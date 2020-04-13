@@ -1040,10 +1040,8 @@ class GSASII(wx.Frame):
             if rd.Constraints:
                 sub = GetGPXtreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
                 Constraints = self.GPXtree.GetItemPyData(sub)                
-                # TODO: make sure that NEWVAR names are unique here?
                 for i in rd.Constraints:
                     if type(i) is dict:
-                        #for j in i: print j,' --> ',i[j]
                         if '_Explain' not in Constraints: Constraints['_Explain'] = {}
                         Constraints['_Explain'].update(i)
                     else:
@@ -5308,6 +5306,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 #        self.ConstraintEdit.Append(id=G2G.wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
 #            help='Add H atom riding constraints between atom parameter values')
 #        self.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
+        G2G.Define_wxId('wxID_SHOWISO')
+        self.ConstraintEdit.Append(G2G.wxID_SHOWISO,'Show ISODISTORT modes',
+                'Show ISODISTORT mode values for all phases')
+        self.ConstraintEdit.Enable(G2G.wxID_SHOWISO,False)
+        # for DEBUG only
+        #def OnShowISODISTORT(event):
+        #    import imp
+        #    imp.reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
+        #    G2cnstG.ShowIsoDistortCalc(G2frame)
+        #G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
+        # end DEBUG
+        
         self.PostfillDataMenu()
 
         # Rigid bodies

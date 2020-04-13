@@ -39,6 +39,7 @@ import GSASIIobj as G2obj
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIfiles as G2fil
+import GSASIIpy3 as G2py3
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -210,12 +211,12 @@ def ProcessConstraints(constList):
                     D[var] = term[0]
             if len(D) > 1:
                 # add extra dict terms for input variable name and vary flag
-                if varname is not None:                    
-                    if varname.startswith('::'):
-                        varname = varname[2:].replace(':',';')
+                if varname is not None:
+                    varname = str(varname) # in case this is a G2VarObj
+                    if ':' in varname:
+                        D['_name'] = varname
                     else:
-                        varname = varname.replace(':',';')
-                    D['_name'] = '::' + varname
+                        D['_name'] = '::' + varname
                 D['_vary'] = varyFlag == True # force to bool
                 constDict.append(D)
             else:
@@ -366,7 +367,73 @@ def PrintFprime(FFtables,pfx,pFile):
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')
+
+def PrintISOmodes(pFile,Phases,parmDict,sigDict):
+    '''Prints the values for the ISODISTORT modes into the project's
+    .lst file after a refinement.
+    '''
+    for phase in Phases:
+        if 'ISODISTORT' not in Phases[phase]: continue
+        data = Phases[phase]
+        ISO = data['ISODISTORT']
+        if 'G2VarList' in ISO:
+            deltaList = []
+            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+                dvar = gv.varname()
+                var = dvar.replace('::dA','::A')
+                albl = Ilbl[:Ilbl.rfind('_')]
+                v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+                if var in parmDict:
+                    cval = parmDict[var]
+                else:
+                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaList.append(cval-pval)
+            modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
             
+        if 'G2OccVarList' in ISO:
+            deltaOccList = []
+            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+                var = gv.varname()
+                albl = Ilbl[:Ilbl.rfind('_')]
+                pval = ISO['BaseOcc'][albl]
+                if var in parmDict:
+                    cval = parmDict[var]
+                else:
+                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaOccList.append(cval-pval)
+            modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
+            
+        if 'G2VarList' in ISO:
+            pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
+            l = str(max([len(i) for i in ISO['IsoModeList']])+3)
+            fmt = '  {:'+l+'}{}'
+            for var,val,norm,G2mode in zip(
+                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] ):
+                try:
+                    value = G2py3.FormatSigFigs(val/norm)
+                    if str(G2mode) in sigDict:
+                        value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
+                except TypeError:
+                    value = '?'
+                pFile.write(fmt.format(var,value)+'\n')
+                
+        if 'G2OccVarList' in ISO:
+            pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
+            l = str(max([len(i) for i in ISO['OccModeList']])+3)
+            fmt = '  {:'+l+'}{}'
+            for var,val,norm,G2mode in zip(
+                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
+                try:
+                    value = G2py3.FormatSigFigs(val/norm)
+                    if str(G2mode) in sigDict:
+                        value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
+                except TypeError:
+                    value = '?'
+                pFile.write(fmt.format(var,value)+'\n')
+    
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
 

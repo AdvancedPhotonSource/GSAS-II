@@ -162,6 +162,8 @@ but under specific conditions, there may be other good reasons to constrain a pa
 A "Hold" constraint is stored as described for type "h" in the 
 :ref:`constraint definitions table <Constraint_definitions_table>`.
 
+.. _Constraints_processing:
+
 Constraint Processing
 ---------------------
 
@@ -1444,11 +1446,11 @@ def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
             s2 = ' value :'
             s3 = ' sig   :'
         s1 += '%15s' % (name)
-        s2 += '%15.4f' % (val)
+        s2 += '%15.5f' % (val)
         if esd is None:
             s3 += '%15s' % ('n/a')
-        else:    
-            s3 += '%15.4f' % (esd)
+        else:
+            s3 += '%15.5f' % (esd)
 
 def ComputeDepESD(covMatrix,varyList,parmDict):
     '''Compute uncertainties for dependent parameters from independent ones

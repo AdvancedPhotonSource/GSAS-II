@@ -274,6 +274,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
+            G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)

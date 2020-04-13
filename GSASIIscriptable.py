@@ -2239,6 +2239,7 @@ class G2Project(G2ObjectWrapper):
         assert phasename not in self.data['Phases'], "phase names should be unique"
         self.data['Phases'][phasename] = phasereader.Phase
 
+        # process constraints, currently generated only from ISODISTORT CIFs
         if phasereader.Constraints:
             Constraints = self.data['Constraints']
             for i in phasereader.Constraints:

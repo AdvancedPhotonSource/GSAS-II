@@ -16,13 +16,15 @@ Used to define constraints and rigid bodies.
 '''
 from __future__ import division, print_function
 import sys
+import copy
+import os.path
 import wx
 import wx.grid as wg
+import wx.lib.scrolledpanel as wxscroll
 import random as ran
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
-import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2elem
@@ -36,6 +38,7 @@ import GSASIIctrlGUI as G2G
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
+import GSASIIpy3 as G2py3
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class ConstraintDialog(wx.Dialog):
@@ -821,17 +824,25 @@ def UpdateConstraints(G2frame,data):
                             eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
+                    # Add ISODISTORT help items
                     if '_Explain' in data:
-                        if data['_Explain'].get(item[-3]):
+                        # this ignores the phase number. TODO: refactor that in
+                        hlptxt = None
+                        try:
+                            hlptxt = data['_Explain'].get(item[-3])
+                        except TypeError:
+                            # note that phase RanId is item[-3].phase
+                            hlptxt = data['_Explain'].get(str(item[-3].phase)+item[-3].name)
+                        if hlptxt:
                             helptext += '\n\n'
-                            helptext += data['_Explain'][item[-3]]
+                            helptext += hlptxt
                     # typeString = 'NEWVAR'
                     # if item[-3]:
                     #     eqString[-1] += ' = '+item[-3]
                     # else:
                     #     eqString[-1] += ' = New Variable'
                     if item[-3]:
-                        typeString = item[-3] + ' = '
+                        typeString = str(item[-3]) + ' = '
                     else:
                         typeString = 'New Variable = '
                     #print 'refine',item[-2]
@@ -936,7 +947,7 @@ def UpdateConstraints(G2frame,data):
             items = data[name][Id][:-3]
             constType = 'New Variable'
             if data[name][Id][-3]:
-                varname = data[name][Id][-3]
+                varname = str(data[name][Id][-3])
             else:
                 varname = ""
             lbl = 'Enter value for each term in constraint; sum = new variable'
@@ -944,7 +955,7 @@ def UpdateConstraints(G2frame,data):
                                    varname=varname,varyflag=data[name][Id][-2])
         elif data[name][Id][-1] == 'c':
             items = data[name][Id][:-3]+[
-                [data[name][Id][-3],'fixed value =']]
+                [str(data[name][Id][-3]),'fixed value =']]
             constType = 'Constraint'
             lbl = 'Edit value for each term in constant constraint sum'
             dlg = ConstraintDialog(G2frame,constType,lbl,items)
@@ -956,7 +967,7 @@ def UpdateConstraints(G2frame,data):
         else:
             return
         try:
-            prev = data[name][Id][:]
+            prev = copy.deepcopy(data[name][Id])
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
                 for i in range(len(data[name][Id][:-3])):
@@ -966,18 +977,21 @@ def UpdateConstraints(G2frame,data):
                 if data[name][Id][-1] == 'c':
                     data[name][Id][-3] = str(result[-1][0])
                 elif data[name][Id][-1] == 'f':
-                    # process the variable name to put in global form (::var)
-                    varname = str(dlg.newvar[0]).strip().replace(' ','_')
-                    if varname.startswith('::'):
-                        varname = varname[2:]
-                    varname = varname.replace(':',';')
-                    if varname:
-                        data[name][Id][-3] = varname
-                    else:
-                        data[name][Id][-3] = ''
                     data[name][Id][-2] = dlg.newvar[1]
+                    if type(data[name][Id][-3]) is str:
+                        # process the variable name to put in global form (::var)
+                        varname = str(dlg.newvar[0]).strip().replace(' ','_')
+                        if varname.startswith('::'):
+                            varname = varname[2:]
+                        varname = varname.replace(':',';')
+                        if varname:
+                            data[name][Id][-3] = varname
+                        else:
+                            data[name][Id][-3] = ''
                 if not CheckChangedConstraint():
                     data[name][Id] = prev
+            else:
+                data[name][Id] = prev
         except:
             import traceback
             print (traceback.format_exc())
@@ -1085,6 +1099,10 @@ def UpdateConstraints(G2frame,data):
         dlg.Destroy()
         return
     G2obj.IndexAllIds(Histograms,Phases)
+    for p in Phases:
+        if 'ISODISTORT' in Phases[p]:
+            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
+            break
     ##################################################################################
     # patch: convert old-style (str) variables in constraints to G2VarObj objects
     for key,value in data.items():
@@ -1176,6 +1194,9 @@ def UpdateConstraints(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnAddHold, id=G2G.wxID_HOLDADD)
     G2frame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2G.wxID_EQUIVALANCEATOMS)
 #    G2frame.Bind(wx.EVT_MENU, OnAddRiding, id=G2G.wxID_ADDRIDING)
+    def OnShowISODISTORT(event):
+        ShowIsoDistortCalc(G2frame)
+    G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
     # tab commands
     for id in (G2G.wxID_CONSPHASE,
                G2G.wxID_CONSHAP,
@@ -2377,3 +2398,216 @@ def UpdateRigidBodies(G2frame,data):
     UpdateVectorRB()
     G2frame.rbBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     wx.CallAfter(OnPageChanged,None)
+
+def ShowIsoDistortCalc(G2frame,phase=None):
+    '''Compute the ISODISTORT mode values from the current coordinates.
+    Called in response to the (Phase/Atoms tab) AtomCompute or 
+    Constraints/Edit Constr. "Show ISODISTORT modes" menu item, which 
+    should be enabled only when Phase['ISODISTORT'] is defined. 
+    '''
+    def _onClose(event):
+        dlg.EndModal(wx.ID_CANCEL)
+    def fmtHelp(item,fullname):
+        helptext = "A new variable"
+        if item[-3]:
+            helptext += " named "+str(item[-3])
+        helptext += " is a linear combination of the following parameters:\n"
+        first = True
+        for term in item[:-3]:
+            line = ''
+            var = str(term[1])
+            m = term[0]
+            if first:
+                first = False
+                line += ' = '
+            else:
+                if m >= 0:
+                    line += ' + '
+                else:
+                    line += ' - '
+                m = abs(m)
+            line += '%.3f*%s '%(m,var)
+            varMean = G2obj.fmtVarDescr(var)
+            helptext += "\n" + line + " ("+ varMean + ")"
+        helptext += '\n\nISODISTORT full name: '+str(fullname)
+        return helptext
+
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # init for constraint
+    isophases = [p for p in Phases if 'ISODISTORT' in Phases[p]]
+    
+    if not isophases:
+        G2frame.ErrorDialog('no ISODISTORT phases',
+                            'Unexpected error: no ISODISTORT phases')
+        return
+    if phase and phase not in isophases:
+        G2frame.ErrorDialog('not ISODISTORT phase',
+                            'Unexpected error: selected phase is not an ISODISTORT phase')
+        print('Unexpected error: selected phase is not an ISODISTORT phase',
+                  phase,isophases)
+    elif not phase and len(isophases) == 1:
+        phase = isophases[0]
+    elif not phase:
+        dlg = wx.SingleChoiceDialog(G2frame,'Select phase from ISODISTORT phases',
+                                        'Select Phase',isophases)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            phase = isophases[sel]
+        else:
+            return
+    # if len(data.get('Histograms',[])) == 0:
+    #     G2frame.ErrorDialog(
+    #         'No data',
+    #         'Sorry, this computation requires that a histogram first be added to the phase'
+    #         )
+    #     return
+   
+    covdata = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+    # make a lookup table for named NewVar Phase constraints
+    sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+    Constraints = G2frame.GPXtree.GetItemPyData(sub)
+    constDict = {}
+    for c in Constraints['Phase']:
+        if c[-1] != 'f' or not c[-3]: continue
+        constDict[str(c[-3])] = c
+
+    parmDict,varyList = G2frame.MakeLSParmDict()
+
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT mode values',#size=(630,400),
+                       style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    if 'ISODISTORT' not in Phases[phase]:
+        G2frame.ErrorDialog('not ISODISTORT phase',
+                            'Unexpected error: selected phase is not an ISODISTORT phase')
+        return
+    data = Phases[phase]
+    ISO = data['ISODISTORT']
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                'ISODISTORT mode computation for cordinates in phase '+
+                                str(data['General'].get('Name'))))
+    aSizer = wx.BoxSizer(wx.HORIZONTAL)
+    panel1 = wxscroll.ScrolledPanel(
+        dlg, wx.ID_ANY,#size=(100,200),
+        style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+    subSizer1 = wx.FlexGridSizer(cols=2,hgap=5,vgap=2)
+    panel2 = wxscroll.ScrolledPanel(
+        dlg, wx.ID_ANY,#size=(100,200),
+        style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+    subSizer2 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
+    subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name  '))
+    subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
+    subSizer2.Add((-1,-1))
+    subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'Mode name  '))
+    subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
+    # ISODISTORT displacive modes
+    if 'G2VarList' in ISO:
+        deltaList = []
+        for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+            dvar = gv.varname()
+            var = dvar.replace('::dA','::A')
+            albl = Ilbl[:Ilbl.rfind('_')]
+            v = Ilbl[Ilbl.rfind('_')+1:]
+            pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+            if var in parmDict:
+                cval = parmDict[var][0]
+            else:
+                dlg.EndModal(wx.ID_CANCEL)
+                G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                return
+            deltaList.append(cval-pval)
+        modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+        for lbl,xyz,var,val,norm,G2mode in zip(
+                ISO['IsoVarList'],deltaList,
+                ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] ):
+            #GSASIIpath.IPyBreak()
+            if str(G2mode) in constDict:
+                ch = G2G.HelpButton(panel2,fmtHelp(constDict[str(G2mode)],var))
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+            else:
+                subSizer2.Add((-1,-1))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            try:
+                value = G2py3.FormatSigFigs(xyz)
+            except TypeError:
+                value = str(xyz)            
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+            try:
+                value = G2py3.FormatSigFigs(val/norm)
+                if 'varyList' in covdata:
+                    if str(G2mode) in covdata['varyList']:
+                        sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]
+                        value = G2mth.ValEsd(val/norm,sig/norm)
+            except TypeError:
+                value = '?'
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            #GSASIIpath.IPyBreak()
+    # ISODISTORT occupancy modes
+    if 'G2OccVarList' in ISO:
+        deltaList = []
+        for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+            var = gv.varname()
+            albl = Ilbl[:Ilbl.rfind('_')]
+            pval = ISO['BaseOcc'][albl]
+            if var in parmDict:
+                cval = parmDict[var][0]
+            else:
+                dlg.EndModal(wx.ID_CANCEL)
+                G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                return
+            deltaList.append(cval-pval)
+        modeVals = np.inner(ISO['Var2OccMatrix'],deltaList)
+        for lbl,delocc,var,val,norm,G2mode in zip(
+                ISO['OccVarList'],deltaList,
+                ISO['OccModeList'],modeVals,ISO['OccNormList'],ISO['G2OccModeList']):
+            if str(G2mode) in constDict:
+                ch = G2G.HelpButton(panel2,fmtHelp(constDict[str(G2mode)],var))
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+            else:
+                subSizer2.Add((-1,-1))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            try:
+                value = G2py3.FormatSigFigs(delocc)
+            except TypeError:
+                value = str(delocc)
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            #subSizer.Add((10,-1))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+            try:
+                value = G2py3.FormatSigFigs(val/norm)
+                if 'varyList' in covdata:
+                    if str(G2mode) in covdata['varyList']:
+                        sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]
+                        value = G2mth.ValEsd(val/norm,sig/norm)
+            except TypeError:
+                value = '?'
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+
+    # finish up ScrolledPanel
+    panel1.SetSizer(subSizer1)
+    panel2.SetSizer(subSizer2)
+    panel1.SetAutoLayout(1)
+    panel1.SetupScrolling()
+    panel2.SetAutoLayout(1)
+    panel2.SetupScrolling()
+    # Allow window to be enlarged but not made smaller
+    dlg.SetSizer(mainSizer)
+    w1,l1 = subSizer1.GetSize()
+    w2,l2 = subSizer2.GetSize()
+    panel1.SetMinSize((w1+10,200))
+    panel2.SetMinSize((w2+20,200))
+    aSizer.Add(panel1,1, wx.ALL|wx.EXPAND,1)
+    aSizer.Add(panel2,2, wx.ALL|wx.EXPAND,1)
+    mainSizer.Add(aSizer,1, wx.ALL|wx.EXPAND,1)
+
+    # make OK button 
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CLOSE) 
+    btn.Bind(wx.EVT_BUTTON,_onClose)
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+
+    mainSizer.Fit(dlg)
+    dlg.SetMinSize(dlg.GetSize())
+    dlg.ShowModal()
+    dlg.Destroy()

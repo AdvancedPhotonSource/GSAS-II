@@ -2538,12 +2538,22 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     fl.close()
     return fname
     
-def MakepdparserPDB(Name,Phase,RMCPdict):
-    import pdbparser as pdp
-    fname = Name+'.pdb'
+def MakePdparse(RMCPdict):
+    fname = 'make_pdb.py'
+    outName = RMCPdict['moleculePdb'].split('.')
+    outName[0] += 'bb'
+    outName = '.'.join(outName)
     fl = open(fname,'w')
-    fl.write('REMARK    this file to be generated using pdbparser\n')
-    fl.close()
+    fl.write('from pdbparser.pdbparser import pdbparser\n')
+    fl.write('from pdbparser.Utilities.Construct import AmorphousSystem\n')
+    fl.write("pdb = pdbparser('%s')\n"%RMCPdict['moleculePdb'])
+    boxstr= 'boxsize=%s'%str(RMCPdict['Box'])
+    recstr = 'recursionLimit=%d'%RMCPdict['maxRecursion']
+    denstr = 'density=%.3f'%RMCPdict['targetDensity']
+    fl.write('pdb = AmorphousSystem(pdb,%s,%s,%s,\n'%(boxstr,recstr,denstr))
+    fl.write('    priorities={"boxSize":True, "insertionNumber":False, "density":True}).construct().get_pdb()\n')
+    fl.write('pdb.export_pdb("%s")\n'%outName)
+    fl.close
     return fname
 
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):

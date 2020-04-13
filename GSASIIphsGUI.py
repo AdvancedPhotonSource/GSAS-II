@@ -88,8 +88,10 @@ atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
 if '2' in platform.python_version_tuple()[0]:
     GkDelta = unichr(0x0394)
+    Angstr = unichr(0x00c5)
 else:
     GkDelta = chr(0x0394)
+    Angstr = chr(0x00c5)   
 ################################################################################
 #### phase class definitions
 ################################################################################
@@ -4430,14 +4432,14 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add(RMCsel,0,WACV)
         mainSizer.Add((5,5),0,WACV)
         if G2frame.RMCchoice == 'fullrmc':
-          #   try:
-          #       from fullrmc import Engine
-          #   except ModuleNotFoundError:
-          #       wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
-          # Install it in your python according to the instructions in
-          # https://bachiraoun.github.io/fullrmc/index.html. ''',
-          #           caption='fullrmc not installed',style=wx.ICON_INFORMATION)
-          #       return
+            try:
+                import fullrmc
+            except ModuleNotFoundError:
+                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
+           Install it in your python according to the instructions in
+           https://bachiraoun.github.io/fullrmc/index.html. ''',
+                     caption='fullrmc not installed',style=wx.ICON_INFORMATION)
+                return
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence",     
  B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
@@ -4461,7 +4463,7 @@ def UpdatePhaseData(G2frame,Item,data):
                           'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
                 data['RMC']['fullrmc'] = {'ifBox':True,'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
                     'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Swaps':[],'useBVS':False,
-                    'AveCN':[],'FxCN':[],}
+                    'AveCN':[],'FxCN':[],'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000}
             RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
@@ -4488,9 +4490,42 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnReStart(event):
                 RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
+                
+            def OnPdbButton(event):
+                dlg = wx.FileDialog(G2frame.FRMC, 'Choose molecule pdb file',G2frame.LastGPXdir,
+                    style=wx.FD_OPEN ,wildcard='PDB file(*.pdb)|*.pdb')
+                if dlg.ShowModal() == wx.ID_OK:
+                    fpath,fName = os.path.split(dlg.GetPath())
+                    RMCPdict['moleculePdb'] = fName
+                    pdbButton.SetLabel(fName)
+                    
+            def OnMakePDB(event):
+                dlg = wx.MessageDialog(G2frame,'''
+Warning - this step can take more than an hour; do you want to proceed?
+It will be run as a separate process, and a result is required for fullrmc.
+Make sure your parameters are correctly set.
+                    ''','Make big box pdb file',wx.YES_NO|wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                    if result in [wx.ID_YES,]:
+                        pdpy = G2pwd.MakePdparse(RMCPdict)
+                        import subprocess as sb
+                        batch = open('pdbparse.bat','w')
+                        batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
+                        batch.write(sys.exec_prefix+'\\python.exe %s\n'%pdpy)
+                        batch.write('pause')
+                        batch.close()
+                        sb.Popen('pdbparse.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
+                    else:
+                        print(' Make PDB file for fullrmc abandonded')
+                finally:
+                    dlg.Destroy()
+                
 #patches
             if 'useBVS' not in RMCPdict:
                 RMCPdict['useBVS'] = False
+            if 'moleculePdb' not in RMCPdict:
+                RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
 #end patches
             restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
             restart.SetValue(RMCPdict['ReStart'][0])
@@ -4499,7 +4534,7 @@ def UpdatePhaseData(G2frame,Item,data):
 
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             if RMCPdict['ifBox']:
-                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions:'),0,WACV)                
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions, %s:'%Angstr),0,WACV)                
                 lineSizer.Add(GetBoxSizer(),0,WACV)
                 boxBtn = wx.Button(G2frame.FRMC,label='Use super lattice')
             else:
@@ -4509,7 +4544,21 @@ def UpdatePhaseData(G2frame,Item,data):
             boxBtn.Bind(wx.EVT_BUTTON,OnBoxChoice)
             lineSizer.Add(boxBtn,0,WACV)
             mainSizer.Add(lineSizer,0,WACV)
-            
+            if RMCPdict['ifBox']:
+                molecSizer = wx.BoxSizer(wx.HORIZONTAL)
+                molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' Source molecule file '),0,WACV)
+                pdbButton = wx.Button(G2frame.FRMC,label=RMCPdict['moleculePdb'])
+                pdbButton.Bind(wx.EVT_BUTTON,OnPdbButton)
+                molecSizer.Add(pdbButton,0,WACV)
+                molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' target density, gm/cc '),0,WACV)
+                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'targetDensity',min=0.1,size=[60,25]),0,WACV)
+                molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' max tries '),0,WACV)
+                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'maxRecursion',min=1000,max=1000000,size=[60,25]),0,WACV)
+                makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB (slow!)')
+                makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
+                molecSizer.Add(makePDB,0,WACV)               
+                mainSizer.Add(molecSizer,0,WACV)
+                
             mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
             
             
@@ -5028,7 +5077,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 print(G2pwd.MakepdparserPDB(pName,data,RMCPdict)+ ' written')
             else:
                 print(G2pwd.MakefullrmcPDB(pName,data,RMCPdict)+ ' written')
-            #print(G2pwd.MakefullrmcRun(pName,data,RMCPdict)+ ' written')
             print('fullrmc file build completed')
         else:
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)

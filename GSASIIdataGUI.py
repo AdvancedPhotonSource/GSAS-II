@@ -5322,11 +5322,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         # Rigid bodies
         G2G.Define_wxId('wxID_RIGIDBODYADD', 'wxID_DRAWDEFINERB', 'wxID_RIGIDBODYIMPORT', 'wxID_RESIDUETORSSEQ',
-            'wxID_VECTORBODYADD')        
+            'wxID_VECTORBODYADD', 'wxID_RIGIDBODYSAVE',)        
         self.RigidBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodyMenu)
         self.ResidueRBMenu = wx.Menu(title='')
         self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYIMPORT,'Import XYZ','Import rigid body XYZ from file')
+        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYSAVE,'Save PDB','Save rigid body to PDB file')        
         self.ResidueRBMenu.Append(G2G.wxID_RESIDUETORSSEQ,'Define sequence','Define torsion sequence')
         self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYADD,'Import residues','Import residue rigid bodies from macro file')
         self.RigidBodyMenu.Append(menu=self.ResidueRBMenu, title='Edit Residue Body')

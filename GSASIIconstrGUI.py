@@ -40,6 +40,7 @@ import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIpy3 as G2py3
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 class ConstraintDialog(wx.Dialog):
     '''Window to edit Constraint values
@@ -1566,6 +1567,7 @@ def UpdateRigidBodies(G2frame,data):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodyMenu)
             G2frame.Bind(wx.EVT_MENU, AddResidueRB, id=G2G.wxID_RIGIDBODYADD)
             G2frame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2G.wxID_RIGIDBODYIMPORT)
+            G2frame.Bind(wx.EVT_MENU, OnSaveRigidBody, id=G2G.wxID_RIGIDBODYSAVE)
             G2frame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2G.wxID_RESIDUETORSSEQ) #enable only if residue RBs exist?
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
@@ -1615,6 +1617,13 @@ def UpdateRigidBodies(G2frame,data):
             pass
         elif 'Residue' in G2frame.rbBook.GetPageText(page):
             ImportResidueRB()
+            
+    def OnSaveRigidBody(event):
+        page = G2frame.rbBook.GetSelection()
+        if 'Vector' in G2frame.rbBook.GetPageText(page):
+            pass
+        elif 'Residue' in G2frame.rbBook.GetPageText(page):
+            SaveResidueRB()
             
     def AddVectorRB(event):
         AtInfo = data['Vector']['AtInfo']
@@ -1703,8 +1712,8 @@ def UpdateRigidBodies(G2frame,data):
         elif 'pdb' in ext:
             while 'ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]:
                 txtStr = text.readline()
-                #print txtStr
         items = txtStr.split()
+        nat = 1
         while len(items):
             if 'txt' in ext:
                 atName = items[0]
@@ -1713,14 +1722,17 @@ def UpdateRigidBodies(G2frame,data):
             elif 'xyz' in ext:
                 atType = items[0]
                 rbXYZ.append([float(items[i]) for i in [1,2,3]])
-                atName = atType+str(len(rbXYZ))
+                atName = '%s%d'%(atType,nat)
             elif 'mol2' in ext:
                 atType = items[1]
                 atName = items[1]+items[0]
                 rbXYZ.append([float(items[i]) for i in [2,3,4]])
             elif 'pdb' in ext:
                 atType = items[-1]
-                atName = items[2]
+                if not items[2][-1].isnumeric():
+                    atName = '%s%d'%(items[2],nat)
+                else:
+                    atName = '5s'%items[2]
                 xyz = txtStr[30:55].split()                    
                 rbXYZ.append([float(x) for x in xyz])
             atNames.append(atName)
@@ -1734,6 +1746,7 @@ def UpdateRigidBodies(G2frame,data):
             if 'pdb' in ext and ('ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]):
                 break
             items = txtStr.split()
+            nat += 1
         if len(atNames) < 3:
             G2G.G2MessageBox(G2frame,'Not enough atoms in rigid body; must be 3 or more')
         else:
@@ -1750,6 +1763,27 @@ def UpdateRigidBodies(G2frame,data):
             print ('Rigid body UNKRB added')
         text.close()
         UpdateResidueRB()
+        
+    def SaveResidueRB():
+        global rbId
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose PDB file for Atom XYZ', pth, '', 
+            'PDB files (*.pdb)|*.pdb',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is .pkslst
+                filename = os.path.splitext(filename)[0]+'.pdb'
+                File = open(filename,'w')       
+                rbData =  data['Residue'][rbId]
+                for iat,xyz in enumerate(rbData['rbXYZ']):
+                    File.write('ATOM %6d  %-4s%3s     1    %8.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(
+                        iat,rbData['atNames'][iat],rbData['RBname'][:3],xyz[0],xyz[1],xyz[2],rbData['rbTypes'][iat]))
+                File.close()
+                print ('Atom XYZ saved to: '+filename)
+        finally:
+            dlg.Destroy()
+        
         
     def FindNeighbors(Orig,XYZ,atTypes,atNames,AtInfo):
         Radii = []
@@ -2036,11 +2070,6 @@ def UpdateRigidBodies(G2frame,data):
         global rbId
         def rbNameSizer(rbId,rbData):
 
-            def OnRBName(event):
-                Obj = event.GetEventObject()
-                rbData['RBname'] = Obj.GetValue()
-                wx.CallAfter(UpdateResidueRB)
-                
             def OnDelRB(event):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
@@ -2076,11 +2105,7 @@ def UpdateRigidBodies(G2frame,data):
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
                 0,wx.ALIGN_CENTER_VERTICAL)
-            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
-            Indx[RBname.GetId()] = rbId
-            RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
-            RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
-            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(G2G.ValidatedTxtCtrl(ResidueRBDisplay,rbData,'RBname'),0,WACV)
             nameSizer.Add((5,0),)
             plotRB = wx.CheckBox(ResidueRBDisplay,-1,'Plot?')
             Indx[plotRB.GetId()] = rbId

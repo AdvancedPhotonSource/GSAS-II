@@ -2164,6 +2164,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             pFile.write(sigstr+'\n')
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
+        Tindx = 1.0
+        Tvar = 0.0
         pFile.write('\n Spherical harmonics texture: Order: %d\n'%textureData['Order'])
         names = ['omega','chi','phi']
         namstr = '  names :'
@@ -2193,7 +2195,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for name in SHkeys[iBeg:iFin]:
                 namstr += '%12s'%(name)
                 ptstr += '%12.3f'%(SHcoeff[name])
+                l = 2.0*eval(name.strip('C'))[0]+1
+                Tindx += SHcoeff[name]**2/l
                 if name in SHtextureSig:
+                    Tvar += (2.*SHcoeff[name]*SHtextureSig[name]/l)**2
                     sigstr += '%12.3f'%(SHtextureSig[name])
                 else:
                     sigstr += 12*' '
@@ -2202,6 +2207,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             pFile.write(sigstr+'\n')
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
+        pFile.write(' Texture index J = %.3f(%d)'%(Tindx,int(1000*np.sqrt(Tvar))))
             
     ##########################################################################
     # SetPhaseData starts here
@@ -2915,6 +2921,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             pFile.write(sigstr+'\n')
         
     def PrintSHPOAndSig(pfx,hapData,POsig):
+        Tindx = 1.0
+        Tvar = 0.0
         pFile.write('\n Spherical harmonics preferred orientation: Order: %d\n'%hapData[4])
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -2922,13 +2930,17 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
             ptstr += '%12.3f'%(hapData[5][item])
+            l = 2.0*eval(item.strip('C'))[0]+1
+            Tindx += hapData[5][item]**2/l
             if pfx+item in POsig:
+                Tvar += (2.*hapData[5][item]*POsig[pfx+item]/l)**2
                 sigstr += '%12.3f'%(POsig[pfx+item])
             else:
                 sigstr += 12*' ' 
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
+        pFile.write('\n Texture index J = %.3f(%d)\n'%(Tindx,int(1000*np.sqrt(Tvar))))
         
     def PrintExtAndSig(pfx,hapData,ScalExtSig):
         pFile.write('\n Single crystal extinction: Type: %s Approx: %s\n'%(hapData[0],hapData[1]))

@@ -2933,6 +2933,8 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     def printSpHarm(textureData,SHtextureSig):
+        Tindx = 1.0
+        Tvar = 0.0
         print ('\n Spherical harmonics texture: Order:' + str(textureData['Order']))
         names = ['omega','chi','phi']
         namstr = '  names :'
@@ -2961,9 +2963,12 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             sigstr = '  esds  :'
             for name in SHkeys[iBeg:iFin]:
                 if 'C' in name:
+                    l = 2.0*eval(name.strip('C'))[0]+1
+                    Tindx += SHcoeff[name]**2/l
                     namstr += '%12s'%(name)
                     ptstr += '%12.3f'%(SHcoeff[name])
                     if name in SHtextureSig:
+                        Tvar += (2.*SHcoeff[name]*SHtextureSig[name]/l)**2
                         sigstr += '%12.3f'%(SHtextureSig[name])
                     else:
                         sigstr += 12*' '
@@ -2972,6 +2977,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             print (sigstr)
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
+        print(' Texture index J = %.3f(%d)'%(Tindx,int(1000*np.sqrt(Tvar))))
             
     def Dict2Values(parmdict, varylist):
         '''Use before call to leastsq to setup list of values for the parameters 

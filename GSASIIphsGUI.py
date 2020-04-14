@@ -4558,6 +4558,7 @@ Make sure your parameters are correctly set.
                 makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
                 molecSizer.Add(makePDB,0,WACV)               
                 mainSizer.Add(molecSizer,0,WACV)
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
                 
             mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
             
@@ -11009,15 +11010,12 @@ Make sure your parameters are correctly set.
         pgbar.Destroy()
         if Error:
             wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
-#        x = []
-#        y = []
         XY = []
         for hist in keyList:
             x = refData[hist].T[5].T
             y = refData[hist].T[6].T
             xy = [x,y]
             XY.append(np.array(xy))
-#        XY = np.array(XY)
         G2plt.PlotXY(G2frame,XY,XY2=[],labelX='POobs',labelY='POcalc',newPlot=False,Title='Texture fit error')
         UpdateTexture()
         G2plt.PlotTexture(G2frame,data,Start=False)            

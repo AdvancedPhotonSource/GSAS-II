@@ -9,7 +9,7 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-.. _GSASIIIntPDFtool:
+.. _GSASIIautoint:
 
 *GSASIIIntPDFtool: autointegration routines*
 ---------------------------------------------

@@ -57,6 +57,7 @@ import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIImapvars as G2mv
+import GSASIIElem as G2el
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -375,9 +376,13 @@ def PutInCol(val, wid):
 
 
 # Refactored over here to allow access by GSASIIscriptable.py
-def WriteComposition(fp, phasedict, phasenam, parmDict):
+def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None):
     '''determine the composition for the unit cell, crudely determine Z and
-    then compute the composition in formula units
+    then compute the composition in formula units.
+
+    If quickmode is False, then scattering factors are added to the element loop.
+
+    If keV is specified, then resonant scattering factors are also computed and included. 
     '''
     General = phasedict['General']
     Z = General.get('cellZ',0.0)
@@ -420,33 +425,72 @@ def WriteComposition(fp, phasedict, phasenam, parmDict):
                     Z = i
         General['cellZ'] = Z # save it
 
-    # when scattering factors are included in the CIF, this needs to be
-    # added to the loop here but only in the one-block case.
-    # For multiblock CIFs, scattering factors go in the histogram
-    # blocks  (for all atoms in all appropriate phases) - an example?:
-    #loop_
-    #    _atom_type_symbol
-    #    _atom_type_description
-    #    _atom_type_scat_dispersion_real
-    #    _atom_type_scat_dispersion_imag
-    #    _atom_type_scat_source
-    #    'C' 'C' 0.0033 0.0016
-    #                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-    #    'H' 'H' 0.0000 0.0000
-    #                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-    #    'P' 'P' 0.1023 0.0942
-    #                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-    #    'Cl' 'Cl' 0.1484 0.1585
-    #                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-    #    'Cu' 'Cu' 0.3201 1.2651
-    #                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+    if not quickmode:
+        FFtable = G2el.GetFFtable(General['AtomTypes'])
+        BLtable = G2el.GetBLtable(General)
 
-    #if oneblock: # add scattering factors for current phase here
     WriteCIFitem(fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
+    s = '       '
+    if not quickmode:
+        for j in ('a1','a2','a3','a4','b1','b2','b3','b4','c',1,2):
+            if len(s) > 80:
+                WriteCIFitem(fp, s)
+                s = '       '
+            if j==1:
+                s += ' _atom_type_scat_source'
+            elif j==2:
+                s += ' _atom_type_scat_length_neutron'
+            else:
+                s += ' _atom_type_scat_Cromer_Mann_'
+                s += j
+        if keV:
+            WriteCIFitem(fp, s)
+            s = '        _atom_type_scat_dispersion_real _atom_type_scat_dispersion_imag _atom_type_scat_dispersion_source'
+        WriteCIFitem(fp, s)
+
+            
     formula = ''
     for elem in HillSortElements(list(compDict.keys())):
-        WriteCIFitem(fp, '  ' + PutInCol(elem,4) +
-                     G2mth.ValEsd(compDict[elem],-0.009,True))
+        s = '  '
+        s += PutInCol(elem,4)
+        s += PutInCol(G2mth.ValEsd(compDict[elem],-0.009,True),5)
+        if not quickmode:
+            for i in 'fa','fb','fc':
+                if i != 'fc':
+                    for j in range(4):
+                        if elem in FFtable:
+                            val = G2mth.ValEsd(FFtable[elem][i][j],-0.0009,True)
+                        else:
+                            val = '?'
+                        s += ' '
+                        s += PutInCol(val,9)
+                else:
+                    if elem in FFtable:
+                        val = G2mth.ValEsd(FFtable[elem][i],-0.0009,True)
+                    else:
+                        val = '?'
+                    s += ' '
+                    s += PutInCol(val,9)
+            if elem in BLtable:
+                bldata = BLtable[elem]
+                #isotope = bldata[0]
+                #mass = bldata[1]['Mass']
+                if 'BW-LS' in bldata[1]:
+                    val = 0
+                else:
+                    val = G2mth.ValEsd(bldata[1]['SL'][0],-0.0009,True)
+            else:
+                val = '?'
+            s += ' '
+            s += PutInCol(val,9)
+            WriteCIFitem(fp,s.rstrip())
+            WriteCIFitem(fp,'      https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py')
+            if keV:
+                Orbs = G2el.GetXsectionCoeff(elem.split('+')[0].split('-')[0])
+                FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
+                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP))
+        else:
+            WriteCIFitem(fp,s.rstrip())
         if formula: formula += " "
         formula += elem
         if compDict[elem] == Z: continue
@@ -865,210 +909,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 lbl = prefix+'_'+str(i)
                 labellist.append(lbl)
 
-        # Factored out to above by Jack O'Donnell, so it
-        # could be accessed by GSASIIscriptable.py
-        #  def WriteAtomsNuclear(phasenam):
-        #      'Write atom positions to CIF'
-        #      phasedict = self.Phases[phasenam] # pointer to current phase info
-        #      General = phasedict['General']
-        #      cx,ct,cs,cia = General['AtomPtrs']
-        #      Atoms = phasedict['Atoms']
-        #      cfrac = cx+3
-        #      fpfx = str(phasedict['pId'])+'::Afrac:'
-        #      for i,at in enumerate(Atoms):
-        #          fval = self.parmDict.get(fpfx+str(i),at[cfrac])
-        #          if fval != 0.0:
-        #              break
-        #      else:
-        #          WriteCIFitem(self.fp, '\n# PHASE HAS NO ATOMS!')
-        #          return
-
-        #      WriteCIFitem(self.fp, '\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
-        #      WriteCIFitem(self.fp, 'loop_ '+
-        #                   '\n   _atom_site_label'+
-        #                   '\n   _atom_site_type_symbol'+
-        #                   '\n   _atom_site_fract_x'+
-        #                   '\n   _atom_site_fract_y'+
-        #                   '\n   _atom_site_fract_z'+
-        #                   '\n   _atom_site_occupancy'+
-        #                   '\n   _atom_site_adp_type'+
-        #                   '\n   _atom_site_U_iso_or_equiv'+
-        #                   '\n   _atom_site_symmetry_multiplicity')
-
-        #      varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
-        #                  cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
-        #                  cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
-        #      self.labellist = []
-
-        #      pfx = str(phasedict['pId'])+'::'
-        #      # loop over all atoms
-        #      naniso = 0
-        #      for i,at in enumerate(Atoms):
-        #          if phasedict['General']['Type'] == 'macromolecular':
-        #              label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
-        #              s = PutInCol(MakeUniqueLabel(label,self.labellist),15) # label
-        #          else:
-        #              s = PutInCol(MakeUniqueLabel(at[ct-1],self.labellist),6) # label
-        #          fval = self.parmDict.get(fpfx+str(i),at[cfrac])
-        #          if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
-        #          s += PutInCol(FmtAtomType(at[ct]),4) # type
-        #          if at[cia] == 'I':
-        #              adp = 'Uiso '
-        #          else:
-        #              adp = 'Uani '
-        #              naniso += 1
-        #              # compute Uequiv crudely
-        #              # correct: Defined as "1/3 trace of diagonalized U matrix".
-        #              # SEE cell2GS & Uij2Ueqv to GSASIIlattice. Former is needed to make the GS matrix used by the latter.
-        #              t = 0.0
-        #              for j in (2,3,4):
-        #                  var = pfx+varnames[cia+j]+":"+str(i)
-        #                  t += self.parmDict.get(var,at[cia+j])
-        #          for j in (cx,cx+1,cx+2,cx+3,cia,cia+1):
-        #              if j in (cx,cx+1,cx+2):
-        #                  dig = 11
-        #                  sigdig = -0.00009
-        #              else:
-        #                  dig = 10
-        #                  sigdig = -0.009
-        #              if j == cia:
-        #                  s += adp
-        #              else:
-        #                  var = pfx+varnames[j]+":"+str(i)
-        #                  dvar = pfx+"d"+varnames[j]+":"+str(i)
-        #                  if dvar not in self.sigDict:
-        #                      dvar = var
-        #                  if j == cia+1 and adp == 'Uani ':
-        #                      val = t/3.
-        #                      sig = sigdig
-        #                  else:
-        #                      #print var,(var in self.parmDict),(var in self.sigDict)
-        #                      val = self.parmDict.get(var,at[j])
-        #                      sig = self.sigDict.get(dvar,sigdig)
-        #                  s += PutInCol(G2mth.ValEsd(val,sig),dig)
-        #          s += PutInCol(at[cs+1],3)
-        #          WriteCIFitem(self.fp, s)
-        #      if naniso == 0: return
-        #      # now loop over aniso atoms
-        #      WriteCIFitem(self.fp, '\nloop_' + '\n   _atom_site_aniso_label' +
-        #                   '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
-        #                   '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
-        #                   '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
-        #      for i,at in enumerate(Atoms):
-        #          fval = self.parmDict.get(fpfx+str(i),at[cfrac])
-        #          if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
-        #          if at[cia] == 'I': continue
-        #          s = PutInCol(self.labellist[i],6) # label
-        #          for j in (2,3,4,5,6,7):
-        #              sigdig = -0.0009
-        #              var = pfx+varnames[cia+j]+":"+str(i)
-        #              val = self.parmDict.get(var,at[cia+j])
-        #              sig = self.sigDict.get(var,sigdig)
-        #              s += PutInCol(G2mth.ValEsd(val,sig),11)
-        #          WriteCIFitem(self.fp, s)
-
-        # def HillSortElements(elmlist):
-        #     '''Sort elements in "Hill" order: C, H, others, (where others
-        #     are alphabetical).
-
-        #     :params list elmlist: a list of element strings
-
-        #     :returns: a sorted list of element strings
-        #     '''
-        #     newlist = []
-        #     oldlist = elmlist[:]
-        #     for elm in ('C','H'):
-        #         if elm in elmlist:
-        #             newlist.append(elm)
-        #             oldlist.pop(oldlist.index(elm))
-        #     return newlist+sorted(oldlist)
-
-        # Factored out to above by Jackson O'Donnell
-        # so that it can be accessed by GSASIIscriptable
-
-        # def WriteComposition(phasenam):
-        #     '''determine the composition for the unit cell, crudely determine Z and
-        #     then compute the composition in formula units
-        #     '''
-        #     phasedict = self.Phases[phasenam] # pointer to current phase info
-        #     General = phasedict['General']
-        #     Z = General.get('cellZ',0.0)
-        #     cx,ct,cs,cia = General['AtomPtrs']
-        #     Atoms = phasedict['Atoms']
-        #     fpfx = str(phasedict['pId'])+'::Afrac:'
-        #     cfrac = cx+3
-        #     cmult = cs+1
-        #     compDict = {} # combines H,D & T
-        #     sitemultlist = []
-        #     massDict = dict(zip(General['AtomTypes'],General['AtomMass']))
-        #     cellmass = 0
-        #     for i,at in enumerate(Atoms):
-        #         atype = at[ct].strip()
-        #         if atype.find('-') != -1: atype = atype.split('-')[0]
-        #         if atype.find('+') != -1: atype = atype.split('+')[0]
-        #         atype = atype[0].upper()+atype[1:2].lower() # force case conversion
-        #         if atype == "D" or atype == "D": atype = "H"
-        #         fvar = fpfx+str(i)
-        #         fval = self.parmDict.get(fvar,at[cfrac])
-        #         mult = at[cmult]
-        #         if not massDict.get(at[ct]):
-        #             print('Error: No mass found for atom type '+at[ct])
-        #             print('Will not compute cell contents for phase '+phasenam)
-        #             return
-        #         cellmass += massDict[at[ct]]*mult*fval
-        #         compDict[atype] = compDict.get(atype,0.0) + mult*fval
-        #         if fval == 1: sitemultlist.append(mult)
-        #     if len(compDict.keys()) == 0: return # no elements!
-        #     if Z < 1: # Z has not been computed or set by user
-        #         Z = 1
-        #         if not sitemultlist:
-        #             General['cellZ'] = 1
-        #             return
-        #         for i in range(2,min(sitemultlist)+1):
-        #             for m in sitemultlist:
-        #                 if m % i != 0:
-        #                     break
-        #                 else:
-        #                     Z = i
-        #         General['cellZ'] = Z # save it
-
-        #     # when scattering factors are included in the CIF, this needs to be
-        #     # added to the loop here but only in the one-block case.
-        #     # For multiblock CIFs, scattering factors go in the histogram
-        #     # blocks  (for all atoms in all appropriate phases) - an example?:
-#loop_
-#    _at# om_type_symbol
-#    _at# om_type_description
-#    _at# om_type_scat_dispersion_real
-#    _at# om_type_scat_dispersion_imag
-#    _at# om_type_scat_source
-#    'C'#  'C' 0.0033 0.0016
-#       #                   'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-#    'H'#  'H' 0.0000 0.0000
-#       #                   'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-#    'P'#  'P' 0.1023 0.0942
-#       #                   'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-#    'Cl# ' 'Cl' 0.1484 0.1585
-#       #                   'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-#    'Cu# ' 'Cu' 0.3201 1.2651
-#       #                   'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-
-        #     #if oneblock: # add scattering factors for current phase here
-        #     WriteCIFitem(self.fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
-        #     formula = ''
-        #     for elem in HillSortElements(compDict.keys()):
-        #         WriteCIFitem(self.fp, '  ' + PutInCol(elem,4) +
-        #                      G2mth.ValEsd(compDict[elem],-0.009,True))
-        #         if formula: formula += " "
-        #         formula += elem
-        #         if compDict[elem] == Z: continue
-        #         formula += G2mth.ValEsd(compDict[elem]/Z,-0.009,True)
-        #     WriteCIFitem(self.fp,  '\n# Note that Z affects _cell_formula_sum and _weight')
-        #     WriteCIFitem(self.fp,  '_cell_formula_units_Z',str(Z))
-        #     WriteCIFitem(self.fp,  '_chemical_formula_sum',formula)
-        #     WriteCIFitem(self.fp,  '_chemical_formula_weight',
-        #                   G2mth.ValEsd(cellmass/Z,-0.09,True))
-
         def WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList):
             '''Report bond distances and angles for the CIF
 
@@ -1213,7 +1053,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n   _geom_angle_publ_flag')
                     WriteCIFitem(self.fp, line)
 
-        def WritePhaseInfo(phasenam,hist=None):
+        def WritePhaseInfo(phasenam):
             'Write out the phase information for the selected phase'
             WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info
@@ -1274,7 +1114,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,opr))
 
             # loop over histogram(s) used in this phase
-            if not oneblock and not self.quickmode and not hist:
+            if not oneblock and not self.quickmode:
                 # report pointers to the histograms used in this phase
                 histlist = []
                 for hist in self.Phases[phasenam]['Histograms']:
@@ -1311,8 +1151,21 @@ class ExportCIF(G2IO.ExportBaseclass):
                                   self.parmDict, self.sigDict, self.labellist)
 #                self.CloseFile()
 #                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
-            # report cell contents
-            WriteComposition(self.fp, self.Phases[phasenam], phasenam, self.parmDict)
+            keV = None             
+            if oneblock: # get xray wavelength
+                lamlist = []
+                for hist in self.Histograms:
+                    if 'X' not in self.Histograms[hist]['Instrument Parameters'][0]['Type'][0]:
+                        continue
+                    for k in ('Lam','Lam1'):
+                        if k in self.Histograms[hist]['Instrument Parameters'][0]:
+                            lamlist.append(self.Histograms[hist]['Instrument Parameters'][0][k][0])
+                            break
+                if len(lamlist) == 1:
+                    keV = 12.397639/lamlist[0]
+
+            # report cell contents                        
+            WriteComposition(self.fp, self.Phases[phasenam], phasenam, self.parmDict, self.quickmode, keV)
             if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
                 WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
             if 'Map' in phasedict['General'] and 'minmax' in phasedict['General']['Map']:
@@ -1447,19 +1300,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 txt = G2mth.ValEsd(inst['2-theta'][0],-0.009)
                 WriteCIFitem(self.fp, '_pd_meas_2theta_fixed',txt)
 
-            # TODO: this will need help from Bob
-            #if not oneblock:
-            #WriteCIFitem(self.fp, '\n# SCATTERING FACTOR INFO')
-            #WriteCIFitem(self.fp, 'loop_  _atom_type_symbol')
-            #if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
-            #    WriteCIFitem(self.fp, '      _atom_type_scat_dispersion_real')
-            #    WriteCIFitem(self.fp, '      _atom_type_scat_dispersion_imag')
-            #    for lbl in ('a1','a2','a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c'):
-            #        WriteCIFitem(self.fp, '      _atom_type_scat_Cromer_Mann_'+lbl)
-            #elif histblk['Instrument Parameters'][0]['Type'][1][1] == 'N':
-            #    WriteCIFitem(self.fp, '      _atom_type_scat_length_neutron')
-            #WriteCIFitem(self.fp, '      _atom_type_scat_source')
-
             WriteCIFitem(self.fp, '_pd_proc_ls_background_function',FormatBackground(histblk['Background'],histblk['hId']))
 
             # TODO: this will need help from Bob
@@ -1535,9 +1375,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                         print('DEBUG: skipping reflection list')
                         break
                     if hklmin is None:
-                        hklmin = ref[0:3]
-                        hklmax = ref[0:3]
-                        dmax = dmin = ref[4]
+                        hklmin = copy.copy(ref[0:3])
+                        hklmax = copy.copy(ref[0:3])
+                    if dmin is None:
+                         dmax = dmin = ref[4]
                     if len(histblk['Reflection Lists'].keys()) > 1:
                         s = PutInCol(phaseid,2)
                     else:
@@ -1661,8 +1502,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     continue
                 s = "  "
                 if hklmin is None:
-                    hklmin = ref[0:3]
-                    hklmax = ref[0:3]
+                    hklmin = copy.copy(ref[0:3])
+                    hklmax = copy.copy(ref[0:3])
                     dmax = dmin = ref[4]
                 for i,hkl in enumerate(ref[0:3]):
                     hklmax[i] = max(hkl,hklmax[i])
@@ -2418,6 +2259,19 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             #============================================================
             # loop over histograms, exporting them
+            # first, get atoms across all phases
+            uniqueAtoms = []
+            for phasenam in self.Phases:
+                cx,ct,cs,cia = self.Phases[phasenam]['General']['AtomPtrs']
+                for line in self.Phases[phasenam]['Atoms']:
+                    atype = line[ct].strip()
+                    if atype.find('-') != -1: atype = atype.split('-')[0]
+                    if atype.find('+') != -1: atype = atype.split('+')[0]
+                    atype = atype[0].upper()+atype[1:2].lower() # force case conversion
+                    if atype == "D" or atype == "D": atype = "H"
+                    if atype not in uniqueAtoms:
+                        uniqueAtoms.append(atype)
+
             for i in sorted(self.powderDict.keys()):
                 hist = self.powderDict[i]
                 histblk = self.Histograms[hist]
@@ -2433,6 +2287,28 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[hist])
                     histprm = self.Histograms[hist]["Sample Parameters"]
                     writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
+                    
+                    # get xray wavelength and compute & write f' & f''
+                    lam = None
+                    if 'X' in histblk['Instrument Parameters'][0]['Type'][0]:
+                        for k in ('Lam','Lam1'):
+                            if k in histblk['Instrument Parameters'][0]:
+                                lam = histblk['Instrument Parameters'][0][k][0]
+                                break
+                    if lam:
+                        keV = 12.397639/lam
+                        WriteCIFitem(self.fp,'loop_')
+                        for item in ('_atom_type_symbol','_atom_type_scat_dispersion_real',
+                                         '_atom_type_scat_dispersion_imag','_atom_type_scat_dispersion_source'):
+                            WriteCIFitem(self.fp,'     '+item)
+                        for elem in HillSortElements(uniqueAtoms):
+                            s = '  '
+                            s += PutInCol(elem,4)
+                            Orbs = G2el.GetXsectionCoeff(elem)
+                            FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
+                            s += '  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP)
+                            WriteCIFitem(self.fp,s.rstrip())
+                        WriteCIFitem(self.fp,'')
                     WritePowderData(hist)
             for i in sorted(self.xtalDict.keys()):
                 hist = self.xtalDict[i]

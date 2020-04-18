@@ -10389,10 +10389,13 @@ def PlotFPAconvolutors(G2frame,NISTpk):
         'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
     ttmin = ttmax = 0
     #GSASIIpath.IPyBreak()
-    for i,conv in enumerate(NISTpk.convolvers):
+    i = -1
+    for conv in NISTpk.convolvers:
         if 'smoother' in conv: continue
+        if 'crystallite_size' in conv: continue
         f = NISTpk.convolver_funcs[conv]()
         if f is None: continue
+        i += 1
         FFT = FP.best_irfft(f)
         if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
         FFT /= FFT.max()

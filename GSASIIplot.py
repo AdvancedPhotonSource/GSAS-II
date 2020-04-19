@@ -5252,7 +5252,8 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
     
     if np.any(X) and np.any(Y) and np.any(Z):
         np.seterr(all='ignore')
-        try:
+        if True:
+#        try:
             Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
             xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
@@ -5264,9 +5265,9 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
             Plot.set_ylabel(labelY)
             Plot.set_zlabel(labelZ)
             Plot.set_aspect('equal')
-        except:
-            print('Plot3dXYZ failure')
-            pass
+        # except:
+        #     print('Plot3dXYZ failure')
+        #     pass
         Page.canvas.draw()
         
 ################################################################################

@@ -2105,7 +2105,7 @@ def calcIncident(Iparm,xdata):
 ################################################################################
 #### RMCutilities
 ################################################################################
-    
+   
 def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
     inst = PWDdata['Instrument Parameters'][0]
     Xsb = 0.
@@ -2422,7 +2422,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
                 break
             fl.write('  > CAVSTR%d ::   %d %d %.2f %.2f %.2f %.6f\n'%(iav+1,at1+1,at2+1,avcn[2],avcn[3],avcn[4],avcn[5]))
     for File in Files:
-        if Files[File][0]:
+        if Files[File][0] and Files[File][0] != 'Select':
             if 'Xray' in File and 'F(Q)' in File:
                 fqdata = open(Files[File][0],'r')
                 lines = int(fqdata.readline()[:-1])
@@ -2461,42 +2461,67 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.close()
     return fname
 
-def MakefullrmcRun(Name,Phase,RMCPdict):
-    print(' nothing happened yet')
-    rname = Name+'-run.py'
+def MakefullrmcRun(pName,Phase,RMCPdict):
+    rname = pName+'-run.py'
+    Files = RMCPdict['files']
     rundata = ''
-    rundata += '#### fullrmc $s file; edit by hand if you so choose #####\n'&rname
+    rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%rname
     rundata += '''
+# fullrmc imports (all that are potentially useful)
 import numpy as np
-
-# fullrmc library imports 
-from fullrmc.Globals import LOGGER, FLOAT_TYPE
+from fullrmc.Globals import LOGGER
 from fullrmc.Engine import Engine
 from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
 from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
+from fullrmc.Constraints.StructureFactorConstraints import StructureFactorConstraint
 from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
 from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.ImproperAngleConstraints import ImproperAngleConstraint
-from fullrmc.Core.Collection import convert_Gr_to_gr
 from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
 from fullrmc.Core.GroupSelector import RecursiveGroupSelector
 from fullrmc.Selectors.RandomSelectors import RandomSelector
 from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
 from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
-from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutSymmetryAxisGenerator
 from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
+from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGenerator
+from fullrmc.Core.Collection import get_principal_axis
+# engine setup\n'''
+    rundata += 'LOGGER.set_log_file_basename(%s)\n'%pName
+    rundata += 'engineFileName = "%s.rmc"\n'%pName
+    rundata += 'ENGINE = Engine(path=None)\n'
+    rundata += 'if not ENGINE.is_engine(engineFileName):\n'
+# create engine
+    rundata += '    ENGINE = Engine(path=engineFileName)\n'
+    rundata += '    ENGINE.set_pdb(%s)\n'%RMCPdict['atomPDB']
+## create experimental constraints
+    for File in Files:
+        filDat = RMCPdict['files'][File]
+        if filDat[0] != 'Select':
+            sfwt = 'neutrons'
+            if 'Xray' in File:
+                sfwt = 'xrays'
+            if 'G(r)' in File:
+                rundata += '    GofR = PairDistributionConstraint(experimentalData=%s, weighting="%s"\n'%(filDat[0],sfwt)
+                rundata += '    GofR.set_variance_squared(%f)\n'%filDat[1]
+                rundata += '    ENGINE.add_constraints([GofR])\n'
+            else:
+                rundata += '    FofQ = StructureFactorConstraint(experimentalData=%s, weighting="%s"\n'%(filDat[0],sfwt)
+                rundata += '    FofQ.set_variance_squared(%f)\n'%filDat[1]
+                rundata += '    ENGINE.add_constraints([FofQ])\n'
+    rundata += '    ENGINE.save()\n'
+        
+        
+    
+    rundata += 'else:\n'
+    rundata += '    ENGINE = ENGINE.load(path=engineFileName)\n'
 
-# engine file names - replace name with phase name
-engineFileName = "name_engine.rmc"
-expFileName    = "name_pdf.exp"
-pdbFileName    = "nme.pdb" 
-freshStart     = False      #make TRUE for a restart
 
-            '''
     rfile = open(rname,'w')
     rfile.writelines(rundata)
     rfile.close()
+    
+    return rname
     
 
 def MakefullrmcPDB(Name,Phase,RMCPdict):
@@ -2514,7 +2539,7 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
     Cell = newPhase['General']['Cell'][1:7]
     A,B = G2lat. cell2AB(Cell)
-    fname = Name+'.pdb'
+    fname = Name+'_cbb.pdb'
     fl = open(fname,'w')
     fl.write('REMARK    this file is generated using GSASII\n')
     fl.write('REMARK    Boundary Conditions:%6.2f  0.0  0.0  0.0%7.2f  0.0  0.0  0.0%7.2f\n'%(
@@ -2528,21 +2553,30 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     Natm = np.core.defchararray.count(np.array(Atcodes),'+')
     Natm = np.count_nonzero(Natm-1)
     nat = 0
-    for atm in Atseq:
+    if RMCPdict['byMolec']:
+        NPM = RMCPdict['Natoms']
         for iat,atom in enumerate(Atoms):
-            if atom[1] == atm:
-                nat += 1
-                XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
-                fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
-                        nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+            XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
+            fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
+                    1+nat%NPM,atom[0],1+nat//NPM,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+            nat += 1
+    else:
+        for atm in Atseq:
+            for iat,atom in enumerate(Atoms):
+                if atom[1] == atm:
+                    XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
+                    fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
+                            1+nat,atom[0],1+nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+                    nat += 1
     fl.close()
     return fname
     
 def MakePdparse(RMCPdict):
     fname = 'make_pdb.py'
     outName = RMCPdict['moleculePdb'].split('.')
-    outName[0] += 'bb'
+    outName[0] += '_rbb'
     outName = '.'.join(outName)
+    RMCPdict['atomPDB'] = outName   #might be empty if pdbparser run fails
     fl = open(fname,'w')
     fl.write('from pdbparser.pdbparser import pdbparser\n')
     fl.write('from pdbparser.Utilities.Construct import AmorphousSystem\n')

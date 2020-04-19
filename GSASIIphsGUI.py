@@ -4410,8 +4410,101 @@ def UpdatePhaseData(G2frame,Item,data):
                 atId = RMCPdict['atSeq'][iType]
                 atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
             return atmChoice
-            
         
+        def FileSizer(RMCdict):
+            
+            def OnFitScale(event):
+                RMCPdict['FitScale'] = not RMCPdict['FitScale']
+            
+            def OnFileSel(event):
+                Obj = event.GetEventObject()
+                fil = Indx[Obj.GetId()]
+                dlg = wx.FileDialog(G2frame.FRMC, 'Choose '+fil,G2G.GetImportPath(G2frame),
+                    style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
+                if dlg.ShowModal() == wx.ID_OK:
+                    fpath,fName = os.path.split(dlg.GetPath())
+                    if fpath != G2frame.LastGPXdir:
+                        disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
+                    if os.path.exists(fName):
+                        RMCPdict['files'][fil][0] = fName
+                    G2frame.LastImportDir = fpath    #set so next file is found in same place
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                    return
+                wx.CallAfter(UpdateRMC)
+        
+            def OnFileFormat(event):
+                Obj = event.GetEventObject()
+                fil = Indx[Obj.GetId()]
+                RMCPdict['files'][fil][3] = Obj.GetStringSelection()
+                
+            def OnPlotBtn(event):
+                Obj = event.GetEventObject()
+                fil = Indx[Obj.GetId()]
+                fileItem = RMCPdict['files'][fil]
+                start = 0
+                XY = np.empty((1,2))
+                while XY.shape[0] == 1:
+                    try:
+                        XY = np.loadtxt(fileItem[0],skiprows=start)
+                    except ValueError:
+                        start += 1
+                Xlab = 'Q'
+                if 'G(R)' in fileItem[2]:
+                    Xlab = 'R'
+                G2plt.PlotXY(G2frame,[XY.T,],labelX=Xlab,
+                    labelY=fileItem[2],newPlot=True,Title=fileItem[0],
+                    lines=True)
+                            
+            Indx = {}
+            titleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            titleSizer.Add(wx.StaticText(G2frame.FRMC,label=' Select data for processing: '),0,WACV)
+            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+            fitscale.SetValue(RMCPdict['FitScale'])
+            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+            titleSizer.Add(fitscale,0,WACV)
+            mainSizer.Add(titleSizer,0,WACV)
+            ncol= 5
+            Heads = ['Name','File','Format','Weight','Plot']
+            if G2frame.RMCchoice == 'fullrmc':
+                mainSizer.Add(wx.StaticText(G2frame.FRMC,
+                    label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
+                ncol = 4
+                Heads = ['Name','File','Weight','Plot']
+            fileSizer = wx.FlexGridSizer(ncol,5,5)
+            Formats = ['RMC','GUDRUN','STOG']
+            for head in Heads:
+                fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
+            for fil in RMCPdict['files']:
+                fileSizer.Add(wx.StaticText(G2frame.FRMC,label=fil),0,WACV)
+                Rfile = RMCPdict['files'][fil][0]
+                filSel = wx.Button(G2frame.FRMC,label=Rfile)
+                filSel.Bind(wx.EVT_BUTTON,OnFileSel)
+                Indx[filSel.GetId()] = fil
+                fileSizer.Add(filSel,0,WACV)
+                if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
+                    if G2frame.RMCchoice == 'RMCProfile':                        
+                        nform = 3
+                        if 'Xray' in fil: nform = 1
+                        fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                        fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
+                        Indx[fileFormat.GetId()] = fil
+                        fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
+                        fileSizer.Add(fileFormat,0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1),0,WACV)
+                    plotBtn = wx.Button(G2frame.FRMC,label='Plot?')
+                    plotBtn.Bind(wx.EVT_BUTTON,OnPlotBtn)
+                    Indx[plotBtn.GetId()] = fil
+                    fileSizer.Add(plotBtn,0,WACV)
+                else:
+                    RMCPdict['files'][fil][0] = 'Select'
+                    fileSizer.Add((5,5),0)
+                    fileSizer.Add((5,5),0)
+                    if G2frame.RMCchoice == 'RMCProfile':                        
+                        fileSizer.Add((5,5),0)
+            return fileSizer
+            
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
@@ -4446,7 +4539,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0,WACV)
             if not data['RMC']['fullrmc']:
                 Atypes = data['General']['AtomTypes']
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
@@ -4456,14 +4549,16 @@ def UpdatePhaseData(G2frame,Item,data):
                 for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-                files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
-                          'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
-                          'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
-                          'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
-                          'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
-                data['RMC']['fullrmc'] = {'ifBox':True,'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
-                    'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Swaps':[],'useBVS':False,
-                    'AveCN':[],'FxCN':[],'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000}
+                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)'],
+                          'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)'],
+                          'Neutron reciprocal space data; S(Q): ':['Select',0.05,'S(Q)'],
+                          'Xray real space data; G(r): ':['Select',0.01,'G(r)'],
+                          'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)'],}
+                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':False,
+                    'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],
+                    'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],
+                    'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,
+                    'atomPDB':''}
             RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
@@ -4484,10 +4579,9 @@ def UpdatePhaseData(G2frame,Item,data):
                         i,min=10.,max=50.,size=(50,25)),0,WACV)
                 return boxSizer
             
-            def OnBoxChoice(event):
-                RMCPdict['ifBox'] = not RMCPdict['ifBox']
-                UpdateRMC()
-                
+            def OnByMolec(event):
+                RMCPdict['byMolec'] = bymolec.GetValue()
+                            
             def OnReStart(event):
                 RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
                 
@@ -4500,6 +4594,17 @@ def UpdatePhaseData(G2frame,Item,data):
                     pdbButton.SetLabel(fName)
                     
             def OnMakePDB(event):
+                if not ifBox:
+                    generalData = data['General']
+                    pName = generalData['Name'].replace(' ','_')
+                    pdbname = G2pwd.MakefullrmcPDB(pName,data,RMCPdict)
+                    RMCPdict['atomPDB'] = pdbname
+                    print(pdbname+ ' written')
+                    return                    
+                if RMCPdict['moleculePdb'] == 'Select':
+                    wx.MessageDialog(G2frame,' You must select a source pdb file first','PDB generation error',
+                        wx.ICON_EXCLAMATION).ShowModal()
+                    return
                 dlg = wx.MessageDialog(G2frame,'''
 Warning - this step can take more than an hour; do you want to proceed?
 It will be run as a separate process, and a result is required for fullrmc.
@@ -4526,25 +4631,35 @@ Make sure your parameters are correctly set.
                 RMCPdict['useBVS'] = False
             if 'moleculePdb' not in RMCPdict:
                 RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
+            if 'byMolec' not in RMCPdict:
+                RMCPdict['byMolec'] = False
+            if 'Natoms' not in RMCPdict:
+                RMCPdict['Natoms'] = 1
+            if 'FitScale' not in RMCPdict:
+                RMCPdict['FitScale'] = False
+            if 'atomPDB' not in RMCPdict:
+                RMCPdict['atomPDB'] = ''
 #end patches
-            restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
-            restart.SetValue(RMCPdict['ReStart'][0])
-            restart.Bind(wx.EVT_CHECKBOX,OnReStart)
-            mainSizer.Add(restart,0,WACV)
 
+            generalData = data['General']
+            ifBox = False
+            if 'macromolecular' in generalData['Type']:
+                ifBox = True
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            if RMCPdict['ifBox']:
+            if ifBox:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions, %s:'%Angstr),0,WACV)                
                 lineSizer.Add(GetBoxSizer(),0,WACV)
-                boxBtn = wx.Button(G2frame.FRMC,label='Use super lattice')
             else:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
                 lineSizer.Add(GetSuperSizer(),0,WACV)
-                boxBtn = wx.Button(G2frame.FRMC,label='Use big box dimensions')
-            boxBtn.Bind(wx.EVT_BUTTON,OnBoxChoice)
-            lineSizer.Add(boxBtn,0,WACV)
+                bymolec = wx.CheckBox(G2frame.FRMC,label='Save in molecule order?')
+                bymolec.SetValue(RMCPdict['byMolec'])
+                bymolec.Bind(wx.EVT_CHECKBOX,OnByMolec)
+                lineSizer.Add(bymolec,0,WACV)
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per molecule '),0,WACV)
+                lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',min=1,size=[40,25]),0,WACV)
             mainSizer.Add(lineSizer,0,WACV)
-            if RMCPdict['ifBox']:
+            if ifBox:
                 molecSizer = wx.BoxSizer(wx.HORIZONTAL)
                 molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' Source molecule file '),0,WACV)
                 pdbButton = wx.Button(G2frame.FRMC,label=RMCPdict['moleculePdb'])
@@ -4558,11 +4673,23 @@ Make sure your parameters are correctly set.
                 makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
                 molecSizer.Add(makePDB,0,WACV)               
                 mainSizer.Add(molecSizer,0,WACV)
-            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            else:
+                makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB')
+                makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
+                mainSizer.Add(makePDB,0,WACV)               
                 
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run file preparation:'),0,WACV)
+            restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
+            restart.SetValue(RMCPdict['ReStart'][0])
+            restart.Bind(wx.EVT_CHECKBOX,OnReStart)
+            mainSizer.Add(restart,0,WACV)
+                
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
             
-            
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            mainSizer.Add(FileSizer(RMCPdict),0,WACV)
                 
         elif G2frame.RMCchoice ==  'RMCProfile':
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
@@ -4584,16 +4711,16 @@ Make sure your parameters are correctly set.
                     for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
                         BVSpairs += pair
                 BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
-                files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
-                          'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
-                          'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
-#                          'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
-                          'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
+                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
+                          'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)','RMC',],
+                          'Neutron reciprocal space data; S(Q): ':['Select',0.05,'S(Q)','RMC',],
+#                          'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],
+                          'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)','RMC',],}
                 runTimes = [10.,1.]
                 metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
                     'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
                 data['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
-                    'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
+                    'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,'FitScale':False,
                     'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,'Swaps':[],
                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
                     'Stretch search':10.,'Pot. Temp.':300.,
@@ -4614,29 +4741,6 @@ Make sure your parameters are correctly set.
         
             def OnStrain(event):
                 RMCPdict['UseSampBrd'][1] = strain.GetValue()
-                
-            def OnFileSel(event):
-                Obj = event.GetEventObject()
-                fil = Indx[Obj.GetId()]
-                dlg = wx.FileDialog(G2frame.FRMC, 'Choose '+fil,G2G.GetImportPath(G2frame),
-                    style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
-                if dlg.ShowModal() == wx.ID_OK:
-                    fpath,fName = os.path.split(dlg.GetPath())
-                    if fpath != G2frame.LastGPXdir:
-                        disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
-                    if os.path.exists(fName):
-                        RMCPdict['files'][fil][0] = fName
-                    G2frame.LastImportDir = fpath    #set so next file is found in same place
-                    dlg.Destroy()
-                else:
-                    dlg.Destroy()
-                    return
-                wx.CallAfter(UpdateRMC)
-        
-            def OnFileFormat(event):
-                Obj = event.GetEventObject()
-                fil = Indx[Obj.GetId()]
-                RMCPdict['files'][fil][3] = Obj.GetStringSelection()
                 
             def SetRestart(invalid,value,tc):
                 RMCPdict['ReStart'] = [True,True]
@@ -4921,9 +5025,6 @@ Make sure your parameters are correctly set.
                     swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
                 return swapSizer
             
-            def OnFitScale(event):
-                RMCPdict['FitScale'] = not RMCPdict['FitScale']
-            
             Indx = {}
 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0,WACV)
@@ -5030,39 +5131,8 @@ Make sure your parameters are correctly set.
             samSizer.Add(samSize,0,WACV)
             samSizer.Add(strain,0,WACV)
             mainSizer.Add(samSizer,0,WACV)
-            titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            titleSizer.Add(wx.StaticText(G2frame.FRMC,label=' Select data for processing: '),0,WACV)
-            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
-            fitscale.SetValue(RMCPdict['FitScale'])
-            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
-            titleSizer.Add(fitscale,0,WACV)
-            mainSizer.Add(titleSizer,0,WACV)
-            fileSizer = wx.FlexGridSizer(4,5,5)
-            Formats = ['RMC','GUDRUN','STOG']
-            Heads = [' ','Format','Weight','Name']
-            for head in Heads:
-                fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
-            for fil in RMCPdict['files']:
-                filSel = wx.Button(G2frame.FRMC,label='Select')
-                filSel.Bind(wx.EVT_BUTTON,OnFileSel)
-                Indx[filSel.GetId()] = fil
-                fileSizer.Add(filSel,0,WACV)
-                Rfile = RMCPdict['files'][fil][0]
-                if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
-                    nform = 3
-                    if 'Xray' in fil: nform = 1
-                    fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                    fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
-                    Indx[fileFormat.GetId()] = fil
-                    fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
-                    fileSizer.Add(fileFormat,0,WACV)
-                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1),0,WACV)
-                else:
-                    RMCPdict['files'][fil][0] = ''
-                    fileSizer.Add((5,5),0)
-                    fileSizer.Add((5,5),0)
-                fileSizer.Add(wx.StaticText(G2frame.FRMC,label=fil+RMCPdict['files'][fil][0]),0,WACV)
-            mainSizer.Add(fileSizer,0,WACV)
+
+            mainSizer.Add(FileSizer(RMCPdict),0,WACV)
     
         SetPhaseWindow(G2frame.FRMC,mainSizer)
         
@@ -5074,11 +5144,8 @@ Make sure your parameters are correctly set.
         if G2frame.RMCchoice == 'fullrmc':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
-            if RMCPdict['ifBox']:
-                print(G2pwd.MakepdparserPDB(pName,data,RMCPdict)+ ' written')
-            else:
-                print(G2pwd.MakefullrmcPDB(pName,data,RMCPdict)+ ' written')
-            print('fullrmc file build completed')
+            fname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
+            print('fullrmc file %s build completed'%fname)
         else:
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
@@ -5128,35 +5195,37 @@ Make sure your parameters are correctly set.
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
             rmcname = pName+'.rmc'            
-            while os.path.isdir(rmcname) and RMCPdict['ReStart']:
+            while os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
                 msg = wx.MessageBox(''' fullrmc will fail to restart if %s exists. You must delete %s by hand now.'''%(rmcname,rmcname),
                     caption='fullrmc file error',style=wx.ICON_EXCLAMATION|wx.OK|wx.CANCEL)
                 if msg != wx.OK:
                     return
             ilog = 0
             while True:
-                logname = 'fullrmc_%d.log'%ilog
+                logname = '%s_%d.log'%(pName,ilog)
                 if os.path.isfile(logname):
                     os.remove(logname)
                 else:
                     break
                 ilog += 1
 # TBD - remove filedialog & use defined run.py file name here
+            rname = pName+'-run.py'
             dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    import subprocess as sb
-                    batch = open('fullrmc.bat','w')
-                    batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
-                    batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
-                    batch.write('pause')
-                    batch.close()
-                    RMCPdict['pid'] = sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
+                    rname = dlg.GetPath()
                 else:
                     return
             finally:
                 dlg.Destroy()
+            import subprocess as sb
+            batch = open('fullrmc.bat','w')
+            batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
+            batch.write(sys.exec_prefix+'\\python.exe '+rname+'\n')
+            batch.write('pause')
+            batch.close()
+            RMCPdict['pid'] = sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
         else:
             RMCPdict = data['RMC']['RMCProfile']
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
@@ -5347,7 +5416,7 @@ Make sure your parameters are correctly set.
             loglines = []
             ilog = 0
             while True:
-                fname = 'fullrmc_%d.log'%ilog
+                fname = '%s_%d.log'%(pName,ilog)
                 try:
                     logfile = open(fname,'r')
                     loglines += logfile.readlines()

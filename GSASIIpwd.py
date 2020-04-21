@@ -2502,11 +2502,11 @@ from fullrmc.Core.Collection import get_principal_axis
             if 'Xray' in File:
                 sfwt = 'xrays'
             if 'G(r)' in File:
-                rundata += '    GofR = PairDistributionConstraint(experimentalData=%s, weighting="%s"\n'%(filDat[0],sfwt)
+                rundata += '    GofR = PairDistributionConstraint(experimentalData=%s, weighting="%s")\n'%(filDat[0],sfwt)
                 rundata += '    GofR.set_variance_squared(%f)\n'%filDat[1]
                 rundata += '    ENGINE.add_constraints([GofR])\n'
             else:
-                rundata += '    FofQ = StructureFactorConstraint(experimentalData=%s, weighting="%s"\n'%(filDat[0],sfwt)
+                rundata += '    FofQ = StructureFactorConstraint(experimentalData=%s, weighting="%s")\n'%(filDat[0],sfwt)
                 rundata += '    FofQ.set_variance_squared(%f)\n'%filDat[1]
                 rundata += '    ENGINE.add_constraints([FofQ])\n'
     rundata += '    ENGINE.save()\n'

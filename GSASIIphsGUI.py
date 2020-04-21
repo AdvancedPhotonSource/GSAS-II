@@ -4411,6 +4411,57 @@ def UpdatePhaseData(G2frame,Item,data):
                 atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
             return atmChoice
         
+        def GetSwapSizer(RMCPdict):
+
+            def OnDelSwap(event):
+                Obj = event.GetEventObject()
+                swap = Indx[Obj.GetId()]
+                del RMCPdict['Swaps'][swap]
+                wx.CallAfter(UpdateRMC)
+                
+            def OnSwapAtSel(event):
+                Obj = event.GetEventObject()
+                swap,i = Indx[Obj.GetId()]
+                RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
+                                       
+            Indx = {}
+            atChoice = RMCPdict['atSeq']
+            swapSizer = wx.FlexGridSizer(4,5,5)
+            swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
+            for lab in swapLabels:
+                swapSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+            for ifx,swap in enumerate(RMCPdict['Swaps']):
+                delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                delBtn.Bind(wx.EVT_BUTTON,OnDelSwap)
+                Indx[delBtn.GetId()] = ifx
+                swapSizer.Add(delBtn,0,WACV)
+                for i in [0,1]:
+                    atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    atmSel.SetStringSelection(swap[i])
+                    atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
+                    Indx[atmSel.GetId()] = [ifx,i]
+                    swapSizer.Add(atmSel,0,WACV)
+                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
+            return swapSizer
+        
+        def GetPairSizer(RMCdict):
+            pairSizer = wx.FlexGridSizer(len(RMCPdict['Pairs'])+1,5,5)
+            pairSizer.Add((5,5),0)
+            for pair in RMCPdict['Pairs']:
+                pairSizer.Add(wx.StaticText(G2frame.FRMC,label=pair),0,WACV)
+            if G2frame.RMCchoice == 'RMCProfile':
+                pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Hard min: '),0,WACV)
+                for pair in RMCPdict['Pairs']:
+                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
+            pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Search from: '),0,WACV)
+            for pair in RMCPdict['Pairs']:
+                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],
+                    1,min=0.,max=10.,size=(50,25)),0,WACV)
+            pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%'to: '),0,WACV)
+            for pair in RMCPdict['Pairs']:
+                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
+            return pairSizer
+                    
         def FileSizer(RMCdict):
             
             def OnFitScale(event):
@@ -4556,7 +4607,7 @@ def UpdatePhaseData(G2frame,Item,data):
                           'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)'],}
                 data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':False,
                     'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],
-                    'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],
+                    'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
                     'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,
                     'atomPDB':''}
             RMCPdict = data['RMC']['fullrmc']
@@ -4584,6 +4635,10 @@ def UpdatePhaseData(G2frame,Item,data):
                             
             def OnReStart(event):
                 RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
+                
+            def OnAddSwap(event):
+                RMCPdict['Swaps'].append(['','',0.0,])
+                wx.CallAfter(UpdateRMC)
                 
             def OnPdbButton(event):
                 dlg = wx.FileDialog(G2frame.FRMC, 'Choose molecule pdb file',G2frame.LastGPXdir,
@@ -4626,6 +4681,46 @@ Make sure your parameters are correctly set.
                 finally:
                     dlg.Destroy()
                 
+            def OnAddAngle(event):
+                RMCPdict['Angles'].append(['','','',0.,0.])
+                wx.CallAfter(UpdateRMC)
+                
+            def GetAngleSizer():
+                
+                def OnDelAngle(event):
+                    Obj = event.GetEventObject()
+                    angle = Indx[Obj.GetId()]
+                    del RMCPdict['Angles'][angle]
+                    wx.CallAfter(UpdateRMC)
+                    
+                def OnAngleAtSel(event):
+                    Obj = event.GetEventObject()
+                    angle,i = Indx[Obj.GetId()]
+                    RMCPdict['Angles'][angle][i] = Obj.GetStringSelection()
+                                           
+                def SetRestart1(invalid,value,tc):
+                    RMCPdict['ReStart'][1] = True
+                
+                Indx = {}
+                atChoice = RMCPdict['atSeq']
+                angleSizer = wx.FlexGridSizer(6,5,5)
+                fxcnLabels = [' ','Atom-A','Atom-B','Atom-C',' min angle',' max angle']
+                for lab in fxcnLabels:
+                    angleSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+                for ifx,angle in enumerate(RMCPdict['Angles']):
+                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    delBtn.Bind(wx.EVT_BUTTON,OnDelAngle)
+                    Indx[delBtn.GetId()] = ifx
+                    angleSizer.Add(delBtn,0,WACV)
+                    for i in [0,1,2]:
+                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                        atmSel.SetStringSelection(angle[i])
+                        atmSel.Bind(wx.EVT_COMBOBOX,OnAngleAtSel)
+                        Indx[atmSel.GetId()] = [ifx,i]
+                        angleSizer.Add(atmSel,0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                return angleSizer
 #patches
             if 'useBVS' not in RMCPdict:
                 RMCPdict['useBVS'] = False
@@ -4639,6 +4734,8 @@ Make sure your parameters are correctly set.
                 RMCPdict['FitScale'] = False
             if 'atomPDB' not in RMCPdict:
                 RMCPdict['atomPDB'] = ''
+            if 'Angles' not in RMCPdict:
+                RMCPdict.update({'Angles':[],'Angle Weight':1.e-5,'Bond Weight':1.e-5,'Torsions':[],'Torsion Weight':1.e-5})
 #end patches
 
             generalData = data['General']
@@ -4688,6 +4785,34 @@ Make sure your parameters are correctly set.
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
             
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            swapBox = wx.BoxSizer(wx.HORIZONTAL)
+            swapAdd = wx.Button(G2frame.FRMC,label='Add')
+            swapAdd.Bind(wx.EVT_BUTTON,OnAddSwap)
+            swapBox.Add(swapAdd,0,WACV)
+            swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabiities: '),0,WACV)
+            mainSizer.Add(swapBox,0,WACV)        
+            if len(RMCPdict['Swaps']):
+                mainSizer.Add(GetSwapSizer(RMCPdict),0,WACV)            
+
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0,WACV)
+            distBox = wx.BoxSizer(wx.HORIZONTAL)
+            distBox.Add(wx.StaticText(G2frame.FRMC,label=' Distance constraints, weight: :'),0,WACV)        
+            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+            mainSizer.Add(distBox,0,WACV)
+            mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
+            
+            angBox = wx.BoxSizer(wx.HORIZONTAL)
+            angAdd = wx.Button(G2frame.FRMC,label='Add')
+            angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
+            angBox.Add(angAdd,0,WACV)
+            angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
+            angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+            mainSizer.Add(angBox,0,WACV)
+            if len(RMCPdict['Angles']):
+                mainSizer.Add(GetAngleSizer(),0,WACV)
+                
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(FileSizer(RMCPdict),0,WACV)
                 
@@ -4794,23 +4919,6 @@ Make sure your parameters are correctly set.
                         i,min=1,max=20,size=(50,25),OnLeave=SetRestart),0,WACV)
                 return superSizer
                       
-            def GetPairSizer():
-                pairSizer = wx.FlexGridSizer(len(RMCPdict['Pairs'])+1,5,5)
-                pairSizer.Add((5,5),0)
-                for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(wx.StaticText(G2frame.FRMC,label=pair),0,WACV)
-                pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Hard min: '),0,WACV)
-                for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
-                pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Search from: '),0,WACV)
-                for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],
-                        1,min=0.,max=10.,size=(50,25)),0,WACV)
-                pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%'to: '),0,WACV)
-                for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
-                return pairSizer
-            
             def GetBvsSizer():
                 
                 def OnResetBVS(event):
@@ -4993,37 +5101,6 @@ Make sure your parameters are correctly set.
                     bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,3,min=0.,size=(50,25)),0,WACV)
                 return bondSizer
 
-            def GetSwapSizer():
-    
-                def OnDelSwap(event):
-                    Obj = event.GetEventObject()
-                    swap = Indx[Obj.GetId()]
-                    del RMCPdict['Swaps'][swap]
-                    wx.CallAfter(UpdateRMC)
-                    
-                def OnSwapAtSel(event):
-                    Obj = event.GetEventObject()
-                    swap,i = Indx[Obj.GetId()]
-                    RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
-                                           
-                atChoice = RMCPdict['atSeq']
-                swapSizer = wx.FlexGridSizer(4,5,5)
-                swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
-                for lab in swapLabels:
-                    swapSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
-                for ifx,swap in enumerate(RMCPdict['Swaps']):
-                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
-                    delBtn.Bind(wx.EVT_BUTTON,OnDelSwap)
-                    Indx[delBtn.GetId()] = ifx
-                    swapSizer.Add(delBtn,0,WACV)
-                    for i in [0,1]:
-                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        atmSel.SetStringSelection(swap[i])
-                        atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
-                        Indx[atmSel.GetId()] = [ifx,i]
-                        swapSizer.Add(atmSel,0,WACV)
-                    swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
-                return swapSizer
             
             Indx = {}
 
@@ -5047,12 +5124,12 @@ Make sure your parameters are correctly set.
             swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabiities: '),0,WACV)
             mainSizer.Add(swapBox,0,WACV)        
             if len(RMCPdict['Swaps']):
-                mainSizer.Add(GetSwapSizer(),0,WACV)            
+                mainSizer.Add(GetSwapSizer(RMCPdict),0,WACV)            
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0,WACV)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Set minimum && maximum distances for:'),0,WACV)        
-            mainSizer.Add(GetPairSizer(),0,WACV)
+            mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             useBVS = wx.CheckBox(G2frame.FRMC,label=' Use bond valence sum restraints for (set to 0 for non-bonded ones):')
@@ -5200,6 +5277,8 @@ Make sure your parameters are correctly set.
                     caption='fullrmc file error',style=wx.ICON_EXCLAMATION|wx.OK|wx.CANCEL)
                 if msg != wx.OK:
                     return
+            if os.path.isfile('pdbparser_0.log'):
+                os.remove('pdbparser_0.log')            
             ilog = 0
             while True:
                 logname = '%s_%d.log'%(pName,ilog)
@@ -8205,6 +8284,8 @@ Make sure your parameters are correctly set.
             if int(Obj.GetValue()) > 0:
                 for h in data['Histograms']:
                     PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,h)
+                    if not PatternId:       #skip bogus histograms
+                        continue
                     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
                     Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Sample Parameters'))
                     if Inst['Type'][1] in instArray:

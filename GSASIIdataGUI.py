@@ -3904,61 +3904,85 @@ class GSASII(wx.Frame):
         DelItemList = []
         nItems = {'PWDR':0,'SASD':0,'REFD':0,'IMG':0,'HKLF':0,'PDF':0}
         PDFnames = []
-        if self.GPXtree.GetCount():
-            item, cookie = self.GPXtree.GetFirstChild(self.root)
-            while item:
-                name = self.GPXtree.GetItemText(item)
-                if name not in ['Notebook','Controls','Covariance','Constraints',
-                    'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
-                    if 'PWDR' in name[:4]: nItems['PWDR'] += 1
-                    if 'SASD' in name[:4]: nItems['SASD'] += 1
-                    if 'REFD' in name[:4]: nItems['REFD'] += 1
-                    if 'IMG' in name[:3]:  nItems['IMG'] += 1
-                    if 'HKLF' in name[:4]: nItems['HKLF'] += 1
-                    if 'PDF' in name[:3]:
-                        PDFnames.append(name)
-                        nItems['PDF'] += 1
-                    TextList.append(name)
-                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-            for pdfName in PDFnames:
-                try:
-                    TextList.remove('PWDR'+pdfName[4:])
-                except ValueError:
-                    print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
-            dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: DelList.append(TextList[i])
-                    item, cookie = self.GPXtree.GetFirstChild(self.root)
-                    while item:
-                        itemName = self.GPXtree.GetItemText(item)
-                        if itemName in DelList:
-                            if 'PWDR' in itemName[:4]: nItems['PWDR'] -= 1
-                            elif 'SASD' in itemName[:4]: nItems['SASD'] -= 1
-                            elif 'REFD' in itemName[:4]: nItems['REFD'] -= 1
-                            elif 'IMG' in itemName[:3]: nItems['IMG'] -= 1
-                            elif 'HKLF' in itemName[:4]: nItems['HKLF'] -= 1
-                            elif 'PDF' in itemName[:3]: nItems['PDF'] -= 1
-                            DelItemList.append(item)
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        if not self.GPXtree.GetCount():
+            G2G.G2MessageBox(self,'No tree items to be deleted',
+                                 'Nothing to delete')
+            return            
+        item, cookie = self.GPXtree.GetFirstChild(self.root)
+        used = False
+        while item:
+            name = self.GPXtree.GetItemText(item)
+            if name not in ['Notebook','Controls','Covariance','Constraints',
+                'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
+                if 'PWDR' in name[:4]:
+                    nItems['PWDR'] += 1
+                    if name in Histograms:
+                        used = True
                         item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-                    for item in DelItemList:
-                        self.GPXtree.Delete(item)
-                    self.PickId = 0
-                    self.PickIdText = None
-                    self.PatternId = 0
-                    if nItems['PWDR']:
-                        wx.CallAfter(G2plt.PlotPatterns,self,True)
-                    else:
-                        self.G2plotNB.Delete('Powder Patterns')
-                    if not nItems['IMG']:
-                        self.G2plotNB.Delete('2D Powder Image')
-                    if not nItems['HKLF']:
-                        self.G2plotNB.Delete('Structure Factors')
-                        if '3D Structure Factors' in self.G2plotNB.plotList:
-                            self.G2plotNB.Delete('3D Structure Factors')
-            finally:
-                dlg.Destroy()
+                        continue
+                if 'SASD' in name[:4]: nItems['SASD'] += 1
+                if 'REFD' in name[:4]: nItems['REFD'] += 1
+                if 'IMG' in name[:3]:  nItems['IMG'] += 1
+                if 'HKLF' in name[:4]:
+                    nItems['HKLF'] += 1
+                    if name in Histograms:
+                        used = True
+                        item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+                        continue
+                if 'PDF' in name[:3]:
+                    PDFnames.append(name)
+                    nItems['PDF'] += 1
+                TextList.append(name)
+            item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        for pdfName in PDFnames:
+            try:
+                TextList.remove('PWDR'+pdfName[4:])
+            except ValueError:
+                print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
+        if len(TextList) == 0 and used:
+            G2G.G2MessageBox(self,'All histograms are used. You must remove them from phases before they can be deleted',
+                                 'Nothing to delete')
+            return
+        elif len(TextList) == 0:
+            G2G.G2MessageBox(self,'None of the tree items are allowed to be deleted',
+                                 'Nothing to delete')
+            return
+        
+        dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: DelList.append(TextList[i])
+                item, cookie = self.GPXtree.GetFirstChild(self.root)
+                while item:
+                    itemName = self.GPXtree.GetItemText(item)
+                    if itemName in DelList:
+                        if 'PWDR' in itemName[:4]: nItems['PWDR'] -= 1
+                        elif 'SASD' in itemName[:4]: nItems['SASD'] -= 1
+                        elif 'REFD' in itemName[:4]: nItems['REFD'] -= 1
+                        elif 'IMG' in itemName[:3]: nItems['IMG'] -= 1
+                        elif 'HKLF' in itemName[:4]: nItems['HKLF'] -= 1
+                        elif 'PDF' in itemName[:3]: nItems['PDF'] -= 1
+                        DelItemList.append(item)
+                    item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+                for item in DelItemList:
+                    self.GPXtree.Delete(item)
+                self.PickId = 0
+                self.PickIdText = None
+                self.PatternId = 0
+                if nItems['PWDR']:
+                    wx.CallAfter(G2plt.PlotPatterns,self,True)
+                else:
+                    self.G2plotNB.Delete('Powder Patterns')
+                if not nItems['IMG']:
+                    self.G2plotNB.Delete('2D Powder Image')
+                if not nItems['HKLF']:
+                    self.G2plotNB.Delete('Structure Factors')
+                    if '3D Structure Factors' in self.G2plotNB.plotList:
+                        self.G2plotNB.Delete('3D Structure Factors')
+        finally:
+            dlg.Destroy()
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the

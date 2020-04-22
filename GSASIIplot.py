@@ -664,6 +664,11 @@ class G2PlotNoteBook(wx.Panel):
         'Add a tabbed page with a 3D plot'
         page = G2Plot3D(self.nb)
         self._addPage(name,page)
+        mplv = mpl.__version__.split('.')
+        if mplv[0] == '3' and (mplv[1] == '1' or mplv[1] == '2'): # patch for bad MPL 3D
+
+            G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, we suggest regressing to MPL 3.0.3 until 3.3.x or later is available.. You have '+mpl.__version__,
+                                 'Avoid Matplotlib 3.1 & 3.2')
         return page.figure
         
     def addOgl(self,name=""):

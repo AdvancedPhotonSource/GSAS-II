@@ -2119,7 +2119,7 @@ class G2Project(G2ObjectWrapper):
         return self.histogram(newhist)
         
     def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep,
-                                       wavelength=None, scale=None, phases=[]):
+                                       wavelength=None, scale=None, phases=[], ibank=None):
         """Loads a powder data histogram into the project.
 
         Requires an instrument parameter file. 
@@ -2130,9 +2130,9 @@ class G2Project(G2ObjectWrapper):
 
         :param str histname: A name for the histogram to be created.
         :param str iparams: The instrument parameters file, a filename.
-        :param float Tmin: Minimum 2theta or TOF (ms) for dataset to be simulated
-        :param float Tmax: Maximum 2theta or TOF (ms) for dataset to be simulated
-        :param float Tstep: Step size in 2theta or TOF (ms) for dataset to be simulated       
+        :param float Tmin: Minimum 2theta or TOF (microsec) for dataset to be simulated
+        :param float Tmax: Maximum 2theta or TOF (usec) for dataset to be simulated
+        :param float Tstep: Step size in 2theta or TOF (usec) for dataset to be simulated       
         :param float wavelength: Wavelength for CW instruments, overriding the value
            in the instrument parameters file if specified.
         :param float scale: Histogram scale factor which multiplies the pattern. Note that
@@ -2142,6 +2142,8 @@ class G2Project(G2ObjectWrapper):
            The default, None, provides a scale of 1 for x-rays and TOF; 10,000 for CW neutrons.
         :param list phases: Phases to link to the new histogram. Use proj.phases() to link to
            all defined phases.
+        :param int ibank: provides a bank number for the instrument parameter file. The 
+           default is None, corresponding to load the first bank.
 
         :returns: A :class:`G2PwdrData` object representing the histogram
         """
@@ -2183,7 +2185,7 @@ class G2Project(G2ObjectWrapper):
         Tmin = rd.powderdata[0][0]
         Tmax = rd.powderdata[0][-1]
         histname, new_names, pwdrdata = load_pwd_from_reader(rd, iparams,
-                                                            [h.name for h in self.histograms()])
+                                            [h.name for h in self.histograms()],ibank)
         if histname in self.data:
             G2fil.G2Print("Warning - redefining histogram", histname)
         elif self.names[-1][0] == 'Phases':

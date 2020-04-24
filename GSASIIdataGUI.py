@@ -591,11 +591,13 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnImageSum, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Add new phase','')
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Delete phase','')
+        item = parent.Append(wx.ID_ANY,'Delete phase entries','')
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Rename tree item','Rename the selected data tree item (PWDR, HKLF or IMG)')
+        item = parent.Append(wx.ID_ANY,'Rename tree entry',
+                'Rename the selected data tree item (PWDR, HKLF or IMG)')
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Delete tree items','Delete selected data items from data tree')
+        item = parent.Append(wx.ID_ANY,'Delete data entries',
+                'Delete selected data items from data tree')
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Delete plots','Delete selected plots')
         self.Bind(wx.EVT_MENU, self.OnPlotDelete, id=item.GetId())
@@ -3901,7 +3903,7 @@ class GSASII(wx.Frame):
             # delete all plots
             for lbl in self.G2plotNB.plotList:
                 self.G2plotNB.Delete(lbl)
-        if subr:        #remove restraints for deleted phase
+        if subr and DelList:     #remove restraints for deleted phase
             DelList = [itm[1] for itm in DelList]
             item, cookie = self.GPXtree.GetFirstChild(subr)
             while item:
@@ -3911,6 +3913,8 @@ class GSASII(wx.Frame):
                     if item == selItem: selItem = self.root
                 item, cookie = self.GPXtree.GetNextChild(subr, cookie)
         # force redisplay of current tree item if it was not deleted
+        self.PickId = 0
+        self.PatternId = 0
         self.PickIdText = None
         SelectDataTreeItem(self,selItem)
         wx.CallAfter(self.GPXtree.SelectItem,selItem)
@@ -3968,6 +3972,7 @@ class GSASII(wx.Frame):
         DelItemList = []
         nItems = {'PWDR':0,'SASD':0,'REFD':0,'IMG':0,'HKLF':0,'PDF':0}
         PDFnames = []
+        selItem = self.GPXtree.GetSelection()
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         if not self.GPXtree.GetCount():
             G2G.G2MessageBox(self,'No tree items to be deleted',
@@ -4032,21 +4037,26 @@ class GSASII(wx.Frame):
                     item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
                 for item in DelItemList:
                     self.GPXtree.Delete(item)
-                self.PickId = 0
-                self.PickIdText = None
-                self.PatternId = 0
-                if nItems['PWDR']:
-                    wx.CallAfter(G2plt.PlotPatterns,self,True)
-                else:
-                    self.G2plotNB.Delete('Powder Patterns')
-                if not nItems['IMG']:
-                    self.G2plotNB.Delete('2D Powder Image')
-                if not nItems['HKLF']:
-                    self.G2plotNB.Delete('Structure Factors')
-                    if '3D Structure Factors' in self.G2plotNB.plotList:
-                        self.G2plotNB.Delete('3D Structure Factors')
+                    if item == selItem: selItem = self.root
+                if DelList:
+                    self.PickId = 0
+                    self.PickIdText = None
+                    self.PatternId = 0
+                    if nItems['PWDR']:
+                        wx.CallAfter(G2plt.PlotPatterns,self,True)
+                    else:
+                        self.G2plotNB.Delete('Powder Patterns')
+                    if not nItems['IMG']:
+                        self.G2plotNB.Delete('2D Powder Image')
+                    if not nItems['HKLF']:
+                        self.G2plotNB.Delete('Structure Factors')
+                        if '3D Structure Factors' in self.G2plotNB.plotList:
+                            self.G2plotNB.Delete('3D Structure Factors')
         finally:
             dlg.Destroy()
+        if DelList:
+            SelectDataTreeItem(self,selItem)
+            wx.CallAfter(self.GPXtree.SelectItem,selItem)
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the

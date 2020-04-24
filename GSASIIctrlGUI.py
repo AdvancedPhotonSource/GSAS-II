@@ -87,6 +87,13 @@ Class or function name             Description
                                    histograms to copy it to.
 :func:`askSaveFile`                Get a file name from user
 :func:`askSaveDirectory`           Get a directory name from user
+:func:`BlockSelector`              Select a single block for instrument parameters
+:func:`MultipleBlockSelector`      Select one or more blocks of data, used for 
+                                   CIF powder histogram imports only
+:func:`MultipleChoicesSelector`    Dialog for displaying fairly complex choices, used for 
+                                   CIF powder histogram imports only
+:func:`PhaseSelector`              Select a phase from a list (used for phase importers)
+
 ================================  =================================================================
 
 Other miscellaneous routines that may be of use:
@@ -1904,7 +1911,8 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
             array.update(saveArray)
         dlg.Destroy()
 
-################################################################        Single choice Dialog with filter options
+###############################################################
+#        Single choice Dialog with filter options
 class G2SingleChoiceDialog(wx.Dialog):
     '''A dialog similar to wx.SingleChoiceDialog except that a filter can be
     added.
@@ -2089,7 +2097,7 @@ class FlagSetDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
-###################################################################,#############
+################################################################################
 def G2MessageBox(parent,msg,title='Error'):
     '''Simple code to display a error or warning message
     '''
@@ -2830,7 +2838,8 @@ def ItemSelector(ChoiceList, ParentFrame=None,
         return None
     dlg.Destroy()
 
-######################################################### Column-order selection dialog
+########################################################
+# Column-order selection dialog
 def GetItemOrder(parent,keylist,vallookup,posdict):
     '''Creates a dialog where items can be ordered into columns
     
@@ -4692,6 +4701,87 @@ def StripUnicode(string,subs='.'):
             s += subs
     return s.encode('ascii','replace')
         
+######################################################################
+# wx classes for reading various types of data files
+######################################################################
+def BlockSelector(ChoiceList, ParentFrame=None,title='Select a block',
+    size=None, header='Block Selector',useCancel=True):
+    ''' Provide a wx dialog to select a single block where one must 
+    be selected. Used for selecting for banks for instrument 
+    parameters if the file contains more than one set.
+    '''
+    if useCancel:
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header,ChoiceList)
+    else:
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header,ChoiceList,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    if size: dlg.SetMinSize(size)
+    dlg.CenterOnParent()
+    dlg.SendSizeEvent()
+    if dlg.ShowModal() == wx.ID_OK:
+        sel = dlg.GetSelection()
+        return sel
+    else:
+        return None
+    dlg.Destroy()
+
+def MultipleBlockSelector(ChoiceList, ParentFrame=None,
+    title='Select a block',size=None, header='Block Selector'):
+    '''Provide a wx dialog to select a block of data if the
+    file contains more than one set of data and one must be
+    selected. Used in :mod:`G2pwd_CIF` only.
+
+    :returns: a list of the selected blocks
+    '''
+    dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
+        wx.CHOICEDLG_STYLE)
+    if size: dlg.SetMinSize(size)
+    dlg.CenterOnScreen()
+    dlg.SendSizeEvent()
+    if dlg.ShowModal() == wx.ID_OK:
+        sel = dlg.GetSelections()
+    else:
+        return []
+    dlg.Destroy()
+    selected = []
+    if len(ChoiceList) in sel:
+        return range(len(ChoiceList))
+    else:
+        return sel
+    return selected
+
+def MultipleChoicesSelector(choicelist, headinglist, ParentFrame=None, **kwargs):
+    '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
+    widget. Used in :mod:`G2pwd_CIF` only.
+
+    Typical input:
+    
+       * choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+       
+       * headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+       
+    optional keyword parameters are: head (window title) and title
+    returns a list of selected indicies for each choice (or None)
+    '''
+    result = None
+    dlg = MultipleChoicesDialog(choicelist,headinglist,
+        parent=ParentFrame, **kwargs)          
+    dlg.CenterOnParent()
+    if dlg.ShowModal() == wx.ID_OK:
+        result = dlg.chosen
+    dlg.Destroy()
+    return result
+
+def PhaseSelector(ChoiceList, ParentFrame=None,
+    title='Select a phase', size=None,header='Phase Selector'):
+    ''' Provide a wx dialog to select a phase, used in importers if a file 
+    contains more than one phase
+    '''
+    return BlockSelector(ChoiceList,ParentFrame,title,
+        size,header)
+
 ################################################################################
 # configuration routines (for editing config.py)
 def SaveGPXdirectory(path,write=True):

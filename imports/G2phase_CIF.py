@@ -24,13 +24,16 @@ import random as ran
 import numpy as np
 import re
 import copy
-import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import GSASIIpy3 as G2p3
 import GSASIIpath
+try:
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
@@ -131,7 +134,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 #how about checking for super/magnetic ones as well? - reject 'X'?
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
-            selblk = G2IO.PhaseSelector(choice,ParentFrame=ParentFrame,
+            selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                 title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
         self.errors = 'Error during reading of selected block'
 #process selected phase
@@ -1151,7 +1154,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             print('\nOccupancy from CIF vs computed')
             for atmline in self.Phase['Atoms']:
                 lbl = atmline[0]
-                print( lbl,atmline[6],Occ[lbl])
+                if lbl in Occ: print( lbl,atmline[6],Occ[lbl])
 
             print( 70*'=')
             print('\nGenerated constraints')

@@ -49,7 +49,6 @@ import GSASIIplot as G2plt
 import GSASIIdataGUI as G2gd
 import GSASIIphsGUI as G2phsG
 import GSASIIctrlGUI as G2G
-import GSASIIIO as G2IO
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
@@ -1871,7 +1870,7 @@ def UpdateInstrumentGrid(G2frame,data):
     
                 for l in dI.defaultIparm_lbl:
                     choices.append('Defaults for '+l)
-                res = G2IO.BlockSelector(choices,ParentFrame=G2frame,title=head,
+                res = G2G.BlockSelector(choices,ParentFrame=G2frame,title=head,
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
                 if 'Generic' in choices[res]:

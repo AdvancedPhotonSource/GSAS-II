@@ -23,9 +23,12 @@ else:
     import pickle as cPickle
 import random as ran
 import GSASIIobj as G2obj
-import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
 import GSASIIpath
+try:
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 GSASIIpath.SetVersionNumber("$Revision$")
 
 class PhaseReaderClass(G2obj.ImportPhase):
@@ -68,7 +71,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         elif len(phasenames) == 1: # one block, no choices
             selblk = 0
         else:                       # choose from options                
-            selblk = G2IO.PhaseSelector(phasenames,ParentFrame=ParentFrame,
+            selblk = G2G.PhaseSelector(phasenames,ParentFrame=ParentFrame,
                 title= 'Select a phase from the list below',)
             if selblk is None:
                 self.errors = 'No phase selected'

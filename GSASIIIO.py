@@ -1193,84 +1193,6 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     else:
         return None
 
-######################################################################
-# base classes for reading various types of data files
-#   not used directly, only by subclassing
-######################################################################
-def BlockSelector(ChoiceList, ParentFrame=None,title='Select a block',
-    size=None, header='Block Selector',useCancel=True):
-    ''' Provide a wx dialog to select a block if the file contains more
-    than one set of data and one must be selected
-    '''
-    if useCancel:
-        dlg = wx.SingleChoiceDialog(
-            ParentFrame,title, header,ChoiceList)
-    else:
-        dlg = wx.SingleChoiceDialog(
-            ParentFrame,title, header,ChoiceList,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-    if size: dlg.SetSize(size)
-    dlg.CenterOnParent()
-    if dlg.ShowModal() == wx.ID_OK:
-        sel = dlg.GetSelection()
-        return sel
-    else:
-        return None
-    dlg.Destroy()
-
-def MultipleBlockSelector(ChoiceList, ParentFrame=None,
-    title='Select a block',size=None, header='Block Selector'):
-    '''Provide a wx dialog to select a block of data if the
-    file contains more than one set of data and one must be
-    selected.
-
-    :returns: a list of the selected blocks
-    '''
-    dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
-        wx.CHOICEDLG_STYLE)
-    dlg.CenterOnScreen()
-    if size: dlg.SetSize(size)
-    if dlg.ShowModal() == wx.ID_OK:
-        sel = dlg.GetSelections()
-    else:
-        return []
-    dlg.Destroy()
-    selected = []
-    if len(ChoiceList) in sel:
-        return range(len(ChoiceList))
-    else:
-        return sel
-    return selected
-
-def MultipleChoicesSelector(choicelist, headinglist, ParentFrame=None, **kwargs):
-    '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
-    widget. Typical input:
-    
-       * choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
-       
-       * headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
-       
-    optional keyword parameters are: head (window title) and title
-    returns a list of selected indicies for each choice (or None)
-    '''
-    result = None
-    dlg = MultipleChoicesDialog(choicelist,headinglist,
-        parent=ParentFrame, **kwargs)          
-    dlg.CenterOnParent()
-    if dlg.ShowModal() == wx.ID_OK:
-        result = dlg.chosen
-    dlg.Destroy()
-    return result
-
-def PhaseSelector(ChoiceList, ParentFrame=None,
-    title='Select a phase', size=None,header='Phase Selector'):
-    ''' Provide a wx dialog to select a phase if the file contains more
-    than one phase
-    '''
-    return BlockSelector(ChoiceList,ParentFrame,title,
-        size,header)
-
-######################################################################
 def striphist(var,insChar=''):
     'strip a histogram number from a var name'
     sv = var.split(':')
@@ -1278,6 +1200,11 @@ def striphist(var,insChar=''):
     if sv[1]:
         sv[1] = insChar
     return ':'.join(sv)
+
+######################################################################
+# base classes for reading various types of data files
+#   not used directly, only by subclassing
+######################################################################
 class ExportBaseclass(object):
     '''Defines a base class for the exporting of GSAS-II results.
 

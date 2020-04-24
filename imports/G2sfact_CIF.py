@@ -18,8 +18,11 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
-import GSASIIIO as G2IO
 import GSASIIpath
+try:
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 
@@ -162,7 +165,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 self.repeatcount += 1
                 if self.repeatcount >= len(blklist): self.repeat = False
             else:
-                selblk = G2IO.BlockSelector(
+                selblk = G2G.BlockSelector(
                     choice,
                     ParentFrame=ParentFrame,
                     title='Select a dataset from one the CIF data_ blocks below',

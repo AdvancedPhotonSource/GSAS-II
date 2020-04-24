@@ -1488,7 +1488,7 @@ class GSASII(wx.Frame):
             choices = []
             for i in range(1,1+ibanks):
                 choices.append('Bank '+str(i))
-            bank = 1 + G2IO.BlockSelector(
+            bank = 1 + G2G.BlockSelector(
                 choices, self,
                 title=u'Select an instrument parameter bank for '+
                 os.path.split(rd.powderentry[0])[1]+u' BANK '+str(bank)+
@@ -1537,7 +1537,7 @@ class GSASII(wx.Frame):
     
                 for l in dI.defaultIparm_lbl:
                     choices.append('Defaults for '+l)
-                res = G2IO.BlockSelector(choices,ParentFrame=self,title=head,
+                res = G2G.BlockSelector(choices,ParentFrame=self,title=head,
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
                 rd.instfile = ''
@@ -3792,13 +3792,22 @@ class GSASII(wx.Frame):
         SelectDataTreeItem(self,sub) #bring up new phase General tab
         
     def OnDeletePhase(self,event):
-        'Delete a phase from the tree. Called by Data/Delete Phase menu'
-        #Hmm, also need to delete this phase from Reflection Lists for each PWDR histogram
+        '''Delete one or more phases from the tree. Called by Data/Delete Phase menu.
+        Also delete this phase from Reflection Lists for each PWDR histogram; 
+        removes the phase from restraints and deletes any constraints 
+        with variables from the phase.
+        If any deleted phase is marked as Used in a histogram, a more rigorous
+        "deep clean" is done and histogram refinement results are cleared, as well as 
+        the covariance information and all plots are deleted
+        '''
+        selItem = self.GPXtree.GetSelection()
         if self.dataWindow:
             self.dataWindow.ClearData() 
         TextList = []
         DelList = []
         DelItemList = []
+        consDeleted = 0
+        usedPhase = False
         if GetGPXtreeItemId(self,self.root,'Phases'):
             sub = GetGPXtreeItemId(self,self.root,'Phases')
         else:
@@ -3807,43 +3816,91 @@ class GSASII(wx.Frame):
             subr = GetGPXtreeItemId(self,self.root,'Restraints')
         else:
             subr = 0
-        if sub:
-            item, cookie = self.GPXtree.GetFirstChild(sub)
-            while item:
-                TextList.append(self.GPXtree.GetItemText(item))
-                item, cookie = self.GPXtree.GetNextChild(sub, cookie)                
-            dlg = wx.MultiChoiceDialog(self, 'Which phase to delete?', 'Delete phase', TextList, wx.CHOICEDLG_STYLE)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: DelList.append([i,TextList[i]])
-                    item, cookie = self.GPXtree.GetFirstChild(sub)
-                    i = 0
-                    while item:
-                        if [i,self.GPXtree.GetItemText(item)] in DelList: DelItemList.append(item)
-                        item, cookie = self.GPXtree.GetNextChild(sub, cookie)
-                        i += 1
-                    for item in DelItemList:
-                        name = self.GPXtree.GetItemText(item)
-                        self.GPXtree.Delete(item)
-                        self.G2plotNB.Delete(name)
-                    item, cookie = self.GPXtree.GetFirstChild(self.root)
-                    while item:
-                        name = self.GPXtree.GetItemText(item)
-                        if 'PWDR' in name:
-                            Id = GetGPXtreeItemId(self,item, 'Reflection Lists')
-                            refList = self.GPXtree.GetItemPyData(Id)
-                            if len(refList):
-                                for i,item in DelList:
-                                    if item in refList:
-                                        del(refList[item])
-                        elif 'HKLF' in name:
-                            data = self.GPXtree.GetItemPyData(item)
-                            data[0] = {}
-                            
-                        item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-            finally:
-                dlg.Destroy()
+        if GetGPXtreeItemId(self,self.root,'Constraints'):
+            id = GetGPXtreeItemId(self,self.root,'Constraints')
+            constr = self.GPXtree.GetItemPyData(id)
+        else:
+            constr = {}
+            
+        item, cookie = self.GPXtree.GetFirstChild(sub)
+        while item:
+            TextList.append(self.GPXtree.GetItemText(item))
+            item, cookie = self.GPXtree.GetNextChild(sub, cookie)                
+        dlg = wx.MultiChoiceDialog(self, 'Which phase to delete?', 'Delete phase', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: DelList.append([i,TextList[i]])
+                item, cookie = self.GPXtree.GetFirstChild(sub)
+                i = 0
+                while item:
+                    if [i,self.GPXtree.GetItemText(item)] in DelList: DelItemList.append(item)
+                    item, cookie = self.GPXtree.GetNextChild(sub, cookie)
+                    i += 1
+                for item in DelItemList:
+                    phase = self.GPXtree.GetItemPyData(item)
+                    for h in phase['Histograms']:
+                        if 'Use' not in phase['Histograms'][h]: continue
+                        if phase['Histograms'][h]['Use']:
+                            usedPhase = True
+                            break
+                    if 'pId' in phase:
+                        p = phase['pId']
+                    else:
+                        p = '?'
+                    self.GPXtree.Delete(item)
+                    if item == selItem: selItem = self.root
+                    # look for constraints to remove
+                    for key in constr:
+                        delThis = []
+                        if key.startswith('_'): continue
+                        for i,cons in enumerate(constr[key]):
+                            for var in cons[0:-3]:
+                                if str(var[1]).startswith(str(p)):
+                                    delThis.append(i)
+                                    break
+                        for i in reversed(delThis):
+                            consDeleted += 1
+                            del constr[key][i]
+                # delete refinement results from histograms
+                item, cookie = self.GPXtree.GetFirstChild(self.root)
+                while item:
+                    name = self.GPXtree.GetItemText(item)
+                    if 'PWDR' in name:
+                        data = self.GPXtree.GetItemPyData(item)
+                        if usedPhase: # remove r-factors
+                            dellist = [value for value in data[0] if ':' in value]
+                            for v in dellist+['Durbin-Watson', 'R', 'wR', 'Rb',
+                                                  'wRb', 'wRmin','Nobs']:
+                                if v in data[0]: del data[0][v]
+                            # could wipe out computed & difference patterns, but does not work
+                            #data[1][3] = np.zeros_like(data[1][3])
+                            #data[1][5] = np.zeros_like(data[1][5])
+                        # always get rid of reflection lists 
+                        Id = GetGPXtreeItemId(self,item, 'Reflection Lists')
+                        refList = self.GPXtree.GetItemPyData(Id)
+                        if len(refList):
+                            for i,item in DelList:
+                                if item in refList:
+                                    del(refList[item])
+                    elif 'HKLF' in name and usedPhase: # probably not needed if phase is not used
+                        data = self.GPXtree.GetItemPyData(item)
+                        data[0] = {}
+
+                    item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        finally:
+            dlg.Destroy()
+        if usedPhase: # clear info from last refinement for "deep clean" if a used phase is deleted
+            id = GetGPXtreeItemId(self,self.root,'Covariance')
+            if DelItemList and id:
+                self.GPXtree.SetItemPyData(id,{})
+            id = GetGPXtreeItemId(self,self.root,'Sequential results')
+            if DelItemList and id:
+                self.GPXtree.Delete(id)
+                if id == selItem: selItem = self.root
+            # delete all plots
+            for lbl in self.G2plotNB.plotList:
+                self.G2plotNB.Delete(lbl)
         if subr:        #remove restraints for deleted phase
             DelList = [itm[1] for itm in DelList]
             item, cookie = self.GPXtree.GetFirstChild(subr)
@@ -3851,8 +3908,15 @@ class GSASII(wx.Frame):
                 name = self.GPXtree.GetItemText(item)
                 if name in DelList:
                     self.GPXtree.Delete(item)
-                item, cookie = self.GPXtree.GetNextChild(subr, cookie)                
-                
+                    if item == selItem: selItem = self.root
+                item, cookie = self.GPXtree.GetNextChild(subr, cookie)
+        # force redisplay of current tree item if it was not deleted
+        self.PickIdText = None
+        SelectDataTreeItem(self,selItem)
+        wx.CallAfter(self.GPXtree.SelectItem,selItem)
+        if consDeleted:
+            print('\n',consDeleted,'constraints were deleted')
+        
     def OnRenameData(self,event):
         'Renames an existing phase. Called by Data/Rename Phase menu'
         name = self.GPXtree.GetItemText(self.PickId)      

@@ -17,9 +17,12 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
-import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import GSASIIpath
+try:
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 GSASIIpath.SetVersionNumber("$Revision$")
 
@@ -181,7 +184,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 choices.append(
                     'Block '+str(blk)+', '+str(l)+' points. X='+sx+' & Y='+sy
                     )
-            selections = G2IO.MultipleBlockSelector(
+            selections = G2G.MultipleBlockSelector(
                 choices,
                 ParentFrame=ParentFrame,
                 title='Select dataset(s) to read from the list below',
@@ -220,7 +223,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             choices.append(such)
             chlbls.append('Divide intensities by data item')
             choices.append(['none']+modch)
-            res = G2IO.MultipleChoicesSelector(choices,chlbls)
+            res = G2G.MultipleChoicesSelector(choices,chlbls)
             if not res:
                 self.errors = "Abort: data items not selected"
                 return False

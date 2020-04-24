@@ -15,18 +15,20 @@ are GUI routines to interact with user.
 
 Includes support for image reading.
 
-Also includes base classes for data import routines.
+Also includes base class for data export routines (TODO: should move)
 
-This module needs some work to separate wx from non-wx routines. GUI 
+TODO: This module needs some work to separate wx from non-wx routines. GUI 
 routines should probably move to GSASIIctrlGUI.
 '''
 
 from __future__ import division, print_function
-# If this is being used for GSASIIscriptable, don't depend on wx
+
+# Allow this to be imported without wx present. Was needed for G2scriptable, but is
+# likely not needed anymore
 try:
     import wx
 except ImportError:
-    # this may not be needed for sphinx anymore
+    # was needed by sphinx, but probably not anymore
     class Placeholder(object):
         def __init__(self):
             self.Dialog = object

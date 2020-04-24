@@ -1090,7 +1090,6 @@ GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these m
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
-#import GSASIIIO as G2IO
 import GSASIIstrIO as G2strIO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

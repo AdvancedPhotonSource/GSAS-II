@@ -3057,7 +3057,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         fil = dlg.GetPath()
         dlg.Destroy()
         if ret == wx.ID_OK:
-            cf = G2IO.ReadCIF(fil)
+            cf = G2obj.ReadCIF(fil)
             if len(cf.keys()) == 0:
                 raise Exception("No CIF data_ blocks found")
             if len(cf.keys()) != 1:
@@ -3070,7 +3070,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         if type(self.CIF) is list or  type(self.CIF) is tuple:
             dblk,loopstructure = copy.deepcopy(self.CIF) # don't modify original
         else:
-            cf = G2IO.ReadCIF(self.CIF)
+            cf = G2obj.ReadCIF(self.CIF)
             dblk,loopstructure = CIF2dict(cf)
         dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure,self.defaultname)
         val = dlg.Post()

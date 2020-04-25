@@ -137,12 +137,19 @@ class FP_atan_windowed_convolver:
         return emiss
 
 
+#cu_ka_spectdata=numpy.array(( #each cluster is wavelength/m, intensity, fwhm/m, from Cu kalpha paper
+#        (0.15405925, 3.91, 0.0436e-3), #ka11
+#        (0.15410769, 0.474, 0.0558e-3), #ka12
+#        (0.15443873, 1.53, 0.0487e-3), #ka21
+#        (0.15446782, 0.754, 0.0630e-3), #ka22
+#    ))*(1e-9,1,1e-9)
+# replaced due to Sphinx problem with scaled values:
 cu_ka_spectdata=numpy.array(( #each cluster is wavelength/m, intensity, fwhm/m, from Cu kalpha paper
-        (0.15405925, 3.91, 0.0436e-3), #ka11
-        (0.15410769, 0.474, 0.0558e-3), #ka12
-        (0.15443873, 1.53, 0.0487e-3), #ka21
-        (0.15446782, 0.754, 0.0630e-3), #ka22
-    ))*(1e-9,1,1e-9)
+        (0.15405925e-9, 3.91, 0.0436e-12), #ka11
+        (0.15410769e-9, 0.474, 0.0558e-12), #ka12
+        (0.15443873e-9, 1.53, 0.0487e-12), #ka21
+        (0.15446782e-9, 0.754, 0.0630e-12), #ka22
+    ))
 
 if __name__ == "__main__":
     ## fixed parameters

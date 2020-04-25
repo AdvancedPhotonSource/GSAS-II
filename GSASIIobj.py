@@ -999,6 +999,63 @@ When loaded from the GPX file (in
 dict is the actual parameter value (usually a float, but sometimes a
 letter or string flag value (such as I or A for iso/anisotropic).
 
+Texture implementation
+------------------------------
+
+There are two different places where texture can be treated in GSAS-II. 
+One is for mitigating the effects of texture in a structural refinement.
+The other is for texture characterization. 
+
+For reducing the effect of texture in a structural refinement
+there are entries labeled preferred orientation in each phase's
+data tab. Two different 
+approaches can be used for this, the March-Dollase model and 
+spherical harmonics.
+For the March-Dollase model, one axis in reciprocal space is designated as 
+unique (defaulting to the 001 axis) and reflections are corrected 
+according to the angle they make with this axis depending on 
+the March-Dollase ratio. (If unity, no correction is made). 
+The ratio can be greater than one or less than one depending on if 
+crystallites oriented along the designated axis are 
+overrepresented or underrepresented. For most crystal systems there is an 
+obvious choice for the direction of the unique axis and then only a single
+term needs to be refined. If the number is close to 1, then the correction 
+is not needed. 
+
+The second method for reducing the effect of texture in a structural 
+refinement is to create a probability surface as an expansion in 
+terms spherical harmonic functions. Only functions consistent with 
+cylindrical diffraction suymmetry and having texture symmetry 
+consistent with the Laue class of phase are used and are allowed, 
+so the higher the symmetry 
+the fewer terms that are available for a given spherical harmonics order. 
+For use of this correction, select the lowest order that provides 
+refinable terms and perform a refinement. If the texture index remains close to 
+one, then the correction is not needed. If a significant improvement is 
+noted in the profile Rwp, one may wish to see if a higher order expansion
+gives an even larger improvement. 
+
+To characterize texture in a material, one needs data collected with the 
+sample at multiple orientations or, for TOF, with detectors at multiple 
+locations around the sample. In this case the detector orientation is given in 
+each histogram's Sample Parameters and the sample's orientation is described 
+with the Euler angles specifed on the phase's Texture tab, which is also 
+where the texture type (cylindrical, rolling,...) and the sherical 
+harmonic order is selected. This should not be used with a single dataset and 
+should not be used if the preferred orientations corrections are used. 
+
+The coordinate system used for texture characterization is defined where 
+the sample coordinates (Psi, gamma) are defined with an instrument coordinate
+system (I, J, K) such that I is normal to the diffraction plane and J is coincident with the
+direction of the incident radiation beam pointing away from the source. We further define
+a standard set of right-handed goniometer eulerian angles (Omega, Chi, Phi) so that Omega and Phi are
+rotations about I and Chi is a rotation about J when Omega, Chi, Phi = 0. Finally, as the sample
+may be mounted so that the sample coordinate system (Is, Js, Ks) does not coincide with
+the instrument coordinate system (I, J, K), we define three eulerian sample rotation angles
+(Omega-s, Chi-s, Phi-s) that describe the rotation from (I, J, K) to (Is, Js, Ks). The sample rotation
+angles are defined so that with the goniometer angles at zero Omega-s and Phi-s are rotations
+about I and Chi-s is a rotation about J.
+
 ISODISTORT implementation
 ------------------------------
 

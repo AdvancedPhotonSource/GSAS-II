@@ -140,8 +140,10 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
                 'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
             seq = 0
+            notProt = True
             for atom in Atoms:
                 if atom[ct-3] in AA3letter and int(atom[ct-4]) != seq:
+                    notProt = False
                     if atom[ct-2] not in seqList:
                         seqList[atom[ct-2]] = []
                     seqList[atom[ct-2]].append(atom[ct-3])
@@ -171,7 +173,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
                 if atom[cia] == 'I':    #need to deal with aniso thermals for proteins = "ANISOU" records
                     Biso = atom[cia+1]*8.*np.pi**2
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
-                if atom[ct-3] in AA3letter:
+                if atom[ct-3] in AA3letter or notProt:
                     self.Write(fmt.format('ATOM  ',iatom,atom[ct-1],atom[ct-3].strip(),    \
                         atom[ct-2].strip(),atom[ct-4].rjust(4),xyz[0],xyz[1],xyz[2],atom[cx+3], \
                         Biso,atom[ct].rjust(12)))

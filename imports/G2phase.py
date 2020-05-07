@@ -58,7 +58,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
 #            fp.close()
 #            return False
         for i,l in enumerate(fp):
-            if l.startswith('ATOM'):
+            if l.startswith('ATOM') or l.startswith('HETATM'):
                 fp.close()
                 return True
         self.errors = 'no ATOM records found after CRYST1 record'
@@ -78,6 +78,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         file = open(filename, 'Ur')
         Phase = {}
         Title = os.path.basename(filename)
+        RES = Title[:3]
         
         Compnd = ''
         Atoms = []
@@ -87,6 +88,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         SGData = None
         cell = None
         Dummy = True
+        Anum = 0
         while S:
             self.errors = 'Error reading at line '+str(line)
             Atom = []
@@ -133,7 +135,8 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     SGData = G2obj.P1SGData # P 1
                     cell = [20.0,20.0,20.0,90.,90.,90.]
                     Volume = G2lat.calc_V(G2lat.cell2A(cell))
-                    AA,AB = G2lat.cell2AB(cell)                    
+                    AA,AB = G2lat.cell2AB(cell)
+                    Anum = 1                    
                 XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
                 XYZ = np.inner(AB,XYZ)
                 XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
@@ -142,13 +145,20 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                 Type = S[76:78].lower()
                 if Dummy and S[12:17].strip() == 'CA':
                     Type = 'C'
-                Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
-                    S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
+                Aname = S[12:17].strip()
+                if Anum:
+                    Aname += '%d'%Anum
+                if S[17:20].upper() != 'UNL':
+                    RES = S[17:20].upper() 
+                Atom = [S[22:27].strip(),RES,S[20:22],
+                    Aname,Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
                 if S[16] in [' ','A','B']:
                     Atom[3] = Atom[3][:3]
                     Atom.append(ran.randint(0,sys.maxsize))
                     Atoms.append(Atom)
+                if Anum:
+                    Anum += 1
             elif 'ANISOU' in S[:6]:
                 Uij = S[30:72].split()
                 Uij = [float(Uij[0])/10000.,float(Uij[1])/10000.,float(Uij[2])/10000.,

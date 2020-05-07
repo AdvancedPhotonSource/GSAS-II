@@ -297,7 +297,7 @@ def ExpandCell(Atoms,atCodes,cx,Trans):
         Codes += moreCodes
     return newAtoms,Codes
     
-def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
+def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag,Force=True):
     '''Transform atoms from oldPhase to newPhase
     M' is inv(M)
     does X' = M(X-U)+V transformation for coordinates and U' = MUM/det(M)
@@ -324,7 +324,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     nAmat,nBmat = cell2AB(newPhase['General']['Cell'][1:7])
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
-    newAtoms,atCodes = FillUnitCell(oldPhase)
+    newAtoms,atCodes = FillUnitCell(oldPhase,Force)
     newAtoms,atCodes = ExpandCell(newAtoms,atCodes,cx,Trans)
     if ifMag:
         cia += 3
@@ -342,8 +342,10 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        xyz = TransformXYZ(atom[cx:cx+3]+Uvec,invTrans.T,Vvec)%1.
-        atom[cx:cx+3] = np.around(xyz,6)%1.
+        xyz = TransformXYZ(atom[cx:cx+3]+Uvec,invTrans.T,Vvec)
+        if Force:
+            xyz = np.around(xyz,6)%1.
+        atom[cx:cx+3] = xyz
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],Trans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
@@ -475,7 +477,7 @@ def makeBilbaoPhase(result,uvec,trans,ifMag=False):
         phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
     return phase
 
-def FillUnitCell(Phase):
+def FillUnitCell(Phase,Force=True):
     Atoms = copy.deepcopy(Phase['Atoms'])
     atomData = []
     atCodes = []
@@ -488,12 +490,14 @@ def FillUnitCell(Phase):
         cm = cx+4
     for iat,atom in enumerate(Atoms):
         XYZ = np.array(atom[cx:cx+3])
-        xyz = XYZ%1.
+        xyz = XYZ
+        if Force:
+            xyz %= 1.
         if atom[cia] == 'A':
             Uij = atom[cia+2:cia+8]
-            result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
+            result = G2spc.GenAtom(xyz,SGData,False,Uij,False)
             for item in result:
-                if item[0][2] >= .95: item[0][2] -= 1.
+#                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]
                 atom[cia+2:cia+8] = item[1]
                 if cm:

@@ -570,11 +570,13 @@ def GetTthAzmG(x,y,data):
     tilt = data['tilt']
     dist = data['distance']/npcosd(tilt)
     x0 = data['distance']*nptand(tilt)
+    x0x = x0*npcosd(data['rotation'])
+    x0y = x0*npsind(data['rotation'])
     MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
     distsq = data['distance']**2
     dx = x-data['center'][0]
     dy = y-data['center'][1]
-    G = ((dx-x0)**2+dy**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     Z = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
     xyZ = dx**2+dy**2-Z**2    
     tth = npatand(np.sqrt(xyZ)/(dist-Z))

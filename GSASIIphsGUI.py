@@ -63,6 +63,7 @@ import GSASIIfiles as G2fl
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
+import numpy.fft as fft
 import atmdata
 
 try:
@@ -2769,9 +2770,9 @@ def UpdatePhaseData(G2frame,Item,data):
         nOct = 0
         nTet = 0
         nElse = 0
-        for atom in data['Atoms']:
+        for iatm,atom in enumerate(data['Atoms']):
             if atom[ct] == Oatoms:
-                results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames)[0]      #slow step
+                results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames,Orig=iatm)[0]      #slow step
                 if len(results) == 4:
                     bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindTetrahedron(results)
                     Bonds[bName]['Tbonds'].append(bond)
@@ -3005,7 +3006,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 Atoms.SelectRow(row,True)
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'Uiso':       #this needs to ask for value
-                    pass                                        #& then change all 'I' atoms
+                    return                                        #& then change all 'I' atoms; now do nothing
                 else:
                     return
                 if noSkip:
@@ -3976,7 +3977,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def MakeMolecule(event):      
         indx = GetSelectedAtoms()
         DisAglCtls = {}
-        if len(indx) == 1:
+        if indx is not None and len(indx) == 1:
             generalData = data['General']
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
@@ -4502,11 +4503,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     except ValueError:
                         start += 1
                 Xlab = 'Q'
-                if 'G(R)' in fileItem[2]:
+                if 'G(R)' in fileItem[2].upper():
                     Xlab = 'R'
                 G2plt.PlotXY(G2frame,[XY.T,],labelX=Xlab,
                     labelY=fileItem[2],newPlot=True,Title=fileItem[0],
                     lines=True)
+                
+            def OnCorrChk(event):
+                Obj = event.GetEventObject()
+                fil = Indx[Obj.GetId()]
+                RMCPdict['files'][fil][3] = not RMCPdict['files'][fil][3]
                             
             Indx = {}
             titleSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4521,8 +4527,7 @@ def UpdatePhaseData(G2frame,Item,data):
             if G2frame.RMCchoice == 'fullrmc':
                 mainSizer.Add(wx.StaticText(G2frame.FRMC,
                     label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
-                ncol = 4
-                Heads = ['Name','File','Weight','Plot']
+                Heads = ['Name','File','Weight','Plot','Corr']
             fileSizer = wx.FlexGridSizer(ncol,5,5)
             Formats = ['RMC','GUDRUN','STOG']
             for head in Heads:
@@ -4548,12 +4553,24 @@ def UpdatePhaseData(G2frame,Item,data):
                     plotBtn.Bind(wx.EVT_BUTTON,OnPlotBtn)
                     Indx[plotBtn.GetId()] = fil
                     fileSizer.Add(plotBtn,0,WACV)
+                    if G2frame.RMCchoice == 'fullrmc':
+                        lab = 'Apply sinc convolution? '
+                        if 'G(r)' in fil:
+                            lab = 'Apply r*G(r) conversion? '
+                        corrChk = wx.CheckBox(G2frame.FRMC,label=lab)
+                        #patch
+                        if len(RMCPdict['files'][fil]) < 4:
+                            RMCPdict['files'][fil].append(True)
+                        #end patch
+                        corrChk.SetValue(RMCPdict['files'][fil][3])
+                        Indx[corrChk.GetId()] = fil
+                        corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
+                        fileSizer.Add(corrChk,0,WACV)
                 else:
                     RMCPdict['files'][fil][0] = 'Select'
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
-                    if G2frame.RMCchoice == 'RMCProfile':                        
-                        fileSizer.Add((5,5),0)
+                    fileSizer.Add((5,5),0)
             return fileSizer
             
         G2frame.GetStatusBar().SetStatusText('',1)
@@ -4600,16 +4617,15 @@ def UpdatePhaseData(G2frame,Item,data):
                 for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)'],
-                          'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)'],
-                          'Neutron reciprocal space data; S(Q): ':['Select',0.05,'S(Q)'],
-                          'Xray real space data; G(r): ':['Select',0.01,'G(r)'],
-                          'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)'],}
+                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)',True],
+                          'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)',True],
+                          'Xray real space data; G(r): ':['Select',0.01,'G(r)',True],
+                          'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)',True],}
                 data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':False,
-                    'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],
+                    'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
                     'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
-                    'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,
-                    'atomPDB':''}
+                    'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,'Torsions':[],'Torsion Weight':1.e-5,
+                    'atomPDB':'','Bond Weight':1.e-5,'min Contact':1.5}
             RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
@@ -4685,6 +4701,10 @@ Make sure your parameters are correctly set.
                 RMCPdict['Angles'].append(['','','',0.,0.])
                 wx.CallAfter(UpdateRMC)
                 
+            def OnAddTorsion(event):
+                RMCPdict['Torsions'].append(['','','','',0.,0.,0.,0.,0.,0.])
+                wx.CallAfter(UpdateRMC)
+                
             def GetAngleSizer():
                 
                 def OnDelAngle(event):
@@ -4721,6 +4741,42 @@ Make sure your parameters are correctly set.
                     angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
                     angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
                 return angleSizer
+            
+            def GetTorsionSizer():
+                
+                def OnDelTorsion(event):
+                    Obj = event.GetEventObject()
+                    angle = Indx[Obj.GetId()]
+                    del RMCPdict['Torsions'][angle]
+                    wx.CallAfter(UpdateRMC)
+                    
+                def OnTorsionAtSel(event):
+                    Obj = event.GetEventObject()
+                    torsion,i = Indx[Obj.GetId()]
+                    RMCPdict['Torsions'][torsion][i] = Obj.GetStringSelection()
+                                           
+                def SetRestart1(invalid,value,tc):
+                    RMCPdict['ReStart'][1] = True
+                
+                Indx = {}
+                torsionSizer = wx.FlexGridSizer(11,5,5)
+                fxcnLabels = [' ','Atom-A','Atom-B','Atom-C','Atom-D',' min angle1',' max angle1',' min angle2',' max angle2',' min angle3',' max angle3']
+                for lab in fxcnLabels:
+                    torsionSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+                for ifx,torsion in enumerate(RMCPdict['Torsions']):
+                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    delBtn.Bind(wx.EVT_BUTTON,OnDelTorsion)
+                    Indx[delBtn.GetId()] = ifx
+                    torsionSizer.Add(delBtn,0,WACV)
+                    for i in [0,1,2,3]:
+                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                        atmSel.SetStringSelection(torsion[i])
+                        atmSel.Bind(wx.EVT_COMBOBOX,OnTorsionAtSel)
+                        Indx[atmSel.GetId()] = [ifx,i]
+                        torsionSizer.Add(atmSel,0,WACV)
+                    for i in  [4,5,6,7,8,9]: 
+                        torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,min=0.,max=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                return torsionSizer
 #patches
             if 'useBVS' not in RMCPdict:
                 RMCPdict['useBVS'] = False
@@ -4736,9 +4792,19 @@ Make sure your parameters are correctly set.
                 RMCPdict['atomPDB'] = ''
             if 'Angles' not in RMCPdict:
                 RMCPdict.update({'Angles':[],'Angle Weight':1.e-5,'Bond Weight':1.e-5,'Torsions':[],'Torsion Weight':1.e-5})
+            if 'Cycles' not in RMCPdict:
+                RMCPdict['Cycles'] = 1
+            if 'min Contact' not in RMCPdict:
+                RMCPdict['min Contact'] = 1.5
 #end patches
 
             generalData = data['General']
+            cx,ct,cs,cia = generalData['AtomPtrs']
+            atomData = data['Atoms']
+            atNames = [atom[ct-1] for atom in atomData]
+            ifP1 = False
+            if generalData['SGData']['SpGrp'] == 'P 1':
+                ifP1 = True                
             ifBox = False
             if 'macromolecular' in generalData['Type']:
                 ifBox = True
@@ -4746,7 +4812,7 @@ Make sure your parameters are correctly set.
             if ifBox:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions, %s:'%Angstr),0,WACV)                
                 lineSizer.Add(GetBoxSizer(),0,WACV)
-            else:
+            elif ifP1:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
                 lineSizer.Add(GetSuperSizer(),0,WACV)
                 bymolec = wx.CheckBox(G2frame.FRMC,label='Save in molecule order?')
@@ -4755,6 +4821,8 @@ Make sure your parameters are correctly set.
                 lineSizer.Add(bymolec,0,WACV)
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per molecule '),0,WACV)
                 lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',min=1,size=[40,25]),0,WACV)
+            else:
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))
             mainSizer.Add(lineSizer,0,WACV)
             if ifBox:
                 molecSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4770,17 +4838,24 @@ Make sure your parameters are correctly set.
                 makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
                 molecSizer.Add(makePDB,0,WACV)               
                 mainSizer.Add(molecSizer,0,WACV)
-            else:
+            elif ifP1:
                 makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB')
                 makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
-                mainSizer.Add(makePDB,0,WACV)               
+                mainSizer.Add(makePDB,0,WACV)
+            else:       #Abort because starting phase symmetry isn't P 1
+                SetPhaseWindow(G2frame.FRMC,mainSizer)
+                return
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run file preparation:'),0,WACV)
+            resLine = wx.BoxSizer(wx.HORIZONTAL)
             restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
             restart.SetValue(RMCPdict['ReStart'][0])
             restart.Bind(wx.EVT_CHECKBOX,OnReStart)
-            mainSizer.Add(restart,0,WACV)
+            resLine.Add(restart,0,WACV)
+            resLine.Add(wx.StaticText(G2frame.FRMC,label=' Computation cycles: '),0,WACV)
+            resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',min=1,size=[60,25]),0,WACV)
+            mainSizer.Add(resLine,0,WACV)
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
@@ -4800,6 +4875,8 @@ Make sure your parameters are correctly set.
             distBox = wx.BoxSizer(wx.HORIZONTAL)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' Distance constraints, weight: :'),0,WACV)        
             distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+            distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
+            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',min=0.,max=4.,size=(50,25)),0,WACV)            
             mainSizer.Add(distBox,0,WACV)
             mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
             
@@ -4813,6 +4890,16 @@ Make sure your parameters are correctly set.
             if len(RMCPdict['Angles']):
                 mainSizer.Add(GetAngleSizer(),0,WACV)
                 
+            torBox = wx.BoxSizer(wx.HORIZONTAL)
+            torAdd = wx.Button(G2frame.FRMC,label='Add')
+            torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
+            torBox.Add(torAdd,0,WACV)
+            torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints, weight: '),0,WACV)
+            torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+            mainSizer.Add(torBox,0,WACV)
+            if len(RMCPdict['Torsions']):
+                mainSizer.Add(GetTorsionSizer(),0,WACV)
+
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(FileSizer(RMCPdict),0,WACV)
                 
@@ -5219,10 +5306,25 @@ Make sure your parameters are correctly set.
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
         if G2frame.RMCchoice == 'fullrmc':
+            DisAglCtls = {}
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
+            if dlg.ShowModal() == wx.ID_OK:
+                DisAglCtls = dlg.GetData()
+                if 'H' not in DisAglCtls['AtomTypes']:
+                    DisAglCtls['AtomTypes'].append('H')
+                    DisAglCtls['AngleRadii'].append(0.5)
+                    DisAglCtls['BondRadii'].append(0.5)
+            dlg.Destroy()
+            generalData['DisAglCtls'] = DisAglCtls
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
             fname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
-            print('fullrmc file %s build completed'%fname)
+            if fname is None:
+                wx.MessageDialog(G2frame,' Big box pdb file is missing; fullrmc will not run','Missing pdb file',wx.OK).ShowModal()
+            else:    
+                print('fullrmc file %s build completed'%fname)
         else:
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
@@ -5289,15 +5391,15 @@ Make sure your parameters are correctly set.
                 ilog += 1
 # TBD - remove filedialog & use defined run.py file name here
             rname = pName+'-run.py'
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
-                wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    rname = dlg.GetPath()
-                else:
-                    return
-            finally:
-                dlg.Destroy()
+            # dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
+            #     wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
+            # try:
+            #     if dlg.ShowModal() == wx.ID_OK:
+            #         rname = dlg.GetPath()
+            #     else:
+            #         return
+            # finally:
+            #     dlg.Destroy()
             import subprocess as sb
             batch = open('fullrmc.bat','w')
             batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
@@ -5412,6 +5514,7 @@ Make sure your parameters are correctly set.
                                     rdfDict = item.get_constraint_value()
                                     if 'total' not in rdfDict:
                                         print('No data yet - wait for a save')
+                                        ENGINE.close()
                                         if Proc is not None:
                                             Proc.resume()
                                         return
@@ -5465,7 +5568,7 @@ Make sure your parameters are correctly set.
                                             bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
                                             G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
                                                 PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
-                                    elif 'ImproperAngleConstraint' in sitem:
+                                    elif 'DihedralAngleConstraint' in sitem:
                                         impangles = 180.*item.get_constraint_value()['angles']/np.pi
                                         impangleList = item.anglesList[:4]
                                         atoms = ENGINE.get_original_data("allElements",frame)
@@ -5475,8 +5578,8 @@ Make sure your parameters are correctly set.
                                         impAngles = list(zip(impangleNames,impangles))
                                         for Aname in impangleSet:
                                             impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
-                                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Improper Angle, deg$'%Aname,Title='%s Improper angles for %s'%(Aname,pName),
-                                                PlotName='%s Improper Angles for %s'%(Aname,pName),maxBins=20)
+                                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title='%s Dihedral angles for %s'%(Aname,pName),
+                                                PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
                                     elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
                                         print(sitem+' not plotted')
                                     else:

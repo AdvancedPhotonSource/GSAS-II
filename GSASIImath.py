@@ -491,14 +491,12 @@ def FillAtomLookUp(atomData,indx):
     '''create a dictionary of atom indexes with atom IDs as keys
     
     :param list atomData: Atom table to be used
+    :param int  indx: pointer to position of atom id in atom record (typically cia+8)
     
     :returns: dict atomLookUp: dictionary of atom indexes with atom IDs as keys
     
     '''
-    atomLookUp = {}
-    for iatm,atom in enumerate(atomData):
-        atomLookUp[atom[indx]] = iatm
-    return atomLookUp
+    return {atom[indx]:iatm for iatm,atom in enumerate(atomData)}
 
 def GetAtomsById(atomData,atomLookUp,IdList):
     '''gets a list of atoms from Atom table that match a set of atom IDs
@@ -635,7 +633,7 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
     IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))
     for j in IndB[0]:
         if j != Orig:
-            if AtNames[j] != notName:
+            if AtNames[j] not in notName:
                 Neigh.append([AtNames[j],dist[j],True])
                 Ids.append(Atoms[j][cia+8])
     return Neigh,[OId,Ids]
@@ -696,7 +694,7 @@ def FindTetrahedron(results):
     A,V = Q2AVdeg(QQ)
     return bond,std,meanDisp,stdDisp,A,V,vecDisp
     
-def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
+def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     General = phase['General']
     cx,ct,cs,cia = General['AtomPtrs']
     Atoms = phase['Atoms']
@@ -712,7 +710,8 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
     DisAglCtls = General['DisAglCtls']    
     radiusFactor = DisAglCtls['Factors'][0]
     AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']
-    Orig = atNames.index(FrstName)
+    if Orig is None:
+        Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
     XYZ = getAtomXYZ(Atoms,cx)        
@@ -738,7 +737,10 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
                             Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
                         else:
                             Topstr = ' +(%4d)'%(Top)
-                        Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
+                        if Short:
+                            Neigh.append([AtNames[iA],dist[iU],True])
+                        else:
+                            Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
                         Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
     
@@ -1951,7 +1953,6 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
             return 0.
         vec[i] /= dist
     angle = acosd(np.sum(vec[0]*vec[1]))
-#    GSASIIpath.IPyBreak()
     return angle
 
 def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):

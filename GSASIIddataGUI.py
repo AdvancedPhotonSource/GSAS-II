@@ -241,7 +241,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         UseList[G2frame.hist]['Mustrain'][3] = hkl
         h,k,l = hkl
         Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-        G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
+        wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
         
     def OnResetStrain(event):
         Obj = event.GetEventObject()

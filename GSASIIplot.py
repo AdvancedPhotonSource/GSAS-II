@@ -289,132 +289,6 @@ def Write2csv(fil,dataItems,header=False):
             line += item
     fil.write(line+'\n')
 
-# def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
-#                  squeeze=True, subplot_kw=None, gridspec_kw=None):
-#         """
-#         Add a set of subplots to this figure.
-        
-#         This is a copy of Figure.figure.subplots from matplotlib.figure.py.
-#         Included here because this appears only in later versions of
-#         matplotlib. When v2.2 is standard, this should be removed from GSAS-II.
-        
-#         :param int nrows, ncols: default: 1
-#             Number of rows/cols of the subplot grid.
-#         :param bool/str sharex, sharey: True/False or {'none', 'all', 'row', 'col'}, default: False
-
-#             Controls sharing of properties among x (`sharex`) or y (`sharey`)
-#             axes:
-            
-#                 - True or 'all': x- or y-axis will be shared among all
-#                   subplots.
-#                 - False or 'none': each subplot x- or y-axis will be
-#                   independent.
-#                 - 'row': each subplot row will share an x- or y-axis.
-#                 - 'col': each subplot column will share an x- or y-axis.
-                
-#             When subplots have a shared x-axis along a column, only the x tick
-#             labels of the bottom subplot are visible.  Similarly, when
-#             subplots have a shared y-axis along a row, only the y tick labels
-#             of the first column subplot are visible.
-#         :param bool squeeze: default: True
-
-#             - If True, extra dimensions are squeezed out from the returned
-#               axis object:
-              
-#                 - if only one subplot is constructed (nrows=ncols=1), the
-#                   resulting single Axes object is returned as a scalar.
-#                 - for Nx1 or 1xN subplots, the returned object is a 1D numpy
-#                   object array of Axes objects are returned as numpy 1D
-#                   arrays.
-#                 - for NxM, subplots with N>1 and M>1 are returned as a 2D
-#                   arrays.
-                  
-#             - If False, no squeezing at all is done: the returned Axes object
-#               is always a 2D array containing Axes instances, even if it ends
-#               up being 1x1.
-              
-#         :param dict subplot_kw: default: {}
-#             Dict with keywords passed to the
-#             :meth:`matplotlib.figure.Figure.add_subplot` call used to create
-#             each subplots.
-#         :param dict gridspec_kw: default: {}
-#             Dict with keywords passed to the
-#             :class:`matplotlib.gridspec.GridSpec` constructor used to create
-#             the grid the subplots are placed on.
-            
-#         :returns: A single Axes object or array of Axes objects with 
-#             the added axes.  The dimensions of the resulting array can be
-#             controlled with the squeeze keyword, see above.
-            
-#         See also: pyplot.subplots: pyplot API; docstring includes examples.
-        
-#         """
-
-#         # for backwards compatibility
-#         if isinstance(sharex, bool):
-#             sharex = "all" if sharex else "none"
-#         if isinstance(sharey, bool):
-#             sharey = "all" if sharey else "none"
-#         share_values = ["all", "row", "col", "none"]
-#         if sharex not in share_values:
-#             # This check was added because it is very easy to type
-#             # `subplots(1, 2, 1)` when `subplot(1, 2, 1)` was intended.
-#             # In most cases, no error will ever occur, but mysterious behavior
-#             # will result because what was intended to be the subplot index is
-#             # instead treated as a bool for sharex.
-#             if isinstance(sharex, int):
-#                 warnings.warn(
-#                     "sharex argument to subplots() was an integer. "
-#                     "Did you intend to use subplot() (without 's')?")
-
-#             raise ValueError("sharex [%s] must be one of %s" %
-#                              (sharex, share_values))
-#         if sharey not in share_values:
-#             raise ValueError("sharey [%s] must be one of %s" %
-#                              (sharey, share_values))
-#         if subplot_kw is None:
-#             subplot_kw = {}
-#         if gridspec_kw is None:
-#             gridspec_kw = {}
-
-#         # if figure.get_constrained_layout():
-#         #     gs = GridSpec(nrows, ncols, figure=figure, **gridspec_kw)
-#         # else:
-#         #     # this should turn constrained_layout off if we don't want it
-#         #     gs = GridSpec(nrows, ncols, figure=None, **gridspec_kw)
-#         gs = mpl.gridspec.GridSpec(nrows, ncols, **gridspec_kw)
-
-#         # Create array to hold all axes.
-#         axarr = np.empty((nrows, ncols), dtype=object)
-#         for row in range(nrows):
-#             for col in range(ncols):
-#                 shared_with = {"none": None, "all": axarr[0, 0],
-#                                "row": axarr[row, 0], "col": axarr[0, col]}
-#                 subplot_kw["sharex"] = shared_with[sharex]
-#                 subplot_kw["sharey"] = shared_with[sharey]
-#                 axarr[row, col] = figure.add_subplot(gs[row, col], **subplot_kw)
-
-#         # turn off redundant tick labeling
-#         if sharex in ["col", "all"]:
-#             # turn off all but the bottom row
-#             for ax in axarr[:-1, :].flat:
-#                 ax.xaxis.set_tick_params(which='both',
-#                                          labelbottom=False, labeltop=False)
-#                 ax.xaxis.offsetText.set_visible(False)
-#         if sharey in ["row", "all"]:
-#             # turn off all but the first column
-#             for ax in axarr[:, 1:].flat:
-#                 ax.yaxis.set_tick_params(which='both',
-#                                          labelleft=False, labelright=False)
-#                 ax.yaxis.offsetText.set_visible(False)
-
-#         if squeeze:
-#             # Discarding unneeded dimensions that equal 1.  If we only have one
-#             # subplot, just return it instead of a 1-element array.
-#             return axarr.item() if axarr.size == 1 else axarr.squeeze()
-#         else:
-#             # Returned axis array will be always 2-d, even if nrows=ncols=1.
-#             return axarr
 
 class _tabPlotWin(wx.Panel):    
     'Creates a basic tabbed plot window for GSAS-II graphics'
@@ -511,6 +385,7 @@ class G2PlotNoteBook(wx.Panel):
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
         self.G2frame = G2frame
+        self.MPLwarn = False
         
         self.plotList = []   # contains the tab label for each plot
         self.panelList = []   # contains the panel object for each plot
@@ -665,8 +540,8 @@ class G2PlotNoteBook(wx.Panel):
         page = G2Plot3D(self.nb)
         self._addPage(name,page)
         mplv = mpl.__version__.split('.')
-        if mplv[0] == '3' and (mplv[1] == '1' or mplv[1] == '2'): # patch for bad MPL 3D
-
+        if mplv[0] == '3' and (mplv[1] == '1' or mplv[1] == '2') and not self.MPLwarn: # patch for bad MPL 3D
+            self.MPLwarn = True
             G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, we suggest regressing to MPL 3.0.3 until 3.3.x or later is available.. You have '+mpl.__version__,
                                  'Avoid Matplotlib 3.1 & 3.2')
         return page.figure
@@ -5865,19 +5740,22 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     
     PHI = np.linspace(0.,360.,40,True)
     PSI = np.linspace(0.,180.,40,True)
-    X = np.outer(npcosd(PHI),npsind(PSI))/2.
-    Y = np.outer(npsind(PHI),npsind(PSI))/2.
-    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))/2.
+    X = np.outer(npcosd(PHI),npsind(PSI))
+    Y = np.outer(npsind(PHI),npsind(PSI))
+    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
         if plotDict[plotType]:
             coeff = useList[hist][plotDict[plotType]]
     except KeyError:
         return
     if plotType in ['Mustrain','Size']:
+        diam = 0.5
+        if plotType == 'Mustrain':
+            diam = 1.0
         if coeff[0] == 'isotropic':
-            X *= coeff[1][0]
-            Y *= coeff[1][0]
-            Z *= coeff[1][0]                                
+            X *= diam*coeff[1][0]
+            Y *= diam*coeff[1][0]
+            Z *= diam*coeff[1][0]                                
         elif coeff[0] == 'uniaxial':
             
             def uniaxCalc(xyz,iso,aniso,axes):
@@ -5885,7 +5763,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 cp = abs(np.dot(xyz,Z))
                 sp = np.sqrt(1.-cp**2)
                 R = iso*aniso/np.sqrt((iso*cp)**2+(aniso*sp)**2)
-                return R*xyz
+                return R*xyz*diam
                 
             iso,aniso = coeff[1][:2]
             axes = np.inner(Amat,np.array(coeff[3]))
@@ -5902,7 +5780,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             
             def ellipseCalc(xyz,E,R):
                 XYZ = xyz*E.T
-                return np.inner(XYZ.T,R)
+                return np.inner(XYZ.T,R)*diam
                 
             S6 = coeff[4]
             Sij = G2lat.U6toUij(S6)

@@ -4726,8 +4726,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
                 if phaseId:         #is phase deleted?
                     General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
+                    G,g = G2lat.cell2Gmat(General['Cell'][1:7])
+                    GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+                    SGData = General['SGData']
                     if General.get('Modulated',False):
                         Super = 1
+                    Histograms = G2frame.GPXtree.GetItemPyData(phaseId)['Histograms']
+                    histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+                    histData = Histograms[histName]
+                    muStrData = histData['Mustrain']
+                    sizeData = histData['Size']
         rowLabels = []
         if HKLF:
             refList = data[1]['RefList']
@@ -4743,13 +4751,15 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             except TypeError:
                 refList = np.array([refl[:11+Super] for refl in data[phaseName]])
                 I100 = refList.T[8+Super]*np.array([refl[11+Super] for refl in data[phaseName]])
+            MuStr = G2pwd.getMustrain(refList.T[:3],G,SGData,muStrData)
+            CrSize = G2pwd.getCrSize(refList.T[:3],G,GB,sizeData)
             Imax = np.max(I100)
             if Imax:
                 I100 *= 100.0/Imax
             if 'C' in Inst['Type'][0]:
-                refs = np.vstack((refList.T[:15+Super],I100)).T
+                refs = np.vstack((refList.T[:15+Super],I100,MuStr,CrSize)).T
             elif 'T' in Inst['Type'][0]:
-                refs = np.vstack((refList.T[:18+Super],I100)).T
+                refs = np.vstack((refList.T[:18+Super],I100,MuStr,CrSize)).T
         rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
@@ -4763,11 +4773,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 colLabels.insert(3,'M')
         else:
             if 'C' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']
-                Types += 4*[wg.GRID_VALUE_FLOAT+':10,3',]
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
+                Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
-                Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
+                Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
         refs.T[3+Super] = np.where(refs.T[4+Super]<dMin,-refs.T[3+Super],refs.T[3+Super])

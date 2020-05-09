@@ -1180,6 +1180,38 @@ def ellipseSizeDerv(H,Sij,GB):
         dRdS[i] = (lenP-lenM)/(2.*delt)
     return lenR,dRdS
 
+def getMustrain(HKL,G,SGData,muStrData):
+    if muStrData[0] == 'isotropic':
+        return np.ones(HKL.shape[1])*muStrData[1][0]
+    elif muStrData[0] == 'uniaxial':
+        H = np.array(HKL)
+        P = np.array(muStrData[3])
+        cosP,sinP = np.array([G2lat.CosSinAngle(h,P,G) for h in H.T]).T
+        Si = muStrData[1][0]
+        Sa = muStrData[1][1]
+        return Si*Sa/(np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
+    else:       #generalized - P.W. Stephens model
+        H = np.array(HKL)
+        rdsq = np.array([G2lat.calc_rDsq2(h,G) for h in H.T])
+        Strms = np.array(G2spc.MustrainCoeff(H,SGData))
+        Sum = np.sum(np.array(muStrData[4])[:,nxs]*Strms,axis=0)
+        return np.sqrt(Sum)/rdsq
+    
+def getCrSize(HKL,G,GB,sizeData):
+    if sizeData[0] == 'isotropic':
+        return np.ones(HKL.shape[1])*sizeData[1][0]
+    elif sizeData[0] == 'uniaxial':
+        H = np.array(HKL)
+        P = np.array(sizeData[3])
+        cosP,sinP = np.array([G2lat.CosSinAngle(h,P,G) for h in H.T]).T
+        Si = sizeData[1][0]
+        Sa = sizeData[1][1]
+        return Si*Sa/(np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
+    else:
+        Sij =[sizeData[4][i] for i in range(6)]
+        H = np.array(HKL)
+        return 1./np.array([ellipseSize(h,Sij,GB) for h in H.T])**2
+
 def getHKLpeak(dmin,SGData,A,Inst=None,nodup=False):
     '''
     Generates allowed by symmetry reflections with d >= dmin

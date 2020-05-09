@@ -511,7 +511,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
             G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %.4f'%(
-                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],Rvals['Max shft/sig']))
+                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],Rvals.get('Max shft/sig',np.nan)))
             # add the uncertainties into the esd dictionary (sigDict)
             if not IfOK:
                 G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')

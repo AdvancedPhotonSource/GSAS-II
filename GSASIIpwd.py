@@ -2624,6 +2624,7 @@ from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
 from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
+from fullrmc.Generators.Swaps import SwapPositionsGenerator
 from fullrmc.Core.GroupSelector import RecursiveGroupSelector
 from fullrmc.Selectors.RandomSelectors import RandomSelector
 from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
@@ -2631,6 +2632,9 @@ from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlo
 from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
 from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGenerator
 from fullrmc.Core.Collection import get_principal_axis
+from fullrmc.debugStuff import *
+InvokeDebugOpts()
+SwapGen = {}
 # engine setup\n'''
     rundata += 'LOGGER.set_log_file_basename("%s")\n'%pName
     rundata += 'engineFileName = "%s.rmc"\n'%pName
@@ -2661,15 +2665,16 @@ from fullrmc.Core.Collection import get_principal_axis
                 rundata += '    ENGINE.add_constraints([FofQ])\n'
                 wtDict['Struct'] = filDat[1]
     rundata += '    ENGINE.add_constraints(InterMolecularDistanceConstraint())\n'
-    if len(BondList):
-        rundata += '    B_CONSTRAINT   = BondConstraint()\n'
-        rundata += '    ENGINE.add_constraints(B_CONSTRAINT)\n'
-    if len(AngleList):
-        rundata += '    A_CONSTRAINT   = BondsAngleConstraint()\n'
-        rundata += '    ENGINE.add_constraints(A_CONSTRAINT)\n'
-    if len(RMCPdict['Torsions']):
-        rundata += '    T_CONSTRAINT   = DihedralAngleConstraint()\n'
-        rundata += '    ENGINE.add_constraints(T_CONSTRAINT)\n'
+    if RMCPdict['byMolec']:
+        if len(BondList):
+            rundata += '    B_CONSTRAINT   = BondConstraint()\n'
+            rundata += '    ENGINE.add_constraints(B_CONSTRAINT)\n'
+        if len(AngleList):
+            rundata += '    A_CONSTRAINT   = BondsAngleConstraint()\n'
+            rundata += '    ENGINE.add_constraints(A_CONSTRAINT)\n'
+        if len(RMCPdict['Torsions']):
+            rundata += '    T_CONSTRAINT   = DihedralAngleConstraint()\n'
+            rundata += '    ENGINE.add_constraints(T_CONSTRAINT)\n'
     rundata += '    ENGINE.save()\n'
     rundata += 'else:\n'
     rundata += '    ENGINE = ENGINE.load(path=engineFileName)\n'
@@ -2677,28 +2682,7 @@ from fullrmc.Core.Collection import get_principal_axis
     rundata += 'Constraints = ENGINE.constraints\n'
     rundata += 'for constraint in Constraints:\n'
     rundata += '    strcons = str(type(constraint))\n'
-    if len(BondList):
-        rundata += '    if "BondConstraint" in strcons:\n'
-        rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Bond Weight']
-        rundata += '        constraint.create_bonds_by_definition(bondsDefinition={"%s":[\n'%Res
-        for bond in BondList:
-            rundata += '        %s'%bond
-        rundata += '        ]})\n'
-    if len(AngleList):
-        rundata += '    elif "BondsAngleConstraint" in strcons:\n'
-        rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Angle Weight']
-        rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
-        for angle in AngleList:
-            rundata += '        %s'%angle
-        rundata += '        ]})\n'
-    if len(RMCPdict['Torsions']):
-        rundata += '    elif "DihedralAngleConstraint" in strcons:\n'
-        rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Torsion Weight']
-        rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
-        for torsion in RMCPdict['Torsions']:
-            rundata += '    %s\n'%str(tuple(torsion))
-        rundata += '        ]})\n'
-    rundata += '    elif "InterMolecular" in strcons:\n'
+    rundata += '    if "InterMolecular" in strcons:\n'
     rundata += '        constraint.set_default_distance(%f)\n'%RMCPdict['min Contact']
     rundata += '    elif "PairDistribution" in strcons:\n'
     rundata += '        constraint.set_variance_squared(%f)\n'%wtDict['Pair']
@@ -2709,29 +2693,53 @@ from fullrmc.Core.Collection import get_principal_axis
     rundata += '        constraint.set_variance_squared(%f)\n'%wtDict['Struct']
     if RMCPdict['FitScale']:
         rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
-    rundata += 'ENGINE.set_groups_as_atoms()\n'
+    if RMCPdict['byMolec']:
+        if len(BondList):
+            rundata += '    elif "BondConstraint" in strcons:\n'
+            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Bond Weight']
+            rundata += '        constraint.create_bonds_by_definition(bondsDefinition={"%s":[\n'%Res
+            for bond in BondList:
+                rundata += '        %s'%bond
+            rundata += '        ]})\n'
+        if len(AngleList):
+            rundata += '    elif "BondsAngleConstraint" in strcons:\n'
+            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Angle Weight']
+            rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
+            for angle in AngleList:
+                rundata += '        %s'%angle
+            rundata += '        ]})\n'
+        if len(RMCPdict['Torsions']):
+            rundata += '    elif "DihedralAngleConstraint" in strcons:\n'
+            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Torsion Weight']
+            rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
+            for torsion in RMCPdict['Torsions']:
+                rundata += '    %s\n'%str(tuple(torsion))
+            rundata += '        ]})\n'
     if len(RMCPdict['Swaps']):
-        print(RMCPdict['Swaps'])
-
-    # allElements = ENGINE.allElements
-    # niSwapList = [[idx] for idx in range(len(allElements)) if allElements[idx]=='ni']
-    # tiSwapList = [[idx] for idx in range(len(allElements)) if allElements[idx]=='ti']
-    # # create swap generator
-    # toNiSG = SwapPositionsGenerator(swapList=niSwapList)
-    # toTiSG = SwapPositionsGenerator(swapList=tiSwapList)
-        
-
-    rundata += 'ENGINE.run(restartPdb="%s",numberOfSteps=%d, saveFrequency=1000)\n'%(restart,RMCPdict['Cycles'])
+        rundata += '    allNames = ENGINE.allNames\n'
+        for swap in RMCPdict['Swaps']:
+            rundata += '    SwapA = [[idx] for idx in range(len(allNames)) if allNames[idx]=="%s"]\n'%swap[0]
+            rundata += '    SwapB = [[idx] for idx in range(len(allNames)) if allNames[idx]=="%s"]\n'%swap[1]
+            rundata += '    SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
     rundata += 'ENGINE.save()\n'
     rundata += '#setup runs for fullrmc\n'
-    
-    
-    
-    
-    
-        
-    
 
+    rundata += 'for _ in range(%d):\n'%RMCPdict['Cycles']
+    rundata += '    ENGINE.set_groups_as_atoms()\n'
+    rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=10000, saveFrequency=1000)\n'%restart
+    rundata += '    for swaps in SwapGen:\n'
+    rundata += '        AB = swaps.split("-")\n'
+    rundata += '        ENGINE.set_groups_as_atoms()\n'
+    rundata += '        for g in ENGINE.groups:\n'
+    rundata += '            if allNames[g.indexes[0]]==AB[0]:\n'
+    rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
+    rundata += '            elif allNames[g.indexes[0]]==AB[1]:\n'
+    rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
+    rundata += '            sProb = SwapGen[swaps][2]\n'
+    rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*sProb, saveFrequency=1000)\n'%restart
+    rundata += '        ENGINE.set_groups_as_atoms()\n'
+    rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
+    rundata += 'ENGINE.close()\n'
     rfile = open(rname,'w')
     rfile.writelines(rundata)
     rfile.close()

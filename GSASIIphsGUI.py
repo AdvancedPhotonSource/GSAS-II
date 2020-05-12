@@ -4426,7 +4426,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
                                        
             Indx = {}
-            atChoice = RMCPdict['atSeq']
+            atChoice = atNames
+            if G2frame.RMCchoice == 'RMCProfile':
+                atChoice = RMCPdict['atSeq']            
             swapSizer = wx.FlexGridSizer(4,5,5)
             swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
             for lab in swapLabels:
@@ -4648,6 +4650,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
             def OnByMolec(event):
                 RMCPdict['byMolec'] = bymolec.GetValue()
+                wx.CallAfter(UpdateRMC)
                             
             def OnReStart(event):
                 RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
@@ -4853,7 +4856,7 @@ Make sure your parameters are correctly set.
             restart.SetValue(RMCPdict['ReStart'][0])
             restart.Bind(wx.EVT_CHECKBOX,OnReStart)
             resLine.Add(restart,0,WACV)
-            resLine.Add(wx.StaticText(G2frame.FRMC,label=' Computation cycles: '),0,WACV)
+            resLine.Add(wx.StaticText(G2frame.FRMC,label=' 10,000X Computation cycles: '),0,WACV)
             resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',min=1,size=[60,25]),0,WACV)
             mainSizer.Add(resLine,0,WACV)
                 
@@ -4878,28 +4881,29 @@ Make sure your parameters are correctly set.
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
             distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',min=0.,max=4.,size=(50,25)),0,WACV)            
             mainSizer.Add(distBox,0,WACV)
-            mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
-            
-            angBox = wx.BoxSizer(wx.HORIZONTAL)
-            angAdd = wx.Button(G2frame.FRMC,label='Add')
-            angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
-            angBox.Add(angAdd,0,WACV)
-            angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
-            angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',min=0.,max=100.,size=(50,25)),0,WACV)
-            mainSizer.Add(angBox,0,WACV)
-            if len(RMCPdict['Angles']):
-                mainSizer.Add(GetAngleSizer(),0,WACV)
+            if RMCPdict['byMolec']:
+                mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
                 
-            torBox = wx.BoxSizer(wx.HORIZONTAL)
-            torAdd = wx.Button(G2frame.FRMC,label='Add')
-            torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
-            torBox.Add(torAdd,0,WACV)
-            torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints, weight: '),0,WACV)
-            torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',min=0.,max=100.,size=(50,25)),0,WACV)
-            mainSizer.Add(torBox,0,WACV)
-            if len(RMCPdict['Torsions']):
-                mainSizer.Add(GetTorsionSizer(),0,WACV)
-
+                angBox = wx.BoxSizer(wx.HORIZONTAL)
+                angAdd = wx.Button(G2frame.FRMC,label='Add')
+                angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
+                angBox.Add(angAdd,0,WACV)
+                angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
+                angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+                mainSizer.Add(angBox,0,WACV)
+                if len(RMCPdict['Angles']):
+                    mainSizer.Add(GetAngleSizer(),0,WACV)
+                    
+                torBox = wx.BoxSizer(wx.HORIZONTAL)
+                torAdd = wx.Button(G2frame.FRMC,label='Add')
+                torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
+                torBox.Add(torAdd,0,WACV)
+                torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints, weight: '),0,WACV)
+                torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+                mainSizer.Add(torBox,0,WACV)
+                if len(RMCPdict['Torsions']):
+                    mainSizer.Add(GetTorsionSizer(),0,WACV)
+    
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(FileSizer(RMCPdict),0,WACV)
                 

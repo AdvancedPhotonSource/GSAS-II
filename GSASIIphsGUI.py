@@ -3655,7 +3655,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 oneLetter = -1
             atomInfo = [[atom[1].strip()+atom[0],]+
                 [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-                atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+                atom[6:9]+['1',]+['vdW balls',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
             ct,cs = [4,11]         #type & color
         atNum = generalData['AtomTypes'].index(atom[ct])
         atomInfo[cs] = list(generalData['Color'][atNum])
@@ -4444,7 +4444,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
                     Indx[atmSel.GetId()] = [ifx,i]
                     swapSizer.Add(atmSel,0,WACV)
-                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
+                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.01,max=0.5,size=(50,25)),0,WACV)
             return swapSizer
         
         def GetPairSizer(RMCdict):

@@ -1433,6 +1433,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -1456,6 +1457,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         A = [0,0]
@@ -7934,102 +7936,6 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Bonds[i].append(Dx[j]/2.)
                 Bonds[j].append(-Dx[j]/2.)
         return Bonds
-
-    # PlotStructure initialization here
-    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
-    global cell, Vol, Amat, Bmat, A4mat, B4mat
-    txID = 0
-    ForthirdPI = 4.0*math.pi/3.0
-    generalData = data['General']
-    cell = generalData['Cell'][1:7]
-    ABC = np.array(cell[0:3])
-    Vol = generalData['Cell'][7:8][0]
-    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
-    Gmat,gmat = G2lat.cell2Gmat(cell)
-    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-    SGData = generalData['SGData']
-    SpnFlp = SGData.get('SpnFlp',[1,])
-    atomData = data['Atoms']
-    mapPeaks = []
-    contourSet = 0
-    if generalData.get('DisAglCtrls',{}):
-        BondRadii = generalData['DisAglCtrls']['BondRadii']
-    else:
-        BondRadii = generalData['BondRadii']
-    drawingData = data['Drawing']
-    if not drawingData:
-        return          #nothing setup, nothing to draw   
-    G2phG.SetDrawingDefaults(drawingData)
-    if 'Map Peaks' in data:
-        mapPeaks = np.array(data['Map Peaks'])
-        peakMax = 100.
-        if len(mapPeaks):
-            peakMax = np.max(mapPeaks.T[0])
-    if 'Plane' not in drawingData:
-        drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
-    resRBData = data['RBModels'].get('Residue',[])
-    vecRBData = data['RBModels'].get('Vector',[])
-    rbAtmDict = {}
-    for rbObj in resRBData+vecRBData:
-        exclList = ['X' for i in range(len(rbObj['Ids']))]
-        rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
-    testRBObj = data.get('testRBObj',{})
-    rbObj = testRBObj.get('rbObj',{})
-    MCSA = data.get('MCSA',{})
-    mcsaModels = MCSA.get('Models',[])
-    if len(mcsaModels) > 1:
-        XYZs,Types = G2mth.UpdateMCSAxyz(Bmat,MCSA)
-        mcsaXYZ = []
-        mcsaTypes = []
-        neqv = 0
-        for xyz,atyp in zip(XYZs,Types):
-            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
-            neqv = max(neqv,len(equiv))
-            for item in equiv:
-                mcsaXYZ.append(item[0]) 
-                mcsaTypes.append(atyp)
-        mcsaXYZ = np.array(mcsaXYZ)
-        mcsaTypes = np.array(mcsaTypes)
-        nuniq = mcsaXYZ.shape[0]//neqv
-        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq,neqv,3))
-        mcsaTypes = np.reshape(mcsaTypes,(nuniq,neqv))
-        cent = np.fix(np.sum(mcsaXYZ+2.,axis=0)/nuniq)-2
-        cent[0] = [0,0,0]   #make sure 1st one isn't moved
-        mcsaXYZ = np.swapaxes(mcsaXYZ,0,1)-cent[:,np.newaxis,:]
-        mcsaTypes = np.swapaxes(mcsaTypes,0,1)
-        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq*neqv,3))
-        mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))                        
-        mcsaBonds = FindPeaksBonds(mcsaXYZ)        
-    drawAtoms = drawingData.get('Atoms',[])
-    mapData = {}
-    showBonds = False
-    if 'Map' in generalData:
-        mapData = generalData['Map']
-        showBonds = mapData.get('Show bonds',False)
-    Wt = np.array([255,255,255])
-    Rd = np.array([255,0,0])
-    Gr = np.array([0,255,0])
-    wxGreen = wx.Colour(0,255,0)
-    Bl = np.array([0,0,255])
-    Or = np.array([255,128,0])
-    wxOrange = wx.Colour(255,128,0)
-    uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
-    eBox = np.array([[0,1],[0,0],[1,0],[1,1],])
-    eplane = np.array([[-1,-1,0],[-1,1,0],[1,1,0],[1,-1,0]])
-    uEdges = np.array([
-        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
-        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
-        [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
-    mD = 0.1
-    mV = np.array([[[-mD,0,0],[mD,0,0]],[[0,-mD,0],[0,mD,0]],[[0,0,-mD],[0,0,mD]]])
-    mapPeakVecs = np.inner(mV,Bmat)
-
-    backColor = np.array(list(drawingData['backColor'])+[0,])
-    Bc = np.array(list(drawingData['backColor']))
-    uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
-    G2frame.tau = 0.
-    G2frame.seq = 0
     
     def OnKeyBox(event):
         mode = cb.GetValue()
@@ -8563,6 +8469,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -8587,6 +8494,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         A = [0,0]
@@ -9220,7 +9128,105 @@ def PlotStructure(G2frame,data,firstCall=False):
     def OnFocus(event):
         Draw('focus')
         
-    # PlotStructure execution starts here (N.B. initialization above)
+    # PlotStructure starts here
+    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
+    global cell, Vol, Amat, Bmat, A4mat, B4mat
+    txID = 0
+    ForthirdPI = 4.0*math.pi/3.0
+    generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    ABC = np.array(cell[0:3])
+    Vol = generalData['Cell'][7:8][0]
+    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+    Gmat,gmat = G2lat.cell2Gmat(cell)
+    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    SGData = generalData['SGData']
+    SpnFlp = SGData.get('SpnFlp',[1,])
+    atomData = data['Atoms']
+    mapPeaks = []
+    contourSet = 0
+    if generalData.get('DisAglCtrls',{}):
+        BondRadii = generalData['DisAglCtrls']['BondRadii']
+    else:
+        BondRadii = generalData['BondRadii']
+
+    drawingData = data['Drawing']
+    if not drawingData:
+        return          #nothing setup, nothing to draw
+        
+    G2phG.SetDrawingDefaults(drawingData)
+    if 'Map Peaks' in data:
+        mapPeaks = np.array(data['Map Peaks'])
+        peakMax = 100.
+        if len(mapPeaks):
+            peakMax = np.max(mapPeaks.T[0])
+    if 'Plane' not in drawingData:
+        drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
+    resRBData = data['RBModels'].get('Residue',[])
+    vecRBData = data['RBModels'].get('Vector',[])
+    rbAtmDict = {}
+    for rbObj in resRBData+vecRBData:
+        exclList = ['X' for i in range(len(rbObj['Ids']))]
+        rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
+    testRBObj = data.get('testRBObj',{})
+    rbObj = testRBObj.get('rbObj',{})
+    MCSA = data.get('MCSA',{})
+    mcsaModels = MCSA.get('Models',[])
+    if len(mcsaModels) > 1:
+        XYZs,Types = G2mth.UpdateMCSAxyz(Bmat,MCSA)
+        mcsaXYZ = []
+        mcsaTypes = []
+        neqv = 0
+        for xyz,atyp in zip(XYZs,Types):
+            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
+            neqv = max(neqv,len(equiv))
+            for item in equiv:
+                mcsaXYZ.append(item[0]) 
+                mcsaTypes.append(atyp)
+        mcsaXYZ = np.array(mcsaXYZ)
+        mcsaTypes = np.array(mcsaTypes)
+        nuniq = mcsaXYZ.shape[0]//neqv
+        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq,neqv,3))
+        mcsaTypes = np.reshape(mcsaTypes,(nuniq,neqv))
+        cent = np.fix(np.sum(mcsaXYZ+2.,axis=0)/nuniq)-2
+        cent[0] = [0,0,0]   #make sure 1st one isn't moved
+        mcsaXYZ = np.swapaxes(mcsaXYZ,0,1)-cent[:,np.newaxis,:]
+        mcsaTypes = np.swapaxes(mcsaTypes,0,1)
+        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq*neqv,3))
+        mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))                        
+        mcsaBonds = FindPeaksBonds(mcsaXYZ)        
+    drawAtoms = drawingData.get('Atoms',[])
+
+    mapData = {'MapType':False, 'rho':[]}
+    showBonds = False
+    if 'Map' in generalData:
+        mapData = generalData['Map']
+        showBonds = mapData.get('Show bonds',False)
+    Wt = np.array([255,255,255])
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    wxGreen = wx.Colour(0,255,0)
+    Bl = np.array([0,0,255])
+    Or = np.array([255,128,0])
+    wxOrange = wx.Colour(255,128,0)
+    uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+    eBox = np.array([[0,1],[0,0],[1,0],[1,1],])
+    eplane = np.array([[-1,-1,0],[-1,1,0],[1,1,0],[1,-1,0]])
+    uEdges = np.array([
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+    mD = 0.1
+    mV = np.array([[[-mD,0,0],[mD,0,0]],[[0,-mD,0],[0,mD,0]],[[0,0,-mD],[0,0,mD]]])
+    mapPeakVecs = np.inner(mV,Bmat)
+
+    backColor = np.array(list(drawingData['backColor'])+[0,])
+    Bc = np.array(list(drawingData['backColor']))
+    uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
+    G2frame.tau = 0.
+    G2frame.seq = 0
+    
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(generalData['Name'],'ogl')
     if new:
         Page.views = False
@@ -9262,6 +9268,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     wx.CallAfter(Draw,'main')
     # on Mac (& Linux?) the structure must be drawn twice the first time that graphics are displayed
     if firstCall: Draw('main') # redraw
+    return Draw,['main']
 
 ################################################################################
 #### Plot Bead Model
@@ -9271,24 +9278,6 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     '''Bead modelplotting package. For bead models from SHAPES
     '''
 
-    Mydir = G2frame.dirname
-    Rd = np.array([255,0,0])
-    Gr = np.array([0,255,0])
-    Bl = np.array([0,0,255])
-    uBox = np.array([[0,0,0],[50,0,0],[0,50,0],[0,0,50]])
-    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
-    uColors = [Rd,Gr,Bl]
-    XYZ = np.array(Atoms[1:]).T      #don't mess with original!
-
-#    def SetRBOrigin():
-#        page = getSelection()
-#        if page:
-#            if G2frame.GetPageText(page) == 'Rigid bodies':
-#                G2frame.MapPeaksTable.SetData(mapPeaks)
-#                panel = G2frame.GetPage(page).GetChildren()
-#                names = [child.GetName() for child in panel]
-#                panel[names.index('grid window')].Refresh()
-            
     def OnMouseDown(event):
         xy = event.GetPosition()
         defaults['oldxy'] = list(xy)
@@ -9334,6 +9323,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -9354,6 +9344,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         defaults['oldxy'] = list(newxy)
@@ -9473,7 +9464,16 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                 PDB.write('ATOM   %4d  CA  ALA A%4d    %8.3f%8.3f%8.3f  1.00  0.00\n'%(iatm+1,iatm+1,xyz[0],xyz[1],xyz[2]))
             PDB.close()
             G2frame.G2plotNB.status.SetStatusText('PDB model saved to: '+Fname,1)
-    # PlotRigidBody execution starts here (N.B. initialization above)
+            
+    # PlotBeadModel execution starts here
+    Mydir = G2frame.dirname
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    Bl = np.array([0,0,255])
+    uBox = np.array([[0,0,0],[50,0,0],[0,50,0],[0,0,50]])
+    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
+    uColors = [Rd,Gr,Bl]
+    XYZ = np.array(Atoms[1:]).T      #don't mess with original!
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
     if new:
         Page.views = False
@@ -9507,7 +9507,6 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
 def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     '''RB plotting package. Can show rigid body structures as balls & sticks
     '''
-
     def FindBonds(XYZ):
         rbTypes = rbData['rbTypes']
         Radii = []
@@ -9527,35 +9526,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
                         
-    Mydir = G2frame.dirname
-    Rd = np.array([255,0,0])
-    Gr = np.array([0,255,0])
-    Bl = np.array([0,0,255])
-    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
-    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
-    uColors = [Rd,Gr,Bl]
-    if rbType == 'Vector':
-        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
-        XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
-        for imag,mag in enumerate(rbData['VectMag']):
-            XYZ += mag*rbData['rbVect'][imag]
-        Bonds = FindBonds(XYZ)
-    elif rbType == 'Residue':
-#        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
-        atNames = rbData['atNames']
-        XYZ = np.copy(rbData['rbXYZ'])      #don't mess with original!
-        Seq = rbData['rbSeq']
-        for ia,ib,ang,mv in Seq:
-            va = XYZ[ia]-XYZ[ib]
-            Q = G2mth.AVdeg2Q(ang,va)
-            for im in mv:
-                vb = XYZ[im]-XYZ[ib]
-                vb = G2mth.prodQVQ(Q,vb)
-                XYZ[im] = XYZ[ib]+vb
-        Bonds = FindBonds(XYZ)
-    elif rbType == 'Z-matrix':
-        pass
-
 #    def SetRBOrigin():
 #        page = getSelection()
 #        if page:
@@ -9610,6 +9580,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -9632,6 +9603,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = defaults['viewDir']
         A = [0,0]
@@ -9728,10 +9700,17 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         GL.glMultMatrixf(matRot.T)
         RenderUnitVectors(0.,0.,0.)
         radius = 0.2
+        s = 1
+        selected = rbData.get('Selection')
         for iat,atom in enumerate(XYZ):
+            if selected:
+                if selected[iat]:
+                    s = 1
+                else:
+                    s = 3
             x,y,z = atom
             CL = AtInfo[rbData['rbTypes'][iat]][1]
-            color = np.array(CL)/255.
+            color = np.array(CL)/(s*255.)
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             RenderLabel(x,y,z,'  '+atNames[iat],matRot)
@@ -9774,7 +9753,54 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             cb.SetValue(' save as/key:')
             G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
 
-    # PlotRigidBody execution starts here (N.B. initialization above)
+    def UpdateDraw():
+        '''This updates the drawing arrays in place'''
+        for i,Ty in enumerate(rbData['rbTypes']):
+            atNames[i] = str(i)+':'+Ty
+        for i in range(len(XYZ)):
+            XYZ[i].fill(0)
+            for imag,mag in enumerate(rbData['VectMag']):
+                XYZ[i] += mag*rbData['rbVect'][imag][i]
+        # number of bonds should not change (=# of atoms)
+        newBonds = FindBonds(XYZ)
+        for i in range(len(Bonds)):
+            Bonds[i] = newBonds[i]
+        Draw() # drawing twice seems needed sometimes at least on mac
+        Draw()
+        
+    # PlotRigidBody execution starts here
+    Mydir = G2frame.dirname
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    Bl = np.array([0,80,255]) # blue on black is hard to see
+    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
+    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
+    uColors = [Rd,Gr,Bl]
+    if rbType == 'Vector':
+        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
+        XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+        for imag,mag in enumerate(rbData['VectMag']):
+            XYZ += mag*rbData['rbVect'][imag]
+        Bonds = FindBonds(XYZ)
+    elif rbType == 'Residue':
+#        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
+        atNames = rbData['atNames']
+        XYZ = np.copy(rbData['rbXYZ'])      #don't mess with original!
+        Seq = rbData['rbSeq']
+        for ia,ib,ang,mv in Seq:
+            va = XYZ[ia]-XYZ[ib]
+            Q = G2mth.AVdeg2Q(ang,va)
+            for im in mv:
+                vb = XYZ[im]-XYZ[ib]
+                vb = G2mth.prodQVQ(Q,vb)
+                XYZ[im] = XYZ[ib]+vb
+        Bonds = FindBonds(XYZ)
+    elif rbType == 'Z-matrix':
+        pass
+    else:
+        print('rbType=', rbType)
+        if GSASIIpath.GetConfigValue('debug'): raise Exception('Should not happen')
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Rigid body','ogl')
     if new:
         Page.views = False
@@ -9801,7 +9827,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         pass
     Draw('main')
     Draw('main')    #to fill both buffers so save works
-
+    if rbType == 'Vector': return UpdateDraw
 ################################################################################
 #### Plot Layers
 ################################################################################
@@ -10031,6 +10057,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -10051,6 +10078,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         defaults['oldxy'] = list(newxy)

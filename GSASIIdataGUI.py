@@ -3771,6 +3771,7 @@ class GSASII(wx.Frame):
                       
     def OnAddPhase(self,event):
         'Add a new, empty phase to the tree. Called by Data/Add Phase menu'
+        self.CheckNotebook()
         if not GetGPXtreeItemId(self,self.root,'Phases'):
             sub = self.GPXtree.AppendItem(parent=self.root,text='Phases')
         else:
@@ -5425,9 +5426,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.RigidBodyMenu)
         self.ResidueRBMenu = wx.Menu(title='')
         self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYIMPORT,'Import XYZ','Import rigid body XYZ from file')
-        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYSAVE,'Save PDB','Save rigid body to PDB file')        
-        self.ResidueRBMenu.Append(G2G.wxID_RESIDUETORSSEQ,'Define sequence','Define torsion sequence')
+        G2G.Define_wxId('wxID_RIGIDBODYIMP')
+        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYIMP,'Extract from file',
+                                'Extract rigid body from phase file')
+        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYSAVE,'Save as PDB','Save rigid body to PDB file')        
+        self.ResidueRBMenu.Append(G2G.wxID_RESIDUETORSSEQ,'Define torsion','Define torsion sequence')
         self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYADD,'Import residues','Import residue rigid bodies from macro file')
+        G2G.Define_wxId('wxID_RESBODYSAV')
+        self.ResidueRBMenu.Append(G2G.wxID_RESBODYSAV,'Save rigid body','Write a rigid body to a file')
+        G2G.Define_wxId('wxID_RESBODYRD')
+        self.ResidueRBMenu.Append(G2G.wxID_RESBODYRD,'Read rigid body','Read a rigid body from a file')
         self.RigidBodyMenu.Append(menu=self.ResidueRBMenu, title='Edit Residue Body')
         self.PostfillDataMenu()
 
@@ -5436,6 +5444,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.VectorRBEdit = wx.Menu(title='')
         self.VectorRBEdit.Append(G2G.wxID_VECTORBODYADD,'Add rigid body','Add vector rigid body')
         self.VectorBodyMenu.Append(menu=self.VectorRBEdit, title='Edit Vector Body')
+        G2G.Define_wxId('wxID_VECTORBODYIMP')
+        self.VectorRBEdit.Append(G2G.wxID_VECTORBODYIMP,'Extract from file',
+                                'Extract rigid body from phase file')
+        G2G.Define_wxId('wxID_VECTORBODYSAV')
+        self.VectorRBEdit.Append(G2G.wxID_VECTORBODYSAV,'Save rigid body','Write a rigid body to a file')
+        G2G.Define_wxId('wxID_VECTORBODYRD')
+        self.VectorRBEdit.Append(G2G.wxID_VECTORBODYRD,'Read rigid body','Read a rigid body from a file')
+        G2G.Define_wxId('wxID_VECTORBODYEXTD')
+        self.VectorRBEdit.Append(G2G.wxID_VECTORBODYEXTD,'Add translation',
+                                'Add translation to existing rigid body')
         self.PostfillDataMenu()
 
         # Restraints
@@ -8385,6 +8403,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         try: 
             if grid.IsCellEditControlEnabled(): # complete any grid edits in progress
                 if GSASIIpath.GetConfigValue('debug'): print ('Completing grid edit in%s'%str(grid))
+                grid.SaveEditControlValue()
+                # not sure if the next two things do anything
                 grid.HideCellEditControl()
                 grid.DisableCellEditControl()
         except:

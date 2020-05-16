@@ -9702,6 +9702,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         radius = 0.2
         s = 1
         selected = rbData.get('Selection')
+        if len(XYZ) != len(rbData['rbTypes']): # H atoms have been removed
+            return
         for iat,atom in enumerate(XYZ):
             if selected:
                 if selected[iat]:

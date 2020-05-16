@@ -934,12 +934,12 @@ def GetXYZDist(xyz,XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,XYZ-xyz)**2,axis=0))
 
 def getAtomXYZ(atoms,cx):
-    '''default doc string
+    '''Create an array of fractional coordinates from the atoms list
     
-    :param type name: description
+    :param list atoms: atoms object as found in tree
+    :param int cx: offset to where coordinates are found
     
-    :returns: type name: description
-    
+    :returns: np.array with shape (n,3)    
     '''
     XYZ = []
     for atom in atoms:

@@ -35,6 +35,8 @@ Class or function name             Description
 :class:`G2MultiChoiceDialog`       Dialog similar to wx.MultiChoiceDialog, but provides
                                    a filter to select choices and buttons to make selection
                                    of multiple items more simple.
+:class:`G2MultiChoiceWindow`       Similar to :class:`G2MultiChoiceDialog` but provides
+                                   a sizer that can be placed in a frame or panel.
 :class:`G2SingleChoiceDialog`      Dialog similar to wx.SingleChoiceDialog, but provides
                                    a filter to help search through choices.
 :class:`HelpButton`                Creates a button labeled with a "?" that when pressed
@@ -1038,9 +1040,12 @@ class ASCIIValidator(wx.PyValidator):
 ################################################################################
 def HorizontalLine(sizer,parent):
     '''Draws a horizontal line as wide as the window.
-    This shows up on the Mac as a very thin line, no matter what I do
     '''
-    line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
+    if sys.platform == "darwin": 
+        line = wx.StaticLine(parent, size=(-1,1), style=wx.LI_HORIZONTAL)
+        line.SetBackgroundColour((128,128,128))
+    else:
+        line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
     sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
 
 ################################################################################
@@ -1736,6 +1741,217 @@ class G2MultiChoiceDialog(wx.Dialog):
         self._ShowSelections()
         self.OKbtn.Enable(True)
 
+###############################################  Multichoice in a sizer with set all, toggle & filter options
+class G2MultiChoiceWindow(wx.BoxSizer):
+    '''Creates a sizer similar to G2MultiChoiceDialog except that 
+    buttons are added to set all choices and to toggle all choices. This
+    is placed in a sizer, so that it can be used in a frame or panel. 
+
+    :param parent: reference to parent frame/panel
+    :param str title: heading above list of choices
+    :param list ChoiceList: a list of choices where one more will be selected
+    :param list SelectList: a list of selected choices
+    :param bool toggle: If True (default) the toggle and select all buttons
+      are displayed
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param bool filterBox: If True (default) an input widget is placed on
+      the window and only entries matching the entered text are shown.
+    :param function OnChange: a reference to a callable object, that 
+      is called each time any a choice is changed. Default is None which
+      will not be called. 
+    :param list OnChangeArgs: a list of arguments to be supplied to function
+      OnChange. The default is a null list.
+    :returns: the name of the created sizer
+    '''
+    def __init__(self, parent, title, ChoiceList, SelectList, toggle=True,
+                 monoFont=False, filterBox=True,
+                     OnChange=None, OnChangeArgs=[]):
+        self.SelectList = SelectList
+        self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
+        self.frm = parent
+        self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
+        self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
+        self.Stride = 1
+        self.OnChange = OnChange
+        self.OnChangeArgs = OnChangeArgs
+        # fill frame
+        wx.BoxSizer.__init__(self,wx.VERTICAL)
+        # fill the sizer
+        Sizer = self
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(self.frm,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
+        if filterBox:
+            self.timer = wx.Timer()
+            self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add(wx.StaticText(self.frm,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
+            self.filterBox = wx.TextCtrl(self.frm, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
+            topSizer.Add(self.filterBox,0,wx.ALL|WACV,0)
+        Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
+        self.settingRange = False
+        self.rangeFirst = None
+        self.clb = wx.CheckListBox(self.frm, wx.ID_ANY, (30,30), wx.DefaultSize, self.ChoiceList)
+        self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
+        if monoFont:
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
+                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            self.clb.SetFont(font1)
+        Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
+        Sizer.Add((-1,10))
+        # set/toggle buttons
+        if toggle:
+            tSizer = wx.BoxSizer(wx.HORIZONTAL)
+            tSizer.Add(wx.StaticText(self.frm,label=' Apply stride:'),0,WACV)
+            numbs = [str(i+1) for i in range(9)]+[str(2*i+10) for i in range(6)]
+            self.stride = wx.ComboBox(self.frm,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)
+            tSizer.Add(self.stride,0,WACV)
+            Sizer.Add(tSizer,0,wx.LEFT,12)
+            tSizer = wx.BoxSizer(wx.HORIZONTAL)
+            setBut = wx.Button(self.frm,wx.ID_ANY,'Set All')
+            setBut.Bind(wx.EVT_BUTTON,self._SetAll)
+            tSizer.Add(setBut)
+            togBut = wx.Button(self.frm,wx.ID_ANY,'Toggle All')
+            togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
+            tSizer.Add(togBut)
+            self.rangeBut = wx.ToggleButton(self.frm,wx.ID_ANY,'Set Range')
+            self.rangeBut.Bind(wx.EVT_TOGGLEBUTTON,self.SetRange)
+            tSizer.Add(self.rangeBut)
+            Sizer.Add(tSizer,0,wx.LEFT,12)
+            tSizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.rangeCapt = wx.StaticText(self.frm,wx.ID_ANY,'')
+            tSizer.Add(self.rangeCapt,1,wx.EXPAND,1)
+            Sizer.Add(tSizer,0,wx.LEFT,12)
+        self.SetSelections(self.SelectList)
+                
+    def OnStride(self,event):
+        self.Stride = int(self.stride.GetValue())
+
+    def SetRange(self,event):
+        '''Respond to a press of the Set Range button. Set the range flag and
+        the caption next to the button
+        '''
+        self.settingRange = self.rangeBut.GetValue()
+        if self.settingRange:
+            self.rangeCapt.SetLabel('Select range start')
+        else:
+            self.rangeCapt.SetLabel('')            
+        self.rangeFirst = None
+        
+    def GetSelections(self):
+        'Returns a list of the indices for the selected choices'
+        # update self.Selections with settings for displayed items
+        for i in range(len(self.filterlist)):
+            self.Selections[self.filterlist[i]] = self.clb.IsChecked(i)
+        # return all selections, shown or hidden
+        return [i for i in range(len(self.Selections)) if self.Selections[i]]
+        
+    def SetSelections(self,selList):
+        '''Sets the selection indices in selList as selected. Resets any previous
+        selections for compatibility with wx.MultiChoiceDialog. Note that
+        the state for only the filtered items is shown.
+
+        :param list selList: indices of items to be selected. These indices
+          are referenced to the order in self.ChoiceList
+        '''
+        self.Selections = len(self.ChoiceList) * [False,] # reset selections
+        for sel in selList:
+            self.Selections[sel] = True
+        self._ShowSelections()
+
+    def _ShowSelections(self):
+        'Show the selection state for displayed items'
+        if 'phoenix' in wx.version():
+            self.clb.SetCheckedItems(
+                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+            ) # Note anything previously checked will be cleared.
+        else:
+            self.clb.SetChecked(
+                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+            ) # Note anything previously checked will be cleared.
+        if self.OnChange:
+            self.OnChange(self.GetSelections(),*self.OnChangeArgs)
+        self.SelectList.clear()
+        for i,val in enumerate(self.Selections):
+            if val: self.SelectList.append(i)
+
+    def _SetAll(self,event):
+        'Set all viewed choices on'
+        if 'phoenix' in wx.version():
+            self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
+        else:
+            self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        self.stride.SetValue('1')
+        self.Stride = 1
+        self.GetSelections() # record current selections
+        self._ShowSelections()
+        
+    def _ToggleAll(self,event):
+        'flip the state of all viewed choices'
+        for i in range(len(self.filterlist)):
+            self.clb.Check(i,not self.clb.IsChecked(i))
+        self.GetSelections() # record current selections
+        self._ShowSelections()
+            
+    def onChar(self,event):
+        'Respond to keyboard events in the Filter box'
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.timer.Start(1000,oneShot=True)
+        if event: event.Skip()
+        
+    def OnCheck(self,event):
+        '''for CheckListBox events; if Set Range is in use, this sets/clears all
+        entries in range between start and end according to the value in start.
+        Repeated clicks on the start change the checkbox state, but do not trigger
+        the range copy. 
+        The caption next to the button is updated on the first button press.
+        '''
+        if self.settingRange:
+            id = event.GetInt()
+            if self.rangeFirst is None:
+                name = self.clb.GetString(id)
+                self.rangeCapt.SetLabel(name+' to...')
+                self.rangeFirst = id
+            elif self.rangeFirst == id:
+                pass
+            else:
+                for i in range(min(self.rangeFirst,id), max(self.rangeFirst,id)+1,self.Stride):
+                    self.clb.Check(i,self.clb.IsChecked(self.rangeFirst))
+                self.rangeBut.SetValue(False)
+                self.rangeCapt.SetLabel('')
+                self.settingRange = False
+                self.rangeFirst = None
+        self.GetSelections() # record current selections
+        self._ShowSelections()
+
+    def Filter(self,event):
+        '''Read text from filter control and select entries that match. Called by
+        Timer after a delay with no input or if Enter is pressed.
+        '''
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.GetSelections() # record current selections
+        txt = self.filterBox.GetValue()
+        self.clb.Clear()
+        
+        self.filterlist = []
+        if txt:
+            txt = txt.lower()
+            ChoiceList = []
+            for i,item in enumerate(self.ChoiceList):
+                if item.lower().find(txt) != -1:
+                    ChoiceList.append(item)
+                    self.filterlist.append(i)
+        else:
+            self.filterlist = range(len(self.ChoiceList))
+            ChoiceList = self.ChoiceList
+        self.clb.AppendItems(ChoiceList)
+        self._ShowSelections()
+        
 def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     '''Select a variable from a list, then edit it and select histograms
     to copy it to.

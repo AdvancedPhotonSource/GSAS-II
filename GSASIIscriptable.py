@@ -1786,9 +1786,9 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     use only.
 
     :param list ImageReaderlist: list of Reader objects for images
-    :param object ImageReaderlist: list of Reader objects for images
-    :param imageRef: A reference to the desired image. Either the Image 
-      tree name (str), the image's index (int) or
+    :param object proj: references a :class:`G2Project` project
+    :param imageRef: A reference to the desired image in the project. 
+      Either the Image tree name (str), the image's index (int) or
       a image object (:class:`G2Image`)
 
     :return: array sumImg: corrected image for background/dark/flat back

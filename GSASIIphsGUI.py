@@ -4483,6 +4483,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         RMCPdict['files'][fil][0] = fName
                     G2frame.LastImportDir = fpath    #set so next file is found in same place
                     dlg.Destroy()
+                    RMCPdict['ReStart'][0] = True
                 else:
                     dlg.Destroy()
                     return
@@ -4520,6 +4521,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
                 RMCPdict['files'][fil][0] = 'Select'
+                RMCPdict['ReStart'][0] = True
                 wx.CallAfter(UpdateRMC)
                             
             Indx = {}
@@ -4684,6 +4686,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     pName = generalData['Name'].replace(' ','_')
                     pdbname = G2pwd.MakefullrmcPDB(pName,data,RMCPdict)
                     RMCPdict['atomPDB'] = pdbname
+                    RMCPdict['ReStart'][0] = True
                     print(pdbname+ ' written')
                     return                    
                 if RMCPdict['moleculePdb'] == 'Select':
@@ -4706,6 +4709,7 @@ Make sure your parameters are correctly set.
                         batch.write('pause')
                         batch.close()
                         sb.Popen('pdbparse.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
+                        RMCPdict['ReStart'][0] = True
                     else:
                         print(' Make PDB file for fullrmc abandonded')
                 finally:

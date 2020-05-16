@@ -4426,9 +4426,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
                                        
             Indx = {}
-            atChoice = atNames
-            if G2frame.RMCchoice == 'RMCProfile':
-                atChoice = RMCPdict['atSeq']            
+            atChoice = RMCPdict['atSeq']            
+            if G2frame.RMCchoice == 'fullrmc':
+                atChoice = atNames
             swapSizer = wx.FlexGridSizer(4,5,5)
             swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
             for lab in swapLabels:

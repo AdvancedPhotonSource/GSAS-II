@@ -4515,6 +4515,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
                 RMCPdict['files'][fil][3] = not RMCPdict['files'][fil][3]
+                
+            def OnDelBtn(event):
+                Obj = event.GetEventObject()
+                fil = Indx[Obj.GetId()]
+                RMCPdict['files'][fil][0] = 'Select'
+                wx.CallAfter(UpdateRMC)
                             
             Indx = {}
             titleSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4524,12 +4530,12 @@ def UpdatePhaseData(G2frame,Item,data):
             fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
             titleSizer.Add(fitscale,0,WACV)
             mainSizer.Add(titleSizer,0,WACV)
-            ncol= 5
-            Heads = ['Name','File','Format','Weight','Plot']
+            ncol= 6
+            Heads = ['Name','File','Format','Weight','Plot','Delete']
             if G2frame.RMCchoice == 'fullrmc':
                 mainSizer.Add(wx.StaticText(G2frame.FRMC,
                     label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
-                Heads = ['Name','File','Weight','Plot','Corr']
+                Heads = ['Name','File','Weight','Plot','Corr','Delete']
             fileSizer = wx.FlexGridSizer(ncol,5,5)
             Formats = ['RMC','GUDRUN','STOG']
             for head in Heads:
@@ -4568,8 +4574,13 @@ def UpdatePhaseData(G2frame,Item,data):
                         Indx[corrChk.GetId()] = fil
                         corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
                         fileSizer.Add(corrChk,0,WACV)
+                        delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                        delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
+                        Indx[delBtn.GetId()] = fil
+                        fileSizer.Add(delBtn,0,WACV)
                 else:
                     RMCPdict['files'][fil][0] = 'Select'
+                    fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
@@ -5499,18 +5510,20 @@ Make sure your parameters are correctly set.
                             for item in FRitems:
                                 sitem = str(type(item))
                                 if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
+                                    nameId = 'X'
+                                    if 'neutron' in item.weighting:
+                                        nameId = 'N'
                                     found = True
                                     Xlab = r'$\mathsf{r,\AA}$'
                                     Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
-                                    title = ' g(r) for '
+                                    title = ' g(r)%s for '%nameId
                                     if 'StructureFactor' in sitem:
-                                        eNames.append('S(Q)')
+                                        eNames.append('S(Q)'+nameId)
                                         Xlab = r'$\mathsf{Q,\AA^{-1}}$'
                                         Ylab = 'S(Q)'
-                                        title = ' S(Q) for '
+                                        title = ' S(Q)%s for '%nameId
                                     else:
-                                        eNames.append('g(r)')
-                                        title = frame+title
+                                        eNames.append('g(r)'+nameId)
                                     dataDict= item.get_constraints_properties(frame)
                                     X = dataDict['frames-experimental_x'][0]
                                     Y = dataDict['frames-experimental_y'][0]
@@ -5533,10 +5546,18 @@ Make sure your parameters are correctly set.
                                     Names = []
                                     NamesT = []
                                     for item in rdfDict:
-                                        PXYT.append([X,rdfDict[item]])
+                                        if 'rdf' not in item and 'g(r)' in title:
+                                            Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                                            PXYT.append([X,1.+rdfDict[item]/X])
+                                        else:
+                                            PXYT.append([X,rdfDict[item]])
                                         NamesT.append(item)
                                         if 'total' in item:
-                                            PXY.append([X,rdfDict[item]])
+                                            if 'rdf' not in item and 'g(r)' in title:
+                                                Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                                                PXY.append([X,1.+rdfDict[item]/X])
+                                            else:
+                                                PXY.append([X,rdfDict[item]])
                                             Names.append(item)
                                     G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,
                                         labelY=Ylab,newPlot=True,Title=' All partials of '+title+pName,
@@ -5624,9 +5645,6 @@ Make sure your parameters are correctly set.
                 else:
                     start += 1
             Gen = []
-            # Tr = []
-            # Acc = []
-            # Rem = []
             Err = []
             start -= 1
             while True:

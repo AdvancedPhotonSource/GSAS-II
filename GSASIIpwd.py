@@ -2647,23 +2647,23 @@ SwapGen = {}
     for File in Files:
         filDat = RMCPdict['files'][File]
         if filDat[0] != 'Select':
-            sfwt = 'neutrons'
+            sfwt = 'neutronCohb'
             if 'Xray' in File:
-                sfwt = 'xrays'
+                sfwt = 'atomicNumber'
             if 'G(r)' in File:
                 rundata += '    RGR = np.loadtxt("%s").T\n'%filDat[0]
                 if filDat[3]:
                     rundata += '    RGR[1] *= RGR[0]\n'
                 rundata += '    GofR = PairDistributionConstraint(experimentalData=RGR.T, weighting="%s")\n'%sfwt
                 rundata += '    ENGINE.add_constraints([GofR])\n'
-                wtDict['Pair'] = filDat[1]
+                wtDict['Pair-'+sfwt] = filDat[1]
             else:
                 rundata += '    SOQ = np.loadtxt("%s").T\n'%filDat[0]
                 if filDat[3]:
                     rundata += '    SOQ[1] = sincConvolution(SOQ,%.3f)\n'%rmax
                 rundata += '    FofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
                 rundata += '    ENGINE.add_constraints([FofQ])\n'
-                wtDict['Struct'] = filDat[1]
+                wtDict['Struct-'+sfwt] = filDat[1]
     rundata += '    ENGINE.add_constraints(InterMolecularDistanceConstraint())\n'
     if RMCPdict['byMolec']:
         if len(BondList):
@@ -2678,19 +2678,20 @@ SwapGen = {}
     rundata += '    ENGINE.save()\n'
     rundata += 'else:\n'
     rundata += '    ENGINE = ENGINE.load(path=engineFileName)\n'
-    rundata += '#fill & change constraints - can be done without restart\n'  
+    rundata += '#fill & change constraints - can be done without restart\n'
+    rundata += 'wtDict = %s\n'%str(wtDict)
     rundata += 'Constraints = ENGINE.constraints\n'
     rundata += 'for constraint in Constraints:\n'
     rundata += '    strcons = str(type(constraint))\n'
     rundata += '    if "InterMolecular" in strcons:\n'
     rundata += '        constraint.set_default_distance(%f)\n'%RMCPdict['min Contact']
     rundata += '    elif "PairDistribution" in strcons:\n'
-    rundata += '        constraint.set_variance_squared(%f)\n'%wtDict['Pair']
+    rundata += '        constraint.set_variance_squared(wtDict["Pair-"+constraint.weighting])\n'
     rundata += '        constraint.set_limits((%.3f,%.3f))\n'%(rmin,rmax)
     if RMCPdict['FitScale']:
         rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
     rundata += '    elif "StructureFactor" in strcons:\n'
-    rundata += '        constraint.set_variance_squared(%f)\n'%wtDict['Struct']
+    rundata += '        constraint.set_variance_squared(wtDict["Struct-"+constraint.weighting])\n'
     if RMCPdict['FitScale']:
         rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
     if RMCPdict['byMolec']:
@@ -2727,18 +2728,19 @@ SwapGen = {}
     rundata += 'for _ in range(%d):\n'%RMCPdict['Cycles']
     rundata += '    ENGINE.set_groups_as_atoms()\n'
     rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=10000, saveFrequency=1000)\n'%restart
-    rundata += '    for swaps in SwapGen:\n'
-    rundata += '        AB = swaps.split("-")\n'
-    rundata += '        ENGINE.set_groups_as_atoms()\n'
-    rundata += '        for g in ENGINE.groups:\n'
-    rundata += '            if allNames[g.indexes[0]]==AB[0]:\n'
-    rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
-    rundata += '            elif allNames[g.indexes[0]]==AB[1]:\n'
-    rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
-    rundata += '            sProb = SwapGen[swaps][2]\n'
-    rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*sProb, saveFrequency=1000)\n'%restart
-    rundata += '        ENGINE.set_groups_as_atoms()\n'
-    rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
+    if len(RMCPdict['Swaps']):
+        rundata += '    for swaps in SwapGen:\n'
+        rundata += '        AB = swaps.split("-")\n'
+        rundata += '        ENGINE.set_groups_as_atoms()\n'
+        rundata += '        for g in ENGINE.groups:\n'
+        rundata += '            if allNames[g.indexes[0]]==AB[0]:\n'
+        rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
+        rundata += '            elif allNames[g.indexes[0]]==AB[1]:\n'
+        rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
+        rundata += '            sProb = SwapGen[swaps][2]\n'
+        rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*sProb, saveFrequency=1000)\n'%restart
+        rundata += '        ENGINE.set_groups_as_atoms()\n'
+        rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
     rundata += 'ENGINE.close()\n'
     rfile = open(rname,'w')
     rfile.writelines(rundata)

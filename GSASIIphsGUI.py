@@ -4349,7 +4349,7 @@ def UpdatePhaseData(G2frame,Item,data):
         global runFile
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
-            UpdateRMC()
+            wx.CallAfter(UpdateRMC)
             
         def GetAtmChoice(RMCPdict):
             
@@ -9556,6 +9556,8 @@ Make sure your parameters are correctly set.
                 
             def OnRBSel(event):
                 selection = rbSel.GetValue()
+                if selection not in rbNames:
+                    return
                 rbType,rbId = rbNames[selection]
                 data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
                 data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
@@ -9767,7 +9769,7 @@ Make sure your parameters are correctly set.
                 mainSizer.Add((5,5),0)
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 topSizer.Add(wx.StaticText(RigidBodies,-1,'Select rigid body model'),0,WACV)
-                rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=list(rbNames.keys()),
+                rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=['']+list(rbNames.keys()),
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 rbSel.Bind(wx.EVT_COMBOBOX, OnRBSel)
                 topSizer.Add((5,5),0)

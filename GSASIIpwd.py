@@ -2206,22 +2206,22 @@ def MakeBack(PWDdata,Name):
     fl.close()
     return fname
 
-def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
-    
-    def findDup(Atoms):
-        Dup = []
-        Fracs = []
-        for iat1,at1 in enumerate(Atoms):
-            if any([at1[0] in dup for dup in Dup]):
-                continue
-            else:
-                Dup.append([at1[0],])
-                Fracs.append([at1[6],])
-            for iat2,at2 in enumerate(Atoms[(iat1+1):]):
-                if np.sum((np.array(at1[3:6])-np.array(at2[3:6]))**2) < 0.00001:
-                    Dup[-1] += [at2[0],]
-                    Fracs[-1]+= [at2[6],]
-        return Dup,Fracs
+def findDup(Atoms):
+    Dup = []
+    Fracs = []
+    for iat1,at1 in enumerate(Atoms):
+        if any([at1[0] in dup for dup in Dup]):
+            continue
+        else:
+            Dup.append([at1[0],])
+            Fracs.append([at1[6],])
+        for iat2,at2 in enumerate(Atoms[(iat1+1):]):
+            if np.sum((np.array(at1[3:6])-np.array(at2[3:6]))**2) < 0.00001:
+                Dup[-1] += [at2[0],]
+                Fracs[-1]+= [at2[6],]
+    return Dup,Fracs
+
+def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):    
     
     Meta = RMCPdict['metadata']
     Atseq = RMCPdict['atSeq']
@@ -2752,6 +2752,8 @@ SwapGen = {}
 def MakefullrmcPDB(Name,Phase,RMCPdict):
     generalData = Phase['General']
     Atseq = RMCPdict['atSeq']
+    Dups,Fracs = findDup(Phase['Atoms'])
+    Sfracs = [np.cumsum(fracs) for fracs in Fracs]
     Supercell = RMCPdict['SuperCell']
     Cell = generalData['Cell'][1:7]
     Trans = np.eye(3)*np.array(Supercell)
@@ -2760,7 +2762,37 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False,Force=False)
     Atoms = newPhase['Atoms']
-    XYZ = np.array([atom[3:6] for atom in Atoms]).T
+
+    Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
+    Natm = np.count_nonzero(Natm-1)
+    Atoms = newPhase['Atoms']
+    Satoms = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms,5),4),3)
+    Datoms = [[atom for atom in Satoms if atom[0] in dup] for dup in Dups]
+    Natoms = []
+    for idup,dup in enumerate(Dups):
+        ldup = len(dup)
+        datoms = Datoms[idup]
+        natm = len(datoms)
+        i = 0
+        while i < natm:
+            atoms = datoms[i:i+ldup]
+            try:
+                atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
+                Natoms.append(atom)
+            except IndexError:      #what about vacancies?
+                if 'Va' not in Atseq:
+                    Atseq.append('Va')
+                    RMCPdict['aTypes']['Va'] = 0.0
+                atom = atoms[0]
+                atom[1] = 'Va'
+                Natoms.append(atom)
+            i += ldup
+
+
+
+
+
+    XYZ = np.array([atom[3:6] for atom in Natoms]).T
     XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
     Cell = newPhase['General']['Cell'][1:7]
     A,B = G2lat. cell2AB(Cell)
@@ -2779,14 +2811,14 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     nat = 0
     if RMCPdict['byMolec']:
         NPM = RMCPdict['Natoms']
-        for iat,atom in enumerate(Atoms):
+        for iat,atom in enumerate(Natoms):
             XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian;residue = 'RMC'
             fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
                     1+nat%NPM,atom[0],1+nat//NPM,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
             nat += 1
     else:
         for atm in Atseq:
-            for iat,atom in enumerate(Atoms):
+            for iat,atom in enumerate(Natoms):
                 if atom[1] == atm:
                     XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
                     fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       

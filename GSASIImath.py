@@ -731,14 +731,14 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
                 dist = np.sqrt(np.sum(dx**2,axis=1))
                 IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))
                 for iU in IndB[0]:
-                    if AtNames[iA] != notName:
+                    if AtNames[iA%len(AtNames)] != notName:
                         unit = Units[iU]
                         if np.any(unit):
                             Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
                         else:
                             Topstr = ' +(%4d)'%(Top)
                         if Short:
-                            Neigh.append([AtNames[iA],dist[iU],True])
+                            Neigh.append([AtNames[iA%len(AtNames)],dist[iU],True])
                         else:
                             Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
                         Ids.append(Atoms[iA][cia+8])

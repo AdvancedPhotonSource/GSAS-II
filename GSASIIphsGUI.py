@@ -5550,6 +5550,8 @@ Make sure your parameters are correctly set.
                                     Names = []
                                     NamesT = []
                                     for item in rdfDict:
+                                        if 'va' in item:
+                                            continue
                                         if 'rdf' not in item and 'g(r)' in title:
                                             Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
                                             PXYT.append([X,1.+rdfDict[item]/X])

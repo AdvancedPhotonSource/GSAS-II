@@ -332,7 +332,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                             tCoords.append(np.array(coords))
                             tDis.append(names[2][3])
                 for i,[oId,oCoord,odis] in enumerate(zip(oIds,oCoords,oDis)):
-                    for tId,tCoord,tdis in zip(tIds,tCoords,tDis)[i:]:
+                    for tId,tCoord,tdis in list(zip(tIds,tCoords,tDis))[i:]:
                         if odis+tdis in ['AB','BA']:
                             continue
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))

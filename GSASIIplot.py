@@ -8180,21 +8180,22 @@ def PlotStructure(G2frame,data,firstCall=False):
         Zmax = 1.
         if Add:
             Indx = GetSelectedAtoms()
-        if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
-            for i,peak in enumerate(mapPeaks):
-                x,y,z = peak[1:4]
-                X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
-                XY = [int(X),int(View[3]-Y)]
-                if np.allclose(xy,XY,atol=10) and Z < Zmax:
-                    Zmax = Z
-                    try:
-                        Indx.remove(i)
-                        ClearSelectedAtoms()
-                        for Id in Indx:
-                            SetSelectedAtoms(Id,Add)
-                    except:
-                        SetSelectedAtoms(i,Add)
-        else:
+        try:
+            if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
+                for i,peak in enumerate(mapPeaks):
+                    x,y,z = peak[1:4]
+                    X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
+                    XY = [int(X),int(View[3]-Y)]
+                    if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                        Zmax = Z
+                        try:
+                            Indx.remove(i)
+                            ClearSelectedAtoms()
+                            for Id in Indx:
+                                SetSelectedAtoms(Id,Add)
+                        except:
+                            SetSelectedAtoms(i,Add)
+        except:
             cx = drawingData['atomPtrs'][0]
             for i,atom in enumerate(drawAtoms):
                 x,y,z = atom[cx:cx+3]
@@ -8309,7 +8310,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
                 for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
-                    sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
+                    sizer.SetLabel('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
                 
     def SetViewDirText(VD):
         page = getSelection()
@@ -8518,6 +8519,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -8529,7 +8531,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         V = G2mth.prodQVQ(G2mth.invQ(Q),V)
         DQ = G2mth.AVdeg2Q(A,V)
         Q = G2mth.prodQQ(Q,DQ)
-        rbObj['Orient'][0] = Q
+        rbObj['Orient'][0][:] = Q
         SetRBOrienText()
         
     def SetRBRotationZ(newxy):                        
@@ -8539,6 +8541,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         A = [0,0]
@@ -8556,7 +8559,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         Qy = G2mth.AVdeg2Q(A[1],V)
         Q = G2mth.prodQQ(Q,Qx)
         Q = G2mth.prodQQ(Q,Qy)
-        rbObj['Orient'][0] = Q
+        rbObj['Orient'][0][:] = Q
         SetRBOrienText()
 
     def RenderBox():

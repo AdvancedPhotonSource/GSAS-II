@@ -2622,26 +2622,28 @@ from fullrmc.sincConvolution import sincConvolution
 from fullrmc.Globals import LOGGER
 from fullrmc.Engine import Engine
 from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
-from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
 from fullrmc.Constraints.StructureFactorConstraints import ReducedStructureFactorConstraint
 from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
 from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
-from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
 from fullrmc.Generators.Swaps import SwapPositionsGenerator
-from fullrmc.Core.GroupSelector import RecursiveGroupSelector
-from fullrmc.Selectors.RandomSelectors import RandomSelector
-from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
-from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
-from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
-from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGenerator
-from fullrmc.Core.Collection import get_principal_axis
 from fullrmc.debugStuff import *
 InvokeDebugOpts()
 time0 = time.time()
 SwapGen = {}
 # engine setup\n'''
+#Unused imports
+# from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
+# from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
+# from fullrmc.Core.GroupSelector import RecursiveGroupSelector
+# from fullrmc.Selectors.RandomSelectors import RandomSelector
+# from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
+# from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
+# from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
+# from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGenerator
+# from fullrmc.Core.Collection import get_principal_axis
+#End unused imports
     rundata += 'LOGGER.set_log_file_basename("%s")\n'%pName
     rundata += 'engineFileName = "%s.rmc"\n'%pName
     rundata += 'ENGINE = Engine(path=None)\n'

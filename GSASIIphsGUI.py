@@ -4637,7 +4637,7 @@ def UpdatePhaseData(G2frame,Item,data):
                           'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)',True],
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)',True],
                           'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)',True],}
-                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':False,
+                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':True,
                     'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
                     'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
                     'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,'Torsions':[],'Torsion Weight':1.e-5,
@@ -4804,7 +4804,7 @@ Make sure your parameters are correctly set.
             if 'moleculePdb' not in RMCPdict:
                 RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
             if 'byMolec' not in RMCPdict:
-                RMCPdict['byMolec'] = False
+                RMCPdict['byMolec'] = True
             if 'Natoms' not in RMCPdict:
                 RMCPdict['Natoms'] = 1
             if 'FitScale' not in RMCPdict:
@@ -4836,11 +4836,11 @@ Make sure your parameters are correctly set.
             elif ifP1:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
                 lineSizer.Add(GetSuperSizer(),0,WACV)
-                bymolec = wx.CheckBox(G2frame.FRMC,label='Save in molecule order?')
-                bymolec.SetValue(RMCPdict['byMolec'])
-                bymolec.Bind(wx.EVT_CHECKBOX,OnByMolec)
-                lineSizer.Add(bymolec,0,WACV)
-                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per molecule '),0,WACV)
+                # bymolec = wx.CheckBox(G2frame.FRMC,label='Save in molecule order?')
+                # bymolec.SetValue(RMCPdict['byMolec'])
+                # bymolec.Bind(wx.EVT_CHECKBOX,OnByMolec)
+                # lineSizer.Add(bymolec,0,WACV)
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
                 lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',min=1,size=[40,25]),0,WACV)
             else:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))

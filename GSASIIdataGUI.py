@@ -6087,7 +6087,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMLABEL,'Atom label','Select atoms first')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMCOLOR,'Atom color','Select atoms first')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMRESETCOLOR,'Reset atom colors','Resets all atom colors to defaults')
-#        self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii') # TODO: removed until it can be made to do something
+        self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii') # TODO: removed until it can be made to do something
         self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'View point','View point is 1st atom selected')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')

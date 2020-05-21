@@ -4365,7 +4365,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Pairs= []
                 atSeq = RMCPdict['atSeq']
                 lenA = len(atSeq)
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                     Pairs += pair
                 RMCPdict['Pairs'] = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 if RMCPdict['useBVS']:
@@ -4406,10 +4406,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' BVS weight: '),0,WACV)
                 for itype in range(nTypes):
                     atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,min=0.),0,WACV)
-            atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
-            for iType in range(nTypes):
-                atId = RMCPdict['atSeq'][iType]
-                atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
+            if G2frame.RMCchoice == 'RMCProfile':
+                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
+                for iType in range(nTypes):
+                    atId = RMCPdict['atSeq'][iType]
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
             return atmChoice
         
         def GetSwapSizer(RMCPdict):
@@ -4576,10 +4577,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         Indx[corrChk.GetId()] = fil
                         corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
                         fileSizer.Add(corrChk,0,WACV)
-                        delBtn = wx.Button(G2frame.FRMC,label='Delete')
-                        delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
-                        Indx[delBtn.GetId()] = fil
-                        fileSizer.Add(delBtn,0,WACV)
+                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
+                    Indx[delBtn.GetId()] = fil
+                    fileSizer.Add(delBtn,0,WACV)
                 else:
                     RMCPdict['files'][fil][0] = 'Select'
                     fileSizer.Add((5,5),0)
@@ -4629,7 +4630,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 atSeq = list(aTypes.keys())
                 lenA = len(atSeq)
                 Pairs= []
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)',True],
@@ -4714,6 +4715,7 @@ Make sure your parameters are correctly set.
                         print(' Make PDB file for fullrmc abandonded')
                 finally:
                     dlg.Destroy()
+                wx.CallAfter(UpdateRMC)
                 
             def OnAddAngle(event):
                 RMCPdict['Angles'].append(['','','',0.,0.])
@@ -4740,7 +4742,7 @@ Make sure your parameters are correctly set.
                     RMCPdict['ReStart'][1] = True
                 
                 Indx = {}
-                atChoice = RMCPdict['atSeq']
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 angleSizer = wx.FlexGridSizer(6,5,5)
                 fxcnLabels = [' ','Atom-A','Atom-B','Atom-C',' min angle',' max angle']
                 for lab in fxcnLabels:
@@ -4777,6 +4779,7 @@ Make sure your parameters are correctly set.
                     RMCPdict['ReStart'][1] = True
                 
                 Indx = {}
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 torsionSizer = wx.FlexGridSizer(11,5,5)
                 fxcnLabels = [' ','Atom-A','Atom-B','Atom-C','Atom-D',' min angle1',' max angle1',' min angle2',' max angle2',' min angle3',' max angle3']
                 for lab in fxcnLabels:
@@ -4787,7 +4790,7 @@ Make sure your parameters are correctly set.
                     Indx[delBtn.GetId()] = ifx
                     torsionSizer.Add(delBtn,0,WACV)
                     for i in [0,1,2,3]:
-                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
                         atmSel.SetStringSelection(torsion[i])
                         atmSel.Bind(wx.EVT_COMBOBOX,OnTorsionAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
@@ -4934,12 +4937,12 @@ Make sure your parameters are correctly set.
                 atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]
                 lenA = len(atSeq)
                 Pairs= []
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 BVSpairs = []
                 if lenA > 1:
-                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)] and 'Va' not in pair:
                         BVSpairs += pair
                 BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
@@ -5076,7 +5079,7 @@ Make sure your parameters are correctly set.
                     RMCPdict['FxCN'][ifxCN][i] = Obj.GetStringSelection()
                 
                 fxcnSizer = wx.FlexGridSizer(8,5,5)
-                atChoice = RMCPdict['atSeq']
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 fxcnLabels = [' ','Atom-1','Atom-2','min dist','max dist','CN','fraction','weight']
                 for lab in fxcnLabels:
                     fxcnSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
@@ -5112,7 +5115,7 @@ Make sure your parameters are correctly set.
                     RMCPdict['AveCN'][ifxCN][i] = Obj.GetStringSelection()
                                
                 avcnSizer = wx.FlexGridSizer(7,5,5)
-                atChoice = RMCPdict['atSeq']
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 fxcnLabels = [' ','Atom-1','Atom-2','min dist','max dist','CN','weight']
                 for lab in fxcnLabels:
                     avcnSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
@@ -5149,7 +5152,7 @@ Make sure your parameters are correctly set.
                 def SetRestart1(invalid,value,tc):
                     RMCPdict['ReStart'][1] = True
                 
-                atChoice = RMCPdict['atSeq']
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 angleSizer = wx.FlexGridSizer(8,5,5)
                 fxcnLabels = [' ','Atom-A','Atom-B','Atom-C',' ABC angle','AB dist','BC dist','potential']
                 for lab in fxcnLabels:
@@ -5187,7 +5190,7 @@ Make sure your parameters are correctly set.
                 def SetRestart1(invalid,value,tc):
                     RMCPdict['ReStart'][1] = True
                 
-                atChoice = RMCPdict['atSeq']
+                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
                 bondSizer = wx.FlexGridSizer(5,5,5)
                 fxcnLabels = [' ','Atom-A','Atom-B',' AB dist','potential']
                 for lab in fxcnLabels:

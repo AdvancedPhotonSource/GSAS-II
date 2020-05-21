@@ -2508,8 +2508,12 @@ def FindBonds(Phase,RMCPdict):
     for FrstName in AtDict:
         nbrs = G2mth.FindAllNeighbors(Phase,FrstName,list(AtDict.keys()),notName=notNames,Short=True)[0]
         Atyp1 = AtDict[FrstName]
+        if 'Va' in Atyp1:
+            continue
         for nbr in nbrs:
             Atyp2 = AtDict[nbr[0]]
+            if 'Va' in Atyp2:
+                continue
             try:
                 bndData = Pairs[' %s-%s'%(Atyp1,Atyp2)][1:]
             except KeyError:
@@ -2613,6 +2617,7 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     rundata += '''
 # fullrmc imports (all that are potentially useful)
 import numpy as np
+import time
 from fullrmc.sincConvolution import sincConvolution
 from fullrmc.Globals import LOGGER
 from fullrmc.Engine import Engine
@@ -2634,6 +2639,7 @@ from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGen
 from fullrmc.Core.Collection import get_principal_axis
 from fullrmc.debugStuff import *
 InvokeDebugOpts()
+time0 = time.time()
 SwapGen = {}
 # engine setup\n'''
     rundata += 'LOGGER.set_log_file_basename("%s")\n'%pName
@@ -2742,6 +2748,7 @@ SwapGen = {}
         rundata += '        ENGINE.set_groups_as_atoms()\n'
         rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
     rundata += 'ENGINE.close()\n'
+    rundata += 'print("ENGINE run time %.2f s"%(time.time()-time0))\n'
     rfile = open(rname,'w')
     rfile.writelines(rundata)
     rfile.close()
@@ -2754,6 +2761,7 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     Atseq = RMCPdict['atSeq']
     Dups,Fracs = findDup(Phase['Atoms'])
     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
+    ifSfracs = np.any(np.array(Sfracs)-1.)
     Supercell = RMCPdict['SuperCell']
     Cell = generalData['Cell'][1:7]
     Trans = np.eye(3)*np.array(Supercell)
@@ -2763,34 +2771,37 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False,Force=False)
     Atoms = newPhase['Atoms']
 
-    Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
-    Natm = np.count_nonzero(Natm-1)
-    Atoms = newPhase['Atoms']
-    Satoms = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms,5),4),3)
-    Datoms = [[atom for atom in Satoms if atom[0] in dup] for dup in Dups]
-    Natoms = []
-    for idup,dup in enumerate(Dups):
-        ldup = len(dup)
-        datoms = Datoms[idup]
-        natm = len(datoms)
-        i = 0
-        while i < natm:
-            atoms = datoms[i:i+ldup]
-            try:
-                atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
-                Natoms.append(atom)
-            except IndexError:      #what about vacancies?
-                if 'Va' not in Atseq:
-                    Atseq.append('Va')
-                    RMCPdict['aTypes']['Va'] = 0.0
-                atom = atoms[0]
-                atom[1] = 'Va'
-                Natoms.append(atom)
-            i += ldup
-
-
-
-
+    if ifSfracs:
+        Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
+        Natm = np.count_nonzero(Natm-1)
+        Satoms = []
+        for i in range(len(Atoms)//Natm):
+            ind = i*Natm
+            Satoms.append(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms[ind:ind+Natm],5),4),3))
+        Natoms = []
+        for satoms in Satoms:
+            for idup,dup in enumerate(Dups):
+                ldup = len(dup)
+                natm = len(satoms)
+                i = 0
+                while i < natm:
+                    if satoms[i][0] in dup:
+                        atoms = satoms[i:i+ldup]
+                        try:
+                            atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
+                            Natoms.append(atom)
+                        except IndexError:      #what about vacancies?
+                            if 'Va' not in Atseq:
+                                Atseq.append('Va')
+                                RMCPdict['aTypes']['Va'] = 0.0
+                            atom = atoms[0]
+                            atom[1] = 'Va'
+                            Natoms.append(atom)
+                        i += ldup
+                    else:
+                       i += 1
+    else:
+        Natoms = Atoms
 
     XYZ = np.array([atom[3:6] for atom in Natoms]).T
     XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.

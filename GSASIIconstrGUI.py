@@ -15,6 +15,7 @@ Used to define constraints and rigid bodies.
 
 '''
 from __future__ import division, print_function
+import platform
 import sys
 import copy
 import os.path
@@ -45,6 +46,97 @@ import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 
+class G2BoolEditor(wg.GridCellBoolEditor):
+    '''Substitute for wx.grid.GridCellBoolEditor except toggles 
+    grid items immediately when opened, updates grid & table contents after every
+    item change
+    '''
+    def __init__(self):
+        self.saveVals = None
+        wx.grid.GridCellBoolEditor.__init__(self)
+
+
+    def Create(self, parent, id, evtHandler):
+        '''Create the editing control (wx.CheckBox) when cell is opened 
+        for edit
+        '''
+        self._tc = wx.CheckBox(parent, -1, "")
+        self._tc.Bind(wx.EVT_CHECKBOX, self.onCheckSet)
+        self.SetControl(self._tc)
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+
+    def onCheckSet(self, event):
+        '''Callback used when checkbox is toggled.
+        Makes change to table immediately (creating event)
+        '''
+        if self.saveVals:
+            self.ApplyEdit(*self.saveVals)
+
+        
+    def SetSize(self, rect):
+        '''Set position/size the edit control within the cell's rectangle.
+        '''
+#        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2, # older
+        self._tc.SetSize(rect.x, rect.y, rect.width+2, rect.height+2,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+    def BeginEdit(self, row, col, grid):
+        '''Prepares the edit control by loading the initial 
+        value from the table (toggles it since you would not 
+        click on it if you were not planning to change it), 
+        buts saves the original, pre-change value.
+        Makes change to table immediately.
+        Saves the info needed to make updates in self.saveVals.
+        Sets the focus.
+        '''
+        self.startValue = int(grid.GetTable().GetValue(row, col))
+        self.saveVals = row, col, grid
+        # invert state and set in editor
+        if self.startValue:
+            grid.GetTable().SetValue(row, col, 0)
+            self._tc.SetValue(0)
+        else:
+            grid.GetTable().SetValue(row, col, 1)
+            self._tc.SetValue(1)
+        self._tc.SetFocus()
+        self.ApplyEdit(*self.saveVals)
+
+    def EndEdit(self, row, col, grid, oldVal=None):
+        '''End editing the cell.  This is supposed to
+        return None if the value has not changed, but I am not 
+        sure that actually works. 
+        '''
+        val = int(self._tc.GetValue())
+        if val != oldVal:   #self.startValue:?
+            return val
+        else:
+            return None
+
+    def ApplyEdit(self, row, col, grid):
+        '''Save the value into the table, and create event. 
+        Called after EndEdit(), BeginEdit and onCheckSet.
+        '''
+        val = int(self._tc.GetValue())
+        grid.GetTable().SetValue(row, col, val) # update the table
+
+    def Reset(self):
+        '''Reset the value in the control back to its starting value.
+        '''
+        self._tc.SetValue(self.startValue)
+
+    def StartingClick(self):
+        '''This seems to be needed for BeginEdit to work properly'''
+        pass
+
+    def Destroy(self):
+        "final cleanup"
+        super(G2BoolEditor, self).Destroy()
+
+    def Clone(self):
+        'required'
+        return G2BoolEditor()
+    
 class DragableRBGrid(wg.Grid):
     '''Simple grid implentation for display of rigid body positions.
 
@@ -61,13 +153,16 @@ class DragableRBGrid(wg.Grid):
         gridmovers.GridRowMover(self)
         self.Bind(gridmovers.EVT_GRID_ROW_MOVE, self.OnRowMove, self)
         self.SetColSize(0, 60)
-        self.SetColSize(1, 35)
-        self.SetColSize(5, 40)
+        self.SetColSize(1, 40)
+        self.SetColSize(2, 35)
         for r in range(len(rb['RBlbls'])):
             self.SetReadOnly(r,0,isReadOnly=True)
-            self.SetCellEditor(r,2, wg.GridCellFloatEditor())
+            self.SetCellEditor(r, 1, G2BoolEditor())            
+            self.SetCellRenderer(r, 1, wg.GridCellBoolRenderer())
+            self.SetReadOnly(r,2,isReadOnly=True)
             self.SetCellEditor(r,3, wg.GridCellFloatEditor())
             self.SetCellEditor(r,4, wg.GridCellFloatEditor())
+            self.SetCellEditor(r,6, wg.GridCellFloatEditor())
 
     def OnRowMove(self,evt):
         'called when a row move needs to take place'
@@ -88,7 +183,7 @@ class RBDataTable(wg.GridTableBase):
     '''
     def __init__(self,rb,onChange):
         wg.GridTableBase.__init__(self)
-        self.colLabels = ['Label','Type','x','y','z','Select']
+        self.colLabels = ['Label','Select','Type','x','y','z']
         self.coords = rb['RBcoords']
         self.labels = rb['RBlbls']
         self.types = rb['RBtypes']
@@ -108,34 +203,26 @@ class RBDataTable(wg.GridTableBase):
         if col == 0:
             return self.labels[row]
         elif col == 1:
+            return int(self.select[row])
+        elif col == 2:
             return self.types[row]
-        elif col < 5:
-            return '{:.5f}'.format(self.coords[row][col-2])
-        elif col == 5:
-            return self.select[row]
+        else:
+            return '{:.5f}'.format(self.coords[row][col-3])
     def SetValue(self, row, col, value):
         row = self.index[row]
-        if col == 0:
-            self.labels[row] = value
-        elif col == 1:
-            self.types[row] = value
-        elif col < 5:
-            self.coords[row][col-2] = float(value)
-        elif col == 5:
-            self.select[row] = value
+        try:
+            if col == 0:
+                self.labels[row] = value
+            elif col == 1:
+                self.select[row] = int(value)
+            elif col == 2:
+                self.types[row] = value
+            else:
+                self.coords[row][col-3] = float(value)
+        except:
+            pass
         if self.onChange:
             self.onChange()
-    # implement boolean for selection
-    def GetTypeName(self, row, col):
-        if col==5:
-            return wg.GRID_VALUE_BOOL
-        else:
-            return wg.GRID_VALUE_STRING
-    def CanGetValueAs(self, row, col, typeName):
-        if col==5 and typeName != wg.GRID_VALUE_BOOL:
-            return False
-        return True
-
     # Display column & row labels
     def GetColLabelValue(self, col):
         return self.colLabels[col]
@@ -2026,8 +2113,9 @@ def UpdateRigidBodies(G2frame,data):
                 
             def onSetAll(event):
                 'Set all atoms as selected'
+                grid.completeEdits()
                 for i in range(len(rd.Phase['RBselection'])):
-                    rd.Phase['RBselection'][i] = True
+                    rd.Phase['RBselection'][i] = 1 # table needs 0/1 for T/F
                 grid.ForceRefresh()
                 UpdateDraw()
                 
@@ -2035,7 +2123,7 @@ def UpdateRigidBodies(G2frame,data):
                 'Toggles selection state for all atoms'
                 grid.completeEdits()
                 for i in range(len(rd.Phase['RBselection'])):
-                    rd.Phase['RBselection'][i] = not rd.Phase['RBselection'][i]
+                    rd.Phase['RBselection'][i] = int(not rd.Phase['RBselection'][i])
                 grid.ForceRefresh()
                 UpdateDraw()
                 
@@ -2062,55 +2150,119 @@ def UpdateRigidBodies(G2frame,data):
                         count += 1
                         center += rd.Phase['RBcoords'][i]
                 if not count:
+                    G2G.G2MessageBox(G2frame,'No atoms selected',
+                                    'Selection required')
                     return
-                XP = center/count
-                if np.sqrt(sum(XP**2)) < 0.1:
+                XYZP = center/count
+                if np.sqrt(sum(XYZP**2)) < 0.1:
                     G2G.G2MessageBox(G2frame,
                             'The selected atom(s) are too close to the origin',
                             'near origin')
                     return
-                XP /= np.sqrt(np.sum(XP**2))
-                Z = np.array((0,0,1.))
-                YP = np.cross(Z,XP)
-                ZP = np.cross(XP,YP)
+                if bntOpts['direction'] == 'y':
+                    YP = XYZP / np.sqrt(np.sum(XYZP**2))
+                    ZP = np.cross((1,0,0),YP)
+                    if sum(ZP*ZP) < .1: # pathological condition: Y' along X
+                        ZP = np.cross((0,0,1),YP)
+                    XP = np.cross(YP,ZP)
+                elif bntOpts['direction'] == 'z':
+                    ZP = XYZP / np.sqrt(np.sum(XYZP**2))
+                    XP = np.cross((0,1,0),ZP)
+                    if sum(XP*XP) < .1: # pathological condition: X' along Y
+                        XP = np.cross((0,0,1),ZP)
+                    YP = np.cross(ZP,XP)
+                else:
+                    XP = XYZP / np.sqrt(np.sum(XYZP**2))
+                    YP = np.cross((0,0,1),XP)
+                    if sum(YP*YP) < .1: # pathological condition: X' along Z
+                        YP = np.cross((0,1,0),XP)
+                    ZP = np.cross(XP,YP)
                 trans = np.array((XP,YP,ZP))
                 # update atoms in place
                 rd.Phase['RBcoords'][:] = np.inner(trans,rd.Phase['RBcoords']).T
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onSetPlane(event):
+            def onSetPlane(event): 
                 '''Compute least-squares plane for selected atoms; 
                 move atoms so that LS plane aligned with x-y plane, 
                 with minimum required change to x
                 '''
                 grid.completeEdits()
-                #X,Y,Z = rd.Phase['RBcoords'][rd.Phase['RBselection']].T
-                XYZ = rd.Phase['RBcoords'][rd.Phase['RBselection']]
-                Z = copy.copy(XYZ[:,2])
-                if len(Z) < 3: 
+                selList = [i==1 for i in rd.Phase['RBselection']]
+                XYZ = rd.Phase['RBcoords'][selList]
+                if len(XYZ) < 3: 
                     G2G.G2MessageBox(G2frame,'A plane requires three or more atoms',
                                      'Need more atoms')
                     return
-                XY0 = copy.copy(XYZ)
-                XY0[:,2] = 1
+                # fit 3 ways (in case of singularity) and take result with lowest residual
+                X,Y,Z = [XYZ[:,i] for i in (0,1,2)]
+                XZ = copy.copy(XYZ)
+                XZ[:,1] = 1
+                (a,d,b), resd, rank, sing = nl.lstsq(XZ, -Y)
+                resid_min = resd
+                normal = a,1,b
+                YZ = copy.copy(XYZ)
+                YZ[:,0] = 1
+                (d,a,b), resd, rank, sing = nl.lstsq(YZ, -X)
+                if resid_min > resd:
+                    resid_min = resd
+                    normal = 1,a,b
+                XY = copy.copy(XYZ)
+                XY[:,2] = 1
+                (a,b,d), resd, rank, sing = nl.lstsq(XY, -Z)
+                if resid_min > resd:
+                    resid_min = resd
+                    normal = a,b,1
                 # solve for  ax + bx + z + c = 0 or equivalently ax + bx + c = -z
-                try:
-                    (a,b,c), resd, rank, sing = nl.lstsq(XY0, -Z)
-                except: 
-                    G2G.G2MessageBox(G2frame,
-                            'Error computing plane; are atoms in a line?',
-                            'Computation error')
+                # try:
+                # except: 
+                #     G2G.G2MessageBox(G2frame,
+                #             'Error computing plane; are atoms in a line?',
+                #             'Computation error')
+                #     return
+                if bntOpts['plane'] == 'xy':
+                    # new coordinate system is
+                    #   ZP, z' normal to plane
+                    #   YP, y' = z' cross x (= [0,1,-b])
+                    #   XP, x' = (z' cross x) cross z'
+                    # this puts XP as close as possible to X with XP & YP in plane
+                    ZP = np.array(normal)
+                    ZP /= np.sqrt(np.sum(ZP**2))
+                    YP = np.cross(ZP,[1,0,0])
+                    if sum(YP*YP) < .1: # pathological condition: z' along x
+                        YP = np.cross(ZP,[0,1,0])
+                    YP /= np.sqrt(np.sum(YP**2))
+                    XP = np.cross(YP,ZP)
+                elif bntOpts['plane'] == 'yz':
+                    # new coordinate system is
+                    #   XP, x' normal to plane
+                    #   ZP, z' = x' cross y
+                    #   YP, y' = (x' cross y) cross x' 
+                    # this puts y' as close as possible to y with z' & y' in plane
+                    XP = np.array(normal)
+                    XP /= np.sqrt(np.sum(XP**2))
+                    ZP = np.cross(XP,[0,1,0])
+                    if sum(ZP*ZP) < .1: # pathological condition: x' along y
+                        ZP = np.cross(XP,(0,0,1))
+                    ZP /= np.sqrt(np.sum(ZP**2))
+                    YP = np.cross(ZP,XP)
+                elif bntOpts['plane'] == 'xz':
+                    # new coordinate system is
+                    #   YP, y' normal to plane
+                    #   ZP, z' = x cross y'
+                    #   XP, y' = (x cross y') cross z' 
+                    # this puts XP as close as possible to X with XP & YP in plane
+                    YP = np.array(normal)
+                    YP /= np.sqrt(np.sum(YP**2))
+                    ZP = np.cross([1,0,0],YP)
+                    if sum(ZP*ZP) < .1: # pathological condition: y' along x
+                        ZP = np.cross([0,1,0],YP)
+                    ZP /= np.sqrt(np.sum(ZP**2))
+                    XP = np.cross(YP,ZP)
+                else:
+                    print('unexpected plane',bntOpts['plane'])
                     return
-                # new coordinate system is z' (zp, normal to plane = [a,b,1]),
-                # y' = z' cross x (YP, = [0,1,-b])
-                # x' = (z' cross x) cross z'
-                # this puts XP as close as possible to X with XP & YP in plane
-                ZP = np.array([a,b,1])
-                ZP /= np.sqrt(np.sum(ZP**2))
-                YP = np.array([0,1,-b])
-                YP /= np.sqrt(np.sum(YP**2))
-                XP = np.cross(YP,ZP)
                 trans = np.array((XP,YP,ZP))
                 # update atoms in place
                 rd.Phase['RBcoords'][:] = np.inner(trans,rd.Phase['RBcoords']).T
@@ -2183,25 +2335,21 @@ def UpdateRigidBodies(G2frame,data):
             plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
 
             rd.Phase['RBindex'] = list(range(len(rd.Phase['RBtypes'])))
-            rd.Phase['RBselection'] = len(rd.Phase['RBtypes']) * [True]
+            rd.Phase['RBselection'] = len(rd.Phase['RBtypes']) * [1]
             rbData = MakeVectorBody()
             DrawCallback = G2plt.PlotRigidBody(G2frame,'Vector',
                                     AtInfo,rbData,plotDefaults)
 
             mainSizer = wx.BoxSizer(wx.HORIZONTAL)
-            gridSizer = wx.BoxSizer(wx.VERTICAL)
-            grid = DragableRBGrid(RBImpPnl,rd.Phase,UpdateDraw)
-            gridSizer.Add(grid)
-            gridSizer.Add(
+            btnSizer = wx.BoxSizer(wx.VERTICAL)
+            btnSizer.Add(
                 wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorder atoms by dragging'),
                 0,wx.ALL)
-            mainSizer.Add(gridSizer)
-            mainSizer.Add((5,5))
-            btnSizer = wx.BoxSizer(wx.VERTICAL)
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'Set All')
+            btnSizer.Add((-1,15))
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Set All')
             btn.Bind(wx.EVT_BUTTON,onSetAll)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'Toggle')
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Toggle')
             btn.Bind(wx.EVT_BUTTON,onToggle)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,15))
@@ -2209,24 +2357,36 @@ def UpdateRigidBodies(G2frame,data):
                 wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorient using selected\natoms...'),
                 0,wx.ALL)
             btnSizer.Add((-1,5))
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'Set origin')
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Set origin')
             btn.Bind(wx.EVT_BUTTON,onSetOrigin)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'Place in xy plane')
+
+            bntOpts = {'plane':'xy','direction':'x'}
+            inSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Place in plane')
             btn.Bind(wx.EVT_BUTTON,onSetPlane)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'Define selection as X')
+            inSizer.Add(btn)
+            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('xy','yz','xz'),
+                                           None,None,bntOpts,'plane'))
+            btnSizer.Add(inSizer,0,wx.ALIGN_CENTER)
+            
+            inSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Define as')
             btn.Bind(wx.EVT_BUTTON,onSetX)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            inSizer.Add(btn)
+            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('x','y','z'),
+                                           None,None,bntOpts,'direction'))
+            btnSizer.Add(inSizer,0,wx.ALIGN_CENTER)
+            
             btnSizer.Add((-1,15))
             btnSizer.Add(
                 wx.StaticText(RBImpPnl,wx.ID_ANY,'Use selected atoms to\ncreate...'),
                 0,wx.ALL)
             btnSizer.Add((-1,5))
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'a Vector Body')
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'a Vector Body')
             btn.Bind(wx.EVT_BUTTON,onAddVector)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btn = wx.Button(RBImpPnl, wx.ID_OK, 'a Residue Body')
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'a Residue Body')
             btn.Bind(wx.EVT_BUTTON,onAddResidue)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btn = wx.Button(RBImpPnl, wx.ID_CANCEL)
@@ -2235,6 +2395,9 @@ def UpdateRigidBodies(G2frame,data):
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
 
             mainSizer.Add(btnSizer)
+            mainSizer.Add((5,5))
+            grid = DragableRBGrid(RBImpPnl,rd.Phase,UpdateDraw)
+            mainSizer.Add(grid)
             RBImpPnl.SetSizer(mainSizer,True)
             mainSizer.Layout()    
             Size = mainSizer.GetMinSize()
@@ -2298,11 +2461,24 @@ def UpdateRigidBodies(G2frame,data):
             UpdateVectorBody(rb)
             return rb
 
+        # too lazy to figure out why wx crashes
+        if wx.__version__.split('.')[0] != '4':
+            wx.MessageBox('Sorry, wxPython 4.x is required to run this command',
+                                  caption='Update Python',
+                                  style=wx.ICON_EXCLAMATION)
+            return
+        if platform.python_version()[:1] == '2':
+            wx.MessageBox('Sorry, Python >=3.x is required to run this command',
+                                  caption='Update Python',
+                                  style=wx.ICON_EXCLAMATION)
+            return
+
         # get importer type and a phase file of that type
         G2sc.LoadG2fil()
         choices = [rd.formatName for  rd in G2sc.Readers['Phase']] 
         dlg = G2G.G2SingleChoiceDialog(G2frame,'Select the format of the file',
                                      'select format',choices)
+        dlg.CenterOnParent()
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 col = dlg.GetSelection()

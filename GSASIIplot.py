@@ -7919,10 +7919,19 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
 ##### PlotStructure
 ################################################################################
             
-def PlotStructure(G2frame,data,firstCall=False):
+def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
     arrows according to spin state
+
+    :param wx.Frame G2frame: main GSAS-II window
+    :param dict data: dict with plotting information
+      (see :ref:`Phase Tree object<Phase_table>`)
+    :param bool firstCall: If True, this is the initial call and causes
+      the plot to be shown twice (needed for Mac and possibly linux)
+    :param function pageCallback: a callback function to 
+      update items on the parent page. Currently implemented for
+      RB Models tab only
     '''
 
     def FindPeaksBonds(XYZ):
@@ -8303,14 +8312,24 @@ def PlotStructure(G2frame,data,firstCall=False):
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
                 for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
-                    sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orig'][0][i]))
-                    
+                    sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
+        if pageCallback:
+            try:
+                pageCallback()
+            except:
+                pass
+            
     def SetRBOrienText():
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
                 for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
                     sizer.SetLabel('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
+        if pageCallback:
+            try:
+                pageCallback()
+            except:
+                pass
                 
     def SetViewDirText(VD):
         page = getSelection()
@@ -8448,7 +8467,9 @@ def PlotStructure(G2frame,data,firstCall=False):
         SetViewPointText([Tx,Ty,Tz])
         
     def SetRBTranslation(newxy):
-#first get translation vector in screen coords.       
+#first get translation vector in screen coords.
+        if 'fixOrig' in rbObj:
+            if rbObj['fixOrig']: return
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -8461,7 +8482,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         Tx -= V[0]*0.01
         Ty -= V[1]*0.01
         Tz -= V[2]*0.01
-        rbObj['Orig'][0] =  Tx,Ty,Tz
+        rbObj['Orig'][0][:] =  Tx,Ty,Tz
         SetRBOrigText()
         
     def SetRotation(newxy):

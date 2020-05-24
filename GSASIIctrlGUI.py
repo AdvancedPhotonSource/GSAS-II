@@ -1874,7 +1874,11 @@ class G2MultiChoiceWindow(wx.BoxSizer):
             ) # Note anything previously checked will be cleared.
         if self.OnChange:
             self.OnChange(self.GetSelections(),*self.OnChangeArgs)
-        self.SelectList.clear()
+        try:
+            self.SelectList.clear()
+        except:  # patch: clear not in EPD
+            for i in reversed((range(len(self.SelectList)))):
+                del self.SelectList[i]
         for i,val in enumerate(self.Selections):
             if val: self.SelectList.append(i)
 
@@ -3395,6 +3399,7 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     #if GSASIIpath.GetConfigValue('debug'): print('debug: GetImportFile from '+defaultDir)
     dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,
                         style=style, **kwargs)
+    dlg.CenterOnParent()
     pth = GetImportPath(G2frame)
     if not defaultDir and pth: dlg.SetDirectory(pth)
     try:
@@ -4114,7 +4119,14 @@ class GSGrid(wg.Grid):
             wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
             if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
             if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
-                                                    
+
+    def completeEdits(self):
+        'complete any outstanding edits'
+        if self.IsCellEditControlEnabled(): # complete any grid edits in progress
+            self.SaveEditControlValue()
+            #self.HideCellEditControl()
+            #self.DisableCellEditControl()
+                
 ################################################################################           
 class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix but pygridtablebase doesn't exist
     '''Basic data table for use with GSgrid

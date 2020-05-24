@@ -6087,7 +6087,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMLABEL,'Atom label','Select atoms first')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMCOLOR,'Atom color','Select atoms first')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMRESETCOLOR,'Reset atom colors','Resets all atom colors to defaults')
-        self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii') # TODO: removed until it can be made to do something
+#        self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii') # TODO: removed until it can be made to do something
         self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'View point','View point is 1st atom selected')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')
@@ -6180,8 +6180,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit Body')
-        self.RigidBodiesEdit.Append(G2G.wxID_ASSIGNATMS2RB,'Assign atoms to rigid body',
-            'Select & position rigid body in structure of existing atoms')
+        self.RigidBodiesEdit.Append(G2G.wxID_ASSIGNATMS2RB,'Locate && Insert Rigid Body',
+            'Locate rigid body in structure mapping to existing atoms')
         self.RigidBodiesEdit.Append(G2G.wxID_AUTOFINDRESRB,'Auto find residues',
             'Auto find of residue RBs in macromolecule')
         self.RigidBodiesEdit.Append(G2G.wxID_COPYRBPARMS,'Copy rigid body parms',

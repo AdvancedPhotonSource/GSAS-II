@@ -43,6 +43,7 @@ import sys
 import random as ran
 import subprocess as subp
 import distutils.file_util as disfile
+import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -4588,7 +4589,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
             return fileSizer
-            
+        
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
@@ -6987,9 +6988,9 @@ Make sure your parameters are correctly set.
                         if iwave < len(waveBlk)-1:
                             Waves.Add((5,5),0)                
                         else:
-                            waveDel = wx.CheckBox(waveData,label='Delete?')
+                            waveDel = wx.Button(waveData,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
                             Indx[waveDel.GetId()] = [Stype,iwave]
-                            waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
+                            waveDel.Bind(wx.EVT_BUTTON,OnDelWave)
                             Waves.Add(waveDel,0,WACV)
                         waveSizer.Add(Waves)                    
                 return waveSizer
@@ -9256,13 +9257,16 @@ Make sure your parameters are correctly set.
                     pass
                 
             topSizer = wx.FlexGridSizer(0,6,5,5)
-            Orig = RBObj['Orig'][0]
+            if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
+                if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
+                RBObj['Orig'][0] = list(RBObj['Orig'][0])
             Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
             Orien = [Orien,]
             Orien.extend(OrienV/nl.norm(OrienV))
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,WACV)
-            for ix,x in enumerate(Orig):
-                origX = G2G.ValidatedTxtCtrl(RigidBodies,Orig,ix,nDig=(8,5),OnLeave=OnOrigX)
+            for ix in range(3):
+                origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
+                                    typeHint=float,OnLeave=OnOrigX)
                 topSizer.Add(origX,0,WACV)
             topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
@@ -9317,8 +9321,8 @@ Make sure your parameters are correctly set.
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
             rbId = RBObj['RBId']
-            delRB = wx.CheckBox(RigidBodies,-1,'Delete?')
-            delRB.Bind(wx.EVT_CHECKBOX,OnDelResRB)
+            delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
+            delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
             resrbSizer.Add(topLine)
@@ -9369,8 +9373,8 @@ Make sure your parameters are correctly set.
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 'Name: '+RBObj['RBname']+'   '),0,WACV)
             rbId = RBObj['RBId']
-            delRB = wx.CheckBox(RigidBodies,-1,'Delete?')
-            delRB.Bind(wx.EVT_CHECKBOX,OnDelVecRB)
+            delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
+            delRB.Bind(wx.EVT_BUTTON,OnDelVecRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
             vecrbSizer.Add(topLine)
@@ -9423,6 +9427,10 @@ Make sure your parameters are correctly set.
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies')
         if not Id:
+            G2frame.CheckNotebook()
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies')
+        if not Id:
+            print('Strange! Why no Rigid Bodies tree entry?')
             return
         RBData = G2frame.GPXtree.GetItemPyData(Id)
         Indx = {}
@@ -9496,7 +9504,413 @@ Make sure your parameters are correctly set.
         wx.CallAfter(FillRigidBodyGrid,True)
                 
     def OnRBAssign(event):
+        '''Assign RB to atoms in a phase with tools to locate the RB in the structure
+        '''
         
+        def assignAtoms(selDict={}):
+            '''Find the closest RB atoms to atoms in the structure 
+            If selDict is specified, it overrides the assignments to specify 
+            atoms that should be matched.
+            '''
+            rbType = data['testRBObj']['rbType']
+            rbObj = data['testRBObj']['rbObj']
+            rbId = rbObj['RBId']
+            rbAtmTypes = RBData[rbType][rbId]['rbTypes']
+            if 'atNames' in RBData[rbType][rbId]:
+                rbAtmLbs = RBData[rbType][rbId]['atNames']
+            else:
+                rbAtmLbs = None
+                
+            newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
+            atmTypes = [atomData[i][ct] for i in range(len(atomData))]
+            # remove assigned atoms from search groups
+            for i in selDict:
+                atmTypes[selDict[i]] = None
+            atmXYZ = G2mth.getAtomXYZ(atomData,cx)
+            # separate structure's atoms by type (w/o assigned atoms)
+            oXYZbyT = {}
+            atmNumByT = {}               
+            for t in set(atmTypes):
+                if t is None: continue
+                oXYZbyT[t] = np.array([atmXYZ[i] for i in range(len(atmXYZ)) if atmTypes[i] == t])
+                atmNumByT[t] = [i for i in range(len(atmXYZ)) if atmTypes[i] == t]
+            Ids = []
+            # create table of fixed and found assignments
+            matchTable = []
+            for i,xyz in enumerate(newXYZ):
+                t = rbAtmTypes[i]
+                if rbAtmLbs:
+                    lbl = rbAtmLbs[i]
+                else:
+                    lbl = ''
+                if i in selDict:
+                    searchXYZ = [atmXYZ[selDict[i]]] #assigned
+                    numLookup = [selDict[i]]
+                else:
+                    searchXYZ = oXYZbyT[t]
+                    numLookup = atmNumByT[t]
+                dist = G2mth.GetXYZDist(xyz,searchXYZ,Amat)
+                repeat = True
+                while repeat:
+                    repeat = False
+                    pidIndx = np.argmin(dist)
+                    d = dist[pidIndx]
+                    pid = numLookup[pidIndx]
+                    if atomData[pid][-1] in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
+                        repeat = True
+                        dist[pidIndx] = 100.
+                        if min(dist) == 100:
+                            print('no atom matches, how could this happen?')
+                            GSASIIpath.IPyBreak()
+                            return
+                Ids.append(atomData[pid][-1])
+                matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
+                                      + atomData[pid][cx:cx+3] + [d, Ids[-1]])
+            return matchTable
+            
+        def Draw():
+            '''Create the window for assigning RB to atoms'''
+            def OnOk(event):
+                'respond to OK button, set info into phase'
+                matchTable = UpdateTable()
+                dmax = 0.
+                Ids = []
+                for line in matchTable:
+                    xyz = line[2:5]
+                    pid = line[5]
+                    dmax = max(dmax,line[10])
+                    atomData[pid][cx:cx+3] = xyz
+                    Ids.append(line[11])
+                if dmax > 1.0:
+                    msg = "Atoms may not be properly located. Are you sure you want to do this?"
+                    dlg = wx.MessageDialog(G2frame,msg,caption='Continue?',style=wx.YES_NO|wx.ICON_EXCLAMATION)
+                    if dlg.ShowModal() != wx.ID_YES:
+                        #OkBtn.SetLabel('Not Ready')
+                        #OkBtn.Enable(False)
+                        return
+                    
+                rbType = data['testRBObj']['rbType']
+                rbObj['Ids'] = Ids
+                rbId = rbObj['RBId']
+                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                rbObj['RBname'] += ':'+str(RBData[rbType][rbId]['useCount'])
+                if type(rbObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple                
+                    if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
+                    rbObj['Orig'][0] = list(rbObj['Orig'][0])    # patch: somehow this was getting set as a tuple
+                if not rbType in data['RBModels']:
+                    data['RBModels'][rbType] = []
+                data['RBModels'][rbType].append(rbObj)
+                RBData[rbType][rbId]['useCount'] += 1
+                del data['testRBObj']
+                G2plt.PlotStructure(G2frame,data,False)
+                FillRigidBodyGrid(True)
+                
+            def OnCancel(event):
+                del data['testRBObj']
+                FillRigidBodyGrid(True)
+                
+            def OnTorAngle(invalid,value,tc):
+                #OkBtn.SetLabel('OK')
+                #OkBtn.Enable(True)
+                Obj = tc.event.GetEventObject()
+                [tor,torSlide] = Indx[Obj.GetId()]
+                torSlide.SetValue(int(value*10))
+                UpdateTablePlot()
+                
+            def OnTorSlide(event):
+                #OkBtn.SetLabel('OK')
+                #OkBtn.Enable(True)
+                Obj = event.GetEventObject()
+                tor,ang = Indx[Obj.GetId()]
+                Tors = data['testRBObj']['rbObj']['Torsions'][tor]
+                val = float(Obj.GetValue())/10.
+                Tors[0] = val
+                ang.SetValue(val)
+                UpdateTablePlot()
+
+            def UpdateTable(event=None):
+                '''get fixed atom assignments, find closest mappings & 
+                update displayed table
+                '''
+                selDict = getSelectedAtoms()
+                matchTable = assignAtoms(selDict)
+                for i,l in enumerate(matchTable):
+                    RigidBodies.atomsTable.data[i][1:4] = l[5],l[6],l[10]
+                RigidBodies.atomsGrid.ForceRefresh()
+                return matchTable
+                
+            def UpdateTablePlot(*args,**kwargs):
+                '''update displayed table and plot
+                '''
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                UpdateTable()
+                
+            def getSelectedAtoms():
+                'Find the FB atoms that have been assigned to specific atoms in structure'
+                RigidBodies.atomsGrid.completeEdits()
+                tbl = RigidBodies.atomsGrid.GetTable()
+                selDict = {}
+                dups = []
+                assigned = []
+                for r in range(tbl.GetRowsCount()):
+                    sel = tbl.GetValue(r,4).strip()
+                    if sel not in labelsChoices: continue
+                    atmNum = labelsChoices.index(sel)-1
+                    if atmNum < 0: continue
+                    if atmNum in assigned:
+                        if sel not in dups:
+                            dups.append(sel)
+                    else:
+                        assigned.append(atmNum)                            
+                    selDict[r] = atmNum
+                if dups:
+                    msg = 'Error: The following atom(s) are assigned multiple times: '
+                    for i in dups:
+                        msg += i
+                        msg += ', '
+                    wx.MessageBox(msg[:-2],caption='Duplicated Fixed Atoms',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                return selDict
+
+            def getDeltaXYZ(selDict,data,rbObj):
+                '''Evaluate the RB position & return the difference between the coordinates
+                and RB coordinates with origin and orientation from data['testRBObj']
+                '''
+                Amat,Bmat = G2lat.cell2AB(data['General']['Cell'][1:7])
+                rbXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,data['testRBObj']['rbData'],data['testRBObj']['rbType'])[0]
+                phaseXYZ = G2mth.getAtomXYZ(atomData,cx)
+                deltaList = []
+                for i in selDict:
+                    deltaList.append(phaseXYZ[selDict[i]]-rbXYZ[i])
+                return np.array(deltaList)
+
+            def objectiveDeltaPos(vals,selDict,data,rbObj_in):
+                '''Returns a list of distances between atom positions and 
+                located rigid body positions
+
+                :param list vals: a 4 or 7 element array with 4 quaterian values
+                   or 4 quaterian values followed by 3 origin (x,y,z) values
+
+                :returns: the 3*n distances between the n selected atoms
+                '''
+                rbObj = copy.deepcopy(rbObj_in)
+                rbObj['Orient'][0][:] = G2mth.normQ(vals[:4])
+                if len(vals) == 7:
+                    rbObj['Orig'][0][:] = vals[4:]
+                #print(np.sqrt(sum(getDeltaXYZ(selDict,data,rbObj).flatten()**2)))
+                return getDeltaXYZ(selDict,data,rbObj).flatten()
+
+            def onSetOrigin(event):
+                'Set Origin to best fit selected atoms'
+                if rbObj['fixOrig']:
+                    wx.MessageBox('Not possible with origin locked',caption='Οrigin Locked',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                selDict = getSelectedAtoms()
+                if len(selDict) < 1:
+                    wx.MessageBox('No atoms were selected',caption='Select Atom(s)',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                deltaList = getDeltaXYZ(selDict,data,rbObj)
+                data['testRBObj']['rbObj']['Orig'][0][:] = deltaList.sum(axis=0)/len(deltaList)
+                for i,item in enumerate(Xsizers):
+                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                UpdateTablePlot()
+                
+            def onFitOrientation(event):
+                'Set Orientation to best fit selected atoms'
+                selDict = getSelectedAtoms()
+                if len(selDict) < 2:
+                    wx.MessageBox('At least two atoms must be selected',caption='Select Atoms',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                vals = rbObj['Orient'][0][:] #+ rbObj['Orig'][0][:]
+                out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
+                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0])
+                for i,item in enumerate(Osizers):
+                    item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
+                UpdateTablePlot()
+                # debug code
+                #selDict = getSelectedAtoms()
+                #for line in assignAtoms(selDict): print(line)
+                
+            def onFitBoth(event):
+                'Set Orientation and origin to best fit selected atoms'
+                if rbObj['fixOrig']:
+                    wx.MessageBox('Not possible with origin locked',caption='Οrigin Locked',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                selDict = getSelectedAtoms()
+                if len(selDict) < 3:
+                    wx.MessageBox('At least three atoms must be selected',caption='Select Atoms',
+                                      style=wx.ICON_EXCLAMATION)
+                    return
+                vals = rbObj['Orient'][0][:] + rbObj['Orig'][0][:]
+                out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
+                data['testRBObj']['rbObj']['Orig'][0][:] = out[0][4:]
+                data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
+                for i,item in enumerate(Xsizers):
+                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                for i,item in enumerate(Osizers):
+                    item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
+                UpdateTablePlot()
+
+            if not data['testRBObj']: return
+#            if len(data['testRBObj']):
+#                G2plt.PlotStructure(G2frame,data,True,UpdateTable)
+            if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            mainSizer.Add((5,5),0)
+            Osizers = []
+            rbObj = data['testRBObj']['rbObj']
+            rbName = rbObj['RBname']
+            rbId = rbObj['RBId']
+            Orien = rbObj['Orient'][0]
+            rbRef = data['testRBObj']['rbRef']
+            Torsions = rbObj['Torsions']
+            refName = []
+            for ref in rbRef:
+                refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
+            atNames = data['testRBObj']['atNames']
+            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Locate rigid body : '+rbName),
+                0,WACV)
+            mainSizer.Add((5,5),0)
+            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Origin: '),0,WACV)
+            Xsizers = []
+            lbl = 'xyz'
+            for ix in range(3):
+                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,lbl[ix]),0,WACV,4)
+                origX = G2G.ValidatedTxtCtrl(RigidBodies,rbObj['Orig'][0],ix,nDig=(10,5),
+                            min=-1.5,max=1.5,typeHint=float,
+                                                 OnLeave=UpdateTablePlot)
+                OriSizer.Add(origX,0,WACV)
+                Xsizers.append(origX)
+            try:
+                rbObj['fixOrig']
+            except:
+                rbObj['fixOrig'] = False
+            fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
+            OriSizer.Add(fixOrig,0,WACV,10)
+
+            mainSizer.Add(OriSizer)
+            OriSizer.Add((5,0),)
+            OriSizer = wx.FlexGridSizer(0,5,5,5)
+            if len(atomData):
+                choice = list(atNames[0].keys())
+                choice.sort()
+                G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation quaternion: '),0,WACV)
+            for ix,x in enumerate(Orien):
+                orien = wx.StaticText(RigidBodies,wx.ID_ANY,'%10.4f'%(x))
+                OriSizer.Add(orien,0,WACV)
+                Osizers.append(orien)
+            G2frame.testRBObjSizers.update({'Osizers':Osizers})
+            mainSizer.Add(OriSizer)
+            mainSizer.Add((5,5),0)
+            RefSizer = wx.FlexGridSizer(0,7,5,5)
+            mainSizer.Add(RefSizer)
+            mainSizer.Add((5,5),0)
+            if Torsions:                    
+                rbSeq = RBData['Residue'][rbId]['rbSeq']
+                TorSizer = wx.FlexGridSizer(0,4,5,5)
+                TorSizer.AddGrowableCol(1,1)
+                for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
+                    torName = ''
+                    for item in [seq[0],seq[1],seq[3][0]]:
+                        torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
+                    TorSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Side chain torsion for rb seq: '+torName),0,WACV)
+                    torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
+                    torSlide.SetRange(0,3600)
+                    torSlide.SetValue(int(torsion[0]*10.))
+                    torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
+                    TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
+                    TorSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,' Angle: '),0,WACV)
+                    ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
+                    Indx[torSlide.GetId()] = [t,ang]
+                    Indx[ang.GetId()] = [t,torSlide]
+                    TorSizer.Add(ang,0,WACV)                            
+                mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
+            else:
+                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0,WACV)
+            matchTable = assignAtoms()
+            OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
+            OkBtn.Bind(wx.EVT_BUTTON, OnOk)
+            CancelBtn = wx.Button(RigidBodies,wx.ID_ANY,'Cancel')
+            CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(OkBtn)
+            btnSizer.Add(CancelBtn)
+            btnSizer.Add((20,20),1)
+            mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 20)
+                
+            SetPhaseWindow(RigidBodies,mainSizer)
+            
+            G2plt.PlotStructure(G2frame,data,True,UpdateTable)
+            colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
+            rowLabels = [l[1] for l in matchTable]
+            displayTable = [[l[0],l[5],l[6],l[10],''] for l in matchTable]
+            Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_NUMBER, 
+                    wg.GRID_VALUE_STRING, wg.GRID_VALUE_FLOAT+':8,3', wg.GRID_VALUE_STRING]
+            RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
+
+            labelsChoices = ['         '] + [a[0] for a in data['Atoms']]
+            choiceeditor = wg.GridCellChoiceEditor(labelsChoices, False)
+            RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
+            # make all grid entries read only
+            attr = wg.GridCellAttr()
+            attr.SetReadOnly(True)
+            for i in range(len(colLabels)-1):
+                attr.IncRef()
+                RigidBodies.atomsGrid.SetColAttr(i, attr)                    
+            attr = wg.GridCellAttr()
+            attr.SetAlignment(wx.ALIGN_RIGHT,wx.ALIGN_CENTRE)
+            RigidBodies.atomsGrid.SetColAttr(1, attr)                    
+            attr = wg.GridCellAttr()
+            attr.SetEditor(choiceeditor)
+            RigidBodies.atomsGrid.SetColAttr(4, attr)
+
+            RigidBodies.atomsGrid.AutoSizeColumns(True)
+            RigidBodies.atomsGrid.SetMargins(0,0)
+
+            gridSizer = wx.BoxSizer(wx.HORIZONTAL)
+            gridSizer.Add(RigidBodies.atomsGrid)#,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            gridSizer.Add((5,5))
+
+            btnSizer = wx.BoxSizer(wx.VERTICAL)
+            btnSizer.Add((-1,20))
+            btnSizer.Add(
+                wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with fixed\natom(s)...'),
+                0,wx.ALL)
+            btnSizer.Add((-1,10))
+            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Process Assignments')
+            btn.Bind(wx.EVT_BUTTON,UpdateTable)
+            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            btnSizer.Add((-1,10))
+
+            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Origin')
+
+            btn.Bind(wx.EVT_BUTTON,onSetOrigin)
+            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            btnSizer.Add((-1,5))
+            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Orientation')
+
+            btn.Bind(wx.EVT_BUTTON,onFitOrientation)
+            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            btnSizer.Add((-1,5))
+            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set both')
+            btn.Bind(wx.EVT_BUTTON,onFitBoth)
+            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            gridSizer.Add(btnSizer)
+            mainSizer.Add(gridSizer)
+            mainSizer.Layout()
+            RigidBodies.SetScrollRate(10,10)
+            RigidBodies.SendSizeEvent()
+            RigidBodies.Scroll(0,0)
+
         G2frame.GetStatusBar().SetStatusText('',1)
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -9509,6 +9923,9 @@ Make sure your parameters are correctly set.
                 rbNames[RBData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
         if not rbNames:
             print ('**** ERROR - no rigid bodies defined ****')
+            G2G.G2MessageBox(G2frame,
+                'You must define bodies in Rigid Bodies tree item before trying to add them to a phase',
+                'No Rigid Bodies')
             return
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
@@ -9517,282 +9934,54 @@ Make sure your parameters are correctly set.
         Indx = {}
         atInd = [-1,-1,-1]
         data['testRBObj'] = {}
-            
-        def Draw():
-            
-            def OnOk(event):
-                rbType = data['testRBObj']['rbType']
-                RBObjs = data['RBModels'].get(rbType,[])
-                rbObj = data['testRBObj']['rbObj']
-                rbId = rbObj['RBId']
-                newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
-                Ids = []
-                dmax = 0.0
-                oldXYZ = G2mth.getAtomXYZ(atomData,cx)
-                for xyz in newXYZ:
-                    dist = G2mth.GetXYZDist(xyz,oldXYZ,Amat)
-                    dmax = max(dmax,np.min(dist))
-                    pid = np.argmin(dist)
-                    Id = atomData[pid][-1]
-                    if Id in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
-                        dist[pid] = 100.
-                        Id = atomData[pid][-1]
-                    Ids.append(Id)
-                    atomData[pid][cx:cx+3] = xyz
-                if dmax > 1.0:
-                    print ('**** WARNING - some atoms not found or misidentified ****')
-                    print ('****           check torsion angles & try again      ****')
-                    OkBtn.SetLabel('Not Ready')
-                    OkBtn.Enable(False)
+        if len(rbNames) == 1:
+            selection = list(rbNames.keys())[0]
+        else:
+            choices = sorted(list(rbNames.keys()))
+            dlg = G2G.G2SingleChoiceDialog(
+                G2frame,'Select rigid body to add to structure',
+                'Select rigid body',choices)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selection = choices[dlg.GetSelection()]
+                else:
                     return
-                rbObj['Ids'] = Ids
-                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
-                rbObj['RBname'] += ':'+str(RBData[rbType][rbId]['useCount'])
-                RBObjs.append(rbObj)
-                data['RBModels'][rbType] = RBObjs
-                RBData[rbType][rbId]['useCount'] += 1
-                del data['testRBObj']
-                G2plt.PlotStructure(G2frame,data)
-                FillRigidBodyGrid(True)
-                
-            def OnCancel(event):
-                del data['testRBObj']
-                FillRigidBodyGrid(True)
-                
-            def OnRBSel(event):
-                selection = rbSel.GetValue()
-                if selection not in rbNames:
-                    return
-                rbType,rbId = rbNames[selection]
-                data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
-                data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
-                data['testRBObj']['rbType'] = rbType
-                data['testRBObj']['rbData'] = RBData
-                data['testRBObj']['Sizers'] = {}
-                rbRef = RBData[rbType][rbId]['rbRef']
-                data['testRBObj']['rbRef'] = rbRef
-                refType = []
-                refName = []
-                for ref in rbRef[:3]:
-                    reftype = data['testRBObj']['rbAtTypes'][ref]
-                    refType.append(reftype)
-                    refName.append(reftype+' '+str(rbRef[0]))
-                atNames,AtNames = fillAtNames(refType,atomData,ct)
-                data['testRBObj']['atNames'] = atNames
-                data['testRBObj']['AtNames'] = AtNames
-                data['testRBObj']['rbObj'] = {'Orig':[[0,0,0],False],
-                    'Orient':[[0.,0.,0.,0.],' '],'Ids':[],'RBId':rbId,'Torsions':[],
+            finally:
+                dlg.Destroy()
+            if selection not in rbNames:
+                print('Invalid RB selection',selection,'How did this happen?')
+                return
+        rbType,rbId = rbNames[selection]
+        data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
+        data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+        data['testRBObj']['rbType'] = rbType
+        data['testRBObj']['rbData'] = RBData
+        data['testRBObj']['Sizers'] = {}
+        rbRef = RBData[rbType][rbId]['rbRef']
+        data['testRBObj']['rbRef'] = rbRef
+        refType = []
+        refName = []
+        for ref in rbRef[:3]:
+            reftype = data['testRBObj']['rbAtTypes'][ref]
+            refType.append(reftype)
+            refName.append(reftype+' '+str(rbRef[0]))
+        atNames = [{},{},{}]
+        AtNames = {}
+        for iatm,atom in enumerate(atomData):
+            AtNames[atom[ct-1]] = iatm
+            for i,reftype in enumerate(refType):
+                if atom[ct] == reftype:
+                    atNames[i][atom[ct-1]] = iatm
+        data['testRBObj']['atNames'] = atNames
+        data['testRBObj']['AtNames'] = AtNames
+        data['testRBObj']['rbObj'] = {'Orig':[[0,0,0],False],
+                    'Orient':[[0.,0.,0.,1.],' '],'Ids':[],'RBId':rbId,'Torsions':[],
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
-                data['testRBObj']['torAtms'] = []                
-                for item in RBData[rbType][rbId].get('rbSeq',[]):
-                    data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
-                    data['testRBObj']['torAtms'].append([-1,-1,-1])
-                wx.CallAfter(Draw)
-                
-            def fillAtNames(refType,atomData,ct):
-                atNames = [{},{},{}]
-                AtNames = {}
-                for iatm,atom in enumerate(atomData):
-                    AtNames[atom[ct-1]] = iatm
-                    for i,reftype in enumerate(refType):
-                        if atom[ct] == reftype:
-                            atNames[i][atom[ct-1]] = iatm
-                return atNames,AtNames
-                
-            def OnAtOrigPick(event):
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                atName = Obj.GetValue()
-                rbType = data['testRBObj']['rbType']
-                atInd[0] = atNames[item][atName]
-                if 'Vector' in rbType:
-                    rbObj = data['testRBObj']['rbObj']
-                    rbId = rbObj['RBId']
-                    rbRef = data['testRBObj']['rbRef']
-                    rbXYZ = -RBData[rbType][rbId]['rbXYZ']
-                    nref = atNames[item][atName]
-                    Oxyz = np.inner(Bmat,np.array(rbXYZ[rbRef[0]]))
-                    Nxyz = np.array(atomData[nref][cx:cx+3])
-                    Orig = Nxyz-Oxyz
-                    data['testRBObj']['rbObj']['Orig'][0] = Orig   
-                else:
-                    Orig = atomData[atNames[item][atName]][cx:cx+3]
-                    data['testRBObj']['rbObj']['Orig'][0] = Orig
-                for x,item in zip(Orig,Xsizers):
-                    item.SetLabel('%10.5f'%(x))
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnAtQPick(event):
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                atName = Obj.GetValue()
-                atInd[item] = atNames[item][atName]
-                if any([x<0 for x in atInd]):
-                    return
-                OkBtn.SetLabel('OK')
-                OkBtn.Enable(True)
-                rbType = data['testRBObj']['rbType']
-                rbObj = data['testRBObj']['rbObj']
-                rbId = rbObj['RBId']
-                rbRef = data['testRBObj']['rbRef']
-                rbXYZ = RBData[rbType][rbId]['rbXYZ']
-                rbOrig = rbXYZ[rbRef[0]]
-                VAR = rbXYZ[rbRef[1]]-rbOrig
-                VBR = rbXYZ[rbRef[2]]-rbOrig
-                if rbType == 'Vector':
-                    Orig = np.array(atomData[atInd[0]][cx:cx+3])
-                else:
-                    Orig = np.array(data['testRBObj']['rbObj']['Orig'][0])                
-                VAC = np.inner(Amat,np.array(atomData[atInd[1]][cx:cx+3]-Orig))
-                VBC = np.inner(Amat,np.array(atomData[atInd[2]][cx:cx+3]-Orig))
-                VCC = np.cross(VAR,VAC)
-                if nl.norm(VCC) > 1e-7:
-                    QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
-                    VAR = G2mth.prodQVQ(QuatA,VAR)
-                    VBR = G2mth.prodQVQ(QuatA,VBR)
-                    QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
-                    QuatC = G2mth.prodQQ(QuatB,QuatA)
-                else:                               #parallel/antiparallel
-                    if np.dot(VAR,VAC)/(nl.norm(VAR)*nl.norm(VAC)) > 1e-7:  #no rotation
-                        QuatC = G2mth.AVdeg2Q(0.,[0.,0.,1.])
-                    else:
-                        QuatC = G2mth.AVdeg2Q(180.,VBR+VBC)
-                data['testRBObj']['rbObj']['Orient'] = [QuatC,' ']
-                for x,item in zip(QuatC,Osizers):
-                    item.SetLabel('%10.4f'%(x))                
-                if rbType == 'Vector':
-                    Oxyz = np.inner(Bmat,G2mth.prodQVQ(QuatC,rbOrig))
-                    Nxyz = np.array(atomData[atInd[0]][cx:cx+3])
-                    Orig = Nxyz-Oxyz
-                    data['testRBObj']['rbObj']['Orig'][0] = Orig
-                    for x,item in zip(Orig,Xsizers):
-                        item.SetLabel('%10.5f'%(x))
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnTorAngle(invalid,value,tc):
-                OkBtn.SetLabel('OK')
-                OkBtn.Enable(True)
-                Obj = tc.event.GetEventObject()
-                [tor,torSlide] = Indx[Obj.GetId()]
-                torSlide.SetValue(int(value*10))
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnTorSlide(event):
-                OkBtn.SetLabel('OK')
-                OkBtn.Enable(True)
-                Obj = event.GetEventObject()
-                tor,ang = Indx[Obj.GetId()]
-                Tors = data['testRBObj']['rbObj']['Torsions'][tor]
-                val = float(Obj.GetValue())/10.
-                Tors[0] = val
-                ang.SetValue(val)
-                G2plt.PlotStructure(G2frame,data)
-
-            if len(data['testRBObj']):
-                G2plt.PlotStructure(G2frame,data)
-                    
-            if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            mainSizer.Add((5,5),0)
-            if data['testRBObj']:
-                Xsizers = []
-                Osizers = []
-                rbObj = data['testRBObj']['rbObj']
-                rbName = rbObj['RBname']
-                rbId = rbObj['RBId']
-                Orig = rbObj['Orig'][0]
-                Orien = rbObj['Orient'][0]
-                rbRef = data['testRBObj']['rbRef']
-                Torsions = rbObj['Torsions']
-                refName = []
-                for ref in rbRef:
-                    refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
-                atNames = data['testRBObj']['atNames']
-                mainSizer.Add(wx.StaticText(RigidBodies,-1,'Locate rigid body : '+rbName),
-                    0,WACV)
-                mainSizer.Add((5,5),0)
-                OriSizer = wx.FlexGridSizer(0,5,5,5)
-                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z: '),0,WACV)
-                for ix,x in enumerate(Orig):
-                    origX = wx.StaticText(RigidBodies,-1,'%10.5f'%(x))
-                    OriSizer.Add(origX,0,WACV)
-                    Xsizers.append(origX)
-                OriSizer.Add((5,0),)
-                if len(atomData):
-                    choice = list(atNames[0].keys())
-                    choice.sort()
-                    G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
-                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,WACV)
-                for ix,x in enumerate(Orien):
-                    orien = wx.StaticText(RigidBodies,-1,'%10.4f'%(x))
-                    OriSizer.Add(orien,0,WACV)
-                    Osizers.append(orien)
-                G2frame.testRBObjSizers.update({'Osizers':Osizers})
-                mainSizer.Add(OriSizer)
-                mainSizer.Add((5,5),0)
-                RefSizer = wx.FlexGridSizer(0,7,5,5)
-                if len(atomData):
-                    RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,WACV)
-                    for i in [0,1,2]:
-                        choice = ['',]+list(atNames[i].keys())
-                        choice.sort()
-                        RefSizer.Add(wx.StaticText(RigidBodies,-1,' '+refName[i]+': '),0,WACV)
-                        atPick = wx.ComboBox(RigidBodies,-1,value='',
-                            choices=choice[1:],style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                        if i:
-                            atPick.Bind(wx.EVT_COMBOBOX, OnAtQPick)
-                        else:
-                            atPick.Bind(wx.EVT_COMBOBOX, OnAtOrigPick)                            
-                        Indx[atPick.GetId()] = i
-                        RefSizer.Add(atPick,0,WACV)
-                mainSizer.Add(RefSizer)
-                mainSizer.Add((5,5),0)
-                if Torsions:                    
-                    rbSeq = RBData['Residue'][rbId]['rbSeq']
-                    TorSizer = wx.FlexGridSizer(0,4,5,5)
-                    TorSizer.AddGrowableCol(1,1)
-                    for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
-                        torName = ''
-                        for item in [seq[0],seq[1],seq[3][0]]:
-                            torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
-                        TorSizer.Add(wx.StaticText(RigidBodies,-1,'Side chain torsion for rb seq: '+torName),0,WACV)
-                        torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
-                        torSlide.SetRange(0,3600)
-                        torSlide.SetValue(int(torsion[0]*10.))
-                        torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
-                        TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
-                        TorSizer.Add(wx.StaticText(RigidBodies,-1,' Angle: '),0,WACV)
-                        ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
-                        Indx[torSlide.GetId()] = [t,ang]
-                        Indx[ang.GetId()] = [t,torSlide]
-                        TorSizer.Add(ang,0,WACV)                            
-                    mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
-                else:
-                    mainSizer.Add(wx.StaticText(RigidBodies,-1,'No side chain torsions'),0,WACV)
-            else:
-                mainSizer.Add(wx.StaticText(RigidBodies,-1,'Assign rigid body:'),0,WACV)
-                mainSizer.Add((5,5),0)
-                topSizer = wx.BoxSizer(wx.HORIZONTAL)
-                topSizer.Add(wx.StaticText(RigidBodies,-1,'Select rigid body model'),0,WACV)
-                rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=['']+list(rbNames.keys()),
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                rbSel.Bind(wx.EVT_COMBOBOX, OnRBSel)
-                topSizer.Add((5,5),0)
-                topSizer.Add(rbSel,0,WACV)
-                mainSizer.Add(topSizer)                
-                
-            OkBtn = wx.Button(RigidBodies,-1,"Not ready")
-            OkBtn.Bind(wx.EVT_BUTTON, OnOk)
-            OkBtn.Enable(False)
-            CancelBtn = wx.Button(RigidBodies,-1,'Cancel')
-            CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
-            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(OkBtn)
-            btnSizer.Add(CancelBtn)
-            btnSizer.Add((20,20),1)
-            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            SetPhaseWindow(RigidBodies,mainSizer)
+        data['testRBObj']['torAtms'] = []                
+        for item in RBData[rbType][rbId].get('rbSeq',[]):
+            data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
+            data['testRBObj']['torAtms'].append([-1,-1,-1])        
         wx.CallAfter(Draw)
         
     def OnAutoFindResRB(event):
@@ -11485,7 +11674,7 @@ Make sure your parameters are correctly set.
         G2frame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2G.wxID_DRAWATOMLABEL)
         G2frame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2G.wxID_DRAWATOMCOLOR)
         G2frame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2G.wxID_DRAWATOMRESETCOLOR)
-        G2frame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2G.wxID_DRWAEDITRADII)   
+        #G2frame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2G.wxID_DRWAEDITRADII)           # TODO: removed until fixed
         G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)

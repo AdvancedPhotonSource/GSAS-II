@@ -983,14 +983,15 @@ def RotateRBXYZ(Bmat,Cart,oriQ):
     return XYZ
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    '''default doc string
+    '''returns crystal coordinates for atoms described by RBObj
     
-    :param type name: description
-    
-    :returns: type name: description
-    
-    '''
-    ''' returns crystal coordinates for atoms described by RBObj
+    :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
+    :param dict rbObj: rigid body selection/orientation information
+    :param dict RBData: rigid body tree data structure
+    :param str RBType: rigid body type, 'Vector' or 'Residue'
+
+    :returns: coordinates for rigid body as XYZ,Cart where XYZ is 
+       the location in crystal coordinates and Cart is in cartesian
     '''
     RBRes = RBData[RBType][RBObj['RBId']]
     if RBType == 'Vector':

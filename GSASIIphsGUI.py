@@ -323,7 +323,7 @@ class TransformDialog(wx.Dialog):
         self.ifMag = ifMag
         if ifMag:
             self.BNSlatt = BNSlatt
-        self.ifConstr = True
+        self.ifConstr = False
         self.Mtrans = False
         self.kvec = [0.,0.,0.]
         self.Draw()
@@ -5374,7 +5374,13 @@ Make sure your parameters are correctly set.
                         os.remove(pName+'.his6f')
                     RMC6f,reset = G2pwd.MakeRMC6f(PWDdata,pName,data,RMCPdict)
                     print(RMC6f+ ' written')
-                print(G2pwd.MakeRMCPdat(PWDdata,pName,data,RMCPdict)+ ' written')
+                fname = G2pwd.MakeRMCPdat(PWDdata,pName,data,RMCPdict)
+                if 'Error' in fname:
+                    print(fname)
+                    wx.MessageDialog(G2frame,fname,'Missing reflection list',wx.OK).ShowModal()
+                    G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+                    return
+                print(fname+ ' written')
                 print('RMCProfile file build completed')
                 RMCPdict['ReStart'] = [False,False]
                 if reset:

@@ -3381,7 +3381,7 @@ class GSASII(wx.Frame):
     class SumDialog(wx.Dialog):
         '''Allows user to supply scale factor(s) when summing data 
         '''
-        def __init__(self,parent,title,text,dataType,data,dataList):
+        def __init__(self,parent,title,text,dataType,data,dataList,Limits=None):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             self.plotFrame = wx.Frame(self,-1,'Sum Plots',size=wx.Size(700,600), \
@@ -3393,6 +3393,7 @@ class GSASII(wx.Frame):
             self.selectData = copy.copy(data[:-1])
             self.selectVals = len(data)*[0.0,]
             self.dataList = dataList
+            self.Limits = Limits
             self.filterlist = range(len(self.dataList)) # list of the choice numbers that have been filtered (list of int indices)
             self.dataType = dataType
             self.filterVal = ''
@@ -3532,6 +3533,12 @@ class GSASII(wx.Frame):
                 data = self.dataList[Id]
                 if scale:
                     x,y,w,yc,yb,yd = data   #numpy arrays!
+                    if self.Limits is not None:
+                        xMin = np.searchsorted(x,self.Limits[1][0])
+                        xMax = np.searchsorted(x,self.Limits[1][1])
+                        x = x[xMin:xMax]
+                        y = y[xMin:xMax]
+                        lenX = xMax-xMin
                     XY.append([x,scale*y])
                     v = 1./w
                     if lenX:
@@ -3539,7 +3546,8 @@ class GSASII(wx.Frame):
                             self.GetParent().ErrorDialog('Data length error','Data to be summed must have same number of points'+
                                 '\nExpected:'+str(lenX)+
                                 '\nFound:   '+str(len(x))+'\nfor '+name)
-                            self.OnCancel(event)
+                            return
+#                            self.OnCancel(event)
                     else:
                         lenX = len(x)
                     if Xminmax[1]:
@@ -3547,7 +3555,8 @@ class GSASII(wx.Frame):
                             self.GetParent().ErrorDialog('Data range error','Data to be summed must span same range'+
                                 '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+
                                 '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
-                            self.OnCancel(event)
+                            return
+#                            self.OnCancel(event)
                     else:
                         Xminmax = [x[0],x[-1]]
                         Xsum = x
@@ -3597,6 +3606,7 @@ class GSASII(wx.Frame):
         'Sum or Average together powder data(?)'
         TextList = []
         DataList = []
+        Limits = []
         Names = []
         Inst = None
         Comments = ['Sum/Average equals: \n']
@@ -3610,12 +3620,19 @@ class GSASII(wx.Frame):
                     DataList.append(self.GPXtree.GetItemPyData(item)[1])    # (x,y,w,yc,yb,yd)
                     if not Inst:
                         Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item, 'Instrument Parameters'))
+                    if not Limits:
+                        Limits = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item, 'Limits'))
                 item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if len(TextList) < 2:
                 self.ErrorDialog('Not enough data to sum/average','There must be more than one "PWDR" pattern')
                 return
             TextList.append('default_ave_name')                
-            dlg = self.SumDialog(self,'Sum/Average data',' Enter scale for each pattern to be summed/averaged','PWDR',TextList,DataList)
+            dlg = self.SumDialog(self,'Sum/Average data','''
+    Enter scale for each pattern to be summed/averaged
+    Limits for first pattern used sets range for the sum
+    All patterns used must extend over this range
+                ''','PWDR',
+                TextList,DataList,Limits)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result,sumData = dlg.GetData()
@@ -3682,7 +3699,8 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "IMG" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data',' Enter scale for each image to be summed','IMG',TextList,DataList)
+            dlg = self.SumDialog(self,'Sum data',' Enter scale for each image to be summed','IMG',
+                TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0

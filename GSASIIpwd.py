@@ -2341,7 +2341,10 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     Files = RMCPdict['files']
     BraggWt = RMCPdict['histogram'][1]
     inst = PWDdata['Instrument Parameters'][0]
-    refList = PWDdata['Reflection Lists'][Name]['RefList']
+    try:
+        refList = PWDdata['Reflection Lists'][Name]['RefList']
+    except KeyError:
+        return 'Error - missing reflection list; you must do Refine first'
     dMin = refList[-1][4]
     gsasType = 'xray2'
     if 'T' in inst['Type'][1]:

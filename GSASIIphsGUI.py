@@ -3718,15 +3718,29 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
         event.StopPropagation()
 
-    def GetSelectedAtoms():
-        '''Get all atoms that are selected by row or by having any cell selected.
-        produce an error message if no atoms are selected.
+    def GetSelectedAtoms(action='action'):
+        '''Get all atoms that are selected by row or by having any cell 
+        selected. If no atoms are selected ask user.
         '''
         indx = list(set([row for row,col in Atoms.GetSelectedCells()]+Atoms.GetSelectedRows()))
-        if indx:
-            return indx
-        else:
-            G2G.G2MessageBox(G2frame,'Warning: no atoms were selected','Nothing selected')
+        # if indx:
+        #     return indx
+        # else:
+        #     G2G.G2MessageBox(G2frame,'Warning: no atoms were selected','Nothing selected')
+        if indx: return indx
+        choices = []
+        for i in range(Atoms.GetNumberRows()):
+            val = Atoms.GetCellValue(i,0)
+            if val in choices:
+                val += '_' + Atoms.GetCellValue(i,5)
+            choices.append(val)
+        if not choices: return
+        dlg = G2G.G2MultiChoiceDialog(Atoms.GetTopLevelParent(),
+            'Select atoms','Select atoms for '+action,choices)
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelections()
+        dlg.Destroy()
+        return indx
         
     def AtomRefine(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
@@ -7055,6 +7069,25 @@ Make sure your parameters are correctly set.
 ################################################################################
 #### Structure drawing GUI stuff                
 ################################################################################
+    def getAtomSelections(drawAtoms,action='action'):
+        '''get selected atoms from table or ask user if none selected'''
+        #indx = drawAtoms.GetSelectedRows()
+        indx = list(set([row for row,col in drawAtoms.GetSelectedCells()]+
+                            drawAtoms.GetSelectedRows()))
+        if indx: return indx
+        choices = []
+        for i in range(drawAtoms.GetNumberRows()):
+            val = drawAtoms.GetCellValue(i,0)
+            if val in choices:
+                val += '_' + drawAtoms.GetCellValue(i,5)
+            choices.append(val)
+        if not choices: return
+        dlg = G2G.G2MultiChoiceDialog(drawAtoms.GetTopLevelParent(),
+            'Select atoms','Select atoms for '+action,choices)
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelections()
+        dlg.Destroy()
+        return indx
 
     def SetupDrawingData():
         generalData = data['General']
@@ -7116,6 +7149,8 @@ Make sure your parameters are correctly set.
         drawingData['Atoms'].append(MakeDrawAtom(atom))
         
     def OnRestraint(event):        
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx = drawAtoms.GetSelectedRows()
         restData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'))
@@ -7170,7 +7205,8 @@ Make sure your parameters are correctly set.
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
     def OnDefineRB(event):
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx.sort()
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -7208,7 +7244,6 @@ Make sure your parameters are correctly set.
 ################################################################################
 ##### Draw Atom routines
 ################################################################################
-            
     def UpdateDrawAtoms(atomStyle=''):
         def RefreshDrawAtomGrid(event):
             def SetChoice(name,c,n=0):
@@ -7415,89 +7450,82 @@ Make sure your parameters are correctly set.
 #        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomStyle(event):
-        indx = drawAtoms.GetSelectedRows()
-        if indx:
-            generalData = data['General']
-            atomData = data['Drawing']['Atoms']
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
-            if generalData['Type'] == 'macromolecular':
-                styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
-                'backbone','ribbons','schematic']
-            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                parms = styleChoice[sel]
-                for r in indx:
-                    atomData[r][cs] = parms
-                    drawAtoms.SetCellValue(r,cs,parms)
-            dlg.Destroy()
-            FindBondsDraw(data)
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        generalData = data['General']
+        atomData = data['Drawing']['Atoms']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+        if generalData['Type'] == 'macromolecular':
+            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
+            'backbone','ribbons','schematic']
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            parms = styleChoice[sel]
+            for r in indx:
+                atomData[r][cs] = parms
+                drawAtoms.SetCellValue(r,cs,parms)
+        dlg.Destroy()
+        FindBondsDraw(data)
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomLabel(event):
-        indx = drawAtoms.GetSelectedRows()
-        if indx:
-            generalData = data['General']
-            atomData = data['Drawing']['Atoms']
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            styleChoice = [' ','type','name','number']
-            if generalData['Type'] == 'macromolecular':
-                styleChoice = [' ','type','name','number','residue','1-letter','chain']
-            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom label style',styleChoice)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                parms = styleChoice[sel]
-                for r in indx:
-                    atomData[r][cs+1] = parms
-                    drawAtoms.SetCellValue(r,cs+1,parms)
-            dlg.Destroy()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        generalData = data['General']
+        atomData = data['Drawing']['Atoms']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        styleChoice = [' ','type','name','number']
+        if generalData['Type'] == 'macromolecular':
+            styleChoice = [' ','type','name','number','residue','1-letter','chain']
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom label style',styleChoice)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            parms = styleChoice[sel]
+            for r in indx:
+                atomData[r][cs+1] = parms
+                drawAtoms.SetCellValue(r,cs+1,parms)
+        dlg.Destroy()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
             
     def DrawAtomColor(event):
-
-        indx = drawAtoms.GetSelectedRows()
-        if indx:
-            if len(indx) > 1:
-                G2frame.GetStatusBar().SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK',1)
-            else:
-                G2frame.GetStatusBar().SetStatusText('Change color, Add to Custom Colors, then OK',1)
-            atomData = data['Drawing']['Atoms']
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            atmColors = []
-            atmTypes = []
-            for r in indx:
-                if atomData[r][cs+2] not in atmColors:
-                    atmColors.append(atomData[r][cs+2])
-                    atmTypes.append(atomData[r][ct])
-                    if len(atmColors) > 16:
-                        break
-            colors = wx.ColourData()
-            colors.SetChooseFull(True)
-            dlg = wx.ColourDialog(None,colors)
-            if dlg.ShowModal() == wx.ID_OK:
-                for i in range(len(atmColors)):                    
-                    atmColors[i] = dlg.GetColourData().GetColour()[:3]
-                colorDict = dict(zip(atmTypes,atmColors))
-                for r in indx:
-                    color = colorDict[atomData[r][ct]]
-                    atomData[r][cs+2] = color
-                    attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-                    attr.SetBackgroundColour(color)
-                    drawAtoms.SetAttr(r,cs+2,attr)
-                    data['Drawing']['Atoms'][r][cs+2] = color
-            drawAtoms.ClearSelection()
-            dlg.Destroy()
-            G2frame.GetStatusBar().SetStatusText('',1)
-            G2plt.PlotStructure(G2frame,data)
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        if len(indx) > 1:
+            G2frame.GetStatusBar().SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK',1)
         else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+            G2frame.GetStatusBar().SetStatusText('Change color, Add to Custom Colors, then OK',1)
+        atomData = data['Drawing']['Atoms']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        atmColors = []
+        atmTypes = []
+        for r in indx:
+            if atomData[r][cs+2] not in atmColors:
+                atmColors.append(atomData[r][cs+2])
+                atmTypes.append(atomData[r][ct])
+                if len(atmColors) > 16:
+                    break
+        colors = wx.ColourData()
+        colors.SetChooseFull(True)
+        dlg = wx.ColourDialog(None,colors)
+        if dlg.ShowModal() == wx.ID_OK:
+            for i in range(len(atmColors)):                    
+                atmColors[i] = dlg.GetColourData().GetColour()[:3]
+            colorDict = dict(zip(atmTypes,atmColors))
+            for r in indx:
+                color = colorDict[atomData[r][ct]]
+                atomData[r][cs+2] = color
+                attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+                attr.SetBackgroundColour(color)
+                drawAtoms.SetAttr(r,cs+2,attr)
+                data['Drawing']['Atoms'][r][cs+2] = color
+        drawAtoms.ClearSelection()
+        dlg.Destroy()
+        G2frame.GetStatusBar().SetStatusText('',1)
+        G2plt.PlotStructure(G2frame,data)
             
     def ResetAtomColors(event):
         generalData = data['General']
@@ -7524,15 +7552,13 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)         
         
     def SetViewPoint(event):
-        indx = drawAtoms.GetSelectedRows()
-        if indx:
-            atomData = data['Drawing']['Atoms']
-            cx = data['Drawing']['atomPtrs'][0]
-            data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        atomData = data['Drawing']['Atoms']
+        cx = data['Drawing']['atomPtrs'][0]
+        data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
 #            drawAtoms.ClearSelection()                                  #do I really want to do this?
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        G2plt.PlotStructure(G2frame,data)
             
     def noDuplicate(xyz,atomData):                  #be careful where this is used - it's slow
         cx = data['Drawing']['atomPtrs'][0]
@@ -7542,63 +7568,63 @@ Make sure your parameters are correctly set.
             return True
                 
     def AddSymEquiv(event):
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx.sort()
-        if indx:
-            colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-            cx,ct,cs,cui = data['Drawing']['atomPtrs']
-            cuij = cui+2
-            cmx = 0
-            if 'Mx' in colLabels:
-                cmx = colLabels.index('Mx')
-            atomData = data['Drawing']['Atoms']
-            generalData = data['General']
-            SGData = generalData['SGData']
-            SpnFlp = SGData.get('SpnFlp',[])
-            dlg = SymOpDialog(G2frame,SGData,False,True)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
-                    Cell = np.array(Cell)
-                    cent = SGData['SGCen'][Cent]
-                    M,T = SGData['SGOps'][Opr]
-                    for ind in indx:
-                        XYZ = np.array(atomData[ind][cx:cx+3])
-                        XYZ = np.inner(M,XYZ)+T
-                        if Inv and not SGData['SGFixed']:
-                            XYZ = -XYZ
-                        XYZ = XYZ+cent+Cell
-                        if Force:
-                            XYZ %= 1.       #G2spc.MoveToUnitCell(XYZ)
-                        if noDuplicate(XYZ,atomData):
-                            atom = copy.copy(atomData[ind])
-                            atom[cx:cx+3] = XYZ
-                            atomOp = atom[cs-1]
-                            OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
-                            newOp = str(OprNum)+'+'+ \
-                                str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))                            
-                            atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
-                            if cmx:         #magnetic moment
-                                opNum = G2spc.GetOpNum(OprNum,SGData)
-                                mom = np.array(atom[cmx:cmx+3])
-                                if SGData['SGGray']:
-                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
-                                else:    
-                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                            if atom[cui] == 'A':
-                                Uij = atom[cuij:cuij+6]
-                                Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
-                                atom[cuij:cuij+6] = Uij
-                            atomData.append(atom[:cuij+9])  #not SS stuff
-            finally:
-                dlg.Destroy()
-            UpdateDrawAtoms()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx,ct,cs,cui = data['Drawing']['atomPtrs']
+        cuij = cui+2
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
+        atomData = data['Drawing']['Atoms']
+        generalData = data['General']
+        SGData = generalData['SGData']
+        SpnFlp = SGData.get('SpnFlp',[])
+        dlg = SymOpDialog(G2frame,SGData,False,True)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
+                Cell = np.array(Cell)
+                cent = SGData['SGCen'][Cent]
+                M,T = SGData['SGOps'][Opr]
+                for ind in indx:
+                    XYZ = np.array(atomData[ind][cx:cx+3])
+                    XYZ = np.inner(M,XYZ)+T
+                    if Inv and not SGData['SGFixed']:
+                        XYZ = -XYZ
+                    XYZ = XYZ+cent+Cell
+                    if Force:
+                        XYZ %= 1.       #G2spc.MoveToUnitCell(XYZ)
+                    if noDuplicate(XYZ,atomData):
+                        atom = copy.copy(atomData[ind])
+                        atom[cx:cx+3] = XYZ
+                        atomOp = atom[cs-1]
+                        OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
+                        newOp = str(OprNum)+'+'+ \
+                            str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))                            
+                        atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
+                        if cmx:         #magnetic moment
+                            opNum = G2spc.GetOpNum(OprNum,SGData)
+                            mom = np.array(atom[cmx:cmx+3])
+                            if SGData['SGGray']:
+                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                            else:    
+                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                        if atom[cui] == 'A':
+                            Uij = atom[cuij:cuij+6]
+                            Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
+                            atom[cuij:cuij+6] = Uij
+                        atomData.append(atom[:cuij+9])  #not SS stuff
+        finally:
+            dlg.Destroy()
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
             
     def AddSphere(event):
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         atomData = data['Drawing']['Atoms']
@@ -7613,7 +7639,6 @@ Make sure your parameters are correctly set.
         SGData = generalData['SGData']
         SpnFlp = SGData.get('SpnFlp',[])
         cellArray = G2lat.CellBlock(1)
-        indx = drawAtoms.GetSelectedRows()
         indx.sort()
         dlg = SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
         try:
@@ -7669,63 +7694,63 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)
             
     def TransformSymEquiv(event):
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx.sort()
-        if indx:
-            atomData = data['Drawing']['Atoms']
-            colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            cuij = ci+2
-            cmx = 0
-            if 'Mx' in colLabels:
-                cmx = colLabels.index('Mx')
-            atomData = data['Drawing']['Atoms']
-            generalData = data['General']
-            SGData = generalData['SGData']
-            SpnFlp = SGData.get('SpnFlp',[])
-            dlg = SymOpDialog(G2frame,SGData,False,True)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
-                    Cell = np.array(Cell)
-                    cent = SGData['SGCen'][Cent]
-                    M,T = SGData['SGOps'][Opr]
-                    for ind in indx:
-                        XYZ = np.array(atomData[ind][cx:cx+3])
-                        XYZ = np.inner(M,XYZ)+T
-                        if Inv and not SGData['SGFixed']:
-                            XYZ = -XYZ
-                        XYZ = XYZ+cent+Cell
-                        if Force:
-                            XYZ,cell = G2spc.MoveToUnitCell(XYZ)
-                            Cell += cell
-                        atom = atomData[ind]
-                        atom[cx:cx+3] = XYZ
-                        OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
-                        if cmx:
-                            opNum = G2spc.GetOpNum(OprNum,SGData)
-                            mom = np.array(atom[cmx:cmx+3])
-                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                        atomOp = atom[cs-1]
-                        newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
-                            str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
-                        atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
-                        if atom[ci] == 'A':
-                            Uij = atom[cuij:cuij+6]
-                            U = G2spc.Uij2U(Uij)
-                            U = np.inner(np.inner(M,U),M)
-                            Uij = G2spc.U2Uij(U)
-                            atom[cuij:cuij+6] = Uij
-                    data['Drawing']['Atoms'] = atomData
-            finally:
-                dlg.Destroy()
-            UpdateDrawAtoms()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        atomData = data['Drawing']['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        cuij = ci+2
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
+        atomData = data['Drawing']['Atoms']
+        generalData = data['General']
+        SGData = generalData['SGData']
+        SpnFlp = SGData.get('SpnFlp',[])
+        dlg = SymOpDialog(G2frame,SGData,False,True)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
+                Cell = np.array(Cell)
+                cent = SGData['SGCen'][Cent]
+                M,T = SGData['SGOps'][Opr]
+                for ind in indx:
+                    XYZ = np.array(atomData[ind][cx:cx+3])
+                    XYZ = np.inner(M,XYZ)+T
+                    if Inv and not SGData['SGFixed']:
+                        XYZ = -XYZ
+                    XYZ = XYZ+cent+Cell
+                    if Force:
+                        XYZ,cell = G2spc.MoveToUnitCell(XYZ)
+                        Cell += cell
+                    atom = atomData[ind]
+                    atom[cx:cx+3] = XYZ
+                    OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
+                    if cmx:
+                        opNum = G2spc.GetOpNum(OprNum,SGData)
+                        mom = np.array(atom[cmx:cmx+3])
+                        atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                    atomOp = atom[cs-1]
+                    newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
+                        str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
+                    atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
+                    if atom[ci] == 'A':
+                        Uij = atom[cuij:cuij+6]
+                        U = G2spc.Uij2U(Uij)
+                        U = np.inner(np.inner(M,U),M)
+                        Uij = G2spc.U2Uij(U)
+                        atom[cuij:cuij+6] = Uij
+                data['Drawing']['Atoms'] = atomData
+        finally:
+            dlg.Destroy()
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
             
     def FillCoordSphere(event):
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         radii = generalData['BondRadii']
@@ -7735,127 +7760,119 @@ Make sure your parameters are correctly set.
             radii[indH] = 0.5
         except:
             pass            
-        indx = drawAtoms.GetSelectedRows()
-        if indx:
-            indx.sort()
-            atomData = data['Drawing']['Atoms']
-            numAtoms = len(atomData)
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            cij = ci+2
-            SGData = generalData['SGData']
-            cellArray = G2lat.CellBlock(1)
-            nind = len(indx)
-            pgbar = wx.ProgressDialog('Fill CN sphere for %d atoms'%nind,'Atoms done=',nind+1, 
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-            screenSize = wx.ClientDisplayRect()
-            Size = pgbar.GetSize()
-            if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-                pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-                pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-            for Ind,ind in enumerate(indx):
-                atomA = atomData[ind]
-                xyzA = np.array(atomA[cx:cx+3])
-                indA = atomTypes.index(atomA[ct])
-                for atomB in atomData[:numAtoms]:
-                    indB = atomTypes.index(atomB[ct])
-                    sumR = radii[indA]+radii[indB]
-                    xyzB = np.array(atomB[cx:cx+3])
-                    for xyz in cellArray+xyzB:
-                        dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                        if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
-                            if noDuplicate(xyz,atomData):
-                                oprB = atomB[cs-1]
-                                C = xyz-xyzB
-                                newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                                newAtom = atomB[:]
-                                newAtom[cx:cx+3] = xyz
-                                newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                                atomData.append(newAtom[:cij+9])  #not SS stuff
-                GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
-                if not GoOn[0]:
-                    break
-            pgbar.Destroy()   
-            data['Drawing']['Atoms'] = atomData
-            UpdateDrawAtoms()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        indx.sort()
+        atomData = data['Drawing']['Atoms']
+        numAtoms = len(atomData)
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        cij = ci+2
+        SGData = generalData['SGData']
+        cellArray = G2lat.CellBlock(1)
+        nind = len(indx)
+        pgbar = wx.ProgressDialog('Fill CN sphere for %d atoms'%nind,'Atoms done=',nind+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        for Ind,ind in enumerate(indx):
+            atomA = atomData[ind]
+            xyzA = np.array(atomA[cx:cx+3])
+            indA = atomTypes.index(atomA[ct])
+            for atomB in atomData[:numAtoms]:
+                indB = atomTypes.index(atomB[ct])
+                sumR = radii[indA]+radii[indB]
+                xyzB = np.array(atomB[cx:cx+3])
+                for xyz in cellArray+xyzB:
+                    dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                    if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
+                        if noDuplicate(xyz,atomData):
+                            oprB = atomB[cs-1]
+                            C = xyz-xyzB
+                            newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                            newAtom = atomB[:]
+                            newAtom[cx:cx+3] = xyz
+                            newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
+                            atomData.append(newAtom[:cij+9])  #not SS stuff
+            GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
+            if not GoOn[0]:
+                break
+        pgbar.Destroy()   
+        data['Drawing']['Atoms'] = atomData
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
             
     def FillUnitCell(event):
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx.sort()
-        if indx:
-            atomData = data['Drawing']['Atoms']
-            colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-            cx,ct,cs,ci = data['Drawing']['atomPtrs']
-            cmx = 0
-            if 'Mx' in colLabels:
-                cmx = colLabels.index('Mx')
-            cuij = cs+5
-            generalData = data['General']
-            SGData = generalData['SGData']
-            SpnFlp = SGData.get('SpnFlp',[])
-            nind = len(indx)
-            pgbar = wx.ProgressDialog('Fill unit cell for %d atoms'%nind,'Atoms done=',nind+1, 
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-            screenSize = wx.ClientDisplayRect()
-            Size = pgbar.GetSize()
-            if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-                pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-                pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-            for Ind,ind in enumerate(indx):
-                atom = atomData[ind]
-                XYZ = np.array(atom[cx:cx+3])
-                Uij = atom[cuij:cuij+6]
-                result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
-                for item in result:
-                    atom = copy.copy(atomData[ind])
-                    atom[cx:cx+3] = item[0]
-                    if cmx:
-                        Opr = abs(item[2])%100
-                        M = SGData['SGOps'][Opr-1][0]
-                        opNum = G2spc.GetOpNum(item[2],SGData)
-                        mom = np.array(atom[cmx:cmx+3])
-                        if SGData['SGGray']:
-                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
-                        else:    
-                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                    atom[cs-1] = str(item[2])+'+' \
-                        +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
-                    atom[cuij:cuij+6] = item[1]
-                    Opp = G2spc.Opposite(item[0])
-                    for key in Opp:
-                        if noDuplicate(Opp[key],atomData):
-                            unit = item[3]+np.array(eval(key))*1.
-                            cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
-                            atom[cx:cx+3] = Opp[key]
-                            atom[cs-1] = cell
-                            atomData.append(atom[:cuij+9])  #not SS stuff
-                data['Drawing']['Atoms'] = atomData
-                GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
-                if not GoOn[0]:
-                    break
-            pgbar.Destroy()   
-            UpdateDrawAtoms()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        atomData = data['Drawing']['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
+        cuij = cs+5
+        generalData = data['General']
+        SGData = generalData['SGData']
+        SpnFlp = SGData.get('SpnFlp',[])
+        nind = len(indx)
+        pgbar = wx.ProgressDialog('Fill unit cell for %d atoms'%nind,'Atoms done=',nind+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        for Ind,ind in enumerate(indx):
+            atom = atomData[ind]
+            XYZ = np.array(atom[cx:cx+3])
+            Uij = atom[cuij:cuij+6]
+            result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
+            for item in result:
+                atom = copy.copy(atomData[ind])
+                atom[cx:cx+3] = item[0]
+                if cmx:
+                    Opr = abs(item[2])%100
+                    M = SGData['SGOps'][Opr-1][0]
+                    opNum = G2spc.GetOpNum(item[2],SGData)
+                    mom = np.array(atom[cmx:cmx+3])
+                    if SGData['SGGray']:
+                        atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                    else:    
+                        atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                atom[cs-1] = str(item[2])+'+' \
+                    +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
+                atom[cuij:cuij+6] = item[1]
+                Opp = G2spc.Opposite(item[0])
+                for key in Opp:
+                    if noDuplicate(Opp[key],atomData):
+                        unit = item[3]+np.array(eval(key))*1.
+                        cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
+                        atom[cx:cx+3] = Opp[key]
+                        atom[cs-1] = cell
+                        atomData.append(atom[:cuij+9])  #not SS stuff
+            data['Drawing']['Atoms'] = atomData
+            GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
+            if not GoOn[0]:
+                break
+        pgbar.Destroy()   
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
             
     def DrawAtomsDelete(event):   
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         indx.sort()
-        if indx:
-            atomData = data['Drawing']['Atoms']
-            indx.reverse()
-            for ind in indx:
-                del atomData[ind]
-            UpdateDrawAtoms()
-            drawAtoms.ClearSelection()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
+        atomData = data['Drawing']['Atoms']
+        indx.reverse()
+        for ind in indx:
+            del atomData[ind]
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
     def OnReloadDrawAtoms(event):
@@ -7892,7 +7909,7 @@ Make sure your parameters are correctly set.
             atomData[ind][col] = value
                 
     def OnDrawPlane(event):
-        indx = drawAtoms.GetSelectedRows()
+        indx = getAtomSelections(drawAtoms)
         if len(indx) < 4:
             G2G.G2MessageBox(G2frame,'Select four or more atoms first')
             print ('**** ERROR - need 4+ atoms for plane calculation')
@@ -7915,11 +7932,8 @@ Make sure your parameters are correctly set.
         
     def OnDrawDistVP(event):
         # distance to view point
-        indx = drawAtoms.GetSelectedRows()
-        if not indx:
-            G2G.G2MessageBox(G2frame,'Select atoms first')
-            print ('***** ERROR - no atoms selected')
-            return
+        indx = getAtomSelections(drawAtoms,'distance calc')
+        if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
         drawingData = data['Drawing']
@@ -7937,8 +7951,8 @@ Make sure your parameters are correctly set.
             print ('Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cs],dist))
     
     def OnDrawDAT(event):
-        #distance, angle, torsion 
-        indx = drawAtoms.GetSelectedRows()
+        #compute distance, angle, or torsion depending on number of selections
+        indx = getAtomSelections(drawAtoms)
         if len(indx) not in [2,3,4]:
             G2G.G2MessageBox(G2frame,'Select 2, 3 or 4 atoms first')
             print ('**** ERROR - wrong number of atoms for distance, angle or torsion calculation')

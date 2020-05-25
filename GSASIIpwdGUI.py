@@ -4731,11 +4731,14 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                     SGData = General['SGData']
                     if General.get('Modulated',False):
                         Super = 1
-                    Histograms = G2frame.GPXtree.GetItemPyData(phaseId)['Histograms']
-                    histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
-                    histData = Histograms[histName]
-                    muStrData = histData['Mustrain']
-                    sizeData = histData['Size']
+                    try:
+                        Histograms = G2frame.GPXtree.GetItemPyData(phaseId)['Histograms']
+                        histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+                        histData = Histograms[histName]
+                        muStrData = histData['Mustrain']
+                        sizeData = histData['Size']
+                    except:
+                        return
         rowLabels = []
         if HKLF:
             refList = data[1]['RefList']
@@ -4826,6 +4829,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
             PeakTable = MakeReflectionTable(phaseName)
+            if not PeakTable: return
             G2frame.refTable[phaseName].SetTable(PeakTable, True)
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)

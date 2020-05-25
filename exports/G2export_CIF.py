@@ -1337,8 +1337,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '\n# STRUCTURE FACTOR TABLE')
             # compute maximum intensity reflection
             Imax = 0
+            phaselist = []
             for phasenam in histblk['Reflection Lists']:
-                scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                try:
+                    scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                except KeyError: # reflection table from removed phase?
+                    continue
+                phaselist.append(phasenam)
                 refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
                 I100 = scale*refList.T[8]*refList.T[11]
                 #Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
@@ -1347,7 +1352,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 Imax = max(Imax,max(I100))
 
             WriteCIFitem(self.fp, 'loop_')
-            if len(histblk['Reflection Lists'].keys()) > 1:
+            if len(phaselist) > 1:
                 WriteCIFitem(self.fp, '   _pd_refln_phase_id')
             WriteCIFitem(self.fp, '   ' + refprx + 'index_h' +
                          '\n   ' + refprx + 'index_k' +
@@ -1364,7 +1369,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             hklmax = None
             dmax = None
             dmin = None
-            for phasenam in histblk['Reflection Lists']:
+            for phasenam in phaselist:
                 scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
                 phaseid = self.Phases[phasenam]['pId']
                 refcount += len(histblk['Reflection Lists'][phasenam]['RefList'])
@@ -1379,7 +1384,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         hklmax = copy.copy(ref[0:3])
                     if dmin is None:
                          dmax = dmin = ref[4]
-                    if len(histblk['Reflection Lists'].keys()) > 1:
+                    if len(phaselist) > 1:
                         s = PutInCol(phaseid,2)
                     else:
                         s = ""
@@ -1397,7 +1402,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         s += PutInCol(G2mth.ValEsd(100.*I100[j]/Imax,-0.09),6)
                     WriteCIFitem(self.fp, "  "+s)
 
-            WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,len(histblk['Reflection Lists']))
+            WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,len(phaselist))
             WriteCIFitem(self.fp, '\n# POWDER DATA TABLE')
             # is data fixed step? If the step varies by <0.01% treat as fixed step
             steps = histblk['Data'][0][1:] - histblk['Data'][0][:-1]

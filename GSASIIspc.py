@@ -2082,7 +2082,6 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     spnflp = []
     X = np.array(XYZ)
     mj = 0
-    cell0 = np.zeros(3,dtype=np.int32)
     for ic,cen in enumerate(icen):
         C = np.array(cen)
         for invers in range(inv):
@@ -2096,13 +2095,11 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if invers:
                     XT = -XT
                 XT += C
-                cell = np.zeros(3,dtype=np.int32)+cell0
-                cellj = np.zeros(3,dtype=np.int32)
+                cell = np.zeros(3,dtype=np.int32)
                 if Move:
-                    newX,cellj = MoveToUnitCell(XT)
+                    newX,cell = MoveToUnitCell(XT)
                 else:
                     newX = XT
-                cell += cellj
                 if All:
                     if np.allclose(newX,X,atol=0.0002):
                         idup = False

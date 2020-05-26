@@ -615,7 +615,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
 
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
-    if 'covData' in DisAglData:
+    if len(DisAglData.get('covData',{})):
         covData = DisAglData['covData']
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
@@ -646,7 +646,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
         for Tatom in targAtoms:
             Xvcov = []
             TxyzNames = ''
-            if 'covData' in DisAglData:
+            if len(DisAglData.get('covData',{})):
                 OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
@@ -728,7 +728,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
 
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
-    if 'covData' in DisAglData:
+    if len(DisAglData.get('covData',{})):
         covData = DisAglData['covData']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])

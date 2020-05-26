@@ -4957,7 +4957,7 @@ Make sure your parameters are correctly set.
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 BVSpairs = []
                 if lenA > 1:
-                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)] and 'Va' not in pair:
+                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                         BVSpairs += pair
                 BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],

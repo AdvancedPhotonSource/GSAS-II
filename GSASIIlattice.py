@@ -504,7 +504,7 @@ def FillUnitCell(Phase,Force=True):
             xyz %= 1.
         if atom[cia] == 'A':
             Uij = atom[cia+2:cia+8]
-            result = G2spc.GenAtom(xyz,SGData,False,Uij,False)
+            result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
             for item in result:
 #                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]

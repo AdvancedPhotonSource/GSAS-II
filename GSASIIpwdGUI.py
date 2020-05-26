@@ -4738,6 +4738,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                         muStrData = histData['Mustrain']
                         sizeData = histData['Size']
                     except:
+                        if GSASIIpath.GetConfigValue('debug'):
+                            print('Reflection table problem: histogram {} not found in phase {}'.format(histName,phaseName))
                         return
         rowLabels = []
         if HKLF:

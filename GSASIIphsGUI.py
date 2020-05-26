@@ -1095,6 +1095,29 @@ class AddHatomDialog(wx.Dialog):
 ################################################################################
 #### Phase editing routines
 ################################################################################
+def getAtomSelections(AtmTbl,action='action'):
+    '''get selected atoms from table or ask user if none are selected'''
+    indx = AtmTbl.GetSelectedRows()
+    indx += [row for row,col in AtmTbl.GetSelectedCells()]
+    for top,bottom in zip([r for r,c in AtmTbl.GetSelectionBlockTopLeft()],
+                          [r for r,c in AtmTbl.GetSelectionBlockBottomRight()]):
+            indx += list(range(top,bottom+1))
+    indx = list(set(indx))
+    if indx: return indx
+    choices = []
+    for i in range(AtmTbl.GetNumberRows()):
+        val = AtmTbl.GetCellValue(i,0)
+        if val in choices:
+            val += '_' + str(i)
+        choices.append(val)
+    if not choices: return
+    dlg = G2G.G2MultiChoiceDialog(AtmTbl.GetTopLevelParent(),
+        'Select atoms','Select atoms for '+action,choices)
+    if dlg.ShowModal() == wx.ID_OK:
+        indx = dlg.GetSelections()
+    dlg.Destroy()
+    return indx
+
 def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
     if mainSizer is not None:
         phasePage.SetSizer(mainSizer)
@@ -3443,7 +3466,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnAtomInsert(event):
         '''Inserts a new atom into list immediately before every selected atom
         '''
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         for a in reversed(sorted(indx)):
             AtomInsert(a,0.,0.,0.)
         event.StopPropagation()
@@ -3463,7 +3486,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnHydAtomAdd(event):
         '''Adds H atoms to fill out coordination sphere for selected atoms
         '''
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         if not indx: return
         DisAglCtls = {}
         generalData = data['General']
@@ -3592,7 +3615,7 @@ def UpdatePhaseData(G2frame,Item,data):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         cx = colLabels.index('x')
         ci = colLabels.index('I/A')
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         if len(indx) != 1:
             G2frame.ErrorDialog('Atom move error','Only one atom can be moved')
         elif atomData[indx[0]][ci+8] in rbAtmDict:
@@ -3691,7 +3714,7 @@ def UpdatePhaseData(G2frame,Item,data):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         HydIds = data['General']['HydIds']
         ci = colLabels.index('I/A')
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         IDs = []
         if not indx: return
         atomData = data['Atoms']
@@ -3717,35 +3740,11 @@ def UpdatePhaseData(G2frame,Item,data):
         if not len(HydIds):
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
         event.StopPropagation()
-
-    def GetSelectedAtoms(action='action'):
-        '''Get all atoms that are selected by row or by having any cell 
-        selected. If no atoms are selected ask user.
-        '''
-        indx = list(set([row for row,col in Atoms.GetSelectedCells()]+Atoms.GetSelectedRows()))
-        # if indx:
-        #     return indx
-        # else:
-        #     G2G.G2MessageBox(G2frame,'Warning: no atoms were selected','Nothing selected')
-        if indx: return indx
-        choices = []
-        for i in range(Atoms.GetNumberRows()):
-            val = Atoms.GetCellValue(i,0)
-            if val in choices:
-                val += '_' + Atoms.GetCellValue(i,5)
-            choices.append(val)
-        if not choices: return
-        dlg = G2G.G2MultiChoiceDialog(Atoms.GetTopLevelParent(),
-            'Select atoms','Select atoms for '+action,choices)
-        if dlg.ShowModal() == wx.ID_OK:
-            indx = dlg.GetSelections()
-        dlg.Destroy()
-        return indx
         
     def AtomRefine(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         c = colLabels.index('refine')
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         if not indx: return
         atomData = data['Atoms']
         generalData = data['General']
@@ -3767,7 +3766,7 @@ def UpdatePhaseData(G2frame,Item,data):
         dlg.Destroy()
 
     def AtomModify(event):
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         if not indx: return
         atomData = data['Atoms']
         generalData = data['General']
@@ -3877,7 +3876,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomTransform(event):
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         if not indx: return
         generalData = data['General']
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
@@ -3946,7 +3945,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
-#        indx = GetSelectedAtoms()
+#        indx = getAtomSelections(Atoms)
 #        if indx:
 #            generalData = data['General']
 #            A,B = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -3990,7 +3989,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
                 
     def MakeMolecule(event):      
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         DisAglCtls = {}
         if indx is not None and len(indx) == 1:
             generalData = data['General']
@@ -4039,7 +4038,7 @@ def UpdatePhaseData(G2frame,Item,data):
     
     def OnDistAngle(event,fp=None):
         'Compute distances and angles'    
-        indx = GetSelectedAtoms()
+        indx = getAtomSelections(Atoms)
         Oxyz = []
         xyz = []
         DisAglData = {}
@@ -7069,26 +7068,6 @@ Make sure your parameters are correctly set.
 ################################################################################
 #### Structure drawing GUI stuff                
 ################################################################################
-    def getAtomSelections(drawAtoms,action='action'):
-        '''get selected atoms from table or ask user if none selected'''
-        #indx = drawAtoms.GetSelectedRows()
-        indx = list(set([row for row,col in drawAtoms.GetSelectedCells()]+
-                            drawAtoms.GetSelectedRows()))
-        if indx: return indx
-        choices = []
-        for i in range(drawAtoms.GetNumberRows()):
-            val = drawAtoms.GetCellValue(i,0)
-            if val in choices:
-                val += '_' + drawAtoms.GetCellValue(i,5)
-            choices.append(val)
-        if not choices: return
-        dlg = G2G.G2MultiChoiceDialog(drawAtoms.GetTopLevelParent(),
-            'Select atoms','Select atoms for '+action,choices)
-        if dlg.ShowModal() == wx.ID_OK:
-            indx = dlg.GetSelections()
-        dlg.Destroy()
-        return indx
-
     def SetupDrawingData():
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])

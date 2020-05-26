@@ -500,12 +500,15 @@ def FillUnitCell(Phase,Force=True):
     for iat,atom in enumerate(Atoms):
         XYZ = np.array(atom[cx:cx+3])
         xyz = XYZ
+        cellj = np.zeros(3,dtype=np.int32)
         if Force:
-            xyz %= 1.
+            xyz,cellj = G2spc.MoveToUnitCell(xyz)
         if atom[cia] == 'A':
             Uij = atom[cia+2:cia+8]
-            result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
+            result = G2spc.GenAtom(xyz,SGData,False,Uij,Force)
             for item in result:
+                item = list(item)
+                item[2] += cellj
 #                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]
                 atom[cia+2:cia+8] = item[1]
@@ -518,9 +521,11 @@ def FillUnitCell(Phase,Force=True):
                 atCodes.append('%d:%s'%(iat,str(item[2])))
                 atomData.append(atom[:cia+9])  #not SS stuff
         else:
-            result = G2spc.GenAtom(xyz,SGData,False,Move=True)
+            result = G2spc.GenAtom(xyz,SGData,False,Move=Force)
             for item in result:
-                if item[0][2] >= .95: item[0][2] -= 1.
+                item = list(item)
+                item[2] += cellj
+#                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]
                 if cm:
                     Opr = abs(item[1])%100

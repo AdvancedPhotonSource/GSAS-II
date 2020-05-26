@@ -2025,7 +2025,7 @@ def MoveToUnitCell(xyz):
     :param xyz: a list or numpy array of fractional coordinates
     :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
     '''
-    XYZ = (np.array(xyz)+10.)%1.
+    XYZ = np.array(xyz)%1.
     cell = np.asarray(np.rint(XYZ-xyz),dtype=np.int32)
     return XYZ,cell
         
@@ -2083,8 +2083,6 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     X = np.array(XYZ)
     mj = 0
     cell0 = np.zeros(3,dtype=np.int32)
-    if Move:
-        X,cell0 = MoveToUnitCell(X)
     for ic,cen in enumerate(icen):
         C = np.array(cen)
         for invers in range(inv):

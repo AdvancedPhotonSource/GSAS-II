@@ -538,10 +538,11 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         fpath = os.path.join(path2GSAS2,rpath,filename)
     cmd = [svn,'switch',URL,fpath,
            '--non-interactive','--trust-server-cert',
-           '--accept','theirs-conflict','--force']
+           '--accept','theirs-conflict','--force','-rHEAD']
     if svnVersionNumber(svn) > 1.6: cmd += ['--ignore-ancestry']
     if proxycmds: cmd += proxycmds
-    if verbose: print(u"Loading files to "+fpath+u"\n  from "+URL)
+    if verbose:
+        print(u"Loading files to "+fpath+u"\n  from "+URL)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     if err:
@@ -565,7 +566,10 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
                 return True
         return False
     if verbose:
-        print('=== Output from svn switch'+(43*'='))
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
+        print('\n=== Output from svn switch'+(43*'='))
         print(out.strip())
         print((70*'=')+'\n')
     return True

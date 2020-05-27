@@ -5876,9 +5876,9 @@ Make sure your parameters are correctly set.
                     Chi.append([float(item) for item in items[3:]])
                 X = np.array(X)
                 Chi = np.array(Chi).T
-                XY = [[X.T,Y.T] for Y in Chi]
+                XY = [[X.T,np.log10(Y.T)] for Y in Chi]
                 G2plt.PlotXY(G2frame,XY,labelX='no. generated',
-                    labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCP Chi^2 for '+pName,
+                    labelY=r'$log_{10}$ (reduced $\mathsf{\chi^2})$',newPlot=True,Title='RMCP Chi^2 for '+pName,
                     lines=True,names=Names[3:])
 
 #get atoms from rmc6f file 

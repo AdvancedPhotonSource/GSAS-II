@@ -2573,8 +2573,11 @@ def FindAngles(Phase,RMCPdict):
                         continue
                 XYZ = np.array(G2mth.GetAtomItemsById(atomData,AtLookup,IdList,cx,numItems=3))
                 calAngle = G2mth.getRestAngle(XYZ,Amat)
-                if angData[0] < calAngle < angData[1]:
-                    AngleList.append(str((MidName,nbr1[0],nbr3[0])+tuple(angData))+',\n')
+                if angData[0] <= calAngle <= angData[1]:
+                    angStr = str((MidName,nbr1[0],nbr3[0])+tuple(angData))+',\n'
+                    revangStr = str((MidName,nbr3[0],nbr1[0])+tuple(angData))+',\n'
+                    if angStr not in AngleList and revangStr not in AngleList:
+                        AngleList.append(angStr)
     return AngleList
 
 def GetSqConvolution(XY,d):

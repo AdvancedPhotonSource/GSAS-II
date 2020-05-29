@@ -8189,22 +8189,21 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Zmax = 1.
         if Add:
             Indx = GetSelectedAtoms()
-        try:
-            if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
-                for i,peak in enumerate(mapPeaks):
-                    x,y,z = peak[1:4]
-                    X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
-                    XY = [int(X),int(View[3]-Y)]
-                    if np.allclose(xy,XY,atol=10) and Z < Zmax:
-                        Zmax = Z
-                        try:
-                            Indx.remove(i)
-                            ClearSelectedAtoms()
-                            for Id in Indx:
-                                SetSelectedAtoms(Id,Add)
-                        except:
-                            SetSelectedAtoms(i,Add)
-        except:
+        if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
+            for i,peak in enumerate(mapPeaks):
+                x,y,z = peak[1:4]
+                X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
+                XY = [int(X),int(View[3]-Y)]
+                if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                    Zmax = Z
+                    try:
+                        Indx.remove(i)
+                        ClearSelectedAtoms()
+                        for Id in Indx:
+                            SetSelectedAtoms(Id,Add)
+                    except:
+                        SetSelectedAtoms(i,Add)
+        else:
             cx = drawingData['atomPtrs'][0]
             for i,atom in enumerate(drawAtoms):
                 x,y,z = atom[cx:cx+3]

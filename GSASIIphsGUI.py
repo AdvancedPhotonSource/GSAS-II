@@ -204,7 +204,7 @@ class SphereEnclosure(wx.Dialog):
     
     '''
     def __init__(self,parent,general,drawing,indx):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Supply sphere info',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.General = general
@@ -213,7 +213,7 @@ class SphereEnclosure(wx.Dialog):
         self.Sphere = [3.0,]
         self.centers = []
         self.atomTypes = [[item,False] for item in self.General['AtomTypes']]
-        
+        self.CenterOnParent()
         self.Draw()
         
     def Draw(self):
@@ -1185,7 +1185,75 @@ def FindBondsDraw(data):
     generalData = data['General']
     cell = generalData['Cell'][1:7]
     FindBondsDrawCell(data,cell)
+
+def getAtomRadii(data):
+    '''Get radii for atoms, using generalData['DisAglCtls']['BondRadii']
+    to override generalData['BondRadii'] when present. Fix to make sure
+    that all elements in generalData are present in DisAglCtls.
+    '''
+    generalData = data['General']
+    if 'DisAglCtls' not in generalData:
+        return generalData['AtomTypes'],generalData['BondRadii']
+    if 'BondRadii' not in generalData['DisAglCtls']:
+        return generalData['AtomTypes'],generalData['BondRadii']
+    DisAglCtls = generalData['DisAglCtls']
+    if len(generalData['BondRadii']) != len(DisAglCtls['BondRadii']):
+        for typ,dis in zip(generalData['AtomTypes'],generalData['BondRadii']):
+            if typ not in DisAglCtls['AtomTypes']:
+                DisAglCtls['AtomTypes'].append(typ)
+                DisAglCtls['AngleRadii'].append(dis)
+                DisAglCtls['BondRadii'].append(dis)
+    return DisAglCtls['AtomTypes'],DisAglCtls['BondRadii']
     
+def FindCoordination(ind,data,cmx=0,targets=None):
+    'Find atoms coordinating atom ind, spe'
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    atomTypes,radii = getAtomRadii(data)
+    atomData = data['Drawing']['Atoms']
+    numAtoms = len(atomData)
+    cx,ct,cs,ci = data['Drawing']['atomPtrs']
+    cij = ci+2
+    SGData = generalData['SGData']
+    cellArray = G2lat.CellBlock(1)
+    
+    newAtomList = []
+    atomA = atomData[ind]
+    xyzA = np.array(atomA[cx:cx+3])
+    indA = atomTypes.index(atomA[ct])
+    for atomB in atomData:
+        if targets and atomB[ct] not in targets:
+            continue
+        indB = atomTypes.index(atomB[ct])
+        sumR = radii[indA]+radii[indB]
+        xyzB = np.array(atomB[cx:cx+3])
+        Uij = atomB[cs+5:cs+5+6]
+        for item in G2spc.GenAtom(xyzB,SGData,False,Uij,True):
+            atom = copy.copy(atomB)
+            atom[cx:cx+3] = item[0]
+            Opr = abs(item[2])%100
+            M = SGData['SGOps'][Opr-1][0]
+            if cmx:
+                opNum = G2spc.GetOpNum(item[2],SGData)
+                mom = np.array(atom[cmx:cmx+3])
+                if SGData['SGGray']:
+                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                else:    
+                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+            atom[cs-1] = str(item[2])+'+'
+            atom[cs+5:cs+5+6] = item[1]
+            posInAllCells = cellArray+np.array(atom[cx:cx+3])
+            dists = np.sqrt(np.sum(np.inner(Amat,posInAllCells-xyzA)**2,axis=0))
+            bonded = np.logical_and(dists < data['Drawing']['radiusFactor']*sumR, dists !=0)
+            for xyz in posInAllCells[bonded]:
+                if True in [np.allclose(np.array(xyz),np.array(atom[cx:cx+3]),atol=0.0002) for atom in atomData]: continue
+                C = xyz-atom[cx:cx+3]+item[3]
+                newAtom = atom[:]
+                newAtom[cx:cx+3] = xyz
+                newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                newAtomList.append(newAtom)
+    return newAtomList
+
 def FindBondsDrawCell(data,cell):    
     '''uses numpy & masks - very fast even for proteins!
     allows different cell as input from seq. refinements
@@ -1196,10 +1264,7 @@ def FindBondsDrawCell(data,cell):
     atomData = data['Drawing']['Atoms']
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(cell)
-    radii = generalData['BondRadii']
-#    if generalData.get('DisAglCtls',{}):
-#        radii = generalData['DisAglCtls']['BondRadii']
-    atomTypes = generalData['AtomTypes']
+    atomTypes,radii = getAtomRadii(data)
     try:
         indH = atomTypes.index('H')
         radii[indH] = 0.5
@@ -7614,7 +7679,6 @@ Make sure your parameters are correctly set.
         cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
-        generalData = data['General']
         SGData = generalData['SGData']
         SpnFlp = SGData.get('SpnFlp',[])
         cellArray = G2lat.CellBlock(1)
@@ -7727,23 +7791,132 @@ Make sure your parameters are correctly set.
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
             
+    def FillMolecule(event):
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        atomTypes,radii = getAtomRadii(data)
+        
+        dlg = wx.Dialog(G2frame,wx.ID_ANY,'Addition criteria',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Molecular completion parameters'),0,WACV)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Max # of repetitions: '),0,WACV)
+        choices = [1,2,5,10,50]
+        params = {'maxrep':5, 'maxatm':1000}
+        topSizer.Add(G2G.EnumSelector(dlg,params,'maxrep',
+                        [str(i) for i in choices],choices))
+        mainSizer.Add(topSizer,0,WACV)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Max # of added atoms: '),0,WACV)
+        choices = [100,500,1000,5000,10000]
+        topSizer.Add(G2G.EnumSelector(dlg,params,'maxatm',
+                        [str(i) for i in choices],choices))
+        mainSizer.Add(topSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Atom types to add:'),0,WACV)
+        atSizer = wx.BoxSizer(wx.HORIZONTAL)
+        for i,item in enumerate(atomTypes):
+            params[item] = True
+            atm = G2G.G2CheckBox(dlg,item,params,item)
+            atSizer.Add(atm,0,WACV)
+        mainSizer.Add(atSizer,0,WACV)
+        
+        OkBtn = wx.Button(dlg,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+        cancelBtn = wx.Button(dlg,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        dlg.SetSizer(mainSizer)
+        dlg.Fit()
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        
+        try:
+            indH = atomTypes.index('H')
+            radii[indH] = 0.5
+        except:
+            pass
+        atomData = data['Drawing']['Atoms']
+        numAtoms = len(atomData)
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        cij = ci+2
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
+        SGData = generalData['SGData']
+        cellArray = G2lat.CellBlock(1)
+        nind = len(indx)
+        pgbar = wx.ProgressDialog('Fill molecular coordination',
+                                    'Passes done=0 %0',params['maxrep'], 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        pgbar.Raise()
+        wx.Yield()
+        added = 0
+        targets = [item for item in atomTypes if params[item]]
+        for rep in range(params['maxrep']):
+            startlen = len(data['Drawing']['Atoms'])
+            addedAtoms = []
+            for Ind,ind in enumerate(indx):
+                addedAtoms += FindCoordination(ind,data,cmx,targets)
+                GoOn = pgbar.Update(rep+1,
+                    newmsg='Passes done={} atom #{} of {}'
+                                        .format(rep+1,Ind+1,len(indx)))
+                wx.Yield()
+                if not GoOn[0]: break
+            if not GoOn[0]: break
+            print('pass {} processed {} atoms adding {}'.format(
+                rep+1,len(indx),len(addedAtoms)))
+            if len(addedAtoms) == 0: break
+            added += len(addedAtoms)
+            if added > params['maxatm']: break
+            data['Drawing']['Atoms'] += addedAtoms
+            indx = list(range(startlen,startlen+len(addedAtoms)))
+            UpdateDrawAtoms()
+            G2plt.PlotStructure(G2frame,data)
+            #GSASIIpath.IPyBreak()
+        pgbar.Destroy()   
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
+        #GSASIIpath.IPyBreak()
+        
     def FillCoordSphere(event):
         indx = getAtomSelections(drawAtoms)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        radii = generalData['BondRadii']
-        atomTypes = generalData['AtomTypes']
+        atomTypes,radii = getAtomRadii(data)
         try:
             indH = atomTypes.index('H')
             radii[indH] = 0.5
         except:
-            pass            
+            pass
         indx.sort()
         atomData = data['Drawing']['Atoms']
         numAtoms = len(atomData)
         cx,ct,cs,ci = data['Drawing']['atomPtrs']
         cij = ci+2
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
         SGData = generalData['SGData']
         cellArray = G2lat.CellBlock(1)
         nind = len(indx)
@@ -7755,27 +7928,9 @@ Make sure your parameters are correctly set.
             pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         for Ind,ind in enumerate(indx):
-            atomA = atomData[ind]
-            xyzA = np.array(atomA[cx:cx+3])
-            indA = atomTypes.index(atomA[ct])
-            for atomB in atomData[:numAtoms]:
-                indB = atomTypes.index(atomB[ct])
-                sumR = radii[indA]+radii[indB]
-                xyzB = np.array(atomB[cx:cx+3])
-                for xyz in cellArray+xyzB:
-                    dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                    if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
-                        if noDuplicate(xyz,atomData):
-                            oprB = atomB[cs-1]
-                            C = xyz-xyzB
-                            newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                            newAtom = atomB[:]
-                            newAtom[cx:cx+3] = xyz
-                            newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                            atomData.append(newAtom[:cij+9])  #not SS stuff
+            atomData += FindCoordination(ind,data,cmx)
             GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
-            if not GoOn[0]:
-                break
+            if not GoOn[0]: break
         pgbar.Destroy()   
         data['Drawing']['Atoms'] = atomData
         UpdateDrawAtoms()
@@ -11673,7 +11828,7 @@ Make sure your parameters are correctly set.
         G2frame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2G.wxID_DRAWATOMLABEL)
         G2frame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2G.wxID_DRAWATOMCOLOR)
         G2frame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2G.wxID_DRAWATOMRESETCOLOR)
-        #G2frame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2G.wxID_DRWAEDITRADII)           # TODO: removed until fixed
+        G2frame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2G.wxID_DRWAEDITRADII)
         G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
@@ -11689,6 +11844,8 @@ Make sure your parameters are correctly set.
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRPLANE)
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRCHIRAL)
         G2frame.Bind(wx.EVT_MENU, OnDefineRB, id=G2G.wxID_DRAWDEFINERB)
+        G2frame.Bind(wx.EVT_MENU, FillMolecule, id=G2G.wxID_DRAWADDMOLECULE)
+        
         # RB Models
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.RigidBodiesMenu)
         G2frame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2G.wxID_AUTOFINDRESRB)

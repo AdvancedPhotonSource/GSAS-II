@@ -5296,7 +5296,7 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,i
         nBins = len(Dbins)
         wid = Dbins[1]-Dbins[0]
     else:
-        nBins= max(10,len(Xarray)//10)
+        nBins= min(40,max(10,len(Xarray)//10))
         if maxBins is not None:
             nBins = min(nBins,maxBins)
         Bins,Dbins = np.histogram(Xarray,nBins)

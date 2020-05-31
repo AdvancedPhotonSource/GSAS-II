@@ -665,9 +665,9 @@ def RetDistAngle(DisAglCtls,DisAglData):
                                 IndBlist.append(str(dx.T[indb][i]))
                                 unit = Units[indb][i]
                                 tunit = (unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
-                                pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
                                 sig = 0.0
                                 if len(Xvcov):
+                                    pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
                                     sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,Xvcov)))
                                 Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
                                 if (Dist[-1][-2]-AsumR) <= 0.:

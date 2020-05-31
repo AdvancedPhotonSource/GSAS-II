@@ -5988,7 +5988,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'wxID_ATOMSMODIFY', 'wxID_ATOMSTRANSFORM', 'wxID_ATOMSVIEWADD', 'wxID_ATOMVIEWINSERT',
             'wxID_RELOADDRAWATOMS', 'wxID_ATOMSDISAGL', 'wxID_ATOMMOVE', 'wxID_MAKEMOLECULE',
             'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM',
-            'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY', 
+            'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST', 
             'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL',)
         self.AtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.AtomsMenu)
@@ -6025,6 +6025,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ReImportMenuId[item.GetId()] = None # try all readers
         self.AtomCompute.Append(G2G.wxID_ATOMSDISAGL,'Show Distances && Angles','Compute distances & angles for selected atoms')
         self.AtomCompute.Append(G2G.wxID_ATOMSPDISAGL,'Save Distances && Angles','Compute distances & angles for selected atoms')
+        self.AtomCompute.Append(G2G.wxID_ATOMSBNDANGLHIST,'Histogram Bonds && Angles','Histogram bonds & angles for selected atoms')
         self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
         self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,'ISODISTORT mode values',
             'Compute values of ISODISTORT modes from atom parameters')

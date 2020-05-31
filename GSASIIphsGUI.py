@@ -4101,7 +4101,10 @@ def UpdatePhaseData(G2frame,Item,data):
         OnDistAngle(event,fp=fp)
         fp.close()
     
-    def OnDistAngle(event,fp=None):
+    def OnDistAngleHist(event):
+        OnDistAngle(event,hist=True)
+        
+    def OnDistAngle(event,fp=None,hist=False):
         'Compute distances and angles'    
         indx = getAtomSelections(Atoms)
         Oxyz = []
@@ -4125,10 +4128,15 @@ def UpdatePhaseData(G2frame,Item,data):
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             cx = colLabels.index('x')
             cn = colLabels.index('Name')
+            ct = colLabels.index('Type')
+            Atypes = []
             for i,atom in enumerate(atomData):
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
                 if i in indx:
                     Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+                    Atypes.append(atom[ct])
+            Atypes = set(Atypes)
+            Atypes = ', '.join(Atypes)
             DisAglData['OrigAtoms'] = Oxyz
             DisAglData['TargAtoms'] = xyz
             generalData = data['General']
@@ -4138,7 +4146,20 @@ def UpdatePhaseData(G2frame,Item,data):
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
             try:
-                if fp:
+                if hist:
+                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+                    Bonds = []
+                    for dists in DistArray:
+                        Bonds += [item[3] for item in DistArray[dists]]
+                    G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
+                        Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
+                    Angles = []
+                    for angles in AngArray:
+                        Angles += [item[2][0] for item in AngArray[angles]]
+                    G2plt.PlotBarGraph(G2frame,Angles,Xname='$\mathsf{Angles,{^o}}$',
+                        Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
+                    
+                elif fp:
                     G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
                 else:    
                     G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
@@ -5690,6 +5711,7 @@ Make sure your parameters are correctly set.
                                     elif 'DihedralAngleConstraint' in sitem:
                                         impangles = 180.*item.get_constraint_value()['angles']/np.pi
                                         impangleList = item.anglesList[:4]
+                                        print(' Dihedral angle chi^2 =  %2f'%item.standardError)
                                         atoms = ENGINE.get_original_data("allElements",frame)
                                         impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
                                             atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
@@ -11795,6 +11817,7 @@ Make sure your parameters are correctly set.
         G2frame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2G.wxID_RELOADDRAWATOMS)
         G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)
+        G2frame.Bind(wx.EVT_MENU, OnDistAngleHist, id=G2G.wxID_ATOMSBNDANGLHIST)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
         G2frame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:

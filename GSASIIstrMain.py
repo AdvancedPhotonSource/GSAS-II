@@ -574,7 +574,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2fil.G2Print (' ***** Sequential refinement successful *****')
     return True,'Success'
 
-def RetDistAngle(DisAglCtls,DisAglData):
+def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
     '''Compute and return distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
@@ -634,7 +634,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
         AtomLabels[Oatom[0]] = Oatom[1]
     DistArray = {}
     AngArray = {}
-    for Oatom in origAtoms:
+    for iO,Oatom in enumerate(origAtoms):
         DistArray[Oatom[0]] = []
         AngArray[Oatom[0]] = []
         OxyzNames = ''
@@ -676,6 +676,8 @@ def RetDistAngle(DisAglCtls,DisAglData):
                                 else:
                                     Vect.append([0.,0.,0.])
                                     VectA.append([])
+            if dlg is not None:
+                dlg.Update(iO,newmsg='Atoms done=%d'%(iO))
         for D in Dist:
             DistArray[Oatom[0]].append(D[1:])
         Vect = np.array(Vect)

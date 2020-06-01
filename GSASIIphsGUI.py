@@ -1095,8 +1095,14 @@ class AddHatomDialog(wx.Dialog):
 ################################################################################
 #### Phase editing routines
 ################################################################################
-def getAtomSelections(AtmTbl,action='action'):
-    '''get selected atoms from table or ask user if none are selected'''
+def getAtomSelections(AtmTbl,cn=0,action='action'):
+    '''get selected atoms from table or ask user if none are selected
+    
+        param: AtmTbl list atom or draw atom table
+        param: int cn atom name position
+        action: str description
+        returns: list indx selected atoms fr tom indices in table
+    '''
     indx = AtmTbl.GetSelectedRows()
     indx += [row for row,col in AtmTbl.GetSelectedCells()]
     for top,bottom in zip([r for r,c in AtmTbl.GetSelectionBlockTopLeft()],
@@ -1106,7 +1112,7 @@ def getAtomSelections(AtmTbl,action='action'):
     if indx: return indx
     choices = []
     for i in range(AtmTbl.GetNumberRows()):
-        val = AtmTbl.GetCellValue(i,0)
+        val = AtmTbl.GetCellValue(i,cn)
         if val in choices:
             val += '_' + str(i)
         choices.append(val)
@@ -1117,6 +1123,19 @@ def getAtomSelections(AtmTbl,action='action'):
         indx = dlg.GetSelections()
     dlg.Destroy()
     return indx
+
+def getAtomPtrs(data,draw=False):
+    ''' get atom data pointers cx,ct,cs,cia in Atoms or Draw Atoms lists
+    NB:may not match column numbers in displayed table
+    
+        param: dict: data phase data structure
+        draw: boolean True if Draw Atoms list pointers are required
+        return: cx,ct,cs,cia pointers to atom xyz, type, site sym, uiso/aniso flag
+    '''
+    if draw:
+        return data['Drawing']['atomPtrs']
+    else:
+        return data['General']['AtomPtrs']
 
 def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
     if mainSizer is not None:
@@ -3531,7 +3550,8 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnAtomInsert(event):
         '''Inserts a new atom into list immediately before every selected atom
         '''
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         for a in reversed(sorted(indx)):
             AtomInsert(a,0.,0.,0.)
         event.StopPropagation()
@@ -3551,7 +3571,8 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnHydAtomAdd(event):
         '''Adds H atoms to fill out coordination sphere for selected atoms
         '''
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         DisAglCtls = {}
         generalData = data['General']
@@ -3569,7 +3590,6 @@ def UpdatePhaseData(G2frame,Item,data):
             return
         dlg.Destroy()
         generalData['DisAglCtls'] = DisAglCtls
-        cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
         AtNames = [atom[ct-1] for atom in atomData]
         AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
@@ -3674,13 +3694,14 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
         
     def OnAtomMove(event):
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         drawData = data['Drawing']
         atomData = data['Atoms']
         x,y,z = drawData['viewPoint'][0]
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         cx = colLabels.index('x')
         ci = colLabels.index('I/A')
-        indx = getAtomSelections(Atoms)
         if len(indx) != 1:
             G2frame.ErrorDialog('Atom move error','Only one atom can be moved')
         elif atomData[indx[0]][ci+8] in rbAtmDict:
@@ -3776,10 +3797,11 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomDelete(event):
+        cx,ct,cs,ci = getAtomPtrs(data,ct-1)      
+        indx = getAtomSelections(Atoms)
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         HydIds = data['General']['HydIds']
         ci = colLabels.index('I/A')
-        indx = getAtomSelections(Atoms)
         IDs = []
         if not indx: return
         atomData = data['Atoms']
@@ -3807,10 +3829,11 @@ def UpdatePhaseData(G2frame,Item,data):
         event.StopPropagation()
         
     def AtomRefine(event):
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
+        if not indx: return
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         c = colLabels.index('refine')
-        indx = getAtomSelections(Atoms)
-        if not indx: return
         atomData = data['Atoms']
         generalData = data['General']
         Type = generalData['Type']
@@ -3831,7 +3854,8 @@ def UpdatePhaseData(G2frame,Item,data):
         dlg.Destroy()
 
     def AtomModify(event):
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         atomData = data['Atoms']
         generalData = data['General']
@@ -3941,7 +3965,8 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomTransform(event):
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         generalData = data['General']
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
@@ -4010,7 +4035,8 @@ def UpdatePhaseData(G2frame,Item,data):
 #            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
-#        indx = getAtomSelections(Atoms)
+#        cx,ct,cs,ci = getAtomPtrs(data)      
+#        indx = getAtomSelections(Atoms,ct-1)
 #        if indx:
 #            generalData = data['General']
 #            A,B = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -4054,7 +4080,8 @@ def UpdatePhaseData(G2frame,Item,data):
 #            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
                 
     def MakeMolecule(event):      
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         DisAglCtls = {}
         if indx is not None and len(indx) == 1:
             generalData = data['General']
@@ -4106,7 +4133,8 @@ def UpdatePhaseData(G2frame,Item,data):
         
     def OnDistAngle(event,fp=None,hist=False):
         'Compute distances and angles'    
-        indx = getAtomSelections(Atoms)
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
         Oxyz = []
         xyz = []
         DisAglData = {}
@@ -4147,17 +4175,22 @@ def UpdatePhaseData(G2frame,Item,data):
                 DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
             try:
                 if hist:
-                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+                    pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1, 
+                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
+                    pgbar.Destroy()
                     Bonds = []
                     for dists in DistArray:
                         Bonds += [item[3] for item in DistArray[dists]]
                     G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
                         Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
+                    print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
                     Angles = []
                     for angles in AngArray:
                         Angles += [item[2][0] for item in AngArray[angles]]
                     G2plt.PlotBarGraph(G2frame,Angles,Xname='$\mathsf{Angles,{^o}}$',
                         Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
+                    print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
                     
                 elif fp:
                     G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
@@ -7214,8 +7247,9 @@ Make sure your parameters are correctly set.
     def DrawAtomAdd(drawingData,atom):
         drawingData['Atoms'].append(MakeDrawAtom(atom))
         
-    def OnRestraint(event):        
-        indx = getAtomSelections(drawAtoms)
+    def OnRestraint(event):
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx = drawAtoms.GetSelectedRows()
         restData = G2frame.GPXtree.GetItemPyData(   
@@ -7223,7 +7257,6 @@ Make sure your parameters are correctly set.
         drawingData = data['Drawing']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
-        cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
         atXYZ = []
         atSymOp = []
@@ -7271,7 +7304,8 @@ Make sure your parameters are correctly set.
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
     def OnDefineRB(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx.sort()
         RBData = G2frame.GPXtree.GetItemPyData(   
@@ -7279,7 +7313,6 @@ Make sure your parameters are correctly set.
         drawingData = data['Drawing']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
-        cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
         rbXYZ = []
         rbType = []
@@ -7516,11 +7549,11 @@ Make sure your parameters are correctly set.
 #        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomStyle(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         generalData = data['General']
         atomData = data['Drawing']['Atoms']
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
         if generalData['Type'] == 'macromolecular':
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
@@ -7538,11 +7571,11 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomLabel(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtomsct-1)
         if not indx: return
         generalData = data['General']
         atomData = data['Drawing']['Atoms']
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         styleChoice = [' ','type','name','number']
         if generalData['Type'] == 'macromolecular':
             styleChoice = [' ','type','name','number','residue','1-letter','chain']
@@ -7558,14 +7591,14 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)
             
     def DrawAtomColor(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         if len(indx) > 1:
             G2frame.GetStatusBar().SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK',1)
         else:
             G2frame.GetStatusBar().SetStatusText('Change color, Add to Custom Colors, then OK',1)
         atomData = data['Drawing']['Atoms']
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         atmColors = []
         atmTypes = []
         for r in indx:
@@ -7618,10 +7651,10 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)         
         
     def SetViewPoint(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         atomData = data['Drawing']['Atoms']
-        cx = data['Drawing']['atomPtrs'][0]
         data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
 #            drawAtoms.ClearSelection()                                  #do I really want to do this?
         G2plt.PlotStructure(G2frame,data)
@@ -7634,11 +7667,11 @@ Make sure your parameters are correctly set.
             return True
                 
     def AddSymEquiv(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx.sort()
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-        cx,ct,cs,cui = data['Drawing']['atomPtrs']
         cuij = cui+2
         cmx = 0
         if 'Mx' in colLabels:
@@ -7689,13 +7722,13 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)
             
     def AddSphere(event):
-        indx = getAtomSelections(drawAtoms)
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         atomData = data['Drawing']['Atoms']
         numAtoms = len(atomData)
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         cuij = cs+5
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cmx = 0

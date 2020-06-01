@@ -3065,6 +3065,22 @@ def UpdatePhaseData(G2frame,Item,data):
                                 Atoms.SelectRow(row,True)
                     dlg.Destroy()
                     SetupGeneral()
+                elif Atoms.GetColLabelValue(c) == 'Name':
+                    choice = []
+                    for r in range(Atoms.GetNumberRows()):
+                        if str(atomData[r][c]) not in choice:
+                            choice.append(str(atomData[r][c]))
+                    choice.sort()
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Name',choice)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parms = choice[sel]
+                        noSkip = False
+                        Atoms.ClearSelection()
+                        for row in range(Atoms.GetNumberRows()):
+                            if parms == atomData[row][c]:
+                                Atoms.SelectRow(row,True)
+                    dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'residue':
                     choice = []
                     for r in range(Atoms.GetNumberRows()):
@@ -3422,7 +3438,7 @@ def UpdatePhaseData(G2frame,Item,data):
             Atoms.AutoSizeColumns(False)
             SetPhaseWindow(Atoms)
 
-# FillAtomsGrid executable code starts here
+#### FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
@@ -7469,7 +7485,7 @@ Make sure your parameters are correctly set.
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
             G2plt.PlotStructure(G2frame,data)                    
 
-        # UpdateDrawAtoms executable code starts here
+#### UpdateDrawAtoms executable code starts here
         G2frame.GetStatusBar().SetStatusText('',1)
         generalData = data['General']
         SetupDrawingData()

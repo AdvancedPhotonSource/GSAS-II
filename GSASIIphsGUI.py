@@ -1230,9 +1230,7 @@ def FindCoordination(ind,data,cmx=0,targets=None):
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     atomTypes,radii = getAtomRadii(data)
     atomData = data['Drawing']['Atoms']
-    numAtoms = len(atomData)
     cx,ct,cs,ci = data['Drawing']['atomPtrs']
-    cij = ci+2
     SGData = generalData['SGData']
     cellArray = G2lat.CellBlock(1)
     
@@ -1258,7 +1256,7 @@ def FindCoordination(ind,data,cmx=0,targets=None):
                 if SGData['SGGray']:
                     atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
                 else:    
-                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SGData['SpnFlp'][opNum-1]
             atom[cs-1] = str(item[2])+'+'
             atom[cs+5:cs+5+6] = item[1]
             posInAllCells = cellArray+np.array(atom[cx:cx+3])
@@ -3571,7 +3569,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnHydAtomAdd(event):
         '''Adds H atoms to fill out coordination sphere for selected atoms
         '''
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,cia = getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         DisAglCtls = {}
@@ -3797,7 +3795,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomDelete(event):
-        cx,ct,cs,ci = getAtomPtrs(data,ct-1)      
+        cx,ct,cs,ci = getAtomPtrs(data)      
         indx = getAtomSelections(Atoms)
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         HydIds = data['General']['HydIds']
@@ -4794,11 +4792,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     boxSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Box'],
                         i,min=10.,max=50.,size=(50,25)),0,WACV)
                 return boxSizer
-            
-            def OnByMolec(event):
-                RMCPdict['byMolec'] = bymolec.GetValue()
-                wx.CallAfter(UpdateRMC)
-                            
+                                        
             def OnReStart(event):
                 RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
                 
@@ -4969,10 +4963,6 @@ Make sure your parameters are correctly set.
             elif ifP1:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
                 lineSizer.Add(GetSuperSizer(),0,WACV)
-                # bymolec = wx.CheckBox(G2frame.FRMC,label='Save in molecule order?')
-                # bymolec.SetValue(RMCPdict['byMolec'])
-                # bymolec.Bind(wx.EVT_CHECKBOX,OnByMolec)
-                # lineSizer.Add(bymolec,0,WACV)
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
                 lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',min=1,size=[40,25]),0,WACV)
             else:
@@ -7572,7 +7562,7 @@ Make sure your parameters are correctly set.
 
     def DrawAtomLabel(event):
         cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
-        indx = getAtomSelections(drawAtomsct-1)
+        indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         generalData = data['General']
         atomData = data['Drawing']['Atoms']
@@ -7672,7 +7662,7 @@ Make sure your parameters are correctly set.
         if not indx: return
         indx.sort()
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-        cuij = cui+2
+        cuij = ci+2
         cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
@@ -7710,7 +7700,7 @@ Make sure your parameters are correctly set.
                                 atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
                             else:    
                                 atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                        if atom[cui] == 'A':
+                        if atom[cuij] == 'A':
                             Uij = atom[cuij:cuij+6]
                             Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
                             atom[cuij:cuij+6] = Uij
@@ -7902,17 +7892,10 @@ Make sure your parameters are correctly set.
             radii[indH] = 0.5
         except:
             pass
-        atomData = data['Drawing']['Atoms']
-        numAtoms = len(atomData)
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
-        cij = ci+2
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
-        SGData = generalData['SGData']
-        cellArray = G2lat.CellBlock(1)
-        nind = len(indx)
         pgbar = wx.ProgressDialog('Fill molecular coordination',
                                     'Passes done=0 %0',params['maxrep'], 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
@@ -7965,15 +7948,11 @@ Make sure your parameters are correctly set.
             pass
         indx.sort()
         atomData = data['Drawing']['Atoms']
-        numAtoms = len(atomData)
         cx,ct,cs,ci = data['Drawing']['atomPtrs']
-        cij = ci+2
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
-        SGData = generalData['SGData']
-        cellArray = G2lat.CellBlock(1)
         nind = len(indx)
         pgbar = wx.ProgressDialog('Fill CN sphere for %d atoms'%nind,'Atoms done=',nind+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
@@ -10141,7 +10120,6 @@ Make sure your parameters are correctly set.
         cx,ct = general['AtomPtrs'][:2]
         atomData = data['Atoms']
         Indx = {}
-        atInd = [-1,-1,-1]
         data['testRBObj'] = {}
         if len(rbNames) == 1:
             selection = list(rbNames.keys())[0]

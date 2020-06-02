@@ -5783,8 +5783,8 @@ Make sure your parameters are correctly set.
                                             Proc.resume()
                                         return
                                     Z = rdfDict['total']
-                                    XY = [[X,Y],[X,Z]]
-                                    Names = ['Obs','Calc']
+                                    XY = [[X,Z],[X,Y]]
+                                    Names = ['Calc','Obs']
                                     G2plt.PlotXY(G2frame,XY,labelX=Xlab,
                                         labelY=Ylab,newPlot=True,Title=title+pName,
                                         lines=True,names=Names)
@@ -5831,6 +5831,7 @@ Make sure your parameters are correctly set.
                                             bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
                                             G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title='%s Bond lengths for %s'%(Bname,pName),
                                                 PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
+                                            print(' %d %s bonds found'%(len(bondLens),Bname))
                                     elif 'BondsAngleConstraint' in sitem:
                                         angles = 180.*item.get_constraint_value()['angles']/np.pi
                                         angleList = item.anglesList[:3]
@@ -5842,6 +5843,7 @@ Make sure your parameters are correctly set.
                                             bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
                                             G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
                                                 PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
+                                            print(' %d %s angles found'%(len(bondAngs),Aname))
                                     elif 'DihedralAngleConstraint' in sitem:
                                         impangles = 180.*item.get_constraint_value()['angles']/np.pi
                                         impangleList = item.anglesList[:4]
@@ -6009,7 +6011,7 @@ Make sure your parameters are correctly set.
                             labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                             lines=True,names=Names[1:])
                     else:
-                        G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
+                        G2plt.PlotXY(G2frame,[Ycalc,Yobs],labelX=Labels[label][0],
                             labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                             lines=True,names=Names[1:])
                         RMCPdict[pName+label] = np.sum(Ycalc[1])/np.sum(Yobs[1])
@@ -6144,6 +6146,7 @@ Make sure your parameters are correctly set.
                     print('%s mean %.3f(%d)'%(title,np.mean(bondDist),int(1000*np.std(bondDist))))
                     G2plt.PlotBarGraph(G2frame,bondDist,Xname=r'$Bond, \AA$',Title=title+' from Potential Energy Restraint',
                         PlotName='%s Bond for %s'%(title,pName))
+                    print(' %d %s bonds found'%(len(bondDist),title))
                 
 #alt angle histograms - from rmc6 & triplets files
             tripName = pName+'.triplets'
@@ -6173,6 +6176,7 @@ Make sure your parameters are correctly set.
                     print('%s mean %.2f(%d)'%(title,np.mean(angles),int(100*np.std(angles))))
                     G2plt.PlotBarGraph(G2frame,angles,Xname=r'$Angle, \AA$',Title=title+' from Potential Energy Restraint',
                         PlotName='%s Angle for %s'%(title,pName))
+                    print(' %d %s angles found'%(len(angles),title))
                                 
 #bond odf plots                
             nPot = len(RMCPdict['Potentials']['Stretch'])

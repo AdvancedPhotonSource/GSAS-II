@@ -37,6 +37,7 @@ import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
+import GSASIIfiles as G2fl
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
@@ -2510,7 +2511,7 @@ def UpdateRigidBodies(G2frame,data):
             rd.ReInitialize()
             rd.errors = ""
             if not rd.ContentsValidator(filename):   # Report error
-                G2fil.G2Print("Warning: File {} has a validation error".format(filename))
+                G2fl.G2Print("Warning: File {} has a validation error".format(filename))
                 return
             if len(rd.selections) > 1:
                 print("File {} has {} phases. This is unexpected."
@@ -2520,8 +2521,14 @@ def UpdateRigidBodies(G2frame,data):
             rd.objname = os.path.basename(filename)
             try:
                 flag = rd.Reader(filename)
-            except:
-                G2fil.G2Print("Warning: read of file {} failed".format(filename))
+            except Exception as msg:
+                G2fl.G2Print("Warning: read of file {} failed\n{}".format(
+                    filename,rd.errors))
+                if GSASIIpath.GetConfigValue('debug'):
+                    print(msg)
+                    import traceback
+                    print (traceback.format_exc())
+                    GSASIIpath.IPyBreak()
                 return
 
         pagename = 'Rigid body importer'

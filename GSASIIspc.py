@@ -3323,8 +3323,11 @@ def SytSym(XYZ,SGData):
                         dupDir[px] = L
                         Isym += 2**(jx-1)
     if Isym == 1073741824: Isym = 0
-    Mult = len(SGData['SGOps'])*Ncen*inv//Jdup
-          
+    try:
+        Mult = len(SGData['SGOps'])*Ncen*inv//Jdup
+    except: # patch because Jdup is not getting incremented for most atoms!
+        Mult = 0
+        
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
    
 def MagSytSym(SytSym,dupDir,SGData):

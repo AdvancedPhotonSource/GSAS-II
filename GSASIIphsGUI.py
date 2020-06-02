@@ -1223,9 +1223,96 @@ def getAtomRadii(data):
                 DisAglCtls['AngleRadii'].append(dis)
                 DisAglCtls['BondRadii'].append(dis)
     return DisAglCtls['AtomTypes'],DisAglCtls['BondRadii']
+
+def FindCoordinationByLabel(data):
+    '''Map out molecular connectivity by determining the atoms bonded
+    to each atom, by label. The atoms boced to each atom in the asymmetric 
+    unit is determined and returned in a dict. Works best 
+    '''
+    generalData = data['General']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    atomTypes,radii = getAtomRadii(data)
+    SGData = generalData['SGData']
+    cellArray = G2lat.CellBlock(1)
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+
+    neighborArray = {}
+    error = ''
+    for atomA in data['Atoms']:
+        lblA = atomA[0]
+        if lblA in neighborArray:
+            if error: error += ', '
+            error += lblA
+        else:
+            neighborArray[lblA] = []
+        xyzA = np.array(atomA[cx:cx+3])
+        indA = atomTypes.index(atomA[ct])
+        for atomB in data['Atoms']:
+            indB = atomTypes.index(atomB[ct])
+            sumR = data['Drawing']['radiusFactor']*(radii[indA]+radii[indB])
+            symAtms = [atm[0] for atm in  G2spc.GenAtom(np.array(atomB[cx:cx+3]),SGData,False,6*[0],True)]
+            symCellAtms = np.concatenate([cellArray+i for i in symAtms])
+            dists = np.sqrt(np.sum(np.inner(Amat,symCellAtms-xyzA)**2,axis=0))
+            if np.any(np.logical_and(dists < sumR, dists != 0)):
+                if atomB[0] not in neighborArray[lblA]:
+                    neighborArray[lblA].append(atomB[0])
+    if error:
+        print('Warning, duplicated atom labels:',error)
+    return neighborArray
     
-def FindCoordination(ind,data,cmx=0,targets=None):
-    'Find atoms coordinating atom ind, spe'
+# def FindCoordination(ind,data,cmx=0,targets=None):
+#     'Find atoms coordinating atom ind, somewhat faster version'
+#     time1 = time.time()
+#     generalData = data['General']
+#     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#     atomTypes,radii = getAtomRadii(data)
+#     atomData = data['Drawing']['Atoms']
+#     numAtoms = len(atomData)
+#     cx,ct,cs,ci = data['Drawing']['atomPtrs']
+#     cij = ci+2
+#     SGData = generalData['SGData']
+#     cellArray = G2lat.CellBlock(1)
+    
+#     newAtomList = []
+#     atomA = atomData[ind]
+#     xyzA = np.array(atomA[cx:cx+3])
+#     indA = atomTypes.index(atomA[ct])
+#     for atomB in atomData:
+#         if targets and atomB[ct] not in targets:
+#             continue
+#         indB = atomTypes.index(atomB[ct])
+#         sumR = radii[indA]+radii[indB]
+#         xyzB = np.array(atomB[cx:cx+3])
+#         Uij = atomB[cs+5:cs+5+6]
+#         for item in G2spc.GenAtom(xyzB,SGData,False,Uij,True):
+#             atom = copy.copy(atomB)
+#             atom[cx:cx+3] = item[0]
+#             Opr = abs(item[2])%100
+#             M = SGData['SGOps'][Opr-1][0]
+#             if cmx:
+#                 opNum = G2spc.GetOpNum(item[2],SGData)
+#                 mom = np.array(atom[cmx:cmx+3])
+#                 if SGData['SGGray']:
+#                     atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+#                 else:    
+#                     atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+#             atom[cs-1] = str(item[2])+'+'
+#             atom[cs+5:cs+5+6] = item[1]
+#             posInAllCells = cellArray+np.array(atom[cx:cx+3])
+#             dists = np.sqrt(np.sum(np.inner(Amat,posInAllCells-xyzA)**2,axis=0))
+#             bonded = np.logical_and(dists < data['Drawing']['radiusFactor']*sumR, dists !=0)
+#             for xyz in posInAllCells[bonded]:
+#                 if True in [np.allclose(np.array(xyz),np.array(atom[cx:cx+3]),atol=0.0002) for atom in atomData]: continue
+#                 C = xyz-atom[cx:cx+3]+item[3]
+#                 newAtom = atom[:]
+#                 newAtom[cx:cx+3] = xyz
+#                 newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+#                 newAtomList.append(newAtom)
+#     print ('Search time: %.2fs'%(time.time()-time1))
+#     return newAtomList
+
+def FindCoordination(ind,data,neighborArray,coordsArray,cmx=0,targets=None):
+    'Find atoms coordinating atom ind, speed-up version'
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     atomTypes,radii = getAtomRadii(data)
@@ -1233,21 +1320,32 @@ def FindCoordination(ind,data,cmx=0,targets=None):
     cx,ct,cs,ci = data['Drawing']['atomPtrs']
     SGData = generalData['SGData']
     cellArray = G2lat.CellBlock(1)
-    
     newAtomList = []
     atomA = atomData[ind]
     xyzA = np.array(atomA[cx:cx+3])
+    lblA = atomA[0]
     indA = atomTypes.index(atomA[ct])
     for atomB in atomData:
-        if targets and atomB[ct] not in targets:
-            continue
+        if targets and atomB[ct] not in targets: continue
+        if atomB[0] not in neighborArray[lblA]: continue
         indB = atomTypes.index(atomB[ct])
-        sumR = radii[indA]+radii[indB]
+        sumR = data['Drawing']['radiusFactor']*(radii[indA]+radii[indB])
         xyzB = np.array(atomB[cx:cx+3])
         Uij = atomB[cs+5:cs+5+6]
+        coords = []
+        symMisc = []
         for item in G2spc.GenAtom(xyzB,SGData,False,Uij,True):
-            atom = copy.copy(atomB)
-            atom[cx:cx+3] = item[0]
+            coords.append(item[0])
+            symMisc.append(item[1:4])
+        symCoords = np.array(coords)
+        dists = np.sqrt(np.sum(np.inner(Amat,
+                np.array([symCoords+i-xyzA for i in cellArray])
+                                           )**2,axis=0))
+        for icell,isym in np.argwhere(np.logical_and(dists < sumR, dists != 0.0)):
+            xyz = symCoords[isym] + cellArray[icell]
+            item = [None]+list(symMisc[isym])
+            atom = copy.deepcopy(atomB)
+            atom[cx:cx+3] = xyz
             Opr = abs(item[2])%100
             M = SGData['SGOps'][Opr-1][0]
             if cmx:
@@ -1259,16 +1357,13 @@ def FindCoordination(ind,data,cmx=0,targets=None):
                     atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SGData['SpnFlp'][opNum-1]
             atom[cs-1] = str(item[2])+'+'
             atom[cs+5:cs+5+6] = item[1]
-            posInAllCells = cellArray+np.array(atom[cx:cx+3])
-            dists = np.sqrt(np.sum(np.inner(Amat,posInAllCells-xyzA)**2,axis=0))
-            bonded = np.logical_and(dists < data['Drawing']['radiusFactor']*sumR, dists !=0)
-            for xyz in posInAllCells[bonded]:
-                if True in [np.allclose(np.array(xyz),np.array(atom[cx:cx+3]),atol=0.0002) for atom in atomData]: continue
-                C = xyz-atom[cx:cx+3]+item[3]
-                newAtom = atom[:]
-                newAtom[cx:cx+3] = xyz
-                newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                newAtomList.append(newAtom)
+            # have we already found an atom at this site?
+            if np.any(np.all(np.isclose(xyz,coordsArray,atol=0.0002),axis=1)): continue
+            # are we going to add it already?
+            if True in [np.allclose(np.array(xyz),np.array(a[cx:cx+3]),atol=0.0002) for a in newAtomList]: continue
+            C = xyz-symCoords[isym]+item[3]
+            atom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+            newAtomList.append(atom)
     return newAtomList
 
 def FindBondsDrawCell(data,cell):    
@@ -7853,6 +7948,11 @@ Make sure your parameters are correctly set.
         G2plt.PlotStructure(G2frame,data)
             
     def FillMolecule(event):
+        '''This is called by the Complete Molecule command. It adds a layer of bonded atoms 
+        of the selected types for all selected atoms in the Draw Atoms table. If the number
+        of repetitions is greater than one, the added atoms (other than H atoms, which are assumed
+        to only have one bond) are then searched for the next surrounding layer of bonded atoms.
+        '''
         indx = getAtomSelections(drawAtoms)
         if not indx: return
         generalData = data['General']
@@ -7861,12 +7961,13 @@ Make sure your parameters are correctly set.
         
         dlg = wx.Dialog(G2frame,wx.ID_ANY,'Addition criteria',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        dlg.CenterOnParent()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Molecular completion parameters'),0,WACV)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Max # of repetitions: '),0,WACV)
         choices = [1,2,5,10,50]
-        params = {'maxrep':5, 'maxatm':1000}
+        params = {'maxrep':10, 'maxatm':1000}
         topSizer.Add(G2G.EnumSelector(dlg,params,'maxrep',
                         [str(i) for i in choices],choices))
         mainSizer.Add(topSizer,0,WACV)
@@ -7912,8 +8013,14 @@ Make sure your parameters are correctly set.
         cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
+        SGData = generalData['SGData']
+        cellArray = G2lat.CellBlock(1)
+        neighborArray = FindCoordinationByLabel(data)
+
+        time1 = time.time()
         pgbar = wx.ProgressDialog('Fill molecular coordination',
-                                    'Passes done=0 %0',params['maxrep'], 
+            'Passes done=0 %0',params['maxrep'],
+            parent=G2frame,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
@@ -7926,30 +8033,31 @@ Make sure your parameters are correctly set.
         targets = [item for item in atomTypes if params[item]]
         for rep in range(params['maxrep']):
             startlen = len(data['Drawing']['Atoms'])
+            coordsArray = np.array([a[cx:cx+3] for a in atomData])
             addedAtoms = []
             for Ind,ind in enumerate(indx):
-                addedAtoms += FindCoordination(ind,data,cmx,targets)
+                addedAtoms += FindCoordination(ind,data,neighborArray,coordsArray,cmx,targets)
                 GoOn = pgbar.Update(rep+1,
                     newmsg='Passes done={} atom #{} of {}'
                                         .format(rep+1,Ind+1,len(indx)))
-                wx.Yield()
                 if not GoOn[0]: break
             if not GoOn[0]: break
-            print('pass {} processed {} atoms adding {}'.format(
-                rep+1,len(indx),len(addedAtoms)))
+            print('pass {} processed {} atoms adding {}; Search time: {:.2f}s'.format(
+                rep+1,len(indx),len(addedAtoms),time.time()-time1))
+            time1 = time.time()            
+
             if len(addedAtoms) == 0: break
             added += len(addedAtoms)
             if added > params['maxatm']: break
             data['Drawing']['Atoms'] += addedAtoms
-            indx = list(range(startlen,startlen+len(addedAtoms)))
+            # atoms to search over (omit H)
+            indx = [i+startlen for i in range(len(addedAtoms)) if addedAtoms[i][ct] != 'H']  
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
-            #GSASIIpath.IPyBreak()
         pgbar.Destroy()   
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
-        #GSASIIpath.IPyBreak()
         
     def FillCoordSphere(event):
         indx = getAtomSelections(drawAtoms)

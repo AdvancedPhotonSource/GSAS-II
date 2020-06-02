@@ -676,8 +676,8 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
                                 else:
                                     Vect.append([0.,0.,0.])
                                     VectA.append([])
-            if dlg is not None:
-                dlg.Update(iO,newmsg='Atoms done=%d'%(iO))
+        if dlg is not None:
+            dlg.Update(iO,newmsg='Atoms done=%d'%(iO))
         for D in Dist:
             DistArray[Oatom[0]].append(D[1:])
         Vect = np.array(Vect)

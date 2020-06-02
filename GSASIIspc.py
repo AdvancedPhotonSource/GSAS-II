@@ -3298,7 +3298,7 @@ def SytSym(XYZ,SGData):
     if SGData['SGFixed']:       #already in list of operators
         inv = 1
     if SGData['SGGray'] and Ncen > 1: Ncen //= 2
-    Xeqv = list(GenAtom(XYZ,SGData,True))
+    Xeqv = list(GenAtom(np.array(XYZ)%1.,SGData,True))
 #    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData['SGOps'])
     L = -1

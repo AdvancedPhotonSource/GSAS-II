@@ -2229,7 +2229,7 @@ def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
     generalData = Phase['General']
     Dups,Fracs = findDup(Phase['Atoms'])
     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
-    ifSfracs = np.any(np.array(Sfracs)-1.)
+    ifSfracs = any([np.any(sfracs-1.) for sfracs in Sfracs])
     Sample = PWDdata['Sample Parameters']
     Meta['temperature'] = Sample['Temperature']
     Meta['pressure'] = Sample['Pressure']
@@ -2782,7 +2782,7 @@ def MakefullrmcPDB(Name,Phase,RMCPdict):
     Atseq = RMCPdict['atSeq']
     Dups,Fracs = findDup(Phase['Atoms'])
     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
-    ifSfracs = np.any(np.array(Sfracs)-1.)
+    ifSfracs = any([np.any(sfracs-1.) for sfracs in Sfracs])
     Supercell = RMCPdict['SuperCell']
     Cell = generalData['Cell'][1:7]
     Trans = np.eye(3)*np.array(Supercell)

@@ -8226,6 +8226,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 GetTruePosition(xy)
             elif event.RightIsDown():
                 GetTruePosition(xy,True)
+            Draw('Shift atom select')
         else:
             drawingData['oldxy'] = list(xy)
         

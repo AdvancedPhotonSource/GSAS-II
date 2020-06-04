@@ -5672,14 +5672,14 @@ Make sure your parameters are correctly set.
         else:
             RMCPdict = data['RMC']['RMCProfile']
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-            rmcexe = os.path.split(rmcfile)[0]
-            print(rmcexe)
             if rmcfile is None:
                 wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
       Obtain the zip file distribution from www.rmcprofile.org, 
       unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
           caption='RMCProfile',style=wx.ICON_INFORMATION)
                 return
+            rmcexe = os.path.split(rmcfile)[0]
+            print(rmcexe)
             wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
       M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, 

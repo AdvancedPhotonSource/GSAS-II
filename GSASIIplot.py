@@ -8190,7 +8190,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if Add:
             Indx = GetSelectedAtoms()
         if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
-            for i,peak in enumerate(mapPeaks):
+            for i,peak in enumerate(atomList):
                 x,y,z = peak[1:4]
                 X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
@@ -8203,21 +8203,26 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SetSelectedAtoms(Id,Add)
                     except:
                         SetSelectedAtoms(i,Add)
+            return
+        elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
+            atomList = drawAtoms
+            cx = G2phG.getAtomPtrs(data,True)[0]
         else:
-            cx = drawingData['atomPtrs'][0]
-            for i,atom in enumerate(drawAtoms):
-                x,y,z = atom[cx:cx+3]
-                X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
-                XY = [int(X),int(View[3]-Y)]
-                if np.allclose(xy,XY,atol=10) and Z < Zmax:
-                    Zmax = Z
-                    try:
-                        Indx.remove(i)
-                        ClearSelectedAtoms()
-                        for Id in Indx:
-                            SetSelectedAtoms(Id,Add)
-                    except:
-                        SetSelectedAtoms(i,Add)
+            atomList = data['Atoms']
+            cx = G2phG.getAtomPtrs(data)[0]
+        for i,atom in enumerate(atomList):
+            x,y,z = atom[cx:cx+3]
+            X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
+            XY = [int(X),int(View[3]-Y)]
+            if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                Zmax = Z
+                try:
+                    Indx.remove(i)
+                    ClearSelectedAtoms()
+                    for Id in Indx:
+                        SetSelectedAtoms(Id,Add)
+                except:
+                    SetSelectedAtoms(i,Add)
                                        
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -8390,7 +8395,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Id = drawAtoms[ind][-3]
                 for i,atom in enumerate(atomData):
                     if atom[-1] == Id:
-                        G2frame.phaseDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
+                        G2frame.phaseDisplay.GetPage(page).SelectRow(i,Add)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
         page = getSelection()

@@ -2714,7 +2714,8 @@ SwapGen = {}
     rundata += '        constraint.set_default_distance(%f)\n'%RMCPdict['min Contact']
     rundata += '    elif "PairDistribution" in strcons:\n'
     rundata += '        constraint.set_variance_squared(wtDict["Pair-"+constraint.weighting])\n'
-    rundata += '        constraint.set_limits((%.3f,%.3f))\n'%(rmin,rmax)
+    rundata += '        constraint.set_limits((None,%.3f))\n'%(rmax)
+#    rundata += '        constraint.set_limits((%.3f,%.3f))\n'%(rmin,rmax)
     if RMCPdict['FitScale']:
         rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
     rundata += '    elif "StructureFactor" in strcons:\n'

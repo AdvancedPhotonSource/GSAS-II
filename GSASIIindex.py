@@ -853,7 +853,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
     while tries < Ntries and GoOn:
         if A:
             Abeg = ranAbyR(ibrav,A,tries+1,Ntries,ran2axis)
-            if ibrav in [13,14,15]:         #monoclinic & triclinic
+            if ibrav > 12:         #monoclinic & triclinic
                 Abeg = ranAbyR(ibrav,A,tries/10+1,Ntries,ran2axis)
         else:
             Abeg = ranAbyV(ibrav,amin,amax,V1)
@@ -863,7 +863,6 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
             GoOn = False
         else:
             if dlg:
-#                GoOn,Skip = dlg.Update(100*Nc/ncMax)   #wx error doesn't work in 32 bit versions!
                 dlg.Raise()
                 GoOn = dlg.Update(100*Nc/ncMax)[0]
                 if Skip or not GoOn:
@@ -931,7 +930,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
         'Orthorhombic-B','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-I','Monoclinic-C','Monoclinic-P','Triclinic']
     tries = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th']
-    N1s = [1,1,1,   5,5,  5,5, 50,50,50,50,50,50,  50,50,50, 200]
+    N1s = [1,1,1,   5,5,  5,5, 50,50,50,50,50,50,  100,100,100, 200]
     N2s = [1,1,1,   2,2,  2,2,     2,2,2,2,2,2,   2,2,2,   4]
     Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,1,1,   2,2,2,   4]
     notUse = 0
@@ -1011,7 +1010,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                         if ibrav < 13:
                             V1 *= 1.1
                         elif ibrav in range(13,17):
-                            V1 *= 1.05
+                            V1 *= 1.025
                         if not GoOn:
                             if bestM20 > topM20:
                                 topM20 = bestM20

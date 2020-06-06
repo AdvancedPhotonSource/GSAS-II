@@ -6167,8 +6167,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PawleyEdit.Append(G2G.wxID_PAWLEYLOAD,'Pawley create','Initialize Pawley reflection list')
         self.PawleyEdit.Append(G2G.wxID_PAWLEYESTIMATE,'Pawley estimate','Estimate initial Pawley intensities')
         self.PawleyEdit.Append(G2G.wxID_PAWLEYUPDATE,'Pawley update','Update negative Pawley intensities with -0.5*Fobs and turn off refinement')
-        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELALL,'Select all','Select all reflections to be refined')
-        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELNONE,'Select none','Set flag for all reflections for no refinement')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELALL,'Refine all','Refine Fsq of all reflections')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELNONE,'Refine none','No reflection Fsq refinement')
         self.PawleyEdit.Append(G2G.wxID_PAWLEYSELTOGGLE,'Toggle Selection','Toggle Selection flag for all reflections to opposite setting')
         self.PostfillDataMenu()
             

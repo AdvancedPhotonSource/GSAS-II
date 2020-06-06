@@ -9831,6 +9831,7 @@ Make sure your parameters are correctly set.
             rbObj = data['testRBObj']['rbObj']
             rbId = rbObj['RBId']
             rbAtmTypes = RBData[rbType][rbId]['rbTypes']
+            atomData = data['Atoms']
             if 'atNames' in RBData[rbType][rbId]:
                 rbAtmLbs = RBData[rbType][rbId]['atNames']
             else:
@@ -9838,6 +9839,13 @@ Make sure your parameters are correctly set.
                 
             newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
             atmTypes = [atomData[i][ct] for i in range(len(atomData))]
+            notfound = []
+            for t in rbAtmTypes:
+                if t not in atmTypes and t not in notfound:
+                    notfound.append(t)
+            if notfound:
+                print('Rigid body atom type(s) not in structure',notfound)
+                return []
             # remove assigned atoms from search groups
             for i in selDict:
                 atmTypes[selDict[i]] = None
@@ -9876,8 +9884,8 @@ Make sure your parameters are correctly set.
                         dist[pidIndx] = 100.
                         if min(dist) == 100:
                             print('no atom matches, how could this happen?')
-                            GSASIIpath.IPyBreak()
-                            return
+                            if GSASIIpath.GetConfigValue('debug'): GSASIIpath.IPyBreak()
+                            return []
                 Ids.append(atomData[pid][-1])
                 matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
                                       + atomData[pid][cx:cx+3] + [d, Ids[-1]])
@@ -10150,19 +10158,32 @@ Make sure your parameters are correctly set.
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0,WACV)
             matchTable = assignAtoms()
-            OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
-            OkBtn.Bind(wx.EVT_BUTTON, OnOk)
+            if not matchTable:
+                OkBtn = None
+                mainSizer.Add((15,15))
+                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                        'Error: unable to match atoms in rigid body to structure (see console window)'),
+                                  0,WACV)
+            else:
+                OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
+                OkBtn.Bind(wx.EVT_BUTTON, OnOk)
             CancelBtn = wx.Button(RigidBodies,wx.ID_ANY,'Cancel')
             CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
             btnSizer.Add((20,20),1)
-            btnSizer.Add(OkBtn)
+            if OkBtn: btnSizer.Add(OkBtn)
             btnSizer.Add(CancelBtn)
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 20)
                 
             SetPhaseWindow(RigidBodies,mainSizer)
             
+            if not matchTable:
+                mainSizer.Layout()
+                RigidBodies.SetScrollRate(10,10)
+                RigidBodies.SendSizeEvent()
+                RigidBodies.Scroll(0,0)
+                return
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]

@@ -8204,13 +8204,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SetSelectedAtoms(Id,Add)
                     except:
                         SetSelectedAtoms(i,Add)
+                        G2frame.G2plotNB.status.SetStatusText(
+                            '  Selected peak/atom: {}'.format(peak[0]),1)
             return
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms
             cx = G2phG.getAtomPtrs(data,True)[0]
+            sympt = cx+3
         else:
             atomList = data['Atoms']
             cx = G2phG.getAtomPtrs(data)[0]
+            sympt = None
         for i,atom in enumerate(atomList):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
@@ -8224,6 +8228,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SetSelectedAtoms(Id,Add)
                 except:
                     SetSelectedAtoms(i,Add)
+                    lbl = atom[0]
+                    if sympt:
+                        lbl += ' ' + atom[sympt]
+                    G2frame.G2plotNB.status.SetStatusText(
+                            '  Selected atom: {}'.format(lbl),1)
+        return
                                        
     def OnMouseDown(event):
         xy = event.GetPosition()

@@ -8190,7 +8190,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if Add:
             Indx = GetSelectedAtoms()
         if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
-            for i,peak in enumerate(atomList):
+            peakList = data['Map Peaks']
+            for i,peak in enumerate(peakList):
                 x,y,z = peak[1:4]
                 X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]

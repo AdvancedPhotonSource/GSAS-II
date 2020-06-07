@@ -8205,7 +8205,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     except:
                         SetSelectedAtoms(i,Add)
                         G2frame.G2plotNB.status.SetStatusText(
-                            '  Selected peak/atom: {}'.format(peak[0]),1)
+                         '    Selected peak: {:.3f} @ ({:.3f},{:.3f},{:.3f})'
+                            .format(*peak[0:4]),1)
             return
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms
@@ -8232,7 +8233,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     if sympt:
                         lbl += ' ' + atom[sympt]
                     G2frame.G2plotNB.status.SetStatusText(
-                            '  Selected atom: {}'.format(lbl),1)
+                            '    Selected atom: {}'.format(lbl),1)
         return
                                        
     def OnMouseDown(event):

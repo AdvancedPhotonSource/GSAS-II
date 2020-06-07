@@ -719,14 +719,18 @@ peak refinement script, where the data files are taken from the
     hist.Export_peaks('pkfit.txt')
     #gpx.save()  # gpx file is not written without this
 
---------------------
+-----------------------
 Pattern Simulation
---------------------
+-----------------------
 
-This shows an example where a structure is read from a CIF, a 
+This shows two examples where a structure is read from a CIF, a 
 pattern is computed using a instrument parameter file to specify the 
 probe type (neutrons here) and wavelength. 
-The pattern and reflection list are computed.
+
+The first example uses a CW neutron instrument parameter file. 
+The pattern is computed over a 2θ range of 5 to 120 degrees 
+with 1000 points. 
+The pattern and reflection list are written into files. 
 Data files are found in the 
 `Scripting Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
 
@@ -737,23 +741,41 @@ Data files are found in the
     import GSASIIscriptable as G2sc
     datadir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     PathWrap = lambda fil: os.path.join(datadir,fil)
-    gpx = G2sc.G2Project(filename='PbSO4sim.gpx') # create a project
-    # add a phase to the project
+    gpx = G2sc.G2Project(filename='PbSO4sim.gpx') # create a project    
     phase0 = gpx.add_phase(PathWrap("PbSO4-Wyckoff.cif"),
-             phasename="PbSO4",fmthint='CIF')
+             phasename="PbSO4",fmthint='CIF') # add a phase to the project
     # add a simulated histogram and link it to the previous phase(s)
     hist1 = gpx.add_simulated_powder_histogram("PbSO4 simulation",
-                PathWrap("inst_d1a.prm"),5.,120.,0.01,
-                phases=gpx.phases())
-    # Set the scale factor to adjust the y scale
-    hist1.SampleParameters['Scale'][0] = 1000000.
-    # parameter optimization and calculate pattern
-    gpx.data['Controls']['data']['max cyc'] = 0 # refinement not needed
-    gpx.do_refinements([{}])
+                PathWrap("inst_d1a.prm"),5.,120.,Npoints=1000,
+                phases=gpx.phases(),scale=500000.)
+    gpx.do_refinements([{}])   # calculate pattern
     gpx.save()
     # save results
     gpx.histogram(0).Export('PbSO4data','.csv','hist') # data
     gpx.histogram(0).Export('PbSO4refl','.csv','refl') # reflections
+
+This example uses bank#2 from a TOF neutron instrument parameter file. 
+The pattern is computed over a TOF range of 14 to 35 milliseconds with 
+the default of 2500 points. 
+This uses the same CIF as in the example before, but the instrument is found in the  
+`TOF-CW Joint Refinement Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/TOF-CW Joint Refinement/data>`_
+tutorial. 
+
+.. code-block::  python
+
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    cifdir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
+    datadir = "/Users/toby/software/G2/Tutorials/TOF-CW Joint Refinement/data"
+    gpx = G2sc.G2Project(filename='/tmp/PbSO4simT.gpx') # create a project
+    phase0 = gpx.add_phase(os.path.join(cifdir,"PbSO4-Wyckoff.cif"),
+             phasename="PbSO4",fmthint='CIF') # add a phase to the project
+    hist1 = gpx.add_simulated_powder_histogram("PbSO4 simulation",
+                os.path.join(datadir,"POWGEN_1066.instprm"),14.,35.,
+                phases=gpx.phases(),ibank=2)
+    gpx.do_refinements([{}])
+    gpx.save()
 
 ----------------------
 Simple Refinement
@@ -2117,9 +2139,10 @@ class G2Project(G2ObjectWrapper):
         self.update_ids()
         return self.histogram(newhist)
         
-    def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep,
-                                       wavelength=None, scale=None, phases=[], ibank=None):
-        """Loads a powder data histogram into the project.
+    def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep=None,
+                                       wavelength=None, scale=None, phases=[], ibank=None,
+                                           Npoints=None):
+        """Create a simulated powder data histogram for the project.
 
         Requires an instrument parameter file. 
         Note that in unix fashion, "~" can be used to indicate the
@@ -2129,20 +2152,26 @@ class G2Project(G2ObjectWrapper):
 
         :param str histname: A name for the histogram to be created.
         :param str iparams: The instrument parameters file, a filename.
-        :param float Tmin: Minimum 2theta or TOF (microsec) for dataset to be simulated
-        :param float Tmax: Maximum 2theta or TOF (usec) for dataset to be simulated
-        :param float Tstep: Step size in 2theta or TOF (usec) for dataset to be simulated       
+        :param float Tmin: Minimum 2theta or TOF (millisec) for dataset to be simulated
+        :param float Tmax: Maximum 2theta or TOF (millisec) for dataset to be simulated
+        :param float Tstep: Step size in 2theta or deltaT/T (TOF) for simulated dataset. 
+           Default is to compute this from Npoints.
         :param float wavelength: Wavelength for CW instruments, overriding the value
            in the instrument parameters file if specified.
         :param float scale: Histogram scale factor which multiplies the pattern. Note that
            simulated noise is added to the pattern, so that if the maximum intensity is
            small, the noise will mask the computed pattern. The scale 
            needs to be a large number for CW neutrons.
-           The default, None, provides a scale of 1 for x-rays and TOF; 10,000 for CW neutrons.
+           The default, None, provides a scale of 1 for x-rays and TOF; 10,000 for CW neutrons
+           and 100,000 for TOF.
         :param list phases: Phases to link to the new histogram. Use proj.phases() to link to
            all defined phases.
         :param int ibank: provides a bank number for the instrument parameter file. The 
            default is None, corresponding to load the first bank.
+        :param int Νpoints: the number of data points to be used for computing the 
+            diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
+            both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
+            by +-1 from Npoints. Must be below 25,000. 
 
         :returns: A :class:`G2PwdrData` object representing the histogram
         """
@@ -2162,17 +2191,43 @@ class G2Project(G2ObjectWrapper):
         #Iparm1, Iparm2 = load_iprms(iparams, rd)
         if Tmax < Tmin:
             Tmin,Tmax = Tmax,Tmin
-        Tstep = abs(Tstep)
-        if 'TOF' in rd.idstring:
+        if Tstep is not None and Npoints is not None:
+            raise G2ScriptException("Error: Tstep and Npoints both specified")
+        elif Tstep is not None:
+            Tstep = abs(Tstep)
+        elif Npoints is None:
+            Npoints = 2500
+        Iparm1, Iparm2 = load_iprms(iparams, rd, bank=ibank)
+        #G2fil.G2Print('Instrument parameters read:',reader.instmsg)
+        if 'T' in Iparm1['Type'][0]:
+            # patch -- anticipate TOF values in microsec from buggy version
+            if Tmax > 200.:
+                print('Error: Tmax is too large. Note that input for TOF Tmin & Tmax has changed.')
+                print('       Tmin & Tmax are now in milliseconds not microsec. Step is now deltaT/T.')
+                raise G2ScriptException("Error: Tmax is too large")
+            if Npoints:
+                N = Npoints
+                Tstep = (np.log(Tmax)-np.log(Tmin))/N
+            else:
                 N = (np.log(Tmax)-np.log(Tmin))/Tstep
-                x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
-                N = len(x)
+            if N > 25000:
+                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
+            x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
+            N = len(x)
+            unit = 'millisec'
         else:            
+            if Npoints:
+                N = Npoints
+            else:
                 N = int((Tmax-Tmin)/Tstep)+1
-                x = np.linspace(Tmin,Tmax,N,True)
-                N = len(x)
+            if N > 25000:
+                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
+            x = np.linspace(Tmin,Tmax,N,True)
+            N = len(x)
+            unit = 'degrees 2theta'
         if N < 3:
             raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
+        G2fil.G2Print('Simulating {} points from {} to {} {}'.format(N,Tmin,Tmax,unit))
         rd.powderdata = [
             np.array(x), # x-axis values
             np.zeros_like(x), # powder pattern intensities
@@ -2195,6 +2250,8 @@ class G2Project(G2ObjectWrapper):
             pwdrdata['Sample Parameters']['Scale'][0] = scale
         elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNC'):
             pwdrdata['Sample Parameters']['Scale'][0] = 10000.
+        elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNT'):
+            pwdrdata['Sample Parameters']['Scale'][0] = 100000.
         self.data[histname] = pwdrdata
         self.update_ids()
 
@@ -4149,6 +4206,65 @@ class G2PwdrData(G2ObjectWrapper):
         LoadG2fil()
         self.data['Instrument Parameters'][0] = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
 
+    def EditSimulated(self,Tmin, Tmax, Tstep=None, Npoints=None):
+        '''Change the parameters for an existing simulated powder histogram. 
+        This will reset the previously computed "observed" pattern.
+
+        :param float Tmin: Minimum 2theta or TOF (microsec) for dataset to be simulated
+        :param float Tmax: Maximum 2theta or TOF (usec) for dataset to be simulated
+        :param float Tstep: Step size in 2theta or TOF (usec) for dataset to be simulated       
+           Default is to compute this from Npoints.
+        :param int Νpoints: the number of data points to be used for computing the 
+            diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
+            both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
+            by +-1 from Npoints. Must be below 25,000.
+         '''
+        if not self.data['data'][0]['Dummy']:
+            raise G2ScriptException("Error: histogram for G2PwdrData.EditSimulated is not simulated")            
+        if Tmax < Tmin:
+            Tmin,Tmax = Tmax,Tmin
+        if Tstep is not None and Npoints is not None:
+            raise G2ScriptException("Error: Tstep and Npoints both specified")
+        elif Tstep is not None:
+            Tstep = abs(Tstep)
+        elif Npoints is None:
+            Npoints = 2500
+            
+        if 'T' in self.data['Instrument Parameters'][0]['Type'][0]:
+            if Tmax > 200.:
+                raise G2ScriptException("Error: Tmax is too large")
+            if Npoints:
+                N = Npoints
+                Tstep = (np.log(Tmax)-np.log(Tmin))/N
+            else:
+                N = (np.log(Tmax)-np.log(Tmin))/Tstep
+            if N > 25000:
+                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
+            x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
+            N = len(x)
+            unit = 'millisec'
+        else:            
+            if Npoints:
+                N = Npoints
+            else:
+                N = int((Tmax-Tmin)/Tstep)+1
+            if N > 25000:
+                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
+            x = np.linspace(Tmin,Tmax,N,True)
+            N = len(x)
+            unit = 'degrees 2theta'
+        if N < 3:
+            raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
+        G2fil.G2Print('Simulating {} points from {} to {} {}'.format(N,Tmin,Tmax,unit))
+        self.data['data'][1] = [
+            np.array(x), # x-axis values
+            np.zeros_like(x), # powder pattern intensities
+            np.ones_like(x), # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(x), # calc. intensities (zero)
+            np.zeros_like(x), # calc. background (zero)
+            np.zeros_like(x), # obs-calc profiles
+            ]
+        self.data['Limits'] = [(1000*Tmin, 1000*Tmax), [1000*Tmin, 1000*Tmax]]
         
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.

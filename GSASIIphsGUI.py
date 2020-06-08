@@ -7301,7 +7301,7 @@ Make sure your parameters are correctly set.
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
-            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
+            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,'SymFade':False,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
         V0 = np.array([0,0,1])
         V = np.inner(Amat,V0)
@@ -7333,6 +7333,8 @@ Make sure your parameters are correctly set.
             drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
         if 'magMult' not in drawingData:
             drawingData['magMult'] = 1.0
+        if 'SymFade' not in drawingData:
+            drawingData['SymFade'] = False
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] in ['nuclear','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
@@ -8461,6 +8463,10 @@ Make sure your parameters are correctly set.
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnSymFade(event):
+                drawingData['SymFade'] = symFade.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnShowSlice(event):
                 drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetValue()
                 G2plt.PlotStructure(G2frame,data)
@@ -8589,6 +8595,14 @@ Make sure your parameters are correctly set.
             line2Sizer.Add(showRB,0,WACV)
             
             showSizer.Add(line2Sizer)
+            
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            symFade = wx.CheckBox(drawOptions,-1,label=' Fade sym equivs?')
+            symFade.Bind(wx.EVT_CHECKBOX, OnSymFade)
+            symFade.SetValue(drawingData['SymFade'])
+            line3Sizer.Add(symFade,0,WACV)
+            showSizer.Add(line3Sizer)
+            
             
             if generalData['Map']['rhoMax']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)

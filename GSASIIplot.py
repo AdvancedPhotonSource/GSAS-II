@@ -8930,6 +8930,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         cx,ct,cs,ci = drawingData['atomPtrs']
         bondR = drawingData['bondRadius']
+        SymFade = drawingData.get('SymFade',False)
         G,g = G2lat.cell2Gmat(cell)
         GS = G
         GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
@@ -8979,6 +8980,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if not atmFade[iat]:
                 continue
             atColor = atmFade[iat]*np.array(CL)/255.
+            if SymFade and atom[cs-1] != '1':
+                atColor *= .5
             if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
                 bndColor = Or/255.
             else:
@@ -9055,6 +9058,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 color = (Wt-Bc)/255.
                 if not SGData['SGGray'] and SpnFlp[OpNum] < 0:
                     color = Rd/255.
+                if SymFade and atom[cs-1] != '1':
+                    color *= .5
                 RenderMoment(x,y,z,Moment,color)                    
 
             if atom[cs+1] == 'type':

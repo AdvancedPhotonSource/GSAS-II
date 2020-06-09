@@ -432,7 +432,7 @@ def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None
     WriteCIFitem(fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
     s = '       '
     if not quickmode:
-        for j in ('a1','a2','a3','a4','b1','b2','b3','b4','c',1,2):
+        for j in ('a1','a2','a3','a4','b1','b2','b3','b4','c',2,1):
             if len(s) > 80:
                 WriteCIFitem(fp, s)
                 s = '       '

@@ -4333,6 +4333,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     finally:
                         dlg.Destroy()
         SetupGeneral()
+        OnReloadDrawAtoms(event)            
         wx.CallAfter(FillAtomsGrid,Atoms)
         
 ################################################################################

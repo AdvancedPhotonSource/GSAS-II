@@ -491,6 +491,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             atomlist[col] = cif.get_number_with_esd(val)[0]
                 if None in atomlist[11:17]:
                     atomlist[9] = 'I'
+                    atomlist[11:17] =  [0.,0.,0.,0.,0.,0.]
                 atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id

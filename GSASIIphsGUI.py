@@ -9848,7 +9848,7 @@ Make sure your parameters are correctly set.
         '''Assign RB to atoms in a phase with tools to locate the RB in the structure
         '''
         
-        def assignAtoms(selDict={}):
+        def assignAtoms(selDict={},unmatchedRBatoms=None):
             '''Find the closest RB atoms to atoms in the structure 
             If selDict is specified, it overrides the assignments to specify 
             atoms that should be matched.
@@ -9865,13 +9865,6 @@ Make sure your parameters are correctly set.
                 
             newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
             atmTypes = [atomData[i][ct] for i in range(len(atomData))]
-            notfound = []
-            for t in rbAtmTypes:
-                if t not in atmTypes and t not in notfound:
-                    notfound.append(t)
-            if notfound:
-                print('Rigid body atom type(s) not in structure',notfound)
-                return []
             # remove assigned atoms from search groups
             for i in selDict:
                 atmTypes[selDict[i]] = None
@@ -9886,6 +9879,7 @@ Make sure your parameters are correctly set.
             Ids = []
             # create table of fixed and found assignments
             matchTable = []
+            unmatched = []
             for i,xyz in enumerate(newXYZ):
                 t = rbAtmTypes[i]
                 if rbAtmLbs:
@@ -9896,6 +9890,9 @@ Make sure your parameters are correctly set.
                     searchXYZ = [atmXYZ[selDict[i]]] #assigned
                     numLookup = [selDict[i]]
                 else:
+                    if t not in oXYZbyT:
+                        unmatched.append(i)
+                        continue
                     searchXYZ = oXYZbyT[t]
                     numLookup = atmNumByT[t]
                 dist = G2mth.GetXYZDist(xyz,searchXYZ,Amat)
@@ -9909,12 +9906,16 @@ Make sure your parameters are correctly set.
                         repeat = True
                         dist[pidIndx] = 100.
                         if min(dist) == 100:
-                            print('no atom matches, how could this happen?')
-                            if GSASIIpath.GetConfigValue('debug'): GSASIIpath.IPyBreak()
-                            return []
+                            unmatched.append(i)
+                            repeat = False
+                            continue
                 Ids.append(atomData[pid][-1])
                 matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
                                       + atomData[pid][cx:cx+3] + [d, Ids[-1]])
+            if unmatched:
+                if unmatchedRBatoms is not None:
+                    unmatchedRBatoms[:] = unmatched
+                return []
             return matchTable
             
         def Draw():
@@ -9981,11 +9982,23 @@ Make sure your parameters are correctly set.
                 '''get fixed atom assignments, find closest mappings & 
                 update displayed table
                 '''
+                RigidBodies.atomsGrid.completeEdits()
+                # add new atoms and reassign
+                added = False
+                for i,l in enumerate(RigidBodies.atomsTable.data):
+                    if l[4] == 'Create new':
+                        elem = l[0]
+                        added = True
+                        lbl = 'Rb' + RigidBodies.atomsGrid.GetRowLabelValue(i)
+                        AtomAdd(0.,0.,0.,El=elem,Name=lbl)
+                        l[4] = lbl
+                        rbAssignments[i] = lbl
                 selDict = getSelectedAtoms()
                 matchTable = assignAtoms(selDict)
                 for i,l in enumerate(matchTable):
                     RigidBodies.atomsTable.data[i][1:4] = l[5],l[6],l[10]
                 RigidBodies.atomsGrid.ForceRefresh()
+                if added: wx.CallLater(100,Draw)
                 return matchTable
                 
             def UpdateTablePlot(*args,**kwargs):
@@ -10003,6 +10016,7 @@ Make sure your parameters are correctly set.
                 assigned = []
                 for r in range(tbl.GetRowsCount()):
                     sel = tbl.GetValue(r,4).strip()
+                    if r in rbAssignments: continue # ignore positions of new atoms
                     if sel not in labelsChoices: continue
                     atmNum = labelsChoices.index(sel)-1
                     if atmNum < 0: continue
@@ -10058,7 +10072,7 @@ Make sure your parameters are correctly set.
                     return
                 selDict = getSelectedAtoms()
                 if len(selDict) < 1:
-                    wx.MessageBox('No atoms were selected',caption='Select Atom(s)',
+                    wx.MessageBox('No existing atoms were selected',caption='Select Atom(s)',
                                       style=wx.ICON_EXCLAMATION)
                     return
                 deltaList = getDeltaXYZ(selDict,data,rbObj)
@@ -10071,7 +10085,7 @@ Make sure your parameters are correctly set.
                 'Set Orientation to best fit selected atoms'
                 selDict = getSelectedAtoms()
                 if len(selDict) < 2:
-                    wx.MessageBox('At least two atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least two existing atoms must be selected',caption='Select Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
                 vals = rbObj['Orient'][0][:] #+ rbObj['Orig'][0][:]
@@ -10092,7 +10106,7 @@ Make sure your parameters are correctly set.
                     return
                 selDict = getSelectedAtoms()
                 if len(selDict) < 3:
-                    wx.MessageBox('At least three atoms must be selected',caption='Select Atoms',
+                    wx.MessageBox('At least three existing atoms must be selected',caption='Select Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
                 vals = rbObj['Orient'][0][:] + rbObj['Orig'][0][:]
@@ -10105,10 +10119,29 @@ Make sure your parameters are correctly set.
                     item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
                 UpdateTablePlot()
 
+            # Start of Draw()
             if not data['testRBObj']: return
-#            if len(data['testRBObj']):
-#                G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
+            unmatchedRBatoms = []
+            matchTable = assignAtoms(unmatchedRBatoms=unmatchedRBatoms)
+            if not matchTable:
+                dlg = wx.MessageDialog(G2frame,
+                    'There are {} atoms that need to be added to atoms list. Do you want to add them?'.format(len(unmatchedRBatoms)),'Add atoms?', 
+                    wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                    if result == wx.ID_YES:
+                        rbType = data['testRBObj']['rbType']
+                        rbObj = data['testRBObj']['rbObj']
+                        rbId = rbObj['RBId']
+                        for i in unmatchedRBatoms:
+                            elem = RBData[rbType][rbId]['rbTypes'][i]
+                            lbl = 'Rb' + RBData[rbType][rbId]['atNames'][i]
+                            AtomAdd(0.,0.,0.,El=elem,Name=lbl)
+                            rbAssignments[i] = lbl
+                        wx.CallAfter(Draw)
+                finally:
+                    dlg.Destroy()
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             Osizers = []
@@ -10183,7 +10216,6 @@ Make sure your parameters are correctly set.
                 mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0,WACV)
-            matchTable = assignAtoms()
             if not matchTable:
                 OkBtn = None
                 mainSizer.Add((15,15))
@@ -10213,14 +10245,20 @@ Make sure your parameters are correctly set.
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
-            displayTable = [[l[0],l[5],l[6],l[10],''] for l in matchTable]
+            displayTable = []
+            for i,l in enumerate(matchTable):
+                lbl = ''
+                if i in rbAssignments: lbl = rbAssignments[i]
+                displayTable.append([l[0],l[5],l[6],l[10],lbl])
             Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_NUMBER, 
-                    wg.GRID_VALUE_STRING, wg.GRID_VALUE_FLOAT+':8,3', wg.GRID_VALUE_STRING]
+                    wg.GRID_VALUE_STRING, wg.GRID_VALUE_FLOAT+':8,3',
+                    wg.GRID_VALUE_STRING]
             RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
 
             labelsChoices = ['         '] + [a[0] for a in data['Atoms']]
-            choiceeditor = wg.GridCellChoiceEditor(labelsChoices, False)
+            choiceeditor = wg.GridCellChoiceEditor(
+                labelsChoices+['Create new'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
             # make all grid entries read only
             attr = wg.GridCellAttr()
@@ -10245,7 +10283,7 @@ Make sure your parameters are correctly set.
             btnSizer = wx.BoxSizer(wx.VERTICAL)
             btnSizer.Add((-1,20))
             btnSizer.Add(
-                wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with fixed\natom(s)...'),
+                wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with assigned\natom(s)...'),
                 0,wx.ALL)
             btnSizer.Add((-1,10))
             btn = wx.Button(RigidBodies, wx.ID_ANY, 'Process Assignments')
@@ -10273,6 +10311,8 @@ Make sure your parameters are correctly set.
             RigidBodies.SendSizeEvent()
             RigidBodies.Scroll(0,0)
 
+        # start of OnRBAssign(event)
+        rbAssignments = {}
         G2frame.GetStatusBar().SetStatusText('',1)
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))

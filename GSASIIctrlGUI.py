@@ -4124,8 +4124,8 @@ class GSGrid(wg.Grid):
         'complete any outstanding edits'
         if self.IsCellEditControlEnabled(): # complete any grid edits in progress
             self.SaveEditControlValue()
-            #self.HideCellEditControl()
-            #self.DisableCellEditControl()
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
                 
 ################################################################################           
 class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix but pygridtablebase doesn't exist

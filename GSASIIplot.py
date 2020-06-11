@@ -5082,6 +5082,7 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     np.seterr(all='ignore')
     mpl.rcParams['image.cmap'] = G2frame.ContourColor
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
+    mcolors.set_array([]) # needed for MPL <=3.0.x
     X0 = Y0 = Z0 = np.zeros_like(X)
     icolor = R/90.
     Plot.quiver(X0,Y0,Z0,X,Y,Z,color=mcolors.cmap(icolor),arrow_length_ratio=0.0)

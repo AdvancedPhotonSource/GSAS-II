@@ -3399,7 +3399,7 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     #if GSASIIpath.GetConfigValue('debug'): print('debug: GetImportFile from '+defaultDir)
     dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,
                         style=style, **kwargs)
-    dlg.CenterOnParent()
+#    dlg.CenterOnParent()
     pth = GetImportPath(G2frame)
     if not defaultDir and pth: dlg.SetDirectory(pth)
     try:

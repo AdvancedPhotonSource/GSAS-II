@@ -3933,13 +3933,15 @@ def PeaksEquiv(data,Ind):
     return Ind
                 
 def PeaksUnique(data,Ind):
-    '''Finds the symmetry unique set of peaks from those selected. Works on the 
-    contents of data['Map Peaks']. 
+    '''Finds the symmetry unique set of peaks from those selected. Selects
+    the one closest to the center of the unit cell. 
+    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
+    GSASIIphsGUI.py,
 
     :param data: the phase data structure
     :param list Ind: list of selected peak indices
-    :returns: the list of symmetry unique peaks from among those given in Ind
 
+    :returns: the list of symmetry unique peaks from among those given in Ind
     '''        
 #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
@@ -3952,24 +3954,32 @@ def PeaksUnique(data,Ind):
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
     mapPeaks = data['Map Peaks']
-    Indx = {}
-    XYZ = {}
-    for ind in Ind:
-        XYZ[ind] = np.array(mapPeaks[ind][1:4])
-        Indx[ind] = True
+    XYZ = {ind:np.array(mapPeaks[ind][1:4]) for ind in Ind}
+    Indx = [True for ind in Ind]
+    Unique = []
+    # scan through peaks, finding all peaks equivalent to peak ind
     for ind in Ind:
         if Indx[ind]:
             xyz = XYZ[ind]
+            dups = []
             for jnd in Ind:
-                if ind != jnd and Indx[jnd]:                        
+                # only consider peaks we have not looked at before
+                # and were not already found to be equivalent
+                if jnd > ind and Indx[jnd]:                        
                     Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
                     xyzs = np.array([equiv[0] for equiv in Equiv])
-                    Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
-    Ind = []
-    for ind in Indx:
-        if Indx[ind]:
-            Ind.append(ind)
-    return Ind
+                    if not noDuplicate(xyz,xyzs,Amat):
+                        Indx[jnd] = False
+                        dups.append(jnd)
+            # select the unique peak closest to cell center
+            cntr = mapPeaks[ind][-1]
+            icntr = ind
+            for jnd in dups:
+                if mapPeaks[jnd][-1] < cntr:
+                    cntr = mapPeaks[jnd][-1]
+                    icntr = jnd
+            Unique.append(icntr)
+    return Unique
 
 ################################################################################
 ##### Dysnomia setup & return stuff

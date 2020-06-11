@@ -8927,6 +8927,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/200.
         Q = drawingData['Quaternion']
+        # Move view point on selection of a single peak, if enabled
+        if pageName == 'Map peaks' and len(Ind) == 1 and drawingData['peakMoveView']:
+            ind = Ind[0]
+            mag,x,y,z = mapPeaks[:,:4][ind]
+            drawingData['viewPoint'][0][:] = [x,y,z]
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         cx,ct,cs,ci = drawingData['atomPtrs']
         bondR = drawingData['bondRadius']
@@ -9077,7 +9082,78 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 #        glDisable(GL_BLEND)
         if not FourD and len(rhoXYZ):       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
-        if len(mapPeaks):
+        if len(Ind) == 1 and pageName == 'Map peaks':
+            # one peak has been selected, show as selected by draw options
+            PeakDistRadius = drawingData['PeakDistRadius']
+            atomsExpandRadius = drawingData['atomsExpandRadius']
+            atomsdistRadius = drawingData['atomsDistRadius']
+            ind = Ind[0]
+            mag,x,y,z = mapPeaks[:,:4][ind]
+            RenderMapPeak(x,y,z,Gr,1.0)
+            # distances to other peaks within PeakDistRadius A
+            if PeakDistRadius > 0:
+                XYZ = mapPeaks.T[1:4].T
+                Dx = XYZ-(x,y,z)
+                dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
+                for i in ma.nonzero(ma.masked_greater(dist,PeakDistRadius))[0]:
+                    lbl = '{:.2f}'.format(dist[i])
+                    RenderLines(x,y,z,[Dx[i]],Gr)
+                    lx,ly,lz = (x,y,z)+(Dx[i]/2)
+                    RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
+                    [mag,x1,y1,z1] = mapPeaks[:,:4][i]
+                    if mag > 0.:
+                        RenderMapPeak(x1,y1,z1,Wt,mag/peakMax)
+                    else:
+                        RenderMapPeak(x1,y1,z1,Or,-2*mag/peakMax)
+            # find and display atoms within atomsExpandRadius A
+            if atomsExpandRadius > 0:
+                xyzA = np.array((x,y,z))
+                cx,ct,cs,ci = G2phG.getAtomPtrs(data)      
+                cellArray = G2lat.CellBlock(1)
+                radDict = dict(zip(*G2phG.getAtomRadii(data)))
+                Names = []
+                Atoms = []
+                Radii = []
+                Color = []
+                for atomB in data['Atoms']:
+                    xyzB = np.array(atomB[cx:cx+3])
+                    color = np.array(generalData['Color'][generalData['AtomTypes'].index(atomB[ct])])/255.
+                    result = G2spc.GenAtom(xyzB,SGData,False,6*[0.],True)
+                    for item in result:
+                        for xyz in cellArray+np.array(item[0]):
+                            dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                            if 0 < dist <= max(atomsdistRadius,atomsExpandRadius):
+                                ax,ay,az = xyz
+                                RenderSphere(ax,ay,az,radius,color)
+                                Atoms.append(xyz)
+                                Radii.append(radDict[atomB[ct]])
+                                Names.append(atomB[0])
+                                Color.append(color)
+                            if dist < atomsdistRadius:
+                                RenderLines(x,y,z,[xyz-xyzA],Gr)
+                                lx,ly,lz = (xyzA+xyz)/2
+                                lbl = '{:.2f}'.format(dist)
+                                RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
+                                ax,ay,az = xyz
+                                RenderLabel(ax,ay,az,'  '+atomB[0],radius,wxGreen,matRot)
+                # find bonds
+                bondData = [[] for i in range(len(Atoms))]
+                Atoms = np.array(Atoms)
+                Radii = np.array(Radii)
+                for i,atom in enumerate(Atoms):
+                    Dx = Atoms-atom
+                    sumR = Radii + Radii[i]
+                    dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5)
+                    IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
+                    for j in IndB[0]:
+                        bondData[i].append(Dx[j]*Radii[i]/sumR[j])
+                        bondData[j].append(-Dx[j]*Radii[j]/sumR[j])
+                # draw bonds
+                bondR = drawingData['bondRadius']
+                for i,xyz in enumerate(Atoms):
+                    ax,ay,az = xyz
+                    RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
+        elif len(mapPeaks):
             XYZ = mapPeaks.T[1:4].T
             mapBonds = FindPeaksBonds(XYZ)
             for ind,[mag,x,y,z] in enumerate(mapPeaks[:,:4]):

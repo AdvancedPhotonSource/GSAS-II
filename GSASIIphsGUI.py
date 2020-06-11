@@ -1402,7 +1402,10 @@ def SetDrawingDefaults(drawingData):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
-            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
+            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
+            'peakMoveView':True,'PeakDistRadius':0.0,
+            'atomsExpandRadius':5.,'atomsDistRadius':2.5,
+        }
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
             
@@ -8726,16 +8729,35 @@ Make sure your parameters are correctly set.
         if drawOptions.GetSizer():
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(drawOptions,-1,' Drawing controls:'),0,WACV)
-        mainSizer.Add((5,5),0)        
+        #mainSizer.Add(wx.StaticText(drawOptions,-1,' Drawing controls'),0,
+        #                  wx.ALL|wx.CENTER)
+        #G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(SlopSizer(),0)
-        mainSizer.Add((5,5),0)
+        G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(ShowSizer(),0,)
-        mainSizer.Add((5,5),0)
+        G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(RadSizer(),0,)
-        mainSizer.Add((5,5),0)
+        G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(PlaneSizer(),0,)
+        G2G.HorizontalLine(mainSizer,drawOptions)
+        mainSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,
+                                        'On map peak selection:'),0,WACV)
+        mainSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',
+                                         drawingData,'peakMoveView'))
+        mapSizer = wx.FlexGridSizer(0,3,5,5)
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
+        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'PeakDistRadius',
+                            min=0.0,max=5.0,nDig=(10,1),size=(50,-1)))
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
+        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsExpandRadius',
+                            min=0.0,max=15.0,nDig=(10,1),size=(50,-1)))
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
+        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsDistRadius',
+                            min=0.0,max=15.0,nDig=(10,1),size=(50,-1)))
+        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+        mainSizer.Add(mapSizer)
         SetPhaseWindow(drawOptions,mainSizer)
 
 ################################################################################
@@ -11469,12 +11491,12 @@ Make sure your parameters are correctly set.
                     
             elif c < 0:                   #only row clicks
                 if event.ControlDown():                    
-                    if r in MapPeaks.GetSelectedRows():
+                    if r in getAtomSelections(MapPeaks):
                         MapPeaks.DeselectRow(r)
                     else:
                         MapPeaks.SelectRow(r,True)
                 elif event.ShiftDown():
-                    indxs = MapPeaks.GetSelectedRows()
+                    indxs = getAtomSelections(MapPeaks)
                     MapPeaks.ClearSelection()
                     ibeg = 0
                     if indxs:
@@ -11497,6 +11519,9 @@ Make sure your parameters are correctly set.
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
+        # beginning of FillMapPeaksGrid()
+        #import imp   # debug code
+        #imp.reload(G2plt) # debug code
         G2frame.GetStatusBar().SetStatusText('',1)
         if 'Map Peaks' in data:
             G2frame.GetStatusBar().SetStatusText('Double click any column heading to sort',1)
@@ -11519,7 +11544,7 @@ Make sure your parameters are correctly set.
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
             peakMax = np.amax(mapPeaks.T[0])
-            Ind = MapPeaks.GetSelectedRows()
+            Ind = getAtomSelections(MapPeaks)
             for ind in Ind:
                 mag,x,y,z = mapPeaks[ind][:4]
                 AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
@@ -11555,7 +11580,7 @@ Make sure your parameters are correctly set.
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            Ind = MapPeaks.GetSelectedRows()
+            Ind = getAtomSelections(MapPeaks)
             Ind.sort()
             Ind.reverse()
             for ind in Ind:
@@ -11580,7 +11605,7 @@ Make sure your parameters are correctly set.
         
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            Ind = MapPeaks.GetSelectedRows()
+            Ind = getAtomSelections(MapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
@@ -11608,24 +11633,28 @@ Make sure your parameters are correctly set.
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            Ind = MapPeaks.GetSelectedRows()
+            Ind = getAtomSelections(MapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
                     Ind = G2mth.PeaksUnique(data,Ind)
                     print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
+                    tbl = MapPeaks.GetTable().data
+                    tbl[:] = [t for i,t in enumerate(tbl) if i in Ind] + [
+                        t for i,t in enumerate(tbl) if i not in Ind]         
                     for r in range(MapPeaks.GetNumberRows()):
-                        if r in Ind:
+                        if r < len(Ind):
                             MapPeaks.SelectRow(r,addToSelected=True)
                         else:
                             MapPeaks.DeselectRow(r)
                 finally:
                     wx.EndBusyCursor()
+                MapPeaks.ForceRefresh()
                 G2plt.PlotStructure(G2frame,data)
                 
     def OnPeaksViewPoint(event):
         # set view point
-        indx = MapPeaks.GetSelectedRows()
+        indx = getAtomSelections(MapPeaks)
         if not indx:
             G2frame.ErrorDialog('Set viewpoint','No peaks selected')
             return
@@ -11636,7 +11665,7 @@ Make sure your parameters are correctly set.
     
     def OnPeaksDistVP(event):
         # distance to view point
-        indx = MapPeaks.GetSelectedRows()
+        indx = getAtomSelections(MapPeaks)
         if not indx:
             G2frame.ErrorDialog('Peak distance','No peaks selected')
             return
@@ -11657,7 +11686,7 @@ Make sure your parameters are correctly set.
 
     def OnPeaksDA(event):
         #distance, angle 
-        indx = MapPeaks.GetSelectedRows()
+        indx = getAtomSelections(MapPeaks)
         if len(indx) not in [2,3]:
             G2frame.ErrorDialog('Peak distance/angle','Wrong number of atoms for distance or angle calculation')
             return

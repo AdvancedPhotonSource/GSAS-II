@@ -2910,6 +2910,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
     mpl.rcParams['image.cmap'] = G2frame.ContourColor
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
+    mcolors.set_array([]) # needed for MPL <=3.0.x
     if G2frame.Contour:
         ContourZ = []
         ContourY = []

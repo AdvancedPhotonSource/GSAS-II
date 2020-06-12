@@ -2777,7 +2777,6 @@ SwapGen = {}
     
     return rname
 
-
 def MakefullrmcPDB(Name,Phase,RMCPdict):
     generalData = Phase['General']
     Atseq = RMCPdict['atSeq']

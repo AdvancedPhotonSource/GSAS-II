@@ -4735,8 +4735,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                         Histograms = G2frame.GPXtree.GetItemPyData(phaseId)['Histograms']
                         histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
                         histData = Histograms[histName]
-                        muStrData = histData['Mustrain']
-                        sizeData = histData['Size']
                     except:
                         if GSASIIpath.GetConfigValue('debug'):
                             print('Reflection table problem: histogram {} not found in phase {}'.format(histName,phaseName))
@@ -4746,6 +4744,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             refList = data[1]['RefList']
             refs = refList
         else:
+            muStrData = histData['Mustrain']
+            sizeData = histData['Size']
             if len(data) > 1:
                 G2frame.dataWindow.SelectPhase.Enable(True)
             try:            #patch for old reflection lists

@@ -1801,7 +1801,7 @@ def ApplyModulation(data,tau):
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X
             if generalData['Type'] == 'magnetic':
-                M = G2spc.ApplyStringOpsMom(opr,SGData,atmom+mom)
+                M = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,atmom+mom)
                 drawatom[dcx+3:dcx+6] = M
     return drawAtoms,Fade
     

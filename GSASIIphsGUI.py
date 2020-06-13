@@ -9531,6 +9531,8 @@ Make sure your parameters are correctly set.
                 RBObj['ThermalMotion'][0] = 'TL'
             elif val == 'TLS':
                 RBObj['ThermalMotion'][0] = 'TLS'
+            elif val == 'None':
+                RBObj['ThermalMotion'][0] = 'None'
             wx.CallAfter(FillRigidBodyGrid,True)
             if val != 'None':
                 cia = data['General']['AtomPtrs'][3]

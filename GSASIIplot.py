@@ -212,17 +212,17 @@ obsInCaption = True # include the observed, calc,... items in the plot caption (
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
 _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
-0.89019608497619629), (0.090909090909090912, 0.70588237047195435,
-0.70588237047195435), (0.18181818181818182, 0.54117649793624878,
-0.54117649793624878), (0.27272727272727271, 0.17254902422428131,
-0.17254902422428131), (0.36363636363636365, 0.60000002384185791,
-0.60000002384185791), (0.45454545454545453, 0.10980392247438431,
-0.10980392247438431), (0.54545454545454541, 0.43529412150382996,
-0.43529412150382996), (0.63636363636363635, 0.0, 0.0),
-(0.72727272727272729, 0.83921569585800171, 0.83921569585800171),
-(0.81818181818181823, 0.60392159223556519, 0.60392159223556519),
-(0.90909090909090906, 0.60000002384185791, 0.60000002384185791), (1.0,
-0.15686275064945221, 0.15686275064945221)],
+    0.89019608497619629), (0.090909090909090912, 0.70588237047195435,
+    0.70588237047195435), (0.18181818181818182, 0.54117649793624878,
+    0.54117649793624878), (0.27272727272727271, 0.17254902422428131,
+    0.17254902422428131), (0.36363636363636365, 0.60000002384185791,
+    0.60000002384185791), (0.45454545454545453, 0.10980392247438431,
+    0.10980392247438431), (0.54545454545454541, 0.43529412150382996,
+    0.43529412150382996), (0.63636363636363635, 0.0, 0.0),
+    (0.72727272727272729, 0.83921569585800171, 0.83921569585800171),
+    (0.81818181818181823, 0.60392159223556519, 0.60392159223556519),
+    (0.90909090909090906, 0.60000002384185791, 0.60000002384185791), (1.0,
+    0.15686275064945221, 0.15686275064945221)],
 
     'green': [(0.0, 0.80784314870834351, 0.80784314870834351),
     (0.090909090909090912, 0.47058823704719543, 0.47058823704719543),
@@ -250,11 +250,14 @@ _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
     1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
 #This can be done on request for other colors
 mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=256)
-try:
-    mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data),lut=256)
-except:
-    if GSASIIpath.GetConfigValue('debug'):
-       print('MPL register_cmap for Paired_r failed')
+blue = [tuple(1.-np.array(item)) for item in _Old_Paired_data['blue']]
+blue.reverse()
+green = [tuple(1.-np.array(item)) for item in _Old_Paired_data['green']]
+green.reverse()
+red = [tuple(1.-np.array(item)) for item in _Old_Paired_data['red']]
+red.reverse()
+Old_Paired_data_r = {'blue':blue,'green':green,'red':red}
+mpl.cm.register_cmap('Paired_r',data=Old_Paired_data_r,lut=256)
 
 # options for publication-quality Rietveld plots
 plotOpt = {}
@@ -5098,7 +5101,10 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     Plot.set_ylabel(labelY,fontsize=14)
     Plot.set_zlabel(labelZ,fontsize=14)
     Plot.set_title(Title)
-    Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
+    try:
+        Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
+    except TypeError:
+        print('mpl error - no colorbar shown')
     Page.canvas.draw()
         
 ################################################################################
@@ -9468,9 +9474,9 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
-        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = defaults['viewDir']
         A = [0,0]
@@ -10183,7 +10189,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
+        if not np.any(dxy): return  # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
@@ -10204,9 +10210,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
-        if dxy[0] == dxy[1] == 0: return # on Mac motion can be less than a full pixel!
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
+        if not np.any(dxy): return  # on Mac motion can be less than a full pixel!
         defaults['oldxy'] = list(newxy)
         V = defaults['viewDir']
         A = [0,0]

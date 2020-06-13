@@ -153,7 +153,12 @@ def MakeByte2str(arg):
     
     '''
     if isinstance(arg,str): return arg
-    if isinstance(arg,bytes): return arg.decode()
+    if isinstance(arg,bytes):
+        try:
+            return arg.decode()
+        except:
+            if GetConfigValue('debug'): print('Decode error')
+            return arg
     if isinstance(arg,list):
         return [MakeByte2str(i) for i in arg]
     if isinstance(arg,tuple):

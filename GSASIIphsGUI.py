@@ -7923,18 +7923,21 @@ Make sure your parameters are correctly set.
         dlg.CenterOnParent()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Molecular completion parameters'),0,WACV)
+        mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Pause after: '),0,WACV)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Max # of repetitions: '),0,WACV)
+        topSizer.Add((45,-1))
         choices = [1,2,5,10,50]
         params = {'maxrep':10, 'maxatm':1000}
         topSizer.Add(G2G.EnumSelector(dlg,params,'maxrep',
                         [str(i) for i in choices],choices))
+        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' repetitions'),0,WACV)
         mainSizer.Add(topSizer,0,WACV)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Max # of added atoms: '),0,WACV)
+        topSizer.Add((45,-1))
         choices = [100,500,1000,5000,10000]
         topSizer.Add(G2G.EnumSelector(dlg,params,'maxatm',
                         [str(i) for i in choices],choices))
+        topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' added atoms'),0,WACV)
         mainSizer.Add(topSizer,0,WACV)
         mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Atom types to add:'),0,WACV)
         atSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -7975,21 +7978,24 @@ Make sure your parameters are correctly set.
         neighborArray = FindCoordinationByLabel(data)
 
         time1 = time.time()
-        pgbar = wx.ProgressDialog('Fill molecular coordination',
-            'Passes done=0 %0',params['maxrep'],
-            parent=G2frame,
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
-        Size = pgbar.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        pgbar.Raise()
-        wx.Yield()
         added = 0
         targets = [item for item in atomTypes if params[item]]
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
-        for rep in range(params['maxrep']):
+        cx,ct,cs,ci = getAtomPtrs(data,draw=True)
+        rep = 0
+        allrep = 0
+        while True:
+            if rep == 0:
+                pgbar = wx.ProgressDialog('Fill molecular coordination',
+                    'Passes done=0 %0',params['maxrep']+1,
+                    parent=G2frame,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+                screenSize = wx.ClientDisplayRect()
+                Size = pgbar.GetSize()
+                if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                    pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                    pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+                pgbar.Raise()
+                wx.Yield()
             startlen = len(data['Drawing']['Atoms'])
             coordsArray = np.array([a[cx:cx+3] for a in data['Drawing']['Atoms']])
             addedAtoms = []
@@ -8001,15 +8007,36 @@ Make sure your parameters are correctly set.
                 if not GoOn[0]: break
             if not GoOn[0]: break
             print('pass {} processed {} atoms adding {}; Search time: {:.2f}s'.format(
-                rep+1,len(indx),len(addedAtoms),time.time()-time1))
+                allrep+1,len(indx),len(addedAtoms),time.time()-time1))
             time1 = time.time()            
-
+            rep += 1
+            allrep += 1
             if len(addedAtoms) == 0: break
             added += len(addedAtoms)
-            if added > params['maxatm']: break
             data['Drawing']['Atoms'] += addedAtoms
             # atoms to search over (omit H)
-            indx = [i+startlen for i in range(len(addedAtoms)) if addedAtoms[i][ct] != 'H']  
+            indx = [i+startlen for i in range(len(addedAtoms)) if addedAtoms[i][ct] != 'H']
+            if len(indx) == 0: break
+            if added > params['maxatm']:
+                msg = "Exceeded number added atoms. Continue?"
+                dlg = wx.MessageDialog(G2frame,msg,caption='Continue?',style=wx.YES_NO)
+                if dlg.ShowModal() != wx.ID_YES:
+                    dlg.Destroy()
+                    break
+                dlg.Destroy()
+                rep = 0
+                added = 1
+                pgbar.Destroy()   
+            if rep >= params['maxrep']:
+                msg = "Exceeded number of repetitions. Continue?"
+                dlg = wx.MessageDialog(G2frame,msg,caption='Continue?',style=wx.YES_NO)
+                if dlg.ShowModal() != wx.ID_YES:
+                    dlg.Destroy()
+                    break
+                dlg.Destroy()
+                rep = 0
+                added = 1
+                pgbar.Destroy()
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
         pgbar.Destroy()   
@@ -9960,9 +9987,9 @@ Make sure your parameters are correctly set.
                     msg = "Atoms may not be properly located. Are you sure you want to do this?"
                     dlg = wx.MessageDialog(G2frame,msg,caption='Continue?',style=wx.YES_NO|wx.ICON_EXCLAMATION)
                     if dlg.ShowModal() != wx.ID_YES:
-                        #OkBtn.SetLabel('Not Ready')
-                        #OkBtn.Enable(False)
+                        dlg.Destroy()
                         return
+                    dlg.Destroy()
                     
                 rbType = data['testRBObj']['rbType']
                 rbObj['Ids'] = Ids

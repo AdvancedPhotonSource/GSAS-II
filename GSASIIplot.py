@@ -8218,12 +8218,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             return
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms
-            cx = G2phG.getAtomPtrs(data,True)[0]
-            sympt = cx+3
+            cx,ct,cs,cia = G2phG.getAtomPtrs(data,True)
+            cs -= 1  #cs points at style for drawings; want sytsym         
         else:
             atomList = data['Atoms']
-            cx = G2phG.getAtomPtrs(data)[0]
-            sympt = None
+            cx,ct,cs,ciax = G2phG.getAtomPtrs(data)
         for i,atom in enumerate(atomList):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
@@ -8237,9 +8236,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SetSelectedAtoms(Id,Add)
                 except:
                     SetSelectedAtoms(i,Add)
-                    lbl = atom[0]
-                    if sympt:
-                        lbl += ' ' + atom[sympt]
+                    if ct > 1:   # macromolecule
+                        lbl = '%s %s'%(atom[0],atom[3])
+                    else:
+                        lbl = atom[ct-1]
+                    lbl += ' ' + atom[cs]
                     G2frame.G2plotNB.status.SetStatusText(
                             '    Selected atom: {}'.format(lbl),1)
         return

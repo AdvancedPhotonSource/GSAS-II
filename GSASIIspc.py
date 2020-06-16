@@ -3566,11 +3566,10 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
     else:
         return newX
         
-def ApplyStringOpsMom(A,SGData,SSGData,Mom):
+def ApplyStringOpsMom(A,SGData,Mom):
     '''Applies string operations to modulated magnetic moment components used in drawing
     '''
     SGOps = SGData['SGOps']
-    SSGCen = SSGData['SSGCen']
     Ax = A.split('+')
     Ax[0] = int(Ax[0])
     iAx = abs(Ax[0])
@@ -3584,8 +3583,6 @@ def ApplyStringOpsMom(A,SGData,SSGData,Mom):
         NA += len(SGOps)
     M,T = SGOps[nA]
     newMom = np.inner(Mom,M).T*SGData['MagMom'][NA+nC]
-    if SSGCen[iAx//100][3]:     #flip spin for BNS centered atoms
-        newMom *= -1.
     return newMom
         
 def StringOpsProd(A,B,SGData):

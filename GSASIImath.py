@@ -1458,8 +1458,8 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     pcos = np.cos(twopi*phase)
     MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)    #cos term
     MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)    #sin term
-    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
+    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
     return MmodA,MmodB    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
@@ -1801,7 +1801,7 @@ def ApplyModulation(data,tau):
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X
             if generalData['Type'] == 'magnetic':
-                M = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,atmom+mom)
+                M = G2spc.ApplyStringOpsMom(opr,SGData,atmom+mom)
                 drawatom[dcx+3:dcx+6] = M
     return drawAtoms,Fade
     

@@ -1511,12 +1511,13 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
 
-    if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
-        
+    if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms - matched drawing & Bilbao drawings
+    
+        mTau = np.linspace(0,1.,ngl,False)    
         mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
         if SGData['SGGray']:
             mXYZ = np.hstack((mXYZ,mXYZ))
-        MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
+        MmodA,MmodB = G2mth.MagMod(mTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
         Mmod = MmodA+MmodB
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
@@ -1528,10 +1529,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
             Mmod += GSdata[nxs,:,:,:]
             
-#        Kdata = np.inner(Mmod,uAmat)    #Ntau,Nop,Natm,Mxyz
-#        Mag = np.sqrt(np.sum(Kdata**2,axis=-1))
-#        Kdata /= Mag[:,:,:,nxs]     #Cartesian unit vectors
-#        Kdata = np.nan_to_num(Kdata)    #Ntau,Nops,Natm,Mxyz       
+        Kdata = np.inner(Mmod,uAmat)    #Ntau,Nop,Natm,Mxyz
+        Mag = np.sqrt(np.sum(Kdata**2,axis=-1)) #ntau,nop,natm
+        Kdata /= Mag[:,:,:,nxs]     #Cartesian unit vectors
+        Kdata = np.nan_to_num(Kdata)    #Ntau,Nops,Natm,Mxyz checked against drawing   
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1598,17 +1599,27 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
 
-        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??            
+        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:            
             
             phasem = twopi*np.inner(mXYZ,HP.T).T    #2pi(Q.r)
-            cosm = np.cos(phasem)
+            cosm = np.cos(phasem)                   #Nref,nops,natm
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-                      
-            HM = np.inner(uBmat.T,HP.T)                            #put into cartesian space X||H,Z||H*L
+
+#method 1     very wrong                 
+            HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T              # normalize  HP  Nref,hkl=Unit vectors || Q
-#for fixed moments --> m=0 reflections 
+            # edotK = np.sum(eM*HP.T,axis=-1)                                               #nRef
+            # Q = edotK[:,nxs,nxs,nxs,nxs]*eM[:,nxs,nxs,nxs,:]-Kdata[nxs,:,:,:,:]           #nRef,ntau,noops,natm,Mxyz      
+            # fam = Q*TMcorr[:,nxs,nxs,:,nxs]*cosm[:,nxs,:,:,nxs]*Mag[nxs,:,:,:,nxs]    #nRef,ntau,noops,natm,Mxyz
+            # fbm = Q*TMcorr[:,nxs,nxs,:,nxs]*sinm[:,nxs,:,:,nxs]*Mag[nxs,:,:,:,nxs]
+            # fama = np.sum(np.sum(fam,axis=2),axis=2)                                      #nRef,ntau,Mxyz; sum natm & nops
+            # fbma = np.sum(np.sum(fbm,axis=2),axis=2)
+            # fas = np.sum(np.sum(1./ngl*fama**2,axis=1),axis=-1)
+            # fbs = np.sum(np.sum(1./ngl*fbma**2,axis=1),axis=-1)
+            
+#method 2   sort of wrong         
             fam0 = 0.
             fbm0 = 0.
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
@@ -1625,16 +1636,16 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             if not SGData['SGGray']:
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
-            else:
-                fams *= Ncen
-                fbms *= Ncen
+            # else:
+            #     fams *= Ncen
+            #     fbms *= Ncen
                 
 # do sum on ops, atms 1st                        
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)            
 #put into cartesian space
-            facm = np.inner(fasm,uAmat.T)
-            fbcm = np.inner(fbsm,uAmat.T)
+            facm = np.inner(fasm,uAmat)
+            fbcm = np.inner(fbsm,uAmat)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
@@ -1643,13 +1654,13 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
 #do integration
             
-            fas = np.sum(glWt*fass,axis=1)
-            fbs = np.sum(glWt*fbss,axis=1)
+            fas = np.sum(1./ngl*fass,axis=1)
+            fbs = np.sum(1./ngl*fbss,axis=1)
             
-            if SGData['SGInv']:
-                fbs *= 4.
-                fas = 0.
-            
+            # if SGData['SGInv']:
+            #     fbs *= 4.
+            #     fas = 0.
+                
             refl.T[10] = fas+fbs   #Sum(fams**2,Mxyz) Re + Im
             refl.T[11] = atan2d(fbs,fas)
 

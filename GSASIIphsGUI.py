@@ -3808,7 +3808,11 @@ def UpdatePhaseData(G2frame,Item,data):
             if oldatom:
                 opr = oldatom[8]
                 mom = np.array(atom[7:10])
-                Mom = G2spc.ApplyStringOpsMom(opr,SGData,mom)
+                if generalData['Super']:
+                    SSGData = generalData['SSGData']
+                    Mom = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,mom)
+                else:
+                    Mom = G2spc.ApplyStringOpsMom(opr,SGData,None,mom)
                 if atom[12] == 'A':                    
                     X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
                     atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]

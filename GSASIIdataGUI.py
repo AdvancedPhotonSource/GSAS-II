@@ -6115,6 +6115,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')
         G2G.Define_wxId('wxID_DRAWADDMOLECULE')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWADDMOLECULE,'Complete molecule','Cyclicly add atoms bonded to selected atoms')
+        G2G.Define_wxId('wxID_DRAWVOIDMAP')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWVOIDMAP,'Create void map','Create a map of locations outside of any VDW radius')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWDELETE,'Delete atoms','Delete atoms from drawing set')
         
         self.DrawAtomCompute.Append(G2G.wxID_DRAWDISTVP,'View pt. dist.','Compute distance of selected atoms from view point')   
@@ -6411,7 +6413,7 @@ def UpdateControls(G2frame,data):
             
         LSSizer.Add(derivSel,0,WACV)
         LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Min delta-M/M: '),0,WACV)
-        LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'min dM/M',nDig=(10,2,'g'),min=1.e-9,max=1.),0,WACV)
+        LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'min dM/M',nDig=(10,2,'g'),xmin=1.e-9,xmax=1.),0,WACV)
         if 'Hessian' in data['deriv type']:
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
@@ -6427,10 +6429,10 @@ def UpdateControls(G2frame,data):
                 marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
                 LSSizer.Add(marqLam,0,WACV)
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' SVD zero tolerance:'),0,WACV)
-            LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'SVDtol',nDig=(10,1,'g'),min=1.e-9,max=.01),0,WACV)
+            LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'SVDtol',nDig=(10,1,'g'),xmin=1.e-9,xmax=.01),0,WACV)
         else:       #TODO what for SVD refine?
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Initial shift factor: '),0,WACV)
-            Factr = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'shift factor',nDig=(10,5),min=1.e-5,max=100.)
+            Factr = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'shift factor',nDig=(10,5),xmin=1.e-5,xmax=100.)
             LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
             userReject = data['UsrReject']
@@ -6446,7 +6448,7 @@ def UpdateControls(G2frame,data):
             for item in usrRej:
                 LSSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=usrRej[item][0]),0,WACV)
                 usrrej = G2G.ValidatedTxtCtrl(G2frame.dataWindow,userReject,item,nDig=(10,2),
-                    min=usrRej[item][1][0],max=usrRej[item][1][1])
+                    xmin=usrRej[item][1][0],xmax=usrRej[item][1][1])
                 LSSizer.Add(usrrej,0,WACV)
         return LSSizer
         
@@ -8225,7 +8227,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
-    wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),min=1.e-9),0,WACV)
+    wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),xmin=1.e-9),0,WACV)
 #    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
 #        wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Compression factor: '),0,WACV)
 #        choice = ['1','2','3','4','5','6']
@@ -8310,15 +8312,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 style=wx.ALIGN_CENTRE_HORIZONTAL),1,wx.ALIGN_CENTER,1)
             magSizer.Add(wx.StaticText(panel,-1,'(start)'),1,wx.ALIGN_CENTER,1)
             edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][0],1,
-                nDig=(7,2),min=0.01,max=1000.,OnLeave=OnEditMag,size=(65,-1))
+                nDig=(7,2),xmin=0.01,xmax=1000.,OnLeave=OnEditMag,size=(65,-1))
             magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
             magSizer.Add((1,1))
             for i in range(1,lenmag):
                 edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],0,nDig=(10,3), 
-                    min=data[1][0][0],max=data[1][0][-1],OnLeave=OnEditMag)
+                    xmin=data[1][0][0],xmax=data[1][0][-1],OnLeave=OnEditMag)
                 magSizer.Add(edit)
                 edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],1,
-                    nDig=(7,2),min=0.01,max=1000.,OnLeave=OnEditMag,size=(65,-1))
+                    nDig=(7,2),xmin=0.01,xmax=1000.,OnLeave=OnEditMag,size=(65,-1))
                 magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
                 delmag = wx.Button(panel,wx.ID_ANY,label='Del',size=(40,-1))
                 delmag.Bind(wx.EVT_BUTTON,OnDelMag)

@@ -572,7 +572,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(lbl4b)
         lbl4a = wx.StaticText(mnpnl, wx.ID_ANY,'Max detector distance: ')
         sizer.Add(lbl4a,0,wx.ALIGN_CENTER_VERTICAL)
-        fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',min=0.0)
+        fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',xmin=0.0)
         pdfwidgets.append(fInp4a)
         sizer.Add(fInp4a,0,wx.ALIGN_CENTER_VERTICAL)
         cOpt = G2G.G2CheckBox(mnpnl,'Optimize',self.params,'optPDF')

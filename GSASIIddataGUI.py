@@ -122,7 +122,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
         scaleVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Scale'],0,
-            min=0.,nDig=(10,4),typeHint=float,OnLeave=onChangeFraction)
+            xmin=0.,nDig=(10,4),typeHint=float,OnLeave=onChangeFraction)
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)
@@ -269,7 +269,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         lgmixRef.Bind(wx.EVT_CHECKBOX, OnRef)
         lgmixSizer.Add(lgmixRef,0,WACV|wx.LEFT,5)
         lgmixVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist][name][1],2,
-            nDig=(10,3),min=Limits[0],max=Limits[1])
+            nDig=(10,3),xmin=Limits[0],xmax=Limits[1])
         lgmixSizer.Add(lgmixVal,0,WACV|wx.LEFT,5)
         return lgmixSizer
                     
@@ -291,7 +291,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
         isoSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
         sizeVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist][parm][1],0,
-            nDig=fmt,min=Limits[0],max=Limits[1],OnLeave=OnNewValue)
+            nDig=fmt,xmin=Limits[0],xmax=Limits[1],OnLeave=OnNewValue)
         isoSizer.Add(sizeVal,0,WACV)
         return isoSizer
         
@@ -317,7 +317,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
             dataSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
             sizeVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist][parm][1],
-                Id,fmt,min=Limits[0],max=Limits[1],OnLeave=OnNewValue)
+                Id,fmt,xmin=Limits[0],xmax=Limits[1],OnLeave=OnNewValue)
             dataSizer.Add(sizeVal,0,WACV)
         return dataSizer
 
@@ -336,7 +336,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             matrixSizer.Add(sizeRef,0,WACV)
             if Id < 3:
                 sizeVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Size'][4],
-                    Id,nDig=(10,3),min=0.,max=4.,OnLeave=OnNewValueReDraw)
+                    Id,nDig=(10,3),xmin=0.,xmax=4.,OnLeave=OnNewValueReDraw)
             else:
                 sizeVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Size'][4],
                     Id,nDig=(10,3),OnLeave=OnNewValueReDraw)
@@ -432,7 +432,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         poRef.SetValue(POData[2])
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
         poSizer.Add(poRef,0,WACV|wx.LEFT,5)
-        poVal = G2G.ValidatedTxtCtrl(DData,POData,1,nDig=(10,3),typeHint=float,min=0.)
+        poVal = G2G.ValidatedTxtCtrl(DData,POData,1,nDig=(10,3),typeHint=float,xmin=0.)
         poSizer.Add(poVal,0,WACV)
         poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Unique axis, H K L: '),0,WACV)
         h,k,l =POData[3]
@@ -525,11 +525,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     valSizer =wx.BoxSizer(wx.HORIZONTAL)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
                     tbarVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Tbar',
-                        min=0.,nDig=(10,3),typeHint=float)
+                        xmin=0.,nDig=(10,3),typeHint=float)
                     valSizer.Add(tbarVal,0,WACV)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
                     cos2tm = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Cos2TM',
-                        min=0.,max=1.,nDig=(10,3),typeHint=float)
+                        xmin=0.,xmax=1.,nDig=(10,3),typeHint=float)
                     valSizer.Add(cos2tm,0,WACV)
                     extSizer.Add(valSizer,0,WACV)
                 val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
@@ -548,7 +548,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Eref.Bind(wx.EVT_CHECKBOX, OnEref)
                     val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
                     Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
-                        min=0.,nDig=(10,3,'g'),typeHint=float)
+                        xmin=0.,nDig=(10,3,'g'),typeHint=float)
                     val2Sizer.Add(Eval,0,WACV)
                 extSizer.Add(val2Sizer,0,WACV)
         else:   #PWDR
@@ -558,7 +558,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
             extSizer.Add(extRef,0,WACV|wx.LEFT,5)
             extVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'],0,
-                min=0.,nDig=(10,2),typeHint=float)
+                xmin=0.,nDig=(10,2),typeHint=float)
             extSizer.Add(extVal,0,WACV)
 
         return extSizer
@@ -578,7 +578,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             babRef.Bind(wx.EVT_CHECKBOX, OnBabRef)
             babSizer.Add(babRef,0,WACV|wx.LEFT,5)
             babVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Babinet']['Bab'+bab],0,
-                nDig=(10,3),min=0.,typeHint=float)
+                nDig=(10,3),xmin=0.,typeHint=float)
             babSizer.Add(babVal,0,WACV)
         return babSizer
         
@@ -715,7 +715,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
                 if it:
                     twinval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Twins'][it],1,nDig=(10,3),
-                        min=0.,max=1.,typeHint=float,OnLeave=OnTwinVal)
+                        xmin=0.,xmax=1.,typeHint=float,OnLeave=OnTwinVal)
                     Indx[twinval.GetId()] = it
                 else:
                     twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=Style)

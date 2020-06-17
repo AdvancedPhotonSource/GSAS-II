@@ -159,7 +159,7 @@ def UpdateImageData(G2frame,data):
     if 'PolaVal' not in data:       #patch
         data['PolaVal'] = [0.99,False]
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,4),
-        min=0.,max=1.,typeHint=float),0,WACV)
+        xmin=0.,xmax=1.,typeHint=float),0,WACV)
     mainSizer.Add(distSizer,0)
     if 'samplechangerpos' not in data or data['samplechangerpos'] is None:
         data['samplechangerpos'] = 0.0
@@ -964,8 +964,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         maxSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
         G2frame.slideSizer.AddGrowableCol(2)
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
-        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,min=Range[0][0]+1,
-            max=Range[0][1],OnLeave=OnNewVal)
+        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,xmin=Range[0][0]+1,
+            xmax=Range[0][1],OnLeave=OnNewVal)
         G2frame.slideSizer.Add(maxVal,0,WACV)
         G2frame.slideSizer.Add(maxSel,flag=wx.EXPAND|wx.ALL)
         G2frame.slideSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min intensity'),0,WACV)
@@ -977,7 +977,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         minSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
-            max=Range[0][1],typeHint=int,OnLeave=OnNewVal)
+            xmax=Range[0][1],typeHint=int,OnLeave=OnNewVal)
         G2frame.slideSizer.Add(minVal,0,WACV)
         G2frame.slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
         maxSizer.Add(G2frame.slideSizer,flag=wx.EXPAND|wx.ALL)
@@ -1001,8 +1001,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         autoSizer.Add((5,0),0)
         autoSizer.Add(linescan,0,WACV)
         if data['linescan'][0]:
-            G2frame.scanazm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['linescan'],1,min=0.,
-            max=360.,OnLeave=OnNewLineScan)
+            G2frame.scanazm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['linescan'],1,xmin=0.,
+            xmax=360.,OnLeave=OnNewLineScan)
             autoSizer.Add(G2frame.scanazm,0,WACV)
             azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
             azmSpin.SetValue(0)
@@ -1039,10 +1039,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             Indx[calSel] = name
             if name == 'wave':
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
-                    Parms[name][3],min=0.01,max=10.,nDig=Parms[name][1],typeHint=float)
+                    Parms[name][3],xmin=0.01,xmax=10.,nDig=Parms[name][1],typeHint=float)
             elif name == 'dep':
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
-                    Parms[name][3],min=0.0,max=0.2,nDig=Parms[name][1],typeHint=float)
+                    Parms[name][3],xmin=0.0,xmax=0.2,nDig=Parms[name][1],typeHint=float)
             else:
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Parms[name][2],
                     Parms[name][3],nDig=Parms[name][1],typeHint=float)
@@ -1152,9 +1152,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             wave = data['wavelength']
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        G2frame.InnerTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,0,nDig=(8,3,'f'),min=0.001,typeHint=float,OnLeave=OnIOtth)
+        G2frame.InnerTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,0,nDig=(8,3,'f'),xmin=0.001,typeHint=float,OnLeave=OnIOtth)
         littleSizer.Add(G2frame.InnerTth,0,WACV)
-        G2frame.OuterTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,1,nDig=(8,3,'f'),min=0.001,typeHint=float,OnLeave=OnIOtth)
+        G2frame.OuterTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,1,nDig=(8,3,'f'),xmin=0.001,typeHint=float,OnLeave=OnIOtth)
         littleSizer.Add(G2frame.OuterTth,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Start/End azimuth'),0,WACV)
@@ -1171,9 +1171,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,min=10,OnLeave=OnNumOutBins)
+        outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,xmin=10,OnLeave=OnNumOutBins)
         littleSizer.Add(outChan,0,WACV)
-        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),min=1,typeHint=int,OnLeave=OnNumOutAzms)
+        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         samplechoice = ['Cylinder','Fixed flat plate',]
@@ -1195,7 +1195,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='transmission '),0,WACV) #for flat plate
             minmax = [.05,1.0]
         samabsVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['SampleAbs'],0,nDig=(10,3),
-            typeHint=float,min=minmax[0],max=minmax[1])
+            typeHint=float,xmin=minmax[0],xmax=minmax[1])
         littleSizer.Add(samabsVal,0,WACV)
         dataSizer.Add(littleSizer,0,)        
         if 'PWDR' in data['type']:
@@ -1205,7 +1205,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
             oblique.SetValue(data['Oblique'][1])
             littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='Value (0.01-0.99)  '),0,WACV)
-            obliqVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Oblique'],0,nDig=(10,3),typeHint=float,min=0.01,max=0.99)
+            obliqVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Oblique'],0,nDig=(10,3),typeHint=float,xmin=0.01,xmax=0.99)
             littleSizer.Add(obliqVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         if 'SASD' in data['type']:
@@ -1215,7 +1215,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             setPolariz.Bind(wx.EVT_CHECKBOX, OnApplyPola)
             setPolariz.SetValue(data['PolaVal'][1])
             littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='Value (0.001-0.999)  '),0,WACV)
-            polaVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,3),typeHint=float,min=0.001,max=0.999)
+            polaVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,3),typeHint=float,xmin=0.001,xmax=0.999)
             littleSizer.Add(polaVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         
@@ -1360,13 +1360,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
         comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min calib d-spacing '),0,WACV)
-        G2frame.calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'calibdmin',nDig=(10,2),typeHint=float,min=0.25)
+        G2frame.calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'calibdmin',nDig=(10,2),typeHint=float,xmin=0.25)
         comboSizer.Add(G2frame.calibDmin,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min ring I/Ib '),0,WACV)
-        cutOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'cutoff',nDig=(10,2),min=0.1)
+        cutOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'cutoff',nDig=(10,2),xmin=0.1)
         comboSizer.Add(cutOff,0,WACV)
         calibSizer.Add(comboSizer,0)
         
@@ -1870,8 +1870,8 @@ def UpdateMasks(G2frame,data):
         sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
         sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
         maxSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
-        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,min=Range[0][0]+1,
-            max=Range[0][1],OnLeave=OnNewVal)
+        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,xmin=Range[0][0]+1,
+            xmax=Range[0][1],OnLeave=OnNewVal)
         slideSizer.Add(maxVal,0,WACV)
         slideSizer.Add(maxSel,flag=wx.EXPAND|wx.ALL)
         slideSizer.AddGrowableCol(2)
@@ -1883,7 +1883,7 @@ def UpdateMasks(G2frame,data):
         DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1) # Imax-Imin0-1
         sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
-            max=Range[0][1],typeHint=int,OnLeave=OnNewVal)
+            xmax=Range[0][1],typeHint=int,OnLeave=OnNewVal)
         slideSizer.Add(minVal,0,WACV)
         minSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
         slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
@@ -1980,17 +1980,17 @@ def UpdateMasks(G2frame,data):
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Lower/Upper thresholds '),0,WACV)
     lowerThreshold = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=thresh[1],key=0,
-        min=thresh[0][0],OnLeave=newReplot,typeHint=int)
+        xmin=thresh[0][0],OnLeave=newReplot,typeHint=int)
     littleSizer.Add(lowerThreshold,0,WACV)
     upperThreshold = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=thresh[1],key=1,
-        max=thresh[0][1],OnLeave=newReplot,typeHint=int)
+        xmax=thresh[0][1],OnLeave=newReplot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     spotSizer = wx.BoxSizer(wx.HORIZONTAL)
     data['SpotMask']['esdMul'] = float(data['SpotMask']['esdMul'])
     spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select n*sigma spot rejection (n=1-10): '),0,WACV)
     spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
-        key='esdMul',min=1.,max=10.,size=(40,25)),0,WACV)
+        key='esdMul',xmin=1.,xmax=10.,size=(40,25)),0,WACV)
     numPix = 0
     if data['SpotMask']['spotMask'] is not None:
         numPix = np.count_nonzero(data['SpotMask']['spotMask'])
@@ -2035,7 +2035,7 @@ def UpdateMasks(G2frame,data):
                 ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(ringText,0,WACV)
                 ringThick = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=Rings[i],key=1,
-                    min=0.001,max=1.,OnLeave=Replot,nDig=[8,3])
+                    xmin=0.001,xmax=1.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(ringThick,0,WACV)
                 ringDelete = G2G.G2LoggedButton(G2frame.dataWindow,label='delete?',
                     locationcode='Delete+Rings+'+str(i),handler=onDeleteMask)
@@ -2064,7 +2064,7 @@ def UpdateMasks(G2frame,data):
                 azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(azmText,0,WACV)
                 arcThick = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=Arcs[i],key=2,
-                    min=0.001,max=20.,OnLeave=Replot,nDig=[8,3])
+                    xmin=0.001,xmax=20.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(arcThick,0,WACV)
                 arcDelete = G2G.G2LoggedButton(G2frame.dataWindow,label='delete?',
                     locationcode='Delete+Arcs+'+str(i),handler=onDeleteMask)
@@ -2438,7 +2438,7 @@ def UpdateStressStrain(G2frame,data):
         strType.Bind(wx.EVT_COMBOBOX, OnStrainType)
         samSizer.Add(strType,0,WACV)
         samSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=' Sample phi: '),0,WACV)
-        samPhi = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Sample phi',nDig=(10,3),typeHint=float,min=-360.,max=360.)
+        samPhi = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Sample phi',nDig=(10,3),typeHint=float,xmin=-360.,xmax=360.)
         samSizer.Add(samPhi,0,WACV)
         samSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=' Sample delta-z(mm): '),0,WACV)
         samZ = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Sample z',nDig=(10,3),typeHint=float)
@@ -2977,7 +2977,7 @@ class AutoIntFrame(wx.Frame):
             scalename.Bind(wx.EVT_COMBOBOX,OnAutoScaleName)
             sizer.Add(scalename,0,WACV)
             sizer.Add(wx.StaticText(mnpnl,label=' to '),0,WACV)
-            scaleval = G2G.ValidatedTxtCtrl(mnpnl,self.Scale,0,nDig=(10,2),min=1.)
+            scaleval = G2G.ValidatedTxtCtrl(mnpnl,self.Scale,0,nDig=(10,2),xmin=1.)
             sizer.Add(scaleval,0,WACV)
             lblsizr.Add(sizer,0)
         #ToDO: Autonormalize, parm name?, scaling value?
@@ -2986,7 +2986,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'ComputePDF',OnChange=showPDFctrls))
         lbl4a = wx.StaticText(mnpnl, wx.ID_ANY,'Max detector distance: ')
         sizer.Add(lbl4a,0,wx.ALIGN_CENTER_VERTICAL)
-        fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',min=0.0)
+        fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',xmin=0.0)
         sizer.Add(fInp4a,0,wx.ALIGN_CENTER_VERTICAL)
         cOpt = G2G.G2CheckBox(mnpnl,'Optimize',self.params,'optPDF')
         sizer.Add(cOpt)

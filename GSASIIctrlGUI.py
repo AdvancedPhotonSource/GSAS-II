@@ -29,6 +29,8 @@ Class or function name             Description
                                    the initial value and saves the choice directly into a dict
                                    or list value. Optionally calls function when a
                                    choice is selected
+:class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
+                                   wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
 :class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
                                    columns may be ignored.
 :class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
@@ -463,13 +465,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     :param bool notBlank: if True (default) blank values are invalid
       for str inputs.
       
-    :param number min: minimum allowed valid value. If None (default) the
+    :param number xmin: minimum allowed valid value. If None (default) the
       lower limit is unbounded.
-      NB: test in NumberValidator is val >= min not val > min
+      NB: test in NumberValidator is val >= xmin not val > xmin
 
-    :param number max: maximum allowed valid value. If None (default) the
+    :param number xmax: maximum allowed valid value. If None (default) the
       upper limit is unbounded
-      NB: test in NumberValidator is val <= max not val < max
+      NB: test in NumberValidator is val <= xmax not val < xmax
       
     :param list exclLim: if True exclude min/max value ([exclMin,exclMax]); 
       (Default=[False,False]) 
@@ -519,9 +521,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     :param (other): other optional keyword parameters for the
       wx.TextCtrl widget such as size or style may be specified.
     '''
-    def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
+    def __init__(self,parent,loc,key,nDig=None,notBlank=True,xmin=None,xmax=None,
         OKcontrol=None,OnLeave=None,typeHint=None,CIFinput=False,exclLim=[False,False],
-        OnLeaveArgs={}, ASCIIonly=False, **kw):
+        OnLeaveArgs={}, ASCIIonly=False,
+                     min=None, max=None, # patch: remove this eventually
+                     **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
@@ -533,6 +537,17 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.notBlank = notBlank
         self.ASCIIonly = ASCIIonly
         self.type = str
+        # patch: remove this when min & max are no longer used to call this
+        if min is not None:
+            xmin=min
+            if GSASIIpath.GetConfigValue('debug'):
+                print('Change min to xmin here:')
+                G2obj.HowDidIgetHere(True)
+        if max is not None:
+            xmax=max
+            if GSASIIpath.GetConfigValue('debug'):
+                print('Change max to xmax here:')
+                G2obj.HowDidIgetHere(True)
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
@@ -559,7 +574,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         if self.type is int:        
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
-                validator=NumberValidator(int,result=loc,key=key,min=min,max=max,
+                validator=NumberValidator(int,result=loc,key=key,xmin=xmin,xmax=xmax,
                     exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
             if val is not None:
                 self._setValue(val)
@@ -568,7 +583,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._IndicateValidity()
         elif self.type is float:
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
-                validator=NumberValidator(float,result=loc,key=key,min=min,max=max,
+                validator=NumberValidator(float,result=loc,key=key,xmin=xmin,xmax=xmax,
                     exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
             if val is not None:
                 self._setValue(val)
@@ -786,13 +801,13 @@ class NumberValidator(wx.PyValidator):
       (default False). This prevents the + or - keys from being pressed.
       Used with typ=int; ignored for typ=float.
 
-    :param number min: Minimum allowed value. If None (default) the
+    :param number xmin: Minimum allowed value. If None (default) the
       lower limit is unbounded
 
-    :param number max: Maximum allowed value. If None (default) the
+    :param number xmax: Maximum allowed value. If None (default) the
       upper limit is unbounded
       
-    :param list exclLim: if True exclude min/max value ([exclMin,exclMax]); 
+    :param list exclLim: if True exclude xmin/xmax value ([exclMin,exclMax]); 
      (Default=[False,False]) 
 
     :param dict/list result: List or dict where value should be placed when valid
@@ -807,7 +822,7 @@ class NumberValidator(wx.PyValidator):
       as valid input.
       
     '''
-    def __init__(self, typ, positiveonly=False, min=None, max=None,exclLim=[False,False],
+    def __init__(self, typ, positiveonly=False, xmin=None, xmax=None,exclLim=[False,False],
         result=None, key=None, OKcontrol=None, CIFinput=False):
         'Create the validator'
         if 'phoenix' in wx.version():
@@ -817,8 +832,8 @@ class NumberValidator(wx.PyValidator):
         # save passed parameters
         self.typ = typ
         self.positiveonly = positiveonly
-        self.min = min
-        self.max = max
+        self.xmin = xmin
+        self.xmax = xmax
         self.exclLim = exclLim
         self.result = result
         self.key = key
@@ -843,7 +858,7 @@ class NumberValidator(wx.PyValidator):
         'Create a copy of the validator, a strange, but required component'
         return NumberValidator(typ=self.typ, 
                                positiveonly=self.positiveonly,
-                               min=self.min, max=self.max,
+                               xmin=self.xmin, xmax=self.xmax,
                                result=self.result, key=self.key,
                                OKcontrol=self.OKcontrol,
                                CIFinput=self.CIFinput)
@@ -885,15 +900,15 @@ class NumberValidator(wx.PyValidator):
             else: 
                 tc.invalid = True
                 return
-        if self.max != None:
-            if val >= self.max and self.exclLim[1]:
+        if self.xmax != None:
+            if val >= self.xmax and self.exclLim[1]:
                 tc.invalid = True
-            elif val > self.max:
+            elif val > self.xmax:
                 tc.invalid = True
-        if self.min != None:
-            if val <= self.min and self.exclLim[0]:
+        if self.xmin != None:
+            if val <= self.xmin and self.exclLim[0]:
                 tc.invalid = True
-            elif val < self.min:
+            elif val < self.xmin:
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
@@ -1036,6 +1051,53 @@ class ASCIIValidator(wx.PyValidator):
             self.TestValid(tc)
             return
         return  # Returning without calling event.Skip, which eats the keystroke
+
+def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale):
+    '''A customized combination of a wx.Slider and a validated 
+    wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
+    a slider or text entry to set a value within a range.
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the TextCtrl. Can be None.
+
+    :param dict/list loc: the dict or list with the initial value to be
+      placed in the TextCtrl.
+
+    :param int/str key: the dict key or the list index for the value to be
+      edited by the TextCtrl. The ``loc[key]`` element must exist and should 
+      have a float value. It will be forced to an initial value 
+      between xmin and xmax.
+      
+    :param str label: A label to be placed to the left of the slider. 
+
+    :param float xmin: the minimum allowed valid value. 
+
+    :param float xmax: the maximum allowed valid value.
+
+    :param float iscale: number to scale values to integers which is what the 
+       Scale widget uses. If the xmin=1 and xmax=4 and iscale=1 then values
+       only the values 1,2,3 and 4 can be set with the slider. If 
+       
+    :returns: returns a wx.BoxSizer containing the widgets
+    '''
+
+    def onScale(event):
+        loc[key] = vScale.GetValue()/float(iscale)
+        wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
+    def onValSet(*args,**kwargs):
+        vScale.SetValue(int(0.5+iscale*loc[key]))        
+    loc[key] = val = min(xmax,max(xmin,loc[key]))
+    hSizer = wx.BoxSizer(wx.HORIZONTAL)
+    hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    vScale = wx.Slider(parent,style=wx.SL_HORIZONTAL,value=int(0.5+iscale*loc[key]))
+    vScale.SetRange(int(0.5+xmin*iscale),int(0.5+xmax*iscale))
+    vScale.Bind(wx.EVT_SLIDER, onScale)
+    hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    vEntry = ValidatedTxtCtrl(parent,loc,key,
+                nDig=(10,int(0.9+np.log10(iscale))),OnLeave=onValSet,
+                xmin=xmin,xmax=xmax,typeHint=float)
+    hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+    return hSizer
 
 ################################################################################
 def HorizontalLine(sizer,parent):
@@ -6522,13 +6584,13 @@ if __name__ == '__main__':
     #======================================================================
     # test Tutorial access
     #======================================================================
-    dlg = OpenTutorial(frm)
-    if dlg.ShowModal() == wx.ID_OK:
-        print("OK")
-    else:
-        print("Cancel")
-    dlg.Destroy()
-    sys.exit()
+    # dlg = OpenTutorial(frm)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print("OK")
+    # else:
+    #     print("Cancel")
+    # dlg.Destroy()
+    # sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================
@@ -6654,13 +6716,27 @@ if __name__ == '__main__':
     #     for sel in dlg.GetSelections():
     #         print sel,choices[sel]
 
+    # pnl = wx.Panel(frm)
+    # siz = wx.BoxSizer(wx.VERTICAL)
+    # td = {'Goni':200.,'a':1.,'int':1,'calc':1./3.,'string':'s'}
+    # for key in sorted(td):
+    #     txt = ValidatedTxtCtrl(pnl,td,key,typeHint=float)
+    #     siz.Add(txt)
+    # pnl.SetSizer(siz)
+    # siz.Fit(frm)
+    # app.MainLoop()
+    # print(td)
+        
     pnl = wx.Panel(frm)
-    siz = wx.BoxSizer(wx.VERTICAL)
-    td = {'Goni':200.,'a':1.,'int':1,'calc':1./3.,'string':'s'}
-    for key in sorted(td):
-        txt = ValidatedTxtCtrl(pnl,td,key,typeHint=float)
-        siz.Add(txt)
-    pnl.SetSizer(siz)
-    siz.Fit(frm)
+    valArr = {'k':1.0}
+    ms = wx.BoxSizer(wx.VERTICAL)
+    #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',.2,1.2,100)
+    #ms.Add(siz)
+    siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',2,5,1)
+    ms.Add(siz)
+    #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',20,50,.1)
+    #ms.Add(siz)
+    pnl.SetSizer(ms)
+    ms.Fit(frm)
     app.MainLoop()
-    print(td)
+    print(valArr)

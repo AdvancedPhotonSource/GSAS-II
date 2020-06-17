@@ -618,8 +618,11 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
     Amat,Bmat = G2lat.cell2AB(Cell)
     atTypes = General['AtomTypes']
     Radii = np.array(General['BondRadii'])
-    DisAglCtls = General['DisAglCtls']    
-    radiusFactor = DisAglCtls['Factors'][0]
+    try:
+        DisAglCtls = General['DisAglCtls']    
+        radiusFactor = DisAglCtls['Factors'][0]
+    except:
+        radiusFactor = 0.85
     AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
     Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
@@ -707,8 +710,11 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     AtTypes = General['AtomTypes']
     Radii = np.array(General['BondRadii'])
-    DisAglCtls = General['DisAglCtls']    
-    radiusFactor = DisAglCtls['Factors'][0]
+    try:
+        DisAglCtls = General['DisAglCtls']    
+        radiusFactor = DisAglCtls['Factors'][0]
+    except:
+        radiusFactor = 0.85
     AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']
     if Orig is None:
         Orig = atNames.index(FrstName)

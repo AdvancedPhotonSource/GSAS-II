@@ -783,14 +783,14 @@ class RotationDialog(wx.Dialog):
         mainSizer.Add(MatSizer)
         rotationBox = wx.BoxSizer(wx.HORIZONTAL)
         rotationBox.Add(wx.StaticText(self.panel,label=' Rotation angle: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
         rotangle = wx.TextCtrl(self.panel,value='%5.3f'%(self.rotAngle),
             size=(50,25),style=wx.TE_PROCESS_ENTER)
         rotangle.Bind(wx.EVT_TEXT_ENTER,OnRotAngle)
         rotangle.Bind(wx.EVT_KILL_FOCUS,OnRotAngle)
         rotationBox.Add(rotangle,0,WACV)
         rotationBox.Add(wx.StaticText(self.panel,label=' about vector: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
         rotvec = wx.TextCtrl(self.panel,value='%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]),
             size=(100,25),style=wx.TE_PROCESS_ENTER)
         rotvec.Bind(wx.EVT_TEXT_ENTER,OnRotVec)
@@ -916,7 +916,7 @@ class DIFFaXcontrols(wx.Dialog):
             mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '),0,WACV)
             parmRange =  wx.BoxSizer(wx.HORIZONTAL)
             numChoice = [str(i+1) for i in range(10)]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             parmrange = wx.TextCtrl(self.panel,value='%.3f %.3f'%(self.parmRange[0],self.parmRange[1]),
                 style=wx.TE_PROCESS_ENTER)
             parmrange.Bind(wx.EVT_TEXT_ENTER,OnParmRange)
@@ -1226,7 +1226,7 @@ def getAtomRadii(data):
 
 def FindCoordinationByLabel(data):
     '''Map out molecular connectivity by determining the atoms bonded
-    to each atom, by label. The atoms boced to each atom in the asymmetric 
+    to each atom, by label. The atoms bonded to each atom in the asymmetric 
     unit is determined and returned in a dict. Works best 
     '''
     generalData = data['General']
@@ -1392,6 +1392,70 @@ def FindBondsDrawCell(data,cell):
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
                         
+def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5):
+    '''Compute points where there are no atoms within probeRadius A.
+    All atoms in the Atoms list are considered, provided their 
+    occupancy is non-zero. 
+
+    :param dict data: Phase data array
+    :param float aMax: Maximum along the *a* direction (fractional units).
+       Defaults to 1.
+    :param float bMax: Maximum along the *b* direction (fractional units).
+       Defaults to 1.
+    :param float cMax: Maximum along the *c* direction (fractional units).
+       Defaults to 1.
+    :param float gridspacing=.25: Approximate spacing of points (fractional units).
+       Defaults to 1.
+    :param float ,probeRadius=.5:
+    
+    '''
+
+    VDWdict = dict(zip(data['General']['AtomTypes'],data['General']['vdWRadii']))
+    cell = data['General']['Cell'][1:7]  
+    Amat,Bmat = G2lat.cell2AB(cell) # orthogonalization matrix
+    SGData = data['General']['SGData']
+    surroundingCells = G2lat.CellBlock(1)
+
+    xx,yy,zz = np.meshgrid(
+        np.linspace(0,aMax,int(0.5+cell[0]*aMax/gridspacing),endpoint=False),
+        np.linspace(0,cMax,int(0.5+cell[1]*bMax/gridspacing),endpoint=False),
+        np.linspace(0,cMax,int(0.5+cell[2]*cMax/gridspacing),endpoint=False))
+    coordGrd = np.array([xyz for xyz in zip(xx.ravel(),yy.ravel(),zz.ravel())])
+
+    lgclArray = [True for i in xx.ravel()]
+
+    cx,ct,cs,cia = data['General']['AtomPtrs']
+    nind = len(data['Atoms'])
+    pgbar = wx.ProgressDialog('Fill unit cell for %d atoms'%nind,'Atoms done=',nind+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+    screenSize = wx.ClientDisplayRect()
+    Size = pgbar.GetSize()
+    if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+        pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+
+    for i,atom in enumerate(data['Atoms']):
+        if atom[cx+3] <= 0: continue
+        radius = VDWdict.get(atom[ct])
+        cellMin = -radius/np.array(cell[0:3])
+        cellMax = radius/np.array(cell[0:3]) + (aMax,bMax,cMax)
+        if radius is None:
+            print('Skipping atom {}, no radius'.format(atom[0]))
+            continue
+        radius += probeRadius
+        result = G2spc.GenAtom(atom[cx:cx+3],SGData,Move=True)
+        for item in result:
+            for scell in surroundingCells:
+                XYZ = item[0] + scell
+                if np.any((XYZ < cellMin, XYZ > cellMax)): continue 
+                lgclArray = np.logical_and(lgclArray,np.sqrt(np.sum(np.inner(Amat,coordGrd-XYZ)**2,axis=0))>radius)
+        GoOn = pgbar.Update(i,newmsg='Atoms done=%d'%(i))
+        if not GoOn[0]:
+            break
+    pgbar.Destroy()
+    print('found ',len(coordGrd[lgclArray]),'points gridspacing,probeRadius=',gridspacing,probeRadius)
+    return coordGrd[lgclArray]
+        
 def SetDrawingDefaults(drawingData):
     """Add required items into data['drawing'] array if not present. This does not add
     all the items in SetupDrawingData, but it seems that this is not a problem. Perhaps the
@@ -1834,7 +1898,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             NameTxt = wx.TextCtrl(General,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
             NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
             NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
@@ -1976,7 +2040,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Fmt = (10,3)
                 if ifEdit:          #a,b,c,etc.
                     cellVal = G2G.ValidatedTxtCtrl(General,generalData['Cell'],Id+1,
-                            min=0.1,max=500.,nDig=Fmt,OnLeave=OnCellChange)
+                            xmin=0.1,xmax=500.,nDig=Fmt,OnLeave=OnCellChange)
                     cellSizer.Add(cellVal,0,WACV)
                     cellList.append(cellVal.GetId())
                 else:               #volume
@@ -2055,7 +2119,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         elemSizer.Add((5,0),)
                     else:
                         gfacTxt = G2G.ValidatedTxtCtrl(General,generalData['Lande g'],ig,
-                            min=0.5,max=3.0,nDig=(10,2))
+                            xmin=0.5,xmax=3.0,nDig=(10,2))
                         elemSizer.Add(gfacTxt,0,WACV)
             return elemSizer
         
@@ -2180,7 +2244,7 @@ def UpdatePhaseData(G2frame,Item,data):
             magSizer.Add(msgSizer)
             dminSizer = wx.BoxSizer(wx.HORIZONTAL)
             dminSizer.Add(wx.StaticText(General,label=' Magnetic reflection d-min: '),0,WACV)
-            dminVal = G2G.ValidatedTxtCtrl(General,generalData,'MagDmin',nDig=(10,4),min=0.7)
+            dminVal = G2G.ValidatedTxtCtrl(General,generalData,'MagDmin',nDig=(10,4),xmin=0.7)
             dminSizer.Add(dminVal,0,WACV)
             magSizer.Add(dminSizer,0,WACV)
             return magSizer
@@ -2285,7 +2349,7 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['SuperVec'][0],ifShow = G2spc.SSGModCheck(generalData['SuperVec'][0],modS)
             for i,[val,show] in enumerate(zip(generalData['SuperVec'][0],ifShow)):
                 if show:
-                    modVal = G2G.ValidatedTxtCtrl(General,generalData['SuperVec'][0],i,nDig=(10,4),min=-1.,max=2.)
+                    modVal = G2G.ValidatedTxtCtrl(General,generalData['SuperVec'][0],i,nDig=(10,4),xmin=-1.,xmax=2.)
                     vecSizer.Add(modVal,0,WACV)
                     Indx[modVal.GetId()] = i
                 else:
@@ -2314,15 +2378,15 @@ def UpdatePhaseData(G2frame,Item,data):
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
             pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(65,25),
-                min=0.25,max=20.,nDig=(10,5))
+                xmin=0.25,xmax=20.,nDig=(10,5))
             pawleySizer.Add(pawlMin,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmax: '),0,WACV)
             pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(65,25),
-                min=2.0,max=100.,nDig=(10,5))
+                xmin=2.0,xmax=100.,nDig=(10,5))
             pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,25),
-                min=0.,max=1.,nDig=(10,4))
+                xmin=0.,xmax=1.,nDig=(10,4))
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             
@@ -2398,10 +2462,10 @@ def UpdatePhaseData(G2frame,Item,data):
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
-            mapRes = G2G.ValidatedTxtCtrl(General,Map,'GridStep',nDig=(10,2),min=0.1,max=2.)
+            mapRes = G2G.ValidatedTxtCtrl(General,Map,'GridStep',nDig=(10,2),xmin=0.1,xmax=2.)
             line2Sizer.Add(mapRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
-            cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),min=1.0,max=100.)
+            cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),xmin=1.0,xmax=100.)
             line2Sizer.Add(cutOff,0,WACV)
             if len(Map['RefList']) and not generalData['Modulated']:
                 if all(['PWDR' in map for map in Map['RefList']]):
@@ -2472,13 +2536,13 @@ def UpdatePhaseData(G2frame,Item,data):
             flipSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
-            flipRes = G2G.ValidatedTxtCtrl(General,Flip,'GridStep',nDig=(10,2),min=0.10,max=2.)
+            flipRes = G2G.ValidatedTxtCtrl(General,Flip,'GridStep',nDig=(10,2),xmin=0.10,xmax=2.)
             line2Sizer.Add(flipRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
-            kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),min=0.1,max=1.2)
+            kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),xmin=0.1,xmax=1.2)
             line2Sizer.Add(kFactor,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
-            kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),min=10.)
+            kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),xmin=10.)
             line2Sizer.Add(kMax,0,WACV)
             flipSizer.Add(line2Sizer,0,WACV)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2487,7 +2551,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Flip['testHKL'] += [[1,1,1],[0,2,0],[1,2,3]]
             HKL = Flip['testHKL']
             for ih,hkl in enumerate(Flip['testHKL']):                
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 hkl = wx.TextCtrl(General,value='%3d %3d %3d'%(HKL[ih][0],HKL[ih][1],HKL[ih][2]),
                     style=wx.TE_PROCESS_ENTER,name='hkl%d'%(ih))
                 hkl.Bind(wx.EVT_TEXT_ENTER,OnTestHKL)        
@@ -2558,7 +2622,7 @@ def UpdatePhaseData(G2frame,Item,data):
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             lineSizer.Add(refList,0,WACV)
             lineSizer.Add(wx.StaticText(General,label=' d-min: '),0,WACV)
-            dmin = G2G.ValidatedTxtCtrl(General,MCSAdata,'dmin',nDig=(10,3),min=1.,max=5.)
+            dmin = G2G.ValidatedTxtCtrl(General,MCSAdata,'dmin',nDig=(10,3),xmin=1.,xmax=5.)
             lineSizer.Add(dmin,0,WACV)
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
@@ -2575,7 +2639,7 @@ def UpdatePhaseData(G2frame,Item,data):
             ranStart.SetValue(MCSAdata.get('ranStart',False))
             line2Sizer.Add(ranStart,0,WACV)
             MCSAdata['ranRange'] = MCSAdata.get('ranRange',10.)  #patch for old gpx files
-            ranRange = G2G.ValidatedTxtCtrl(General,MCSAdata,'ranRange',nDig=(10,1),min=1.,max=99.)
+            ranRange = G2G.ValidatedTxtCtrl(General,MCSAdata,'ranRange',nDig=(10,1),xmin=1.,xmax=99.)
             line2Sizer.Add(ranRange,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label='% of ranges. '),0,WACV)
             mcsaSizer.Add(line2Sizer)
@@ -2592,11 +2656,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 parms = 'fast parms'
                 for i,name in enumerate(Names):
                     line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
-                    Ajump = G2G.ValidatedTxtCtrl(General,MCSAdata[parms],i,nDig=(10,2),min=0.1,max=1.,OnLeave=ShowTsched)
+                    Ajump = G2G.ValidatedTxtCtrl(General,MCSAdata[parms],i,nDig=(10,2),xmin=0.1,xmax=1.,OnLeave=ShowTsched)
                     line3Sizer.Add(Ajump,0,WACV)
             elif 'log' in MCSAdata['Algorithm']:
                 line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,WACV)
-                slope = G2G.ValidatedTxtCtrl(General,MCSAdata,'log slope',nDig=(10,3),min=0.25,max=1.0,OnLeave=ShowTsched)
+                slope = G2G.ValidatedTxtCtrl(General,MCSAdata,'log slope',nDig=(10,3),xmin=0.25,xmax=1.0,OnLeave=ShowTsched)
                 line3Sizer.Add(slope,0,WACV)
             elif 'Basin Hopping' in MCSAdata['Algorithm']:
                 pass        #TODO basinhopping controls here?
@@ -4405,7 +4469,7 @@ def UpdatePhaseData(G2frame,Item,data):
         OptMeth.Bind(wx.EVT_COMBOBOX,OnOptMeth)
         lineSizer.Add(OptMeth,0,WACV)
         lineSizer.Add(wx.StaticText(MEMData,label=' Peak overlap factor'),0,WACV)
-        overlap = G2G.ValidatedTxtCtrl(MEMData,DysData,'overlap',nDig=(10,4),min=0.1,max=1.)
+        overlap = G2G.ValidatedTxtCtrl(MEMData,DysData,'overlap',nDig=(10,4),xmin=0.1,xmax=1.)
         lineSizer.Add(overlap,0,WACV)
         mainSizer.Add(lineSizer)
         if DysData['Optimize'] == 'ZSPA':
@@ -4417,18 +4481,18 @@ def UpdatePhaseData(G2frame,Item,data):
             Zsizer.Add(Zmult,0,WACV)
             if DysData['Lagrange'][0] == 'user':
                 Zsizer.Add(wx.StaticText(MEMData,label=' value: '),0,WACV)
-                lamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],1,nDig=(10,4),min=0.0001,max=1.)
+                lamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],1,nDig=(10,4),xmin=0.0001,xmax=1.)
                 Zsizer.Add(lamb,0,WACV)
             Zsizer.Add(wx.StaticText(MEMData,label=' Adjust by: '),0,WACV)
-            dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),min=0.05,max=0.1)
+            dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),xmin=0.05,xmax=0.1)
             Zsizer.Add(dlamb,0,WACV)
             mainSizer.Add(Zsizer)
 
         Esizer = wx.BoxSizer(wx.HORIZONTAL)
         Esizer.Add(wx.StaticText(MEMData,label=' Weight by d-spacing**'),0,WACV)
-        Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',min=0,max=4,size=(50,20))
+        Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',xmin=0,xmax=4,size=(50,20))
         Esizer.Add(Efact,0,WACV)
-        Dmin = G2G.ValidatedTxtCtrl(MEMData,DysData,'MEMdmin',min=0.5,max=refDmin,size=(50,20))
+        Dmin = G2G.ValidatedTxtCtrl(MEMData,DysData,'MEMdmin',xmin=0.5,xmax=refDmin,size=(50,20))
         Esizer.Add(wx.StaticText(MEMData,label=' Minimum d-spacing for generated reflections: '),0,WACV)
         Esizer.Add(Dmin,0,WACV)
         mainSizer.Add(Esizer)
@@ -4452,7 +4516,7 @@ def UpdatePhaseData(G2frame,Item,data):
         
         Csizer = wx.BoxSizer(wx.HORIZONTAL)
         Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
-        Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',min=0,max=10000,size=(50,20))
+        Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',xmin=0,xmax=10000,size=(50,20))
         Csizer.Add(Cyc,0,WACV)
         fileCheck = wx.CheckBox(MEMData,label='Clear Dynsomia files? ')
         fileCheck.SetValue(DysData['clear'])
@@ -4604,12 +4668,12 @@ def UpdatePhaseData(G2frame,Item,data):
                     atmChoice.Add(valSel,0,WACV)
                 atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' BVS weight: '),0,WACV)
                 for itype in range(nTypes):
-                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,min=0.),0,WACV)
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,xmin=0.),0,WACV)
             if G2frame.RMCchoice == 'RMCProfile':
                 atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
                 for iType in range(nTypes):
                     atId = RMCPdict['atSeq'][iType]
-                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,xmin=0.,xmax=1.),0,WACV)
             return atmChoice
         
         def GetSwapSizer(RMCPdict):
@@ -4644,7 +4708,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
                     Indx[atmSel.GetId()] = [ifx,i]
                     swapSizer.Add(atmSel,0,WACV)
-                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.01,max=0.5,size=(50,25)),0,WACV)
+                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,xmin=0.01,xmax=0.5,size=(50,25)),0,WACV)
             return swapSizer
         
         def GetPairSizer(RMCdict):
@@ -4655,14 +4719,14 @@ def UpdatePhaseData(G2frame,Item,data):
             if G2frame.RMCchoice == 'RMCProfile':
                 pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Hard min: '),0,WACV)
                 for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
+                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Search from: '),0,WACV)
             for pair in RMCPdict['Pairs']:
                 pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],
-                    1,min=0.,max=10.,size=(50,25)),0,WACV)
+                    1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%'to: '),0,WACV)
             for pair in RMCPdict['Pairs']:
-                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
+                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             return pairSizer
                     
         def FileSizer(RMCdict):
@@ -4849,7 +4913,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 for i,ax in enumerate(axes):
                     superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
                     superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
-                        i,min=1,max=20,size=(50,25)),0,WACV)
+                        i,xmin=1,xmax=20,size=(50,25)),0,WACV)
                 return superSizer
 
             def GetBoxSizer():
@@ -4858,7 +4922,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 for i,ax in enumerate(axes):
                     boxSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
                     boxSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Box'],
-                        i,min=10.,max=50.,size=(50,25)),0,WACV)
+                        i,xmin=10.,xmax=50.,size=(50,25)),0,WACV)
                 return boxSizer
                                         
             def OnReStart(event):
@@ -4953,8 +5017,8 @@ Make sure your parameters are correctly set.
                         atmSel.Bind(wx.EVT_COMBOBOX,OnAngleAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
                         angleSizer.Add(atmSel,0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,xmin=0.,xmax=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,xmin=0.,xmax=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
                 return angleSizer
             
             def GetTorsionSizer():
@@ -4991,7 +5055,7 @@ Make sure your parameters are correctly set.
                         Indx[atmSel.GetId()] = [ifx,i]
                         torsionSizer.Add(atmSel,0,WACV)
                     for i in  [4,5,6,7,8,9]: 
-                        torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,min=0.,max=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                        torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,xmin=0.,xmax=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
                 return torsionSizer
 #patches
             if 'useBVS' not in RMCPdict:
@@ -5032,7 +5096,7 @@ Make sure your parameters are correctly set.
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
                 lineSizer.Add(GetSuperSizer(),0,WACV)
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
-                lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',min=1,size=[40,25]),0,WACV)
+                lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',xmin=1,size=[40,25]),0,WACV)
             else:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))
             mainSizer.Add(lineSizer,0,WACV)
@@ -5043,9 +5107,9 @@ Make sure your parameters are correctly set.
                 pdbButton.Bind(wx.EVT_BUTTON,OnPdbButton)
                 molecSizer.Add(pdbButton,0,WACV)
                 molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' target density, gm/cc '),0,WACV)
-                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'targetDensity',min=0.1,size=[60,25]),0,WACV)
+                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'targetDensity',xmin=0.1,size=[60,25]),0,WACV)
                 molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' max tries '),0,WACV)
-                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'maxRecursion',min=1000,max=1000000,size=[60,25]),0,WACV)
+                molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'maxRecursion',xmin=1000,xmax=1000000,size=[60,25]),0,WACV)
                 makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB (slow!)')
                 makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
                 molecSizer.Add(makePDB,0,WACV)               
@@ -5066,7 +5130,7 @@ Make sure your parameters are correctly set.
             restart.Bind(wx.EVT_CHECKBOX,OnReStart)
             resLine.Add(restart,0,WACV)
             resLine.Add(wx.StaticText(G2frame.FRMC,label=' 10,000X Computation cycles: '),0,WACV)
-            resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',min=1,size=[60,25]),0,WACV)
+            resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',xmin=1,size=[60,25]),0,WACV)
             mainSizer.Add(resLine,0,WACV)
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
@@ -5086,9 +5150,9 @@ Make sure your parameters are correctly set.
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0,WACV)
             distBox = wx.BoxSizer(wx.HORIZONTAL)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' Distance constraints, weight: :'),0,WACV)        
-            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
-            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',min=0.,max=4.,size=(50,25)),0,WACV)            
+            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',xmin=0.,xmax=4.,size=(50,25)),0,WACV)            
             mainSizer.Add(distBox,0,WACV)
             if RMCPdict['byMolec']:
                 mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
@@ -5098,7 +5162,7 @@ Make sure your parameters are correctly set.
                 angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
                 angBox.Add(angAdd,0,WACV)
                 angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
-                angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+                angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
                 mainSizer.Add(angBox,0,WACV)
                 if len(RMCPdict['Angles']):
                     mainSizer.Add(GetAngleSizer(),0,WACV)
@@ -5108,7 +5172,7 @@ Make sure your parameters are correctly set.
                 torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
                 torBox.Add(torAdd,0,WACV)
                 torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints, weight: '),0,WACV)
-                torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',min=0.,max=100.,size=(50,25)),0,WACV)
+                torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
                 mainSizer.Add(torBox,0,WACV)
                 if len(RMCPdict['Torsions']):
                     mainSizer.Add(GetTorsionSizer(),0,WACV)
@@ -5205,9 +5269,9 @@ Make sure your parameters are correctly set.
             def GetTimeSizer():
                 timeSizer = wx.BoxSizer(wx.HORIZONTAL)
                 timeSizer.Add(wx.StaticText(G2frame.FRMC,label=' Total running time (min): '),0,WACV)
-                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],0,min=0.),0,WACV)
+                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],0,xmin=0.),0,WACV)
                 timeSizer.Add(wx.StaticText(G2frame.FRMC,label=' Save interval time (min): '),0,WACV)
-                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],1,min=0.1,max=20.),0,WACV)
+                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],1,xmin=0.1,xmax=20.),0,WACV)
                 return timeSizer
                 
             def GetSuperSizer():
@@ -5216,7 +5280,7 @@ Make sure your parameters are correctly set.
                 for i,ax in enumerate(axes):
                     superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
                     superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
-                        i,min=1,max=20,size=(50,25),OnLeave=SetRestart),0,WACV)
+                        i,xmin=1,xmax=20,size=(50,25),OnLeave=SetRestart),0,WACV)
                 return superSizer
                       
             def GetBvsSizer():
@@ -5247,13 +5311,13 @@ Make sure your parameters are correctly set.
                     Indx[reset.GetId()] = pair
                 bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' Bond length:'),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
                 bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' B constant (0.37): '),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],1,min=0.,max=10.,size=(50,25)),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
                 bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' Cut off: '),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
                 return bvsSizer
             
             def GetFxcnSizer():
@@ -5285,11 +5349,11 @@ Make sure your parameters are correctly set.
                         atmSel.Bind(wx.EVT_COMBOBOX,OnFxcnAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
                         fxcnSizer.Add(atmSel,0,WACV)
-                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,2,min=0.,max=5.,size=(50,25)),0,WACV)
-                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,3,min=0.,max=5.,size=(50,25)),0,WACV)
-                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,4,min=1,max=12,size=(50,25)),0,WACV)
-                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,5,min=0.,max=1.,size=(50,25)),0,WACV)
-                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,6,min=0.,size=(50,25)),0,WACV)
+                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,2,xmin=0.,xmax=5.,size=(50,25)),0,WACV)
+                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,3,xmin=0.,xmax=5.,size=(50,25)),0,WACV)
+                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,4,xmin=1,xmax=12,size=(50,25)),0,WACV)
+                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,5,xmin=0.,xmax=1.,size=(50,25)),0,WACV)
+                    fxcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,6,xmin=0.,size=(50,25)),0,WACV)
                 return fxcnSizer
     
             def GetAvcnSizer():
@@ -5321,10 +5385,10 @@ Make sure your parameters are correctly set.
                         atmSel.Bind(wx.EVT_COMBOBOX,OnAvcnAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
                         avcnSizer.Add(atmSel,0,WACV)
-                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,2,min=0.,max=5.,size=(50,25)),0,WACV)
-                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,3,min=0.,max=5.,size=(50,25)),0,WACV)
-                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,4,min=1.,max=12.,size=(50,25)),0,WACV)
-                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,5,min=0.,size=(50,25)),0,WACV)
+                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,2,xmin=0.,xmax=5.,size=(50,25)),0,WACV)
+                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,3,xmin=0.,xmax=5.,size=(50,25)),0,WACV)
+                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,4,xmin=1.,xmax=12.,size=(50,25)),0,WACV)
+                    avcnSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,fxCN,5,xmin=0.,size=(50,25)),0,WACV)
                 return avcnSizer
     
             def GetAngleSizer():
@@ -5359,10 +5423,10 @@ Make sure your parameters are correctly set.
                         atmSel.Bind(wx.EVT_COMBOBOX,OnAngleAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
                         angleSizer.Add(atmSel,0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,min=0.,max=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,min=0.5,max=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,5,min=0.5,max=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,6,min=0.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,xmin=0.,xmax=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,xmin=0.5,xmax=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,5,xmin=0.5,xmax=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,6,xmin=0.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
                 return angleSizer
     
             def GetBondSizer():
@@ -5397,8 +5461,8 @@ Make sure your parameters are correctly set.
                         atmSel.Bind(wx.EVT_COMBOBOX,OnBondAtSel)
                         Indx[atmSel.GetId()] = [ifx,i]
                         bondSizer.Add(atmSel,0,WACV)
-                    bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,2,min=0.,max=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,3,min=0.,size=(50,25)),0,WACV)
+                    bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,2,xmin=0.,xmax=5.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,3,xmin=0.,size=(50,25)),0,WACV)
                 return bondSizer
 
             
@@ -5462,14 +5526,14 @@ Make sure your parameters are correctly set.
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             pottempBox = wx.BoxSizer(wx.HORIZONTAL)
             pottempBox.Add(wx.StaticText(G2frame.FRMC,label=' Potential temperature (K): '),0,WACV)
-            pottempBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Pot. Temp.',min=0.,max=1000.,size=(50,25)),0,WACV)
+            pottempBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Pot. Temp.',xmin=0.,xmax=1000.,size=(50,25)),0,WACV)
             mainSizer.Add(pottempBox,0,WACV)
             bondpotBox = wx.BoxSizer(wx.HORIZONTAL)
             bondpotAdd = wx.Button(G2frame.FRMC,label='Add')
             bondpotAdd.Bind(wx.EVT_BUTTON,OnAddBondPot)
             bondpotBox.Add(bondpotAdd,0,WACV)
             bondpotBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B stretch potential restraints, search range (%): '),0,WACV)
-            bondpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Stretch search',min=0.,max=100.,size=(50,25)),0,WACV)
+            bondpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Stretch search',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             mainSizer.Add(bondpotBox,0,WACV)
             if len(RMCPdict['Potentials']['Stretch']):
                 mainSizer.Add(GetBondSizer(),0,WACV)
@@ -5479,7 +5543,7 @@ Make sure your parameters are correctly set.
             angpotAdd.Bind(wx.EVT_BUTTON,OnAddAnglePot)
             angpotBox.Add(angpotAdd,0,WACV)
             angpotBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle potential restraints, search range (%): '),0,WACV)
-            angpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Angle search',min=0.,max=100.,size=(50,25)),0,WACV)
+            angpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Angle search',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             mainSizer.Add(angpotBox,0,WACV)
             if len(RMCPdict['Potentials']['Angles']):
                 mainSizer.Add(GetAngleSizer(),0,WACV)
@@ -5495,7 +5559,7 @@ Make sure your parameters are correctly set.
             histo.Bind(wx.EVT_COMBOBOX,OnHisto)
             histoSizer.Add(histo,0,WACV)
             histoSizer.Add(wx.StaticText(G2frame.FRMC,label=' Weight '),0,WACV)
-            histoSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['histogram'],1,min=0.,max=10000.,size=(50,25)),0,WACV)
+            histoSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['histogram'],1,xmin=0.,xmax=10000.,size=(50,25)),0,WACV)
             mainSizer.Add(histoSizer,0,WACV)
             
             samSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6257,7 +6321,7 @@ Make sure your parameters are correctly set.
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(layerData,label=txt),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 cellVal = wx.TextCtrl(layerData,value=(fmt%(cell[Id+1])),
                     style=wx.TE_PROCESS_ENTER)
                 cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -6279,7 +6343,7 @@ Make sure your parameters are correctly set.
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
                 widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
-                widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),min=0.005,max=1.0)
+                widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),xmin=0.005,xmax=1.0)
                 widthSizer.Add(widthVal,0,WACV)
                 widthRef = wx.CheckBox(layerData,label='Refine?')
                 widthRef.SetValue(flags[i])
@@ -6394,7 +6458,7 @@ Make sure your parameters are correctly set.
             layerSizer = wx.BoxSizer(wx.VERTICAL)
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)            
             nameSizer.Add(wx.StaticText(layerData,label=' Layer name: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
             layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)        
             layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
@@ -6558,7 +6622,7 @@ Make sure your parameters are correctly set.
             plotSizer.Add(wx.StaticText(layerData,label=Str[:-1]),0,WACV)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(layerData,label=' Enter sequence of layers to plot:'),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             plotSeq = wx.TextCtrl(layerData,value = '',style=wx.TE_PROCESS_ENTER)
             plotSeq.Bind(wx.EVT_TEXT_ENTER,OnPlotSeq)        
             plotSeq.Bind(wx.EVT_KILL_FOCUS,OnPlotSeq)
@@ -6664,7 +6728,7 @@ Make sure your parameters are correctly set.
             topLine.Add(stackType,0,WACV)
             if Layers['Stacking'][0] == 'recursive':
                 topLine.Add(wx.StaticText(layerData,label=' number of layers (<1022 or "infinite"): '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 numLayers = wx.TextCtrl(layerData,value=data['Layers']['Stacking'][1],style=wx.TE_PROCESS_ENTER)
                 numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
                 numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
@@ -6692,7 +6756,7 @@ Make sure your parameters are correctly set.
                     stackSizer.Add(stackList,0,wx.ALL|wx.EXPAND|WACV,8)
                 else:   #random
                     topLine.Add(wx.StaticText(layerData,label=' Length of random sequence: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                     numRan = wx.TextCtrl(layerData,value=Layers['Stacking'][2],style=wx.TE_PROCESS_ENTER)
                     numRan.Bind(wx.EVT_TEXT_ENTER,OnNumRan)        
                     numRan.Bind(wx.EVT_KILL_FOCUS,OnNumRan)
@@ -7173,7 +7237,7 @@ Make sure your parameters are correctly set.
                                         minmax = [0.,2.]
                                     else:
                                         minmax = [wave[0][0],1.0+wave[0][0]]
-                                waveVal = G2G.ValidatedTxtCtrl(waveData,wave[0],ival,nDig=(10,5),min=minmax[0],max=minmax[1],OnLeave=OnWavePlot)
+                                waveVal = G2G.ValidatedTxtCtrl(waveData,wave[0],ival,nDig=(10,5),xmin=minmax[0],xmax=minmax[1],OnLeave=OnWavePlot)
                             else:
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
                                 waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
@@ -8328,7 +8392,59 @@ Make sure your parameters are correctly set.
             DATData['pId'] = data['pId']
             DATData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         G2stMn.DisAglTor(DATData)
-                        
+        
+    def MapVoid(event):
+        generalData = data['General']
+        rMax = max(data['General']['vdWRadii'])
+        cell = data['General']['Cell'][1:7]
+        voidDlg = wx.Dialog(G2frame,wx.ID_ANY,
+                    'Void computation parameters',
+                    style=wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,
+                    'Set parameters for void computation for phase '+generalData.get('Name','?')))
+        # get cell ranges
+        xmax = 2. - rMax/cell[0]
+        voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5}
+        for i in ('a', 'b', 'c'):
+            mainSizer.Add(
+                G2G.G2SliderWidget(voidDlg,voidPar,i,
+                               'Max '+i+' value: ',0.,xmax,100))
+            
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Grid spacing (A)'))
+        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'grid',
+                nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
+        mainSizer.Add(hSizer)
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Probe radius (A)'))
+        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'probe',
+                nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
+        mainSizer.Add(hSizer)
+
+        def OnOK(event): voidDlg.EndModal(wx.ID_OK)
+        mainSizer.Add([5,5])
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(voidDlg, wx.ID_OK)
+        btn.Bind(wx.EVT_BUTTON, OnOK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(voidDlg, wx.ID_CANCEL) 
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+
+        voidDlg.SetSizer(mainSizer)
+        mainSizer.Fit(voidDlg)
+        voidDlg.CenterOnParent()
+        res = voidDlg.ShowModal()
+        voidDlg.Destroy()
+        if res != wx.ID_OK: return
+        res = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
+                          voidPar['grid'],voidPar['probe'])
+        G2plt.PlotStructure(G2frame,data,
+                        voidMap=res,voidRadius=voidPar['probe'])  
+        
 ################################################################################
 #### Draw Options page
 ################################################################################
@@ -8420,7 +8536,7 @@ Make sure your parameters are correctly set.
             
             ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
             ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
-            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             ZstepSizer.Add(Zstep,0,WACV)
             slideSizer.Add(ZstepSizer)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8597,7 +8713,7 @@ Make sure your parameters are correctly set.
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             viewDir = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
@@ -8614,7 +8730,7 @@ Make sure your parameters are correctly set.
             lineSizer.Add(showABC,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Point:'),0,WACV)
             VP = drawingData['viewPoint'][0]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             viewPoint = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
             G2frame.phaseDisplay.viewPoint = viewPoint
@@ -8680,11 +8796,11 @@ Make sure your parameters are correctly set.
             
             radSizer = wx.BoxSizer(wx.HORIZONTAL)
             radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,WACV)
-            sizeH = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sizeH',nDig=(10,2),min=0.1,max=1.2,size=wx.Size(60,20),OnLeave=OnSizeHatoms)
+            sizeH = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sizeH',nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnSizeHatoms)
             radSizer.Add(sizeH,0,WACV)
     
             radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,WACV)
-            radFactor = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',nDig=(10,2),min=0.1,max=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor)
+            radFactor = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor)
             radSizer.Add(radFactor,0,WACV)
             return radSizer
             
@@ -8722,7 +8838,7 @@ Make sure your parameters are correctly set.
             planeSizer1 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
             H = drawingData['Plane'][0]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             plane = wx.TextCtrl(drawOptions,value='%3d %3d %3d'%(H[0],H[1],H[2]),
                 style=wx.TE_PROCESS_ENTER)
             plane.Bind(wx.EVT_TEXT_ENTER,OnPlane)
@@ -8778,15 +8894,15 @@ Make sure your parameters are correctly set.
         mapSizer = wx.FlexGridSizer(0,3,5,5)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'PeakDistRadius',
-                            min=0.0,max=5.0,nDig=(10,1),size=(50,-1)))
+                            xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsExpandRadius',
-                            min=0.0,max=15.0,nDig=(10,1),size=(50,-1)))
+                            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsDistRadius',
-                            min=0.0,max=15.0,nDig=(10,1),size=(50,-1)))
+                            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mainSizer.Add(mapSizer)
         SetPhaseWindow(drawOptions,mainSizer)
@@ -9035,7 +9151,7 @@ Make sure your parameters are correctly set.
             hklList.Bind(wx.EVT_BUTTON,OnHKLList)
             shPenalty.Add(hklList,0,WACV)
             shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
-            shToler = G2G.ValidatedTxtCtrl(Texture,Penalty,1,nDig=(10,2),min=0.001)
+            shToler = G2G.ValidatedTxtCtrl(Texture,Penalty,1,nDig=(10,2),xmin=0.001)
             shPenalty.Add(shToler,0,WACV)
             return shPenalty
         
@@ -9148,12 +9264,12 @@ Make sure your parameters are correctly set.
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             pfVal = wx.TextCtrl(Texture,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
         else:
             PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,WACV)
             PX = textureData['PFxyz']
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
@@ -9672,7 +9788,7 @@ Make sure your parameters are correctly set.
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
             for ix,x in enumerate(Orien):
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
                 orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
                 orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
@@ -10221,7 +10337,7 @@ Make sure your parameters are correctly set.
             for ix in range(3):
                 OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,lbl[ix]),0,WACV,4)
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,rbObj['Orig'][0],ix,nDig=(10,5),
-                            min=-1.5,max=1.5,typeHint=float,
+                            xmin=-1.5,xmax=1.5,typeHint=float,
                                                  OnLeave=UpdateTablePlot)
                 OriSizer.Add(origX,0,WACV)
                 Xsizers.append(origX)
@@ -10691,7 +10807,7 @@ Make sure your parameters are correctly set.
             for ix,item in enumerate(['x','y','z']):
                 atomsizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -10765,7 +10881,7 @@ Make sure your parameters are correctly set.
             for ix,item in enumerate(['x','y','z']):
                 rbsizer1.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -10775,13 +10891,13 @@ Make sure your parameters are correctly set.
             rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oa: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             angVal = wx.TextCtrl(G2frame.MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
             rbsizer2.Add(angVal,0,WACV)
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             vecVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
             vecVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             vecVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
@@ -10797,7 +10913,7 @@ Make sure your parameters are correctly set.
             rbsizer2.Add(orvar,0,WACV)
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,' Range: Oa: '),0,WACV)
             Rge = model['Ori'][2]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             angRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
             Indx[angRange.GetId()] = [model,'Ori',0]
             angRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -10806,7 +10922,7 @@ Make sure your parameters are correctly set.
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
             for io,item in enumerate(['Oi','Oj','Ok']):
                 rmin,rmax = Rge[io+1]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 vecRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[vecRange.GetId()] = [model,'Ori',io+1]
                 vecRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -10831,7 +10947,7 @@ Make sure your parameters are correctly set.
                         rbsizer3.Add(torVal,0,WACV)
                         rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                         rmin,rmax = model['Tor'][2][it]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                         torRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                         Indx[torRange.GetId()] = [model,'Tor',it]
                         torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -10880,18 +10996,18 @@ Make sure your parameters are correctly set.
             poRef.SetValue(POData['Coef'][1])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
-            poVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,POData['Coef'],0,nDig=(10,3),min=0.)
+            poVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,POData['Coef'],0,nDig=(10,3),xmin=0.)
             poSizer.Add(poVal,0,WACV)
             poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
             rmin,rmax = POData['Coef'][2]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             poRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
             poRange.Bind(wx.EVT_TEXT_ENTER,OnPORange)
             poRange.Bind(wx.EVT_KILL_FOCUS,OnPORange)
             poSizer.Add(poRange,0,WACV)                       
             poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Unique axis, H K L: '),0,WACV)
             h,k,l = POData['axis']
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             poAxis = wx.TextCtrl(G2frame.MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
@@ -11293,7 +11409,7 @@ Make sure your parameters are correctly set.
             temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
             pawlQVal.SetValue(temp['Qmax'])
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
-            min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
+            xmin=0.25,xmax=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
         pawleySizer.Add(pawlVal,0,WACV)
         pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
         temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
@@ -11301,13 +11417,13 @@ Make sure your parameters are correctly set.
             generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
             pawlVal.SetValue(generalData['Pawley dmin'])        
         pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
-            min=0.314,max=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
+            xmin=0.314,xmax=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
         pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
         pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley neg. wt.: '),0,WACV)
         pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
-            min=0.,max=1.,nDig=(10,4),typeHint=float)
+            xmin=0.,xmax=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
         mainSizer.Add(pawleySizer)
 
@@ -12156,6 +12272,7 @@ Make sure your parameters are correctly set.
         G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRCHIRAL)
         G2frame.Bind(wx.EVT_MENU, OnDefineRB, id=G2G.wxID_DRAWDEFINERB)
         G2frame.Bind(wx.EVT_MENU, FillMolecule, id=G2G.wxID_DRAWADDMOLECULE)
+        G2frame.Bind(wx.EVT_MENU, MapVoid, id=G2G.wxID_DRAWVOIDMAP)
         
         # RB Models
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.RigidBodiesMenu)

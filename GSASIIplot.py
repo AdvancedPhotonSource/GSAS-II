@@ -4111,15 +4111,15 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     txt = wx.StaticText(dlg,wx.ID_ANY,'Pixels/inch:')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',min=60,max=1600,size=(40,-1))
+    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',xmin=60,xmax=1600,size=(40,-1))
     hbox.Add(val,0,wx.ALL)
     txt = wx.StaticText(dlg,wx.ID_ANY,' Width (in):')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'width',min=3.,max=20.,nDig=(5,1),size=(45,-1))
+    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'width',xmin=3.,xmax=20.,nDig=(5,1),size=(45,-1))
     hbox.Add(val,0,wx.ALL)
     txt = wx.StaticText(dlg,wx.ID_ANY,' Height (in):')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'height',min=3.,max=20.,nDig=(5,1),size=(45,-1))
+    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'height',xmin=3.,xmax=20.,nDig=(5,1),size=(45,-1))
     hbox.Add(val,0,wx.ALL)
     txt = wx.StaticText(dlg,wx.ID_ANY,'File format:')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
@@ -7927,7 +7927,8 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
 ##### PlotStructure
 ################################################################################
             
-def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
+def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
+                    voidMap=[],voidRadius=.1):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
     arrows according to spin state
@@ -7940,6 +7941,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     :param function pageCallback: a callback function to 
       update items on the parent page. Currently implemented for
       RB Models tab only
+    :param list voidMap: a list of coordinates to be plotted as small spheres 
+    :param float voidRadius: radius of spheres drawn for void map
     '''
 
     def FindPeaksBonds(XYZ):
@@ -8895,6 +8898,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 #useful debug?        
 #        if caller:
 #            print (caller,generalData['Name'])
+#    Bob: why not use a traceback? See GSASIIobj.HowDidIgetHere()
 # end of useful debug
         vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']
@@ -9246,7 +9250,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             plt.rcParams['figure.figsize'] = oldSize
 #            agg = canvas.switch_backends(Canvas)
             RenderViewPlane(msize*eplane,Zimg,width,height)
-                
+        for x,y,z in voidMap:
+             RenderSphere(x,y,z,voidRadius,(0,1.,0))
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)
         except:

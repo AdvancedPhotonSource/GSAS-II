@@ -4887,7 +4887,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0,WACV)
             if not data['RMC']['fullrmc']:
-                Atypes = data['General']['AtomTypes']
+                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
                 atSeq = list(aTypes.keys())
                 lenA = len(atSeq)
@@ -5185,7 +5185,7 @@ Make sure your parameters are correctly set.
  '''))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
             if not data['RMC']['RMCProfile']:
-                Atypes = data['General']['AtomTypes']
+                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
                 atSeq = list(aTypes.keys())
                 atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]

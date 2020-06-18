@@ -1466,8 +1466,8 @@ def SetDrawingDefaults(drawingData):
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
-            'peakMoveView':True,'PeakDistRadius':0.0,
-            'atomsExpandRadius':5.,'atomsDistRadius':2.5,
+            'peakMoveView':True,'PeakDistRadius':0.0,'showVoids':False,'showMap':False,
+            'atomsExpandRadius':5.,'atomsDistRadius':2.5,'Voids':[],
         }
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
@@ -7355,6 +7355,10 @@ Make sure your parameters are correctly set.
             drawingData['magMult'] = 1.0
         if 'SymFade' not in drawingData:
             drawingData['SymFade'] = False
+        if 'Voids' not in drawingData:
+            drawingData['Voids'] = []
+            drawinData['showVoids'] = False
+            drawingData['showMap'] = False
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] in ['nuclear','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
@@ -8396,6 +8400,7 @@ Make sure your parameters are correctly set.
         generalData = data['General']
         rMax = max(data['General']['vdWRadii'])
         cell = data['General']['Cell'][1:7]
+        drawingData = data['Drawing']
         voidDlg = wx.Dialog(G2frame,wx.ID_ANY,
                     'Void computation parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
@@ -8406,10 +8411,8 @@ Make sure your parameters are correctly set.
         xmax = 2. - rMax/cell[0]
         voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5}
         for i in ('a', 'b', 'c'):
-            mainSizer.Add(
-                G2G.G2SliderWidget(voidDlg,voidPar,i,
-                               'Max '+i+' value: ',0.,xmax,100))
-            
+            mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,i,
+                'Max '+i+' value: ',0.,xmax,100))
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Grid spacing (A)'))
         hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'grid',
@@ -8439,10 +8442,10 @@ Make sure your parameters are correctly set.
         res = voidDlg.ShowModal()
         voidDlg.Destroy()
         if res != wx.ID_OK: return
-        res = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
+        drawingData['Voids'] = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
                           voidPar['grid'],voidPar['probe'])
-        G2plt.PlotStructure(G2frame,data,
-                        voidMap=res,voidRadius=voidPar['probe'])  
+        drawingData['showVoids'] = True
+        G2plt.PlotStructure(G2frame,data)
         
 ################################################################################
 #### Draw Options page
@@ -8629,6 +8632,14 @@ Make sure your parameters are correctly set.
                 drawingData['SymFade'] = symFade.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnShowMap(event):
+                drawingData['showMap'] = showMap.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnShowVoids(event):
+                drawingData['showVoids'] = showVoids.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnShowSlice(event):
                 drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetValue()
                 G2plt.PlotStructure(G2frame,data)
@@ -8763,6 +8774,14 @@ Make sure your parameters are correctly set.
             symFade.Bind(wx.EVT_CHECKBOX, OnSymFade)
             symFade.SetValue(drawingData['SymFade'])
             line3Sizer.Add(symFade,0,WACV)
+            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
+            showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
+            showMap.SetValue(drawingData['showMap'])
+            line3Sizer.Add(showMap,0,WACV)
+            showVoids = wx.CheckBox(drawOptions,-1,label=' Show void map?')
+            showVoids.Bind(wx.EVT_CHECKBOX, OnShowVoids)
+            showVoids.SetValue(drawingData['showVoids'])
+            line3Sizer.Add(showVoids,0,WACV)
             showSizer.Add(line3Sizer)
             
             
@@ -8886,22 +8905,20 @@ Make sure your parameters are correctly set.
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(PlaneSizer(),0,)
         G2G.HorizontalLine(mainSizer,drawOptions)
-        mainSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,
-                                        'On map peak selection:'),0,WACV)
-        mainSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',
-                                         drawingData,'peakMoveView'))
+        mainSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:'),0,WACV)
+        mainSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))
         mapSizer = wx.FlexGridSizer(0,3,5,5)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'PeakDistRadius',
-                            xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1)))
+            xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsExpandRadius',
-                            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
+            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
         mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsDistRadius',
-                            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
+            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
         mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
         mainSizer.Add(mapSizer)
         SetPhaseWindow(drawOptions,mainSizer)
@@ -11883,6 +11900,7 @@ Make sure your parameters are correctly set.
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
+        data['Drawing']['showMap'] = True
         print (dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
@@ -11890,6 +11908,7 @@ Make sure your parameters are correctly set.
     def OnFourClear(event):
         generalData = data['General']
         generalData['Map'] = mapDefault.copy()
+        data['Drawing']['showMap'] = False
         G2plt.PlotStructure(G2frame,data)
         
 # map printing for testing purposes
@@ -12027,6 +12046,7 @@ Make sure your parameters are correctly set.
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
+        data['Drawing']['showMap'] = True
         print (' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end

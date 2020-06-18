@@ -7927,8 +7927,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
 ##### PlotStructure
 ################################################################################
             
-def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
-                    voidMap=[],voidRadius=.1):
+def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
     arrows according to spin state
@@ -7941,8 +7940,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
     :param function pageCallback: a callback function to 
       update items on the parent page. Currently implemented for
       RB Models tab only
-    :param list voidMap: a list of coordinates to be plotted as small spheres 
-    :param float voidRadius: radius of spheres drawn for void map
     '''
 
     def FindPeaksBonds(XYZ):
@@ -8712,6 +8709,21 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
         GLU.gluSphere(q,radius,20,10)
         GL.glPopMatrix()
         
+    def RenderFadeSphere(x,y,z,radius,color):
+        fade = list(color) + [1.0,]
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,20,10)
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_BLEND)
+        GL.glShadeModel(GL.GL_SMOOTH)
+
     def RenderDots(XYZ,RC):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         XYZ = np.array(XYZ)
@@ -9093,7 +9105,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
             elif atom[cs+1] == 'chain' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
 #        glDisable(GL_BLEND)
-        if not FourD and len(rhoXYZ):       #no green dot map for 4D - it's wrong!
+        if not FourD and len(rhoXYZ) and drawingData['showMap']:       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
         if len(Ind) == 1 and pageName == 'Map peaks':
             # one peak has been selected, show as selected by draw options
@@ -9250,8 +9262,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None,
             plt.rcParams['figure.figsize'] = oldSize
 #            agg = canvas.switch_backends(Canvas)
             RenderViewPlane(msize*eplane,Zimg,width,height)
-        for x,y,z in voidMap:
-             RenderSphere(x,y,z,voidRadius,(0,1.,0))
+        if drawingData['showVoids']:
+            for x,y,z in drawingData['Voids']:
+                RenderFadeSphere(x,y,z,.05,(0.,0.,1.))
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)
         except:

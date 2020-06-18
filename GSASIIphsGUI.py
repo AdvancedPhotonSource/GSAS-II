@@ -64,7 +64,6 @@ import GSASIIfiles as G2fl
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
-import numpy.fft as fft
 import atmdata
 
 try:

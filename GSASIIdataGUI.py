@@ -562,7 +562,6 @@ class GSASII(wx.Frame):
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
             def OnIPython(event):
-                G2frame = self
                 GSASIIpath.IPyBreak()
             item = parent.Append(wx.ID_ANY,"IPython Console",'')
             self.Bind(wx.EVT_MENU, OnIPython, item)
@@ -6605,9 +6604,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         wx.CallAfter(PlotSelectedColRow,'double')
         
     def OnKeyUp(event):
-        key = event.GetKeyCode()
-        rows = G2frame.dataDisplay.GetSelectedRows()
-        #print(key,rows)
         event.Skip()
         wx.CallAfter(PlotSelectedColRow,'single')
             

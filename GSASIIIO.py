@@ -256,8 +256,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,
-                                 size=(50,-1))
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,size=(50,-1))
     vsizer.Add(wdgt)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,size=(50,-1))

@@ -611,9 +611,7 @@ class ExpressionDialog(wx.Dialog):
             if self.varSelect.get(v) is None:
                 GridSiz.Add((-1,-1),0,wx.ALIGN_LEFT|wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
-                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varName,v,
-                                            #OnLeave=self.OnTxtLeave,
-                                            size=(50,-1))
+                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varName,v,size=(50,-1))
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
             else:
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,self.varName[v])
@@ -623,9 +621,7 @@ class ExpressionDialog(wx.Dialog):
             if self.varSelect.get(v) is None:
                 GridSiz.Add((-1,-1),0,wx.ALIGN_RIGHT|wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
-                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varValue,v,
-                                            #OnLeave=self.OnTxtLeave,
-                                            size=(75,-1))
+                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varValue,v,size=(75,-1))
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
                 wid.Bind(wx.EVT_CHAR,self.OnChar)
             else:

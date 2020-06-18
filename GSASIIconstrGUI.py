@@ -285,11 +285,8 @@ class ConstraintDialog(wx.Dialog):
         for id in range(len(self.data)):
             lbl1 = lbl = str(self.data[id][1])
             if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
-            name = wx.StaticText(panel,wx.ID_ANY,lbl1,
-                                 style=wx.ALIGN_RIGHT)
-            scale = G2G.ValidatedTxtCtrl(panel,self.data[id],0,
-                                          typeHint=float,
-                                          OKcontrol=self.DisableOK)
+            name = wx.StaticText(panel,wx.ID_ANY,lbl1,style=wx.ALIGN_RIGHT)
+            scale = G2G.ValidatedTxtCtrl(panel,self.data[id],0,OKcontrol=self.DisableOK)
             dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
             dataGridSizer.Add(scale,0,wx.RIGHT,3)
             if ':' in lbl:
@@ -300,9 +297,8 @@ class ConstraintDialog(wx.Dialog):
                 dataGridSizer.Add((-1,-1))
         if title == 'New Variable':
             name = wx.StaticText(panel,wx.ID_ANY,"New variable's\nname (optional)",
-                                 style=wx.ALIGN_CENTER)
-            scale = G2G.ValidatedTxtCtrl(panel,self.newvar,0,
-                                          typeHint=str,notBlank=False)
+                style=wx.ALIGN_CENTER)
+            scale = G2G.ValidatedTxtCtrl(panel,self.newvar,0,notBlank=False)
             dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
             dataGridSizer.Add(scale,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
             self.refine = wx.CheckBox(panel,label='Refine?')
@@ -3134,8 +3130,7 @@ def UpdateRigidBodies(G2frame,data):
                 0,wx.ALIGN_CENTER_VERTICAL)
             nameSizer.Add(G2G.ValidatedTxtCtrl(ResidueRBDisplay,rbData,'RBname'),0,WACV)
             nameSizer.Add((5,0),)
-            plotRB =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Plot',
-                                style=wx.BU_EXACTFIT)
+            plotRB =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Plot',style=wx.BU_EXACTFIT)
             plotRB.Bind(wx.EVT_BUTTON, OnPlotRB)
             Indx[plotRB.GetId()] = rbid
             nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)

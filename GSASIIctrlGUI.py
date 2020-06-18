@@ -1086,7 +1086,7 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale):
         wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
     def onValSet(*args,**kwargs):
         vScale.SetValue(int(0.5+iscale*loc[key]))        
-    loc[key] = val = min(xmax,max(xmin,loc[key]))
+    loc[key] = min(xmax,max(xmin,loc[key]))
     hSizer = wx.BoxSizer(wx.HORIZONTAL)
     hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     vScale = wx.Slider(parent,style=wx.SL_HORIZONTAL,value=int(0.5+iscale*loc[key]))

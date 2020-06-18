@@ -154,7 +154,7 @@ def UpdateImageData(G2frame,data):
     if 'setdist' not in data:
         data['setdist'] = data['distance']
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'setdist',nDig=(10,4),
-            typeHint=float),0,WACV)
+        typeHint=float),0,WACV)
     distSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Polarization: '),0,WACV)
     if 'PolaVal' not in data:       #patch
         data['PolaVal'] = [0.99,False]

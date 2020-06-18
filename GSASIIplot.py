@@ -8441,8 +8441,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
-        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.1,.1,.1,1])
-        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[.8,.8,.8,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[.7,.7,.7,1])
 #        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
 #        glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,1])
         
@@ -8610,6 +8610,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         SetRBOrienText()
 
     def RenderBox():
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.4,.4,.4,1])
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(2)
         GL.glEnable(GL.GL_BLEND)
@@ -8625,8 +8626,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_LINE_SMOOTH)
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
         
     def RenderUnitVectors(x,y,z):
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(2)
         GL.glEnable(GL.GL_BLEND)
@@ -8646,6 +8649,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_LINE_SMOOTH)
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
         
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
@@ -8907,11 +8911,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glShadeModel(GL.GL_SMOOTH)
                             
     def Draw(caller='',Fade=[]):
-#useful debug?        
-#        if caller:
-#            print (caller,generalData['Name'])
-#    Bob: why not use a traceback? See GSASIIobj.HowDidIgetHere()
-# end of useful debug
         vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']
         D4mapData = generalData.get('4DmapData',{})
@@ -8987,6 +8986,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glMultMatrixf(A4mat.T)
         GL.glTranslate(-Tx,-Ty,-Tz)
         drawingData['modelView'] = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
+        if drawingData['unitCellBox']:
+            RenderBox()
+            if drawingData['Plane'][1]:
+                H,phase,stack,phase,color = drawingData['Plane']
+                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
+                for plane in Planes:
+                    RenderPlane(plane,color)
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
@@ -9213,13 +9219,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             for chain in Backbones:
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
-        if drawingData['unitCellBox']:
-            RenderBox()
-            if drawingData['Plane'][1]:
-                H,phase,stack,phase,color = drawingData['Plane']
-                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
-                for plane in Planes:
-                    RenderPlane(plane,color)
         if drawingData.get('showSlice',False):
             global contourSet,Zslice
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there

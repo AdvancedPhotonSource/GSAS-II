@@ -6243,7 +6243,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             if not rd.ContentsValidator(f):
                 Settings['timer'].Stop()
                 btnstart.SetLabel('Continue')
-                G2G.G2MessageBox(dlg,'Error in reading file {}: {}'.format(
+                G2MessageBox(dlg,'Error in reading file {}: {}'.format(
                     f, rd.errors))
                 return
             #if len(rd.selections) > 1:
@@ -6402,7 +6402,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             if not rd.ContentsValidator(f):
                 Settings['timer'].Stop()
                 btnstart.SetLabel('Continue')
-                G2G.G2MessageBox(dlg,'Error in reading file {}: {}'.format(
+                G2MessageBox(dlg,'Error in reading file {}: {}'.format(
                     f, rd.errors))
                 return
             #if len(rd.selections) > 1:

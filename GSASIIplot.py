@@ -8910,6 +8910,84 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         RenderDots(XYZ,RC)
         GL.glShadeModel(GL.GL_SMOOTH)
                             
+    def distances2Peaks(x,y,z,PeakDistRadius,mapPeaks,peakMax,radius,Amat,matRot):
+        ''' show distances to other peaks within PeakDistRadius A
+        '''
+        XYZ = mapPeaks.T[1:4].T
+        Dx = XYZ-(x,y,z)
+        dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
+        for i in ma.nonzero(ma.masked_greater(dist,PeakDistRadius))[0]:
+            lbl = '{:.2f}'.format(dist[i])
+            RenderLines(x,y,z,[Dx[i]],Gr)
+            lx,ly,lz = (x,y,z)+(Dx[i]/2)
+            RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
+            [mag,x1,y1,z1] = mapPeaks[:,:4][i]
+            lbl = '{:.2f}'.format(mag)
+            if mag > 0.:
+                RenderMapPeak(x1,y1,z1,Wt,mag/peakMax)
+                RenderLabel(x1,y1,z1,lbl,radius,wx.Colour(Wt),matRot)
+            else:
+                RenderMapPeak(x1,y1,z1,Or,-2*mag/peakMax)
+                RenderLabel(x1,y1,z1,lbl,radius,wx.Colour(Or),matRot)
+
+    def distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot):
+        # find and display atoms within atomsExpandRadius A
+        vdwScale = drawingData['vdwScale']
+        ballScale = drawingData['ballScale']
+        xyzA = np.array((x,y,z))
+        cx,ct,cs,ci = G2phG.getAtomPtrs(data)      
+        cellArray = G2lat.CellBlock(1)
+        radDict = dict(zip(*G2phG.getAtomRadii(data)))
+        Names = []
+        Atoms = []
+        Radii = []
+        Color = []
+        for atomB in data['Atoms']:
+            atNum = generalData['AtomTypes'].index(atomB[ct])
+            if 'vdW' in atomB[cs]:
+                radius = vdwScale*vdWRadii[atNum]
+            elif 'H' == atomB[ct]:
+                radius = ballScale*drawingData['sizeH']
+            else:
+                radius = ballScale*BondRadii[atNum]
+            xyzB = np.array(atomB[cx:cx+3])
+            color = np.array(generalData['Color'][generalData['AtomTypes'].index(atomB[ct])])/255.
+            result = G2spc.GenAtom(xyzB,SGData,False,6*[0.],True)
+            for item in result:
+                for xyz in cellArray+np.array(item[0]):
+                    dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                    if 0 < dist <= max(atomsdistRadius,atomsExpandRadius):
+                        ax,ay,az = xyz
+                        RenderSphere(ax,ay,az,radius,color)
+                        Atoms.append(xyz)
+                        Radii.append(radDict[atomB[ct]])
+                        Names.append(atomB[0])
+                        Color.append(color)
+                    if dist < atomsdistRadius:
+                        RenderLines(x,y,z,[xyz-xyzA],Gr)
+                        lx,ly,lz = (xyzA+xyz)/2
+                        lbl = '{:.2f}'.format(dist)
+                        RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
+                        ax,ay,az = xyz
+                        RenderLabel(ax,ay,az,'  '+atomB[0],radius,wxGreen,matRot)
+        # find bonds
+        bondData = [[] for i in range(len(Atoms))]
+        Atoms = np.array(Atoms)
+        Radii = np.array(Radii)
+        for i,atom in enumerate(Atoms):
+            Dx = Atoms-atom
+            sumR = Radii + Radii[i]
+            dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5)
+            IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
+            for j in IndB[0]:
+                bondData[i].append(Dx[j]*Radii[i]/sumR[j])
+                bondData[j].append(-Dx[j]*Radii[j]/sumR[j])
+        # draw bonds
+        bondR = drawingData['bondRadius']
+        for i,xyz in enumerate(Atoms):
+            ax,ay,az = xyz
+            RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
+                
     def Draw(caller='',Fade=[]):
         vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']
@@ -9113,7 +9191,22 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 #        glDisable(GL_BLEND)
         if not FourD and len(rhoXYZ) and drawingData['showMap']:       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
-        if len(Ind) == 1 and pageName == 'Map peaks':
+        if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and (
+                drawingData['VPPeakDistRad'] + drawingData['VPatomsExpandRad']
+                 + drawingData['VPatomsDistRad']
+                ) > 0:
+            PeakDistRadius = drawingData['VPPeakDistRad']
+            atomsExpandRadius = drawingData['VPatomsExpandRad']
+            atomsdistRadius = drawingData['VPatomsDistRad']
+            x,y,z = drawingData['viewPoint'][0]
+            # distances to other peaks within PeakDistRadius A
+            if PeakDistRadius > 0:
+                distances2Peaks(x,y,z,PeakDistRadius,mapPeaks,radius,peakMax,Amat,matRot)
+            # find and display atoms within atomsExpandRadius A
+            if atomsExpandRadius > 0:
+                distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot)
+        elif len(Ind) == 1 and (pageName == 'Map peaks' or
+                                    pageName == 'Draw Options'):
             # one peak has been selected, show as selected by draw options
             PeakDistRadius = drawingData['PeakDistRadius']
             atomsExpandRadius = drawingData['atomsExpandRadius']
@@ -9121,69 +9214,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             ind = Ind[0]
             mag,x,y,z = mapPeaks[:,:4][ind]
             RenderMapPeak(x,y,z,Gr,1.0)
-            # distances to other peaks within PeakDistRadius A
             if PeakDistRadius > 0:
-                XYZ = mapPeaks.T[1:4].T
-                Dx = XYZ-(x,y,z)
-                dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
-                for i in ma.nonzero(ma.masked_greater(dist,PeakDistRadius))[0]:
-                    lbl = '{:.2f}'.format(dist[i])
-                    RenderLines(x,y,z,[Dx[i]],Gr)
-                    lx,ly,lz = (x,y,z)+(Dx[i]/2)
-                    RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
-                    [mag,x1,y1,z1] = mapPeaks[:,:4][i]
-                    if mag > 0.:
-                        RenderMapPeak(x1,y1,z1,Wt,mag/peakMax)
-                    else:
-                        RenderMapPeak(x1,y1,z1,Or,-2*mag/peakMax)
+                distances2Peaks(x,y,z,PeakDistRadius,mapPeaks,radius,peakMax,Amat,matRot)
             # find and display atoms within atomsExpandRadius A
             if atomsExpandRadius > 0:
-                xyzA = np.array((x,y,z))
-                cx,ct,cs,ci = G2phG.getAtomPtrs(data)      
-                cellArray = G2lat.CellBlock(1)
-                radDict = dict(zip(*G2phG.getAtomRadii(data)))
-                Names = []
-                Atoms = []
-                Radii = []
-                Color = []
-                for atomB in data['Atoms']:
-                    xyzB = np.array(atomB[cx:cx+3])
-                    color = np.array(generalData['Color'][generalData['AtomTypes'].index(atomB[ct])])/255.
-                    result = G2spc.GenAtom(xyzB,SGData,False,6*[0.],True)
-                    for item in result:
-                        for xyz in cellArray+np.array(item[0]):
-                            dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                            if 0 < dist <= max(atomsdistRadius,atomsExpandRadius):
-                                ax,ay,az = xyz
-                                RenderSphere(ax,ay,az,radius,color)
-                                Atoms.append(xyz)
-                                Radii.append(radDict[atomB[ct]])
-                                Names.append(atomB[0])
-                                Color.append(color)
-                            if dist < atomsdistRadius:
-                                RenderLines(x,y,z,[xyz-xyzA],Gr)
-                                lx,ly,lz = (xyzA+xyz)/2
-                                lbl = '{:.2f}'.format(dist)
-                                RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
-                                ax,ay,az = xyz
-                                RenderLabel(ax,ay,az,'  '+atomB[0],radius,wxGreen,matRot)
-                # find bonds
-                bondData = [[] for i in range(len(Atoms))]
-                Atoms = np.array(Atoms)
-                Radii = np.array(Radii)
-                for i,atom in enumerate(Atoms):
-                    Dx = Atoms-atom
-                    sumR = Radii + Radii[i]
-                    dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5)
-                    IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
-                    for j in IndB[0]:
-                        bondData[i].append(Dx[j]*Radii[i]/sumR[j])
-                        bondData[j].append(-Dx[j]*Radii[j]/sumR[j])
-                # draw bonds
-                bondR = drawingData['bondRadius']
-                for i,xyz in enumerate(Atoms):
-                    ax,ay,az = xyz
-                    RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
+                distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot)
         elif len(mapPeaks):
             XYZ = mapPeaks.T[1:4].T
             mapBonds = FindPeaksBonds(XYZ)

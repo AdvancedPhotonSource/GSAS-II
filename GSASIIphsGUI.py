@@ -232,9 +232,13 @@ class SphereEnclosure(wx.Dialog):
             topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at atoms: '),0,WACV)
             cx,ct,cs = self.Drawing['atomPtrs'][:3]
             for Id in self.indx:
-                atom = self.Drawing['Atoms'][Id]
-                self.centers.append(atom[cx:cx+3])
-                atoms.append('%s(%s)'%(atom[ct-1],atom[cs-1]))
+                if Id < len(self.Drawing['Atoms']):
+                    atom = self.Drawing['Atoms'][Id]
+                    self.centers.append(atom[cx:cx+3])
+                    atoms.append('%s(%s)'%(atom[ct-1],atom[cs-1]))
+                else:
+                    self.centers.append(list(self.Drawing['viewPoint'][0]))
+                    atoms.append('View point')
             topSizer.Add(wx.ComboBox(self.panel,choices=atoms,value=atoms[0],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN),0,WACV)
         else:
@@ -1094,13 +1098,17 @@ class AddHatomDialog(wx.Dialog):
 ################################################################################
 #### Phase editing routines
 ################################################################################
-def getAtomSelections(AtmTbl,cn=0,action='action'):
+def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False):
     '''get selected atoms from table or ask user if none are selected
     
-        param: AtmTbl list atom or draw atom table
-        param: int cn atom name position
-        action: str description
-        returns: list indx selected atoms fr tom indices in table
+        :param list AtmTbl: atom or draw atom table
+        :param int cn: atom name position
+        :param str action: description for prompt, when needed
+        :param bool includeView: if True, the viewpoint is included 
+          as an option in the selection dialog
+        :returns: indx (list) selected atoms from indices in table. 
+          If includeView is True, indx can contain index n (where there 
+          are n atoms in table). This is indicates the viewpoint. 
     '''
     indx = AtmTbl.GetSelectedRows()
     indx += [row for row,col in AtmTbl.GetSelectedCells()]
@@ -1116,6 +1124,8 @@ def getAtomSelections(AtmTbl,cn=0,action='action'):
             val += '_' + str(i)
         choices.append(val)
     if not choices: return
+    if includeView:
+        choices.append('View point')
     dlg = G2G.G2MultiChoiceDialog(AtmTbl.GetTopLevelParent(),
         'Select atoms','Select atoms for '+action,choices)
     if dlg.ShowModal() == wx.ID_OK:
@@ -1468,6 +1478,7 @@ def SetDrawingDefaults(drawingData):
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
             'peakMoveView':True,'PeakDistRadius':0.0,'showVoids':False,'showMap':False,
             'atomsExpandRadius':5.,'atomsDistRadius':2.5,'Voids':[],
+            'VPPeakDistRad':0.,'VPatomsExpandRad':0.,'VPatomsDistRad':0.,
         }
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
@@ -7854,7 +7865,8 @@ Make sure your parameters are correctly set.
             
     def AddSphere(event):
         cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
-        indx = getAtomSelections(drawAtoms,ct-1)
+        indx = getAtomSelections(drawAtoms,ct-1,'as center of sphere addition',
+                                     includeView=True)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -8343,7 +8355,7 @@ Make sure your parameters are correctly set.
         
     def OnDrawDistVP(event):
         # distance to view point
-        indx = getAtomSelections(drawAtoms,'distance calc')
+        indx = getAtomSelections(drawAtoms,action='distance calc')
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
@@ -8504,17 +8516,6 @@ Make sure your parameters are correctly set.
                 magMultTxt.SetLabel(' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnContourLevel(event):
-                drawingData['contourLevel'] = contourLevel.GetValue()/100.
-                contourLevelTxt.SetLabel(' Rho maximum: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
-                G2plt.PlotStructure(G2frame,data)
-
-            def OnMapSize(event):
-                drawingData['mapSize'] = mapSize.GetValue()/10.
-                mapSizeTxt.SetLabel(' Map radius, A: '+'%.1f'%(drawingData['mapSize']))
-                G2plt.PlotStructure(G2frame,data)
-
-            
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer = wx.FlexGridSizer(0,2,0,0)
             slideSizer.AddGrowableCol(1,1)
@@ -8583,21 +8584,7 @@ Make sure your parameters are correctly set.
                 magMult.SetRange(10,500)
                 magMult.Bind(wx.EVT_SLIDER, OnMagMult)
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
-            
-            if generalData['Map']['rhoMax'] and not generalData.get('4DmapData',{}):
-                contourLevelTxt = wx.StaticText(drawOptions,-1,' Rho maximum: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
-                slideSizer.Add(contourLevelTxt,0,WACV)
-                contourLevel = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['contourLevel']))
-                contourLevel.SetRange(1,100)
-                contourLevel.Bind(wx.EVT_SLIDER, OnContourLevel)
-                slideSizer.Add(contourLevel,1,wx.EXPAND|wx.RIGHT)
-                mapSizeTxt = wx.StaticText(drawOptions,-1,' Map radius, A: '+'%.1f'%(drawingData['mapSize']))
-                slideSizer.Add(mapSizeTxt,0,WACV)
-                mapSize = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(10*drawingData['mapSize']))
-                mapSize.SetRange(1,100)
-                mapSize.Bind(wx.EVT_SLIDER, OnMapSize)
-                slideSizer.Add(mapSize,1,wx.EXPAND|wx.RIGHT)
-            
+                        
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
             slopSizer.SetMinSize(wx.Size(350,10))
@@ -8630,10 +8617,6 @@ Make sure your parameters are correctly set.
                 
             def OnSymFade(event):
                 drawingData['SymFade'] = symFade.GetValue()
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnShowMap(event):
-                drawingData['showMap'] = showMap.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnShowVoids(event):
@@ -8748,6 +8731,9 @@ Make sure your parameters are correctly set.
             viewPoint.Bind(wx.EVT_KILL_FOCUS,OnViewPoint)
             lineSizer.Add(viewPoint,0,WACV)
             showSizer.Add(lineSizer)
+            mapSizer = DistanceSettingSizer(drawingData,
+                        'VPPeakDistRad','VPatomsExpandRad','VPatomsDistRad')
+            showSizer.Add(mapSizer,0,wx.LEFT,20)
             showSizer.Add((0,5),0)
             
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8774,10 +8760,6 @@ Make sure your parameters are correctly set.
             symFade.Bind(wx.EVT_CHECKBOX, OnSymFade)
             symFade.SetValue(drawingData['SymFade'])
             line3Sizer.Add(symFade,0,WACV)
-            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
-            showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
-            showMap.SetValue(drawingData['showMap'])
-            line3Sizer.Add(showMap,0,WACV)
             showVoids = wx.CheckBox(drawOptions,-1,label=' Show void map?')
             showVoids.Bind(wx.EVT_CHECKBOX, OnShowVoids)
             showVoids.SetValue(drawingData['showVoids'])
@@ -8881,6 +8863,32 @@ Make sure your parameters are correctly set.
             planeSizer.Add(planeSizer1)
             planeSizer.Add(planeSizer2)
             return planeSizer
+        
+        def DistanceSettingSizer(var,key1,key2,key3):
+            '''Sizer to get distances to show'''
+            def onLeave(*args,**kwargs):
+                print('On leave')
+                G2plt.PlotStructure(G2frame,data)
+                #wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            for key in key1,key2,key3:
+                if key not in var: var[key] = 0
+            mapSizer = wx.FlexGridSizer(0,3,5,5)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
+            mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key1,
+                xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1),
+                OnLeave=onLeave))
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
+            mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key2,
+                xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
+                OnLeave=onLeave))
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
+            mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key3,
+                xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
+                OnLeave=onLeave))
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            return mapSizer
             
 
         # UpdateDrawOptions exectable code starts here
@@ -8904,23 +8912,35 @@ Make sure your parameters are correctly set.
         mainSizer.Add(RadSizer(),0,)
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(PlaneSizer(),0,)
-        G2G.HorizontalLine(mainSizer,drawOptions)
-        mainSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:'),0,WACV)
-        mainSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))
-        mapSizer = wx.FlexGridSizer(0,3,5,5)
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
-        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'PeakDistRadius',
-            xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1)))
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
-        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsExpandRadius',
-            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
-        mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'atomsDistRadius',
-            xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1)))
-        mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
-        mainSizer.Add(mapSizer)
+        if generalData['Map']['rhoMax'] and not generalData.get('4DmapData',{}):
+            G2G.HorizontalLine(mainSizer,drawOptions)
+            def OnShowMap(event):
+                drawingData['showMap'] = showMap.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
+            showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
+            showMap.SetValue(drawingData['showMap'])
+            mainSizer.Add(showMap,0,WACV)
+            mainSizer.Add(G2G.G2SliderWidget(drawOptions,
+                        drawingData,'contourLevel',
+                        'Max relative to rho max ({:.2f}): '
+                                        .format(generalData['Map']['rhoMax']),
+                        0.01,1.0,100,
+                        onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)
+                        ))
+            mainSizer.Add(G2G.G2SliderWidget(drawOptions,
+                        drawingData,'mapSize',
+                        'Range of map surrounding view point: ',0.1,10.,10.,
+                        onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)
+                        ))
+            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:  '),0,WACV)
+            mapSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))
+            mainSizer.Add(mapSizer)
+            mapSizer = DistanceSettingSizer(drawingData,
+                        'PeakDistRadius','atomsExpandRadius','atomsDistRadius')
+            mainSizer.Add(mapSizer,0,wx.LEFT,20)
+
         SetPhaseWindow(drawOptions,mainSizer)
 
 ################################################################################
@@ -12177,6 +12197,9 @@ Make sure your parameters are correctly set.
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()
         elif text == 'Map peaks':
+            #print('reimport GSASIIplot')
+            #import imp
+            #imp.reload(G2plt)
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MapPeaksMenu)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
             FillMapPeaksGrid()

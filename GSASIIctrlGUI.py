@@ -1056,7 +1056,8 @@ class ASCIIValidator(wx.PyValidator):
             return
         return  # Returning without calling event.Skip, which eats the keystroke
 
-def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale):
+def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
+                       onChange=None,onChangeArgs=[]):
     '''A customized combination of a wx.Slider and a validated 
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a slider or text entry to set a value within a range.
@@ -1080,16 +1081,23 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale):
 
     :param float iscale: number to scale values to integers which is what the 
        Scale widget uses. If the xmin=1 and xmax=4 and iscale=1 then values
-       only the values 1,2,3 and 4 can be set with the slider. If 
+       only the values 1,2,3 and 4 can be set with the slider.
+
+    :param callable onChange: function to call when value is changed.
+       Default is None where nothing will be called. 
        
+    :param list onChangeArgs: arguments to be passed to onChange function 
+       when called.
     :returns: returns a wx.BoxSizer containing the widgets
     '''
 
     def onScale(event):
         loc[key] = vScale.GetValue()/float(iscale)
         wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
+        if onChange: onChange(*onChangeArgs)
     def onValSet(*args,**kwargs):
         vScale.SetValue(int(0.5+iscale*loc[key]))        
+        if onChange: onChange(*onChangeArgs)
     loc[key] = min(xmax,max(xmin,loc[key]))
     hSizer = wx.BoxSizer(wx.HORIZONTAL)
     hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)

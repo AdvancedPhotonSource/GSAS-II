@@ -8867,9 +8867,7 @@ Make sure your parameters are correctly set.
         def DistanceSettingSizer(var,key1,key2,key3):
             '''Sizer to get distances to show'''
             def onLeave(*args,**kwargs):
-                print('On leave')
                 G2plt.PlotStructure(G2frame,data)
-                #wx.CallAfter(G2plt.PlotStructure,G2frame,data)
             for key in key1,key2,key3:
                 if key not in var: var[key] = 0
             mapSizer = wx.FlexGridSizer(0,3,5,5)

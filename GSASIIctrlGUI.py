@@ -169,7 +169,11 @@ import GSASIIlog as log
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIscriptable as G2sc
-
+import GSASIIpwd as G2pwd
+import GSASIIlattice as G2lat
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = str
 
 # Define a short names for convenience
 WHITE = (255,255,255)
@@ -2876,7 +2880,6 @@ class G2ColumnIDDialog(wx.Dialog):
         self.Comments = ''.join(Comments)
         self.ChoiceList = ChoiceList
         self.ColumnData = ColumnData
-        nCol = len(ColumnData)
         if options['style'] & wx.OK:
             useOK = True
             options['style'] ^= wx.OK
@@ -4638,7 +4641,6 @@ class MyHelp(wx.Menu):
 
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"
-        import GSASII
         try:
             import wx.adv as wxadv  # AboutBox moved here in Phoenix
         except:
@@ -5042,6 +5044,70 @@ def MultipleBlockSelector(ChoiceList, ParentFrame=None,
         return sel
     return selected
 
+class MultipleChoicesDialog(wx.Dialog):
+    '''A dialog that offers a series of choices, each with a
+    title and a wx.Choice widget. Intended to be used Modally. 
+    typical input:
+
+        *  choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+        *  headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+        
+    selections are placed in self.chosen when OK is pressed
+
+    Also see GSASIIctrlGUI
+    '''
+    def __init__(self,choicelist,headinglist,
+                 head='Select options',
+                 title='Please select from options below',
+                 parent=None):
+        self.chosen = []
+        wx.Dialog.__init__(
+            self,parent,wx.ID_ANY,head, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((10,10),1)
+        topLabl = wx.StaticText(panel,wx.ID_ANY,title)
+        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.CENTER,10)
+        self.ChItems = []
+        for choice,lbl in zip(choicelist,headinglist):
+            mainSizer.Add((10,10),1)
+            self.chosen.append(0)
+            topLabl = wx.StaticText(panel,wx.ID_ANY,' '+lbl)
+            mainSizer.Add(topLabl,0,wx.ALIGN_LEFT,10)
+            self.ChItems.append(wx.Choice(self, wx.ID_ANY, (100, 50), choices = choice))
+            mainSizer.Add(self.ChItems[-1],0,wx.ALIGN_CENTER,10)
+
+        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        # save the results from the choice widgets
+        self.chosen = []
+        for w in self.ChItems:
+            self.chosen.append(w.GetSelection())
+        self.EndModal(wx.ID_OK)              
+            
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        self.chosen = []
+        self.EndModal(wx.ID_CANCEL)              
+
 def MultipleChoicesSelector(choicelist, headinglist, ParentFrame=None, **kwargs):
     '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
     widget. Used in :mod:`G2pwd_CIF` only.
@@ -5156,7 +5222,7 @@ def SaveConfigVars(vars,parent=None):
         savefile = config.__file__
     except ImportError: # no config.py file yet
         savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
-    except Exception as err: # import failed
+    except Exception: # import failed
         # find the bad file, save it in a new name and prepare to overwrite it
         for p in sys.path:
             savefile = os.path.join(p,'config.py')
@@ -6274,7 +6340,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     repeat = rd.repeat
                 else:
                     G2fil.G2Print("Warning: {} Reader failed to read {}"
-                                      .format(rd.formatName,filename))
+                                      .format(rd.formatName,f))
                 Iparm1, Iparm2 = G2sc.load_iprms(Settings['instfile'],rd)    
                 if 'phoenix' in wx.version():
                     HistName = 'PWDR '+rd.idstring
@@ -6433,7 +6499,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     repeat = rd.repeat
                 else:
                     G2fil.G2Print("Warning: {} Reader failed to read {}"
-                                      .format(rd.formatName,filename))
+                                      .format(rd.formatName,f))
                 if 'phoenix' in wx.version():
                     HistName = 'PDF  '+rd.idstring
                 else:
@@ -6726,7 +6792,12 @@ if __name__ == '__main__':
     # siz.Fit(frm)
     # app.MainLoop()
     # print(td)
-        
+    choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+    headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+    dlg = MultipleChoicesDialog(choicelist,headinglist,parent=frm)
+    if dlg.ShowModal() == wx.ID_OK:
+        print(dlg.chosen)
+    print(MultipleChoicesSelector(choicelist,headinglist,frm))
     pnl = wx.Panel(frm)
     valArr = {'k':1.0}
     ms = wx.BoxSizer(wx.VERTICAL)

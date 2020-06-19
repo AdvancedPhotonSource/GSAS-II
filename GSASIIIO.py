@@ -45,7 +45,6 @@ else:
     import pickle as cPickle
 import sys
 import re
-import glob
 import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -60,7 +59,6 @@ try:
     import GSASIIimgGUI as G2imG
 except ImportError:
     pass
-import GSASIIimage as G2img
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
@@ -1007,71 +1005,7 @@ def IndexPeakListSave(G2frame,peaks):
     finally:
         wx.EndBusyCursor()
     print ('index peak list saved')
-    
-class MultipleChoicesDialog(wx.Dialog):
-    '''A dialog that offers a series of choices, each with a
-    title and a wx.Choice widget. Intended to be used Modally. 
-    typical input:
-
-        *  choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
-        *  headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
-        
-    selections are placed in self.chosen when OK is pressed
-
-    Also see GSASIIctrlGUI
-    '''
-    def __init__(self,choicelist,headinglist,
-                 head='Select options',
-                 title='Please select from options below',
-                 parent=None):
-        self.chosen = []
-        wx.Dialog.__init__(
-            self,parent,wx.ID_ANY,head, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        panel = wx.Panel(self)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((10,10),1)
-        topLabl = wx.StaticText(panel,wx.ID_ANY,title)
-        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.CENTER,10)
-        self.ChItems = []
-        for choice,lbl in zip(choicelist,headinglist):
-            mainSizer.Add((10,10),1)
-            self.chosen.append(0)
-            topLabl = wx.StaticText(panel,wx.ID_ANY,' '+lbl)
-            mainSizer.Add(topLabl,0,wx.ALIGN_LEFT,10)
-            self.ChItems.append(wx.Choice(self, wx.ID_ANY, (100, 50), choices = choice))
-            mainSizer.Add(self.ChItems[-1],0,wx.ALIGN_CENTER,10)
-
-        OkBtn = wx.Button(panel,-1,"Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        cancelBtn = wx.Button(panel,-1,"Cancel")
-        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(cancelBtn)
-        btnSizer.Add((20,20),1)
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        panel.SetSizer(mainSizer)
-        panel.Fit()
-        self.Fit()
-        
-    def OnOk(self,event):
-        parent = self.GetParent()
-        if parent is not None: parent.Raise()
-        # save the results from the choice widgets
-        self.chosen = []
-        for w in self.ChItems:
-            self.chosen.append(w.GetSelection())
-        self.EndModal(wx.ID_OK)              
-            
-    def OnCancel(self,event):
-        parent = self.GetParent()
-        if parent is not None: parent.Raise()
-        self.chosen = []
-        self.EndModal(wx.ID_CANCEL)              
-            
+                
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
                        confirmoverwrite=True, parent=None,
                        multipleselect=False):
@@ -1689,7 +1623,7 @@ class ExportBaseclass(object):
         :returns: a file name (str) or None if Cancel is pressed
 
         '''
-        pth = G2G.GetExportPath(self.G2frame)
+        #pth = G2G.GetExportPath(self.G2frame)
         if self.G2frame.GSASprojectfile:
             defnam = os.path.splitext(
                 os.path.split(self.G2frame.GSASprojectfile)[1]

@@ -8516,6 +8516,10 @@ Make sure your parameters are correctly set.
                 magMultTxt.SetLabel(' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnRadFactor(invalid,value,tc):
+                FindBondsDraw(data)
+                G2plt.PlotStructure(G2frame,data)
+            
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer = wx.FlexGridSizer(0,2,0,0)
             slideSizer.AddGrowableCol(1,1)
@@ -8585,6 +8589,10 @@ Make sure your parameters are correctly set.
                 magMult.Bind(wx.EVT_SLIDER, OnMagMult)
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
                         
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor: '),0,WACV)
+            slideSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',
+                nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor),0,WACV)
+
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
             slopSizer.SetMinSize(wx.Size(350,10))
@@ -8784,25 +8792,31 @@ Make sure your parameters are correctly set.
                 showSizer.Add(line3Sizer)
             
             return showSizer
+        
+        def MapSizer():
             
-        def RadSizer():
-            
-            def OnSizeHatoms(invalid,value,tc):
+            def OnShowMap(event):
+                drawingData['showMap'] = showMap.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnRadFactor(invalid,value,tc):
-                FindBondsDraw(data)
-                G2plt.PlotStructure(G2frame,data)
-            
-            radSizer = wx.BoxSizer(wx.HORIZONTAL)
-            radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,WACV)
-            sizeH = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sizeH',nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnSizeHatoms)
-            radSizer.Add(sizeH,0,WACV)
-    
-            radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,WACV)
-            radFactor = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor)
-            radSizer.Add(radFactor,0,WACV)
-            return radSizer
+            mapSizer = wx.BoxSizer(wx.VERTICAL)
+            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
+            showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
+            showMap.SetValue(drawingData['showMap'])
+            mapSizer.Add(showMap,0,WACV)
+            mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'contourLevel',
+                'Max relative to rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),
+                0.01,1.0,100,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
+            mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
+                'Range of map surrounding view point: ',0.1,10.,10.,
+                onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:  '),0,WACV)
+            lineSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))
+            mapSizer.Add(lineSizer,0,WACV)
+            mapSizer.Add(DistanceSettingSizer(drawingData,
+                'PeakDistRadius','atomsExpandRadius','atomsDistRadius'),0,wx.LEFT,20)
+            return mapSizer
             
         def PlaneSizer():
             
@@ -8906,38 +8920,11 @@ Make sure your parameters are correctly set.
         mainSizer.Add(SlopSizer(),0)
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(ShowSizer(),0,)
-        G2G.HorizontalLine(mainSizer,drawOptions)
-        mainSizer.Add(RadSizer(),0,)
-        G2G.HorizontalLine(mainSizer,drawOptions)
-        mainSizer.Add(PlaneSizer(),0,)
         if generalData['Map']['rhoMax'] and not generalData.get('4DmapData',{}):
             G2G.HorizontalLine(mainSizer,drawOptions)
-            def OnShowMap(event):
-                drawingData['showMap'] = showMap.GetValue()
-                G2plt.PlotStructure(G2frame,data)
-            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
-            showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
-            showMap.SetValue(drawingData['showMap'])
-            mainSizer.Add(showMap,0,WACV)
-            mainSizer.Add(G2G.G2SliderWidget(drawOptions,
-                        drawingData,'contourLevel',
-                        'Max relative to rho max ({:.2f}): '
-                                        .format(generalData['Map']['rhoMax']),
-                        0.01,1.0,100,
-                        onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)
-                        ))
-            mainSizer.Add(G2G.G2SliderWidget(drawOptions,
-                        drawingData,'mapSize',
-                        'Range of map surrounding view point: ',0.1,10.,10.,
-                        onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)
-                        ))
-            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:  '),0,WACV)
-            mapSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))
-            mainSizer.Add(mapSizer)
-            mapSizer = DistanceSettingSizer(drawingData,
-                        'PeakDistRadius','atomsExpandRadius','atomsDistRadius')
-            mainSizer.Add(mapSizer,0,wx.LEFT,20)
+            mainSizer.Add(MapSizer())
+        G2G.HorizontalLine(mainSizer,drawOptions)
+        mainSizer.Add(PlaneSizer(),0,)
 
         SetPhaseWindow(drawOptions,mainSizer)
 

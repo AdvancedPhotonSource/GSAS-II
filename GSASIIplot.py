@@ -9218,7 +9218,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             # find and display atoms within atomsExpandRadius A
             if atomsExpandRadius > 0:
                 distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot)
-        elif len(mapPeaks):
+        if len(mapPeaks):
             XYZ = mapPeaks.T[1:4].T
             mapBonds = FindPeaksBonds(XYZ)
             for ind,[mag,x,y,z] in enumerate(mapPeaks[:,:4]):

@@ -7368,7 +7368,7 @@ Make sure your parameters are correctly set.
             drawingData['SymFade'] = False
         if 'Voids' not in drawingData:
             drawingData['Voids'] = []
-            drawinData['showVoids'] = False
+            drawingData['showVoids'] = False
             drawingData['showMap'] = False
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] in ['nuclear','faulted',]:

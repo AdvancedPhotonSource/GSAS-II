@@ -9188,7 +9188,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderLabel(x,y,z,'  '+atom[ct-3],radius,wxGreen,matRot)
             elif atom[cs+1] == 'chain' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
-#        glDisable(GL_BLEND)
         if not FourD and len(rhoXYZ) and drawingData['showMap']:       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
         if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and (
@@ -9254,7 +9253,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             for chain in Backbones:
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
-        if drawingData.get('showSlice',False):
+        if drawingData['showVoids']:
+            for x,y,z in drawingData['Voids']:
+                RenderFadeSphere(x,y,z,.05,(0.,0.,1.))
+        if drawingData.get('showSlice',False):      #must be done last to properly show things behind as faded
             global contourSet,Zslice
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
@@ -9296,9 +9298,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             plt.rcParams['figure.figsize'] = oldSize
 #            agg = canvas.switch_backends(Canvas)
             RenderViewPlane(msize*eplane,Zimg,width,height)
-        if drawingData['showVoids']:
-            for x,y,z in drawingData['Voids']:
-                RenderFadeSphere(x,y,z,.05,(0.,0.,1.))
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)
         except:

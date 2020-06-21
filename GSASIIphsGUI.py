@@ -3574,6 +3574,7 @@ def UpdatePhaseData(G2frame,Item,data):
         atomData = data['Atoms']
         resRBData = data['RBModels'].get('Residue',[])
         vecRBData = data['RBModels'].get('Vector',[])
+        global rbAtmDict   
         rbAtmDict = {}
         for rbObj in resRBData+vecRBData:
             exclList = ['X' for i in range(len(rbObj['Ids']))]
@@ -3953,15 +3954,19 @@ def UpdatePhaseData(G2frame,Item,data):
         atomData = data['Atoms']
         indx.sort()
         indx.reverse()
+        msg = ''
         for ind in indx:
             atom = atomData[ind]
             if atom[ci+8] in rbAtmDict:
-                G2frame.GetStatusBar().SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****',1)
+                if msg: msg += ', '
+                msg += atom[0]
             else:
                 if atom[ci+8] in HydIds:    #remove Hs from Hatom update dict
                     del HydIds[atom[ci+8]]
                 IDs.append(atom[ci+8])
                 del atomData[ind]
+        if msg: G2frame.ErrorDialog('Atom delete error',
+                    'ERROR - atom(s) in a rigid body were not deleted: '+msg)
         if 'Atoms' in data['Drawing']:
             Atoms.ClearSelection()
             DrawAtomsDeleteByIDs(IDs)

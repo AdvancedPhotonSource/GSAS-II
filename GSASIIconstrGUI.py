@@ -3162,7 +3162,7 @@ def UpdateRigidBodies(G2frame,data):
                             El = PE.Elem.strip().lower().capitalize()
                             if El not in AtInfo:
                                 Info = G2elem.GetAtomInfo(El)
-                                AtInfo[El] = [Info['Drad']['Color']]
+                                AtInfo[El] = [Info['Drad'],Info['Color']]
                             rbData['rbTypes'][r] = El
                             resGrid.SetCellValue(r,c,El)
                     PE.Destroy()
@@ -3176,13 +3176,6 @@ def UpdateRigidBodies(G2frame,data):
                     except ValueError:
                         pass
                         
-            def RowSelect(event):
-                r,c =  event.GetRow(),event.GetCol()
-                if c < 0:                   #only row clicks
-                    for iGrid in resList:
-                        iGrid.ClearSelection()
-                    resGrid.SelectRow(r,True)
-
             def OnRefSel(event):
                 Obj = event.GetEventObject()
                 iref,res,jref = Indx[Obj.GetId()]
@@ -3232,16 +3225,13 @@ def UpdateRigidBodies(G2frame,data):
             else:
                 resGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             resGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
-            resGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
-            attr = wx.grid.GridCellAttr()
-            attr.IncRef()
-            attr.SetEditor(G2G.GridFractionEditor(resGrid))
-            for c in range(3):
+            for c in range(2,5):
+                attr = wx.grid.GridCellAttr()
                 attr.IncRef()
+                attr.SetEditor(G2G.GridFractionEditor(resGrid))
                 resGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
-                for col in range(5):
-                    resGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
+                resGrid.SetReadOnly(row,1,True)
             resGrid.AutoSizeColumns(False)
             vecSizer = wx.BoxSizer()
             vecSizer.Add(resGrid)

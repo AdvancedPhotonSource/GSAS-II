@@ -1401,7 +1401,8 @@ def FindBondsDrawCell(data,cell):
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
                         
-def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5):
+def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5,
+                aMin=0,bMin=0,cMin=0):
     '''Compute points where there are no atoms within probeRadius A.
     All atoms in the Atoms list are considered, provided their 
     occupancy is non-zero. 
@@ -1416,7 +1417,13 @@ def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5):
     :param float gridspacing=.25: Approximate spacing of points (fractional units).
        Defaults to 1.
     :param float ,probeRadius=.5:
-    
+    :param float aMin: Minimum along the *a* direction (fractional units).
+       Defaults to 0.
+    :param float bMin: Minimum along the *b* direction (fractional units).
+       Defaults to 0.
+    :param float cMin: Minimum along the *c* direction (fractional units).
+       Defaults to 0.
+    :
     '''
 
     VDWdict = dict(zip(data['General']['AtomTypes'],data['General']['vdWRadii']))
@@ -1426,9 +1433,9 @@ def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5):
     surroundingCells = G2lat.CellBlock(1)
 
     xx,yy,zz = np.meshgrid(
-        np.linspace(0,aMax,int(0.5+cell[0]*aMax/gridspacing),endpoint=False),
-        np.linspace(0,cMax,int(0.5+cell[1]*bMax/gridspacing),endpoint=False),
-        np.linspace(0,cMax,int(0.5+cell[2]*cMax/gridspacing),endpoint=False))
+        np.linspace(aMin,aMax,int(0.5+cell[0]*(aMax-aMin)/gridspacing),endpoint=False),
+        np.linspace(bMin,bMax,int(0.5+cell[1]*(bMax-bMin)/gridspacing),endpoint=False),
+        np.linspace(cMin,cMax,int(0.5+cell[2]*(cMax-cMin)/gridspacing),endpoint=False))
     coordGrd = np.array([xyz for xyz in zip(xx.ravel(),yy.ravel(),zz.ravel())])
 
     lgclArray = [True for i in xx.ravel()]
@@ -9983,7 +9990,8 @@ Make sure your parameters are correctly set.
             mainSizer.Add((5,5),0)
             RBnames = []
             for RBObj in data['RBModels']['Residue']:
-                RBnames.append(RBObj['RBname'].split(':')[0]+RBObj['numChain'])
+#                RBnames.append(RBObj['RBname'].split(':')[0]+RBObj['numChain'])
+                RBnames.append(RBObj['RBname']+RBObj['numChain'])
             rbName = RBnames[0]
             rbObj = data['RBModels']['Residue'][0]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
@@ -10046,6 +10054,10 @@ Make sure your parameters are correctly set.
             If selDict is specified, it overrides the assignments to specify 
             atoms that should be matched.
             '''
+            UsedIds = []
+            for i in data['RBModels']: 
+                for j in data['RBModels'][i]:
+                    UsedIds += j['Ids']
             rbType = data['testRBObj']['rbType']
             rbObj = data['testRBObj']['rbObj']
             rbId = rbObj['RBId']
@@ -10057,9 +10069,14 @@ Make sure your parameters are correctly set.
                 rbAtmLbs = None
                 
             newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
-            atmTypes = [atomData[i][ct] for i in range(len(atomData))]
+            # categorize atoms by type, omitting any that are already assigned
+            # in a rigid body
+            atmTypes = [None if atomData[i][-1] in UsedIds
+                            else atomData[i][ct]
+                            for i in range(len(atomData))]
             # remove assigned atoms from search groups
             for i in selDict:
+                if selDict[i] is None: continue
                 atmTypes[selDict[i]] = None
             atmXYZ = G2mth.getAtomXYZ(atomData,cx)
             # separate structure's atoms by type (w/o assigned atoms)
@@ -10079,51 +10096,52 @@ Make sure your parameters are correctly set.
                     lbl = rbAtmLbs[i]
                 else:
                     lbl = ''
-                if i in selDict:
+                if i in selDict and selDict[i] is None:
+                    matchTable.append([t , lbl] + list(xyz))
+                    continue
+                elif i in selDict:
                     searchXYZ = [atmXYZ[selDict[i]]] #assigned
                     numLookup = [selDict[i]]
                 else:
                     if t not in oXYZbyT:
                         unmatched.append(i)
+                        matchTable.append([t , lbl] + list(xyz))
                         continue
                     searchXYZ = oXYZbyT[t]
                     numLookup = atmNumByT[t]
                 dist = G2mth.GetXYZDist(xyz,searchXYZ,Amat)
-                repeat = True
-                while repeat:
-                    repeat = False
+                while True:
                     pidIndx = np.argmin(dist)
                     d = dist[pidIndx]
                     pid = numLookup[pidIndx]
                     if atomData[pid][-1] in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
-                        repeat = True
                         dist[pidIndx] = 100.
                         if min(dist) == 100:
-                            unmatched.append(i)
-                            repeat = False
-                            continue
-                Ids.append(atomData[pid][-1])
-                matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
+                            pid = None
+                            break
+                    else:
+                        break
+                if pid is not None:
+                    Ids.append(atomData[pid][-1])
+                    matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
                                       + atomData[pid][cx:cx+3] + [d, Ids[-1]])
-            if unmatched:
-                if unmatchedRBatoms is not None:
-                    unmatchedRBatoms[:] = unmatched
-                return []
+                else:
+                    unmatched.append(i)
+                    matchTable.append([t , lbl] + list(xyz))
+            if unmatched and unmatchedRBatoms is not None:
+                unmatchedRBatoms[:] = unmatched
             return matchTable
             
         def Draw():
             '''Create the window for assigning RB to atoms'''
-            def OnOk(event):
+            def OnAddRB(event):
                 'respond to OK button, set info into phase'
+                cx,ct,cs,cia = data['General']['AtomPtrs']  
                 matchTable = UpdateTable()
                 dmax = 0.
-                Ids = []
                 for line in matchTable:
-                    xyz = line[2:5]
-                    pid = line[5]
-                    dmax = max(dmax,line[10])
-                    atomData[pid][cx:cx+3] = xyz
-                    Ids.append(line[11])
+                    if len(line) >= 11:
+                        dmax = max(dmax,line[10])
                 if dmax > 1.0:
                     msg = "Atoms may not be properly located. Are you sure you want to do this?"
                     dlg = wx.MessageDialog(G2frame,msg,caption='Continue?',style=wx.YES_NO|wx.ICON_EXCLAMATION)
@@ -10131,6 +10149,18 @@ Make sure your parameters are correctly set.
                         dlg.Destroy()
                         return
                     dlg.Destroy()
+                Ids = []
+                for line in matchTable:
+                    if len(line) < 11:
+                        elem = line[0]
+                        nextNum = len(data['Atoms'])
+                        lbl = 'Rb' + elem + str(nextNum)
+                        x,y,z = line[2:5]
+                        AtomAdd(x,y,z,El=elem,Name=lbl)
+                        Ids.append(atomData[nextNum][-1])
+                    else:
+                        atomData[line[5]][cx:cx+3] = line[2:5]
+                        Ids.append(line[11])
                     
                 rbType = data['testRBObj']['rbType']
                 rbObj['Ids'] = Ids
@@ -10178,17 +10208,14 @@ Make sure your parameters are correctly set.
                 RigidBodies.atomsGrid.completeEdits()
                 # add new atoms and reassign
                 added = False
+                selDict = getSelectedAtoms()
                 for i,l in enumerate(RigidBodies.atomsTable.data):
                     if l[4] == 'Create new':
-                        elem = l[0]
-                        added = True
-                        lbl = 'Rb' + RigidBodies.atomsGrid.GetRowLabelValue(i)
-                        AtomAdd(0.,0.,0.,El=elem,Name=lbl)
-                        l[4] = lbl
-                        rbAssignments[i] = lbl
-                selDict = getSelectedAtoms()
+                        rbAssignments[i] = None
+                        selDict[i] = None
                 matchTable = assignAtoms(selDict)
                 for i,l in enumerate(matchTable):
+                    if len(l) < 11: continue
                     RigidBodies.atomsTable.data[i][1:4] = l[5],l[6],l[10]
                 RigidBodies.atomsGrid.ForceRefresh()
                 if added: wx.CallLater(100,Draw)
@@ -10209,7 +10236,7 @@ Make sure your parameters are correctly set.
                 assigned = []
                 for r in range(tbl.GetRowsCount()):
                     sel = tbl.GetValue(r,4).strip()
-                    if r in rbAssignments: continue # ignore positions of new atoms
+                    if sel == 'Create new': continue # ignore positions of new atoms
                     if sel not in labelsChoices: continue
                     atmNum = labelsChoices.index(sel)-1
                     if atmNum < 0: continue
@@ -10238,6 +10265,7 @@ Make sure your parameters are correctly set.
                 phaseXYZ = G2mth.getAtomXYZ(atomData,cx)
                 deltaList = []
                 for i in selDict:
+                    if selDict[i] is None: continue
                     deltaList.append(phaseXYZ[selDict[i]]-rbXYZ[i])
                 return np.array(deltaList)
 
@@ -10287,9 +10315,6 @@ Make sure your parameters are correctly set.
                 for i,item in enumerate(Osizers):
                     item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
                 UpdateTablePlot()
-                # debug code
-                #selDict = getSelectedAtoms()
-                #for line in assignAtoms(selDict): print(line)
                 
             def onFitBoth(event):
                 'Set Orientation and origin to best fit selected atoms'
@@ -10317,24 +10342,12 @@ Make sure your parameters are correctly set.
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
             unmatchedRBatoms = []
             matchTable = assignAtoms(unmatchedRBatoms=unmatchedRBatoms)
-            if not matchTable:
-                dlg = wx.MessageDialog(G2frame,
-                    'There are {} atoms that need to be added to atoms list. Do you want to add them?'.format(len(unmatchedRBatoms)),'Add atoms?', 
-                    wx.YES_NO | wx.ICON_QUESTION)
-                try:
-                    result = dlg.ShowModal()
-                    if result == wx.ID_YES:
-                        rbType = data['testRBObj']['rbType']
-                        rbObj = data['testRBObj']['rbObj']
-                        rbId = rbObj['RBId']
-                        for i in unmatchedRBatoms:
-                            elem = RBData[rbType][rbId]['rbTypes'][i]
-                            lbl = 'Rb' + RBData[rbType][rbId]['atNames'][i]
-                            AtomAdd(0.,0.,0.,El=elem,Name=lbl)
-                            rbAssignments[i] = lbl
-                        wx.CallAfter(Draw)
-                finally:
-                    dlg.Destroy()
+            if unmatchedRBatoms:
+                msg = 'There are {} atoms that will need to be added to atoms list.'.format(len(unmatchedRBatoms))
+                G2G.G2MessageBox(G2frame,msg,title='Please note')
+                for i in unmatchedRBatoms:
+                    rbAssignments[i] = None
+
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             Osizers = []
@@ -10348,8 +10361,8 @@ Make sure your parameters are correctly set.
             for ref in rbRef:
                 refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
             atNames = data['testRBObj']['atNames']
-            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Locate rigid body : '+rbName),
-                0,WACV)
+            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                                'Locating rigid body : '+rbName), 0, WACV)
             mainSizer.Add((5,5),0)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Origin: '),0,WACV)
@@ -10409,7 +10422,7 @@ Make sure your parameters are correctly set.
                 mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0,WACV)
-            if not matchTable:
+            if not matchTable: # not sure if this will ever be true
                 OkBtn = None
                 mainSizer.Add((15,15))
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
@@ -10417,7 +10430,7 @@ Make sure your parameters are correctly set.
                                   0,WACV)
             else:
                 OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
-                OkBtn.Bind(wx.EVT_BUTTON, OnOk)
+                OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
             CancelBtn = wx.Button(RigidBodies,wx.ID_ANY,'Cancel')
             CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -10428,21 +10441,21 @@ Make sure your parameters are correctly set.
             mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 20)
                 
             SetPhaseWindow(RigidBodies,mainSizer)
-            
-            if not matchTable:
-                mainSizer.Layout()
-                RigidBodies.SetScrollRate(10,10)
-                RigidBodies.SendSizeEvent()
-                RigidBodies.Scroll(0,0)
-                return
+
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
             displayTable = []
             for i,l in enumerate(matchTable):
                 lbl = ''
-                if i in rbAssignments: lbl = rbAssignments[i]
-                displayTable.append([l[0],l[5],l[6],l[10],lbl])
+                if i in rbAssignments:
+                    if rbAssignments[i] is None:
+                        displayTable.append([l[0],-1,'?',-1,'Create new'])
+                    else:
+                        lbl = rbAssignments[i]
+                        displayTable.append([l[0],l[5],l[6],l[10],lbl]) # TODO: think about this
+                else:
+                    displayTable.append([l[0],l[5],l[6],l[10],lbl])
             Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_NUMBER, 
                     wg.GRID_VALUE_STRING, wg.GRID_VALUE_FLOAT+':8,3',
                     wg.GRID_VALUE_STRING]
@@ -10485,12 +10498,10 @@ Make sure your parameters are correctly set.
             btnSizer.Add((-1,10))
 
             btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Origin')
-
             btn.Bind(wx.EVT_BUTTON,onSetOrigin)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,5))
             btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Orientation')
-
             btn.Bind(wx.EVT_BUTTON,onFitOrientation)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,5))

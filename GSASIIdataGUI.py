@@ -4337,6 +4337,8 @@ class GSASII(wx.Frame):
                 G2IO.ProjFileSave(self)
                 self.SetTitleByGPX()
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
+                config = G2G.GetConfigValsDocs()
+                GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
                 return True
             else:
                 return False

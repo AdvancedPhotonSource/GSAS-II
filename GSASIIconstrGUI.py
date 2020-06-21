@@ -3169,10 +3169,12 @@ def UpdateRigidBodies(G2frame,data):
 
             def ChangeCell(event):
                 r,c =  event.GetRow(),event.GetCol()
-                if r >= 0 and (0 <= c < 3):
+                if c == 0:
+                    rbData['atNames'][r] = resGrid.GetCellValue(r,c)
+                if r >= 0 and (2 <= c <= 4):
                     try:
                         val = float(resGrid.GetCellValue(r,c))
-                        rbData['rbXYZ'][r][c] = val
+                        rbData['rbXYZ'][r][c-2] = val
                     except ValueError:
                         pass
                         

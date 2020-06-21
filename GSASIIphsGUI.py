@@ -10059,10 +10059,6 @@ Make sure your parameters are correctly set.
             If selDict is specified, it overrides the assignments to specify 
             atoms that should be matched.
             '''
-            UsedIds = []
-            for i in data['RBModels']: 
-                for j in data['RBModels'][i]:
-                    UsedIds += j['Ids']
             rbType = data['testRBObj']['rbType']
             rbObj = data['testRBObj']['rbObj']
             rbId = rbObj['RBId']
@@ -10076,7 +10072,7 @@ Make sure your parameters are correctly set.
             newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
             # categorize atoms by type, omitting any that are already assigned
             # in a rigid body
-            atmTypes = [None if atomData[i][-1] in UsedIds
+            atmTypes = [None if atomData[i][-1] in rbUsedIds
                             else atomData[i][ct]
                             for i in range(len(atomData))]
             # remove assigned atoms from search groups
@@ -10216,6 +10212,7 @@ Make sure your parameters are correctly set.
                 selDict = getSelectedAtoms()
                 for i,l in enumerate(RigidBodies.atomsTable.data):
                     if l[4] == 'Create new':
+                        l[1:4] = -1,'?',-1
                         rbAssignments[i] = None
                         selDict[i] = None
                 matchTable = assignAtoms(selDict)
@@ -10467,7 +10464,8 @@ Make sure your parameters are correctly set.
             RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
 
-            labelsChoices = ['         '] + [a[0] for a in data['Atoms']]
+            labelsChoices = ['         '] + [a[0] for a in data['Atoms']
+                                                 if a[-1] not in rbUsedIds]
             choiceeditor = wg.GridCellChoiceEditor(
                 labelsChoices+['Create new'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
@@ -10522,6 +10520,10 @@ Make sure your parameters are correctly set.
 
         # start of OnRBAssign(event)
         rbAssignments = {}
+        rbUsedIds = []   # Ids of atoms in current phase used inside RBs
+        for i in data['RBModels']: 
+            for j in data['RBModels'][i]:
+                rbUsedIds += j['Ids']
         G2frame.GetStatusBar().SetStatusText('',1)
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))

@@ -12143,7 +12143,7 @@ Make sure your parameters are correctly set.
         mid = menuBar.FindMenu('Select tab')
         menu = menuBar.GetMenu(mid)
         for ipage,page in enumerate(Pages):
-            if menu.FindItem(page) < 0: # is tab already in menu?
+            if menu.FindItem(page) == wx.NOT_FOUND: # is tab already in menu?
                 Id = wx.NewId()
                 TabSelectionIdDict[Id] = page
                 menu.Append(Id,page,'')

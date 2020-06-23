@@ -9064,13 +9064,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glMultMatrixf(A4mat.T)
         GL.glTranslate(-Tx,-Ty,-Tz)
         drawingData['modelView'] = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
-        # if drawingData['unitCellBox']:
-        #     if drawingData['Plane'][1]:
-        #         H,phase,stack,phase,color = drawingData['Plane']
-        #         Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
-        #         for plane in Planes:
-        #             RenderPlane(plane,color)
-        #     RenderBox()
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)

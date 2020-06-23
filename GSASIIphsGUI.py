@@ -2403,7 +2403,7 @@ def UpdatePhaseData(G2frame,Item,data):
             pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,25),
-                xmin=0.,xmax=1.,nDig=(10,4))
+                xmin=0.,xmax=1.,nDig=(10,3,'g'))
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             
@@ -8786,7 +8786,6 @@ Make sure your parameters are correctly set.
             line3Sizer.Add(showVoids,0,WACV)
             showSizer.Add(line3Sizer)
             
-            
             if generalData['Map']['rhoMax']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
@@ -8836,13 +8835,13 @@ Make sure your parameters are correctly set.
                 event.Skip()
                 vals = plane.GetValue().split()
                 try:
-                    hkl = [int(vals[i]) for i in range(3)]
-                    if not np.any(np.array(hkl)):       #can't be all zeros!
+                    hkl = [float(vals[i]) for i in range(3)]
+                    if not any(hkl):       #can't be all zeros!
                         raise ValueError
                 except (ValueError,IndexError):
                     hkl = drawingData['Plane'][0]
                 drawingData['Plane'][0] = hkl
-                plane.SetValue('%3d %3d %3d'%(hkl[0],hkl[1],hkl[2]))
+                plane.SetValue('%5.3f %5.3f %5.3f'%(hkl[0],hkl[1],hkl[2]))
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnShowPlane(event):
@@ -8864,8 +8863,7 @@ Make sure your parameters are correctly set.
             planeSizer1 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
             H = drawingData['Plane'][0]
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
-            plane = wx.TextCtrl(drawOptions,value='%3d %3d %3d'%(H[0],H[1],H[2]),
+            plane = wx.TextCtrl(drawOptions,value='%5.3f %5.3f %5.3f'%(H[0],H[1],H[2]),
                 style=wx.TE_PROCESS_ENTER)
             plane.Bind(wx.EVT_TEXT_ENTER,OnPlane)
             plane.Bind(wx.EVT_KILL_FOCUS,OnPlane)

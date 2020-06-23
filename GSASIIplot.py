@@ -9064,13 +9064,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glMultMatrixf(A4mat.T)
         GL.glTranslate(-Tx,-Ty,-Tz)
         drawingData['modelView'] = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
-        if drawingData['unitCellBox']:
-            RenderBox()
-            if drawingData['Plane'][1]:
-                H,phase,stack,phase,color = drawingData['Plane']
-                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
-                for plane in Planes:
-                    RenderPlane(plane,color)
+        # if drawingData['unitCellBox']:
+        #     if drawingData['Plane'][1]:
+        #         H,phase,stack,phase,color = drawingData['Plane']
+        #         Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
+        #         for plane in Planes:
+        #             RenderPlane(plane,color)
+        #     RenderBox()
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
@@ -9256,6 +9256,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if drawingData['showVoids']:
             for x,y,z in drawingData['Voids']:
                 RenderFadeSphere(x,y,z,.05,(0.,0.,1.))
+        if drawingData['unitCellBox']:
+            RenderBox()
+            if drawingData['Plane'][1]:
+                H,phase,stack,phase,color = drawingData['Plane']
+                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
+                for plane in Planes:
+                    RenderPlane(plane,color)
         if drawingData.get('showSlice',False):      #must be done last to properly show things behind as faded
             global contourSet,Zslice
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there

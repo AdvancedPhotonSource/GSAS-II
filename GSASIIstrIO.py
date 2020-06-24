@@ -3232,6 +3232,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         insKeys = list(Inst.keys())
         insKeys.sort()
         for item in insKeys:
+            if item in 'Azimuth':
+                continue
             insName = pfx+item
             instDict[insName] = Inst[item][1]
             if len(Inst[item]) > 2 and Inst[item][2]:
@@ -3249,7 +3251,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         sampVary = []
         hfx = ':'+str(hId)+':'        
         sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius'],hfx+'Omega':Sample['Omega'],
-            hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi']}
+            hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi'],hfx+'Azimuth':Sample['Azimuth']}
         for key in ('Temperature','Pressure','FreePrm1','FreePrm2','FreePrm3'):
             if key in Sample:
                 sampDict[hfx+key] = Sample[key]

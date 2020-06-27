@@ -592,7 +592,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Delete phase entries','')
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Rename tree entry',
+        item = parent.Append(wx.ID_ANY,'Rename data entry',
                 'Rename the selected data tree item (PWDR, HKLF or IMG)')
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Delete data entries',
@@ -3940,8 +3940,16 @@ class GSASII(wx.Frame):
             print('\n',consDeleted,'constraints were deleted')
         
     def OnRenameData(self,event):
-        'Renames an existing phase. Called by Data/Rename Phase menu'
+        '''Renames an existing histogram. Called by Data/Rename Phase menu.
+        Must be used before a histogram is used in a phase.
+        '''
         name = self.GPXtree.GetItemText(self.PickId)      
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        if name in Histograms:
+            G2G.G2MessageBox(self,
+                'Histogram is used. You must remove it from all phases before it can be renamed',
+                'Rename not allowed')
+            return
         if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
             if 'Bank' in name:
                 names = name.split('Bank')
@@ -3952,16 +3960,15 @@ class GSASII(wx.Frame):
             else:
                 names = [name,'']
             dataType = names[0][:names[0].index(' ')+1]                 #includes the ' '
-            dlg = wx.TextEntryDialog(self,'Data name: '+name,'Change data name',
-                defaultValue=names[0][names[0].index(' ')+1:])
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    name = dataType+dlg.GetValue()+names[1]
-                    self.GPXtree.SetItemText(self.PickId,name)
-                    if 'PWDR' in name:
-                        self.GPXtree.GetItemPyData(self.PickId)[2] = name
-            finally:
-                dlg.Destroy()
+            dlg = G2G.SingleStringDialog(self,'Change tree name',
+                    'Data name: '+name,names[0][names[0].index(' ')+1:])
+            #if dlg.ShowModal() == wx.ID_OK:
+            if dlg.Show():
+                name = dataType+dlg.GetValue().strip()+names[1]
+                self.GPXtree.SetItemText(self.PickId,name)
+                if 'PWDR' in name:
+                    self.GPXtree.GetItemPyData(self.PickId)[2] = name
+            dlg.Destroy()
         
     def GetFileList(self,fileType,skip=None):        #potentially useful?
         'Appears unused. Note routine of same name in GSASIIpwdGUI'

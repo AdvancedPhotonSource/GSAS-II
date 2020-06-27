@@ -3340,7 +3340,7 @@ def MagSytSym(SytSym,dupDir,SGData):
     SplitSytSym = SytSym.split('(')
     if SGData['SGGray']:
         return SytSym+"1'"
-    if SytSym == '1':       #genersl position
+    if SytSym in ['1','-1','2','3','6','m']:       #axial position
         return SytSym
     if SplitSytSym[0] == SGData['SGPtGrp']:     #simple cases
         try:

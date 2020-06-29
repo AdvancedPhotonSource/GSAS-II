@@ -72,7 +72,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
 #            self.Image = scipy.misc.imread(filename,flatten=True)
             import PIL.Image as PI
             self.Image = PI.open(filename,mode='r')
-            
+            self.Image.shape = self.Image.size
             # for scipy 1.2 & later  scipy.misc.imread will be removed
             # with note to use imageio.imread instead 
             # (N.B. scipy.misc.imread uses PIL/pillow perhaps better to just use pillow)

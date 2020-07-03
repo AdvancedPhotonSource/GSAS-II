@@ -1959,14 +1959,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 generalData['Cell'][0] = cellRef.GetValue()
                 
             def OnCellChange(invalid,value,tc):
-#                event.Skip()
                 SGData = generalData['SGData']
                 laue = SGData['SGLaue']
                 if laue == '2/m':
                     laue += SGData['SGUniq']
                 cell = generalData['Cell']
                 Obj = tc
-#                Obj = event.GetEventObject()
                 ObjId = cellList.index(Obj.GetId())
                 try:
                     value = max(1.0,float(tc.GetValue()))
@@ -2959,21 +2957,21 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     break
                                 
-        NShkl = len(G2spc.MustrainNames(SGData))
-        NDij = len(G2spc.HStrainNames(SGData))
-        UseList = newPhase['Histograms']
-        for hist in UseList:
-            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
-            UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-            UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
-        sub = G2frame.GPXtree.AppendItem(parent=
-            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
-        G2frame.GPXtree.SetItemPyData(sub,newPhase)
-        newPhase['Drawing'] = []
-        if ifConstr:
-            G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
-        G2frame.GPXtree.SelectItem(sub)
+            NShkl = len(G2spc.MustrainNames(SGData))
+            NDij = len(G2spc.HStrainNames(SGData))
+            UseList = newPhase['Histograms']
+            for hist in UseList:
+                UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+                UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+            newPhase['General']['Map'] = mapDefault.copy()
+            sub = G2frame.GPXtree.AppendItem(parent=
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+            G2frame.GPXtree.SetItemPyData(sub,newPhase)
+            newPhase['Drawing'] = []
+            if ifConstr:
+                G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
+            G2frame.GPXtree.SelectItem(sub)
                 
     def OnCompare(event):
         generalData = data['General']

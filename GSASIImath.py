@@ -1434,7 +1434,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
 def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     '''
     this needs to make magnetic moment modulations & magnitudes as 
-    fxn of gTau points
+    fxn of gTau points; NB: this allows only 1 mag. wave fxn.
     '''
     Am = np.array(MSSdata[3:]).T   #atoms x waves x cos pos mods
     Bm = np.array(MSSdata[:3]).T  #...sin pos mods

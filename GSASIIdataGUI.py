@@ -4107,7 +4107,7 @@ class GSASII(wx.Frame):
         sellist = []
         for f in files:
             dirname,filroot = os.path.split(f)
-            if os.path.exists(f):
+            if os.path.exists(f) and '.gpx' in f:
                 sellist.append("{} from {}".format(filroot,dirname))
 #            else:
 #                sellist.append("not found: {}".format(f))

@@ -1468,6 +1468,39 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
     return MmodA,MmodB    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
         
+def MagMod2(m,glTau,XYZ,modQ,MSSdata,SGData,SSGData):
+    '''
+    this needs to make magnetic moment modulations & magnitudes as 
+    fxn of gTau points; NB: this allows only 1 mag. wave fxn.
+    '''
+    Am = np.array(MSSdata[3:]).T[:,0,:]   #atoms x cos pos mods; only 1 wave
+    Bm = np.array(MSSdata[:3]).T[:,0,:]  #...sin pos mods
+    SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
+    Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
+    SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    if SGData['SGInv']:
+        SGMT = np.vstack((SGMT,-SGMT))
+        Sinv = np.vstack((Sinv,-Sinv))
+        SGT = np.vstack((SGT,-SGT))
+    SGMT = np.vstack([SGMT for cen in SGData['SGCen']])
+    Sinv = np.vstack([Sinv for cen in SGData['SGCen']])
+    SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
+    if SGData['SGGray']:
+        SGMT = np.vstack((SGMT,SGMT))
+        Sinv = np.vstack((Sinv,Sinv))
+        SGT = np.vstack((SGT,SGT+.5))%1.
+    mst = Sinv[:,3,:3]
+    epsinv = Sinv[:,3,3]
+    phase = np.inner(XYZ,modQ).T+(np.inner(mst,modQ)-epsinv)[:,nxs]+glTau
+    
+    psin = np.sin(twopi*m*phase).T
+    pcos = np.cos(twopi*m*phase).T
+    MmodA = Am[nxs,nxs,:,:]*pcos[:,:,nxs,nxs]    #cos term
+    MmodB = Bm[nxs,nxs,:,:]*psin[:,:,nxs,nxs]    #sin term
+    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    return MmodA,MmodB    #Nref,Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
+        
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x ops X hklt

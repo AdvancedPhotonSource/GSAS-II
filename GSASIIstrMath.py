@@ -1485,6 +1485,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
+    gs = nl.inv(GS)
     uAmat,uBmat = G2lat.Gmat2AB(GS)
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
@@ -1513,7 +1514,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms - Mmod matched drawing & Bilbao drawings
     
-#        mTau = np.linspace(0,1.,ngl,False)    
         mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
         if SGData['SGGray']:
             mXYZ = np.hstack((mXYZ,mXYZ))
@@ -1596,12 +1596,13 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:            
             
+            MmodA,MmodB = G2mth.MagMod2(H[3],glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Nref,Ntau,Nops,Natm,Mxyz
             phasem = twopi*np.inner(mXYZ,HP.T).T    #2pi(Q.r)
             cosm = np.cos(phasem)                   #Nref,nops,natm
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
+            HM = np.inner(uAmat,HP.T)                            #put into cartesian space X||H,Z||H*L; uAmat better than uBmat
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T              # normalize  HP  Nref,hkl=Unit vectors || Q
 
             fam0 = 0.
@@ -1610,33 +1611,28 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
                            
-            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]+    \
-                np.sign(H[3,i])*MmodB*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
+            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA[i]*cosm[i,nxs,:,:,nxs]+    
+                np.sign(H[3,i])*MmodB[i]*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
-            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    \
-                np.sign(H[3,i])*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
+            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA[i]*sinm[i,nxs,:,:,nxs]+    
+                np.sign(H[3,i])*MmodB[i]*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
-            # else:
-            #     fams /= 2.
-            #     fbms /= 2.
                                 
 # # do sum on ops, atms 1st                        
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
 # #put into cartesian space
-            facm = np.inner(fasm,uBmat.T)
+            facm = np.inner(fasm,uBmat.T)       #uBmat better than uAmat
             fbcm = np.inner(fbsm,uBmat.T)
 # #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
-# #intensity
-            fass = np.sum((facm-eM[:,nxs,:]*eDotFa[:,:,nxs])**2,axis=-1)
-            fbss = np.sum((fbcm-eM[:,nxs,:]*eDotFb[:,:,nxs])**2,axis=-1)
-            # fass = np.sum(facm**2,axis=-1)-eDotFa**2
-            # fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
+# #intensity    Halpern & Johnson
+            fass = np.sum(facm**2,axis=-1)-eDotFa**2
+            fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
             
 # #do integration            
             fas = np.sum(fass*glWt[nxs,:],axis=1)

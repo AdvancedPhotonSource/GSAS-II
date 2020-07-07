@@ -1043,6 +1043,24 @@ end tell
 '''.format(pythonapp,g2script,project)
     subprocess.Popen(["osascript","-e",script])
 
+def MacRunScript(script):
+    '''Start a bash script in a new terminal window.
+    Used on Mac OS X only.
+
+    :param str script: file name for a bash script
+    '''
+    script = os.path.abspath(script)
+    osascript = '''
+set bash to "/bin/bash"
+set filename to "{}"
+
+tell application "Terminal"
+     activate
+     do script bash & " " & filename & "; exit"
+end tell
+'''.format(script)
+    subprocess.Popen(["osascript","-e",osascript])
+    
 def findConda():
     '''Determines if GSAS-II has been installed as g2conda or gsas2full
     with conda located relative to this file. 

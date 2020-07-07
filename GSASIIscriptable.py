@@ -21,7 +21,7 @@ of data tree items.
 GSASIIscriptable can be used in two ways. It offers a command-line mode 
 (see :ref:`CommandlineInterface`) that 
 provides access a number of features without writing Python scripts 
-via shell/batch commands. The more powerful mode of GSASIIscriptable is 
+via shell/batch commands. The more widely used and more powerful mode of GSASIIscriptable is 
 use is through Python scripts that 
 call the module's application interface (API), see API summary that follows or the :ref:`API` 
 section.
@@ -288,6 +288,7 @@ As an example:
 ------------------------
 Refinement recipe
 ------------------------
+
 Building on the :ref:`Project_dicts`,
 it is possible to specify a sequence of refinement actions as a list of
 these dicts and supplying this list 
@@ -651,7 +652,6 @@ For phase parameters, use code such as this:
                           'V4': 'FXU'}}
     some_histogram.set_refinements(params)
 
-
 and here is an example for HAP parameters:
 
 .. code-block::  python
@@ -664,6 +664,99 @@ and here is an example for HAP parameters:
     some_phase.set_HAP_refinements(params)
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
+
+.. _AccessingOtherItems:
+
+===================================
+Access to other parameter settings
+===================================
+
+There are several hundred different types of values that can be stored in a 
+GSAS-II project (.gpx) file. All can be changed from the GUI but only a 
+subset have direct mechanism implemented for change from the GSASIIscriptable 
+API. In practice all parameters in a .gpx file can be edited via scripting, 
+but sometimes determining what should be changed to implement a change can be 
+complex. 
+Several routines, :meth:`G2Phase.getHAPentryValue`, 
+:meth:`G2Phase.getPhaseEntryValue` and :meth:`G2PwdrData.getHistEntryList`
+provide a mechanism to discover what the GUI is changing inside a .gpx file. 
+
+As an example, a user in changing the data type for a histogram from Debye-Scherrer 
+mode to Bragg-Brentano. This capability is not directly exposed in the API. To 
+find out what changes when the histogram type is changed we can create a short script 
+that displays the contents of all the histogram settings:
+
+.. code-block::  python
+
+    from __future__ import division, print_function
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    gpx = G2sc.G2Project('/tmp/test.gpx')
+    h = gpx.histograms()[0]
+    for h in h.getHistEntryList():
+        print(h)
+
+This can be run with a command like this::
+
+       python test.py > before.txt
+
+(This will create file ``before.txt``, which will contain hundreds of lines.) 
+
+At this point open the project file, ``test.py`` in the GSAS-II GUI and 
+change in Histogram/Sample Parameters the diffractometer type from Debye-Scherrer 
+mode to Bragg-Brentano and then save the file. 
+
+Rerun the previous script creating a new file::
+
+       python test.py > after.txt
+
+Finally look for the differences between files ``before.txt`` and ``after.txt`` using a tool 
+such as diff on Linux/OS X or fc in Windows. 
+
+
+    Z:\>fc before.txt after.txt
+    Comparing files before.txt and after.txt
+    ***** before.txt
+           fill_value = 1e+20)
+    , 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1', 'PWDR Co_PCP_Act_d900-00030.fxye Ban
+    k 1'])
+    (['Comments'], <class 'list'>, ['Co_PCP_Act_d900-00030.tif #0001 Azm= 180.00'])
+    ***** AFTER.TXT
+           fill_value = 1e+20)
+    , 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1', 'PWDR Co_PCP_Act_d900-00030.fxye Ban
+    k 1', 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1']
+
+    (['Comments'], <class 'list'>, ['Co_PCP_Act_d900-00030.tif #0001 Azm= 180.00'])
+    *****
+
+    ***** before.txt
+    (['Sample Parameters', 'Scale'], <class 'list'>, [1.276313196832068, True])
+    (['Sample Parameters', 'Type'], <class 'str'>, 'Debye-Scherrer')
+    (['Sample Parameters', 'Absorption'], <class 'list'>, [0.0, False])
+    ***** AFTER.TXT
+    (['Sample Parameters', 'Scale'], <class 'list'>, [1.276313196832068, True])
+    (['Sample Parameters', 'Type'], <class 'str'>, 'Bragg-Brentano')
+    (['Sample Parameters', 'Absorption'], <class 'list'>, [0.0, False])
+    *****
+
+    bht14: toby$ diff before.txt after.txt 
+    103c103
+    < , 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1', 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1'])
+    ---
+    > , 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1', 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1', 'PWDR Co_PCP_Act_d900-00030.fxye Bank 1'])
+    111c111
+    < (['Sample Parameters', 'Type'], <class 'str'>, 'Debye-Scherrer')
+    ---
+    > (['Sample Parameters', 'Type'], <class 'str'>, 'Bragg-Brentano')
+
+From this we can see there are two changes that took place. One is fairly obscure, 
+where the histogram name is added to a list, which can be ignored, but the second change 
+occurs in a straight-forward way and we discover that a simple call::
+
+    h.setHistEntryValue(['Sample Parameters', 'Type'], 'Bragg-Brentano')
+
+can be used to change the histogram type. 
 
 .. _CodeExamples:
 
@@ -2033,6 +2126,11 @@ class G2Project(G2ObjectWrapper):
         Automatically checks for an instrument parameter file, or one can be
         provided. Note that in unix fashion, "~" can be used to indicate the
         home directory (e.g. ~/G2data/data.fxye).
+
+        Note that the data type (x-ray/CW neutron/TOF) for the histogram 
+        will be set from the instrument parameter file. The instrument
+        geometry is assumed to be Debye-Scherrer except for 
+        dual-wavelength x-ray, where Bragg-Brentano is assumed. 
 
         :param str datafile: The powder data file to read, a filename.
         :param str iparams: The instrument parameters file, a filename.
@@ -4265,6 +4363,62 @@ class G2PwdrData(G2ObjectWrapper):
             np.zeros_like(x), # obs-calc profiles
             ]
         self.data['Limits'] = [(1000*Tmin, 1000*Tmax), [1000*Tmin, 1000*Tmax]]
+
+    def getHistEntryList(self, keyname=''):
+        """Returns a dict with histogram setting values. 
+
+        :param str keyname: an optional string. When supplied only entries
+          where at least one key contains the specified string are reported.
+          Case is ignored, so 'sg' will find entries where one of the keys 
+          is 'SGdata', etc. 
+        :returns: a set of histogram dict keys. 
+
+        See :meth:`G2Phase.getHAPentryList` for a related example.
+
+        """
+        return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
+
+    def getHistEntryValue(self, keylist):
+        """Returns the histogram control value associated with a list of keys. 
+        Where the value returned is a list, it may be used as the target of 
+        an assignment (as in 
+        ``getHistEntryValue(``...``)[``...``] = ``val) 
+        to set a value inside a list.        
+
+        :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getHistEntryList`. 
+
+        :returns: a histogram setting; may be a int, float, bool, list,...
+
+        See :meth:`G2Phase.getHAPentryValue` for a related example.
+
+        """
+        d = self.data
+        for key in keylist:
+            d = d[key]
+        return d
+
+    def setHistEntryValue(self, keylist, newvalue):
+        """Sets a histogram control value associated with a list of keys. 
+
+       :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getHistEntryList`. 
+
+        :param newvalue: a new value for the hist setting. The type must be
+          the same as the initial value, but if the value is a container 
+          (list, tuple, np.array,...) the elements inside are not checked.
+
+        See :meth:`G2Phase.setHAPentryValue` for a related example.
+
+        """
+        oldvalue = self.getHistEntryValue(keylist)
+        if type(oldvalue) is not type(newvalue):
+            raise G2ScriptException("getHistEntryValue error: types do not agree for keys {}".format(keylist))
+        d = self.data
+        for key in keylist:
+            dlast = d
+            d = d[key]
+        dlast[key] = newvalue
         
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
@@ -5010,6 +5164,151 @@ class G2Phase(G2ObjectWrapper):
         G2fil.G2Print('Copied item(s) {} from dict'.format(list(copydict.keys())))
         G2fil.G2Print(' to histogram(s) {}'.format([self._decodeHist(h) for h in targethistlist]))
 
+    def getPhaseEntryList(self, keyname=''):
+        """Returns a dict with control values. 
+
+        :param str keyname: an optional string. When supplied only entries
+          where at least one key contains the specified string are reported.
+          Case is ignored, so 'sg' will find entries where one of the keys 
+          is 'SGdata', etc. 
+        :returns: a set of phase dict keys. Note that HAP items, while 
+          technically part of the phase entries, are not included. 
+
+        See :meth:`getHAPentryList` for a related example.
+
+        """
+        return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
+
+    def getPhaseEntryValue(self, keylist):
+        """Returns the value associated with a list of keys. 
+        Where the value returned is a list, it may be used as the target of 
+        an assignment (as in 
+        ``getPhaseEntryValue(``...``)[``...``] = ``val) 
+        to set a value inside a list.        
+
+        :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getPhaseEntryList`. 
+
+        :returns: a phase setting; may be a int, float, bool, list,...
+
+        See :meth:`getHAPentryValue` for a related example.
+
+        """
+        d = self.data
+        for key in keylist:
+            d = d[key]
+        return d
+
+    def setPhaseEntryValue(self, keylist, newvalue):
+        """Sets a phase control value associated with a list of keys. 
+
+        :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getPhaseEntryList`. 
+
+        :param newvalue: a new value for the phase setting. The type must be
+          the same as the initial value, but if the value is a container 
+          (list, tuple, np.array,...) the elements inside are not checked.
+
+        See :meth:`setHAPentryValue` for a related example.
+
+        """
+        oldvalue = self.getPhaseEntryValue(keylist)
+        if type(oldvalue) is not type(newvalue):
+            raise G2ScriptException("getPhaseEntryValue error: types do not agree for keys {}".format(keylist))
+        d = self.data
+        for key in keylist:
+            dlast = d
+            d = d[key]
+        dlast[key] = newvalue
+        
+    def getHAPentryList(self, histname=None, keyname=''):
+        """Returns a dict with HAP values. Optionally a histogram 
+        may be selected.
+
+        :param histname: is a histogram object (:class:`G2PwdrData`) or
+            a histogram name or the index number of the histogram.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase. If no histogram is specified, all histograms 
+            are selected. 
+        :param str keyname: an optional string. When supplied only entries
+          where at least one key contains the specified string are reported.
+          Case is ignored, so 'sg' will find entries where one of the keys 
+          is 'SGdata', etc. 
+        :returns: a set of HAP dict keys. 
+
+        Example: 
+
+        >>> p.getHAPentryList(0,'Scale')
+        [(['PWDR test Bank 1', 'Scale'], list, [1.0, False])]
+
+        """
+        if histname:
+            h = [self._decodeHist(histname)]
+        else:
+            h = []
+        return dictDive(self.data['Histograms'],keyname,h)
+
+    def getHAPentryValue(self, keylist):
+        """Returns the HAP value associated with a list of keys. Where the
+        value returned is a list, it may be used as the target of 
+        an assignment (as in 
+        ``getHAPentryValue(``...``)[``...``] = ``val) 
+        to set a value inside a list.
+
+        :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getHAPentryList`. Note the first entry is a histogram name. 
+          Example: ``['PWDR hist1.fxye Bank 1', 'Scale']``
+
+        :returns: HAP value
+
+        Example: 
+
+        >>> sclEnt = p.getHAPentryList(0,'Scale')[0]                                    >>> sclEnt
+        [(['PWDR test Bank 1', 'Scale'], list, [1.0, False])]
+        >>> p.getHAPentryValue(sclEnt[0])
+        [1.0, False]
+        >>> p.getHAPentryValue(sclEnt[0])[1] = True
+        >>> p.getHAPentryValue(sclEnt[0])
+        [1.0, True]
+
+        """
+        d = self.data['Histograms']
+        for key in keylist:
+            d = d[key]
+        return d
+
+    def setHAPentryValue(self, keylist, newvalue):
+        """Sets an HAP value associated with a list of keys. 
+
+        :param list keylist: a list of dict keys, typically as returned by 
+          :meth:`getHAPentryList`. Note the first entry is a histogram name. 
+          Example: ``['PWDR hist1.fxye Bank 1', 'Scale']``
+
+        :param newvalue: a new value for the HAP setting. The type must be
+          the same as the initial value, but if the value is a container 
+          (list, tuple, np.array,...) the elements inside are not checked.
+
+        Example: 
+
+        >>> sclEnt = p.getHAPentryList(0,'Scale')[0]
+        >>> p.getHAPentryValue(sclEnt[0])
+        [1.0, False]
+        >>> p.setHAPentryValue(sclEnt[0], (1, True))
+        GSASIIscriptable.G2ScriptException: setHAPentryValue error: types do not agree for keys ['PWDR test.fxye Bank 1', 'Scale']
+        >>> p.setHAPentryValue(sclEnt[0], [1, True])
+        >>> p.getHAPentryValue(sclEnt[0])
+        [1, True]
+
+        """
+        oldvalue = self.getHAPentryValue(keylist)
+        if type(oldvalue) is not type(newvalue):
+            raise G2ScriptException("setHAPentryValue error: types do not agree for keys {}".format(keylist))
+        d = self.data['Histograms']
+        for key in keylist:
+            dlast = d
+            d = d[key]
+        dlast[key] = newvalue
+    
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the 
     results for a refinement
@@ -6342,6 +6641,61 @@ def main():
     result = parser.parse_args()
     result.func(result)
 
+def dictDive(d,search="",keylist=[],firstcall=True,l=None):
+    '''Recursive routine to scan a nested dict. Reports a list of keys 
+    and the associated type and value for that key. 
+
+    :param dict d: a dict that will be scanned
+    :param str search: an optional search string. If non-blank,
+       only entries where one of the keys constains search (case ignored)
+    :param list keylist: a list of keys to apply to the dict.
+    :param bool firstcall: do not specify
+    :param list l: do not specify
+
+    :returns: a list of keys located by this routine
+       in form [([keylist], type, value),...] where if keylist is ['a','b','c']
+       then d[['a']['b']['c'] will have the value.
+
+    This routine can be called in a number of ways, as are shown in a few 
+    examples: 
+
+    >>> for i in G2sc.dictDive(p.data['General'],'paw'): print(i)
+    ... 
+    (['Pawley dmin'], <class 'float'>, 1.0)
+    (['doPawley'], <class 'bool'>, False)
+    (['Pawley dmax'], <class 'float'>, 100.0)
+    (['Pawley neg wt'], <class 'float'>, 0.0)
+    >>>
+    >>> for i in G2sc.dictDive(p.data,'paw',['General']): print(i)
+    ... 
+    (['General', 'Pawley dmin'], <class 'float'>, 1.0)
+    (['General', 'doPawley'], <class 'bool'>, False)
+    (['General', 'Pawley dmax'], <class 'float'>, 100.0)
+    (['General', 'Pawley neg wt'], <class 'float'>, 0.0)
+    >>>
+    >>> for i in G2sc.dictDive(p.data,'',['General','doPawley']): print(i)
+    ... 
+    (['General', 'doPawley'], <class 'bool'>, False)
+
+    '''
+    if firstcall:
+        for k in keylist:
+            d = d[k]
+        l = []
+        first = True
+    if type(d) is dict:
+        [dictDive(d[key],search,keylist+[key],False,l) for key in d]
+    elif search:
+        for key in keylist:
+            if search.lower() in key.lower():
+                l.append((keylist,type(d),d))
+                break
+        return
+    else:
+        l.append((keylist,type(d),d))
+    if firstcall:
+        return l
+        
 if __name__ == '__main__':
     #fname='/tmp/corundum-template.gpx'
     #prj = G2Project(fname)

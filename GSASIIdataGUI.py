@@ -5154,7 +5154,7 @@ class GSASII(wx.Frame):
         if 'Seq Data' in Controls: 
             histNames = Controls['Seq Data']
         else: # patch from before Controls['Seq Data'] was implemented
-            histNames = G2stIO.GetHistogramNames(self.GPXfile,['PWDR',])
+            histNames = G2stIO.GetHistogramNames(self.GSASprojectfile,['PWDR',])
         if Controls.get('Reverse Seq'):
             histNames.reverse()
         # select it

@@ -703,7 +703,7 @@ This can be run with a command like this::
 
 (This will create file ``before.txt``, which will contain hundreds of lines.) 
 
-At this point open the project file, ``test.py`` in the GSAS-II GUI and 
+At this point open the project file, ``test.gpx`` in the GSAS-II GUI and 
 change in Histogram/Sample Parameters the diffractometer type from Debye-Scherrer 
 mode to Bragg-Brentano and then save the file. 
 
@@ -712,8 +712,9 @@ Rerun the previous script creating a new file::
        python test.py > after.txt
 
 Finally look for the differences between files ``before.txt`` and ``after.txt`` using a tool 
-such as diff on Linux/OS X or fc in Windows. 
+such as diff (on Linux/OS X) or fc (in Windows).
 
+in Windows:: 
 
     Z:\>fc before.txt after.txt
     Comparing files before.txt and after.txt
@@ -739,6 +740,8 @@ such as diff on Linux/OS X or fc in Windows.
     (['Sample Parameters', 'Type'], <class 'str'>, 'Bragg-Brentano')
     (['Sample Parameters', 'Absorption'], <class 'list'>, [0.0, False])
     *****
+
+in Linux/Mac:: 
 
     bht14: toby$ diff before.txt after.txt 
     103c103
@@ -4382,7 +4385,7 @@ class G2PwdrData(G2ObjectWrapper):
         """Returns the histogram control value associated with a list of keys. 
         Where the value returned is a list, it may be used as the target of 
         an assignment (as in 
-        ``getHistEntryValue(``...``)[``...``] = ``val) 
+        ``getHistEntryValue(...)[...] = val``) 
         to set a value inside a list.        
 
         :param list keylist: a list of dict keys, typically as returned by 
@@ -4401,14 +4404,14 @@ class G2PwdrData(G2ObjectWrapper):
     def setHistEntryValue(self, keylist, newvalue):
         """Sets a histogram control value associated with a list of keys. 
 
+        See :meth:`G2Phase.setHAPentryValue` for a related example.
+
        :param list keylist: a list of dict keys, typically as returned by 
           :meth:`getHistEntryList`. 
 
         :param newvalue: a new value for the hist setting. The type must be
           the same as the initial value, but if the value is a container 
           (list, tuple, np.array,...) the elements inside are not checked.
-
-        See :meth:`G2Phase.setHAPentryValue` for a related example.
 
         """
         oldvalue = self.getHistEntryValue(keylist)
@@ -5183,7 +5186,7 @@ class G2Phase(G2ObjectWrapper):
         """Returns the value associated with a list of keys. 
         Where the value returned is a list, it may be used as the target of 
         an assignment (as in 
-        ``getPhaseEntryValue(``...``)[``...``] = ``val) 
+        ``getHistEntryValue(...)[...] = val``) 
         to set a value inside a list.        
 
         :param list keylist: a list of dict keys, typically as returned by 

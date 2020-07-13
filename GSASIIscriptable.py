@@ -675,10 +675,11 @@ There are several hundred different types of values that can be stored in a
 GSAS-II project (.gpx) file. All can be changed from the GUI but only a 
 subset have direct mechanism implemented for change from the GSASIIscriptable 
 API. In practice all parameters in a .gpx file can be edited via scripting, 
-but sometimes determining what should be changed to implement a change can be 
-complex. 
-Several routines, :meth:`G2Phase.getHAPentryValue`, 
-:meth:`G2Phase.getPhaseEntryValue` and :meth:`G2PwdrData.getHistEntryList`
+but sometimes determining what should be set to implement a parameter 
+change can be complex. 
+Several routines, :meth:`G2Phase.getHAPentryList`, 
+:meth:`G2Phase.getPhaseEntryList` and :meth:`G2PwdrData.getHistEntryList` 
+(and their related get...Value and set.Value entries), 
 provide a mechanism to discover what the GUI is changing inside a .gpx file. 
 
 As an example, a user in changing the data type for a histogram from Debye-Scherrer 
@@ -4378,6 +4379,10 @@ class G2PwdrData(G2ObjectWrapper):
 
         See :meth:`G2Phase.getHAPentryList` for a related example.
 
+        .. seealso::
+            :meth:`getHistEntryValue`
+            :meth:`setHistEntryValue`
+
         """
         return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
 
@@ -5179,6 +5184,10 @@ class G2Phase(G2ObjectWrapper):
 
         See :meth:`getHAPentryList` for a related example.
 
+        .. seealso::
+            :meth:`getPhaseEntryValue`
+            :meth:`setPhaseEntryValue`
+
         """
         return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
 
@@ -5186,7 +5195,7 @@ class G2Phase(G2ObjectWrapper):
         """Returns the value associated with a list of keys. 
         Where the value returned is a list, it may be used as the target of 
         an assignment (as in 
-        ``getHistEntryValue(...)[...] = val``) 
+        ``getPhaseEntryValue(...)[...] = val``) 
         to set a value inside a list.        
 
         :param list keylist: a list of dict keys, typically as returned by 
@@ -5244,6 +5253,10 @@ class G2Phase(G2ObjectWrapper):
         >>> p.getHAPentryList(0,'Scale')
         [(['PWDR test Bank 1', 'Scale'], list, [1.0, False])]
 
+        .. seealso::
+            :meth:`getHAPentryValue`
+            :meth:`setHAPentryValue`
+
         """
         if histname:
             h = [self._decodeHist(histname)]
@@ -5255,7 +5268,7 @@ class G2Phase(G2ObjectWrapper):
         """Returns the HAP value associated with a list of keys. Where the
         value returned is a list, it may be used as the target of 
         an assignment (as in 
-        ``getHAPentryValue(``...``)[``...``] = ``val) 
+        ``getHAPentryValue(...)[...] = val``) 
         to set a value inside a list.
 
         :param list keylist: a list of dict keys, typically as returned by 

@@ -31,7 +31,6 @@ to control scrolling.
 from __future__ import division, print_function
 import platform
 import os
-import os.path
 import wx
 import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
@@ -1423,7 +1422,6 @@ def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5,
        Defaults to 0.
     :param float cMin: Minimum along the *c* direction (fractional units).
        Defaults to 0.
-    :
     '''
 
     VDWdict = dict(zip(data['General']['AtomTypes'],data['General']['vdWRadii']))
@@ -4627,7 +4625,7 @@ def UpdatePhaseData(G2frame,Item,data):
 ################################################################################
 
     def UpdateRMC():
-        ''' Present the controls for running fullrmc or RMCprofile
+        ''' Present the controls for running fullrmc or RMCProfile
         '''
         global runFile
         def OnRMCselect(event):
@@ -4704,31 +4702,26 @@ def UpdatePhaseData(G2frame,Item,data):
                 del RMCPdict['Swaps'][swap]
                 wx.CallAfter(UpdateRMC)
                 
-            def OnSwapAtSel(event):
-                Obj = event.GetEventObject()
-                swap,i = Indx[Obj.GetId()]
-                RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
-                                       
             Indx = {}
             atChoice = RMCPdict['atSeq']            
             if G2frame.RMCchoice == 'fullrmc':
                 atChoice = atNames
-            swapSizer = wx.FlexGridSizer(4,5,5)
-            swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
+            swapSizer = wx.FlexGridSizer(6,5,5)
+            swapLabels = [' ','Atom-A','Atom-B',' Swap prob.',' ','delete']
             for lab in swapLabels:
                 swapSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
             for ifx,swap in enumerate(RMCPdict['Swaps']):
-                delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                swapSizer.Add((20,-1))
+                for i in [0,1]:
+                    if swap[i] not in atChoice: swap[i] = atChoice[0]
+                    atmSel = G2G.EnumSelector(G2frame.FRMC,swap,i,atChoice)
+                    swapSizer.Add(atmSel,0,WACV)
+                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,xmin=0.01,xmax=0.5,size=(50,25)),0,WACV)
+                swapSizer.Add((20,-1))
+                delBtn = wx.Button(G2frame.FRMC,label='Del',style=wx.BU_EXACTFIT)
                 delBtn.Bind(wx.EVT_BUTTON,OnDelSwap)
                 Indx[delBtn.GetId()] = ifx
                 swapSizer.Add(delBtn,0,WACV)
-                for i in [0,1]:
-                    atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                    atmSel.SetStringSelection(swap[i])
-                    atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
-                    Indx[atmSel.GetId()] = [ifx,i]
-                    swapSizer.Add(atmSel,0,WACV)
-                swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,xmin=0.01,xmax=0.5,size=(50,25)),0,WACV)
             return swapSizer
         
         def GetPairSizer(RMCdict):
@@ -4804,7 +4797,7 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnDelBtn(event):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
-                RMCPdict['files'][fil][0] = 'Select'
+                RMCPdict['files'][fil][0] = 'Select file'
                 RMCPdict['ReStart'][0] = True
                 wx.CallAfter(UpdateRMC)
                             
@@ -4816,13 +4809,70 @@ def UpdatePhaseData(G2frame,Item,data):
             fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
             titleSizer.Add(fitscale,0,WACV)
             mainSizer.Add(titleSizer,0,WACV)
-            ncol= 6
-            Heads = ['Name','File','Format','Weight','Plot','Delete']
             if G2frame.RMCchoice == 'fullrmc':
                 mainSizer.Add(wx.StaticText(G2frame.FRMC,
                     label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
-                Heads = ['Name','File','Weight','Plot','Corr','Delete']
-            fileSizer = wx.FlexGridSizer(ncol,5,5)
+                Heads = ['Name','File','Weight','type','Plot','Delete']
+                fileSizer = wx.FlexGridSizer(6,5,5)
+                Formats = ['RMC','GUDRUN','STOG']
+                for head in Heads:
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
+                for fil in RMCPdict['files']:
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=fil),0,WACV)
+                    Rfile = RMCPdict['files'][fil][0]
+                    filSel = wx.Button(G2frame.FRMC,label=Rfile)
+                    filSel.Bind(wx.EVT_BUTTON,OnFileSel)
+                    Indx[filSel.GetId()] = fil
+                    fileSizer.Add(filSel,0,WACV)
+                    if Rfile and os.path.exists(Rfile): # in case .gpx file is moved away from G(R), F(Q), etc. files
+                        fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1,
+                                                               size=(50,25)),0,WACV)
+                        #patch
+                        if len(RMCPdict['files'][fil]) < 4:
+                            RMCPdict['files'][fil].append(0)
+                        if len(RMCPdict['files'][fil]) < 5:
+                            RMCPdict['files'][fil].append(True)
+                        #end patch
+                        if 'G(r)' in fil:
+                            choices = 'G(r)-RMCProfile','G(r)-PDFFIT','g(r)'
+                            if type(RMCPdict['files'][fil][3]) is bool: RMCPdict['files'][fil][3] = 0
+                            fmtTyp = G2G.G2ChoiceButton(G2frame.FRMC,choices,RMCPdict['files'][fil],3)
+                        elif 'F(Q)' in fil:
+                            choices = 'F(Q)-RMCProfile','S(Q)-PDFFIT'
+                            if type(RMCPdict['files'][fil][3]) is bool: RMCPdict['files'][fil][3] = 0
+                            fmtTyp = G2G.G2ChoiceButton(G2frame.FRMC,choices,RMCPdict['files'][fil],3)
+                        else:
+                            fmtTyp = (-1,-1)
+                        fileSizer.Add(fmtTyp,0,WACV)
+                        plotBtn = wx.Button(G2frame.FRMC,label='Plot',style=wx.BU_EXACTFIT)
+                        plotBtn.Bind(wx.EVT_BUTTON,OnPlotBtn)
+                        Indx[plotBtn.GetId()] = fil
+                        fileSizer.Add(plotBtn,0,WACV)
+                        delBtn = wx.Button(G2frame.FRMC,label='Del',style=wx.BU_EXACTFIT)
+                        delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
+                        Indx[delBtn.GetId()] = fil
+                        fileSizer.Add(delBtn,0,WACV)
+                        if 'F(Q)' in fil:
+                            fileSizer.Add((-1,-1),0)
+                            corrChk = wx.CheckBox(G2frame.FRMC,label='Apply sinc convolution? ')
+                            corrChk.SetValue(RMCPdict['files'][fil][4])
+                            Indx[corrChk.GetId()] = fil
+                            corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
+                            fileSizer.Add(corrChk,0,WACV)
+                            fileSizer.Add((-1,-1),0)
+                            fileSizer.Add((-1,-1),0)
+                            fileSizer.Add((-1,-1),0)
+                            fileSizer.Add((-1,-1),0)
+                    else:
+                        RMCPdict['files'][fil][0] = 'Select file' # set filSel?
+                        fileSizer.Add((-1,-1),0)
+                        fileSizer.Add((-1,-1),0)
+                        fileSizer.Add((-1,-1),0)
+                        fileSizer.Add((-1,-1),0)
+                return fileSizer
+            # RMCProfile
+            Heads = ['Name','File','Format','Weight','Plot','Delete']
+            fileSizer = wx.FlexGridSizer(6,5,5)
             Formats = ['RMC','GUDRUN','STOG']
             for head in Heads:
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
@@ -4834,33 +4884,19 @@ def UpdatePhaseData(G2frame,Item,data):
                 Indx[filSel.GetId()] = fil
                 fileSizer.Add(filSel,0,WACV)
                 if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
-                    if G2frame.RMCchoice == 'RMCProfile':                        
-                        nform = 3
-                        if 'Xray' in fil: nform = 1
-                        fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
-                        Indx[fileFormat.GetId()] = fil
-                        fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
-                        fileSizer.Add(fileFormat,0,WACV)
+                    nform = 3
+                    if 'Xray' in fil: nform = 1
+                    fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
+                    Indx[fileFormat.GetId()] = fil
+                    fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
+                    fileSizer.Add(fileFormat,0,WACV)
                     fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1),0,WACV)
-                    plotBtn = wx.Button(G2frame.FRMC,label='Plot?')
+                    plotBtn = wx.Button(G2frame.FRMC,label='Plot?',style=wx.BU_EXACTFIT)
                     plotBtn.Bind(wx.EVT_BUTTON,OnPlotBtn)
                     Indx[plotBtn.GetId()] = fil
                     fileSizer.Add(plotBtn,0,WACV)
-                    if G2frame.RMCchoice == 'fullrmc':
-                        lab = 'Apply sinc convolution? '
-                        if 'G(r)' in fil:
-                            lab = 'Apply r*G(r) conversion? '
-                        corrChk = wx.CheckBox(G2frame.FRMC,label=lab)
-                        #patch
-                        if len(RMCPdict['files'][fil]) < 4:
-                            RMCPdict['files'][fil].append(True)
-                        #end patch
-                        corrChk.SetValue(RMCPdict['files'][fil][3])
-                        Indx[corrChk.GetId()] = fil
-                        corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
-                        fileSizer.Add(corrChk,0,WACV)
-                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    delBtn = wx.Button(G2frame.FRMC,label='Del',style=wx.BU_EXACTFIT)
                     delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
                     Indx[delBtn.GetId()] = fil
                     fileSizer.Add(delBtn,0,WACV)
@@ -4900,13 +4936,18 @@ def UpdatePhaseData(G2frame,Item,data):
            https://bachiraoun.github.io/fullrmc/index.html. ''',
                      caption='fullrmc not installed',style=wx.ICON_INFORMATION)
                 return
+            if int(fullrmc.__version__.split('.')[0]) < 5:
+                wx.MessageBox('This module requires fullrmc >= 5.0. You have {}.'.format(fullrmc.__version__) + 
+                        ' Revert to GSAS-II version <=4517 to use older versions of fullrmc. ',
+                     caption='fullrmc to old',style=wx.ICON_INFORMATION)
+                return
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence",     
  B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0,WACV)
+            #mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0,WACV)
             if not data['RMC']['fullrmc']:
                 Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
@@ -4916,15 +4957,15 @@ def UpdatePhaseData(G2frame,Item,data):
                 for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)',True],
-                          'Neutron reciprocal space data; F(Q): ':['Select',0.05,'F(Q)',True],
-                          'Xray real space data; G(r): ':['Select',0.01,'G(r)',True],
-                          'Xray reciprocal space data; F(Q): ':['Select',0.01,'F(Q)',True],}
-                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,'byMolec':True,
-                    'Natoms':1,'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
+                files = {'Neutron real space data; G(r): ':['Select',1.,'G(r)',0,True],
+                          'Neutron reciprocal space data; F(Q): ':['Select',1.,'F(Q)',0,True],
+                          'Xray real space data; G(r): ':['Select',1.,'G(r)',0,True],
+                          'Xray reciprocal space data; F(Q): ':['Select',1.,'F(Q)',0,True],}
+                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
+                    'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
                     'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
                     'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,'Torsions':[],'Torsion Weight':1.e-5,
-                    'atomPDB':'','Bond Weight':1.e-5,'min Contact':1.5}
+                    'Bond Weight':1.e-5,'min Contact':1.5,'periodicBound':True}
             RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
@@ -4959,45 +5000,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     fpath,fName = os.path.split(dlg.GetPath())
                     RMCPdict['moleculePdb'] = fName
                     pdbButton.SetLabel(fName)
-                    
-            def OnMakePDB(event):
-                if not ifBox:
-                    generalData = data['General']
-                    pName = generalData['Name'].replace(' ','_')
-                    pdbname = G2pwd.MakefullrmcPDB(pName,data,RMCPdict)
-                    RMCPdict['atomPDB'] = pdbname
-                    RMCPdict['ReStart'][0] = True
-                    print(pdbname+ ' written')
-                    return                    
-                if RMCPdict['moleculePdb'] == 'Select':
-                    wx.MessageDialog(G2frame,' You must select a source pdb file first','PDB generation error',
-                        wx.ICON_EXCLAMATION).ShowModal()
-                    return
-                dlg = wx.MessageDialog(G2frame,'''
-Warning - this step can take more than an hour; do you want to proceed?
-It will be run as a separate process, and a result is required for fullrmc.
-Make sure your parameters are correctly set.
-                    ''','Make big box pdb file',wx.YES_NO|wx.ICON_QUESTION)
-                try:
-                    result = dlg.ShowModal()
-                    if result in [wx.ID_YES,]:
-                        pdpy = G2pwd.MakePdparse(RMCPdict)
-                        import subprocess as sb
-                        batch = open('pdbparse.bat','w')
-                        batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
-                        batch.write(sys.exec_prefix+'\\python.exe %s\n'%pdpy)
-                        batch.write('pause')
-                        batch.close()
-                        sb.Popen('pdbparse.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
-                        RMCPdict['ReStart'][0] = True
-                    else:
-                        print(' Make PDB file for fullrmc abandonded')
-                finally:
-                    dlg.Destroy()
-                wx.CallAfter(UpdateRMC)
                 
             def OnAddAngle(event):
-                RMCPdict['Angles'].append(['','','',0.,0.])
+                RMCPdict['Angles'].append(['','','',0.,0.,0.,0.])
                 wx.CallAfter(UpdateRMC)
                 
             def OnAddTorsion(event):
@@ -5012,33 +5017,52 @@ Make sure your parameters are correctly set.
                     del RMCPdict['Angles'][angle]
                     wx.CallAfter(UpdateRMC)
                     
-                def OnAngleAtSel(event):
-                    Obj = event.GetEventObject()
-                    angle,i = Indx[Obj.GetId()]
-                    RMCPdict['Angles'][angle][i] = Obj.GetStringSelection()
+                # def OnAngleAtSel(event):
+                #     Obj = event.GetEventObject()
+                #     angle,i = Indx[Obj.GetId()]
+                #     RMCPdict['Angles'][angle][i] = Obj.GetStringSelection()
                                            
                 def SetRestart1(invalid,value,tc):
                     RMCPdict['ReStart'][1] = True
                 
                 Indx = {}
                 atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
-                angleSizer = wx.FlexGridSizer(6,5,5)
-                fxcnLabels = [' ','Atom-A','Atom-B','Atom-C',' min angle',' max angle']
-                for lab in fxcnLabels:
-                    angleSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+                angleSizer = wx.GridBagSizer(0,5)
+                fxcnLabels1 = [' ',' ','Central','',None,'angle restraint values (deg)',None,'search distance (A)']
+                fxcnLabels2 = [' ','Atom-A','Atom','Atom-C','min','max','from','to']
+                for i in range(8):
+                    if fxcnLabels1[i]:
+                        cspan=1
+                        coloff = 0
+                        if fxcnLabels1[i-1] is None:
+                            cspan=2
+                            coloff = 1
+                        angleSizer.Add(wx.StaticText(G2frame.FRMC,label=fxcnLabels1[i]),
+                                       (0,i-coloff),(1,cspan))
+                    if fxcnLabels2[i]:
+                        angleSizer.Add(wx.StaticText(G2frame.FRMC,wx.ID_ANY,
+                                                    label=fxcnLabels2[i],style=wx.CENTER),
+                                       (1,i))
+                row = 1
                 for ifx,angle in enumerate(RMCPdict['Angles']):
-                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    row += 1
+                    angleSizer.Add((30,-1),(row,0))
+                    for i in range(3):
+                        if angle[i] not in atChoice: angle[i] = atChoice[0]
+                        atmSel = G2G.EnumSelector(G2frame.FRMC,angle,i,atChoice)
+                        angleSizer.Add(atmSel,(row,1+i))
+                    for i in range(4):
+                        if i == 0:
+                            xmin,xmax=0.,180.
+                        elif i == 2:
+                            xmin,xmax=0.1,6.
+                        angleSizer.Add(
+                            G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3+i,xmin=xmin,xmax=xmax,
+                                OnLeave=SetRestart1,size=(50,25)),(row,4+i))
+                    delBtn = wx.Button(G2frame.FRMC,label='Del',style=wx.BU_EXACTFIT)
                     delBtn.Bind(wx.EVT_BUTTON,OnDelAngle)
                     Indx[delBtn.GetId()] = ifx
-                    angleSizer.Add(delBtn,0,WACV)
-                    for i in [0,1,2]:
-                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        atmSel.SetStringSelection(angle[i])
-                        atmSel.Bind(wx.EVT_COMBOBOX,OnAngleAtSel)
-                        Indx[atmSel.GetId()] = [ifx,i]
-                        angleSizer.Add(atmSel,0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,3,xmin=0.,xmax=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                    angleSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,angle,4,xmin=0.,xmax=180.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+                    angleSizer.Add(delBtn,(row,9))
                 return angleSizer
             
             def GetTorsionSizer():
@@ -5082,29 +5106,27 @@ Make sure your parameters are correctly set.
                 RMCPdict['useBVS'] = False
             if 'moleculePdb' not in RMCPdict:
                 RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
-            if 'byMolec' not in RMCPdict:
-                RMCPdict['byMolec'] = True
-            if 'Natoms' not in RMCPdict:
-                RMCPdict['Natoms'] = 1
             if 'FitScale' not in RMCPdict:
                 RMCPdict['FitScale'] = False
-            if 'atomPDB' not in RMCPdict:
-                RMCPdict['atomPDB'] = ''
+#            if 'atomPDB' not in RMCPdict:
+#                RMCPdict['atomPDB'] = ''
             if 'Angles' not in RMCPdict:
                 RMCPdict.update({'Angles':[],'Angle Weight':1.e-5,'Bond Weight':1.e-5,'Torsions':[],'Torsion Weight':1.e-5})
             if 'Cycles' not in RMCPdict:
                 RMCPdict['Cycles'] = 1
             if 'min Contact' not in RMCPdict:
                 RMCPdict['min Contact'] = 1.5
+            if 'periodicBound' not in RMCPdict:
+                RMCPdict['periodicBound'] = True
 #end patches
 
             generalData = data['General']
             cx,ct,cs,cia = generalData['AtomPtrs']
             atomData = data['Atoms']
             atNames = [atom[ct-1] for atom in atomData]
-            ifP1 = False
-            if generalData['SGData']['SpGrp'] == 'P 1':
-                ifP1 = True                
+            # ifP1 = False
+            # if generalData['SGData']['SpGrp'] == 'P 1':
+            #     ifP1 = True                
             ifBox = False
             if 'macromolecular' in generalData['Type']:
                 ifBox = True
@@ -5112,13 +5134,16 @@ Make sure your parameters are correctly set.
             if ifBox:
                 lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions, %s:'%Angstr),0,WACV)                
                 lineSizer.Add(GetBoxSizer(),0,WACV)
-            elif ifP1:
-                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
-                lineSizer.Add(GetSuperSizer(),0,WACV)
-                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
-                lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',xmin=1,size=[40,25]),0,WACV)
-            else:
-                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))
+#            elif ifP1:
+            lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
+            lineSizer.Add(GetSuperSizer(),0,WACV)
+            lineSizer.Add((5,-1))
+#            lineSizer.Add(G2G.G2CheckBox(G2frame.FRMC,'Impose periodic boundaries',RMCPdict,'periodicBound'),
+#                              0,WACV)
+#            lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
+#            lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',xmin=1,size=[40,25]),0,WACV)
+#            else:
+#                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))
             mainSizer.Add(lineSizer,0,WACV)
             if ifBox:
                 molecSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5130,18 +5155,7 @@ Make sure your parameters are correctly set.
                 molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'targetDensity',xmin=0.1,size=[60,25]),0,WACV)
                 molecSizer.Add(wx.StaticText(G2frame.FRMC,label=' max tries '),0,WACV)
                 molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'maxRecursion',xmin=1000,xmax=1000000,size=[60,25]),0,WACV)
-                makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB (slow!)')
-                makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
-                molecSizer.Add(makePDB,0,WACV)               
                 mainSizer.Add(molecSizer,0,WACV)
-            elif ifP1:
-                makePDB = wx.Button(G2frame.FRMC,label='Make big box PDB')
-                makePDB.Bind(wx.EVT_BUTTON,OnMakePDB)
-                mainSizer.Add(makePDB,0,WACV)
-            else:       #Abort because starting phase symmetry isn't P 1
-                SetPhaseWindow(G2frame.FRMC,mainSizer)
-                return
-                
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run file preparation:'),0,WACV)
             resLine = wx.BoxSizer(wx.HORIZONTAL)
@@ -5158,44 +5172,46 @@ Make sure your parameters are correctly set.
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             swapBox = wx.BoxSizer(wx.HORIZONTAL)
-            swapAdd = wx.Button(G2frame.FRMC,label='Add')
+            swapBox.Add(wx.StaticText(G2frame.FRMC,label='Atom swap probabiities: '),0,WACV)
+            swapAdd = wx.Button(G2frame.FRMC,label='Add',style=wx.BU_EXACTFIT)
             swapAdd.Bind(wx.EVT_BUTTON,OnAddSwap)
             swapBox.Add(swapAdd,0,WACV)
-            swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabiities: '),0,WACV)
             mainSizer.Add(swapBox,0,WACV)        
             if len(RMCPdict['Swaps']):
                 mainSizer.Add(GetSwapSizer(RMCPdict),0,WACV)            
 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Geometry constraints && restraints'),0,WACV)
             distBox = wx.BoxSizer(wx.HORIZONTAL)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' Distance constraints, weight: :'),0,WACV)        
             distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
             distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',xmin=0.,xmax=4.,size=(50,25)),0,WACV)            
             mainSizer.Add(distBox,0,WACV)
-            if RMCPdict['byMolec']:
-                mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
-                
-                angBox = wx.BoxSizer(wx.HORIZONTAL)
-                angAdd = wx.Button(G2frame.FRMC,label='Add')
-                angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
-                angBox.Add(angAdd,0,WACV)
-                angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
-                angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
-                mainSizer.Add(angBox,0,WACV)
-                if len(RMCPdict['Angles']):
-                    mainSizer.Add(GetAngleSizer(),0,WACV)
-                    
-                torBox = wx.BoxSizer(wx.HORIZONTAL)
-                torAdd = wx.Button(G2frame.FRMC,label='Add')
-                torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
-                torBox.Add(torAdd,0,WACV)
-                torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints, weight: '),0,WACV)
-                torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
-                mainSizer.Add(torBox,0,WACV)
-                if len(RMCPdict['Torsions']):
-                    mainSizer.Add(GetTorsionSizer(),0,WACV)
+            mainSizer.Add(GetPairSizer(RMCPdict),0,WACV)
+
+            mainSizer.Add((-1,10))
+            angBox = wx.BoxSizer(wx.HORIZONTAL)
+            angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
+            angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
+            angBox.Add((20,-1))
+            angAdd = wx.Button(G2frame.FRMC,label='Add',style=wx.BU_EXACTFIT)
+            angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
+            angBox.Add(angAdd,0,WACV)
+            mainSizer.Add(angBox,0,WACV)
+            if len(RMCPdict['Angles']):
+                mainSizer.Add(GetAngleSizer(),0,WACV)
+
+            # Torsions are probably not implemented correctly, hide them for now
+            # torBox = wx.BoxSizer(wx.HORIZONTAL)
+            # torAdd = wx.Button(G2frame.FRMC,label='Add')
+            # torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
+            # torBox.Add(torAdd,0,WACV)
+            # torBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C-D torsion angle restraints (intracell only), weight: '),0,WACV)
+            # torBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Torsion Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
+            # mainSizer.Add(torBox,0,WACV)
+            # if len(RMCPdict['Torsions']):
+            #     mainSizer.Add(GetTorsionSizer(),0,WACV)
     
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(FileSizer(RMCPdict),0,WACV)
@@ -5599,30 +5615,21 @@ Make sure your parameters are correctly set.
         
     def OnSetupRMC(event):
         generalData = data['General']
-        pName = generalData['Name'].replace(' ','_')
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
         if G2frame.RMCchoice == 'fullrmc':
-            DisAglCtls = {}
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
-            if dlg.ShowModal() == wx.ID_OK:
-                DisAglCtls = dlg.GetData()
-                if 'H' not in DisAglCtls['AtomTypes']:
-                    DisAglCtls['AtomTypes'].append('H')
-                    DisAglCtls['AngleRadii'].append(0.5)
-                    DisAglCtls['BondRadii'].append(0.5)
-            dlg.Destroy()
-            generalData['DisAglCtls'] = DisAglCtls
+            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+            pName = pName.replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
-            fname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
-            if fname is None:
-                wx.MessageDialog(G2frame,' Big box pdb file is missing; fullrmc will not run','Missing pdb file',wx.OK).ShowModal()
-            else:    
-                print('fullrmc file %s build completed'%fname)
+            # debug stuff
+            import imp
+            imp.reload(G2pwd)
+            # end debug stuff            
+            rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
+            print('build of fullrmc file {} completed'.format(rname))
         else:
+            pName = generalData['Name'].replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
             PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,RMCPdict['histogram'][0])
@@ -5666,24 +5673,37 @@ Make sure your parameters are correctly set.
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             
     def OnRunRMC(event):
-        
+        '''Run a previously created RMCProfile/fullrmc script
+        '''
         generalData = data['General']
-        pName = generalData['Name'].replace(' ','_')
         if G2frame.RMCchoice == 'fullrmc':
+            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+            pName = pName.replace(' ','_')
+            rname = pName+'-fullrmc.py'
+            if not os.path.exists(rname):
+                G2G.G2MessageBox(G2frame,
+                    'The fullrmc script has not been created. Running setup.',
+                    'Not setup')
+                OnSetupRMC(event)
             RMCPdict = data['RMC']['fullrmc']
-            wx.MessageBox(''' For use of fullrmc, please cite:
-      Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with
-      Machine Learning and Artificial Intelligence,
+            rmcname = pName+'.rmc'
+            if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
+                G2G.G2MessageBox(G2frame,
+                    '''You have asked to restart fullrmc but have an existing 
+                    run as {}. You must manually delete this directory if 
+                    you wish to restart or change the restart checkbox to 
+                    continue from the previous results. 
+                    '''.format(rmcname),'Restart or Continue?')
+                # TODO: could do this for the user with:
+                #import shutil
+                #shutil.rmtree(rmcname)
+            G2G.G2MessageBox(G2frame,'''For use of fullrmc, please cite:
+
+      "Fullrmc, a Rigid Body Reverse Monte Carlo 
+      Modeling Package Enabled with Machine Learning 
+      and Artificial Intelligence",
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
-      doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
-            rmcname = pName+'.rmc'            
-            while os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
-                msg = wx.MessageBox(''' fullrmc will fail to restart if %s exists. You must delete %s by hand now.'''%(rmcname,rmcname),
-                    caption='fullrmc file error',style=wx.ICON_EXCLAMATION|wx.OK|wx.CANCEL)
-                if msg != wx.OK:
-                    return
-            if os.path.isfile('pdbparser_0.log'):
-                os.remove('pdbparser_0.log')            
+      DOI: https://doi.org/10.1002/jcc.24304''','Please cite fullrmc')
             ilog = 0
             while True:
                 logname = '%s_%d.log'%(pName,ilog)
@@ -5692,25 +5712,33 @@ Make sure your parameters are correctly set.
                 else:
                     break
                 ilog += 1
-# TBD - remove filedialog & use defined run.py file name here
-            rname = pName+'-run.py'
-            # dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
-            #     wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
-            # try:
-            #     if dlg.ShowModal() == wx.ID_OK:
-            #         rname = dlg.GetPath()
-            #     else:
-            #         return
-            # finally:
-            #     dlg.Destroy()
             import subprocess as sb
-            batch = open('fullrmc.bat','w')
-            batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
-            batch.write(sys.exec_prefix+'\\python.exe '+rname+'\n')
-            batch.write('pause')
-            batch.close()
-            RMCPdict['pid'] = sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
+            if sys.platform.lower().startswith('win'):
+                batch = open('fullrmc.bat','w')
+                batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
+                batch.write(sys.exec_prefix+'\\python.exe '+rname+'\n')
+                batch.write('pause')
+                batch.close()
+                sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+            else:
+                batch = open('fullrmc.sh','w')
+                batch.write('#!/bin/bash\n')
+                activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
+                batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
+                if os.path.exists(activate):
+                    batch.write('source ' + activate + ' ' +
+                                os.environ['CONDA_DEFAULT_ENV'] +'\n')
+                    batch.write('python ' + rname + '\n')
+                else:
+                    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
+                batch.close()
+                if sys.platform == "darwin":
+                    GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
+                else:
+                    # TODO: better to create this in a new terminal on Linux
+                    sb.Popen(['/bin/bash','fullrmc.sh'])
         else:
+            pName = generalData['Name'].replace(' ','_')
             RMCPdict = data['RMC']['RMCProfile']
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
             if rmcfile is None:
@@ -5767,212 +5795,232 @@ Make sure your parameters are correctly set.
             
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
+                
+            #dlg = wx.DirDialog (None, "Choose fullrmc directory", "",
+            #        wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
             RMCPdict = data['RMC']['fullrmc']
             generalData = data['General']
-            pName = generalData['Name'].replace(' ','_')
-            import psutil
-            pid = RMCPdict.get('pid',-1)
-            Proc = None
-            if pid and psutil.pid_exists(pid):
-                proc = psutil.Process(pid).children()
-                for child in proc:
-                    if 'conhost' in child.name():       #probably very Windows specific
-                        Proc = child
+            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+            pName = pName.replace(' ','_')
+            engineFilePath = pName+'.rmc'
+            if not os.path.exists(engineFilePath):
+                dlg = wx.FileDialog(self, 'Open fullrmc directory',
+                                        defaultFile='*.rmc',
+                                        wildcard='*.rmc')
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        engineFilePath = dlg.GetPath()
+                    else:
+                        return
+                finally:
+                    dlg.Destroy()
+                engineFilePath = os.path.splitext(engineFilePath)[0] + '.rmc'
+                if not os.path.exists(engineFilePath): return
+            # import psutil
+            # pid = RMCPdict.get('pid',-1)
+            # Proc = None
+            # if pid and psutil.pid_exists(pid):
+            #     proc = psutil.Process(pid).children()
+            #     for child in proc:
+            #         if 'conhost' in child.name():       #probably very Windows specific
+            #             Proc = child
             from fullrmc import Engine
             # load
-            engineFilePath = pName+'.rmc'
+            GSASIIpath.IPyBreak()
             ENGINE = Engine(path=None)
+            ENGINE.load(engineFilePath)
+            
+            # try:
+            #     if engineFilePath is not None:
+            #         result, mes = ENGINE.is_engine(engineFilePath, mes=True)
+            #         if result:
+            #             if Proc is not None:
+            #                 Proc.suspend()
+            #             ENGINE = ENGINE.load(engineFilePath)
             eNames = ['Total',]
+            found = False
             nObs = [0,]
             try:
-                if engineFilePath is not None:
-                    result, mes = ENGINE.is_engine(engineFilePath, mes=True)
-                    if result:
-                        if Proc is not None:
-                            Proc.suspend()
-                        ENGINE = ENGINE.load(engineFilePath)
-                        found = False
-                        for frame in list(ENGINE.frames):
-                            ENGINE.set_used_frame(frame)
-                            FRitems = ENGINE.constraints
-                            for item in FRitems:
-                                sitem = str(type(item))
-                                if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
-                                    nameId = 'X'
-                                    if 'neutron' in item.weighting:
-                                        nameId = 'N'
-                                    found = True
-                                    Xlab = r'$\mathsf{r,\AA}$'
-                                    Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
-                                    title = ' g(r)%s for '%nameId
-                                    if 'StructureFactor' in sitem:
-                                        eNames.append('S(Q)'+nameId)
-                                        Xlab = r'$\mathsf{Q,\AA^{-1}}$'
-                                        Ylab = 'S(Q)'
-                                        title = ' S(Q)%s for '%nameId
-                                    else:
-                                        eNames.append('g(r)'+nameId)
-                                    dataDict= item.get_constraints_properties(frame)
-                                    X = dataDict['frames-experimental_x'][0]
-                                    Y = dataDict['frames-experimental_y'][0]
-                                    nObs.append(X.shape[0])
-                                    rdfDict = item.get_constraint_value()
-                                    if 'total' not in rdfDict:
-                                        print('No data yet - wait for a save')
-                                        ENGINE.close()
-                                        if Proc is not None:
-                                            Proc.resume()
-                                        return
-                                    Z = rdfDict['total']
-                                    XY = [[X,Z],[X,Y]]
-                                    Names = ['Calc','Obs']
-                                    G2plt.PlotXY(G2frame,XY,labelX=Xlab,
-                                        labelY=Ylab,newPlot=True,Title=title+pName,
-                                        lines=True,names=Names)
-                                    PXY = []
-                                    PXYT = []
-                                    Names = []
-                                    NamesT = []
-                                    for item in rdfDict:
-                                        if 'va' in item:
-                                            continue
-                                        if 'rdf' not in item and 'g(r)' in title:
-                                            Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                                            PXYT.append([X,1.+rdfDict[item]/X])
-                                        else:
-                                            PXYT.append([X,rdfDict[item]])
-                                        NamesT.append(item)
-                                        if 'total' in item:
-                                            if 'rdf' not in item and 'g(r)' in title:
-                                                Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                                                PXY.append([X,1.+rdfDict[item]/X])
-                                            else:
-                                                PXY.append([X,rdfDict[item]])
-                                            Names.append(item)
-                                    G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,
-                                        labelY=Ylab,newPlot=True,Title=' All partials of '+title+pName,
-                                        lines=True,names=NamesT)
-                                    G2plt.PlotXY(G2frame,PXY,labelX=Xlab,
-                                        labelY=Ylab,newPlot=True,Title=' Total partials of '+title+pName,
-                                        lines=True,names=Names)
-                                    
+                for frame in list(ENGINE.frames):
+                    ENGINE.set_used_frame(frame)
+                    for item in ENGINE.constraints:
+                        sitem = str(type(item))
+                        if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
+                            nameId = 'X'
+                            if 'neutron' in item.weighting:
+                                nameId = 'N'
+                            found = True
+                            Xlab = r'$\mathsf{r,\AA}$'
+                            Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
+                            title = ' g(r)%s for '%nameId
+                            if 'StructureFactor' in sitem:
+                                eNames.append('S(Q)'+nameId)
+                                Xlab = r'$\mathsf{Q,\AA^{-1}}$'
+                                Ylab = 'S(Q)'
+                                title = ' S(Q)%s for '%nameId
+                            else:
+                                eNames.append('g(r)'+nameId)
+                            dataDict= item.get_constraints_properties(frame)
+                            X = dataDict['frames-experimental_x'][0]
+                            Y = dataDict['frames-experimental_y'][0]
+                            nObs.append(X.shape[0])
+                            rdfDict = item.get_constraint_value()
+                            if 'total' not in rdfDict:
+                                print('No data yet - wait for a save')
+                                #ENGINE.close()
+                                #if Proc is not None:
+                                #    Proc.resume()
+                                return
+                            Z = rdfDict['total']
+                            XY = [[X,Z],[X,Y]]
+                            Names = ['Calc','Obs']
+                            G2plt.PlotXY(G2frame,XY,labelX=Xlab,
+                                labelY=Ylab,newPlot=True,Title=title+pName,
+                                lines=True,names=Names)
+                            PXY = []
+                            PXYT = []
+                            Names = []
+                            NamesT = []
+                            for item in rdfDict:
+                                if 'va' in item:
+                                    continue
+                                if 'rdf' not in item and 'g(r)' in title:
+                                    Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                                    PXYT.append([X,1.+rdfDict[item]/X])
                                 else:
-                                    found = True
-                                    if 'BondConstraint' in sitem:
-                                        try:
-                                            bonds = item.get_constraint_value()['bondsLength']
-                                        except TypeError:
-                                            break
-                                        bondList = item.bondsList[:2]
-                                        atoms = ENGINE.get_original_data("allElements",frame)
-                                        bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
-                                        bondSet = list(set(bondNames))
-                                        Bonds = list(zip(bondNames,bonds))
-                                        for Bname in bondSet:
-                                            bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
-                                            G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title='%s Bond lengths for %s'%(Bname,pName),
-                                                PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
-                                            print(' %d %s bonds found'%(len(bondLens),Bname))
-                                    elif 'BondsAngleConstraint' in sitem:
-                                        angles = 180.*item.get_constraint_value()['angles']/np.pi
-                                        angleList = item.anglesList[:3]
-                                        atoms = ENGINE.get_original_data("allElements",frame)
-                                        angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
-                                        angleSet = list(set(angleNames))
-                                        Angles = list(zip(angleNames,angles))
-                                        for Aname in angleSet:
-                                            bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
-                                            G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
-                                                PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
-                                            print(' %d %s angles found'%(len(bondAngs),Aname))
-                                    elif 'DihedralAngleConstraint' in sitem:
-                                        impangles = 180.*item.get_constraint_value()['angles']/np.pi
-                                        impangleList = item.anglesList[:4]
-                                        print(' Dihedral angle chi^2 =  %2f'%item.standardError)
-                                        atoms = ENGINE.get_original_data("allElements",frame)
-                                        impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
-                                            atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
-                                        impangleSet = list(set(impangleNames))
-                                        impAngles = list(zip(impangleNames,impangles))
-                                        for Aname in impangleSet:
-                                            impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
-                                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title='%s Dihedral angles for %s'%(Aname,pName),
-                                                PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
-                                    elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
-                                        print(sitem+' not plotted')
+                                    PXYT.append([X,rdfDict[item]])
+                                NamesT.append(item)
+                                if 'total' in item:
+                                    if 'rdf' not in item and 'g(r)' in title:
+                                        Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                                        PXY.append([X,1.+rdfDict[item]/X])
                                     else:
-                                        print(sitem)
-                                        item.plot(show=True)
-                                        pass
-                            nObs[0] = np.sum(nObs[1:])
-                        if not found:
-                            print(' No saved information yet, wait until fullrmc does a Save')
-                            eNames = []
-                        ENGINE.close()      #return lock on ENGINE repository & close it
-                        if Proc is not None:
-                            Proc.resume()
+                                        PXY.append([X,rdfDict[item]])
+                                    Names.append(item)
+                            G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,
+                                labelY=Ylab,newPlot=True,Title=' All partials of '+title+pName,
+                                lines=True,names=NamesT)
+                            G2plt.PlotXY(G2frame,PXY,labelX=Xlab,
+                                labelY=Ylab,newPlot=True,Title=' Total partials of '+title+pName,
+                                lines=True,names=Names)
+
+                        else:
+                            found = True
+                            if 'BondConstraint' in sitem:
+                                try:
+                                    bonds = item.get_constraint_value()['bondsLength']
+                                except TypeError:
+                                    break
+                                bondList = item.bondsList[:2]
+                                atoms = ENGINE.get_original_data("allElements",frame)
+                                bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
+                                bondSet = list(set(bondNames))
+                                Bonds = list(zip(bondNames,bonds))
+                                for Bname in bondSet:
+                                    bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
+                                    G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title='%s Bond lengths for %s'%(Bname,pName),
+                                        PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
+                                    print(' %d %s bonds found'%(len(bondLens),Bname))
+                            elif 'BondsAngleConstraint' in sitem:
+                                angles = 180.*item.get_constraint_value()['angles']/np.pi
+                                angleList = item.anglesList[:3]
+                                atoms = ENGINE.get_original_data("allElements",frame)
+                                angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
+                                angleSet = list(set(angleNames))
+                                Angles = list(zip(angleNames,angles))
+                                for Aname in angleSet:
+                                    bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
+                                    G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
+                                        PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
+                                    print(' %d %s angles found'%(len(bondAngs),Aname))
+                            elif 'DihedralAngleConstraint' in sitem:
+                                impangles = 180.*item.get_constraint_value()['angles']/np.pi
+                                impangleList = item.anglesList[:4]
+                                print(' Dihedral angle chi^2 =  %2f'%item.standardError)
+                                atoms = ENGINE.get_original_data("allElements",frame)
+                                impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
+                                    atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
+                                impangleSet = list(set(impangleNames))
+                                impAngles = list(zip(impangleNames,impangles))
+                                for Aname in impangleSet:
+                                    impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
+                                    G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title='%s Dihedral angles for %s'%(Aname,pName),
+                                        PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
+                            elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
+                                print(sitem+' not plotted')
+                            else:
+                                print(sitem)
+                                item.plot(show=True)
+                                pass
+                    nObs[0] = np.sum(nObs[1:])
+                if not found:
+                    print(' No saved information yet, wait until fullrmc does a Save')
+                    eNames = []
+                #ENGINE.close()      #return lock on ENGINE repository & close it
+                #if Proc is not None:
+                #    Proc.resume()
             except AssertionError:
                  print("Can't open fullrmc engine while running")
-            loglines = []
-            ilog = 0
-            while True:
-                fname = '%s_%d.log'%(pName,ilog)
-                try:
-                    logfile = open(fname,'r')
-                    loglines += logfile.readlines()
-                    logfile.close()
-                except FileNotFoundError:
-                    break
-                ilog += 1
-            if not len(loglines):
-                print('no log file found')
-                return
-            start = 0
-            while True:
-                if start == len(loglines):
-                    print('No log info to plot')
-                    return
-                line = loglines[start]                
-                if 'Err:' in line:
-                    break
-                else:
-                    start += 1
-            Gen = []
-            Err = []
-            start -= 1
-            while True:
-                start += 1
-                try:
-                    line = loglines[start]
-                except:
-                    break
-                if 'Err' not in line:
-                    continue
-                items = line.split(' - ')
-                try:    # could be a trashed line at end
-                    errStr = items[5][:-1].split('Err:')[1]
-                    Err.append([float(val) for val in errStr.split(',')])
-                except ValueError:
-                    break
-                Gen.append(int(items[1].split('Gen:')[1]))
+            # loglines = []
+            # ilog = 0
+            # while True:
+            #     fname = '%s_%d.log'%(pName,ilog)
+            #     try:
+            #         logfile = open(fname,'r')
+            #         loglines += logfile.readlines()
+            #         logfile.close()
+            #     except FileNotFoundError:
+            #         break
+            #     ilog += 1
+            # if not len(loglines):
+            #     print('no log file found')
+            #     return
+            # start = 0
+            # while True:
+            #     if start == len(loglines):
+            #         print('No log info to plot')
+            #         return
+            #     line = loglines[start]                
+            #     if 'Err:' in line:
+            #         break
+            #     else:
+            #         start += 1
+            # Gen = []
+            # Err = []
+            # start -= 1
+            # while True:
+            #     start += 1
+            #     try:
+            #         line = loglines[start]
+            #     except:
+            #         break
+            #     if 'Err' not in line:
+            #         continue
+            #     items = line.split(' - ')
+            #     try:    # could be a trashed line at end
+            #         errStr = items[5][:-1].split('Err:')[1]
+            #         Err.append([float(val) for val in errStr.split(',')])
+            #     except ValueError:
+            #         break
+            #     Gen.append(int(items[1].split('Gen:')[1]))
             
-            Gen = np.array(Gen)
-            Err = np.array(Err)
-            nObs = np.array(nObs)
-            if np.any(nObs):
-                Err /= nObs[:Err.shape[1]]
-                ptstr1 = ''
-                ptstr2 = ''
-                for it,item in enumerate(eNames):
-                    ptstr1 += ' %s obs: %d'%(item,nObs[it])
-                    ptstr2 += ' %s reduced chi^2: %.5f'%(item,Err[-1][it])
-                print(ptstr1)
-                print(ptstr2)
-                Err = np.log10(Err)
-                XY = [[Gen,Erri] for Erri in Err.T]
-                G2plt.PlotXY(G2frame,XY,labelX='no. generated',
-                    labelY=r'$log_{10}$ (reduced $\mathsf{\chi^2})$',newPlot=True,Title='fullrmc residuals for '+pName,
-                    lines=True,names=eNames)
+            # Gen = np.array(Gen)
+            # Err = np.array(Err)
+            # nObs = np.array(nObs)
+            # if np.any(nObs):
+            #     Err /= nObs[:Err.shape[1]]
+            #     ptstr1 = ''
+            #     ptstr2 = ''
+            #     for it,item in enumerate(eNames):
+            #         ptstr1 += ' %s obs: %d'%(item,nObs[it])
+            #         ptstr2 += ' %s reduced chi^2: %.5f'%(item,Err[-1][it])
+            #     print(ptstr1)
+            #     print(ptstr2)
+            #     Err = np.log10(Err)
+            #     XY = [[Gen,Erri] for Erri in Err.T]
+            #     G2plt.PlotXY(G2frame,XY,labelX='no. generated',
+            #         labelY=r'$log_{10}$ (reduced $\mathsf{\chi^2})$',newPlot=True,Title='fullrmc residuals for '+pName,
+            #         lines=True,names=eNames)
                       
         else:
             generalData = data['General']
@@ -10232,11 +10280,12 @@ Make sure your parameters are correctly set.
                 selDict = {}
                 dups = []
                 assigned = []
+                atomsLabels = [a[0] for a in data['Atoms']]
                 for r in range(tbl.GetRowsCount()):
                     sel = tbl.GetValue(r,4).strip()
                     if sel == 'Create new': continue # ignore positions of new atoms
-                    if sel not in labelsChoices: continue
-                    atmNum = labelsChoices.index(sel)-1
+                    if sel not in atomsLabels: continue
+                    atmNum = atomsLabels.index(sel)
                     if atmNum < 0: continue
                     if atmNum in assigned:
                         if sel not in dups:
@@ -10417,7 +10466,7 @@ Make sure your parameters are correctly set.
                     Indx[torSlide.GetId()] = [t,ang]
                     Indx[ang.GetId()] = [t,torSlide]
                     TorSizer.Add(ang,0,WACV)                            
-                mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
+                mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0,WACV)
             if not matchTable: # not sure if this will ever be true

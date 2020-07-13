@@ -19,6 +19,7 @@ import time
 import os
 import os.path
 import subprocess as subp
+import datetime as dt
 import copy
 
 import numpy as np
@@ -32,6 +33,7 @@ import scipy.optimize as so
 import scipy.special as sp
 
 import GSASIIpath
+filversion = "$Revision$"
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -2510,266 +2512,299 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.close()
     return fname
 
-def FindBonds(Phase,RMCPdict):
-    generalData = Phase['General']
-    cx,ct,cs,cia = generalData['AtomPtrs']
-    atomData = Phase['Atoms']
-    Res = 'RMC'
-    if 'macro' in generalData['Type']:
-        Res = atomData[0][ct-3]
-    AtDict = {atom[ct-1]:atom[ct] for atom in atomData}
-    Pairs = RMCPdict['Pairs']   #dict!
-    BondList = []
-    notNames = []
-    for FrstName in AtDict:
-        nbrs = G2mth.FindAllNeighbors(Phase,FrstName,list(AtDict.keys()),notName=notNames,Short=True)[0]
-        Atyp1 = AtDict[FrstName]
-        if 'Va' in Atyp1:
-            continue
-        for nbr in nbrs:
-            Atyp2 = AtDict[nbr[0]]
-            if 'Va' in Atyp2:
-                continue
-            try:
-                bndData = Pairs[' %s-%s'%(Atyp1,Atyp2)][1:]
-            except KeyError:
-                bndData = Pairs[' %s-%s'%(Atyp2,Atyp1)][1:]
-            if any(bndData):
-                if bndData[0] <= nbr[1] <= bndData[1]:
-                    bondStr = str((FrstName,nbr[0])+tuple(bndData))+',\n'
-                    revbondStr = str((nbr[0],FrstName)+tuple(bndData))+',\n'
-                    if bondStr not in BondList and revbondStr not in BondList:
-                        BondList.append(bondStr)
-        notNames.append(FrstName)
-    return Res,BondList
+# def FindBonds(Phase,RMCPdict):
+#     generalData = Phase['General']
+#     cx,ct,cs,cia = generalData['AtomPtrs']
+#     atomData = Phase['Atoms']
+#     Res = 'RMC'
+#     if 'macro' in generalData['Type']:
+#         Res = atomData[0][ct-3]
+#     AtDict = {atom[ct-1]:atom[ct] for atom in atomData}
+#     Pairs = RMCPdict['Pairs']   #dict!
+#     BondList = []
+#     notNames = []
+#     for FrstName in AtDict:
+#         nbrs = G2mth.FindAllNeighbors(Phase,FrstName,list(AtDict.keys()),notName=notNames,Short=True)[0]
+#         Atyp1 = AtDict[FrstName]
+#         if 'Va' in Atyp1:
+#             continue
+#         for nbr in nbrs:
+#             Atyp2 = AtDict[nbr[0]]
+#             if 'Va' in Atyp2:
+#                 continue
+#             try:
+#                 bndData = Pairs[' %s-%s'%(Atyp1,Atyp2)][1:]
+#             except KeyError:
+#                 bndData = Pairs[' %s-%s'%(Atyp2,Atyp1)][1:]
+#             if any(bndData):
+#                 if bndData[0] <= nbr[1] <= bndData[1]:
+#                     bondStr = str((FrstName,nbr[0])+tuple(bndData))+',\n'
+#                     revbondStr = str((nbr[0],FrstName)+tuple(bndData))+',\n'
+#                     if bondStr not in BondList and revbondStr not in BondList:
+#                         BondList.append(bondStr)
+#         notNames.append(FrstName)
+#     return Res,BondList
 
-def FindAngles(Phase,RMCPdict):
-    generalData = Phase['General']
-    Cell = generalData['Cell'][1:7]
-    Amat = G2lat.cell2AB(Cell)[0]
-    cx,ct,cs,cia = generalData['AtomPtrs']
-    atomData = Phase['Atoms']
-    AtLookup = G2mth.FillAtomLookUp(atomData,cia+8)
-    AtDict = {atom[ct-1]:atom[ct] for atom in atomData}
-    Angles = RMCPdict['Angles']
-    AngDict = {'%s-%s-%s'%(angle[0],angle[1],angle[2]):angle[3:] for angle in Angles}
-    AngleList = []
-    for MidName in AtDict:
-        nbrs,nbrIds = G2mth.FindAllNeighbors(Phase,MidName,list(AtDict.keys()),Short=True)
-        if len(nbrs) < 2: #need 2 neighbors to make an angle
-            continue
-        Atyp2 = AtDict[MidName]
-        for i,nbr1 in enumerate(nbrs):
-            Atyp1 = AtDict[nbr1[0]]
-            for j,nbr3 in enumerate(nbrs[i+1:]):
-                Atyp3 = AtDict[nbr3[0]]
-                IdList = [nbrIds[1][i],nbrIds[0],nbrIds[1][i+j+1]]
-                try:
-                    angData = AngDict['%s-%s-%s'%(Atyp1,Atyp2,Atyp3)]
-                except KeyError:
-                    try:
-                        angData = AngDict['%s-%s-%s'%(Atyp3,Atyp2,Atyp1)]
-                    except KeyError:
-                        continue
-                XYZ = np.array(G2mth.GetAtomItemsById(atomData,AtLookup,IdList,cx,numItems=3))
-                calAngle = G2mth.getRestAngle(XYZ,Amat)
-                if angData[0] <= calAngle <= angData[1]:
-                    angStr = str((MidName,nbr1[0],nbr3[0])+tuple(angData))+',\n'
-                    revangStr = str((MidName,nbr3[0],nbr1[0])+tuple(angData))+',\n'
-                    if angStr not in AngleList and revangStr not in AngleList:
-                        AngleList.append(angStr)
-    return AngleList
+# def FindAngles(Phase,RMCPdict):
+#     generalData = Phase['General']
+#     Cell = generalData['Cell'][1:7]
+#     Amat = G2lat.cell2AB(Cell)[0]
+#     cx,ct,cs,cia = generalData['AtomPtrs']
+#     atomData = Phase['Atoms']
+#     AtLookup = G2mth.FillAtomLookUp(atomData,cia+8)
+#     AtDict = {atom[ct-1]:atom[ct] for atom in atomData}
+#     Angles = RMCPdict['Angles']
+#     AngDict = {'%s-%s-%s'%(angle[0],angle[1],angle[2]):angle[3:] for angle in Angles}
+#     AngleList = []
+#     for MidName in AtDict:
+#         nbrs,nbrIds = G2mth.FindAllNeighbors(Phase,MidName,list(AtDict.keys()),Short=True)
+#         if len(nbrs) < 2: #need 2 neighbors to make an angle
+#             continue
+#         Atyp2 = AtDict[MidName]
+#         for i,nbr1 in enumerate(nbrs):
+#             Atyp1 = AtDict[nbr1[0]]
+#             for j,nbr3 in enumerate(nbrs[i+1:]):
+#                 Atyp3 = AtDict[nbr3[0]]
+#                 IdList = [nbrIds[1][i],nbrIds[0],nbrIds[1][i+j+1]]
+#                 try:
+#                     angData = AngDict['%s-%s-%s'%(Atyp1,Atyp2,Atyp3)]
+#                 except KeyError:
+#                     try:
+#                         angData = AngDict['%s-%s-%s'%(Atyp3,Atyp2,Atyp1)]
+#                     except KeyError:
+#                         continue
+#                 XYZ = np.array(G2mth.GetAtomItemsById(atomData,AtLookup,IdList,cx,numItems=3))
+#                 calAngle = G2mth.getRestAngle(XYZ,Amat)
+#                 if angData[0] <= calAngle <= angData[1]:
+#                     angStr = str((MidName,nbr1[0],nbr3[0])+tuple(angData))+',\n'
+#                     revangStr = str((MidName,nbr3[0],nbr1[0])+tuple(angData))+',\n'
+#                     if angStr not in AngleList and revangStr not in AngleList:
+#                         AngleList.append(angStr)
+#     return AngleList
 
-def GetSqConvolution(XY,d):
+# def GetSqConvolution(XY,d):
 
-    n = XY.shape[1]
-    snew = np.zeros(n)
-    dq = np.zeros(n)
-    sold = XY[1]
-    q = XY[0]
-    dq[1:] = np.diff(q)
-    dq[0] = dq[1]
+#     n = XY.shape[1]
+#     snew = np.zeros(n)
+#     dq = np.zeros(n)
+#     sold = XY[1]
+#     q = XY[0]
+#     dq[1:] = np.diff(q)
+#     dq[0] = dq[1]
     
-    for j in range(n):
-        for i in range(n):
-            b = abs(q[i]-q[j])
-            t = q[i]+q[j]
-            if j == i:
-                snew[j] += q[i]*sold[i]*(d-np.sin(t*d)/t)*dq[i]
-            else:
-                snew[j] += q[i]*sold[i]*(np.sin(b*d)/b-np.sin(t*d)/t)*dq[i]
-        snew[j] /= np.pi*q[j]
+#     for j in range(n):
+#         for i in range(n):
+#             b = abs(q[i]-q[j])
+#             t = q[i]+q[j]
+#             if j == i:
+#                 snew[j] += q[i]*sold[i]*(d-np.sin(t*d)/t)*dq[i]
+#             else:
+#                 snew[j] += q[i]*sold[i]*(np.sin(b*d)/b-np.sin(t*d)/t)*dq[i]
+#         snew[j] /= np.pi*q[j]
     
-    snew[0] = snew[1]
-    return snew
+#     snew[0] = snew[1]
+#     return snew
 
-def GetMaxSphere(pdbName):
-    try:
-        pFil = open(pdbName,'r')
-    except FileNotFoundError:
-        return None
-    while True:
-        line = pFil.readline()
-        if 'Boundary' in line:
-            line = line.split()[3:]
-            G = np.array([float(item) for item in line])
-            G = np.reshape(G,(3,3))**2
-            G = nl.inv(G)
-            pFil.close()
-            break
-    dspaces = [0.5/np.sqrt(G2lat.calc_rDsq2(H,G)) for H in np.eye(3)]
-    return min(dspaces)
+# def GetMaxSphere(pdbName):
+#     try:
+#         pFil = open(pdbName,'r')
+#     except FileNotFoundError:
+#         return None
+#     while True:
+#         line = pFil.readline()
+#         if 'Boundary' in line:
+#             line = line.split()[3:]
+#             G = np.array([float(item) for item in line])
+#             G = np.reshape(G,(3,3))**2
+#             G = nl.inv(G)
+#             pFil.close()
+#             break
+#     dspaces = [0.5/np.sqrt(G2lat.calc_rDsq2(H,G)) for H in np.eye(3)]
+#     return min(dspaces)
     
 def MakefullrmcRun(pName,Phase,RMCPdict):
-    Res,BondList = FindBonds(Phase,RMCPdict)
-    AngleList = FindAngles(Phase,RMCPdict)
+    BondList = {}
+    for k in RMCPdict['Pairs']:
+        if RMCPdict['Pairs'][k][1]+RMCPdict['Pairs'][k][2]>0:
+            BondList[k] = (RMCPdict['Pairs'][k][1],RMCPdict['Pairs'][k][2])
+    AngleList = []
+    for angle in RMCPdict['Angles']:
+        if angle[3] == angle[4] or angle[5] >= angle[6] or angle[6] <= 0:
+            continue
+        AngleList.append(angle)
     rmin = RMCPdict['min Contact']
-    rmax = GetMaxSphere(RMCPdict['atomPDB'])
-    if rmax is None:
-        return None
-    rname = pName+'-run.py'
+    cell = Phase['General']['Cell'][1:7]
+    bigcell = np.array(cell)*np.array(RMCPdict['SuperCell']+[1,1,1])
+    bigG = G2lat.cell2Gmat(bigcell)[0]
+    rmax = min([0.5/np.sqrt(G2lat.calc_rDsq2(H,bigG)) for H in np.eye(3)])
+    SymOpList = G2spc.AllOps(Phase['General']['SGData'])[0]
+    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    atomsList = []
+    for atom in Phase['Atoms']:
+        el = ''.join([i for i in atom[ct] if i.isalpha()])
+        atomsList.append([el] + atom[cx:cx+4])
+    rname = pName+'-fullrmc.py'
     restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
     wtDict = {}
     rundata = ''
     rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%rname
+    rundata += '# created in '+__file__+" v"+filversion.split()[1]
+    rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
 # fullrmc imports (all that are potentially useful)
+#import matplotlib.pyplot as plt
 import numpy as np
 import time
-from fullrmc.sincConvolution import sincConvolution
-from fullrmc.Globals import LOGGER
+from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
-from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
-from fullrmc.Constraints.StructureFactorConstraints import ReducedStructureFactorConstraint
-from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
+import fullrmc.Constraints.PairDistributionConstraints as fPDF
+from fullrmc.Constraints.StructureFactorConstraints import ReducedStructureFactorConstraint, StructureFactorConstraint
+from fullrmc.Constraints.DistanceConstraints import DistanceConstraint
 from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
 from fullrmc.Generators.Swaps import SwapPositionsGenerator
-from fullrmc.debugStuff import *
-InvokeDebugOpts()
+
+### When True, erases an existing enging to provide a fresh start
+FRESH_START = {}
 time0 = time.time()
-SwapGen = {}
-# engine setup\n'''
-#Unused imports
-# from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
-# from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
-# from fullrmc.Core.GroupSelector import RecursiveGroupSelector
-# from fullrmc.Selectors.RandomSelectors import RandomSelector
-# from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
-# from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
-# from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
-# from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutAxisGenerator
-# from fullrmc.Core.Collection import get_principal_axis
-#End unused imports
-    rundata += 'LOGGER.set_log_file_basename("%s")\n'%pName
+'''.format(RMCPdict['ReStart'][0])
+    
+    rundata += '# setup structure\n'
+    rundata += 'cell = ' + str(cell) + '\n'
+    rundata += "SymOpList = "+str([i.lower() for i in SymOpList]) + '\n'
+    rundata += 'atomList = ' + str(atomsList).replace('],','],\n  ') + '\n'
+    rundata += 'supercell = ' + str(RMCPdict['SuperCell']) + '\n'
+
+    rundata += '\n# initialize engine\n'
     rundata += 'engineFileName = "%s.rmc"\n'%pName
-    rundata += 'ENGINE = Engine(path=None)\n'
-    rundata += 'if not ENGINE.is_engine(engineFileName):\n'
-    rundata += '# create engine & set atomic (pdb) model\n'
-    rundata += '    ENGINE = Engine(path=engineFileName)\n'
-    rundata += '    ENGINE.set_pdb("%s")\n'%RMCPdict['atomPDB']
-    rundata += '# create experimental constraints must restart to change these\n'
+
+    rundata += '''\n# check Engine exists if so (and not FRESH_START) load it
+# otherwise build it 
+ENGINE = Engine(path=None)
+if not ENGINE.is_engine(engineFileName) or FRESH_START:
+    ## create structure
+    ENGINE = Engine(path=engineFileName, freshStart=True)
+    ENGINE.build_crystal_set_pdb(symOps     = SymOpList,
+                                 atoms      = atomList,
+                                 unitcellBC = cell,
+                                 supercell  = supercell)
+    rmax = min( [ENGINE.boundaryConditions.get_a(), ENGINE.boundaryConditions.get_b(), ENGINE.boundaryConditions.get_c()] ) /2.
+'''    
+    import atmdata
+    rundata += '# conversion factors (may be needed)\n'
+    rundata += '    sumCiBi2 = 0.\n'
+    for elem in Phase['General']['AtomTypes']:
+        rundata += '    Ci = ENGINE.numberOfAtomsPerElement["{}"]/len(ENGINE.allElements)\n'.format(elem)
+        rundata += '    sumCiBi2 += (Ci*{})**2\n'.format(atmdata.AtmBlens[elem+'_']['SL'][0])
+    rundata += '    rho0 = len(ENGINE.allNames)/ENGINE.volume\n'
+    # settings that require a new Engine
     for File in Files:
         filDat = RMCPdict['files'][File]
-        if filDat[0] != 'Select':
-            sfwt = 'neutronCohb'
-            if 'Xray' in File:
-                sfwt = 'atomicNumber'
-            if 'G(r)' in File:
-                rundata += '    RGR = np.loadtxt("%s").T\n'%filDat[0]
-                if filDat[3]:
-                    rundata += '    RGR[1] *= RGR[0]\n'
-                rundata += '    GofR = PairDistributionConstraint(experimentalData=RGR.T, weighting="%s")\n'%sfwt
-                rundata += '    ENGINE.add_constraints([GofR])\n'
-                wtDict['Pair-'+sfwt] = filDat[1]
+        if not os.path.exists(filDat[0]): continue
+        sfwt = 'neutronCohb'
+        if 'Xray' in File:
+            sfwt = 'atomicNumber'
+        if 'G(r)' in File:
+            rundata += '    GR = np.loadtxt("%s").T\n'%filDat[0]
+            if filDat[3] == 0:
+                rundata += '''    # read and xform G(r) as defined in RMCProfile
+# see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
+                rundata += '    GR[1] *= 4 * np.pi * GR[0] * rho0 / sumCiBi2\n'
+                rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
+            elif filDat[3] == 1:
+                rundata += '    # This is G(r) as defined in PDFFIT\n'
+                rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
+            elif filDat[3] == 2:
+                rundata += '    # This is g(r)\n'
+                rundata += '    GofR = fPDF.PairCorrelationConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
             else:
-                rundata += '    SOQ = np.loadtxt("%s").T\n'%filDat[0]
-                if filDat[3]:
-                    rundata += '    SOQ[1] = sincConvolution(SOQ,%.3f)\n'%rmax
-                rundata += '    FofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
-                rundata += '    ENGINE.add_constraints([FofQ])\n'
-                wtDict['Struct-'+sfwt] = filDat[1]
-    rundata += '    ENGINE.add_constraints(InterMolecularDistanceConstraint())\n'
-    if RMCPdict['byMolec']:
-        if len(BondList):
-            rundata += '    B_CONSTRAINT   = BondConstraint()\n'
-            rundata += '    ENGINE.add_constraints(B_CONSTRAINT)\n'
-        if len(AngleList):
-            rundata += '    A_CONSTRAINT   = BondsAngleConstraint()\n'
-            rundata += '    ENGINE.add_constraints(A_CONSTRAINT)\n'
-        if len(RMCPdict['Torsions']):
-            rundata += '    T_CONSTRAINT   = DihedralAngleConstraint()\n'
-            rundata += '    ENGINE.add_constraints(T_CONSTRAINT)\n'
-    rundata += '    ENGINE.save()\n'
-    rundata += 'else:\n'
-    rundata += '    ENGINE = ENGINE.load(path=engineFileName)\n'
-    rundata += '#fill & change constraints - can be done without restart\n'
-    rundata += 'wtDict = %s\n'%str(wtDict)
-    rundata += 'Constraints = ENGINE.constraints\n'
-    rundata += 'for constraint in Constraints:\n'
-    rundata += '    strcons = str(type(constraint))\n'
-    rundata += '    if "InterMolecular" in strcons:\n'
-    rundata += '        constraint.set_default_distance(%f)\n'%RMCPdict['min Contact']
-    rundata += '    elif "PairDistribution" in strcons:\n'
-    rundata += '        constraint.set_variance_squared(wtDict["Pair-"+constraint.weighting])\n'
-    rundata += '        constraint.set_limits((None,%.3f))\n'%(rmax)
-#    rundata += '        constraint.set_limits((%.3f,%.3f))\n'%(rmin,rmax)
+                raise ValueError('Invalid G(r) type: '+str(filDat[3]))
+            rundata += '    ENGINE.add_constraints([GofR])\n'
+            rundata += '    GofR.set_limits((None, rmax))\n'
+            wtDict['Pair-'+sfwt] = filDat[1]
+        elif 'F(Q)' in File:
+            rundata += '    SOQ = np.loadtxt("%s").T\n'%filDat[0]
+            if filDat[3] == 0:
+                rundata += '    # Read & xform F(Q) as defined in RMCProfile\n'
+                rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
+                rundata += '    SOQ[1] += 1\n'
+            elif filDat[3] == 1:
+                rundata += '    # This is S(Q) as defined in PDFFIT\n'
+            if filDat[4]:
+                rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax={:.3f})\n'.format(rmax)
+            rundata += '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
+            rundata += '    ENGINE.add_constraints([SofQ])\n'
+        else:
+            print('What is this?')
+        wtDict['Struct-'+sfwt] = filDat[1]
+    rundata += '    ENGINE.add_constraints(DistanceConstraint(defaultLowerDistance={}))\n'.format(RMCPdict['min Contact'])
+    rundata += '''    B_CONSTRAINT   = BondConstraint()
+    ENGINE.add_constraints(B_CONSTRAINT)
+    B_CONSTRAINT.create_supercell_bonds(bondsDefinition=[
+'''
+    for pair in BondList:
+        e1,e2 = pair.split('-')
+        rundata += '            ("element","{}","{}",{},{}),\n'.format(
+                                    e1.strip(),e2.strip(),*BondList[pair])
+    rundata += '''             ])
+    ENGINE.save()
+else:
+    ENGINE = ENGINE.load(path=engineFileName)
+'''                
+#    if RMCPdict['Swaps']:
+#        rundata += '#set up for site swaps\n'
+#        rundata += 'aN = ENGINE.allNames\n'
+#        rundata += 'SwapGen = {}\n'
+#        for swap in RMCPdict['Swaps']:
+#            rundata += 'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[0]
+#            rundata += 'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[1]
+#            rundata += 'SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
+    rundata += '# setup/change constraints - can be done without restart\n'    
+    rundata += 'for c in ENGINE.constraints:  # loop over predefined constraints\n'
+    rundata += '    strcons = str(type(c))\n'
+    rundata += '    if type(c) is fPDF.PairDistributionConstraint:\n'
+    rundata += '        c.set_variance_squared(wtDict["Pair-"+c.weighting])\n'
+    rundata += '        c.set_limits((None,%.3f))\n'%(rmax)
     if RMCPdict['FitScale']:
-        rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
+        rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
     rundata += '    elif "StructureFactor" in strcons:\n'
-    rundata += '        constraint.set_variance_squared(wtDict["Struct-"+constraint.weighting])\n'
+    rundata += '        c.set_variance_squared(wtDict["Struct-"+c.weighting])\n'
     if RMCPdict['FitScale']:
-        rundata += '        constraint.set_adjust_scale_factor((10, 0.01, 100.))\n'
-    if RMCPdict['byMolec']:
-        if len(BondList):
-            rundata += '    elif "BondConstraint" in strcons:\n'
-            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Bond Weight']
-            rundata += '        constraint.create_bonds_by_definition(bondsDefinition={"%s":[\n'%Res
-            for bond in BondList:
-                rundata += '        %s'%bond
-            rundata += '        ]})\n'
-        if len(AngleList):
-            rundata += '    elif "BondsAngleConstraint" in strcons:\n'
-            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Angle Weight']
-            rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
-            for angle in AngleList:
-                rundata += '        %s'%angle
-            rundata += '        ]})\n'
-        if len(RMCPdict['Torsions']):
-            rundata += '    elif "DihedralAngleConstraint" in strcons:\n'
-            rundata += '        constraint.set_variance_squared(%f)\n'%RMCPdict['Torsion Weight']
-            rundata += '        constraint.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
-            for torsion in RMCPdict['Torsions']:
-                rundata += '    %s\n'%str(tuple(torsion))
-            rundata += '        ]})\n'
-    if len(RMCPdict['Swaps']):
-        rundata += '    allNames = ENGINE.allNames\n'
-        for swap in RMCPdict['Swaps']:
-            rundata += '    SwapA = [[idx] for idx in range(len(allNames)) if allNames[idx]=="%s"]\n'%swap[0]
-            rundata += '    SwapB = [[idx] for idx in range(len(allNames)) if allNames[idx]=="%s"]\n'%swap[1]
-            rundata += '    SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
-    rundata += 'ENGINE.save()\n'
-    rundata += '#setup runs for fullrmc\n'
+        rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
+#    if AngleList and not RMCPdict['Swaps']: rundata += setAngleConstraints()
+    # if len(RMCPdict['Torsions']):         # Torsions currently commented out in GUI
+    #     rundata += 'for c in ENGINE.constraints:  # look for Dihedral Angle Constraints\n'
+    #     rundata += '    if type(c) is DihedralAngleConstraint:\n'
+    #     rundata += '        c.set_variance_squared(%f)\n'%RMCPdict['Torsion Weight']
+    #     rundata += '        c.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
+    #     for torsion in RMCPdict['Torsions']:
+    #         rundata += '    %s\n'%str(tuple(torsion))
+    #     rundata += '        ]})\n'            
+    rundata += '\n# setup runs for fullrmc\n'
 
     rundata += 'for _ in range(%d):\n'%RMCPdict['Cycles']
+    if BondList and RMCPdict['Swaps']: rundata += setBondConstraints('    ')
+    if AngleList and RMCPdict['Swaps']: rundata += setAngleConstraints('    ')
     rundata += '    ENGINE.set_groups_as_atoms()\n'
     rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=10000, saveFrequency=1000)\n'%restart
-    if len(RMCPdict['Swaps']):
+    if RMCPdict['Swaps']:
+        if BondList: rundata += setBondConstraints('    ',clear=True)
+        if AngleList: rundata += setAngleConstraints('    ',clear=True)
         rundata += '    for swaps in SwapGen:\n'
         rundata += '        AB = swaps.split("-")\n'
         rundata += '        ENGINE.set_groups_as_atoms()\n'
         rundata += '        for g in ENGINE.groups:\n'
-        rundata += '            if allNames[g.indexes[0]]==AB[0]:\n'
+        rundata += '            if aN[g.indexes[0]]==AB[0]:\n'
         rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
-        rundata += '            elif allNames[g.indexes[0]]==AB[1]:\n'
+        rundata += '            elif aN[g.indexes[0]]==AB[1]:\n'
         rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
         rundata += '            sProb = SwapGen[swaps][2]\n'
         rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*sProb, saveFrequency=1000)\n'%restart
         rundata += '        ENGINE.set_groups_as_atoms()\n'
         rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
-    rundata += 'ENGINE.close()\n'
+    #rundata += 'ENGINE.close()\n'
     rundata += 'print("ENGINE run time %.2f s"%(time.time()-time0))\n'
     rfile = open(rname,'w')
     rfile.writelines(rundata)
@@ -2777,87 +2812,87 @@ SwapGen = {}
     
     return rname
 
-def MakefullrmcPDB(Name,Phase,RMCPdict):
-    generalData = Phase['General']
-    Atseq = RMCPdict['atSeq']
-    Dups,Fracs = findDup(Phase['Atoms'])
-    Sfracs = [np.cumsum(fracs) for fracs in Fracs]
-    ifSfracs = any([np.any(sfracs-1.) for sfracs in Sfracs])
-    Supercell = RMCPdict['SuperCell']
-    Cell = generalData['Cell'][1:7]
-    Trans = np.eye(3)*np.array(Supercell)
-    newPhase = copy.deepcopy(Phase)
-    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
-    newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False,Force=True)
-    Atoms = newPhase['Atoms']
+# def MakefullrmcPDB(Name,Phase,RMCPdict):
+#     generalData = Phase['General']
+#     Atseq = RMCPdict['atSeq']
+#     Dups,Fracs = findDup(Phase['Atoms'])
+#     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
+#     ifSfracs = any([np.any(sfracs-1.) for sfracs in Sfracs])
+#     Supercell = RMCPdict['SuperCell']
+#     Cell = generalData['Cell'][1:7]
+#     Trans = np.eye(3)*np.array(Supercell)
+#     newPhase = copy.deepcopy(Phase)
+#     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+#     newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+#     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False,Force=True)
+#     Atoms = newPhase['Atoms']
 
-    if ifSfracs:
-        Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
-        Natm = np.count_nonzero(Natm-1)
-        Satoms = []
-        for i in range(len(Atoms)//Natm):
-            ind = i*Natm
-            Satoms.append(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms[ind:ind+Natm],5),4),3))
-        Natoms = []
-        for satoms in Satoms:
-            for idup,dup in enumerate(Dups):
-                ldup = len(dup)
-                natm = len(satoms)
-                i = 0
-                while i < natm:
-                    if satoms[i][0] in dup:
-                        atoms = satoms[i:i+ldup]
-                        try:
-                            atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
-                            Natoms.append(atom)
-                        except IndexError:      #what about vacancies?
-                            if 'Va' not in Atseq:
-                                Atseq.append('Va')
-                                RMCPdict['aTypes']['Va'] = 0.0
-                            atom = atoms[0]
-                            atom[1] = 'Va'
-                            Natoms.append(atom)
-                        i += ldup
-                    else:
-                       i += 1
-    else:
-        Natoms = Atoms
+#     if ifSfracs:
+#         Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
+#         Natm = np.count_nonzero(Natm-1)
+#         Satoms = []
+#         for i in range(len(Atoms)//Natm):
+#             ind = i*Natm
+#             Satoms.append(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms[ind:ind+Natm],5),4),3))
+#         Natoms = []
+#         for satoms in Satoms:
+#             for idup,dup in enumerate(Dups):
+#                 ldup = len(dup)
+#                 natm = len(satoms)
+#                 i = 0
+#                 while i < natm:
+#                     if satoms[i][0] in dup:
+#                         atoms = satoms[i:i+ldup]
+#                         try:
+#                             atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
+#                             Natoms.append(atom)
+#                         except IndexError:      #what about vacancies?
+#                             if 'Va' not in Atseq:
+#                                 Atseq.append('Va')
+#                                 RMCPdict['aTypes']['Va'] = 0.0
+#                             atom = atoms[0]
+#                             atom[1] = 'Va'
+#                             Natoms.append(atom)
+#                         i += ldup
+#                     else:
+#                        i += 1
+#     else:
+#         Natoms = Atoms
 
-    XYZ = np.array([atom[3:6] for atom in Natoms]).T
-    XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
-    Cell = newPhase['General']['Cell'][1:7]
-    A,B = G2lat. cell2AB(Cell)
-    fname = Name+'_cbb.pdb'
-    fl = open(fname,'w')
-    fl.write('REMARK    Boundary Conditions:%6.2f  0.0  0.0  0.0%7.2f  0.0  0.0  0.0%7.2f\n'%(
-             Cell[0],Cell[1],Cell[2]))
-    fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
-    fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
-    fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
-    fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
-            Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+#     XYZ = np.array([atom[3:6] for atom in Natoms]).T
+#     XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
+#     Cell = newPhase['General']['Cell'][1:7]
+#     A,B = G2lat. cell2AB(Cell)
+#     fname = Name+'_cbb.pdb'
+#     fl = open(fname,'w')
+#     fl.write('REMARK    Boundary Conditions:%6.2f  0.0  0.0  0.0%7.2f  0.0  0.0  0.0%7.2f\n'%(
+#              Cell[0],Cell[1],Cell[2]))
+#     fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
+#     fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
+#     fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
+#     fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
+#             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
 
-    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
-    Natm = np.count_nonzero(Natm-1)
-    nat = 0
-    if RMCPdict['byMolec']:
-        NPM = RMCPdict['Natoms']
-        for iat,atom in enumerate(Natoms):
-            XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian;residue = 'RMC'
-            fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
-                    1+nat%NPM,atom[0],1+nat//NPM,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
-            nat += 1
-    else:
-        for atm in Atseq:
-            for iat,atom in enumerate(Natoms):
-                if atom[1] == atm:
-                    XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
-                    fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
-                            1+nat,atom[0],1+nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
-                    nat += 1
-    fl.close()
-    return fname
+#     Natm = np.core.defchararray.count(np.array(Atcodes),'+')
+#     Natm = np.count_nonzero(Natm-1)
+#     nat = 0
+#     if RMCPdict['byMolec']:
+#         NPM = RMCPdict['Natoms']
+#         for iat,atom in enumerate(Natoms):
+#             XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian;residue = 'RMC'
+#             fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
+#                     1+nat%NPM,atom[0],1+nat//NPM,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+#             nat += 1
+#     else:
+#         for atm in Atseq:
+#             for iat,atom in enumerate(Natoms):
+#                 if atom[1] == atm:
+#                     XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
+#                     fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
+#                             1+nat,atom[0],1+nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+#                     nat += 1
+#     fl.close()
+#     return fname
     
 def MakePdparse(RMCPdict):
     fname = 'make_pdb.py'
@@ -3251,7 +3286,7 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
     
     Reflectometry as a function of kz for a set of slabs.
 
-    :param kz: float[n] (1/Ang). Scattering vector, :math:`2\pi\sin(\\theta)/\lambda`.
+    :param kz: float[n] (1/Ang). Scattering vector, :math:`2\\pi\\sin(\\theta)/\\lambda`.
         This is :math:`\\tfrac12 Q_z`.        
     :param depth:  float[m] (Ang).
         thickness of each layer.  The thickness of the incident medium

@@ -586,21 +586,21 @@ def MakeSimSizer(G2frame, dlg):
                         ) / NISTparms['']['diffractometer_radius']
         except:
             pass
-        GoOn = pgbar.Update(5,newmsg='Creating peak list')
+        pgbar.Update(5,newmsg='Creating peak list')
         pgbar.Raise()
         for pos in peaklist:
             i = ttArr.searchsorted(pos)
             area = sum(intArr[max(0,i-maxPtsHM):min(len(intArr),i+maxPtsHM)])
             peakData['peaks'].append(G2mth.setPeakparms(Parms,Parms2,pos,area))
-        GoOn = pgbar.Update(10,newmsg='Refining peak positions')
+        pgbar.Update(10,newmsg='Refining peak positions')
         histData = G2frame.GPXtree.GetItemPyData(histId)
         # refine peak positions only
         bxye = np.zeros(len(histData[1][1]))
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
                                             bkg,limits[1],
                                             Parms,Parms2,histData[1],bxye,[],
-                                           False,controldat,None)[0]
-        GoOn = pgbar.Update(20,newmsg='Refining peak positions && areas')
+                                           False,controldat)[0]
+        pgbar.Update(20,newmsg='Refining peak positions && areas')
         # refine peak areas as well
         for pk in peakData['peaks']:
             pk[1] = True
@@ -608,7 +608,7 @@ def MakeSimSizer(G2frame, dlg):
                                             bkg,limits[1],
                                             Parms,Parms2,histData[1],bxye,[],
                                            False,controldat)[0]
-        GoOn = pgbar.Update(40,newmsg='Refining profile function')
+        pgbar.Update(40,newmsg='Refining profile function')
         # refine profile function
         for p in ('U', 'V', 'W', 'X', 'Y'):
             Parms[p][2] = True
@@ -616,14 +616,14 @@ def MakeSimSizer(G2frame, dlg):
                                             bkg,limits[1],
                                             Parms,Parms2,histData[1],bxye,[],
                                            False,controldat)[0]
-        GoOn = pgbar.Update(70,newmsg='Refining profile function && asymmetry')
+        pgbar.Update(70,newmsg='Refining profile function && asymmetry')
         # add in asymmetry
         Parms['SH/L'][2] = True
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
                                             bkg,limits[1],
                                             Parms,Parms2,histData[1],bxye,[],
                                            False,controldat)[0]
-        GoOn = pgbar.Update(100,newmsg='Done')
+        pgbar.Update(100,newmsg='Done')
         # reset "initial" profile
         for p in Parms:
             if len(Parms[p]) == 3:
@@ -687,7 +687,6 @@ def MakeSimSizer(G2frame, dlg):
         try:
             txt = open(filename[0],'r').read()
             NISTparms.clear()
-            array = np.array
             d = eval(txt)
             NISTparms.update(d)
         except Exception as err:

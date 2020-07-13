@@ -841,11 +841,11 @@ def permutations(items):
 def Pos2dsp(Inst,pos):
     ''' convert powder pattern position (2-theta or TOF, musec) to d-spacing
     '''
-    if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+    if 'T' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+        return TOF2dsp(Inst,pos)
+    else:   #'C' or 'B'
         wave = G2mth.getWave(Inst)
         return wave/(2.0*sind((pos-Inst.get('Zero',[0,0])[1])/2.0))
-    else:   #'T'OF - ignore difB
-        return TOF2dsp(Inst,pos)
         
 def TOF2dsp(Inst,Pos):
     ''' convert powder pattern TOF, musec to d-spacing by successive approximation
@@ -867,21 +867,21 @@ def TOF2dsp(Inst,Pos):
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
-    if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+    if 'T' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
+    else:   #'C' or 'B'
         wave = G2mth.getWave(Inst)
         val = min(0.995,wave/(2.*dsp))  #set max at 168deg
         pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]             
-    else:   #'T'OF
-        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
     return pos
     
 def getPeakPos(dataType,parmdict,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
-    if 'C' in dataType:
-        pos = 2.0*asind(parmdict['Lam']/(2.*dsp))+parmdict['Zero']
-    else:   #'T'OF
+    if 'T' in dataType:
         pos = parmdict['difC']*dsp+parmdict['difA']*dsp**2+parmdict['difB']/dsp+parmdict['Zero']
+    else:   #'C' or 'B'
+        pos = 2.0*asind(parmdict['Lam']/(2.*dsp))+parmdict['Zero']
     return pos
                    
 def calc_rDsq(H,A):

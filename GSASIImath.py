@@ -1462,13 +1462,13 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     phase = modind[:,nxs,nxs]*tauT     #Nops,Natm,Nwave
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)    #cos term
-    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)    #sin term
+    MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)/2.    #cos term
+    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)/2.    #sin term
     MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
     MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
     return MmodA,MmodB    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
         
-def MagMod2(m,glTau,XYZ,modQ,MSSdata,SGData,SSGData):
+def MagMod2(m,XYZ,modQ,MSSdata,SGData,SSGData):
     '''
     this needs to make magnetic moment modulations & magnitudes as 
     fxn of gTau points; NB: this allows only 1 mag. wave fxn.
@@ -1476,30 +1476,35 @@ def MagMod2(m,glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     Am = np.array(MSSdata[3:]).T[:,0,:]   #atoms x cos pos mods; only 1 wave
     Bm = np.array(MSSdata[:3]).T[:,0,:]  #...sin pos mods
     SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
+    SSGMT = np.array([ops[0] for ops in SSGData['SSGOps']])        #not .T!!
     Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     if SGData['SGInv']:
         SGMT = np.vstack((SGMT,-SGMT))
+        SSGMT = np.vstack((SSGMT,-SSGMT))
         Sinv = np.vstack((Sinv,-Sinv))
         SGT = np.vstack((SGT,-SGT))
     SGMT = np.vstack([SGMT for cen in SGData['SGCen']])
+    SSGMT = np.vstack([SSGMT for cen in SGData['SGCen']])
     Sinv = np.vstack([Sinv for cen in SGData['SGCen']])
     SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
     if SGData['SGGray']:
         SGMT = np.vstack((SGMT,SGMT))
+        SSGMT = np.vstack((SSGMT,SSGMT))
         Sinv = np.vstack((Sinv,Sinv))
         SGT = np.vstack((SGT,SGT+.5))%1.
-    mst = Sinv[:,3,:3]
     epsinv = Sinv[:,3,3]
-    phase = np.inner(XYZ,modQ).T+(np.inner(mst,modQ)-epsinv)[:,nxs]+glTau
+    phi = np.inner(XYZ,modQ).T
+    TA = phi+(epsinv*(np.inner(modQ,SGT[:,:3])-SGT[:,3]))[:,nxs]    #Nops,Natm
+    phase = phi+(np.inner(modQ,SGT[:,:3])-SGT[:,3])[:,nxs]
     
-    psin = np.sin(twopi*m*phase).T
-    pcos = np.cos(twopi*m*phase).T
-    MmodA = Am[nxs,nxs,:,:]*pcos[:,:,nxs,nxs]    #cos term
-    MmodB = Bm[nxs,nxs,:,:]*psin[:,:,nxs,nxs]    #sin term
-    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
-    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
-    return MmodA,MmodB    #Nref,Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
+    pcos = np.cos(-twopi*m[:,nxs,nxs]*phase[nxs,:,:])      #Nref,Nops,Natm
+    psin = np.sin(-twopi*m[:,nxs,nxs]*phase[nxs,:,:])
+    MmodA = TA[nxs,:,:,nxs]*(Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]-Bm[nxs,nxs,:,:]*psin[:,:,:,nxs])/2.    #Nref,Nops,Natm,Mxyz
+    MmodB = TA[nxs,:,:,nxs]*(Am[nxs,nxs,:,:]*psin[:,:,:,nxs]+Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs])/2.    #Nref,Nops,Natm,Mxyz
+    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
+    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
+    return MmodA,MmodB    #Nref,Nops,Natm,Mxyz; cos & sin parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
@@ -4162,6 +4167,50 @@ def getTOFalphaDeriv(dsp):
     '''
     return 1./dsp
     
+def getPinkalpha(ins,tth):
+    '''get TOF peak profile alpha
+    
+    :param dict ins: instrument parameters with at least 'alpha'
+      as values only
+    :param float tth: 2-theta of peak
+    
+    :returns: flaot getPinkalpha: peak alpha
+    
+    '''
+    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
+    
+def getPinkalphaDeriv(tth):
+    '''get derivatives of TOF peak profile beta wrt alpha
+    
+    :param float dsp: d-spacing of peak
+    
+    :returns: float getTOFalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
+    
+    '''
+    return 1.0,tand(tth/2.)
+    
+def getPinkbeta(ins,tth):
+    '''get TOF peak profile beta
+    
+    :param dict ins: instrument parameters with at least 'beat-0' & 'beta-1'
+      as values only
+    :param float tth: 2-theta of peak
+    
+    :returns: float getaPinkbeta: peak beta
+    
+    '''
+    return ins['beta-0']+ins['beta-1']*tand(tth/2.)
+    
+def getPinkbetaDeriv(tth):
+    '''get derivatives of TOF peak profile beta wrt beta-0 & beta-1
+    
+    :param float dsp: d-spacing of peak
+    
+    :returns: list getTOFbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
+    
+    '''
+    return 1.0,tand(tth/2.)
+    
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     '''set starting peak parameters for single peak fits from plot selection or auto selection
     
@@ -4175,6 +4224,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     :returns: list XY: peak list entry:
         for CW: [pos,0,mag,1,sig,0,gam,0]
         for TOF: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+        for Pink: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
         NB: mag refinement set by default, all others off
     
     '''
@@ -4182,15 +4232,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     if useFit:
         ind = 1
     ins = {}
-    if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an else
-        for x in ['U','V','W','X','Y','Z']:
-            ins[x] = Parms.get(x,[0.0,0.0])[ind]
-        if ifQ:                              #qplot - convert back to 2-theta
-            pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
-        sig = getCWsig(ins,pos)
-        gam = getCWgam(ins,pos)           
-        XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
-    else:
+    if 'T' in Parms['Type'][0]:
         if ifQ:
             dsp = 2.*np.pi/pos
             pos = Parms['difC']*dsp
@@ -4210,6 +4252,24 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getTOFsig(ins,dsp)
         gam = getTOFgamma(ins,dsp)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+    elif 'C' in Parms['Type'][0]:                            #CW data - TOF later in an else
+        for x in ['U','V','W','X','Y','Z']:
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
+        if ifQ:                              #qplot - convert back to 2-theta
+            pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
+        sig = getCWsig(ins,pos)
+        gam = getCWgam(ins,pos)           
+        XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
+    elif 'B' in Parms['Type'][0]:
+        for x in ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']:
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
+        if ifQ:                              #qplot - convert back to 2-theta
+            pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
+        alp = getPinkalpha(ins,pos)
+        bet = getPinkbeta(ins,pos)
+        sig = getCWsig(ins,pos)
+        gam = getCWgam(ins,pos)           
+        XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]       #default refine intensity 1st
     return XY
     
 ################################################################################

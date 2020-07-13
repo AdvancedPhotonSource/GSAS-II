@@ -800,17 +800,17 @@ def getFWHM(pos,Inst):
     gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
     alpTOF = lambda dsp,alp: alp/dsp
     betTOF = lambda dsp,bet0,bet1,betq: bet0+bet1/dsp**4+betq/dsp**2
-    if 'C' in Inst['Type'][0]:
-        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
-        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
-        return getgamFW(g,s)/100.  #returns FWHM in deg
-    else:
+    if 'T' in Inst['Type'][0]:
         dsp = pos/Inst['difC'][0]
         alp = alpTOF(dsp,Inst['alpha'][0])
         bet = betTOF(dsp,Inst['beta-0'][0],Inst['beta-1'][0],Inst['beta-q'][0])
         s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
         g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)+np.log(2.0)*(alp+bet)/(alp*bet)
+    else:
+        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
+        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
+        return getgamFW(g,s)/100.  #returns FWHM in deg
     
 def getgamFW(g,s):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
@@ -853,7 +853,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
     '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[pfx+'difC']/xdata
-    elif 'C' in dataType:
+    else:
         wave = parmDict.get(pfx+'Lam',parmDict.get(pfx+'Lam1',1.0))
         q = npT2q(xdata,wave)
     yb = np.zeros_like(xdata)
@@ -989,7 +989,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[hfx+'difC']/xdata
-    elif 'C' in dataType:
+    else:
         wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
         q = 2.*np.pi*npsind(xdata/2.)/wave
     nBak = 0
@@ -1086,7 +1086,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
             pkG = max(parmDict[hfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
                 Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
-            else: #'T'OF
+            else: #'T' or 'B'
                 Wd,fmin,fmax = getWidthsTOF(pkP,1.,1.,pkS,pkG)
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
@@ -1320,6 +1320,50 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
+    elif 'B' in dataType:
+        iPeak = 0
+        dsp = 1.0 #for now - fix later
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                tth = (pos-parmDict['Zero'])
+                intens = parmDict['int'+str(iPeak)]
+                alpName = 'alp'+str(iPeak)
+                if alpName in varyList:
+                    alp = parmDict[alpName]
+                else:
+                    alp = G2mth.getPinkalpha(parmDict,tth)
+                alp = max(0.1,alp)
+                betName = 'bet'+str(iPeak)
+                if betName in varyList:
+                    bet = parmDict[betName]
+                else:
+                    bet = G2mth.getPinkbeta(parmDict,tth)
+                bet = max(0.0001,bet)
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                else:
+                    sig = G2mth.getCWsig(parmDict,tth)
+                sig = max(sig,0.001)          #avoid neg sigma^2
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                else:
+                    gam = G2mth.getCWgam(parmDict,tth)
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = np.searchsorted(xdata,pos+fmin)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    return yb+yc
+                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                return yb+yc        
     else:
         Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
@@ -1479,6 +1523,86 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 break
+    elif 'B' in dataType:
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                tth = (pos-parmDict['Zero'])
+                intens = parmDict['int'+str(iPeak)]
+                alpName = 'alp'+str(iPeak)
+                if alpName in varyList:
+                    alp = parmDict[alpName]
+                else:
+                    alp = G2mth.getPinkalpha(parmDict,tth)
+                    dada0,dada1 = G2mth.getPinkalphaDeriv(tth)
+                alp = max(0.0001,alp)
+                betName = 'bet'+str(iPeak)
+                if betName in varyList:
+                    bet = parmDict[betName]
+                else:
+                    bet = G2mth.getPinkbeta(parmDict,tth)
+                    dbdb0,dbdb1 = G2mth.getPinkbetaDeriv(tth)
+                bet = max(0.0001,bet)
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                    dsdU = dsdV = dsdW = 0
+                else:
+                    sig = G2mth.getCWsig(parmDict,tth)
+                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
+                sig = max(sig,0.001)          #avoid neg sigma
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                    dgdX = dgdY = dgdZ = 0
+                else:
+                    gam = G2mth.getCWgam(parmDict,tth)
+                    dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig/1.e4,gam/100.)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = np.searchsorted(xdata,pos+fmin)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    break
+                dMdpk = np.zeros(shape=(7,len(xdata)))
+                dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                for i in range(1,6):
+                    dMdpk[i][iBeg:iFin] += cw[iBeg:iFin]*intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += cw[iBeg:iFin]*dMdipk[0]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
+                for parmName in ['pos','int','alp','bet','sig','gam']:
+                    try:
+                        idx = varyList.index(parmName+str(iPeak))
+                        dMdv[idx] = dervDict[parmName]
+                    except ValueError:
+                        pass
+                if 'U' in varyList:
+                    dMdv[varyList.index('U')] += dsdU*dervDict['sig']
+                if 'V' in varyList:
+                    dMdv[varyList.index('V')] += dsdV*dervDict['sig']
+                if 'W' in varyList:
+                    dMdv[varyList.index('W')] += dsdW*dervDict['sig']
+                if 'X' in varyList:
+                    dMdv[varyList.index('X')] += dgdX*dervDict['gam']
+                if 'Y' in varyList:
+                    dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
+                if 'Z' in varyList:
+                    dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
+                if 'alpha-0' in varyList:
+                    dMdv[varyList.index('alpha-0')] += dada0*dervDict['alp']
+                if 'alpha-1' in varyList:
+                    dMdv[varyList.index('alpha-1')] += dada1*dervDict['alp']
+                if 'beta-0' in varyList:
+                    dMdv[varyList.index('beta-0')] += dbdb0*dervDict['bet']
+                if 'beta-1' in varyList:
+                    dMdv[varyList.index('beta-1')] += dbdb1*dervDict['bet']
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                break        
     else:
         Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
@@ -1719,7 +1843,7 @@ def DoCalibInst(IndexPeaks,Inst):
     InstPrint(Inst,sigDict)
     return True
             
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,wtFactor=1.0,dlg=None):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
@@ -1743,6 +1867,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     :param bool oneCycle: True if only one cycle of fitting should be performed
     :param dict controls: a dict specifying two values, Ftol = controls['min dM/M']
       and derivType = controls['deriv type']. If None default values are used. 
+    :param float wtFactor. weight multiplier; = 1.0 by default
     :param wx.Dialog dlg: A dialog box that is updated with progress from the fit.
       Defaults to None, which means no updates are done. 
     '''
@@ -1841,7 +1966,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             insNames.append(parm)
             insVals.append(Inst[parm][1])
             if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1'] and Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
 #        instDict['X'] = max(instDict['X'],0.01)
@@ -1859,18 +1984,18 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 sigName = 'sig'+str(iPeak)
                 pos = parmDict['pos'+str(iPeak)]
                 if sigName not in varyList:
-                    if 'C' in Inst['Type'][0]:
-                        parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
-                    else:
+                    if 'T' in Inst['Type'][0]:
                         dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
+                    else:
+                        parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList:
-                    if 'C' in Inst['Type'][0]:
-                        parmDict[gamName] = G2mth.getCWgam(parmDict,pos)
-                    else:
+                    if 'T' in Inst['Type'][0]:
                         dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
+                    else:
+                        parmDict[gamName] = G2mth.getCWgam(parmDict,pos)
                 iPeak += 1
             except KeyError:
                 break
@@ -1883,7 +2008,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         sigstr = 'esds  :'
         for parm in Inst:
             if parm in  ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',]:
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1']:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
@@ -1900,7 +2025,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         peakVals = []
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
-        else:
+        else:   #'T' and 'B'
             names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
             for j,name in enumerate(names):
@@ -1914,7 +2039,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         if 'C' in Inst['Type'][0]:
             names = ['pos','int','sig','gam']
-        else:   #'T'
+        else:   #'T' & 'B'
             names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
             pos = parmDict['pos'+str(i)]
@@ -1924,26 +2049,32 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 parName = names[j]+str(i)
                 if parName in varyList:
                     peak[2*j] = parmDict[parName]
-                elif 'alpha' in parName:
-                    peak[2*j] = parmDict['alpha']/dsp
-                elif 'beta' in parName:
-                    peak[2*j] = G2mth.getTOFbeta(parmDict,dsp)
+                elif 'alp' in parName:
+                    if 'T' in Inst['Type'][0]:
+                        peak[2*j] = G2mth.getTOFalpha(parmDict,dsp)
+                    else: #'B'
+                        peak[2*j] = G2mth.getPinkalpha(parmDict,pos)
+                elif 'bet' in parName:
+                    if 'T' in Inst['Type'][0]:
+                        peak[2*j] = G2mth.getTOFbeta(parmDict,dsp)
+                    else:   #'B'
+                        peak[2*j] = G2mth.getPinkbeta(parmDict,pos)
                 elif 'sig' in parName:
-                    if 'C' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getCWsig(parmDict,pos)
-                    else:
+                    if 'T' in Inst['Type'][0]:
                         peak[2*j] = G2mth.getTOFsig(parmDict,dsp)
+                    else:   #'C' & 'B'
+                        peak[2*j] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
-                    if 'C' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getCWgam(parmDict,pos)
-                    else:
+                    if 'T' in Inst['Type'][0]:
                         peak[2*j] = G2mth.getTOFgamma(parmDict,dsp)
+                    else:   #'C' & 'B'
+                        peak[2*j] = G2mth.getCWgam(parmDict,pos)
                         
     def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
         print ('Peak coefficients:')
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
-        else:   #'T'
+        else:   #'T' & 'B'
             names = ['pos','int','alp','bet','sig','gam']            
         head = 13*' '
         for name in names:
@@ -1955,7 +2086,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (head)
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
-        else:
+        else:   #'T' & 'B'
             ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%8.3f",'bet':"%8.5f",'sig':"%10.3f",'gam':"%10.3f"}
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
@@ -2023,12 +2154,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         Rvals = {}
         badVary = []
         result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-               args=(x[xBeg:xFin],(y+fixback)[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
+               args=(x[xBeg:xFin],(y+fixback)[xBeg:xFin],wtFactor*w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin    
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
-        Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
+        Rvals['Rwp'] = np.sqrt(chisq/np.sum(wtFactor*w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
         Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
         G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],xFin-xBeg,len(varyList)))
         if ncyc:

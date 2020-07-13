@@ -658,18 +658,18 @@ def UpdatePeakGrid(G2frame, data):
         mags = ymask[indx]
         poss = x[indx]
         refs = list(zip(poss,mags))
-        if 'C' in Inst['Type'][0]:    
-            refs = G2mth.sortArray(refs,0,reverse=True)     #small 2-Thetas first
-        else:   #'T'OF
-            refs = G2mth.sortArray(refs,0,reverse=False)    #big TOFs first
+        if 'T' in Inst['Type'][0]:    
+            refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
+        else:   #'c' or 'B'
+            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas first
         for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
             for ref2 in refs[i+1:]:
                 if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
                     del(refs[i])
-        if 'C' in Inst['Type'][0]:    
-            refs = G2mth.sortArray(refs,1,reverse=True)
-        else:   #'T'OF
+        if 'T' in Inst['Type'][0]:    
             refs = G2mth.sortArray(refs,1,reverse=False)
+        else:   #'C' or 'B'
+            refs = G2mth.sortArray(refs,1,reverse=True)
         for pos,mag in refs:
             data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
@@ -740,7 +740,6 @@ def UpdatePeakGrid(G2frame, data):
                 print ('PWDR peaks list saved to: '+filename)
         finally:
             dlg.Destroy()
-        
     
     def OnUnDo(event):
         DoUnDo()
@@ -836,7 +835,7 @@ def UpdatePeakGrid(G2frame, data):
                 data = Pattern[1]
                 fixback = GetFileBackground(G2frame,data,Pattern)
                 peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
-                    background,limits,inst,inst2,data,fixback,prevVaryList,oneCycle,controls)
+                    background,limits,inst,inst2,data,fixback,prevVaryList,oneCycle,controls)   #needs wtFactor after controls?
                 if len(result[0]) != len(fullvaryList):
                     dlg.Destroy()
                     print (' ***** Sequential peak fit stopped at '+name+' *****')
@@ -880,6 +879,7 @@ def UpdatePeakGrid(G2frame, data):
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         data = Pattern[1]
+        wtFactor = Pattern[0]['wtFactor']
         bxye = GetFileBackground(G2frame,data,Pattern)
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
@@ -889,7 +889,7 @@ def UpdatePeakGrid(G2frame, data):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,dlg)[0]
+            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)[0]
         finally:
 #            dlg.Destroy()
             print ('finished')
@@ -1103,12 +1103,20 @@ def UpdatePeakGrid(G2frame, data):
     else:
         colLabels = ['position','refine','intensity','refine','alpha','refine',
             'beta','refine','sigma','refine','gamma','refine']
-        Types = [wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+        if 'T' in Inst['Type'][0]:
+            Types = [wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+        else:  #'B'
+            Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
     T = []
     for peak in data['peaks']:
         T.append(peak[0])
@@ -1787,7 +1795,7 @@ def UpdateInstrumentGrid(G2frame,data):
         good = []
         for key in keys:
             if key in ['Type','Bank','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.',
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.','alpha-0','alpha-1',
                 'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
         return good
@@ -2223,6 +2231,44 @@ def UpdateInstrumentGrid(G2frame,data):
                     nDig = (10,3)
                     if item == 'SH/L':
                         nDig = (10,5)
+                    labelLst.append(item)
+                    elemKeysLst.append([item,1])
+                    dspLst.append(nDig)
+                    refFlgElem.append([item,2])
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
+                    instSizer.Add(itemVal,0,WACV)
+                    instSizer.Add(RefineBox(item),0,WACV)
+            elif 'B' in insVal['Type']:                                   #pink beam CW (x-rays & neutrons(?))
+                labelLst.append('Azimuth angle')
+                elemKeysLst.append(['Azimuth',1])
+                dspLst.append([10,2])
+                refFlgElem.append(None)                   
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
+                txt = '%7.2f'%(insVal['Azimuth'])
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                instSizer.Add((5,5),0)
+                key = 'Lam'
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append([key,1])
+                dspLst.append([10,6])
+                instSizer.Add(waveVal,0,WACV)
+                refFlgElem.append([key,2])                   
+                instSizer.Add(RefineBox(key),0,WACV)
+                for item in ['Zero','Polariz.']:
+                    if item in insDef:
+                        labelLst.append(item)
+                        elemKeysLst.append([item,1])
+                        dspLst.append([10,4])
+                        instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,4,insDef[item])),0,WACV)
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        instSizer.Add(itemVal,0,WACV)
+                        refFlgElem.append([item,2])
+                        instSizer.Add(RefineBox(item),0,WACV)
+                for item in ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']:
+                    nDig = (10,3)
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
                     dspLst.append(nDig)
@@ -3145,12 +3191,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','P -1','C -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
-    if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
-        wave = G2mth.getWave(Inst)
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
-    else:
+    if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[0])
+    else:   #'C', 'B', or 'PKS'
+        wave = G2mth.getWave(Inst)
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
     
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -3367,10 +3413,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         # recompute dmin in case limits were changed
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
         Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
-        if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
-            dmin = G2lat.Pos2dsp(Inst,Limits[1])
-        else:
+        if 'T' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,Limits[0])
+        else:
+            dmin = G2lat.Pos2dsp(Inst,Limits[1])
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         spc = controls[13]
@@ -3577,19 +3623,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
 #        if not controls[13]: controls[13] = SPGlist[controls[5]][0]    #don't know if this is needed?   
         SGData = G2spc.SpcGroup(controls[13])[1]
-        if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
-            if ssopt.get('Use',False):
-                vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
-                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
-                G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
-                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Vec,Zero = \
-                    G2indx.refinePeaksZSS(peaks[0],wave,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
-            else:
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
-        else:   
+        if 'T' in Inst['Type'][0]:
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
                 SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
@@ -3601,6 +3635,18 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
+        else:   
+            if ssopt.get('Use',False):
+                vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
+                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+                G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
+                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+                Lhkl,M20,X20,Aref,Vec,Zero = \
+                    G2indx.refinePeaksZSS(peaks[0],wave,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
+            else:
+                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
@@ -4780,7 +4826,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if 'C' in Inst['Type'][0]:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
                 Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
-            elif 'T' in Inst['Type'][0]:
+            else:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:

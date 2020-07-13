@@ -1944,11 +1944,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 except ValueError:      #avoid bad value in asin beyond upper limit
                     G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
                     return
-                if 'C' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
+                if 'T' in Parms['Type'][0]: # TOF
+                    dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
+                else: # 'C' or  'B' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
                     wave = G2mth.getWave(Parms)
                     dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
-                else: # TOF
-                    dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
             elif plottype in ['SASD','REFD']:
                 q = xpos
                 if q <= 0:
@@ -1975,12 +1975,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 dsp = G2lat.Pos2dsp(Parms,xpos)
                 q = 2.*np.pi/dsp
             if G2frame.Contour: #PWDR only
-                if 'C' in Parms['Type'][0]:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
-                else:
+                if 'T' in Parms['Type'][0]:
                     G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                else:
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
             else:
-                if 'C' in Parms['Type'][0]:
+                if 'T' in Parms['Type'][0]:
+                    if Page.plotStyle['sqrtPlot']:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                else:
                     if 'PWDR' in plottype:
                         if Page.plotStyle['sqrtPlot']:
                             G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
@@ -1990,11 +1995,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                     elif plottype == 'REFD':
                         G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
-                else:
-                    if Page.plotStyle['sqrtPlot']:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
-                    else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
             s = ''
             if G2frame.PickId:
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
@@ -2159,7 +2159,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
-                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
+                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
                 data['peaks'].append(XY)
                 data['sigDict'] = {}    #now invalid
                 G2pdG.UpdatePeakGrid(G2frame,data)
@@ -2890,7 +2890,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
-    if 'C' in ParmList[0]['Type'][0]:
+    if 'T' in ParmList[0]['Type'][0]:
+        if Page.plotStyle['sqrtPlot']:
+            Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
+        else:
+            Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
+    else:       #neutron TOF
         if 'PWDR' in plottype:
             if Page.plotStyle['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
@@ -2908,11 +2913,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
-    else:       #neutron TOF
-        if Page.plotStyle['sqrtPlot']:
-            Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
-        else:
-            Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
     mpl.rcParams['image.cmap'] = G2frame.ContourColor
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
     mcolors.set_array([]) # needed for MPL <=3.0.x
@@ -2958,6 +2958,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not refineMode:
                 magLineList = data[0].get('Magnification',[])
             if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
+                ('B' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
                 ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
                 tcorner = 1
                 tpos = 1.0
@@ -5558,7 +5559,59 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Y = []
     Z = []
     W = []
-    if 'C' in Parms['Type'][0]:
+    if 'T' in Parms['Type'][0]:   #'T'OF
+        Plot.set_title('Instrument and sample peak coefficients')
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
+        Xmin,Xmax = limits[1]
+        T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+        Z = np.ones_like(T)
+        data = G2mth.setPeakparms(Parms,Parms2,T,Z)
+        ds = T/difC
+        Q = 2.*np.pi/ds
+        A = data[4]
+        B = data[6]
+        S = 1.17741*np.sqrt(data[8])/T
+        G = data[10]/T
+        Plot.plot(Q,A,color='r',label='Alpha')
+        Plot.plot(Q,B,color='g',label='Beta')
+        Plot.plot(Q,S,color='b',label='Gaussian')
+        Plot.plot(Q,G,color='m',label='Lorentzian')
+
+        fit = G2mth.setPeakparms(Parms,Parms2,T,Z)
+        ds = T/difC
+        Q = 2.*np.pi/ds
+        Af = fit[4]
+        Bf = fit[6]
+        Sf = 1.17741*np.sqrt(fit[8])/T
+        Gf = fit[10]/T
+        Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
+        Plot.plot(Q,Bf,color='g',dashes=(5,5),label='Beta fit')
+        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
+        Plot.plot(Q,Gf,color='m',dashes=(5,5),label='Lorentzian fit')
+        
+        Tp = []
+        Ap = []
+        Bp = []
+        Sp = []
+        Gp = []
+        Wp = []
+        Qp = []
+        for peak in peaks:
+            Tp.append(peak[0])
+            Ap.append(peak[4])
+            Bp.append(peak[6])
+            Qp.append(2.*np.pi*difC/peak[0])
+            Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
+            Gp.append(peak[10]/peak[0])
+            
+        if Qp: 
+            Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
+            Plot.plot(Qp,Bp,'+',color='g',label='Beta peak')
+            Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
+            Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
+        Plot.legend(loc='best')
+    else:       #'C' & 'B'
         Plot.figure.suptitle(TreeItemText)
         Plot.set_title('Instrument and sample peak widths')
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
@@ -5611,58 +5664,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()
-    else:   #'T'OF
-        Plot.set_title('Instrument and sample peak coefficients')
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
-        Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
-        Xmin,Xmax = limits[1]
-        T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
-        Z = np.ones_like(T)
-        data = G2mth.setPeakparms(Parms,Parms2,T,Z)
-        ds = T/difC
-        Q = 2.*np.pi/ds
-        A = data[4]
-        B = data[6]
-        S = 1.17741*np.sqrt(data[8])/T
-        G = data[10]/T
-        Plot.plot(Q,A,color='r',label='Alpha')
-        Plot.plot(Q,B,color='g',label='Beta')
-        Plot.plot(Q,S,color='b',label='Gaussian')
-        Plot.plot(Q,G,color='m',label='Lorentzian')
-
-        fit = G2mth.setPeakparms(Parms,Parms2,T,Z)
-        ds = T/difC
-        Q = 2.*np.pi/ds
-        Af = fit[4]
-        Bf = fit[6]
-        Sf = 1.17741*np.sqrt(fit[8])/T
-        Gf = fit[10]/T
-        Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
-        Plot.plot(Q,Bf,color='g',dashes=(5,5),label='Beta fit')
-        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Gf,color='m',dashes=(5,5),label='Lorentzian fit')
         
-        Tp = []
-        Ap = []
-        Bp = []
-        Sp = []
-        Gp = []
-        Wp = []
-        Qp = []
-        for peak in peaks:
-            Tp.append(peak[0])
-            Ap.append(peak[4])
-            Bp.append(peak[6])
-            Qp.append(2.*np.pi*difC/peak[0])
-            Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
-            Gp.append(peak[10]/peak[0])
-            
-        if Qp: 
-            Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
-            Plot.plot(Qp,Bp,'+',color='g',label='Beta peak')
-            Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
-            Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
-        Plot.legend(loc='best')
     if xylim and not G2frame.G2plotNB.allowZoomReset:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()

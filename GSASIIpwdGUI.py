@@ -4811,6 +4811,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 refs = np.vstack((refList.T[:15+Super],I100,MuStr,CrSize)).T
             elif 'T' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:18+Super],I100,MuStr,CrSize)).T
+            elif 'B' in Inst['Type'][0]:
+                refs = np.vstack((refList.T[:17+Super],I100,MuStr,CrSize)).T
         rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
@@ -4826,9 +4828,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if 'C' in Inst['Type'][0]:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
                 Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
-            else:
+            elif 'T' in Inst['Type'][0]:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
+            elif 'B' in Inst['Type'][0]:
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
+                Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
         refs.T[3+Super] = np.where(refs.T[4+Super]<dMin,-refs.T[3+Super],refs.T[3+Super])

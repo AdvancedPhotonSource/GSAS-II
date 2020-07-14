@@ -2551,15 +2551,18 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     dmin = wave/(2.0*sind(limits[1]/2.0))
                 elif 'T' in inst['Type'][0]:
                     dmin = limits[0]/inst['difC'][1]
+                else:
+                    wave = inst['Lam'][1]
+                    dmin = wave/(2.0*sind(limits[1]/2.0))
                 pfx = str(pId)+':'+str(hId)+':'
                 if Phases[phase]['General']['doPawley']:
                     hapDict[pfx+'LeBail'] = False           #Pawley supercedes LeBail
                     hapDict[pfx+'newLeBail'] = True
                     Tmin = G2lat.Dsp2pos(inst,dmin)
-                    if 'C' in inst['Type'][1]:
-                        limits[1] = min(limits[1],Tmin)
-                    else:
+                    if 'T' in inst['Type'][1]:
                         limits[0] = max(limits[0],Tmin)
+                    else:
+                        limits[1] = min(limits[1],Tmin)
                 else:
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
                     hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
@@ -2694,6 +2697,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                         #TODO - if tabulated put alp & bet in here
 #                                        Uniq.append(uniq)
 #                                        Phi.append(phi)
+                                elif 'B' in inst['Type'][0]:
+                                    pos = G2lat.Dsp2pos(inst,d)
+                                    if limits[0] < pos < limits[1]:
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                        # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     else:
                         ifSuper = False
                         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
@@ -2720,6 +2728,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
 #                                    Uniq.append(uniq)
 #                                    Phi.append(phi)
+                            elif 'B' in inst['Type'][0]:
+                                pos = G2lat.Dsp2pos(inst,d)
+                                if limits[0] < pos < limits[1]:
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                    # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
@@ -3245,6 +3258,11 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 instDict[pfx+'alpha'] = 1.0
             if not instDict[pfx+'beta-0'] and not instDict[pfx+'beta-1']:
                 instDict[pfx+'beta-1'] = 1.0
+        elif 'B' in dataType:   #trap zero alp, bet coeff.
+            if not instDict[pfx+'alpha-0'] and not instDict[pfx+'alpha-1']:
+                instDict[pfx+'alpha-1'] = 1.0
+            if not instDict[pfx+'beta-0'] and not instDict[pfx+'beta-1']:
+                instDict[pfx+'beta-1'] = 1.0
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):
@@ -3382,7 +3400,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
             controlDict[pfx+'histType'] = Type
-            if 'XC' in Type:
+            if 'XC' in Type or 'XB' in Type:
                 if pfx+'Lam1' in instDict:
                     controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
                 else:
@@ -3400,7 +3418,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             if Print: 
                 pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
                 pFile.write(135*'='+'\n')
-                Units = {'C':' deg','T':' msec'}
+                Units = {'C':' deg','T':' msec','B':' deg'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
                 pFile.write(' Instrument type: %s\n'%Sample['Type'])
@@ -3422,7 +3440,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             if 'X' in Inst['Type'][0]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
                 controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']
-            elif 'NC' in Inst['Type'][0]:                   
+            elif 'NC' in Inst['Type'][0] or 'NB' in Inst['Type'][0]:                   
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
     

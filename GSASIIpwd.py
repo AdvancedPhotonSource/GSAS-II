@@ -800,17 +800,25 @@ def getFWHM(pos,Inst):
     gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
     alpTOF = lambda dsp,alp: alp/dsp
     betTOF = lambda dsp,bet0,bet1,betq: bet0+bet1/dsp**4+betq/dsp**2
+    alpPink = lambda pos,alp0,alp1: alp0+alp1*tand(pos/2.)
+    betPink = lambda pos,bet0,bet1: bet0+bet1*tand(pos/2.)
     if 'T' in Inst['Type'][0]:
-        dsp = pos/Inst['difC'][0]
-        alp = alpTOF(dsp,Inst['alpha'][0])
-        bet = betTOF(dsp,Inst['beta-0'][0],Inst['beta-1'][0],Inst['beta-q'][0])
+        dsp = pos/Inst['difC'][1]
+        alp = alpTOF(dsp,Inst['alpha'][1])
+        bet = betTOF(dsp,Inst['beta-0'][1],Inst['beta-1'][1],Inst['beta-q'][1])
         s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
         g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)+np.log(2.0)*(alp+bet)/(alp*bet)
-    else:
+    elif 'C' in Inst['Type'][0]:
         s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
         g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)/100.  #returns FWHM in deg
+    else:   #'B'
+        alp = alpPink(pos,Inst['alpha-0'][1],Inst['alpha-1'][1])
+        bet = betPink(pos,Inst['beta-0'][1],Inst['beta-1'][1])
+        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
+        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
+        return getgamFW(g,s)/100.+np.log(2.0)*(alp+bet)/(alp*bet)  #returns FWHM in deg
     
 def getgamFW(g,s):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
@@ -964,8 +972,11 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
             if 'C' in dataType:
                 ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])
                 yb[iBeg:iFin] += ybi
-            else:   #'T'OF
+            elif 'T' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
+                yb[iBeg:iFin] += ybi
+            elif 'B' in dataType:
+                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])
                 yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1       
@@ -1775,7 +1786,7 @@ def DoCalibInst(IndexPeaks,Inst):
         
     def InstPrint(Inst,sigDict):
         print ('Instrument Parameters:')
-        if 'C' in Inst['Type'][0]:
+        if 'C' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
             ptfmt = "%12.6f"
         else:
             ptfmt = "%12.3f"
@@ -2086,8 +2097,10 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (head)
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
-        else:   #'T' & 'B'
+        elif 'T' in dataType:
             ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%8.3f",'bet':"%8.5f",'sig':"%10.3f",'gam':"%10.3f"}
+        else: #'B'
+            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'alp':"%8.2f",'bet':"%8.4f",'sig':"%10.3f",'gam':"%10.3f"}
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
             for j in range(len(names)):

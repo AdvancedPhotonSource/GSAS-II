@@ -114,6 +114,20 @@ def ComputeFobsSqTOFbatch(profList):
             break
     return sInt,resList
         
+def ComputeFobsSqPinkbatch(profList):
+    sInt = 0
+    resList = []
+    for refl,iref in profList:
+        icod = ComputeFobsSqPink(refl,iref)
+        if type(icod) is tuple:
+            resList.append((icod[0],iref))
+            sInt += icod[1]
+        elif icod == -1:
+            resList.append((None,iref))
+        elif icod == -2:
+            break
+    return sInt,resList
+
 def ComputeFobsSqCW(refl,iref):
     yp = np.zeros(len(x)) # not masked
     sInt = 0
@@ -161,6 +175,25 @@ def ComputeFobsSqTOF(refl,iref):
             refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])
     refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
     return refl8im,refl[11+im]*refl[9+im]
+
+def ComputeFobsSqPink(refl,iref):
+    yp = np.zeros(len(x)) # not masked
+    refl8im = 0
+    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/100.,refl[7+im]/1.e4)
+    iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
+    iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
+    if not iBeg+iFin:       #peak below low limit - skip peak
+        return 0
+    if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
+        return -1
+    elif not iBeg-iFin:     #peak above high limit - done
+        return -2
+    if iBeg < iFin:
+        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
+            refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])
+    refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
+    return refl8im,refl[11+im]*refl[9+im]
+
 ################################################################################
 # Powder Profile computation
 ################################################################################        
@@ -194,3 +227,9 @@ def ComputePwdrProfTOF(profList):
             pos,refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])/cw[iBeg:iFin]
     return yc
     
+def ComputePwdrProfPink(profList):
+    'Compute the peaks profile for a set of TOF peaks and add into the yc array'
+    for pos,refl,iBeg,iFin in profList:
+        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
+            pos,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])/cw[iBeg:iFin]
+    return yc

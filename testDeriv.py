@@ -51,8 +51,8 @@ except AttributeError:
 def create(parent):
     return testDeriv(parent)
     
-[wxID_FILEEXIT, wxID_FILEOPEN, wxID_MAKEPLOTS, wxID_CLEARSEL,
-] = [wx.NewId() for _init_coll_File_Items in range(4)]
+[wxID_FILEEXIT, wxID_FILEOPEN, wxID_MAKEPLOTS, wxID_CLEARSEL,wxID_SELECTALL,
+] = [wx.NewId() for _init_coll_File_Items in range(5)]
 
 def FileDlgFixExt(dlg,file):            #this is needed to fix a problem in linux wx.FileDialog
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
@@ -69,11 +69,13 @@ class testDeriv(wx.Frame):
         self.File = wx.Menu(title='')
         self.File.Append(wxID_FILEOPEN,'Open testDeriv file','Open testDeriv')
         self.File.Append(wxID_MAKEPLOTS,'Make plots','Make derivative plots')
+        self.File.Append(wxID_SELECTALL,'Select all')
         self.File.Append(wxID_CLEARSEL,'Clear selections')
         self.File.Append(wxID_FILEEXIT,'Exit','Exit from testDeriv')
         self.Bind(wx.EVT_MENU,self.OnTestRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnMakePlots,id=wxID_MAKEPLOTS)
         self.Bind(wx.EVT_MENU,self.ClearSelect,id=wxID_CLEARSEL)
+        self.Bind(wx.EVT_MENU,self.SelectAll,id=wxID_SELECTALL)
         self.Bind(wx.EVT_MENU,self.OnFileExit, id=wxID_FILEEXIT)
         self.testDerivMenu.Append(menu=self.File, title='File')
         self.SetMenuBar(self.testDerivMenu)
@@ -105,6 +107,13 @@ class testDeriv(wx.Frame):
             self.dataFrame.Destroy()
         self.Close()
         
+    def SelectAll(self,event):
+        self.use = [True for name in self.names]
+        for i,name in enumerate(self.names):
+            if 'Back' in name:
+                self.use[i] = False
+        self.UpdateControls(event)
+        
     def ClearSelect(self,event):
         self.use = [False for i in range(len(self.names))]
         self.UpdateControls(event)
@@ -125,22 +134,13 @@ class testDeriv(wx.Frame):
             
     def TestRead(self):
         file = open(self.testFile,'rb')
-        if '2' in platform.python_version_tuple()[0]:
-            self.values = cPickle.load(file)
-            self.HistoPhases = cPickle.load(file)
-            (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
-            self.parmDict = cPickle.load(file)
-            self.varylist = cPickle.load(file)
-            self.calcControls = cPickle.load(file)
-            self.pawleyLookup = cPickle.load(file)
-        else:
-            self.values = cPickle.load(file,encoding='Latin-1')
-            self.HistoPhases = cPickle.load(file,encoding='Latin-1')
-            (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
-            self.parmDict = cPickle.load(file,encoding='Latin-1')
-            self.varylist = cPickle.load(file,encoding='Latin-1')
-            self.calcControls = cPickle.load(file,encoding='Latin-1')
-            self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
+        self.values = cPickle.load(file,encoding='Latin-1')
+        self.HistoPhases = cPickle.load(file,encoding='Latin-1')
+        (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
+        self.parmDict = cPickle.load(file,encoding='Latin-1')
+        self.varylist = cPickle.load(file,encoding='Latin-1')
+        self.calcControls = cPickle.load(file,encoding='Latin-1')
+        self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
         self.names = self.varylist+self.depVarList
         self.use = [False for i in range(len(self.names))]
         self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.names]

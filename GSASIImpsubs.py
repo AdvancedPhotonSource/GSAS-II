@@ -179,7 +179,7 @@ def ComputeFobsSqTOF(refl,iref):
 def ComputeFobsSqPink(refl,iref):
     yp = np.zeros(len(x)) # not masked
     refl8im = 0
-    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/100.,refl[7+im]/1.e4)
+    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
     iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
     iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
     if not iBeg+iFin:       #peak below low limit - skip peak

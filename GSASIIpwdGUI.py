@@ -1953,6 +1953,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     data = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
                     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
                     RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
+                    UpdateInstrumentGrid(G2frame,data)
                 else:
                     G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame)
             else:

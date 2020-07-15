@@ -3338,7 +3338,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
-                Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/100.,refl[7+im]/1.e4)
+                Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
                 iBeg = np.searchsorted(x,refl[5+im]-fmin)
                 iFin = np.searchsorted(x,refl[5+im]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
@@ -3556,7 +3556,7 @@ def getPowderProfileDervMP(args):
             elif 'T' in calcControls[hfx+'histType']:
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
             elif 'B' in calcControls[hfx+'histType']:
-                Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im]/100.,refl[13+im]/1.e4,refl[6+im],refl[7+im])
+                Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
             iBeg = np.searchsorted(x,refl[5+im]-fmin)
             iFin = np.searchsorted(x,refl[5+im]+fmax)
             if not iBeg+iFin:       #peak below low limit - skip peak
@@ -3592,7 +3592,7 @@ def getPowderProfileDervMP(args):
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
-                    dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]      #cw[iBeg:iFin]*
+                    dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
             elif 'B' in calcControls[hfx+'histType']:
                 tanth = tand(pos/2.0)
@@ -3601,10 +3601,10 @@ def getPowderProfileDervMP(args):
                 if lenBF < 0:   #bad peak coeff
                     break
                 dMdpk = np.zeros(shape=(6,lenBF))
-                dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/100.,refl[7+im]/1.e4,ma.getdata(x[iBeg:iFin]))
+                dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
-                    dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]
-                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
+                    dMdpk[i] = cw[iBeg:iFin]*refl[11+im]*refl[9+im]*dMdipk[i]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}            
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))
                 try:
@@ -4106,7 +4106,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             W = wtFactor*w
             wdy = -ma.sqrt(w[xB:xF])*(yd[xB:xF])
             Histogram['Residuals']['Durbin-Watson'] = ma.sum(ma.diff(wdy)**2)/ma.sum(wdy**2)
-            wdy *= wtFactor
+            wdy *= np.sqrt(wtFactor)
             Histogram['Residuals']['Nobs'] = ma.count(x[xB:xF])
             Nobs += Histogram['Residuals']['Nobs']
             Histogram['Residuals']['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)

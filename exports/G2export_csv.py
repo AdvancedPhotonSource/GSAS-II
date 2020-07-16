@@ -337,7 +337,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         # note addition of a phase # flag at end (i)
         for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
             phasDict = histblk['Reflection Lists'][phasenam]
-            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+            tname = {'T':'TOF','C':'2-theta','B':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
                 WriteList(self,("h","k","l","m","d-sp",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
@@ -350,8 +350,14 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:17]
                         FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
-                    else:        #convert to deg        
+                    elif 'C' in phasDict['Type']:        #convert to deg        
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:14]
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        g = gam/100.    #-> deg
+                        FWHM = G2pwd.getgamFW(g,s)
+                        self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,i))
+                    elif 'B' in phasDict['Type']:        #convert to deg        
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:17]
                         s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
                         g = gam/100.    #-> deg
                         FWHM = G2pwd.getgamFW(g,s)
@@ -368,8 +374,14 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:16]
                         FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,Prfo,i))
-                    else:        #convert to deg        
+                    elif 'C' in phasDict['Type']:        #convert to deg        
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:13]
+                        g = gam/100.
+                        s = np.sqrt(max(sig,0.0001))/100.
+                        FWHM = G2pwd.getgamFW(g,s)
+                        self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
+                    elif 'B' in phasDict['Type']:        #convert to deg        
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:16]
                         g = gam/100.
                         s = np.sqrt(max(sig,0.0001))/100.
                         FWHM = G2pwd.getgamFW(g,s)

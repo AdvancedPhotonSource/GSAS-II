@@ -198,7 +198,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
         histblk = self.Histograms[hist]
         for phasenam in histblk['Reflection Lists']:
             phasDict = histblk['Reflection Lists'][phasenam]
-            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+            tname = {'T':'TOF','C':'2-theta','B':'2-theta'}[phasDict['Type'][2]]
             self.Write('\nPhase '+str(phasenam))
             if phasDict.get('Super',False):
                 self.Write(96*'=')
@@ -216,8 +216,14 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
                         FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,prfo))
-                    else:
+                    elif 'C' in phasDict['Type']:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:14]
+                        g = gam/100.    #centideg -> deg
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        FWHM = G2pwd.getgamFW(g,s)  #FWHM
+                        self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,s,g,FWHM,prfo))
+                    elif 'B' in phasDict['Type']:
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
                         g = gam/100.    #centideg -> deg
                         s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
                         FWHM = G2pwd.getgamFW(g,s)  #FWHM
@@ -238,8 +244,15 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
                         FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,np.sqrt(max(sig,0.0001)),gam,FWHM,prfo))
-                    else:
+                    elif 'C' in phasDict['Type']:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:13]
+                        g = gam/100.    #centideg -> deg
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        FWHM = G2pwd.getgamFW(g,s)
+                        self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,   \
+                            s,g,FWHM,prfo))
+                    elif 'B' in phasDict['Type']:
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
                         g = gam/100.    #centideg -> deg
                         s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
                         FWHM = G2pwd.getgamFW(g,s)

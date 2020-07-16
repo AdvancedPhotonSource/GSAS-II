@@ -41,7 +41,7 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
     def WriteInstFile(self,hist,Inst):
         '''Write an instrument parameter file
         '''
-        if 'T' in Inst['Type'][0]:      #can't do TOF iparm files
+        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:      #can't do TOF or pink iparm files
             return None
         prmname = os.path.splitext(self.filename)[0] + '.prm'
         prmname = os.path.join(self.dirname,prmname)
@@ -72,11 +72,11 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         self.Write(TreeName[5:])
         if prmname: self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
         x = np.array(histblk['Data'][0])
-        if 'C' in histblk['Instrument Parameters'][0]['Type'][0]:
-            x *= 100.
-        else:
+        if 'T' in histblk['Instrument Parameters'][0]['Type'][0]:
             cw = np.diff(x)
             x[:-1] += cw
+        else:
+            x *= 100.
         # convert weights to sigmas; use largest weight as minimum esd
         s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
         s[s==0] = np.max(s)

@@ -2778,9 +2778,6 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
         AngleList.append(angle)
     rmin = RMCPdict['min Contact']
     cell = Phase['General']['Cell'][1:7]
-    bigcell = np.array(cell)*np.array(RMCPdict['SuperCell']+[1,1,1])
-    bigG = G2lat.cell2Gmat(bigcell)[0]
-    rmax = min([0.5/np.sqrt(G2lat.calc_rDsq2(H,bigG)) for H in np.eye(3)])
     SymOpList = G2spc.AllOps(Phase['General']['SGData'])[0]
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
     atomsList = []
@@ -2790,7 +2787,6 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     rname = pName+'-fullrmc.py'
     restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
-    wtDict = {}
     rundata = ''
     rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%rname
     rundata += '# created in '+__file__+" v"+filversion.split()[1]
@@ -2854,7 +2850,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             rundata += '    GR = np.loadtxt("%s").T\n'%filDat[0]
             if filDat[3] == 0:
                 rundata += '''    # read and xform G(r) as defined in RMCProfile
-# see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
+    # see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
                 rundata += '    GR[1] *= 4 * np.pi * GR[0] * rho0 / sumCiBi2\n'
                 rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
@@ -2867,22 +2863,20 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 raise ValueError('Invalid G(r) type: '+str(filDat[3]))
             rundata += '    ENGINE.add_constraints([GofR])\n'
             rundata += '    GofR.set_limits((None, rmax))\n'
-            wtDict['Pair-'+sfwt] = filDat[1]
-        elif 'F(Q)' in File:
+        elif '(Q)' in File:
             rundata += '    SOQ = np.loadtxt("%s").T\n'%filDat[0]
             if filDat[3] == 0:
-                rundata += '    # Read & xform F(Q) as defined in RMCProfile\n'
+                rundata += '    # Read & xform F(Q) as defined in RMCProfile to S(Q)-1\n'
                 rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
-                rundata += '    SOQ[1] += 1\n'
             elif filDat[3] == 1:
                 rundata += '    # This is S(Q) as defined in PDFFIT\n'
+                rundata += '    SOQ[1] -= 1\n'
             if filDat[4]:
-                rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax={:.3f})\n'.format(rmax)
+                rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
             rundata += '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
             rundata += '    ENGINE.add_constraints([SofQ])\n'
         else:
             print('What is this?')
-        wtDict['Struct-'+sfwt] = filDat[1]
     rundata += '    ENGINE.add_constraints(DistanceConstraint(defaultLowerDistance={}))\n'.format(RMCPdict['min Contact'])
     rundata += '''    B_CONSTRAINT   = BondConstraint()
     ENGINE.add_constraints(B_CONSTRAINT)
@@ -2905,19 +2899,30 @@ else:
 #            rundata += 'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[0]
 #            rundata += 'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[1]
 #            rundata += 'SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
-    rundata += '# setup/change constraints - can be done without restart\n'    
+    rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
+    rundata += 'wtDict = {}\n'
+    for File in Files:
+        filDat = RMCPdict['files'][File]
+        if not os.path.exists(filDat[0]): continue
+        if 'Xray' in File:
+            sfwt = 'atomicNumber'
+        else:
+            sfwt = 'neutronCohb'
+        if 'G(r)' in File:
+            typ = 'Pair'
+        elif '(Q)' in File:
+            typ = 'Struct'
+        rundata += 'wtDict["{}-{}"] = {}\n'.format(typ,sfwt,filDat[1])
     rundata += 'for c in ENGINE.constraints:  # loop over predefined constraints\n'
-    rundata += '    strcons = str(type(c))\n'
     rundata += '    if type(c) is fPDF.PairDistributionConstraint:\n'
-    rundata += '        c.set_variance_squared(wtDict["Pair-"+c.weighting])\n'
-    rundata += '        c.set_limits((None,%.3f))\n'%(rmax)
+    rundata += '        c.set_variance_squared(1./wtDict["Pair-"+c.weighting])\n'
+    rundata += '        c.set_limits((None,rmax))\n'
     if RMCPdict['FitScale']:
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
-    rundata += '    elif "StructureFactor" in strcons:\n'
-    rundata += '        c.set_variance_squared(wtDict["Struct-"+c.weighting])\n'
+    rundata += '    elif type(c) is ReducedStructureFactorConstraint:\n'
+    rundata += '        c.set_variance_squared(1./wtDict["Struct-"+c.weighting])\n'
     if RMCPdict['FitScale']:
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
-#    if AngleList and not RMCPdict['Swaps']: rundata += setAngleConstraints()
     # if len(RMCPdict['Torsions']):         # Torsions currently commented out in GUI
     #     rundata += 'for c in ENGINE.constraints:  # look for Dihedral Angle Constraints\n'
     #     rundata += '    if type(c) is DihedralAngleConstraint:\n'
@@ -2953,110 +2958,8 @@ else:
     rfile = open(rname,'w')
     rfile.writelines(rundata)
     rfile.close()
-    
     return rname
-
-# def MakefullrmcPDB(Name,Phase,RMCPdict):
-#     generalData = Phase['General']
-#     Atseq = RMCPdict['atSeq']
-#     Dups,Fracs = findDup(Phase['Atoms'])
-#     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
-#     ifSfracs = any([np.any(sfracs-1.) for sfracs in Sfracs])
-#     Supercell = RMCPdict['SuperCell']
-#     Cell = generalData['Cell'][1:7]
-#     Trans = np.eye(3)*np.array(Supercell)
-#     newPhase = copy.deepcopy(Phase)
-#     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-#     newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
-#     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False,Force=True)
-#     Atoms = newPhase['Atoms']
-
-#     if ifSfracs:
-#         Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
-#         Natm = np.count_nonzero(Natm-1)
-#         Satoms = []
-#         for i in range(len(Atoms)//Natm):
-#             ind = i*Natm
-#             Satoms.append(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms[ind:ind+Natm],5),4),3))
-#         Natoms = []
-#         for satoms in Satoms:
-#             for idup,dup in enumerate(Dups):
-#                 ldup = len(dup)
-#                 natm = len(satoms)
-#                 i = 0
-#                 while i < natm:
-#                     if satoms[i][0] in dup:
-#                         atoms = satoms[i:i+ldup]
-#                         try:
-#                             atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
-#                             Natoms.append(atom)
-#                         except IndexError:      #what about vacancies?
-#                             if 'Va' not in Atseq:
-#                                 Atseq.append('Va')
-#                                 RMCPdict['aTypes']['Va'] = 0.0
-#                             atom = atoms[0]
-#                             atom[1] = 'Va'
-#                             Natoms.append(atom)
-#                         i += ldup
-#                     else:
-#                        i += 1
-#     else:
-#         Natoms = Atoms
-
-#     XYZ = np.array([atom[3:6] for atom in Natoms]).T
-#     XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
-#     Cell = newPhase['General']['Cell'][1:7]
-#     A,B = G2lat. cell2AB(Cell)
-#     fname = Name+'_cbb.pdb'
-#     fl = open(fname,'w')
-#     fl.write('REMARK    Boundary Conditions:%6.2f  0.0  0.0  0.0%7.2f  0.0  0.0  0.0%7.2f\n'%(
-#              Cell[0],Cell[1],Cell[2]))
-#     fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
-#     fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
-#     fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
-#     fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
-#             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
-
-#     Natm = np.core.defchararray.count(np.array(Atcodes),'+')
-#     Natm = np.count_nonzero(Natm-1)
-#     nat = 0
-#     if RMCPdict['byMolec']:
-#         NPM = RMCPdict['Natoms']
-#         for iat,atom in enumerate(Natoms):
-#             XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian;residue = 'RMC'
-#             fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
-#                     1+nat%NPM,atom[0],1+nat//NPM,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
-#             nat += 1
-#     else:
-#         for atm in Atseq:
-#             for iat,atom in enumerate(Natoms):
-#                 if atom[1] == atm:
-#                     XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
-#                     fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %2s\n'%(       
-#                             1+nat,atom[0],1+nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
-#                     nat += 1
-#     fl.close()
-#     return fname
     
-def MakePdparse(RMCPdict):
-    fname = 'make_pdb.py'
-    outName = RMCPdict['moleculePdb'].split('.')
-    outName[0] += '_rbb'
-    outName = '.'.join(outName)
-    RMCPdict['atomPDB'] = outName   #might be empty if pdbparser run fails
-    fl = open(fname,'w')
-    fl.write('from pdbparser.pdbparser import pdbparser\n')
-    fl.write('from pdbparser.Utilities.Construct import AmorphousSystem\n')
-    fl.write("pdb = pdbparser('%s')\n"%RMCPdict['moleculePdb'])
-    boxstr= 'boxsize=%s'%str(RMCPdict['Box'])
-    recstr = 'recursionLimit=%d'%RMCPdict['maxRecursion']
-    denstr = 'density=%.3f'%RMCPdict['targetDensity']
-    fl.write('pdb = AmorphousSystem(pdb,%s,%s,%s,\n'%(boxstr,recstr,denstr))
-    fl.write('    priorities={"boxSize":True, "insertionNumber":False, "density":True}).construct().get_pdb()\n')
-    fl.write('pdb.export_pdb("%s")\n'%outName)
-    fl.close
-    return fname
-
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     bondDist = []
     Cell = general['Cell'][1:7]

@@ -4742,7 +4742,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             return pairSizer
                     
-        def FileSizer(RMCdict):
+        def FileSizer(RMCdict,mainSizer):
             
             def OnFitScale(event):
                 RMCPdict['FitScale'] = not RMCPdict['FitScale']
@@ -4802,16 +4802,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 wx.CallAfter(UpdateRMC)
                             
             Indx = {}
-            titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            titleSizer.Add(wx.StaticText(G2frame.FRMC,label=' Select data for processing: '),0,WACV)
-            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
-            fitscale.SetValue(RMCPdict['FitScale'])
-            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
-            titleSizer.Add(fitscale,0,WACV)
-            mainSizer.Add(titleSizer,0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Select data for processing: '),0,WACV)
             if G2frame.RMCchoice == 'fullrmc':
-                mainSizer.Add(wx.StaticText(G2frame.FRMC,
-                    label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
                 Heads = ['Name','File','Weight','type','Plot','Delete']
                 fileSizer = wx.FlexGridSizer(6,5,5)
                 Formats = ['RMC','GUDRUN','STOG']
@@ -4837,7 +4829,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             choices = 'G(r)-RMCProfile','G(r)-PDFFIT','g(r)'
                             if type(RMCPdict['files'][fil][3]) is bool: RMCPdict['files'][fil][3] = 0
                             fmtTyp = G2G.G2ChoiceButton(G2frame.FRMC,choices,RMCPdict['files'][fil],3)
-                        elif 'F(Q)' in fil:
+                        elif '(Q)' in fil:
                             choices = 'F(Q)-RMCProfile','S(Q)-PDFFIT'
                             if type(RMCPdict['files'][fil][3]) is bool: RMCPdict['files'][fil][3] = 0
                             fmtTyp = G2G.G2ChoiceButton(G2frame.FRMC,choices,RMCPdict['files'][fil],3)
@@ -4852,7 +4844,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         delBtn.Bind(wx.EVT_BUTTON,OnDelBtn)
                         Indx[delBtn.GetId()] = fil
                         fileSizer.Add(delBtn,0,WACV)
-                        if 'F(Q)' in fil:
+                        if '(Q)' in fil:
                             fileSizer.Add((-1,-1),0)
                             corrChk = wx.CheckBox(G2frame.FRMC,label='Apply sinc convolution? ')
                             corrChk.SetValue(RMCPdict['files'][fil][4])
@@ -4869,7 +4861,14 @@ def UpdatePhaseData(G2frame,Item,data):
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
-                return fileSizer
+                mainSizer.Add(fileSizer,0,WACV)
+                fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+                fitscale.SetValue(RMCPdict['FitScale'])
+                fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+                mainSizer.Add(fitscale,0,WACV)
+                mainSizer.Add(wx.StaticText(G2frame.FRMC,
+                    label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0,WACV)
+                return 
             # RMCProfile
             Heads = ['Name','File','Format','Weight','Plot','Delete']
             fileSizer = wx.FlexGridSizer(6,5,5)
@@ -4906,7 +4905,12 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
-            return fileSizer
+            mainSizer.Add(fileSizer,0,WACV)
+            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+            fitscale.SetValue(RMCPdict['FitScale'])
+            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+            mainSizer.Add(fitscale,0,WACV)
+            return
         
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
@@ -4958,9 +4962,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     Pairs += pair
                 Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 files = {'Neutron real space data; G(r): ':['Select',1.,'G(r)',0,True],
-                          'Neutron reciprocal space data; F(Q): ':['Select',1.,'F(Q)',0,True],
+                          'Neutron reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],
                           'Xray real space data; G(r): ':['Select',1.,'G(r)',0,True],
-                          'Xray reciprocal space data; F(Q): ':['Select',1.,'F(Q)',0,True],}
+                          'Xray reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],}
                 data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
                     'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
                     'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
@@ -4969,12 +4973,21 @@ def UpdatePhaseData(G2frame,Item,data):
             RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
+                def ShowRmax(*args,**kwargs):
+                    cell = data['General']['Cell'][1:7]
+                    bigcell = np.array(cell)*np.array(RMCPdict['SuperCell']+[1,1,1])
+                    bigG = G2lat.cell2Gmat(bigcell)[0]
+                    rmax = min([0.5/np.sqrt(G2lat.calc_rDsq2(H,bigG)) for H in np.eye(3)])
+                    rmaxlbl.SetLabel('  Rmax = {:.1f}'.format(rmax))
                 superSizer = wx.BoxSizer(wx.HORIZONTAL)
                 axes = ['X','Y','Z']
                 for i,ax in enumerate(axes):
                     superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
                     superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
-                        i,xmin=1,xmax=20,size=(50,25)),0,WACV)
+                        i,xmin=1,xmax=20,size=(50,25),OnLeave=ShowRmax),0,WACV)
+                rmaxlbl = wx.StaticText(G2frame.FRMC,label=' Rmax=?')
+                superSizer.Add(rmaxlbl,0,WACV)
+                ShowRmax()
                 return superSizer
 
             def GetBoxSizer():
@@ -5214,7 +5227,7 @@ def UpdatePhaseData(G2frame,Item,data):
             #     mainSizer.Add(GetTorsionSizer(),0,WACV)
     
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(FileSizer(RMCPdict),0,WACV)
+            FileSizer(RMCPdict,mainSizer)
                 
         elif G2frame.RMCchoice ==  'RMCProfile':
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
@@ -5609,7 +5622,7 @@ def UpdatePhaseData(G2frame,Item,data):
             samSizer.Add(strain,0,WACV)
             mainSizer.Add(samSizer,0,WACV)
 
-            mainSizer.Add(FileSizer(RMCPdict),0,WACV)
+            FileSizer(RMCPdict,mainSizer)
     
         SetPhaseWindow(G2frame.FRMC,mainSizer)
         
@@ -5796,15 +5809,15 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
                 
-            #dlg = wx.DirDialog (None, "Choose fullrmc directory", "",
-            #        wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
             RMCPdict = data['RMC']['fullrmc']
             generalData = data['General']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
             engineFilePath = pName+'.rmc'
             if not os.path.exists(engineFilePath):
-                dlg = wx.FileDialog(self, 'Open fullrmc directory',
+                #dlg = wx.DirDialog (None, "Choose fullrmc directory", "",
+                #        wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
+                dlg = wx.FileDialog(G2frame, 'Open fullrmc directory',
                                         defaultFile='*.rmc',
                                         wildcard='*.rmc')
                 try:
@@ -5816,151 +5829,213 @@ def UpdatePhaseData(G2frame,Item,data):
                     dlg.Destroy()
                 engineFilePath = os.path.splitext(engineFilePath)[0] + '.rmc'
                 if not os.path.exists(engineFilePath): return
-            # import psutil
-            # pid = RMCPdict.get('pid',-1)
-            # Proc = None
-            # if pid and psutil.pid_exists(pid):
-            #     proc = psutil.Process(pid).children()
-            #     for child in proc:
-            #         if 'conhost' in child.name():       #probably very Windows specific
-            #             Proc = child
             from fullrmc import Engine
-            # load
-            GSASIIpath.IPyBreak()
-            ENGINE = Engine(path=None)
-            ENGINE.load(engineFilePath)
-            
-            # try:
-            #     if engineFilePath is not None:
-            #         result, mes = ENGINE.is_engine(engineFilePath, mes=True)
-            #         if result:
-            #             if Proc is not None:
-            #                 Proc.suspend()
-            #             ENGINE = ENGINE.load(engineFilePath)
-            eNames = ['Total',]
-            found = False
-            nObs = [0,]
-            try:
-                for frame in list(ENGINE.frames):
-                    ENGINE.set_used_frame(frame)
-                    for item in ENGINE.constraints:
-                        sitem = str(type(item))
-                        if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
-                            nameId = 'X'
-                            if 'neutron' in item.weighting:
-                                nameId = 'N'
-                            found = True
-                            Xlab = r'$\mathsf{r,\AA}$'
-                            Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
-                            title = ' g(r)%s for '%nameId
-                            if 'StructureFactor' in sitem:
-                                eNames.append('S(Q)'+nameId)
-                                Xlab = r'$\mathsf{Q,\AA^{-1}}$'
-                                Ylab = 'S(Q)'
-                                title = ' S(Q)%s for '%nameId
-                            else:
-                                eNames.append('g(r)'+nameId)
-                            dataDict= item.get_constraints_properties(frame)
-                            X = dataDict['frames-experimental_x'][0]
-                            Y = dataDict['frames-experimental_y'][0]
-                            nObs.append(X.shape[0])
-                            rdfDict = item.get_constraint_value()
-                            if 'total' not in rdfDict:
-                                print('No data yet - wait for a save')
-                                #ENGINE.close()
-                                #if Proc is not None:
-                                #    Proc.resume()
-                                return
-                            Z = rdfDict['total']
-                            XY = [[X,Z],[X,Y]]
-                            Names = ['Calc','Obs']
-                            G2plt.PlotXY(G2frame,XY,labelX=Xlab,
-                                labelY=Ylab,newPlot=True,Title=title+pName,
-                                lines=True,names=Names)
-                            PXY = []
-                            PXYT = []
-                            Names = []
-                            NamesT = []
-                            for item in rdfDict:
-                                if 'va' in item:
-                                    continue
-                                if 'rdf' not in item and 'g(r)' in title:
-                                    Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                                    PXYT.append([X,1.+rdfDict[item]/X])
-                                else:
-                                    PXYT.append([X,rdfDict[item]])
-                                NamesT.append(item)
-                                if 'total' in item:
-                                    if 'rdf' not in item and 'g(r)' in title:
-                                        Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                                        PXY.append([X,1.+rdfDict[item]/X])
-                                    else:
-                                        PXY.append([X,rdfDict[item]])
-                                    Names.append(item)
-                            G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,
-                                labelY=Ylab,newPlot=True,Title=' All partials of '+title+pName,
-                                lines=True,names=NamesT)
-                            G2plt.PlotXY(G2frame,PXY,labelX=Xlab,
-                                labelY=Ylab,newPlot=True,Title=' Total partials of '+title+pName,
-                                lines=True,names=Names)
+            # try to load a few times w/short delay before giving up
+            for i in range(10):
+                try:
+                    ENGINE = Engine().load(engineFilePath)
+                    break
+                except:
+                    time.sleep(0.1)
+            else:
+                G2G.G2MessageBox(G2frame,
+                    'The fullrmc project exists but could not be loaded.',
+                    'Not loaded')
+                return
 
+            # make a list of possible plots
+            plotList = []
+            found = False
+            try:
+                frame = ENGINE.usedFrame
+                for item in ENGINE.constraints:
+                    sitem = str(type(item))
+                    if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
+                        if 'neutron' in item.weighting:
+                            nameId = 'Neutron'
                         else:
-                            found = True
-                            if 'BondConstraint' in sitem:
-                                try:
-                                    bonds = item.get_constraint_value()['bondsLength']
-                                except TypeError:
-                                    break
-                                bondList = item.bondsList[:2]
-                                atoms = ENGINE.get_original_data("allElements",frame)
-                                bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
-                                bondSet = list(set(bondNames))
-                                Bonds = list(zip(bondNames,bonds))
-                                for Bname in bondSet:
-                                    bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
-                                    G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title='%s Bond lengths for %s'%(Bname,pName),
-                                        PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
-                                    print(' %d %s bonds found'%(len(bondLens),Bname))
-                            elif 'BondsAngleConstraint' in sitem:
-                                angles = 180.*item.get_constraint_value()['angles']/np.pi
-                                angleList = item.anglesList[:3]
-                                atoms = ENGINE.get_original_data("allElements",frame)
-                                angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
-                                angleSet = list(set(angleNames))
-                                Angles = list(zip(angleNames,angles))
-                                for Aname in angleSet:
-                                    bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
-                                    G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
-                                        PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
-                                    print(' %d %s angles found'%(len(bondAngs),Aname))
-                            elif 'DihedralAngleConstraint' in sitem:
-                                impangles = 180.*item.get_constraint_value()['angles']/np.pi
-                                impangleList = item.anglesList[:4]
-                                print(' Dihedral angle chi^2 =  %2f'%item.standardError)
-                                atoms = ENGINE.get_original_data("allElements",frame)
-                                impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
+                            nameId = 'Xray'
+                        if 'StructureFactor' in sitem:
+                            title = 'S(Q)-{} for {}'.format(nameId,pName)
+                        else:
+                            title = 'g(r)-{} for {}'.format(nameId,pName)
+                            
+                        plotList.append(title+pName)
+                        plotList.append('All partials of '+title+pName)
+                        plotList.append('Total partials of '+title+pName)
+                        found = True
+                    elif 'BondConstraint' in sitem:
+                        try:
+                            bonds = item.get_constraint_value()['bondsLength']
+                        except Exception as msg:
+                            print("Error reading BondConstraint bondsLength\n  ",msg)
+                            continue
+                        atoms = ENGINE.allElements  
+                        bondList = item.bondsList[:2]
+                        bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
+                        for Bname in set(bondNames):
+                            title = '{} Bond lengths for {}'.format(Bname,pName)
+                            plotList.append(title)
+                        found = True
+                    elif 'BondsAngleConstraint' in sitem:
+                        angles = 180.*item.get_constraint_value()['angles']/np.pi
+                        angleList = item.anglesList[:3]
+                        atoms = ENGINE.get_original_data("allElements",frame)
+                        angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
+                        for Aname in set(angleNames):
+                            title = '{} Bond angles for {}'.format(Aname,pName)
+                            plotList.append(title)
+                        found = True
+                    elif 'DihedralAngleConstraint' in sitem:
+                        impangles = 180.*item.get_constraint_value()['angles']/np.pi
+                        impangleList = item.anglesList[:4]
+                        atoms = ENGINE.get_original_data("allElements",frame)
+                        impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
                                     atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
-                                impangleSet = list(set(impangleNames))
-                                impAngles = list(zip(impangleNames,impangles))
-                                for Aname in impangleSet:
-                                    impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
-                                    G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title='%s Dihedral angles for %s'%(Aname,pName),
-                                        PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
-                            elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
-                                print(sitem+' not plotted')
+                        for Aname in set(impangleNames):
+                            title = '{} Dihedral angles for {}'.format(Aname,pName)
+                            plotList.append(title)
+                        found = True
+                    elif hasattr(item,'plot'):
+                        plotList.append(item.__class__.__name__+' pyplot')
+                        found = True
+            except Exception as msg:
+                 print("Unexpected error reading from fullrmc engine\n  ",msg)
+                 return
+            if not found or len(plotList) == 0:
+                G2G.G2MessageBox(G2frame,'No saved information yet, wait until fullrmc does a Save',
+                                         'No info')
+                return
+             
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select plots to see displayed. N.B. pyplots are in a separate window.',
+                                              'Select plots',plotList)
+            try:
+                result = dlg.ShowModal()
+                if result == wx.ID_OK:
+                    selectedPlots = [plotList[i] for i in dlg.GetSelections()]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+
+            eNames = ['Total',]
+            nObs = [0,]
+            frame = ENGINE.usedFrame
+            for item in ENGINE.constraints:
+                sitem = str(type(item))
+                if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
+                    if 'neutron' in item.weighting:
+                        nameId = 'Neutron'
+                    else:
+                        nameId = 'Xray'
+                    if 'StructureFactor' in sitem:
+                        eNames.append('S(Q)-'+nameId)
+                        Xlab = r'$\mathsf{Q,\AA^{-1}}$'
+                        Ylab = 'S(Q)'
+                        title = 'S(Q)-{} for {}'.format(nameId,pName)
+                    else:
+                        eNames.append('g(r)-'+nameId)
+                        Xlab = r'$\mathsf{r,\AA}$'
+                        Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
+                        title = 'g(r)-{} for {}'.format(nameId,pName)
+                    dataDict= item.get_constraints_properties(frame)
+                    X = dataDict['frames-experimental_x'][0]
+                    Y = dataDict['frames-experimental_y'][0]
+                    nObs.append(X.shape[0])
+                    rdfDict = item.get_constraint_value()
+                    if 'total' not in rdfDict:
+                        print('No data yet - wait for a save')
+                        return
+                    Z = rdfDict['total']
+                    XY = [[X,Z],[X,Y]]
+                    Names = ['Calc','Obs']
+                    if title in selectedPlots:
+                        G2plt.PlotXY(G2frame,XY,labelX=Xlab,
+                            labelY=Ylab,newPlot=True,Title=title,lines=True,names=Names)
+                    PXY = []
+                    PXYT = []
+                    Names = []
+                    NamesT = []
+
+                    for item in rdfDict:
+                        if 'va' in item:
+                            continue
+                        if 'rdf' not in item and 'g(r)' in title:
+                            Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                            PXYT.append([X,1.+rdfDict[item]/X])
+                        else:
+                            PXYT.append([X,rdfDict[item]])
+                        NamesT.append(item)
+                        if 'total' in item:
+                            if 'rdf' not in item and 'g(r)' in title:
+                                Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
+                                PXY.append([X,1.+rdfDict[item]/X])
                             else:
-                                print(sitem)
-                                item.plot(show=True)
-                                pass
-                    nObs[0] = np.sum(nObs[1:])
-                if not found:
-                    print(' No saved information yet, wait until fullrmc does a Save')
-                    eNames = []
-                #ENGINE.close()      #return lock on ENGINE repository & close it
-                #if Proc is not None:
-                #    Proc.resume()
-            except AssertionError:
-                 print("Can't open fullrmc engine while running")
+                                PXY.append([X,rdfDict[item]])
+                            Names.append(item)
+                    if 'All partials of '+title in selectedPlots:
+                        G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,labelY=Ylab,
+                                         newPlot=True,Title='All partials of '+title,
+                                         lines=True,names=NamesT)
+                    if 'Total partials of '+title in selectedPlots:
+                        G2plt.PlotXY(G2frame,PXY,labelX=Xlab,labelY=Ylab,
+                                         newPlot=True,Title='Total partials of '+title,
+                                         lines=True,names=Names)
+
+                elif 'BondConstraint' in sitem:
+                    try:
+                        bonds = item.get_constraint_value()['bondsLength']
+                    except Exception as msg:
+                        print("Error reading BondConstraint bondsLength\n  ",msg)
+                        continue
+                    atoms = ENGINE.allElements  
+                    bondList = item.bondsList[:2]
+                    bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
+                    Bonds = list(zip(bondNames,bonds))
+                    for Bname in set(bondNames):
+                        bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
+                        title = '{} Bond lengths for {}'.format(Bname,pName)
+                        if title in selectedPlots:
+                            G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title=title,
+                                                        PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
+                        #print(' %d %s bonds found'%(len(bondLens),Bname))
+                elif 'BondsAngleConstraint' in sitem:
+                    # code not tested
+                    angles = 180.*item.get_constraint_value()['angles']/np.pi
+                    angleList = item.anglesList[:3]
+                    atoms = ENGINE.get_original_data("allElements",frame)
+                    angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
+                    Angles = list(zip(angleNames,angles))
+                    for Aname in set(angleNames):
+                        bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
+                        title = '{} Bond angles for {}'.format(Aname,pName)
+                        if title in selectedPlots:
+                            G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title=title,
+                                    PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
+                        print(' %d %s angles found'%(len(bondAngs),Aname))
+                elif 'DihedralAngleConstraint' in sitem:
+                    # code not tested
+                    impangles = 180.*item.get_constraint_value()['angles']/np.pi
+                    impangleList = item.anglesList[:4]
+                    print(' Dihedral angle chi^2 =  %2f'%item.standardError)
+                    atoms = ENGINE.get_original_data("allElements",frame)
+                    impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
+                                atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
+                    impAngles = list(zip(impangleNames,impangles))
+                    for Aname in set(impangleNames):
+                        impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
+                        title = '{} Dihedral angles for {}'.format(Aname,pName)
+                        if title in selectedPlots:
+                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title=title,
+                                    PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
+                #elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
+                #    print(sitem+' not plotted')
+                elif hasattr(item,'plot'):
+                    #print('skipping constraint ',sitem)
+                    if item.__class__.__name__+' pyplot' in selectedPlots:
+                        item.plot(show=True)
+            GSASIIpath.IPyBreak()
+            
             # loglines = []
             # ilog = 0
             # while True:

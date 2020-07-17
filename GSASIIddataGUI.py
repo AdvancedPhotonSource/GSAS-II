@@ -604,7 +604,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Layer Disp'][1] = Obj.GetValue()
                 
         dispSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dispRef = wx.CheckBox(DData,wx.ID_ANY,label=' Layer displacement (\xb5m): ')
+        dispRef = wx.CheckBox(DData,wx.ID_ANY,label=u' Layer displacement (\xb5m): ')
         dispRef.SetValue(UseList[G2frame.hist]['Layer Disp'][1])
         dispRef.Bind(wx.EVT_CHECKBOX, OnDispRef)
         dispSizer.Add(dispRef,0,WACV|wx.LEFT,5)

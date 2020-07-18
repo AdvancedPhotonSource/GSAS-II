@@ -6126,6 +6126,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_DRAWVOIDMAP')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWVOIDMAP,'Create void map','Create a map of locations outside of any VDW radius')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWDELETE,'Delete atoms','Delete atoms from drawing set')
+        G2G.Define_wxId('wxID_RELOADATOMS')
+        self.DrawAtomEdit.Append(G2G.wxID_RELOADATOMS,'Reload draw atoms','Reload atom drawing list')
         
         self.DrawAtomCompute.Append(G2G.wxID_DRAWDISTVP,'View pt. dist.','Compute distance of selected atoms from view point')   
         self.DrawAtomCompute.Append(G2G.wxID_DRAWDISAGLTOR,'Dist. Ang. Tors.',

@@ -12467,6 +12467,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)            
         G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)
         G2frame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2G.wxID_DRAWDELETE)
+        G2frame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2G.wxID_RELOADATOMS)
         G2frame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2G.wxID_DRAWDISTVP)
         G2frame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2G.wxID_DRAWDISAGLTOR)
         G2frame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2G.wxID_DRAWPLANE)

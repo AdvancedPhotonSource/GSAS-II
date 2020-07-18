@@ -1097,6 +1097,67 @@ class AddHatomDialog(wx.Dialog):
 ################################################################################
 #### Phase editing routines
 ################################################################################
+def DrawAtomsReplaceByID(data,loc,atom,ID):
+    '''Replace all atoms in drawing array with an ID matching the specified value'''
+    atomData = data['Drawing']['Atoms']
+    indx = G2mth.FindAtomIndexByIDs(atomData,loc,[ID,])
+    for ind in indx:
+        atomData[ind] = MakeDrawAtom(data,atom,atomData[ind])
+
+def MakeDrawAtom(data,atom,oldatom=None):
+    'needs a description'
+    AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+        'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
+    AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
+        'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    SGData = generalData['SGData']
+    if generalData['Type'] in ['nuclear','faulted',]:
+        if oldatom:
+            opr = oldatom[5]
+            if atom[9] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[11:17])
+                atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+oldatom[17:]][0]
+        else:
+            atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
+                ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
+        ct,cs = [1,8]         #type & color
+    elif  generalData['Type'] == 'magnetic':
+        if oldatom:
+            opr = oldatom[8]
+            mom = np.array(atom[7:10])
+            if generalData['Super']:
+                SSGData = generalData['SSGData']
+                Mom = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,mom)
+            else:
+                Mom = G2spc.ApplyStringOpsMom(opr,SGData,None,mom)
+            if atom[12] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
+                atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:]+oldatom[20:]][0]
+        else:
+            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
+                ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+        ct,cs = [1,11]         #type & color
+    elif generalData['Type'] == 'macromolecular':
+        try:
+            oneLetter = AA3letter.index(atom[1])
+        except ValueError:
+            oneLetter = -1
+        atomInfo = [[atom[1].strip()+atom[0],]+
+            [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
+            atom[6:9]+['1',]+['vdW balls',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+        ct,cs = [4,11]         #type & color
+    atNum = generalData['AtomTypes'].index(atom[ct])
+    atomInfo[cs] = list(generalData['Color'][atNum])
+    return atomInfo
+    
 def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False):
     '''get selected atoms from table or ask user if none are selected
     
@@ -3294,7 +3355,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             else: 
                                 atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
-                            DrawAtomsReplaceByID(data['Drawing'],ui+6,atomData[r],ID)
+                            DrawAtomsReplaceByID(data,ui+6,atomData[r],ID)
                     wx.CallAfter(Paint)
                     
         def ChangeAtomCell(event):
@@ -3377,7 +3438,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             atomData[r][i+colLabels.index('Mx')] = value*CSI[1][i]
                 if 'Atoms' in data['Drawing'] and replot:
                     ci = colLabels.index('I/A')
-                    DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                    DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
                     G2plt.PlotStructure(G2frame,data)
                 if SGData['SpGrp'] != 'P 1':    #no need to update P 1 structures!
                     wx.CallAfter(Paint)
@@ -3402,7 +3463,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 ci = colLabels.index('I/A')
                 ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
-                    DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                    DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
                     G2plt.PlotStructure(G2frame,data)
                 SetupGeneral()
             else:
@@ -3850,69 +3911,9 @@ def UpdatePhaseData(G2frame,Item,data):
             SetupGeneral()
             FillAtomsGrid(Atoms)
             ID = atomData[indx[0]][ci+8]
-            DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[indx[0]],ID)
+            DrawAtomsReplaceByID(data,ci+8,atomData[indx[0]],ID)
             G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
-            
-    def DrawAtomsReplaceByID(drawingData,loc,atom,ID):
-        IDs = [ID,]
-        atomData = drawingData['Atoms']
-        indx = G2mth.FindAtomIndexByIDs(atomData,loc,IDs)
-        for ind in indx:
-            atomData[ind] = MakeDrawAtom(atom,atomData[ind])
-                
-    def MakeDrawAtom(atom,oldatom=None):
-        AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
-            'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
-        AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
-            'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        SGData = generalData['SGData']
-        if generalData['Type'] in ['nuclear','faulted',]:
-            if oldatom:
-                opr = oldatom[5]
-                if atom[9] == 'A':                    
-                    X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[11:17])
-                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
-                else:
-                    X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
-                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+oldatom[17:]][0]
-            else:
-                atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
-                    ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
-            ct,cs = [1,8]         #type & color
-        elif  generalData['Type'] == 'magnetic':
-            if oldatom:
-                opr = oldatom[8]
-                mom = np.array(atom[7:10])
-                if generalData['Super']:
-                    SSGData = generalData['SSGData']
-                    Mom = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,mom)
-                else:
-                    Mom = G2spc.ApplyStringOpsMom(opr,SGData,None,mom)
-                if atom[12] == 'A':                    
-                    X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
-                    atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]
-                else:
-                    X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
-                    atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:]+oldatom[20:]][0]
-            else:
-                atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
-                    ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
-            ct,cs = [1,11]         #type & color
-        elif generalData['Type'] == 'macromolecular':
-            try:
-                oneLetter = AA3letter.index(atom[1])
-            except ValueError:
-                oneLetter = -1
-            atomInfo = [[atom[1].strip()+atom[0],]+
-                [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-                atom[6:9]+['1',]+['vdW balls',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
-            ct,cs = [4,11]         #type & color
-        atNum = generalData['AtomTypes'].index(atom[ct])
-        atomInfo[cs] = list(generalData['Color'][atNum])
-        return atomInfo
         
     def AtomInsert(indx,x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
@@ -4036,7 +4037,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     if 'Atoms' in data['Drawing']:
                         for r in indx:
                             ID = atomData[r][ci+8]
-                            DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                            DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
                 FillAtomsGrid(Atoms)
             dlg.Destroy()
         elif parm in ['Name',]:
@@ -5860,9 +5861,9 @@ def UpdatePhaseData(G2frame,Item,data):
                         else:
                             title = 'g(r)-{} for {}'.format(nameId,pName)
                             
-                        plotList.append(title+pName)
-                        plotList.append('All partials of '+title+pName)
-                        plotList.append('Total partials of '+title+pName)
+                        plotList.append(title)
+                        plotList.append('All partials of '+title)
+                        plotList.append('Total partials of '+title)
                         found = True
                     elif 'BondConstraint' in sitem:
                         try:
@@ -6034,8 +6035,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     #print('skipping constraint ',sitem)
                     if item.__class__.__name__+' pyplot' in selectedPlots:
                         item.plot(show=True)
-            GSASIIpath.IPyBreak()
-            
+
+            # how to get std err vs steps?
+            #GSASIIpath.IPyBreak()
             # loglines = []
             # ilog = 0
             # while True:
@@ -7520,7 +7522,7 @@ def UpdatePhaseData(G2frame,Item,data):
             drawingData['Plane'].append([255,255,0])
             
     def DrawAtomAdd(drawingData,atom):
-        drawingData['Atoms'].append(MakeDrawAtom(atom))
+        drawingData['Atoms'].append(MakeDrawAtom(data,atom))
         
     def OnRestraint(event):
         cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
@@ -8431,16 +8433,17 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
-    def OnReloadDrawAtoms(event):
+    def OnReloadDrawAtoms(event=None):
         atomData = data['Atoms']
         cx,ct,cs,ci = data['General']['AtomPtrs']
         for atom in atomData:
             ID = atom[ci+8]
-            DrawAtomsReplaceByID(data['Drawing'],ci+8,atom,ID)
+            DrawAtomsReplaceByID(data,ci+8,atom,ID)
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
-        event.StopPropagation()
+        if event:
+            event.StopPropagation()
         
     def DrawAtomsDeleteByIDs(IDs):
         atomData = data['Drawing']['Atoms']
@@ -10104,11 +10107,9 @@ def UpdatePhaseData(G2frame,Item,data):
             atomStyle = 'sticks'
         G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        if not data['RBModels']:
-            mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'No rigid body models:'),0,WACV)
-            mainSizer.Add((5,5),0)
+        nobody = True
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
+            nobody = False
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
@@ -10131,12 +10132,23 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.GetStatusBar().SetStatusText('NB: Rotation vector is in crystallographic space',1)
             G2plt.PlotStructure(G2frame,data)
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
+            nobody = False
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
             for RBObj in data['RBModels']['Vector']:
                 mainSizer.Add(VecrbSizer(RBObj))
-
+        if nobody:
+            mainSizer.Add((5,5),0)
+            msg = 'Define a rigid body with the "Rigid Bodies" tree entry before adding it to the phase here'
+            if RBData.get('RBIds') is None:
+                pass
+            elif len(RBData['RBIds'].get('Vector',[])) + len(RBData['RBIds'].get('Residue',[])) == 0:
+                pass
+            else:
+                msg = 'No rigid bodies defined in phase. Use "Edit Body"/"Locate & Insert..."\ncommand to add them.'
+            mainSizer.Add(wx.StaticText(RigidBodies,-1,msg),0,WACV)
+            mainSizer.Add((5,5),0)
         SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
@@ -10254,9 +10266,11 @@ def UpdatePhaseData(G2frame,Item,data):
             
         def Draw():
             '''Create the window for assigning RB to atoms'''
+            
             def OnAddRB(event):
-                'respond to OK button, set info into phase'
-                cx,ct,cs,cia = data['General']['AtomPtrs']  
+                'respond to RB Add button, sets RB info in phase'
+                cx,ct,cs,cia = data['General']['AtomPtrs']
+                atomData = data['Atoms']                
                 matchTable = UpdateTable()
                 dmax = 0.
                 for line in matchTable:
@@ -10295,6 +10309,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['RBModels'][rbType].append(rbObj)
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
+                
+                # Update the draw atoms array & recompute bonds
+                for atom in atomData:
+                    ID = atom[cia+8]
+                    DrawAtomsReplaceByID(data,cia+8,atom,ID)
+                FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data,False)
                 FillRigidBodyGrid(True)
                 
@@ -10329,6 +10349,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 # add new atoms and reassign
                 added = False
                 selDict = getSelectedAtoms()
+                if selDict is None: return
                 for i,l in enumerate(RigidBodies.atomsTable.data):
                     if l[4] == 'Create new':
                         l[1:4] = -1,'?',-1
@@ -10392,7 +10413,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 return np.array(deltaList)
 
             def objectiveDeltaPos(vals,selDict,data,rbObj_in):
-                '''Returns a list of distances between atom positions and 
+                '''Objective function for minimization.  
+                Returns a list of distances between atom positions and 
                 located rigid body positions
 
                 :param list vals: a 4 or 7 element array with 4 quaterian values
@@ -10648,16 +10670,33 @@ def UpdatePhaseData(G2frame,Item,data):
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbNames = {}
+        dups = []
         for rbVec in RBData['Vector']:
-            if rbVec != 'AtInfo':
-                rbNames[RBData['Vector'][rbVec]['RBname']] =['Vector',rbVec]
+            if rbVec == 'AtInfo': continue
+            key = RBData['Vector'][rbVec]['RBname']
+            if key in rbNames:
+                dups.append(key)
+            else:
+                rbNames[key] = ['Vector',rbVec]
         for rbRes in RBData['Residue']:
-            if rbRes != 'AtInfo':
-                rbNames[RBData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
+            if rbRes == 'AtInfo': continue
+            key = RBData['Residue'][rbRes]['RBname']
+            if key in rbNames:
+                dups.append(key)
+            else:
+                rbNames[key] = ['Residue',rbRes]
+        if dups:
+            msg = 'Two or more rigid bodies have the same name. This must be corrected before bodies can be added.'
+            msg += '\n\n Duplicated name(s): '
+            for d in dups:
+                msg += d
+                msg += ' '
+            G2G.G2MessageBox(G2frame,msg,'Duplicate Rigid Body Names')
+            return
         if not rbNames:
             print ('**** ERROR - no rigid bodies defined ****')
             G2G.G2MessageBox(G2frame,
-                'You must define bodies in Rigid Bodies tree item before trying to add them to a phase',
+                'You must define bodies in the Rigid Bodies tree item before trying to add them to a phase',
                 'No Rigid Bodies')
             return
         general = data['General']

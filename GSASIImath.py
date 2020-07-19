@@ -1502,8 +1502,8 @@ def MagMod2(m,XYZ,modQ,MSSdata,SGData,SSGData):
     psin = np.sin(-twopi*m[:,nxs,nxs]*phase[nxs,:,:])
     MmodA = TA[nxs,:,:,nxs]*(Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]-Bm[nxs,nxs,:,:]*psin[:,:,:,nxs])/2.    #Nref,Nops,Natm,Mxyz
     MmodB = TA[nxs,:,:,nxs]*(Am[nxs,nxs,:,:]*psin[:,:,:,nxs]+Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs])/2.    #Nref,Nops,Natm,Mxyz
-    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
+    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
     return MmodA,MmodB    #Nref,Nops,Natm,Mxyz; cos & sin parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):

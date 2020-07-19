@@ -845,7 +845,7 @@ Data files are found in the
     hist1 = gpx.add_simulated_powder_histogram("PbSO4 simulation",
                 PathWrap("inst_d1a.prm"),5.,120.,Npoints=1000,
                 phases=gpx.phases(),scale=500000.)
-    gpx.do_refinements([{}])   # calculate pattern
+    gpx.do_refinements()   # calculate pattern
     gpx.save()
     # save results
     gpx.histogram(0).Export('PbSO4data','.csv','hist') # data
@@ -2810,15 +2810,17 @@ class G2Project(G2ObjectWrapper):
         for i, p in enumerate(self.phases()):
             p.id = i
 
-    def do_refinements(self, refinements, histogram='all', phase='all',
+    def do_refinements(self, refinements=[{}], histogram='all', phase='all',
                        outputnames=None, makeBack=False):
         """Conducts one or a series of refinements according to the
            input provided in parameter refinements. This is a wrapper
            around :meth:`iter_refinements`
 
         :param list refinements: A list of dictionaries specifiying changes to be made to
-            parameters before refinements are conducted.
+            parameters before refinements are conducted. 
             See the :ref:`Refinement_recipe` section for how this is defined. 
+            If not specified, the default value is ``[{}]``, which performs a single 
+            refinement step is performed with the current refinement settings. 
         :param str histogram: Name of histogram for refinements to be applied
             to, or 'all'; note that this can be overridden for each refinement
             step via a "histograms" entry in the dict.
@@ -4345,7 +4347,8 @@ class G2PwdrData(G2ObjectWrapper):
             x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
             N = len(x)
             unit = 'millisec'
-        else:            
+            limits = [(1000*Tmin, 1000*Tmax), [1000*Tmin, 1000*Tmax]]
+        else:
             if Npoints:
                 N = Npoints
             else:
@@ -4355,6 +4358,7 @@ class G2PwdrData(G2ObjectWrapper):
             x = np.linspace(Tmin,Tmax,N,True)
             N = len(x)
             unit = 'degrees 2theta'
+            limits = [(Tmin, Tmax), [Tmin, Tmax]]
         if N < 3:
             raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
         G2fil.G2Print('Simulating {} points from {} to {} {}'.format(N,Tmin,Tmax,unit))
@@ -4366,7 +4370,7 @@ class G2PwdrData(G2ObjectWrapper):
             np.zeros_like(x), # calc. background (zero)
             np.zeros_like(x), # obs-calc profiles
             ]
-        self.data['Limits'] = [(1000*Tmin, 1000*Tmax), [1000*Tmin, 1000*Tmax]]
+        self.data['Limits'] = limits
 
     def getHistEntryList(self, keyname=''):
         """Returns a dict with histogram setting values. 

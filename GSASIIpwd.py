@@ -2775,6 +2775,8 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     for angle in RMCPdict['Angles']:
         if angle[3] == angle[4] or angle[5] >= angle[6] or angle[6] <= 0:
             continue
+        for i in (0,1,2):
+            angle[i] = angle[i].strip()
         AngleList.append(angle)
     rmin = RMCPdict['min Contact']
     cell = Phase['General']['Cell'][1:7]
@@ -2878,15 +2880,26 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         else:
             print('What is this?')
     rundata += '    ENGINE.add_constraints(DistanceConstraint(defaultLowerDistance={}))\n'.format(RMCPdict['min Contact'])
-    rundata += '''    B_CONSTRAINT   = BondConstraint()
+    if BondList:
+        rundata += '''    B_CONSTRAINT   = BondConstraint()
     ENGINE.add_constraints(B_CONSTRAINT)
     B_CONSTRAINT.create_supercell_bonds(bondsDefinition=[
 '''
-    for pair in BondList:
-        e1,e2 = pair.split('-')
-        rundata += '            ("element","{}","{}",{},{}),\n'.format(
-                                    e1.strip(),e2.strip(),*BondList[pair])
-    rundata += '''             ])
+        for pair in BondList:
+            e1,e2 = pair.split('-')
+            rundata += '            ("element","{}","{}",{},{}),\n'.format(
+                                        e1.strip(),e2.strip(),*BondList[pair])
+        rundata += '             ])\n'
+    if AngleList:
+        rundata += '''    A_CONSTRAINT   = BondsAngleConstraint()
+    ENGINE.add_constraints(A_CONSTRAINT)
+    A_CONSTRAINT.create_supercell_angles(anglesDefinition=[
+'''
+        for item in AngleList:
+            rundata += ('            '+
+               '("element","{1}","{0}","{2}",{5},{6},{5},{6},{3},{4}),\n'.format(*item))
+        rundata += '             ])\n'
+    rundata += '''
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)

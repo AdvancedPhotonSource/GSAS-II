@@ -3403,7 +3403,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         plotOpt['phaseList']  = []
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
-            if 'mag' in lbl:
+            if 'magline' in lbl:
                 pass
             elif lbl[1:] in plotOpt['lineList']: # item not in legend
                 if lbl[1:] in plotOpt['colors']: continue
@@ -3533,7 +3533,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     # plot magnification lines and labels (first, so "under" data)
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
-            if 'mag' not in lbl: continue
+            if 'magline' not in lbl: continue
             #ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
             # vertical line
             s = '@with line\n@ line on\n@ line loctype world\n@ line g0\n'
@@ -3544,7 +3544,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             s = '@ line linewidth 2\n@ line linestyle 2\n@ line color 1\n@ line arrow 0\n@line def\n'
             fp.write(s)
         for l in Plot.texts:
-            if 'mag' not in l.get_label(): continue
+            if 'magline' not in l.get_label(): continue
             if l.xycoords[0] == 'data':
                 xpos = l.get_position()[0]
             elif l.get_position()[0] == 0:
@@ -3878,7 +3878,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         j = 0
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
-            if 'mag' not in lbl: continue
+            if 'magline' not in lbl: continue
             j += 1
             fp.write('WAVES /D/O mag{0}X, mag{0}\nBEGIN\n'.format(j))
             fp.write(' {0} {1}\n {0} {2}\n'.format(
@@ -3886,7 +3886,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
             fp.write('END\nX AppendToGraph mag{0} vs mag{0}X\n'.format(j))
             fp.write('X ModifyGraph lstyle(mag{0})=3,rgb(mag{0})=(0,0,0)\n'.format(j))
         for l in Plot.texts:
-            if 'mag' not in l.get_label(): continue
+            if 'magline' not in l.get_label(): continue
             if l.xycoords[0] == 'data':
                 xpos = l.get_position()[0]
             elif l.get_position()[0] == 0:
@@ -3924,7 +3924,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
                 lbl = l.get_label()[1:]
             else:
                 lbl = l.get_label()
-            if 'mag' in lbl:
+            if 'magline' in lbl:
                 pass
             elif lbl in ('obs','calc','bkg','zero','diff'):
                 if lbl == 'obs':
@@ -3955,7 +3955,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         # magnifcation values
         for l in Plot.texts:
             lbl = l.get_label()
-            if 'mag' not in lbl: continue
+            if 'magline' not in lbl: continue
             if l.xycoords == 'axes fraction':
                 lbl = 'initial-mag'
                 lblList.append(lbl)
@@ -4197,7 +4197,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             lbl = l.get_label()[1:]
         else:
             lbl = l.get_label()
-        if 'mag' in lbl:
+        if 'magline' in lbl:
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
         elif lbl in ('obs','calc','bkg','zero','diff'):
             marker = l.get_marker()
@@ -4248,7 +4248,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
     for l in Plot.texts:
-        if 'mag' not in l.get_label(): continue
+        if 'magline' not in l.get_label(): continue
         ax0.annotate(l.get_text(),
                     xy=(l.get_position()), xycoords=l.xycoords,
                     verticalalignment='bottom',

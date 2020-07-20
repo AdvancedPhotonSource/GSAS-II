@@ -267,6 +267,7 @@ plotOpt['labelSize'] = '11'
 plotOpt['dpi'] = 600
 plotOpt['width'] = 8.
 plotOpt['height'] = 6.
+plotOpt['Show'] = {}
 plotOpt['legend'] = {}
 plotOpt['colors'] = {}
 plotOpt['format'] = None
@@ -3590,6 +3591,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 gsiz = 0
                 gmw = 0
                 lineWid = float(plotOpt['lineWid'])
+            if not plotOpt['Show'].get(lbl,True): continue
             if plotOpt['legend'].get(lbl):
                 glbl = lbl
             else:
@@ -3618,6 +3620,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             siz = float(plotOpt['tickSiz'])*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/(100*6) # 1% for siz=6
             mkwid = float(plotOpt['tickWid'])
             if sum(c) == 4.0: continue # white: ignore
+            if not plotOpt['Show'].get(lbl,True): continue
             if plotOpt['legend'].get(lbl):
                 # invisible data point for 
                 datnum += 1
@@ -3731,6 +3734,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         fontsize = 18*float(plotOpt['labelSize'])/12.
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
+            if not plotOpt['Show'].get(lbl[1:],True): continue
             if plotOpt['legend'].get(lbl[1:]):
                 legends.append((InameDict[lbl[1:]],lbl[1:]))
             if l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
@@ -3852,6 +3856,7 @@ X SetAxis Res_bot {0}, {1}
         ticknum = 0
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
+            if not plotOpt['Show'].get(lbl,True): continue
             if l in Page.tickDict.values():
                 c = plotOpt['colors'].get(lbl,l.get_color())
                 if sum(c) == 4.0: continue # white is invisible
@@ -4013,7 +4018,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     # start of PublishRietveldPlot
     if plotOpt['initNeeded']: Initialize()
     GetColors()            
-    dlg = wx.Dialog(G2frame.plotFrame,
+    dlg = wx.Dialog(G2frame.plotFrame,title="Publication plot creation",
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
     vbox = wx.BoxSizer(wx.VERTICAL)
     
@@ -4085,6 +4090,12 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         val = G2G.ValidatedTxtCtrl(dlg,plotOpt['phaseLabels'],lbl,size=(110,-1),
                                    style=wx.ALIGN_CENTER,OnLeave=RefreshPlot)
         gsizer.Add(val,0,wx.ALL)
+    gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Show'),0,wx.ALL)
+    for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
+        if lbl not in plotOpt['Show']:
+            plotOpt['Show'][lbl] = True
+        ch = G2G.G2CheckBox(dlg,'',plotOpt['Show'],lbl,RefreshPlot)
+        gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
     gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Include in legend'),0,wx.ALL)
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
         if lbl not in plotOpt['legend']:
@@ -4200,6 +4211,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
         if 'magline' in lbl:
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
         elif lbl in ('obs','calc','bkg','zero','diff'):
+            if not plotOpt['Show'].get(lbl,True): continue
             marker = l.get_marker()
             lineWid = l.get_lw()
             siz = l.get_markersize()
@@ -4230,6 +4242,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
         elif l in Page.tickDict.values():
+            if not plotOpt['Show'].get(lbl,True): continue
             c = plotOpt['colors'].get(lbl,l.get_color())
             #siz = l.get_markersize()
             siz = float(plotOpt['tickSiz'])

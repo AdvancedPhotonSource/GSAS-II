@@ -3625,7 +3625,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 # invisible data point for 
                 datnum += 1
                 fp.write("@type xy\n")
-                fp.write("-1 -1\n".format(x,y))
+                fp.write("-1 -1\n")
                 fp.write("&\n")
                 fp.write(linedef1.format(
                     "s"+str(datnum),glbl,gc,float(plotOpt['tickSiz'])/8.,mkwid))

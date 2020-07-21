@@ -853,7 +853,7 @@ def TOF2dsp(Inst,Pos):
     '''
     def func(d,pos,Inst):        
         return (pos-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d)/Inst['difC'][1]
-    dsp0 = np.ones_like(Pos)
+    dsp0 = Pos/Inst['difC'][1]
     N = 0
     while True:      #successive approximations
         dsp = func(dsp0,Pos,Inst)

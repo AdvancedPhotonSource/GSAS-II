@@ -4854,7 +4854,7 @@ class GSASII(wx.Frame):
                         Phase['Histograms'][hist]['Use'] = True
                     if Phase['Histograms'][hist]['Use'] and phase not in Phases:
                         Phases[phase] = Phase
-                    if hist not in Histograms and Phase['Histograms'][hist]['Use']:
+                    if (hist not in Histograms) and Phase['Histograms'][hist]['Use']:
                         if hist not in histIdList:
                             if badnum == 0:
                                 print('Error: hist {} not found in histIdList. Deleted?'.format(hist))
@@ -8677,7 +8677,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
-        G2plt.PlotPatterns(G2frame,plotType=datatype)
+        G2plt.PlotPatterns(G2frame,plotType=datatype,newPlot=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]

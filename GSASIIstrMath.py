@@ -1606,9 +1606,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
             HM = np.inner(uAmat,HP.T)                    #put into cartesian space X||H,Z||H*L; uAmat better than uBmat
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T    # normalize  HP  Nref,hkl=Unit vectors || Q
-#            eDotK = np.sum(eM[:,nxs,nxs,nxs,:]*Kdata[nxs,:,:,:,:],axis=-1)
-#            QC = eM[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kdata[nxs,:,:,:,:] #Nref,Ntau,Nop,Natm,xyz; Cartesian
-#            Q = np.inner(QC,uBmat.T)    #crystal space; Nref,Ntau,Nop,Natm,xyz .T?
 
             fam0 = 0.
             fbm0 = 0.
@@ -1622,7 +1619,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    
                 H[3,i]*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
 
-            if not SGData['SGGray']:
+            if not SGData['SGGray']:            
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
                 

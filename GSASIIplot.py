@@ -1857,7 +1857,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Pattern[0]['Magnification'] += [[xpos,2.]]
             wx.CallAfter(G2gd.UpdatePWHKPlot,G2frame,plottype,G2frame.PatternId)
             return
-        elif event.key == 'q': 
+        elif event.key == 'q' and not ifLimits: 
             newPlot = True
             if 'PWDR' in plottype:
                 Page.plotStyle['qPlot'] = not Page.plotStyle['qPlot']
@@ -1866,7 +1866,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
                 Page.plotStyle['sqPlot'] = not Page.plotStyle['sqPlot']
-        elif event.key == 't' and 'PWDR' in plottype:
+        elif event.key == 't' and 'PWDR' in plottype and not ifLimits:
             if G2frame.Contour:
                 G2frame.TforYaxis = not G2frame.TforYaxis
             else:
@@ -2732,6 +2732,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Page.tickDict = {}
     DifLine = ['']
+    PickId = G2frame.PickId
+    PatternId = G2frame.PatternId
+    ifLimits = False
+    if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+        ifLimits = True
+        Page.plotStyle['qPlot'] = False
+        Page.plotStyle['dPlot'] = False
     if G2frame.Contour:
         Page.Choice = (' key press','b: toggle subtract background',
             'd: lower contour max','u: raise contour max',
@@ -2748,9 +2755,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.Choice += ['o: remove obs, calc,... from legend',]
             else:
                 Page.Choice += ['o: add obs, calc,... to legend',]
-            Page.Choice += ['q: toggle q plot','s: toggle sqrt plot',
-                't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
-                '+: no selection']
+            if ifLimits:
+                Page.Choice += ['s: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
+                    '+: no selection']
+            else:
+                Page.Choice += ['q: toggle q plot','s: toggle sqrt plot',
+                    't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
+                    '+: no selection']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
                 del Page.Choice[1]
                 del Page.Choice[1]
@@ -2778,8 +2789,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.toolbar.updateActions = None # no update actions
     G2frame.cid = None
     Page.keyPress = OnPlotKeyPress    
-    PickId = G2frame.PickId
-    PatternId = G2frame.PatternId
     try:
         colors = GSASIIpath.GetConfigValue('Plot_Colors').split()
         for color in colors:
@@ -2866,9 +2875,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Title = 'Scaling diagnostic for '+Title
     if G2frame.SubBack:
         Title += ' - background'
-    if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
+    if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour and not ifLimits:
         xLabel = r'$Q, \AA^{-1}$'
-    elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
+    elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour and not ifLimits:
         xLabel = r'$d, \AA$'
     else:
         if 'C' in ParmList[0]['Type'][0]:
@@ -2942,9 +2951,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
             if not G2frame.Contour:
                 xye0 = ma.masked_outside(xye[0],limits[1][0],limits[1][1],copy=False)            #now mask for limits
-        if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
+        if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
-        elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
+        elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
             X = G2lat.Pos2dsp(Parms,xye0)
         else:
             X = copy.deepcopy(xye0)
@@ -3028,9 +3037,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if LimitId and ifpicked:
             limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
             lims = limits[1]
-            if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
+            if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
-            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
+            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
             Lines.append(Plot.axvline(lims[0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(lims[1],color='r',dashes=(5,5),picker=3.))
@@ -3625,8 +3634,8 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 # invisible data point for 
                 datnum += 1
                 fp.write("@type xy\n")
+#                fp.write("-1 -1\n".format(x,y))
                 fp.write("-1 -1\n")
-                fp.write("&\n")
                 fp.write(linedef1.format(
                     "s"+str(datnum),glbl,gc,float(plotOpt['tickSiz'])/8.,mkwid))
             # plot values with error bars

@@ -2795,9 +2795,10 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
 # fullrmc imports (all that are potentially useful)
+import os,glob
+import time
 #import matplotlib.pyplot as plt
 import numpy as np
-import time
 from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
 import fullrmc.Constraints.PairDistributionConstraints as fPDF
@@ -2899,19 +2900,30 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             rundata += ('            '+
                '("element","{1}","{0}","{2}",{5},{6},{5},{6},{3},{4}),\n'.format(*item))
         rundata += '             ])\n'
+    rundata += '    for f in glob.glob("{}_*.log"): os.remove(f)\n'.format(pName)
     rundata += '''
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)
-'''                
-#    if RMCPdict['Swaps']:
-#        rundata += '#set up for site swaps\n'
-#        rundata += 'aN = ENGINE.allNames\n'
-#        rundata += 'SwapGen = {}\n'
-#        for swap in RMCPdict['Swaps']:
-#            rundata += 'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[0]
-#            rundata += 'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[1]
-#            rundata += 'SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
+'''
+    rundata += 'ENGINE.set_log_file("{}")\n'.format(pName)
+    if RMCPdict['Swaps']:
+        rundata += '\n#set up for site swaps\n'
+        rundata += 'aN = ENGINE.allNames\n'
+        rundata += 'SwapGen = {}\n'
+        for swap in RMCPdict['Swaps']:
+            rundata += 'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[0]
+            rundata += 'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n'%swap[1]
+            rundata += 'SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'%(swap[0],swap[1],swap[2])
+        rundata += '    for swaps in SwapGen:\n'
+        rundata += '        AB = swaps.split("-")\n'
+        rundata += '        ENGINE.set_groups_as_atoms()\n'
+        rundata += '        for g in ENGINE.groups:\n'
+        rundata += '            if aN[g.indexes[0]]==AB[0]:\n'
+        rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
+        rundata += '            elif aN[g.indexes[0]]==AB[1]:\n'
+        rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
+        rundata += '            sProb = SwapGen[swaps][2]\n'
     rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
     rundata += 'wtDict = {}\n'
     for File in Files:
@@ -2936,6 +2948,8 @@ else:
     rundata += '        c.set_variance_squared(1./wtDict["Struct-"+c.weighting])\n'
     if RMCPdict['FitScale']:
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
+    # torsions difficult to implement, must be internal to cell & named with
+    # fullrmc atom names
     # if len(RMCPdict['Torsions']):         # Torsions currently commented out in GUI
     #     rundata += 'for c in ENGINE.constraints:  # look for Dihedral Angle Constraints\n'
     #     rundata += '    if type(c) is DihedralAngleConstraint:\n'
@@ -2946,27 +2960,13 @@ else:
     #     rundata += '        ]})\n'            
     rundata += '\n# setup runs for fullrmc\n'
 
-    rundata += 'for _ in range(%d):\n'%RMCPdict['Cycles']
-    if BondList and RMCPdict['Swaps']: rundata += setBondConstraints('    ')
-    if AngleList and RMCPdict['Swaps']: rundata += setAngleConstraints('    ')
+    rundata += 'steps = 10000\n'
+    rundata += 'for _ in range({}):\n'.format(RMCPdict['Cycles'])
     rundata += '    ENGINE.set_groups_as_atoms()\n'
-    rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=10000, saveFrequency=1000)\n'%restart
-    if RMCPdict['Swaps']:
-        if BondList: rundata += setBondConstraints('    ',clear=True)
-        if AngleList: rundata += setAngleConstraints('    ',clear=True)
-        rundata += '    for swaps in SwapGen:\n'
-        rundata += '        AB = swaps.split("-")\n'
-        rundata += '        ENGINE.set_groups_as_atoms()\n'
-        rundata += '        for g in ENGINE.groups:\n'
-        rundata += '            if aN[g.indexes[0]]==AB[0]:\n'
-        rundata += '                g.set_move_generator(SwapGen[swaps][0])\n'
-        rundata += '            elif aN[g.indexes[0]]==AB[1]:\n'
-        rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
-        rundata += '            sProb = SwapGen[swaps][2]\n'
-        rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*sProb, saveFrequency=1000)\n'%restart
-        rundata += '        ENGINE.set_groups_as_atoms()\n'
-        rundata += '        ENGINE.run(restartPdb="%s",numberOfSteps=10000*(1.-sProb), saveFrequency=1000)\n'%restart
-    #rundata += 'ENGINE.close()\n'
+    rundata += '    expected = ENGINE.generated+steps\n'
+    
+    rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=steps, saveFrequency=1000)\n'%restart
+    rundata += '    if ENGINE.generated != expected: break # run was stopped\n'
     rundata += 'print("ENGINE run time %.2f s"%(time.time()-time0))\n'
     rfile = open(rname,'w')
     rfile.writelines(rundata)

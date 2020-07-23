@@ -4918,10 +4918,12 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
         elif G2frame.RMCchoice == 'fullrmc':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5019,9 +5021,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['Angles'].append(['','','',0.,0.,0.,0.])
                 wx.CallAfter(UpdateRMC)
                 
-            def OnAddTorsion(event):
-                RMCPdict['Torsions'].append(['','','','',0.,0.,0.,0.,0.,0.])
-                wx.CallAfter(UpdateRMC)
+            # def OnAddTorsion(event):
+            #     RMCPdict['Torsions'].append(['','','','',0.,0.,0.,0.,0.,0.])
+            #     wx.CallAfter(UpdateRMC)
                 
             def GetAngleSizer():
                 
@@ -5079,42 +5081,42 @@ def UpdatePhaseData(G2frame,Item,data):
                     angleSizer.Add(delBtn,(row,9))
                 return angleSizer
             
-            def GetTorsionSizer():
+            # def GetTorsionSizer():
                 
-                def OnDelTorsion(event):
-                    Obj = event.GetEventObject()
-                    angle = Indx[Obj.GetId()]
-                    del RMCPdict['Torsions'][angle]
-                    wx.CallAfter(UpdateRMC)
+            #     def OnDelTorsion(event):
+            #         Obj = event.GetEventObject()
+            #         angle = Indx[Obj.GetId()]
+            #         del RMCPdict['Torsions'][angle]
+            #         wx.CallAfter(UpdateRMC)
                     
-                def OnTorsionAtSel(event):
-                    Obj = event.GetEventObject()
-                    torsion,i = Indx[Obj.GetId()]
-                    RMCPdict['Torsions'][torsion][i] = Obj.GetStringSelection()
+            #     def OnTorsionAtSel(event):
+            #         Obj = event.GetEventObject()
+            #         torsion,i = Indx[Obj.GetId()]
+            #         RMCPdict['Torsions'][torsion][i] = Obj.GetStringSelection()
                                            
-                def SetRestart1(invalid,value,tc):
-                    RMCPdict['ReStart'][1] = True
+            #     def SetRestart1(invalid,value,tc):
+            #         RMCPdict['ReStart'][1] = True
                 
-                Indx = {}
-                atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
-                torsionSizer = wx.FlexGridSizer(11,5,5)
-                fxcnLabels = [' ','Atom-A','Atom-B','Atom-C','Atom-D',' min angle1',' max angle1',' min angle2',' max angle2',' min angle3',' max angle3']
-                for lab in fxcnLabels:
-                    torsionSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
-                for ifx,torsion in enumerate(RMCPdict['Torsions']):
-                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
-                    delBtn.Bind(wx.EVT_BUTTON,OnDelTorsion)
-                    Indx[delBtn.GetId()] = ifx
-                    torsionSizer.Add(delBtn,0,WACV)
-                    for i in [0,1,2,3]:
-                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        atmSel.SetStringSelection(torsion[i])
-                        atmSel.Bind(wx.EVT_COMBOBOX,OnTorsionAtSel)
-                        Indx[atmSel.GetId()] = [ifx,i]
-                        torsionSizer.Add(atmSel,0,WACV)
-                    for i in  [4,5,6,7,8,9]: 
-                        torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,xmin=0.,xmax=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
-                return torsionSizer
+            #     Indx = {}
+            #     atChoice = [atm for atm in RMCPdict['atSeq'] if 'Va' not in atm]
+            #     torsionSizer = wx.FlexGridSizer(11,5,5)
+            #     fxcnLabels = [' ','Atom-A','Atom-B','Atom-C','Atom-D',' min angle1',' max angle1',' min angle2',' max angle2',' min angle3',' max angle3']
+            #     for lab in fxcnLabels:
+            #         torsionSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+            #     for ifx,torsion in enumerate(RMCPdict['Torsions']):
+            #         delBtn = wx.Button(G2frame.FRMC,label='Delete')
+            #         delBtn.Bind(wx.EVT_BUTTON,OnDelTorsion)
+            #         Indx[delBtn.GetId()] = ifx
+            #         torsionSizer.Add(delBtn,0,WACV)
+            #         for i in [0,1,2,3]:
+            #             atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+            #             atmSel.SetStringSelection(torsion[i])
+            #             atmSel.Bind(wx.EVT_COMBOBOX,OnTorsionAtSel)
+            #             Indx[atmSel.GetId()] = [ifx,i]
+            #             torsionSizer.Add(atmSel,0,WACV)
+            #         for i in  [4,5,6,7,8,9]: 
+            #             torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,xmin=0.,xmax=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
+            #     return torsionSizer
 #patches
             if 'useBVS' not in RMCPdict:
                 RMCPdict['useBVS'] = False
@@ -5130,8 +5132,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['Cycles'] = 1
             if 'min Contact' not in RMCPdict:
                 RMCPdict['min Contact'] = 1.5
-            if 'periodicBound' not in RMCPdict:
-                RMCPdict['periodicBound'] = True
+            #if 'periodicBound' not in RMCPdict:
+            #    RMCPdict['periodicBound'] = True
 #end patches
 
             generalData = data['General']
@@ -5152,12 +5154,9 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
             lineSizer.Add(GetSuperSizer(),0,WACV)
             lineSizer.Add((5,-1))
-#            lineSizer.Add(G2G.G2CheckBox(G2frame.FRMC,'Impose periodic boundaries',RMCPdict,'periodicBound'),
-#                              0,WACV)
-#            lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Num. atoms per group '),0,WACV)
-#            lineSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Natoms',xmin=1,size=[40,25]),0,WACV)
-#            else:
-#                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Starting phase symmetry must be P 1; transform structure first'))
+            # Bachir suggests that w/o periodic boundaries, users are likely to use fullrmc wrong
+            #lineSizer.Add(G2G.G2CheckBox(G2frame.FRMC,'Impose periodic boundaries',RMCPdict,'periodicBound'),
+            #                  0,WACV)
             mainSizer.Add(lineSizer,0,WACV)
             if ifBox:
                 molecSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5216,7 +5215,8 @@ def UpdatePhaseData(G2frame,Item,data):
             if len(RMCPdict['Angles']):
                 mainSizer.Add(GetAngleSizer(),0,WACV)
 
-            # Torsions are probably not implemented correctly, hide them for now
+            # Torsions are difficult to implement. Need to be internal to a unit cell & named with fullrmc
+            # atom labels. Leave this out, at least for now. 
             # torBox = wx.BoxSizer(wx.HORIZONTAL)
             # torAdd = wx.Button(G2frame.FRMC,label='Add')
             # torAdd.Bind(wx.EVT_BUTTON,OnAddTorsion)
@@ -5637,8 +5637,10 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
             # debug stuff
-            import imp
-            imp.reload(G2pwd)
+            if GSASIIpath.GetConfigValue('debug'):
+                print('reloading',G2pwd)
+                import imp
+                imp.reload(G2pwd)
             # end debug stuff            
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
@@ -5700,17 +5702,17 @@ def UpdatePhaseData(G2frame,Item,data):
                     'Not setup')
                 OnSetupRMC(event)
             RMCPdict = data['RMC']['fullrmc']
-            rmcname = pName+'.rmc'
-            if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
-                G2G.G2MessageBox(G2frame,
-                    '''You have asked to restart fullrmc but have an existing 
-                    run as {}. You must manually delete this directory if 
-                    you wish to restart or change the restart checkbox to 
-                    continue from the previous results. 
-                    '''.format(rmcname),'Restart or Continue?')
-                # TODO: could do this for the user with:
-                #import shutil
-                #shutil.rmtree(rmcname)
+            #rmcname = pName+'.rmc'
+            # if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
+            #     G2G.G2MessageBox(G2frame,
+            #         '''You have asked to restart fullrmc but have an existing 
+            #         run as {}. You must manually delete this directory if 
+            #         you wish to restart or change the restart checkbox to 
+            #         continue from the previous results. 
+            #         '''.format(rmcname),'Restart or Continue?')
+            #     # TODO: could do this for the user with:
+            #     #import shutil
+            #     #shutil.rmtree(rmcname)
             G2G.G2MessageBox(G2frame,'''For use of fullrmc, please cite:
 
       "Fullrmc, a Rigid Body Reverse Monte Carlo 
@@ -5807,6 +5809,24 @@ def UpdatePhaseData(G2frame,Item,data):
             batch.close()
             sb.Popen('runrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
             
+    def OnStopRMC(event):
+        if G2frame.RMCchoice == 'fullrmc':
+            RMCPdict = data['RMC']['fullrmc']
+            generalData = data['General']
+            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+            pName = pName.replace(' ','_')
+            engineFilePath = pName+'.rmc'
+            if not os.path.exists(engineFilePath):
+                print('fullrmc repository {} not found'.format(engineFilePath))
+                return
+            try:
+                from fullrmc import InterceptHook
+                hook = InterceptHook(path=engineFilePath)
+                hook.stop_engine()
+                print('hook.stop_engine() sent to {}'.format(engineFilePath))
+            except Exception as msg:
+                print('failed, msg=',msg)
+      
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
                 
@@ -5903,6 +5923,7 @@ def UpdatePhaseData(G2frame,Item,data):
             except Exception as msg:
                  print("Unexpected error reading from fullrmc engine\n  ",msg)
                  return
+            plotList.append('fullrmc residuals for '+pName)
             if not found or len(plotList) == 0:
                 G2G.G2MessageBox(G2frame,'No saved information yet, wait until fullrmc does a Save',
                                          'No info')
@@ -6035,70 +6056,31 @@ def UpdatePhaseData(G2frame,Item,data):
                     #print('skipping constraint ',sitem)
                     if item.__class__.__name__+' pyplot' in selectedPlots:
                         item.plot(show=True)
-
-            # how to get std err vs steps?
+                        
+            # read log files to get std err vs steps
+            ilog = 0
+            Gen = []
+            Err = []
+            while True:
+                fname = '{}_{}.log'.format(pName,ilog)
+                try:
+                    logfile = open(fname,'r')
+                    for line in logfile.readlines():
+                        if "fullrmc <STEP>" not in line: continue
+                        Gen.append(float(int(line.split('Gen:')[1].split()[0])))
+                        Err.append(float(line.split('Err:')[1].strip()))
+                    logfile.close()
+                except FileNotFoundError:
+                    break
+                ilog += 1
+            title = 'fullrmc residuals for '+pName
             #GSASIIpath.IPyBreak()
-            # loglines = []
-            # ilog = 0
-            # while True:
-            #     fname = '%s_%d.log'%(pName,ilog)
-            #     try:
-            #         logfile = open(fname,'r')
-            #         loglines += logfile.readlines()
-            #         logfile.close()
-            #     except FileNotFoundError:
-            #         break
-            #     ilog += 1
-            # if not len(loglines):
-            #     print('no log file found')
-            #     return
-            # start = 0
-            # while True:
-            #     if start == len(loglines):
-            #         print('No log info to plot')
-            #         return
-            #     line = loglines[start]                
-            #     if 'Err:' in line:
-            #         break
-            #     else:
-            #         start += 1
-            # Gen = []
-            # Err = []
-            # start -= 1
-            # while True:
-            #     start += 1
-            #     try:
-            #         line = loglines[start]
-            #     except:
-            #         break
-            #     if 'Err' not in line:
-            #         continue
-            #     items = line.split(' - ')
-            #     try:    # could be a trashed line at end
-            #         errStr = items[5][:-1].split('Err:')[1]
-            #         Err.append([float(val) for val in errStr.split(',')])
-            #     except ValueError:
-            #         break
-            #     Gen.append(int(items[1].split('Gen:')[1]))
-            
-            # Gen = np.array(Gen)
-            # Err = np.array(Err)
-            # nObs = np.array(nObs)
-            # if np.any(nObs):
-            #     Err /= nObs[:Err.shape[1]]
-            #     ptstr1 = ''
-            #     ptstr2 = ''
-            #     for it,item in enumerate(eNames):
-            #         ptstr1 += ' %s obs: %d'%(item,nObs[it])
-            #         ptstr2 += ' %s reduced chi^2: %.5f'%(item,Err[-1][it])
-            #     print(ptstr1)
-            #     print(ptstr2)
-            #     Err = np.log10(Err)
-            #     XY = [[Gen,Erri] for Erri in Err.T]
-            #     G2plt.PlotXY(G2frame,XY,labelX='no. generated',
-            #         labelY=r'$log_{10}$ (reduced $\mathsf{\chi^2})$',newPlot=True,Title='fullrmc residuals for '+pName,
-            #         lines=True,names=eNames)
-                      
+            if len(Gen) > 0 and title in selectedPlots:
+                Gen = np.array(Gen)
+                Err = np.log10(Err)
+                G2plt.PlotXY(G2frame,[[Gen,Err]],labelX='generated steps',
+                               labelY=r'$log_{10}$ ($\mathsf{\chi^2})$',newPlot=True,Title=title,
+                               lines=True,names=eNames)
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
@@ -11867,8 +11849,6 @@ def UpdatePhaseData(G2frame,Item,data):
             G2plt.PlotStructure(G2frame,data)                    
             
         # beginning of FillMapPeaksGrid()
-        #import imp   # debug code
-        #imp.reload(G2plt) # debug code
         G2frame.GetStatusBar().SetStatusText('',1)
         if 'Map Peaks' in data:
             G2frame.GetStatusBar().SetStatusText('Double click any column heading to sort',1)
@@ -12359,9 +12339,6 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()
         elif text == 'Map peaks':
-            #print('reimport GSASIIplot')
-            #import imp
-            #imp.reload(G2plt)
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MapPeaksMenu)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
             FillMapPeaksGrid()
@@ -12505,6 +12482,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
         G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
         G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
+        G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)

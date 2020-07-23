@@ -3854,7 +3854,8 @@ class ShowLSParms(wx.Dialog):
     '''Create frame to show least-squares parameters
     '''
     def __init__(self,parent,title,parmDict,varyList,fullVaryList,
-                 size=(375,430)):
+                     parmMinDict={}, parmMaxDict={}, frozenList=[],
+                     size=(650,430)):
         
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -3862,7 +3863,14 @@ class ShowLSParms(wx.Dialog):
         self.parmDict = parmDict
         self.varyList = varyList
         self.fullVaryList = fullVaryList
+        self.parmMinDict = parmMinDict
+        self.parmMaxDict = parmMaxDict
+        self.frozenList = frozenList
         self.choiceDict = {}
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('dummy settings for frozenList etc')
+        #     self.parmMinDict['0::Afrac:26'] = 0.0
+        #     self.frozenList = ['0::Afrac:26']        
 
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
@@ -3878,89 +3886,32 @@ class ShowLSParms(wx.Dialog):
         hisNames = [':'.join(item) for item in splitNames if not item[0] and item[1]]
         self.choiceDict['Histogram'] = G2obj.SortVariables(hisNames)
         self.hisNums = sorted(list(set([int(item.split(':')[1]) for item in hisNames])))
-        self.hisNums = [' ',]+[str(item) for item in self.hisNums]
+        self.hisNums = ['*',]+[str(item) for item in self.hisNums]
         self.hisVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[0]])))
         phasNames = [':'.join(item) for item in splitNames if not item[1] and 'is' not in item[2]]
         self.choiceDict['Phase'] = G2obj.SortVariables(phasNames)
-        self.phasNums = sorted([' ',]+list(set([item.split(':')[0] for item in phasNames])))
+        self.phasNums = sorted(['*',]+list(set([item.split(':')[0] for item in phasNames])))
         if '' in self.phasNums: self.phasNums.remove('')
         self.phasVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[1] and 'is' not in item[2]])))
         hapNames = [':'.join(item) for item in splitNames if item[0] and item[1]]
         self.choiceDict['Phase/Histo'] = G2obj.SortVariables(hapNames)
         self.hapVars = sorted(list(set([' ',]+[item[2] for item in splitNames if item[0] and item[1]])))
         
-        self.hisNum = ' '
-        self.phasNum = ' '
+        self.hisNum = '*'
+        self.phasNum = '*'
         self.varName = ' '
         self.listSel = 'Refined'
         self.DrawPanel()
         
     def repaintScrollTbl(self):
-        '''Shows the selected variables
-
-        This routine is pretty slow when lots of variables are selected. Why?
+        '''Shows the selected variables in a ListCtrl
         '''
-        self.countSizer.Clear(True)
-        self.headSizer.Clear(True)
-        self.scrolledSizer.Clear(True)
-        self.explainSizer.Clear(True)
-        
-        explainRefine = False
-        count = 0
-        for name in self.choiceDict[self.parmChoice]:
-            if '2' in platform.python_version_tuple()[0]: 
-                basestr = basestring
-            else:
-                basestr = str
-            if isinstance(self.parmDict[name],basestr): continue
-            if 'Refined' in self.listSel and (name not in self.fullVaryList
-                                              ) and (name not in self.varyList):
-                continue
-            if 'Phase' in self.parmChoice:
-                if self.phasNum != ' ' and name.split(':')[0] != self.phasNum: continue
-            if 'Histo' in self.parmChoice:
-                if self.hisNum != ' ' and name.split(':')[1] != self.hisNum: continue
-            if (self.varName != ' ') and (self.varName not in name): continue
-            try:
-                value = G2py3.FormatSigFigs(self.parmDict[name])
-            except TypeError:
-                value = str(self.parmDict[name])+' -?' # unexpected
-                #continue
-            v = G2obj.getVarDescr(name)
-            if v is None or v[-1] is None:
-                self.scrolledSizer.Add((-1,-1))
-            else:                
-                ch = HelpButton(self.panel,G2obj.fmtVarDescr(name))
-                self.scrolledSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
-            self.scrolledSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
-            if name in self.varyList:
-                self.scrolledSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinement flag setting?
-            elif name in self.fullVaryList:
-                self.scrolledSizer.Add(wx.StaticText(self.panel,label='C',size=(50,-1)))
-                explainRefine = True
-            else:
-                self.scrolledSizer.Add((50,-1))
-            self.scrolledSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
-            count += 1
-            if count > 200:
-                msg = wx.StaticText(self,label='Too many parameters selected. Showing first 200')
-                msg.SetBackgroundColour(wx.YELLOW)
-                self.countSizer.Add(msg,0,wx.ALIGN_LEFT)
-                self.countSizer.Add((-1,10))
-                break
-        
-        if explainRefine:
-            self.explainSizer.Add(
-                wx.StaticText(self,label='"R" indicates a refined variable\n'+
-                    '"C" indicates generated from a constraint'),0, wx.ALL,0)
-        self.panel.SetAutoLayout(1)
-        self.panel.SetupScrolling()
-        self.SetMinSize(self.GetSize())        # Allow window to be enlarged but not made smaller
-        for txt,wid,loc in zip(['','Parameter name','refine?','value'],self.scrolledSizer.GetColWidths(),
-                           [wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_RIGHT]):
-            self.headSizer.Add(wx.StaticText(self,wx.ID_ANY,txt,size=(wid,-1),style=loc),0,loc)
+        start = time.time()
+        self.varBox.SetContents(self)
         self.SendSizeEvent()
-            
+        if GSASIIpath.GetConfigValue('debug'):
+            print('repaintScrollTbl',time.time()-start)
+                    
     def DrawPanel(self):
         '''Draws the contents of the entire dialog. Called initially & when radio buttons are pressed
         '''
@@ -3986,9 +3937,9 @@ class ShowLSParms(wx.Dialog):
         def OnVarSel(event):
             event.Skip()
             self.varName = varSel.GetValue()
-            self.phasNum = ' '
+            self.phasNum = '*'
             if phasSel: phasSel.SetSelection(0)
-            self.hisNum = ' '
+            self.hisNum = '*'
             if histSel: histSel.SetSelection(0)
             wx.CallAfter(self.repaintScrollTbl)
             
@@ -4026,15 +3977,21 @@ class ShowLSParms(wx.Dialog):
             self.SpinDict[varSpin.GetId()] = SelCtrl,binding
             varSelSizer.Add(varSpin,0)
             varSizer.Add(varSelSizer,0)
-            
+
         if self.GetSizer(): self.GetSizer().Clear(True)
         self.SpinDict = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         num = len(self.varyList)
-        mainSizer.Add(wx.StaticText(self,label=' Number of refined variables: '+str(num)),0,wx.ALIGN_CENTER)
+        mainSizer.Add(wx.StaticText(self,label='View Parameters in Project'),0,wx.ALIGN_CENTER)
+        parmSizer = wx.BoxSizer(wx.HORIZONTAL)
+        parmSizer.Add(wx.StaticText(self,label=' Number of refined variables: {}'.format(num)),0,wx.ALIGN_LEFT)
         if len(self.varyList) != len(self.fullVaryList):
             num = len(self.fullVaryList) - len(self.varyList)
-            mainSizer.Add(wx.StaticText(self,label=' + '+str(num)+' parameters are varied via constraints'))
+            parmSizer.Add(wx.StaticText(self,label=
+                ' + {} parameters are varied via constraints'.format(
+                    len(self.fullVaryList) - len(self.varyList))
+                                        ))
+        mainSizer.Add(parmSizer)
         choice = ['Phase','Phase/Histo','Histogram']
         if 'Global' in self.choiceDict:
             choice += ['Global',]
@@ -4066,7 +4023,7 @@ class ShowLSParms(wx.Dialog):
         if self.parmChoice in ['Phase','Phase/Histo'] and len(self.phasNums) > 1:
             numSizer = wx.BoxSizer(wx.VERTICAL)
             phasSel = wx.ComboBox(self,choices=self.phasNums,value=self.phasNum,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                style=wx.CB_READONLY|wx.CB_DROPDOWN,size=(50,-1))
             AddSpinner(numSizer,'Phase',phasSel,OnPhasSel)
             varSizer.Add(numSizer)
 
@@ -4074,32 +4031,35 @@ class ShowLSParms(wx.Dialog):
         if self.parmChoice in ['Histogram','Phase/Histo'] and len(self.hisNums) > 1:
             numSizer = wx.BoxSizer(wx.VERTICAL)
             histSel = wx.ComboBox(self,choices=self.hisNums,value=self.hisNum,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                style=wx.CB_READONLY|wx.CB_DROPDOWN,size=(50,-1))
             AddSpinner(numSizer,'Histogram',histSel,OnHistSel)
             varSizer.Add(numSizer)
         selectionsSizer.Add(varSizer,0)
         parmSizer.Add(selectionsSizer,0)
-        mainSizer.Add(parmSizer,0)
-        
         listSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',
             choices=['All','Refined'],
             majorDimension=0,style=wx.RA_SPECIFY_COLS)
         listSel.SetStringSelection(self.listSel)
         listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
-        mainSizer.Add(listSel,0)
+        parmSizer.Add(listSel,0,wx.CENTER|wx.ALL,15)
+        mainSizer.Add(parmSizer,0)
+        
         
         self.countSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self.countSizer)
         self.headSizer = wx.BoxSizer(wx.HORIZONTAL) # non-scrolling header        
         mainSizer.Add(self.headSizer,0)
-        self.panel = wxscroll.ScrolledPanel(self)        
-        self.scrolledSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
-        self.panel.SetSizer(self.scrolledSizer)
-        mainSizer.Add(self.panel,1,wx.ALL|wx.EXPAND,1)
-        self.explainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(self.explainSizer)
-        # make OK button 
-        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.varBox = VirtualVarBox(self)
+        mainSizer.Add(self.varBox,1,wx.ALL|wx.EXPAND,1)
+
+        txt = ('"R" indicates a refined variable\n'+
+                    '"C" indicates generated from a constraint')
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     txt += '\n"F" indicates a variable that is Frozen due to exceeding min/max'
+        mainSizer.Add(
+            wx.StaticText(self,label=txt),0, wx.ALL,0)
+
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)          # make Close button 
         btn = wx.Button(self, wx.ID_CLOSE,"Close") 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
         btnsizer.Add(btn)
@@ -4109,6 +4069,109 @@ class ShowLSParms(wx.Dialog):
                 
     def _onClose(self,event):
         self.EndModal(wx.ID_CANCEL)
+        
+class VirtualVarBox(wx.ListCtrl):
+    def __init__(self, parent):
+        self.parmWin = parent
+        wx.ListCtrl.__init__(
+            self, parent, -1,
+            style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES
+            )
+
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     for i,(lbl,wid) in enumerate(zip(
+        #         ('#', "Parameter", "Ref?", "Value", "Min", "Max", "Explanation"),
+        #         (40 , 100        , 35    ,  100   ,  75  ,  75  , 700),)):  
+        #         self.InsertColumn(i, lbl)
+        #         self.SetColumnWidth(i, wid)
+        # else:
+        if True:
+            for i,(lbl,wid) in enumerate(zip(
+                ('#', "Parameter", "Ref?", "Value", "", "", "Explanation"),
+                (40 , 100        , 35    ,  100   ,  5  ,  5  , 700),)):  
+                self.InsertColumn(i, lbl)
+                self.SetColumnWidth(i, wid)
+
+        self.SetItemCount(0)
+
+        self.attr1 = wx.ListItemAttr()
+        self.attr1.SetBackgroundColour((255,255,150))
+
+        if GSASIIpath.GetConfigValue('debug'):
+            self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        #self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColSelected)
+
+    def SetContents(self,parent):
+        self.varList = []
+        for name in parent.choiceDict[parent.parmChoice]:
+            if '2' in platform.python_version_tuple()[0]: 
+                basestr = basestring
+            else:
+                basestr = str
+            if isinstance(parent.parmDict[name],basestr): continue
+            if 'Refined' in parent.listSel and (name not in parent.fullVaryList
+                                              ) and (name not in parent.varyList):
+                continue
+            if 'Phase' in parent.parmChoice:
+                if parent.phasNum != '*' and name.split(':')[0] != parent.phasNum: continue
+            if 'Histo' in parent.parmChoice:
+                if parent.hisNum != '*' and name.split(':')[1] != parent.hisNum: continue
+            if (parent.varName != ' ') and (parent.varName not in name): continue
+            self.varList.append(name)
+        oldlen = self.GetItemCount()
+        self.SetItemCount(len(self.varList))
+        
+    def OnItemSelected(self, event):
+        print('OnItemSelected: "%s"\n' % (event.Index))
+    #def OnColSelected(self, event):
+    #    print('Column selected:',event.Column)
+    #    #G2p.IPyBreak_base()
+    #-----------------------------------------------------------------
+    # Callbacks to set info in table
+    def OnGetItemText(self, item, col):
+        name = self.varList[item]
+        if col == 0:
+            return str(item)
+        elif col == 1:
+            return name
+        elif col == 2:
+            if name in self.parmWin.varyList:
+                if name in self.parmWin.frozenList:
+                    return "F"
+                return "R"
+            elif name in self.parmWin.fullVaryList:
+                return "C"
+            return ""
+        elif col == 3:
+            try:
+                value = G2py3.FormatSigFigs(self.parmWin.parmDict[name])
+            except TypeError:
+                value = str(self.parmWin.parmDict[name])+' -?' # unexpected
+            return value
+                #continue
+        elif col == 4:
+            if name in self.parmWin.parmMinDict:
+                return G2py3.FormatSigFigs(self.parmWin.parmMinDict[name],8)
+            return "" # min value
+        elif col == 5:
+            if name in self.parmWin.parmMaxDict:
+                return G2py3.FormatSigFigs(self.parmWin.parmMaxDict[name],8)
+            return "" # max value
+        elif col == 6:
+            v = G2obj.getVarDescr(name)
+            if v is not None and v[-1] is not None:
+                txt = G2obj.fmtVarDescr(name)
+                if txt: return txt
+            return ""
+        else:
+            return "?"
+
+    def OnGetItemAttr(self, item):
+        name = self.varList[item]
+        if name in self.parmWin.varyList and name in self.parmWin.frozenList:
+            return self.attr1
+        else:
+            return None
 
 ################################################################################
 #####  Customized Grid Support

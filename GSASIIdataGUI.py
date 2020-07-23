@@ -23,8 +23,6 @@ import random as ran
 import copy
 import sys
 import os
-#import glob
-#import imp
 import inspect
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
@@ -623,7 +621,7 @@ class GSASII(wx.Frame):
         self.MakePDF.append(item)
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
-        item = parent.Append(wx.ID_ANY,'&View LS parms','View least squares parameters')
+        item = parent.Append(wx.ID_ANY,'&View LS parms\tCTRL+L','View least squares parameters')
         self.Bind(wx.EVT_MENU, self.OnShowLSParms, id=item.GetId())
         
         item = parent.Append(wx.ID_ANY,'&Refine\tCTRL+R','Perform a refinement') 
@@ -1334,8 +1332,6 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'Auto Import','Import data files as found')
         def OnAutoImport(event):
-            #import imp
-            #imp.reload(G2G)
             G2G.AutoLoadFiles(self,FileTyp='pwd')
         self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
         
@@ -2526,8 +2522,6 @@ class GSASII(wx.Frame):
         submenu.AppendSeparator()
         item = submenu.Append(wx.ID_ANY,'Auto Import','Import PDF files as found')
         def OnAutoImport(event):
-            #import imp
-            #imp.reload(G2G)
             G2G.AutoLoadFiles(self,FileTyp='gr')
         self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -4972,7 +4966,14 @@ class GSASII(wx.Frame):
         except G2mv.ConstraintException:
             pass
         wx.EndBusyCursor()
-        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
+        # debug stuff
+        if GSASIIpath.GetConfigValue('debug'):
+            print('reloading',G2G)
+            import imp
+            imp.reload(G2G)
+        # end debug stuff            
+        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,
+                                  varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -6062,7 +6063,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
-        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC' )       
+        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC',
+                            'wxID_STOPRMC')       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6070,7 +6072,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.FRMCMenu.Append(menu=self.FRMCDataEdit, title='Operations')
         self.FRMCDataEdit.Append(G2G.wxID_SETUPRMC,'Setup RMC','Setup new fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
-        self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'View','View fullrmc or RMCprofile results')
+        self.FRMCDataEdit.Append(G2G.wxID_STOPRMC,'Stop run','Stop fullrmc run')
+        self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'Plot','View fullrmc or RMCprofile results')
         self.PostfillDataMenu()
         
         # Phase / Layer tab 

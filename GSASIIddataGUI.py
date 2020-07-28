@@ -18,6 +18,8 @@ information that is shown in the data display window
 '''
 from __future__ import division, print_function
 import wx
+import numpy as np
+import numpy.linalg as nl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -26,8 +28,7 @@ import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
 import GSASIIctrlGUI as G2G
-import numpy as np
-import numpy.linalg as nl
+import GSASIIpy3 as G2py3
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -391,9 +392,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             hist,pid = Indx[Obj.GetId()]
             UseList[G2frame.hist]['HStrain'][1][pid] = Obj.GetValue()
             
+        hSizer = wx.BoxSizer(wx.VERTICAL)
         hstrainSizer = wx.FlexGridSizer(0,6,5,5)
         Hsnames = G2spc.HStrainNames(SGData)
         parms = zip(Hsnames,UseList[G2frame.hist]['HStrain'][1],range(len(Hsnames)))
+        allzero = True
         for Pa,ref,Id in parms:
             hstrainRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             hstrainRef.thisown = False
@@ -401,9 +404,38 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[hstrainRef.GetId()] = [G2frame.hist,Id]
             hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
             hstrainSizer.Add(hstrainRef,0,WACV|wx.LEFT,5)
-            hstrainVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['HStrain'][0],Id,nDig=(10,3,'g'))
+            hstrainVal = G2G.ValidatedTxtCtrl(DData,
+                        UseList[G2frame.hist]['HStrain'][0],Id,nDig=(10,3,'g'),
+                        OnLeave=OnNewValueReDraw)
+            if abs(UseList[G2frame.hist]['HStrain'][0][Id]) > 1e-8:
+                allzero = False
             hstrainSizer.Add(hstrainVal,0,WACV)
-        return hstrainSizer
+        hSizer.Add(hstrainSizer,0,WACV)
+        if not allzero:   # show Dij shifted unit cell
+            DijVals = UseList[G2frame.hist]['HStrain'][0][:]
+            # apply the Dij values to the reciprocal cell
+            newA = []
+            Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+            for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
+                            ['D11','D22','D33','D12','D13','D23']):
+                newA.append(Aij + Dijdict.get(lbl,0.0))
+            cell = G2lat.A2cell(newA)   # convert back to direct cell
+            laue = generalData['SGData']['SGLaue']
+            if laue == '2/m':
+                laue += generalData['SGData']['SGUniq']
+            for cellGUI in G2py3.cellGUIlist:
+                if laue in cellGUI[0]:
+                    useGUI = cellGUI
+                    break
+            else:
+                return hSizer
+            cellstr = ''
+            for txt,fmt,ifEdit,Id in zip(*useGUI[2:]):
+                if cellstr: cellstr += ", "
+                cellstr += txt+fmt.format(cell[Id])
+            cellstr += ', Vol = {:.3f}'.format(G2lat.calc_V(newA))
+            hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0,WACV)
+        return hSizer
         
     def PoTopSizer(POData):
         poSizer = wx.FlexGridSizer(0,6,5,5)
@@ -966,7 +998,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return bottomSizer
 
     ######################################################################
-    # Beginning of UpdateDData execution here
+    ### Beginning of UpdateDData execution here
     ######################################################################
     G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])

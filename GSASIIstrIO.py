@@ -131,7 +131,7 @@ def GetControls(GPXfile):
     :param str GPXfile: full .gpx file name
     :return: dictionary of control items
     '''
-    Controls = copy.copy(G2obj.DefaultControls)
+    Controls = copy.deepcopy(G2obj.DefaultControls)
     IndexGPX(GPXfile)
     pos = gpxIndex.get('Controls')
     if pos is None:
@@ -647,7 +647,7 @@ def GPXBackup(GPXfile,makeBack=True):
             time.sleep(1)           #just wait a second!         
     return GPXback
 
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,makeBack=True):
+def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozenList,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram. Also updates rigid body definitions.
     This is used for non-sequential fits, but not for sequential fitting.
@@ -657,6 +657,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
     :param dict Phases: dictionary of phases that use histograms
     :param dict RigidBodies: dictionary of rigid bodies
     :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
+    :param list parmFrozenList: list of parameters that are frozen due to limits
     :param bool makeBack: True if new backup of .gpx file is to be made; else use the last one made
 
     '''
@@ -683,6 +684,11 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
             data[0][1] = CovData
         elif datum[0] == 'Rigid bodies':
             data[0][1] = RigidBodies
+        elif datum[0] == 'Controls':
+            Controls = data[0][1]
+            if 'parmFrozen' not in Controls:
+                Controls['parmFrozen'] = {}
+            Controls['parmFrozen']['FrozenList'] = parmFrozenList
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
@@ -753,7 +759,7 @@ def SetupSeqSavePhases(GPXfile):
     fp = open(GPXhist,'wb')
     fp.close()
 
-def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData):
+def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozen):
     '''
     Save phase and histogram information into "pseudo-gpx" files. The phase
     information is overwritten each time this is called, but histogram information is 
@@ -764,6 +770,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     :param dict Phases: dictionary of phases that use histograms
     :param dict RigidBodies: dictionary of rigid bodies
     :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
+    :param dict parmFrozen: dict with frozen parameters for all phases
     '''
                         
     import distutils.file_util as dfu
@@ -784,6 +791,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     cPickle.dump(data,fp,1)
     cPickle.dump([['Covariance',CovData]],fp,1)
     cPickle.dump([['Rigid bodies',RigidBodies]],fp,1)
+    cPickle.dump([['parmFrozen',parmFrozen]],fp,1)
     fp.close()
     # create an entry that looks like a PWDR tree item
     for key in Histograms:
@@ -840,9 +848,10 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         raise Exception('Unexpected block in {} file. How did this happen?'.format(GPXphase))
     Phases = {}
     for name,vals in data[1:]:
-        Phases[name] = vals
+        Phases[name] = vals        
     name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
     name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+    name,parmFrozen = cPickleLoad(fp)[0] # 4th block in file should be frozen parameters
     fp.close()
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     hist = open(GPXhist,'rb')
@@ -875,7 +884,9 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         elif datum[0] == 'Rigid bodies':
             data[0][1] = RigidBodies
         elif datum[0] == 'Controls': # reset the Copy Next flag after a sequential fit
-            data[0][1]['Copy2Next'] = False
+            Controls = data[0][1]
+            Controls['Copy2Next'] = False
+            Controls['parmFrozen'] = parmFrozen
         elif datum[0] in histIndex:
             hist.seek(histIndex[datum[0]])
             hdata = cPickleLoad(hist)

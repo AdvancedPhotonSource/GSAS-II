@@ -17,6 +17,22 @@ tand = tan = t = lambda x: np.tan(x*np.pi/180.)
 sqrt = sq = lambda x: np.sqrt(x)
 pi = np.pi
 
+# formatting for unique cell parameters by Laue type
+cellGUIlist = [[['m3','m3m'],4,[" Unit cell: a = "],["{:.5f}"],[True],[0]],
+[['3R','3mR'],6,[" a = ",u" \u03B1 = "],["{:.5f}","{:.3f}"],[True,True],[0,3]],
+[['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,[" a = "," c = "],["{:.5f}","{:.5f}"],[True,True],[0,2]],
+[['mmm'],8,[" a = "," b = "," c = "],["{:.5f}","{:.5f}","{:.5f}"],
+    [True,True,True],[0,1,2]],
+[['2/m'+'a'],10,[" a = "," b = "," c = ",u" \u03B1 = "],
+    ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,3]],
+[['2/m'+'b'],10,[" a = "," b = "," c = ",u" \u03B2 = "],
+    ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,4]],
+[['2/m'+'c'],10,[" a = "," b = "," c = ",u" \u03B3 = "],
+    ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,5]],
+[['-1'],7,[" a = "," b = "," c = ",u" \u03B1 = ",u" \u03B2 = ",u" \u03B3 = "],
+    ["{:.5f}","{:.5f}","{:.5f}","{:.3f}","{:.3f}","{:.3f}"],
+    [True,True,True,False,True,True,True],[0,1,2,3,4,5]]]
+
 def FormulaEval(string):
     '''Evaluates a algebraic formula into a float, if possible. Works
     properly on fractions e.g. 2/3 only with python 3.0+ division.
@@ -87,7 +103,7 @@ def FormatValue(val,maxdigits=None):
     if len(string) <= digits[0]:
         if ':' in string: # deal with weird bug where a colon pops up in a number when formatting (EPD 7.3.2!)
             string = str(val)
-        if digits[1] > 0: # strip off extra zeros on right side
+        if digits[1] > 0 and not 'e' in string.lower(): # strip off extra zeros on right side
             string = string.rstrip('0')
             if string[-1] == '.': string += "0"
         return string

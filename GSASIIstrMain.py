@@ -252,6 +252,19 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         return False,' Constraint error'
 #    print G2mv.VarRemapShow(varyList)
 
+    # remove frozen vars from refinement
+    if 'parmFrozen' not in Controls:
+        Controls['parmFrozen'] = {}
+    if 'FrozenList' not in Controls['parmFrozen']: 
+        Controls['parmFrozen']['FrozenList'] = []
+    parmFrozenList = Controls['parmFrozen']['FrozenList']
+    frozenList = [i for i in varyList if i in parmFrozenList]
+    if len(frozenList) != 0: 
+        varyList = [i for i in varyList if i not in parmFrozenList]
+        G2fil.G2Print(
+            'Frozen refined variables (due to exceeding limits)\n\t:{}'
+            .format(frozenList))
+        
     ifSeq = False
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
@@ -270,6 +283,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
                        'newCellDict':newCellDict,'freshCOV':True}
             # add the uncertainties into the esd dictionary (sigDict)
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
+            # check for variables outside their allowed range, reset and freeze them
+            frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
@@ -277,7 +292,11 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
-            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)
+            if len(frozen) > 0:
+                G2fil.G2Print(
+                    ' {} variables were outside limits and were frozen (now {} frozen total)\n'
+                    .format(len(frozen),len(parmFrozenList)))
+            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
             G2fil.G2Print (' ***** Refinement successful *****')
@@ -506,6 +525,18 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         ifSeq = True
         printFile.write('\n Refinement results for histogram: %s\n'%histogram)
         printFile.write(135*'-'+'\n')
+        # remove frozen vars
+        if 'parmFrozen' not in Controls:
+            Controls['parmFrozen'] = {}
+        if histogram not in Controls['parmFrozen']: 
+            Controls['parmFrozen'][histogram] = []
+        parmFrozenList = Controls['parmFrozen'][histogram]
+        frozenList = [i for i in varyList if i in parmFrozenList]
+        if len(frozenList) != 0: 
+           varyList = [i for i in varyList if i not in parmFrozenList]
+           printFile.write(
+               ' The following refined variables have previously been frozen due to exceeding limits\n\t:{}\n'
+               .format(frozenList))
         try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
@@ -519,7 +550,20 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             sigDict = dict(zip(varyList,sig))
             # the uncertainties for dependent constrained parms into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
-
+            # check for variables outside their allowed range, reset and freeze them
+            frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
+            if len(frozen) > 0:
+               msg = ('Hist {}: {} variables were outside limits and were frozen (now {} frozen total)'
+                   .format(ihst,len(frozen),len(parmFrozenList)))
+               G2fil.G2Print(msg)
+               printFile.write(msg+'\n')
+               for p in frozen:
+                   if p not in varyList:
+                       print('Frozen Warning: {} not in varyList. This should not happen!'.format(p))
+                       continue
+                   i = varyList.index(p)
+                   result[0][i] = parmDict[p]
+                   sig[i] = -0.1
             # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
             depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i in sigDict and i not in varyList}
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
@@ -530,13 +574,14 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
                 'newCellDict':newCellDict,'depParmDict':depParmDict,
                 'constraintInfo':constraintInfo,
-                'parmDict':parmDict}
+                'parmDict':parmDict,
+                }
             SeqResult[histogram] = histRefData
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile)
-            G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData)
+            G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,Controls['parmFrozen'])
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
             # next histogram, for use in next refinement.
@@ -568,11 +613,48 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))
             t1 = t2
     SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
-    G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
+    try:
+        G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
+    except Exception as msg:
+        print('Error reading Sequential results')
+        if GSASIIpath.GetConfigValue('debug'):
+            import traceback
+            print(traceback.format_exc())        
     printFile.close()
     G2fil.G2Print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
     G2fil.G2Print (' ***** Sequential refinement successful *****')
     return True,'Success'
+
+def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
+    '''Find variables in the parameters dict that are outside the ranges 
+    (in parmMinDict and parmMaxDict) and set them to the limits values. 
+    Add any such variables into the list of frozen variable 
+    (parmFrozenList). Returns a list of newly frozen variables, if any.
+    '''
+    parmMinDict = Controls.get('parmMinDict',{})
+    parmMaxDict = Controls.get('parmMaxDict',{})
+    freeze = []
+    if parmMinDict or parmMaxDict:
+        for name in varyList:
+            if name not in parmDict: continue
+            n,val = G2obj.prmLookup(name,parmMinDict)
+            if n is not None:
+                if parmDict[name] < parmMinDict[n]:
+                    parmDict[name] = parmMinDict[n]
+                    sigDict[name] = 0.0
+                    freeze.append(name)
+                    continue
+            n,val = G2obj.prmLookup(name,parmMaxDict)
+            if n is not None:
+                if parmDict[name] > parmMaxDict[n]:
+                    parmDict[name] = parmMaxDict[n]
+                    sigDict[name] = 0.0
+                    freeze.append(name)
+                    continue
+        for v in freeze:
+            if v not in parmFrozenList:
+                parmFrozenList.append(v)
+    return freeze
 
 def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
     '''Compute and return distances and angles

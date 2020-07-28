@@ -4965,15 +4965,18 @@ class GSASII(wx.Frame):
                 G2mv.Map2Dict(parmValDict,varyList)
         except G2mv.ConstraintException:
             pass
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+            if key not in Controls: Controls[key] = {}
         wx.EndBusyCursor()
         # debug stuff
-        if GSASIIpath.GetConfigValue('debug'):
-            print('reloading',G2G)
-            import imp
-            imp.reload(G2G)
+        #if GSASIIpath.GetConfigValue('debug'):
+        #    print('reloading',G2G)
+        #    import imp
+        #    imp.reload(G2G)
         # end debug stuff            
         dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,
-                                  varyList,reqVaryList)
+                    varyList,reqVaryList,Controls)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -6466,7 +6469,6 @@ def UpdateControls(G2frame,data):
         return LSSizer
         
     def AuthSizer():
-
         def OnAuthor(event):
             event.Skip()
             data['Author'] = auth.GetValue()
@@ -6479,6 +6481,10 @@ def UpdateControls(G2frame,data):
         auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
         authSizer.Add(auth,0,WACV)
         return authSizer
+
+    def ClearFrozen(event):
+        Controls['parmFrozen'] = {}
+        wx.CallAfter(UpdateControls,G2frame,data)
         
     if 'SVD' in data['deriv type']:
         G2frame.GetStatusBar().SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian',1)
@@ -6488,18 +6494,48 @@ def UpdateControls(G2frame,data):
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Refinement Controls:'),0,WACV)    
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement Controls'),0,WACV)    
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)
+    mainSizer.Add((5,5),0)
     mainSizer.Add(LSSizer())
     mainSizer.Add((5,5),0)
     mainSizer.Add(SeqSizer())
     mainSizer.Add((5,5),0)
     mainSizer.Add(AuthSizer())
     mainSizer.Add((5,5),0)
+    Controls = data
+    if 'parmFrozen' not in Controls:
+        Controls['parmFrozen'] = {}
+    parmFrozen = Controls['parmFrozen']
+    if G2frame.testSeqRefineMode():
+        frozenList = set()
+        for h in parmFrozen:
+            if h == 'FrozenList': continue
+            frozenList = frozenList.union(parmFrozen[h])
+        count = len(frozenList)
+    elif 'FrozenList' in parmFrozen:
+        count = len(parmFrozen['FrozenList'])
+    else:
+        count = 0
+    if count > 0:
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    label='There are {} frozen variables (values refined outside limits)'
+                                .format(count)),0,WACV)
+        subSizer.Add((5,-1))
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear All Frozen')
+        btn.Bind(wx.EVT_BUTTON,ClearFrozen)
+        subSizer.Add(btn)
+        mainSizer.Add(subSizer)
         
     mainSizer.Layout()
     mainSizer.FitInside(G2frame.dataWindow)    
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
+    G2frame.SendSizeEvent()
      
 ################################################################################
 #####  Display of Sequential Results
@@ -7292,6 +7328,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         as a tooltip
         '''
         if G2frame.colSigs[col]:
+            if G2frame.colSigs[col][row] == -0.1: return 'frozen'
             return u'\u03c3 = '+str(G2frame.colSigs[col][row])
         return ''
         

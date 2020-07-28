@@ -1927,6 +1927,21 @@ def LookupWildCard(varname,varlist):
     rexp = re.compile(varname.replace('*','[0-9]+'))
     return sorted([var for var in varlist if rexp.match(var)])
 
+def prmLookup(name,prmDict):
+    '''looks for a parameter in a min/max dictionary, optionally
+    considering a wild card for histogram & atom number
+    '''
+    sn = name.split(':')
+    if sn[1] != '': sn[1] = '*'
+    if len(sn) >= 4 and sn[3] != '': sn[3] = '*'
+    wname = ':'.join(sn)
+    if wname in prmDict:
+        return wname,prmDict[wname]
+    elif name in prmDict:
+        return name,prmDict[name]
+    else:
+        return None,None
+        
 
 def _lookup(dic,key):
     '''Lookup a key in a dictionary, where None returns an empty string

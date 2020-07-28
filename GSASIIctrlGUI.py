@@ -3853,25 +3853,30 @@ class DisAglDialog(wx.Dialog):
 class ShowLSParms(wx.Dialog):
     '''Create frame to show least-squares parameters
     '''
-    def __init__(self,parent,title,parmDict,varyList,fullVaryList,
-                     parmMinDict={}, parmMaxDict={}, frozenList=[],
-                     size=(650,430)):
+    def __init__(self,G2frame,title,parmDict,varyList,fullVaryList,
+                     Controls, size=(650,430)):
         
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
+        wx.Dialog.__init__(self,G2frame,wx.ID_ANY,title,size=size,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.parmChoice = 'Phase'
+        self.G2frame = G2frame
         self.parmDict = parmDict
         self.varyList = varyList
         self.fullVaryList = fullVaryList
-        self.parmMinDict = parmMinDict
-        self.parmMaxDict = parmMaxDict
-        self.frozenList = frozenList
+        self.Controls = Controls
         self.choiceDict = {}
-        # if GSASIIpath.GetConfigValue('debug'):
-        #     print('dummy settings for frozenList etc')
-        #     self.parmMinDict['0::Afrac:26'] = 0.0
-        #     self.frozenList = ['0::Afrac:26']        
 
+        parmFrozen = Controls.get('parmFrozen',{})
+        if G2frame.testSeqRefineMode():
+            frozenList = set()
+            for h in parmFrozen:
+                if h == 'FrozenList': continue
+                frozenList = frozenList.union(parmFrozen[h])
+            self.frozenList = list(frozenList)
+        elif 'FrozenList' in parmFrozen:
+            self.frozenList = copy.copy(parmFrozen['FrozenList'])
+        else:
+            self.frozenList = []
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
         if '2' in platform.python_version_tuple()[0]: 
@@ -3906,11 +3911,11 @@ class ShowLSParms(wx.Dialog):
     def repaintScrollTbl(self):
         '''Shows the selected variables in a ListCtrl
         '''
-        start = time.time()
+        #start = time.time()
         self.varBox.SetContents(self)
         self.SendSizeEvent()
-        if GSASIIpath.GetConfigValue('debug'):
-            print('repaintScrollTbl',time.time()-start)
+        #if GSASIIpath.GetConfigValue('debug'):
+        #    print('repaintScrollTbl',time.time()-start)
                     
     def DrawPanel(self):
         '''Draws the contents of the entire dialog. Called initially & when radio buttons are pressed
@@ -3988,9 +3993,20 @@ class ShowLSParms(wx.Dialog):
         if len(self.varyList) != len(self.fullVaryList):
             num = len(self.fullVaryList) - len(self.varyList)
             parmSizer.Add(wx.StaticText(self,label=
-                ' + {} parameters are varied via constraints'.format(
+                ' + {} varied via constraints'.format(
                     len(self.fullVaryList) - len(self.varyList))
                                         ))
+        parmFrozen = self.Controls.get('parmFrozen',{})
+        fcount = 0
+        if self.G2frame.testSeqRefineMode():
+            for h in parmFrozen:
+                if h == 'FrozenList': continue
+                fcount += len(parmFrozen[h])
+        elif 'FrozenList' in parmFrozen:
+            fcount = len(parmFrozen['FrozenList'])
+        if fcount:
+            parmSizer.Add(wx.StaticText(self,label=
+                ' - {} frozen variables'.format(fcount)))
         mainSizer.Add(parmSizer)
         choice = ['Phase','Phase/Histo','Histogram']
         if 'Global' in self.choiceDict:
@@ -4053,9 +4069,8 @@ class ShowLSParms(wx.Dialog):
         mainSizer.Add(self.varBox,1,wx.ALL|wx.EXPAND,1)
 
         txt = ('"R" indicates a refined variable\n'+
-                    '"C" indicates generated from a constraint')
-        # if GSASIIpath.GetConfigValue('debug'):
-        #     txt += '\n"F" indicates a variable that is Frozen due to exceeding min/max'
+               '"C" indicates generated from a constraint\n'+
+               '"F" indicates a variable that is Frozen due to exceeding min/max')
         mainSizer.Add(
             wx.StaticText(self,label=txt),0, wx.ALL,0)
 
@@ -4069,7 +4084,7 @@ class ShowLSParms(wx.Dialog):
                 
     def _onClose(self,event):
         self.EndModal(wx.ID_CANCEL)
-        
+
 class VirtualVarBox(wx.ListCtrl):
     def __init__(self, parent):
         self.parmWin = parent
@@ -4078,28 +4093,18 @@ class VirtualVarBox(wx.ListCtrl):
             style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES
             )
 
-        # if GSASIIpath.GetConfigValue('debug'):
-        #     for i,(lbl,wid) in enumerate(zip(
-        #         ('#', "Parameter", "Ref?", "Value", "Min", "Max", "Explanation"),
-        #         (40 , 100        , 35    ,  100   ,  75  ,  75  , 700),)):  
-        #         self.InsertColumn(i, lbl)
-        #         self.SetColumnWidth(i, wid)
-        # else:
-        if True:
-            for i,(lbl,wid) in enumerate(zip(
-                ('#', "Parameter", "Ref?", "Value", "", "", "Explanation"),
-                (40 , 100        , 35    ,  100   ,  5  ,  5  , 700),)):  
-                self.InsertColumn(i, lbl)
-                self.SetColumnWidth(i, wid)
+        for i,(lbl,wid) in enumerate(zip(
+                ('#', "Parameter", "Ref", "Value", "Min", "Max", "Explanation"),
+                (40 , 125        , 30    ,  100   ,  75  ,  75  , 700),)):  
+            self.InsertColumn(i, lbl)
+            self.SetColumnWidth(i, wid)
 
         self.SetItemCount(0)
 
         self.attr1 = wx.ListItemAttr()
         self.attr1.SetBackgroundColour((255,255,150))
 
-        if GSASIIpath.GetConfigValue('debug'):
-            self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        #self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColSelected)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnRowSelected)
 
     def SetContents(self,parent):
         self.varList = []
@@ -4121,13 +4126,227 @@ class VirtualVarBox(wx.ListCtrl):
         oldlen = self.GetItemCount()
         self.SetItemCount(len(self.varList))
         
-    def OnItemSelected(self, event):
-        print('OnItemSelected: "%s"\n' % (event.Index))
-    #def OnColSelected(self, event):
-    #    print('Column selected:',event.Column)
-    #    #G2p.IPyBreak_base()
+    def OnRowSelected(self, event, row=None):
+        'Creates an edit window when a parameter is selected'
+        def ResetFrozen(event):
+            '''release a frozen parameter (from all histograms in the case of a 
+            sequential fit).
+            '''
+            if name in self.parmWin.frozenList:
+                del self.parmWin.frozenList[self.parmWin.frozenList.index(name)]
+            parmFrozen = self.parmWin.Controls.get('parmFrozen',{})
+            if self.parmWin.G2frame.testSeqRefineMode():
+                for h in parmFrozen:
+                    if h == 'FrozenList': continue
+                    if name in parmFrozen[h]:
+                        del parmFrozen[h][parmFrozen[h].index(name)]
+            elif 'FrozenList' in parmFrozen:
+                if name in parmFrozen['FrozenList']:
+                    del parmFrozen['FrozenList'][parmFrozen['FrozenList'].index(name)]
+            dlg.EndModal(wx.ID_CANCEL)
+            self.parmWin.SendSizeEvent()
+
+        def delM(event):
+            'Get event info & prepare to delete Max or Min limit'
+            if hasattr(event.EventObject,'max'):
+                d = self.parmWin.Controls['parmMaxDict']
+            else:
+                d = self.parmWin.Controls['parmMinDict']
+            # close sub-dialog then delete item and redraw
+            dlg.EndModal(wx.ID_OK)
+            wx.CallAfter(delMafter,d,name)
+        def delMafter(d,name):
+            'Delete Max or Min limit once dialog is deleted'
+            n,val = G2obj.prmLookup(name,d) # is this a wild-card?
+            if val is not None:
+                del d[n]
+            self.OnRowSelected(None, row)
+            
+        def AddM(event):
+            'Get event info & add a Max or Min limit'
+            if hasattr(event.EventObject,'max'):
+                d = self.parmWin.Controls['parmMaxDict']
+            else:
+                d = self.parmWin.Controls['parmMinDict']
+            # close sub-dialog then delete item and redraw
+            dlg.EndModal(wx.ID_OK)
+            wx.CallAfter(AddMafter,d,name)
+        def AddMafter(d,name):
+            'Add a Max or Min limit & redraw'
+            try:
+                d[name] = float(value)
+            except:
+                d[name] = 0.0
+            self.OnRowSelected(None, row)
+            
+        def SetWild(event):
+            'Get event info & prepare to set/clear item as wildcard'
+            if hasattr(event.EventObject,'max'):
+                d = self.parmWin.Controls['parmMaxDict']
+            else:
+                d = self.parmWin.Controls['parmMinDict']
+            ns = name.split(':')
+            if hasattr(event.EventObject,'hist'):
+                ns[1] = '*'
+            else:
+                ns[3] = '*'
+            wname = ':'.join(ns)            
+            # close sub-dialog then delete item and redraw
+            dlg.EndModal(wx.ID_OK)
+            wx.CallAfter(SetWildAfter,d,name,wname,event.EventObject.GetValue())
+        def SetWildAfter(d,name,wname,mode):
+            'Set/clear item as wildcard & delete old name(s), redraw'
+            n,val = G2obj.prmLookup(name,d) # is this a wild-card?
+            if mode: # make wildcard
+                if n == name: # confirm not wildcard already
+                    d[wname] = d[name]
+                for n in list(d.keys()): # delete names matching wildcard
+                    if n == wname: continue
+                    if G2obj.prmLookup(n,d)[0] == wname:
+                        del d[n]
+            else:
+                if n != name: 
+                    d[name] = d[wname]                
+                    del d[wname]
+            self.OnRowSelected(None, row)
+
+        if event is not None:
+            row = event.Index
+        elif row is None:
+            print('Error: row and event should not be None!')
+            return
+        name = self.varList[row]
+        dlg = wx.Dialog(self,wx.ID_ANY,'Parameter {} info'.format(name),
+                            size=(600,-1),
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5))
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        try:
+            value = G2py3.FormatSigFigs(self.parmWin.parmDict[name])
+        except TypeError:
+            value = str(self.parmWin.parmDict[name])+' -?' # unexpected
+        subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        'Parameter "{}" information and settings. Value={}'
+                                       .format(name,value)))
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        mainSizer.Add(subSizer,0,wx.EXPAND,0)
+        mainSizer.Add((0,10))
+        v = G2obj.getVarDescr(name)
+        if v is not None and v[-1] is not None:
+            txt = G2obj.fmtVarDescr(name)
+            if txt:
+                txt.replace('Ph=','Phase: ')
+                txt.replace('Pwd=','Histogram: ')
+                txtwid = wx.StaticText(dlg,wx.ID_ANY,'Parameter meaning is "'+txt+'"')
+                txtwid.Wrap(580)
+                mainSizer.Add(txtwid)
+                mainSizer.Add((0,10))
+
+        freezebtn = None
+        if name in self.parmWin.fullVaryList and name in self.parmWin.frozenList:
+            msg = "Parameter {} exceeded limits and has been frozen".format(name)
+            freezebtn = wx.Button(dlg, wx.ID_ANY,'Unfreeze')
+            freezebtn.Bind(wx.EVT_BUTTON, ResetFrozen)
+        elif name in self.parmWin.varyList:
+            msg = "Parameter {} is refined".format(name)
+        elif name in self.parmWin.fullVaryList:
+            msg = "Parameter {} is refined via a constraint".format(name)
+        else:
+            msg = ""
+        if msg:
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,msg),0,wx.CENTER)
+        if freezebtn:
+            subSizer.Add(freezebtn,0,wx.ALL|wx.CENTER,5)
+        mainSizer.Add(subSizer,0)
+
+        # draw min value widgets
+        mainSizer.Add((-1,10),0)
+        n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMinDict']) # is this a wild-card?
+        if val is None: 
+            addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Lower limit')
+            addMbtn.Bind(wx.EVT_BUTTON, AddM)
+            mainSizer.Add(addMbtn,0)
+        else:
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Minimum limit'),0,wx.CENTER)
+            subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMinDict'],n,nDig=(10,2,'g')),0,WACV)
+            delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
+            subSizer.Add((5,-1),0,WACV)
+            subSizer.Add(delMbtn,0,WACV)
+            delMbtn.Bind(wx.EVT_BUTTON, delM)
+            if name.split(':')[1]:             # is this using a histogram?
+                subSizer.Add((5,-1),0,WACV)
+                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
+                wild.SetValue(n.split(':')[1] == '*')
+                wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                wild.hist = True
+                subSizer.Add(wild,0,WACV)
+            elif len(name.split(':')) > 3:
+                subSizer.Add((5,-1),0,WACV)
+                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
+                wild.SetValue(n.split(':')[3] == '*')
+                wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                subSizer.Add(wild,0,WACV)
+            mainSizer.Add(subSizer,0)
+
+        # draw max value widgets
+        mainSizer.Add((-1,10),0)
+        n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMaxDict']) # is this a wild-card?
+        if val is None: 
+            addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Upper limit')
+            addMbtn.Bind(wx.EVT_BUTTON, AddM)
+            addMbtn.max = True
+            mainSizer.Add(addMbtn,0)
+        else:
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Maximum limit'),0,wx.CENTER)
+            subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMaxDict'],n,nDig=(10,2,'g')),0,WACV)
+            delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
+            subSizer.Add((5,-1),0,WACV)
+            subSizer.Add(delMbtn,0,WACV)
+            delMbtn.Bind(wx.EVT_BUTTON, delM)
+            delMbtn.max = True
+            if name.split(':')[1]:             # is this using a histogram?
+                subSizer.Add((5,-1),0,WACV)
+                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
+                wild.SetValue(n.split(':')[1] == '*')
+                wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                wild.max = True
+                wild.hist = True
+                subSizer.Add(wild,0,WACV)
+            elif len(name.split(':')) > 3:
+                subSizer.Add((5,-1),0,WACV)
+                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
+                wild.SetValue(n.split(':')[3] == '*')
+                wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                wild.max = True
+                subSizer.Add(wild,0,WACV)
+            mainSizer.Add(subSizer,0)
+            
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(dlg, wx.ID_OK)
+        OKbtn.SetDefault()
+        OKbtn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        mainSizer.Add((-1,5),1,wx.EXPAND,1)
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
+        mainSizer.Add((-1,10))
+
+        dlg.SetSizer(mainSizer)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK: # if not OK, destroy & reopen
+            dlg.Destroy()
+            wx.CallAfter(self.OnRowSelected, None, row)
+            return
+        dlg.Destroy()
+        self.parmWin.SendSizeEvent()
+        
     #-----------------------------------------------------------------
-    # Callbacks to set info in table
+    # Callbacks to display info in table
     def OnGetItemText(self, item, col):
         name = self.varList[item]
         if col == 0:
@@ -4135,9 +4354,9 @@ class VirtualVarBox(wx.ListCtrl):
         elif col == 1:
             return name
         elif col == 2:
-            if name in self.parmWin.varyList:
-                if name in self.parmWin.frozenList:
+            if name in self.parmWin.fullVaryList and name in self.parmWin.frozenList:
                     return "F"
+            elif name in self.parmWin.varyList:
                 return "R"
             elif name in self.parmWin.fullVaryList:
                 return "C"
@@ -4148,15 +4367,17 @@ class VirtualVarBox(wx.ListCtrl):
             except TypeError:
                 value = str(self.parmWin.parmDict[name])+' -?' # unexpected
             return value
-                #continue
-        elif col == 4:
-            if name in self.parmWin.parmMinDict:
-                return G2py3.FormatSigFigs(self.parmWin.parmMinDict[name],8)
-            return "" # min value
-        elif col == 5:
-            if name in self.parmWin.parmMaxDict:
-                return G2py3.FormatSigFigs(self.parmWin.parmMaxDict[name],8)
-            return "" # max value
+        elif col == 4 or col == 5: # min/max value
+            if col == 4: # min
+                d = self.parmWin.Controls['parmMinDict']
+            else:
+                d = self.parmWin.Controls['parmMaxDict']
+            n,val = G2obj.prmLookup(name,d)
+            if val is None: return ""
+            try:
+                return G2py3.FormatSigFigs(val,8)
+            except TypeError:
+                return "?"
         elif col == 6:
             v = G2obj.getVarDescr(name)
             if v is not None and v[-1] is not None:

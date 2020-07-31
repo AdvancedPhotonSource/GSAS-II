@@ -1457,19 +1457,14 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     phi = np.inner(XYZ,modQ).T
     TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
     phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
-    pcos = np.cos(twopi*phase*epsinv[nxs,:,nxs])      #Ntau,Nops,Natm
-    psin = np.sin(twopi*phase*epsinv[nxs,:,nxs])
-    
-    MmodAp = (Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]+epsinv[nxs,:,nxs,nxs]*Bm[nxs,nxs,:,:]*psin[:,:,:,nxs])/2.    #Ntau,Nops,Natm,Mxyz
-    MmodBp = (Am[nxs,nxs,:,:]*psin[:,:,:,nxs]+epsinv[nxs,:,nxs,nxs]*Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs])/2.
-    MmodAm = (Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]+epsinv[nxs,:,nxs,nxs]*Bm[nxs,nxs,:,:]*psin[:,:,:,nxs])/2.
-    MmodBm = (Am[nxs,nxs,:,:]*psin[:,:,:,nxs]+epsinv[nxs,:,nxs,nxs]*Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs])/2.
-    MmodAp = np.sum(SGMT[nxs,:,nxs,:,:]*MmodAp[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    MmodBp = np.sum(SGMT[nxs,:,nxs,:,:]*MmodBp[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    MmodAm = np.sum(SGMT[nxs,:,nxs,:,:]*MmodAm[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    MmodBm = np.sum(SGMT[nxs,:,nxs,:,:]*MmodBm[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    return MmodAp,MmodBp,MmodAm,MmodBm    #Ntau,Nops,Natm,Mxyz; cos & sin parts
-                
+    psin = np.sin(twopi*phase)
+    pcos = np.cos(twopi*phase)
+    MmodA = Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #cos term
+    MmodB = Bm[nxs,nxs,:,:]*psin[:,:,:,nxs]    #sin term
+    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
+    return MmodA,MmodB    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
+        
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x ops X hklt
@@ -1499,37 +1494,6 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-#def MagModulation(H,HP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt):
-#    '''
-#    H: array nRefBlk x ops X hklt
-#    HP: array nRefBlk x ops X hklt proj to hkl
-#    nWaves: list number of waves for frac, pos, uij & mag
-#    Fmod: array 2 x atoms x waves    (sin,cos terms)
-#    Xmod: array atoms X 3 X ngl
-#    Umod: array atoms x 3x3 x ngl
-#    Mmod: array atoms x 3x3 x ngl
-#    glTau,glWt: arrays Gauss-Lorentzian pos & wts
-#    '''
-#    
-#    if nWaves[2]:       #uij (adp) waves
-#        if len(HP.shape) > 2:
-#            HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
-#        else:
-#            HbH = np.exp(-np.sum(HP[:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
-#    else:
-#        HbH = 1.0
-#    HdotX = np.inner(HP,Xmod)                   #refBlk x ops x atoms X ngl
-#    if len(H.shape) > 2:
-#        D = H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x ops X ngl
-#        HdotXD = twopi*(HdotX+D[:,:,nxs,:])
-#    else:
-#        D = H[:,3:]*glTau[nxs,:]              #m*e*tau; refBlk x ops X ngl
-#        HdotXD = twopi*(HdotX+D[:,nxs,:])
-#    M = np.swapaxes(Mmod,1,2)
-#    cosHA = np.sum(M[nxs,nxs,:,:,:]*(Fmod*HbH*np.cos(HdotXD)[:,:,:,nxs,:]*glWt),axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
-#    sinHA = np.sum(M[nxs,nxs,:,:,:]*(Fmod*HbH*np.sin(HdotXD)[:,:,:,nxs,:]*glWt),axis=-1)       #imag part; ditto
-#    return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
-#
 def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x tw x ops X hklt

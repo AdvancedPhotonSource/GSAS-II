@@ -2880,13 +2880,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour and not ifLimits:
         xLabel = r'$d, \AA$'
     else:
-        if 'C' in ParmList[0]['Type'][0]:
-            xLabel = r'$\mathsf{2\theta}$'
-        else:
+        if 'T' in ParmList[0]['Type'][0]:
             if G2frame.Contour:
                 xLabel = r'Channel no.'
             else:
                 xLabel = r'$TOF, \mathsf{\mu}$s'
+        else:
+            xLabel = r'$\mathsf{2\theta}$'
     if G2frame.Weight:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}

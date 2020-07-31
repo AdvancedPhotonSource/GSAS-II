@@ -1516,8 +1516,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         if SGData['SGGray']:
             mXYZ = np.hstack((mXYZ,mXYZ))
 
-        MmodAp,MmodBp,MmodAm,MmodBm = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
-#        MmodAp,MmodBp,MmodAm,MmodBm = G2mth.MagMod2(mXYZ,modQ,MSSdata,SGData,SSGData)  #Nops,Natm,Mxyz cos,sim parts sum matches drawing
+        MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
@@ -1552,7 +1551,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
-#    time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
@@ -1602,34 +1600,20 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             HM = np.inner(uAmat,HP.T)                    #put into cartesian space X||H,Z||H*L; uAmat better than uBmat
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T    # normalize  HP  Nref,hkl=Unit vectors || Q
 
-#            fam0 = 0.
-#            fbm0 = 0.
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
 #  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
-#            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]+    
-#                H[3,i]*MmodB*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
-#                        
-#            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    
-#                H[3,i]*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
-#
-#            if not SGData['SGGray']:            
-#                fams += fam0[:,nxs,:,:,:]
-#                fbms += fbm0[:,nxs,:,:,:]
-                
-            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,np.where(H[3,i]>0,
-                (MmodAp*cosm[i,nxs,:,:,nxs]+MmodBp*sinm[i,nxs,:,:,nxs]),
-                (MmodAm*cosm[i,nxs,:,:,nxs]+MmodBm*sinm[i,nxs,:,:,nxs])),0.) for i in range(mRef)])  #Nref,Nops,Natm,Mxyz
+            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]+    
+                H[3,i]*MmodB*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
                         
-            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,np.where(H[3,i]>0,
-                (MmodAp*sinm[i,nxs,:,:,nxs]+MmodBp*cosm[i,nxs,:,:,nxs]),
-                (MmodAm*sinm[i,nxs,:,:,nxs]+MmodBm*cosm[i,nxs,:,:,nxs])),0.) for i in range(mRef)])  #Nref,Nops,Natm,Mxyz
+            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    
+                H[3,i]*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
 
             if not SGData['SGGray']:            
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
-                
+                                
 #sum ops & atms                                
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
@@ -1667,7 +1651,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         if 'P' not in calcControls[hfx+'histType']:
             refl.T[8] = np.copy(refl.T[10])                
         iBeg += blkSize
-#    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
     return copy.deepcopy(refDict['RefList'])
 
 def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):

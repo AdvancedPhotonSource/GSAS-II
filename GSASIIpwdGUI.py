@@ -3555,7 +3555,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if controls[5][1:] == 'm3': controls[5] += 'm'
-        if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
+        if controls[5] in ['P3','P3m1','P31m','P6/m']: controls[5] = 'P6/mmm'
+        if controls[5] in ['P4/m',]: controls[5] = 'P4/mmm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         cx,ct,cs,cia = Phase['General']['AtomPtrs']
@@ -3563,7 +3564,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'N' in Inst['Type'][0]:
             if not ssopt.get('Use',False):
                 G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-#                G2frame.dataWindow.RunSubGroups.Enable(True)
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)

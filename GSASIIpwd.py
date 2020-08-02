@@ -1544,6 +1544,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList:
                     alp = parmDict[alpName]
+                    dada0 = dada1 = 0.0
                 else:
                     alp = G2mth.getPinkalpha(parmDict,tth)
                     dada0,dada1 = G2mth.getPinkalphaDeriv(tth)
@@ -1551,6 +1552,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
+                    dbdb0 = dbdb1 = 0.0
                 else:
                     bet = G2mth.getPinkbeta(parmDict,tth)
                     dbdb0,dbdb1 = G2mth.getPinkbetaDeriv(tth)

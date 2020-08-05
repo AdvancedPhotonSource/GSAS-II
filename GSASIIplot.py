@@ -5966,7 +5966,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             return        
         Z = np.reshape(Z,(npts,npts))
         try:
-            CS = Plot.contour(Y,X,Z,aspect='equal')
+            CS = Plot.contour(Y,X,Z)
+#            CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
         except ValueError:
             pass
@@ -7636,7 +7637,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 MaskA = ma.getmaskarray(MA)^Masks['SpotMask']['spotMask']
                 MA = ma.array(MA,mask=MaskA)
             except KeyError: # should not be needed if initializtion is proper
-                if GSASIIpath.GetConfigValue('debug'): print('SpotMask missing')
+#                if GSASIIpath.GetConfigValue('debug'): print('SpotMask missing')
                 MaskA = ma.getmaskarray(MA)
             except TypeError: # needed if spotMasks set to initial value (None)
                 if GSASIIpath.GetConfigValue('debug'): print('spotMask is None')

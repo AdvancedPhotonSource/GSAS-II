@@ -6793,7 +6793,7 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     xy1 = []
     xy2 = []
     aR = [azm0,azm1,max(3,int(0.5+azm1-azm0))] # number of points should be at least 3
-    if azm1-azm0 > 180: aR[2] /= 2  # for more than 180 degrees, steps can be 2 deg.
+    if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
         xy1.append(G2img.GetDetectorXY(Dsp(angI,wave),azm,Data))      #what about hyperbola
@@ -7640,7 +7640,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 #                if GSASIIpath.GetConfigValue('debug'): print('SpotMask missing')
                 MaskA = ma.getmaskarray(MA)
             except TypeError: # needed if spotMasks set to initial value (None)
-                if GSASIIpath.GetConfigValue('debug'): print('spotMask is None')
+#                if GSASIIpath.GetConfigValue('debug'): print('spotMask is None')
                 MaskA = ma.getmaskarray(MA)
             for xline in Masks.get('Xlines',[]):
                 MaskA[xline,:] = True

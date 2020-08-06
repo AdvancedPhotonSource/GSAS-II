@@ -884,13 +884,13 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
         Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
-        polariz = 0.99    #set default polarization for synchrotron radiation!
+        polariz = data['PolaVal'][0]
         for item in Comments:
-            if 'polariz' in item:
-                try:
-                    polariz = float(item.split('=')[1])
-                except:
-                    polariz = 0.99
+            # if 'polariz' in item:
+            #     try:
+            #         polariz = float(item.split('=')[1])
+            #     except:
+            #         polariz = 0.99
             for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
                 'Chi','Phi'):
                 if key.lower() in item.lower():

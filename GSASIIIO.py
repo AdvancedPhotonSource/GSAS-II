@@ -850,14 +850,6 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     Xminmax = [X[0],X[-1]]
     Azms = np.zeros(data['outAzimuths'])
     dazm = 0.
-#    if data['fullIntegrate'] and data['outAzimuths'] == 1:
-#        Azms = [0.0,]                              #a poor man's average?
-#    else:
-##        for i,azm in enumerate(azms[:-1]):
-##            if azm > 360. and azms[i+1] > 360.:
-##                Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
-##            else:    
-##                Azms.append(G2img.meanAzm(azm,azms[i+1]))
     if data['outAzimuths'] > 1:
         dazm = np.min(np.abs(np.diff(azms)))/2.
     G2frame.IntgOutList = []
@@ -886,11 +878,6 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
         polariz = data['PolaVal'][0]
         for item in Comments:
-            # if 'polariz' in item:
-            #     try:
-            #         polariz = float(item.split('=')[1])
-            #     except:
-            #         polariz = 0.99
             for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
                 'Chi','Phi'):
                 if key.lower() in item.lower():

@@ -5634,6 +5634,11 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
     else:       #'C' & 'B'
+        isig = 4
+        igam = 6
+        if 'B' in Parms['Type'][0]:
+            isig = 8
+            igam = 10
         Plot.figure.suptitle(TreeItemText)
         Plot.set_title('Instrument and sample peak widths')
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
@@ -5643,8 +5648,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-        s = np.sqrt(data[4])*np.pi/18000.   #var -> sig(radians)
-        g = data[6]*np.pi/18000.    #centideg -> radians
+        s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
+        g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
         Y = sq8ln2*s/nptand(X/2.)
         Z = g/nptand(X/2.)
@@ -5654,8 +5659,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,W,color='b',label='G+L')
         
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
-        sf = np.sqrt(fit[4])*np.pi/18000.
-        gf = fit[6]*np.pi/18000.
+        sf = np.sqrt(fit[isig])*np.pi/18000.
+        gf = fit[igam]*np.pi/18000.
         Gf = G2pwd.getgamFW(gf,sf)      #/2.
         Yf = sq8ln2*sf/nptand(X/2.)
         Zf = gf/nptand(X/2.)

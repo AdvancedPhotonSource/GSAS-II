@@ -911,18 +911,6 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         UpdatePeakGrid(G2frame,newpeaks)
                 
-#    def RefreshPeakGrid(event):
-#        
-#        event.StopPropagation()
-#        data['peaks'] = G2frame.PeakTable.GetData()
-#        T = []
-#        for peak in data['peaks']:T.append(peak[0])
-#        D = dict(zip(T,data['peaks']))
-#        T.sort()
-#        X = []
-#        for key in T: X.append(D[key])
-#        data['peaks'] = X        
-        
     def setBackgroundColors():
        for r in range(reflGrid.GetNumberRows()):
            for c in range(reflGrid.GetNumberCols()):

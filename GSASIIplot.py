@@ -5676,10 +5676,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for peak in peaks:
             Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
             try:
-                s = math.sqrt(peak[4])*math.pi/18000.
+                s = math.sqrt(peak[isig])*math.pi/18000.
             except ValueError:
                 s = 0.01
-            g = peak[6]*math.pi/18000.
+            g = peak[igam]*math.pi/18000.
             G = G2pwd.getgamFW(g,s)         #/2.
             Yp.append(sq8ln2*s/tand(peak[0]/2.))
             Zp.append(g/tand(peak[0]/2.))

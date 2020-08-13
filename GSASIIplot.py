@@ -4707,6 +4707,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 Yb = [0.,-20.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
                 Plot.set_xlim([0.,PDFdata['Rmax']])
+            elif plotType == 'g(r)':
+                Plot.set_xlim([0.,PDFdata['Rmax']])
             elif plotType == 'F(Q)':
                 Xb = [0.,5.0]
                 Yb = [0.,-20.*np.pi*numbDen]

@@ -331,10 +331,11 @@ class G2PlotMpl(_tabPlotWin):
             return self.canvas.SetToolTipString(text)
         
     def ToolBarDraw(self):
-        try:
-            self.toolbar.draw()
-        except:
+        mplv = eval(mpl.__version__.replace('.',','))
+        if mplv[0] >= 3 and mplv[1] >= 3:
             self.toolbar.draw_idle()
+        else:
+            self.toolbar.draw()
         
 class G2PlotOgl(_tabPlotWin):
     'Creates an OpenGL plot in the GSAS-II graphics window'

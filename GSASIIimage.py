@@ -1332,7 +1332,7 @@ def IntStrSta(Image,StrSta,Controls):
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
-            RingsAI.append(np.array(zip(ringazm,ringint)).T)
+            RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
     return RingsAI
     
 def CalcStrSta(StrSta,Controls):

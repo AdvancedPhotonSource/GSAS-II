@@ -330,6 +330,12 @@ class G2PlotMpl(_tabPlotWin):
         else:
             return self.canvas.SetToolTipString(text)
         
+    def ToolBarDraw(self):
+        try:
+            self.toolbar.draw()
+        except:
+            self.toolbar.draw_idle()
+        
 class G2PlotOgl(_tabPlotWin):
     'Creates an OpenGL plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -374,6 +380,13 @@ class G2Plot3D(_tabPlotWin):
             self.canvas.SetToolTip(wx.ToolTip(text))
         else:
             self.canvas.SetToolTipString(text)
+            
+    def ToolBarDraw(self):
+        mplv = eval(mpl.__version__.replace('.',','))
+        if mplv[0] >= 3 and mplv[1] >= 3:
+            self.toolbar.draw_idle()
+        else:
+            self.toolbar.draw()
         
 class G2PlotNoteBook(wx.Panel):
     'create a tabbed panel to hold a GSAS-II graphics window'
@@ -545,11 +558,14 @@ class G2PlotNoteBook(wx.Panel):
         'Add a tabbed page with a 3D plot'
         page = G2Plot3D(self.nb)
         self._addPage(name,page)
-        mplv = mpl.__version__.split('.')
-        if mplv[0] == '3' and (mplv[1] == '1' or mplv[1] == '2') and not self.MPLwarn: # patch for bad MPL 3D
-            self.MPLwarn = True
-            G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, we suggest regressing to MPL 3.0.3 until 3.3.x or later is available.. You have '+mpl.__version__,
-                                 'Avoid Matplotlib 3.1 & 3.2')
+        mplv = eval(mpl.__version__.replace('.',','))
+        if mplv[0] == 3:
+            if mplv[1] >= 3:
+                page.set_box_aspect((1,1,1))
+            elif not self.MPLwarn: # patch for bad MPL 3D
+                self.MPLwarn = True
+                G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, use MPL 3.0.3 or 3.3. You have '+mpl.__version__,
+                                     'Avoid Matplotlib 3.1 & 3.2')       
         return page.figure
         
     def addOgl(self,name=""):
@@ -732,7 +748,7 @@ class GSASIItoolbar(Toolbar):
         ax.axis((xmin,xmax,ymin,ymax))
         #print xmin,xmax,ymin,ymax
         self.plotCanvas.figure.canvas.draw()
-        self.parent.toolbar.draw()
+        self.parent.ToolBarDraw()
 #        self.parent.toolbar.push_current()
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
@@ -1061,7 +1077,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_ylim(xylim[1])
 #        xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
         Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
@@ -1165,7 +1181,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             Plot.set_ylim(xylim[1])
             xylim = []
             Page.toolbar.push_current()
-            Page.toolbar.draw()
+            Page.ToolBarDraw()
             Page.canvas.draw()
         else:
             Page.canvas.draw()
@@ -3348,7 +3364,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Plot.set_xlim(G2frame.xylim[0])
         Plot.set_ylim(G2frame.xylim[1])
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.canvas.draw()
@@ -4739,7 +4755,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Plot.set_ylim(xylim[1])
         xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
 
@@ -4827,7 +4843,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         Plot.set_ylim(xylim[1])
 #        xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
 
@@ -4933,7 +4949,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
             Plot.set_ylim(xylim[1])
             xylim = []
             Page.toolbar.push_current()
-            Page.toolbar.draw()
+            Page.ToolBarDraw()
             Page.canvas.draw()
         else:
             Page.canvas.draw()
@@ -5081,7 +5097,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Plot.set_ylim(xylim[1])
         xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
         
@@ -5293,7 +5309,7 @@ def PlotStrain(G2frame,data,newPlot=False):
         Plot.set_ylim(xylim[1])
         xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
         
@@ -5700,7 +5716,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.set_xlim(xylim[0])
         Plot.set_ylim(xylim[1])
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
     
@@ -5974,7 +5990,6 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Z = np.reshape(Z,(npts,npts))
         try:
             CS = Plot.contour(Y,X,Z)
-#            CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
         except ValueError:
             pass
@@ -7825,7 +7840,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     pass
             xylim = []
             Page.toolbar.push_current()
-            Page.toolbar.draw()
+            Page.ToolBarDraw()
             # patch for wx 2.9 on Mac, to force a redraw
             i,j= wx.__version__.split('.')[0:2]
             if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
@@ -7886,7 +7901,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         Plot.set_ylim(xylim[1])
         xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
                 
@@ -7953,7 +7968,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         Plot.set_ylim(xylim[1])
         xylim = []
         Page.toolbar.push_current()
-        Page.toolbar.draw()
+        Page.ToolBarDraw()
     else:
         Page.canvas.draw()
         
@@ -10540,7 +10555,7 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     Page.toolbar.push_current()
     Plot.set_xlim((ttmin,ttmax))
     Page.toolbar.push_current()
-    Page.toolbar.draw()
+    Page.ToolBarDraw()
     Page.canvas.draw()
 
 def SetupLegendPick(legend,new,delay=5):

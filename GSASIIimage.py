@@ -1328,9 +1328,13 @@ def IntStrSta(Image,StrSta,Controls):
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
+            XY = np.array(ringxy).T
+            Th,Azm = GetTthAzm(XY[0],XY[1],Controls)
+            pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
+            ringint /= pola
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
     return RingsAI

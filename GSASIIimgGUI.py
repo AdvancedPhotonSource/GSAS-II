@@ -2145,7 +2145,7 @@ def UpdateStressStrain(G2frame,data):
     
     def OnAppendDzero(event):
         data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
-            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'fixDset':False})
+            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'fixDset':False,'Ivar':0})
         UpdateStressStrain(G2frame,data)
         
     def OnUpdateDzero(event):

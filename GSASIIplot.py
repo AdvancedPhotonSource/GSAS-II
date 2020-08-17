@@ -6881,6 +6881,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         StrSta = {}
 
     def OnImMotion(event):
+        if not Page:
+            return
         Page.SetToolTipString('')
         sizexy = Data['size']
         if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
@@ -7487,7 +7489,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,'Ivar':0.0,
-                'ImxyObs':[[],[]],'ImxyCalc':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
+                'ImxyObs':[[],[]],'ImxyCalc':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'Ivar':0})
             R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
             if not len(R):
                 del StrSta['d-zero'][-1]

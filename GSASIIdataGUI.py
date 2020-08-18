@@ -2585,7 +2585,12 @@ class GSASII(wx.Frame):
             
         if not newHistList: return # somehow, no new histograms
         return # success
-        
+    
+    def AddToNotebook(self,text):
+        Id =  GetGPXtreeItemId(self,self.root,'Notebook')
+        data = self.GPXtree.GetItemPyData(Id)
+        data.append('Notebook entry @ %s: %s\n'%(time.ctime(),text))    
+                   
 ###############################################################################
 #Command logging
 ###############################################################################
@@ -6234,7 +6239,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Remove all rigid body assignment for atoms')
         self.PostfillDataMenu()
     # end of GSAS-II menu definitions
-                   
+    
 ################################################################################
 #####  Notebook Tree Item editor
 ################################################################################                  
@@ -6258,7 +6263,7 @@ def UpdateNotebook(G2frame,data):
     text.AppendText('Notebook entry @ '+time.ctime()+"\n")
     G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0,WACV)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
-            
+
 ################################################################################
 #####  Comments
 ################################################################################       

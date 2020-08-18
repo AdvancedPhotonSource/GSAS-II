@@ -12156,6 +12156,8 @@ def UpdatePhaseData(G2frame,Item,data):
             newMap,new4Dmap = G2mth.SSChargeFlip(data,ReflData,pgbar)
         finally:
             pgbar.Destroy()
+        G2frame.AddToNotebook('4D Charge flip: '+result[2])
+        G2frame.AddToNotebook('4D Charge flip: '+result[3])
         mapData.update(newMap)
         map4DData.update(new4Dmap)
         mapData['Flip'] = True        
@@ -12193,6 +12195,8 @@ def UpdatePhaseData(G2frame,Item,data):
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             result = G2mth.ChargeFlip(data,ReflData,pgbar)
+            G2frame.AddToNotebook('Charge flip: '+result[2])
+            G2frame.AddToNotebook('Charge flip: '+result[3])
             mapData.update(result[0])
             X = range(len(result[1]))
             Y = 180.*np.array(result[1]).T/np.pi

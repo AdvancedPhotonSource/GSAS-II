@@ -3388,13 +3388,11 @@ def findOffset(SGData,A,Fhkl):
     Dang = (np.dot(XYZ,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
-#    for i,item in enumerate(hist[:10]):
-#        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    G2fil.G2Print (' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2]))
-#    print (np.dot(DX,DH.T)+.5)%1.-Dphi
-    return DX
+    ptext = ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
+    G2fil.G2Print(ptext)
+    return DX,ptext
     
 def ChargeFlip(data,reflDict,pgbar):
     '''default doc string
@@ -3487,15 +3485,16 @@ def ChargeFlip(data,reflDict,pgbar):
     np.seterr(**old)
     G2fil.G2Print (' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.  #? to get on same scale as e-map
-    G2fil.G2Print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
-    roll = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
+    ctext = ' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape))
+    G2fil.G2Print (ctext)
+    roll,ptext = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
         
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
     mapData['Type'] = reflDict['Type']
-    return mapData,twophases
+    return mapData,twophases,ptext,ctext
     
 def findSSOffset(SGData,SSGData,A,Fhklm):    
     '''default doc string
@@ -3554,13 +3553,11 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
     Dang = (np.dot(XYZT,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
-#    for i,item in enumerate(hist[:10]):
-#        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    G2fil.G2Print (' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3]))
-#    print (np.dot(DX,DH.T)+.5)%1.-Dphi
-    return DX
+    ptext = ' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3])
+    G2fil.G2Print(ptext)
+    return DX,ptext
     
 def SSChargeFlip(data,reflDict,pgbar):
     '''default doc string
@@ -3649,8 +3646,9 @@ def SSChargeFlip(data,reflDict,pgbar):
     G2fil.G2Print (' Charge flip time: %.4f no. elements: %d'%(time.time()-time0,Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))/10.    #? to get on same scale as e-map
     SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.                  #? ditto
-    G2fil.G2Print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
-    roll = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
+    ctext = ' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape))
+    G2fil.G2Print (ctext)
+    roll,ptext = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
 
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
@@ -3663,7 +3661,7 @@ def SSChargeFlip(data,reflDict,pgbar):
     map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
     map4DData['minmax'] = [np.max(map4DData['rho']),np.min(map4DData['rho'])]
     map4DData['Type'] = reflDict['Type']
-    return mapData,map4DData
+    return mapData,map4DData,ptext,ctext
     
 def getRho(xyz,mapData):
     ''' get scattering density at a point by 8-point interpolation

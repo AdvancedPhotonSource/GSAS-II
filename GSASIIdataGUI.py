@@ -2718,6 +2718,12 @@ class GSASII(wx.Frame):
 
         powdermenu = wx.Menu()
         item = menu.AppendSubMenu(powdermenu,'Powder data as','Export powder diffraction histogram(s)')
+        
+        sasdmenu = wx.Menu()
+        item = menu.AppendSubMenu(sasdmenu,'Small angle data as','Export small angle histogram(s)')
+
+        refdmenu = wx.Menu()
+        item = menu.AppendSubMenu(refdmenu,'Reflectometry data as','Export reflectometry histogram(s)')
 
         singlemenu = wx.Menu()
         item = menu.AppendSubMenu(singlemenu,'Single crystal data as','Export single crystal histogram(s)')
@@ -2727,9 +2733,6 @@ class GSASII(wx.Frame):
 
         mapmenu = wx.Menu()
         item = menu.AppendSubMenu(mapmenu,'Maps as','Export density map(s)')
-        
-        sasdmenu = wx.Menu()
-        item = menu.AppendSubMenu(sasdmenu,'Small angle data as','Export small angle histogram(s)')
 
         # sequential exports are handled differently; N.B. enabled in testSeqRefineMode
         seqPhasemenu = wx.Menu()
@@ -2761,6 +2764,8 @@ class GSASII(wx.Frame):
                     submenu = mapmenu
                 elif typ == "sasd":
                     submenu = sasdmenu
+                elif typ == "refd":
+                    submenu = refdmenu
                 # elif typ == "pdf":
                 #     submenu = pdfmenu
                 else:

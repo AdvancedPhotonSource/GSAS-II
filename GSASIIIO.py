@@ -1154,6 +1154,7 @@ class ExportBaseclass(object):
         self.Histograms = {}
         self.powderDict = {}
         self.sasdDict = {}
+        self.refdDict = {}
         self.xtalDict = {}
         self.parmDict = {}
         self.sigDict = {}
@@ -1309,6 +1310,26 @@ class ExportBaseclass(object):
                 numselected = len(self.histnam)
             else:
                 choices = sorted(self.sasdDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame)
+                if hnum is None: return True
+                self.histnam = [choices[hnum]]
+                numselected = len(self.histnam)
+        elif self.currentExportType == 'refd':
+            if len(self.refdDict) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any reflectivity data.')
+                return True
+            elif len(self.refdDict) == 1:
+                self.histnam = self.refdDict.values()
+            elif self.multiple:
+                choices = sorted(self.refdDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                if not hnum: return True
+                self.histnam = [choices[i] for i in hnum]
+                numselected = len(self.histnam)
+            else:
+                choices = sorted(self.refdDict.values())
                 hnum = G2G.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
@@ -1488,6 +1509,7 @@ class ExportBaseclass(object):
         self.OverallParms = {}
         self.powderDict = {}
         self.sasdDict = {}
+        self.refdDict = {}
         self.xtalDict = {}
         self.Phases = {}
         self.Histograms = {}
@@ -1515,6 +1537,8 @@ class ExportBaseclass(object):
             histType = 'IMG'
         elif self.currentExportType == 'sasd':
             histType = 'SASD'
+        elif self.currentExportType == 'refd':
+            histType = 'REFD'
 
         if histType: # Loading just one kind of tree entry
             item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
@@ -1549,6 +1573,8 @@ class ExportBaseclass(object):
                     d = self.xtalDict
                 elif hist.startswith("SASD"):
                     d = self.sasdDict
+                elif hist.startswith("REFD"):
+                    d = self.refdDict
                 else:
                     return                    
                 i = self.Histograms[hist].get('hId')
@@ -1576,6 +1602,8 @@ class ExportBaseclass(object):
                 self.xtalDict[i] = hist
             elif hist.startswith("SASD"):
                 self.sasdDict[i] = hist
+            elif hist.startswith("REFD"):
+                self.refdDict[i] = hist
 
     def dumpTree(self,mode='type'):
         '''Print out information on the data tree dicts loaded in loadTree.

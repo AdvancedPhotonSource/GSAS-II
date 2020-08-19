@@ -5033,6 +5033,7 @@ class GSASII(wx.Frame):
             wx.Yield()
         if OK:
             Rw = Msg['Rwp']
+            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Msg['Rwp'],Msg['GOF'],Msg['Nobs'],Msg['Max shft/sig'])
             lamMax = Msg.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n\nLoad new result?'
@@ -5044,9 +5045,10 @@ class GSASII(wx.Frame):
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    wx.CallAfter(self.reloadFromGPX)
+                    self.reloadFromGPX
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
+                self.AddToNotebook(rtext)
             finally:
                 dlg2.Destroy()
         else:

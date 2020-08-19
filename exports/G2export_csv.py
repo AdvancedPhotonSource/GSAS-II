@@ -211,7 +211,8 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             line = ""
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
-                line += G2py3.FormatValue(val,digits)
+                line += '%.6g'%val
+#                line += G2py3.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         
@@ -283,7 +284,8 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
             line = ""
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
-                line += G2py3.FormatValue(val,digits)
+                line += '%.6g'%val
+#                line += G2py3.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         print('...file '+self.fullpath+' written')
@@ -438,7 +440,8 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
             line = ""
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
-                line += G2py3.FormatValue(val,digits)
+                line += '%.6g'%val
+#                line += G2py3.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         
@@ -483,17 +486,6 @@ class ExportREFDCSV(G2IO.ExportBaseclass):
     def Writer(self,TreeName,filename=None):
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
-        # if len(self.Histograms[TreeName]['Models']['Size']['Distribution']):
-        #     self.Write('"Size Distribution"')
-        #     Distr = np.array(self.Histograms[TreeName]['Models']['Size']['Distribution'])
-        #     WriteList(self,("bin_pos","bin_width","bin_value"))
-        #     digitList = 2*((13,3),)+((13,4,'g'),)
-        #     for bindata in Distr.T:
-        #         line = ""
-        #         for val,digits in zip(bindata,digitList):
-        #             if line: line += ','
-        #             line += G2py3.FormatValue(val,digits)
-        #         self.Write(line)            
         self.Write('"Reflectometry data"')
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
         for parm in Parms:
@@ -515,7 +507,8 @@ class ExportREFDCSV(G2IO.ExportBaseclass):
             line = ""
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
-                line += G2py3.FormatValue(val,digits)
+                line += '%.6g'%val
+#                line += G2py3.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         

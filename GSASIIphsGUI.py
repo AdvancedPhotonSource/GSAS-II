@@ -12063,7 +12063,9 @@ def UpdatePhaseData(G2frame,Item,data):
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         data['Drawing']['showMap'] = True
-        print (dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
+        ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print (ftext)
+        G2frame.AddToNotebook('Fourier '+ftext)
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         

@@ -3351,10 +3351,10 @@ class G2Project(G2ObjectWrapper):
             return self.data['Controls']['data']['Seq Data']
         elif control == 'Reverse Seq':
             return self.data['Controls']['data']['Reverse Seq']
-        elif control in self.data['Controls']['data']:
-            return self.data['Controls']['data'][control]
         elif control == 'seqCopy':
             return self.data['Controls']['data']['Copy2Next']
+        elif control in self.data['Controls']['data']:
+            return self.data['Controls']['data'][control]
         else:
             G2fil.G2Print('Defined Controls:',self.data['Controls']['data'].keys())
             raise Exception('{} is an invalid control value'.format(control))

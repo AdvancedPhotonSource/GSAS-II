@@ -3256,7 +3256,8 @@ def UpdatePhaseData(G2frame,Item,data):
                         if str(atomData[r][c]) not in choice:
                             choice.append(str(atomData[r][c]))
                     choice.sort()
-                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Name',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select atom(s) by name',
+                                            'Name Selection',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel]
@@ -3265,7 +3266,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         for row in range(Atoms.GetNumberRows()):
                             if parms == atomData[row][c]:
                                 Atoms.SelectRow(row,True)
-                    dlg.Destroy()
+                        dlg.Destroy()
+                    else:
+                        dlg.Destroy()
+                        return
                 elif Atoms.GetColLabelValue(c) == 'residue':
                     choice = []
                     for r in range(Atoms.GetNumberRows()):

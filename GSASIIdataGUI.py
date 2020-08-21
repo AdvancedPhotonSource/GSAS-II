@@ -5045,24 +5045,26 @@ class GSASII(wx.Frame):
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    self.reloadFromGPX
+                    wx.CallAfter(self.reloadFromGPX,rtext)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                self.AddToNotebook(rtext)
             finally:
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
             
-    def reloadFromGPX(self):
+    def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
         refinemnt.) Done after events are completed to avoid crashes.
+        :param rtext str: string info from cller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = []
         G2IO.ProjFileOpen(self,False)
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
+        if rtext is not None:
+            self.AddToNotebook(rtext)
         self.ResetPlots()        
         
     def SaveTreeSetting(self):

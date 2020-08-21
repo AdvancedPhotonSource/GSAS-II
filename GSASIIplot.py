@@ -208,6 +208,7 @@ nxs = np.newaxis
 plotDebug = False
 timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
 obsInCaption = True # include the observed, calc,... items in the plot caption (PlotPatterns)
+mplv = eval(mpl.__version__.replace('.',','))
 
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
@@ -331,9 +332,8 @@ class G2PlotMpl(_tabPlotWin):
             return self.canvas.SetToolTipString(text)
         
     def ToolBarDraw(self):
-        mplv = eval(mpl.__version__.replace('.',','))
         if mplv[0] >= 3 and mplv[1] >= 3:
-            self.toolbar.draw_idle()
+            self.toolbar.canvas.draw_idle()
         else:
             self.toolbar.draw()
         
@@ -10564,11 +10564,17 @@ def PlotFPAconvolutors(G2frame,NISTpk):
 def SetupLegendPick(legend,new,delay=5):
     legend.delay = delay*1000 # Hold time in ms for clear; 0 == forever
     for line in legend.get_lines():
-        line.set_picker(4)
+        if mplv[0] >= 3 and mplv[1] >= 3:
+            line.set_pickradius(4)
+        else:
+            line.set_picker(4)
         # bug: legend items with single markers don't seem to respond to a "pick"
     #GSASIIpath.IPyBreak()
     for txt in legend.get_texts():
-        txt.set_picker(4)
+        if mplv[0] >= 3 and mplv[1] >= 3:
+            txt.set_pickradius(4)
+        else:
+            txt.set_picker(4)
     if new:
         legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
         

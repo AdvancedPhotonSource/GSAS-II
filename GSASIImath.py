@@ -3902,7 +3902,7 @@ def PeaksEquiv(data,Ind):
             Ind.append(ind)
     return Ind
                 
-def PeaksUnique(data,Ind):
+def PeaksUnique(data,Ind,Sel):
     '''Finds the symmetry unique set of peaks from those selected. Selects
     the one closest to the center of the unit cell. 
     Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
@@ -3910,6 +3910,7 @@ def PeaksUnique(data,Ind):
 
     :param data: the phase data structure
     :param list Ind: list of selected peak indices
+    :param int Sel: selected column to find peaks closest to
 
     :returns: the list of symmetry unique peaks from among those given in Ind
     '''        
@@ -3923,65 +3924,34 @@ def PeaksUnique(data,Ind):
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
-    mapPeaks = data['Map Peaks']
-    
-    
-    Indx = {}
-    XYZ = {}
-    for ind in Ind:
-        XYZ[ind] = np.array(mapPeaks[ind][1:4])
-        Indx[ind] = True
+    mapPeaks = data['Map Peaks']    
+    XYZ = {ind:np.array(mapPeaks[ind][1:4]) for ind in Ind}
+    Indx = [True for ind in Ind]
+    Unique = []
+    # scan through peaks, finding all peaks equivalent to peak ind
     for ind in Ind:
         if Indx[ind]:
             xyz = XYZ[ind]
+            dups = []
             for jnd in Ind:
-                if ind != jnd and Indx[jnd]:                        
+                # only consider peaks we have not looked at before
+                # and were not already found to be equivalent
+                if jnd > ind and Indx[jnd]:                        
                     Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
                     xyzs = np.array([equiv[0] for equiv in Equiv])
-                    Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
-    Ind = []
-    for ind in Indx:
-        if Indx[ind]:
-            Ind.append(ind)
-    return Ind
-    
-    
-    
-    
-    
-    
-    # XYZ = {ind:np.array(mapPeaks[ind][1:4]) for ind in Ind}
-    # Indx = [True for ind in Ind]
-    # Unique = []
-    # # scan through peaks, finding all peaks equivalent to peak ind
-    # for ind in Ind:
-    #     if Indx[ind]:
-    #         xyz = XYZ[ind]
-    #         dups = []
-    #         for jnd in Ind:
-    #             # only consider peaks we have not looked at before
-    #             # and were not already found to be equivalent
-    #             if jnd > ind and Indx[jnd]:                        
-    #                 Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
-    #                 xyzs = np.array([equiv[0] for equiv in Equiv])
-    #                 if not noDuplicate(xyz,xyzs,Amat):
-    #                     Indx[jnd] = False
-    #                     dups.append(jnd)
-    #                 Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
-    # #        # select the unique peak closest to cell center
-    # #         cntr = mapPeaks[ind][-1]
-    # #         icntr = ind
-    # #         for jnd in dups:
-    # #             if mapPeaks[jnd][-1] < cntr:
-    # #                 cntr = mapPeaks[jnd][-1]
-    # #                 icntr = jnd
-    # #         Unique.append(icntr)
-    # # return Unique
-    # Ind = []
-    # for ind in Indx:
-    #     if Indx[ind]:
-    #         Ind.append(ind)
-    # return Ind
+                    if not noDuplicate(xyz,xyzs,Amat):
+                        Indx[jnd] = False
+                        dups.append(jnd)
+            # select the unique peak closest to cell center
+            cntr = mapPeaks[ind][Sel]
+            icntr = ind
+            for jnd in dups:
+                if mapPeaks[jnd][Sel] < cntr:
+                    cntr = mapPeaks[jnd][Sel]
+                    icntr = jnd
+            Unique.append(icntr)
+    return Unique
+
 ################################################################################
 ##### Dysnomia setup & return stuff
 ################################################################################

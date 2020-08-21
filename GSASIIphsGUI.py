@@ -11966,9 +11966,17 @@ def UpdatePhaseData(G2frame,Item,data):
             mapPeaks = data['Map Peaks']
             Ind = getAtomSelections(MapPeaks)
             if Ind:
+                choice = ['x=0','y=0','z=0','origin','center']
+                dlg = wx.SingleChoiceDialog(G2frame,'Peaks closest to:','Select',choice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()+1
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                    return
                 wx.BeginBusyCursor()
                 try:
-                    Ind = G2mth.PeaksUnique(data,Ind)
+                    Ind = G2mth.PeaksUnique(data,Ind,sel)
                     print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
                     tbl = MapPeaks.GetTable().data
                     tbl[:] = [t for i,t in enumerate(tbl) if i in Ind] + [

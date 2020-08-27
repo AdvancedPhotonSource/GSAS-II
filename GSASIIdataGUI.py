@@ -2589,7 +2589,7 @@ class GSASII(wx.Frame):
     def AddToNotebook(self,text):
         Id =  GetGPXtreeItemId(self,self.root,'Notebook')
         data = self.GPXtree.GetItemPyData(Id)
-        data.append('Notebook entry @ %s: %s\n'%(time.ctime(),text))    
+        data.append('Notebook entry @ %s: %s'%(time.ctime(),text))    
                    
 ###############################################################################
 #Command logging

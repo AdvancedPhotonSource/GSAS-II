@@ -53,7 +53,7 @@ ElTable = [
     (["Zn","Zn+2"],               11,3, "Zinc",        Metcolor,        0.0960,(125,128,176)),
     (["Ga","Ga+3"],               12,3, "Gallium",     SemMetcolor,      0.104,(194,143,143)),
     (["Ge","Ge+4"],               13,3, "Germanium",   SemMetcolor,      0.114,(102,143,143)),
-    (["As",],                     14,3, "Arsenic",     NonMetcolor,      0.120,(189,128,227)),
+    (["As",],                     14,3, "Arsenic",     NonMetcolor,      0.120,(255,0,255)),
     (["Se",],                     15,3, "Selenium",    NonMetcolor,      0.132,(255,161,0)),
     (["Br","Br-1"],               16,3, "Bromine",     NonMetcolor,      0.141,(166,41,41)),
     (["Kr",],                     17,3, "Krypton",     Noblecolor,       0.150,(92,184,209)),

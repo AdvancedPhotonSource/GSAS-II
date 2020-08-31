@@ -1671,9 +1671,12 @@ def UpdatePhaseData(G2frame,Item,data):
             del generalData['Map']['Resolution']
             del generalData['Flip']['Resolution']
         if 'Compare' not in generalData:
-            generalData['Compare'] = {'Oatoms':'','Tatoms':'','Tilts':{'Otilts':[],'Ttilts':[]},
+            generalData['Compare'] = {'Oatoms':'','Tatoms':'',
+                    'Tilts':{'Otilts':[],'Ttilts':[]},
                 'Bonds':{'Obonds':[],'Tbonds':[]},'Vects':{'Ovec':[],'Tvec':[]},
-                'dVects':{'Ovec':[],'Tvec':[]}}
+                'dVects':{'Ovec':[],'Tvec':[]},'Sampling':1.0}
+        if 'Sampling' not in generalData['Compare']:
+            generalData['Compare']['Sampling'] = 1.0
                 
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2851,6 +2854,9 @@ def UpdatePhaseData(G2frame,Item,data):
             tatmsel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
             atmselSizer.Add(tatmsel,0,WACV)
             
+            atmselSizer.Add(wx.StaticText(General,label=' Sampling fraction:: '),0,WACV)
+            atmselSizer.Add(G2G.ValidatedTxtCtrl(General,generalData['Compare'],'Sampling',nDig=(8,3),xmin=0.0,xmax=1.0,),0,WACV)
+            
             try:
                 if len(generalData['Compare']['Bonds'][bName]['Obonds']) or len(generalData['Compare']['Bonds'][bName]['Tbonds']):
                     plotBtn = wx.Button(General,label='Show plots?')
@@ -3063,6 +3069,9 @@ def UpdatePhaseData(G2frame,Item,data):
         nElse = 0
         for iatm,atom in enumerate(data['Atoms']):
             if atom[ct] == Oatoms:
+                if ran.random() > generalData['Compare']['Sampling']:
+                    iAtm += 1
+                    continue
                 results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames,Orig=iatm)[0]      #slow step
                 if len(results) == 4:
                     bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindTetrahedron(results)

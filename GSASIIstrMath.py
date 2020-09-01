@@ -863,7 +863,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
-    SGMT = np.array([ops[0] for ops in SGData['SGOps']])
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']

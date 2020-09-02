@@ -4660,7 +4660,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 Pairs= []
                 atSeq = RMCPdict['atSeq']
                 lenA = len(atSeq)
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+#                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                     Pairs += pair
                 RMCPdict['Pairs'] = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
                 if RMCPdict['useBVS']:

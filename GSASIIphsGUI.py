@@ -2976,6 +2976,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     if not '_' in BNSlatt:
                         SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
                 else:
+                    dlg.Destroy()
                     return
             finally:
                 dlg.Destroy()
@@ -3022,21 +3023,21 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     break
                                 
-            NShkl = len(G2spc.MustrainNames(SGData))
-            NDij = len(G2spc.HStrainNames(SGData))
-            UseList = newPhase['Histograms']
-            for hist in UseList:
-                UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
-                UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-                UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-            newPhase['General']['Map'] = mapDefault.copy()
-            sub = G2frame.GPXtree.AppendItem(parent=
-                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
-            G2frame.GPXtree.SetItemPyData(sub,newPhase)
-            newPhase['Drawing'] = []
-            if ifConstr:
-                G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
-            G2frame.GPXtree.SelectItem(sub)
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        UseList = newPhase['Histograms']
+        for hist in UseList:
+            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+            UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+            UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+        newPhase['General']['Map'] = mapDefault.copy()
+        sub = G2frame.GPXtree.AppendItem(parent=
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+        G2frame.GPXtree.SetItemPyData(sub,newPhase)
+        newPhase['Drawing'] = []
+        if ifConstr:
+            G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
+        G2frame.GPXtree.SelectItem(sub)
                 
     def OnCompare(event):
         generalData = data['General']
@@ -12177,13 +12178,13 @@ def UpdatePhaseData(G2frame,Item,data):
             pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            newMap,new4Dmap = G2mth.SSChargeFlip(data,ReflData,pgbar)
+            result = G2mth.SSChargeFlip(data,ReflData,pgbar)
         finally:
             pgbar.Destroy()
         G2frame.AddToNotebook('4D Charge flip: '+result[2])
         G2frame.AddToNotebook('4D Charge flip: '+result[3])
-        mapData.update(newMap)
-        map4DData.update(new4Dmap)
+        mapData.update(result[0])
+        map4DData.update(result[1])
         mapData['Flip'] = True        
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!

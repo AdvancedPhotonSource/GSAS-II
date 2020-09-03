@@ -1296,7 +1296,7 @@ def XScattDen(Elements,vol,wave=0.):
             fpp += Xanom[El][1]*Elements[El]['Num']
             mu += Xanom[El][2]*Elements[El]['Num']
         rho += Elements[El]['Num']*f0
-    return 28.179*rho/vol,0.1*mu/vol,28.179*fpp/vol
+    return 28.179*rho/vol,mu/vol,28.179*fpp/vol
     
 def NCScattDen(Elements,vol,wave=0.):
     '''Estimate neutron scattering density from molecular formula & volume;

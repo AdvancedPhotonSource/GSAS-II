@@ -3544,7 +3544,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     Atoms.SelectCol(c,True)
                     
-        def Paint():
+        def Paint(Scroll=0):
             
             table = []
             rowLabels = []
@@ -3635,7 +3635,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             Atoms.AutoSizeColumns(False)
-            SetPhaseWindow(Atoms)
+            SetPhaseWindow(Atoms,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
 
 #### FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -7820,7 +7820,6 @@ def UpdatePhaseData(G2frame,Item,data):
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
-#        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomStyle(event):
         cx,ct,cs,ci = getAtomPtrs(data,draw=True)      

@@ -2101,10 +2101,10 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 else:
                     newX = XT
                 if All:
-                    if np.allclose(newX,X,atol=0.0002):
+                    if np.allclose(newX,X,atol=0.0002):     #do we want %1. here?
                         idup = False
                 else:
-                    if True in [np.allclose(newX,oldX,atol=0.0002) for oldX in XYZEquiv]:
+                    if True in [np.allclose(newX%1.,oldX%1.,atol=0.0002) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
                     XYZEquiv.append(newX)

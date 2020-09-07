@@ -11940,6 +11940,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 mapData['rho'] = np.flip(mapData['rho'],0)
                 mapData['rho'] = np.flip(mapData['rho'],1)
                 mapData['rho'] = np.flip(mapData['rho'],2)                
+            mapData['rho'] = np.roll(np.roll(np.roll(mapData['rho'],1,axis=0),1,axis=1),1,axis=2)
             OnSearchMaps(event)
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)

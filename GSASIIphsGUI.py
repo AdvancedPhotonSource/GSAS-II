@@ -11945,6 +11945,36 @@ def UpdatePhaseData(G2frame,Item,data):
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
         
+    def OnRollMap(event):
+        if 'Map Peaks' in data:
+            if mapData['Flip'] != True:
+                print('Only valid for charge flip maps')
+                return
+            mapPeaks = data['Map Peaks']
+            generalData = data['General']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+            mapData = generalData['Map']
+            dims = mapData['rho'].shape
+            dims = [[-D,D] for D in dims]
+            dlg = G2G.MultiDataDialog(G2frame,title='Roll map by steps',
+                prompts=['X steps (%d to %d)'%(dims[0][0],dims[0][1]),
+                         'Y steps (%d to %d)'%(dims[1][0],dims[1][1]),
+                         'Z steps (%d to %d)'%(dims[2][0],dims[2][1])],values=[0,0,0,],
+                    limits=dims,formats=['%6d','%6d','%6d'])
+            if dlg.ShowModal() == wx.ID_OK:
+                rollsteps = dlg.GetValues()
+                rollsteps = [int(R) for R in rollsteps]
+                mapData['rho'] = np.roll(np.roll(np.roll(mapData['rho'],rollsteps[0],axis=0),rollsteps[1],axis=1),rollsteps[2],axis=2)
+                steps = 1./np.array(dims)
+                dxy = rollsteps*steps.T[1]
+                for peak in mapPeaks:
+                    peak[1:4] += dxy
+                    peak[1:4] %= 1.
+                    peak[4] = np.sqrt(np.sum(np.inner(Amat,peak[1:4])**2))
+                FillMapPeaksGrid()
+                G2plt.PlotStructure(G2frame,data)
+            dlg.Destroy()
+        
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
             Ind = getAtomSelections(MapPeaks)
@@ -12502,6 +12532,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnShowBonds, id=G2G.wxID_SHOWBONDS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2G.wxID_FINDEQVPEAKS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksInvert, id=G2G.wxID_INVERTPEAKS)
+        G2frame.Bind(wx.EVT_MENU, OnRollMap, id=G2G.wxID_ROLLMAP)
         G2frame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2G.wxID_PEAKSUNIQUE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksSave, id=G2G.wxID_PEAKSSAVE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)

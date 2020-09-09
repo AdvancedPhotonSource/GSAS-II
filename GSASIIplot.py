@@ -563,6 +563,8 @@ class G2PlotNoteBook(wx.Panel):
         if mplv[0] == 3:
             if mplv[1] >= 3:
                 page.set_box_aspect((1,1,1))
+            elif mplv == [3,0,3]:
+                pass
             elif not self.MPLwarn: # patch for bad MPL 3D
                 self.MPLwarn = True
                 G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, use MPL 3.0.3 or 3.3. You have '+mpl.__version__,
@@ -4939,9 +4941,9 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dX = Page.Offset[0]*(ixy+1)*Xmax/500.
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
                 if len(names2):
-                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False,label=names2[ixy])
+                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
                 else:
-                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False)
+                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
         if len(names):
             Plot.legend(names,loc='best')
         if not newPlot:

@@ -1727,7 +1727,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
                
     def OnAddExcl(event):
         G2frame.ifGetExclude = True
-        G2G.G2MessageBox(G2frame,'Click on a point in the pattern to be excluded, then drag or edit limits to adjust range','Creating excluded region')
+        G2frame.plotFrame.Raise()
+        G2G.G2MessageBox(G2frame.plotFrame,'Click on a point in the pattern to be excluded, then drag or edit limits to adjust range','Creating excluded region')
         
     def OnLimitCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)

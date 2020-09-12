@@ -869,7 +869,6 @@ def ImageCalibrate(G2frame,data):
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
             hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
-            #G2fil.G2Print(hkl)
             HKL += list(hkl)
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)

@@ -5396,7 +5396,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         '''
         
 #        G2G.Define_wxId('wxID_MCRON', 'wxID_MCRLIST', 'wxID_MCRSAVE', 'wxID_MCRPLAY',)
-
+##### GSAS-II Menu items
         # Main menu
         G2frame = self.GetTopLevelParent()
         G2frame.GSASIIMenu = wx.MenuBar()
@@ -6219,7 +6219,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSDA,'Calc dist/ang','Calculate distance or angle for selection')
         self.MapPeaksEdit.Append(G2G.wxID_FINDEQVPEAKS,'Equivalent peaks','Find equivalent peaks')
         self.MapPeaksEdit.Append(G2G.wxID_INVERTPEAKS,'Invert peak positions','Inverts map & peak positions')
-        self.MapPeaksEdit.Append(G2G.wxID_ROLLMAP,'Roll map','Roll map by specified steps')
+        self.MapPeaksEdit.Append(G2G.wxID_ROLLMAP,'Roll charge flip map','Roll charge flip map by specified steps')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSUNIQUE,'Unique peaks','Select unique set')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSSAVE,'Save peaks','Save peaks to csv file')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSDELETE,'Delete peaks','Delete selected peaks')

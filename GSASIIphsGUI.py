@@ -5826,7 +5826,6 @@ def UpdatePhaseData(G2frame,Item,data):
             
     def OnStopRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
-            RMCPdict = data['RMC']['fullrmc']
             generalData = data['General']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
@@ -11947,13 +11946,14 @@ def UpdatePhaseData(G2frame,Item,data):
         
     def OnRollMap(event):
         if 'Map Peaks' in data:
-            if mapData['Flip'] != True:
-                print('Only valid for charge flip maps')
-                return
+            half = np.array([.5,.5,.5])
             mapPeaks = data['Map Peaks']
             generalData = data['General']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             mapData = generalData['Map']
+            if mapData['Flip'] != True:
+                wx.MessageBox('Only valid for charge flip maps',caption='Roll map error',style=wx.ICON_EXCLAMATION)
+                return
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             dims = mapData['rho'].shape
             dims = [[-D,D] for D in dims]
             dlg = G2G.MultiDataDialog(G2frame,title='Roll map by steps',
@@ -11971,6 +11971,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     peak[1:4] += dxy
                     peak[1:4] %= 1.
                     peak[4] = np.sqrt(np.sum(np.inner(Amat,peak[1:4])**2))
+                    if len(peak)>4:
+                        peak[5] = np.sqrt(np.sum(np.inner(Amat,(peak[1:4]-half)%1.)**2))
                 FillMapPeaksGrid()
                 G2plt.PlotStructure(G2frame,data)
             dlg.Destroy()

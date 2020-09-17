@@ -136,11 +136,15 @@ def UpdateImageData(G2frame,data):
         G2plt.PlotExposedImage(G2frame,newPlot=True,event=tc.event)
         
     def OnPolaCalib(event):
-        IOtth = [data['IOtth'][0]+2.,data['IOtth'][1]-2.]
+        if data['IOtth'][1] < 34.:
+            G2G.G2MessageBox(G2frame,'Maximum 2-theta not greater than 34 deg',
+                    'Polarization Calibration Error')
+            return
+        IOtth = [32.,data['IOtth'][1]-2.]
         dlg = G2G.SingleFloatDialog(G2frame,'Polarization test arc mask',
 ''' Do not use if pattern has uneven absorption
- Set 2-theta max in image controls to be fully inside image  
- Enter 2-theta position for arc mask (%.1f-%.1f) '''%(IOtth[0],IOtth[1]),IOtth[1],IOtth,format='%.2f')
+ Set 2-theta max in image controls to be fully inside image 
+ Enter 2-theta position for arc mask (32-%.1f) '''%IOtth[1],IOtth[1],IOtth,format='%.2f')
         if dlg.ShowModal() == wx.ID_OK:
             arcTth = dlg.GetValue()
             G2fil.G2SetPrintLevel('none')

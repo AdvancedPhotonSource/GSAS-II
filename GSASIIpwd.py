@@ -236,11 +236,10 @@ def Polarization(Pola,Tth,Azm=0.0):
       * dpdPola: derivative needed for least squares
 
     """
-    cazm = npcosd(Azm)
-    sazm = npsind(Azm)
-    pola = ((1.0-Pola)*cazm**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
-        (1.0-Pola)*sazm**2+Pola*cazm**2
-    dpdPola = -npsind(Tth)**2*(sazm**2-cazm**2)
+    cazm = npcosd(Azm)**2
+    sazm = npsind(Azm)**2
+    pola = ((1.0-Pola)*cazm+Pola*sazm)*npcosd(Tth)**2+(1.0-Pola)*sazm+Pola*cazm
+    dpdPola = -npsind(Tth)**2*(sazm-cazm)
     return pola,dpdPola
     
 def Oblique(ObCoeff,Tth):

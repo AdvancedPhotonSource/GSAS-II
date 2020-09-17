@@ -1216,7 +1216,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     t0 = time.time()
     #prepare masked arrays of bins with pixels for interpolation setup
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
-    H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
+#    H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
+    H0msk = [ma.array(h0/nst,mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
     #make linear interpolators; outside limits give NaN
     H0 = []
     problemEntries = []
@@ -1511,20 +1512,27 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
     ''' Determine image polarization by successive integrations with & without preset arc mask.
     '''
     from scipy.optimize import minimize_scalar
-    Arc = [arcTth,[45.,135.],2.0]
+    print(' Polarization fit for mask at %.1f deg 2-theta'%arcTth)
+    data = copy.deepcopy(imageData)
+    data['IOtth'] = [arcTth-2.,arcTth+2.]
+    data['fullIntegrate'] = True
+    data['LRazimuth'] = [0.,360.]
+    data['outChannels'] = 200
+    data['outAzimuths'] = 1
+    Arc = [arcTth,[85.,95.],2.0]
+    print(' Integration 2-theta test range %.1f - %.1f in 200 steps'%(data['IOtth'][0],data['IOtth'][1]))
     Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
         'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
     AMasks = {'Points':[],'Rings':[],'Arcs':[Arc,],'Polygons':[],'Frames':[],
         'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
-    data = copy.deepcopy(imageData)
     
     def func(p):
         p = min(1.0,max(p,0.0))
         data['PolaVal'][0] = p
         H0 = ImageIntegrate(ImageZ,data,Masks)[0]
         H0A = ImageIntegrate(ImageZ,data,AMasks)[0]
-        M = np.sum(H0-H0A)
-        print('polarization %.4f, fxn: %.1f'%(p,M))
+        M = np.sum(H0)-np.sum(H0A)
+        print(' Polarization %.4f, fxn: %.1f'%(p,M))
         return M**2
     
     res = minimize_scalar(func,bracket=[1.,.999],tol=.0001)

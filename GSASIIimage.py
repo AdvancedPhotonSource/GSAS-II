@@ -1506,3 +1506,28 @@ def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
             if not GoOn[0]:
                 break
     return mask
+
+def DoPolaCalib(ImageZ,imageData,arcTth):
+    ''' Determine image polarization by successive integrations with & without preset arc mask.
+    '''
+    from scipy.optimize import minimize_scalar
+    Arc = [arcTth,[45.,135.],2.0]
+    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
+        'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+    AMasks = {'Points':[],'Rings':[],'Arcs':[Arc,],'Polygons':[],'Frames':[],
+        'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+    data = copy.deepcopy(imageData)
+    
+    def func(p):
+        p = min(1.0,max(p,0.0))
+        data['PolaVal'][0] = p
+        H0 = ImageIntegrate(ImageZ,data,Masks)[0]
+        H0A = ImageIntegrate(ImageZ,data,AMasks)[0]
+        M = np.sum(H0-H0A)
+        print('polarization %.4f, fxn: %.1f'%(p,M))
+        return M**2
+    
+    res = minimize_scalar(func,bracket=[1.,.999],tol=.0001)
+    print(res)
+    pola = min(1.0,max(res.x,.0))
+    imageData['PolaVal'][0] = pola

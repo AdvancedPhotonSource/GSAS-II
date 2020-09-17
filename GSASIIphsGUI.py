@@ -11727,6 +11727,8 @@ def UpdatePhaseData(G2frame,Item,data):
         wave = G2mth.getWave(Inst)
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         gconst = 2.35482 # sqrt(8 ln 2)
+        dx = (xdata[0][1]-xdata[0][0])*20.              #this ian approximation - not correct, but CW seems to be needed
+        gconst *= dx
         
         wx.BeginBusyCursor()
         try:

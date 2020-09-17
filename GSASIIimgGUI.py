@@ -135,7 +135,21 @@ def UpdateImageData(G2frame,data):
     def OnPixVal(invalid,value,tc):
         G2plt.PlotExposedImage(G2frame,newPlot=True,event=tc.event)
         
-    #G2frame.dataWindow.ClearData()
+    def OnPolaCalib(event):
+        IOtth = [data['IOtth'][0]+2.,data['IOtth'][1]-2.]
+        dlg = G2G.SingleFloatDialog(G2frame,'Polarization test arc mask',
+''' Do not use if pattern has uneven absorption
+ Set 2-theta max in image controls to be fully inside image  
+ Enter 2-theta position for arc mask (%.1f-%.1f) '''%(IOtth[0],IOtth[1]),IOtth[1],IOtth,format='%.2f')
+        if dlg.ShowModal() == wx.ID_OK:
+            arcTth = dlg.GetValue()
+            G2fil.G2SetPrintLevel('none')
+            G2img.DoPolaCalib(G2frame.ImageZ,data,arcTth)
+            G2fil.G2SetPrintLevel('all')
+            UpdateImageData(G2frame,data)
+        dlg.Destroy()
+        
+    G2frame.dataWindow.ClearData()
     G2frame.ImageZ = GetImageZ(G2frame,data)
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,
@@ -160,10 +174,14 @@ def UpdateImageData(G2frame,data):
         data['PolaVal'] = [0.99,False]
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,4),
         xmin=0.,xmax=1.,typeHint=float),0,WACV)
+    polaCalib = wx.Button(G2frame.dataWindow,label='Calibrate?')
+    polaCalib.Bind(wx.EVT_BUTTON,OnPolaCalib)
+    distSizer.Add(polaCalib,0,WACV)
     mainSizer.Add(distSizer,0)
     if 'samplechangerpos' not in data or data['samplechangerpos'] is None:
         data['samplechangerpos'] = 0.0
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample changer position %.2f mm'%data['samplechangerpos']),0,WACV)
+    G2frame.dataWindow.SetDataSize()
 
 ################################################################################
 ##### Image Controls

@@ -1510,6 +1510,7 @@ def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
 
 def DoPolaCalib(ImageZ,imageData,arcTth):
     ''' Determine image polarization by successive integrations with & without preset arc mask.
+    After initial search, does a set of five with offset azimuth to get mean(std) result.
     '''
     from scipy.optimize import minimize_scalar
     print(' Polarization fit for mask at %.1f deg 2-theta'%arcTth)
@@ -1521,6 +1522,7 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
     data['outAzimuths'] = 1
     Arc = [arcTth,[85.,95.],2.0]
     print(' Integration 2-theta test range %.1f - %.1f in 200 steps'%(data['IOtth'][0],data['IOtth'][1]))
+    print(' Mask azimuth range: %.1f - %.1f'%(Arc[1][0],Arc[1][1]))
     Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
         'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
     AMasks = {'Points':[],'Rings':[],'Arcs':[Arc,],'Polygons':[],'Frames':[],
@@ -1534,8 +1536,24 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
         M = np.sum(H0)-np.sum(H0A)
         print(' Polarization %.4f, fxn: %.1f'%(p,M))
         return M**2
-    
+    time0 = time.time()
     res = minimize_scalar(func,bracket=[1.,.999],tol=.0001)
     print(res)
     pola = min(1.0,max(res.x,.0))
-    imageData['PolaVal'][0] = pola
+    
+    Pola = []
+    for arc in [75,80,85,90,95]:
+        Arc = [arcTth,[arc,arc+10.],2.0]
+        AMasks = {'Points':[],'Rings':[],'Arcs':[Arc,],'Polygons':[],'Frames':[],
+            'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+        res = minimize_scalar(func,bracket=[pola-.001,pola],tol=.0001)
+        print(' Mask azimuth range: %.1f - %.1f'%(Arc[1][0],Arc[1][1]))
+        print(' pola: %.5f'%res.x)
+        Pola.append(res.x)
+    Pola = np.array(Pola)
+    mean = np.mean(Pola)
+    std = int(10000*np.std(Pola))
+    print(' Polarization: %.4f(%d)'%(mean,std))
+    print(' time: %.2fs'%(time.time()-time0))
+    imageData['PolaVal'][0] = mean
+    

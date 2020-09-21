@@ -8598,10 +8598,14 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)
-            #reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
+            #import imp
+            #imp.reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
             G2cnstG.UpdateConstraints(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Rigid bodies':
             data = G2frame.GPXtree.GetItemPyData(item)
+            # import imp
+            # imp.reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
+            # print('debug: reloaded',G2cnstG)
             G2cnstG.UpdateRigidBodies(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item).startswith('IMG '):
             G2frame.Image = item
@@ -8674,6 +8678,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.GPXtree.GetItemText(parentID) == 'Phases':
         data = G2frame.GPXtree.GetItemPyData(item)
+        # print('Debug: reload G2phG')
+        # import imp
+        # imp.reload(G2phG)
         G2phG.UpdatePhaseData(G2frame,item,data)
     elif G2frame.GPXtree.GetItemText(parentID) == 'Restraints':
         data = G2frame.GPXtree.GetItemPyData(parentID)

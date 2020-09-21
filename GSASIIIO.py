@@ -1158,6 +1158,7 @@ class ExportBaseclass(object):
         self.xtalDict = {}
         self.parmDict = {}
         self.sigDict = {}
+        self.fp = None
         # updated in InitExport:
         self.currentExportType = None # type of export that has been requested
         # updated in ExportSelect (when used):
@@ -1698,6 +1699,8 @@ class ExportBaseclass(object):
 
         :param str line: the text to be written. 
         '''
+        if self.fp is None:
+            raise Exception('Attempt to Write without use of OpenFile')
         self.fp.write(line+'\n')
         
     def CloseFile(self,fp=None):
@@ -1706,6 +1709,8 @@ class ExportBaseclass(object):
         :param file fp: the file object to be closed. If None (default)
           file object self.fp is closed. 
         '''
+        if self.fp is None:
+            raise Exception('Attempt to CloseFile without use of OpenFile')
         if self.fp == sys.stdout: return # debug mode
         if fp is None:
             fp = self.fp

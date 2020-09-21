@@ -26,7 +26,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
-import GSASIIphsGUI as G2phsGUI
+import GSASIIphsGUI as G2phG
 import GSASIIctrlGUI as G2G
 import GSASIIpy3 as G2py3
 
@@ -1056,4 +1056,4 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),
                       0,WACV|wx.TOP,10)
         
-    G2phsGUI.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)
+    G2phG.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)

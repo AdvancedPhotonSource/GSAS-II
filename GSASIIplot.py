@@ -8482,6 +8482,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Ind = G2frame.phaseDisplay.GetPage(page).GetSelectedRows()
             elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
                 Ind = G2frame.phaseDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
+            elif G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
+                if 'testRBObj' not in data: return []
+                Ind = data['testRBObj'].get('CRYhighLight',[])
         return Ind
                                        
     def SetBackground():
@@ -9149,6 +9152,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 bndColor = atColor
             if iat in Ind and G2frame.phaseDisplay.GetPageText(getSelection()) != 'Map peaks':
                 atColor = np.array(Gr)/255.
+                bndColor = atColor
 #            color += [.25,]
             radius = 0.5
             if atom[cs] != '':
@@ -9278,14 +9282,20 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         RenderMapPeak(x,y,z,Or,-2*mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
-        if len(testRBObj) and pageName == 'RB Models':
+        if len(testRBObj) and pageName == 'RB Models':  # plot a test rigid body as ball & [green] sticks
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]
-                name = '  '+aType+str(ind)
+                if testRBObj['NameLookup'][ind]:
+                    name = testRBObj['NameLookup'][ind]+' '
+                else:
+                    name = '  '+aType+str(ind)
                 color = np.array(testRBObj['AtInfo'][aType][1])
-                RenderSphere(x,y,z,0.2,color/255.)
+                if 'RBhighLight' in testRBObj and testRBObj['RBhighLight'] == ind: # highlighted atom is green
+                    RenderSphere(x,y,z,0.2,Gr)
+                else:
+                    RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
@@ -9295,7 +9305,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr/255.)
-                RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
+                RenderLabel(x,y,z,name,0.3,wxOrange,matRot)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]

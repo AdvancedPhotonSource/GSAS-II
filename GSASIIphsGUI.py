@@ -7726,6 +7726,20 @@ def UpdatePhaseData(G2frame,Item,data):
                     UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
                     
+        def NextAtom(event):
+            'respond to a tab by cycling through the atoms'
+            next = 0
+            for r in drawAtoms.GetSelectedRows():
+                next = r + 1
+                break
+            if next >= drawAtoms.GetNumberRows():
+                next = 0
+            drawAtoms.ClearSelection()
+            drawAtoms.SelectRow(next,True)
+            drawAtoms.MakeCellVisible(next,0)
+            drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
+            G2plt.PlotStructure(G2frame,data)
+
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if r < 0 and c < 0:
@@ -7750,7 +7764,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     drawAtoms.SelectRow(r,True)                
             drawingData['selectedAtoms'] = []
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
-            G2plt.PlotStructure(G2frame,data)                    
+            G2plt.PlotStructure(G2frame,data)
 
 #### UpdateDrawAtoms executable code starts here
         G2frame.GetStatusBar().SetStatusText('',1)
@@ -7798,6 +7812,10 @@ def UpdatePhaseData(G2frame,Item,data):
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
+        try:
+            drawAtoms.Bind(wg.EVT_GRID_TABBING, NextAtom)
+        except: # patch: for pre-2.9.5 wx
+            pass
         for i,atom in enumerate(drawingData['Atoms']):
             attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
             attr.SetReadOnly(True)
@@ -8887,7 +8905,7 @@ def UpdatePhaseData(G2frame,Item,data):
             showHydrogen.SetValue(drawingData['showHydrogen'])
             line2Sizer.Add(showHydrogen,0,WACV)
             
-            showRB = wx.CheckBox(drawOptions,-1,label=' Show rigid Bodies?')
+            showRB = wx.CheckBox(drawOptions,-1,label=' Show Rigid Bodies?')
             showRB.Bind(wx.EVT_CHECKBOX, OnShowRB)
             showRB.SetValue(drawingData['showRigidBodies'])
             line2Sizer.Add(showRB,0,WACV)
@@ -10084,6 +10102,7 @@ def UpdatePhaseData(G2frame,Item,data):
         # FillRigidBodyGrid executable code starts here
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
+        if 'testRBObj' in data: del data['testRBObj']
         general = data['General']
         cx,ct,cs,cia = general['AtomPtrs']
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
@@ -10318,16 +10337,18 @@ def UpdatePhaseData(G2frame,Item,data):
                 FillRigidBodyGrid(True)
                 
             def OnTorAngle(invalid,value,tc):
-                #OkBtn.SetLabel('OK')
-                #OkBtn.Enable(True)
-                Obj = tc.event.GetEventObject()
-                [tor,torSlide] = Indx[Obj.GetId()]
+                '''respond to a number entered into the torsion editor. 
+                Update the slider (number is already saved)
+                recompute atom distances
+                '''
+                [tor,torSlide] = Indx[tc.GetId()]
                 torSlide.SetValue(int(value*10))
                 UpdateTablePlot()
                 
             def OnTorSlide(event):
-                #OkBtn.SetLabel('OK')
-                #OkBtn.Enable(True)
+                '''respond to the slider moving. Put value into editor & save
+                recompute atom distances
+                '''
                 Obj = event.GetEventObject()
                 tor,ang = Indx[Obj.GetId()]
                 Tors = data['testRBObj']['rbObj']['Torsions'][tor]
@@ -10475,6 +10496,42 @@ def UpdatePhaseData(G2frame,Item,data):
                 for i,item in enumerate(Osizers):
                     item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
                 UpdateTablePlot()
+                
+            def BallnSticks(event):
+                '''Set all draw atoms in crystal structure to balls & stick
+                '''
+                for a in data['Drawing']['Atoms']: a[6] = "balls & sticks"
+                FindBondsDraw(data)
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                RigidBodies.SetFocus() # make sure tab presses go to panel
+            def Sticks(event):
+                '''Set all draw atoms in crystal structure to stick
+                '''
+                for a in data['Drawing']['Atoms']: a[6] = "sticks"
+                FindBondsDraw(data)
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                RigidBodies.SetFocus() # make sure tab presses go to panel                
+            def OnRowSelect(event):
+                '''Respond to the selection of a rigid body atom.
+                Highlight the atom in the body and the paired atom in the
+                crystal
+                '''
+                event.Skip()
+                cryatom = event.GetEventObject().Table.GetValue(event.GetRow(),4) 
+                if not cryatom: 
+                    cryatom = event.GetEventObject().Table.GetValue(event.GetRow(),2)
+                data['testRBObj']['RBhighLight'] = event.GetRow()
+                data['testRBObj']['CRYhighLight'] = [
+                    i for i,a in enumerate(data['Atoms']) if a[0] == cryatom]
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                data['testRBObj']['showSelect'].SetLabelText(cryatom)
+            showAtom = [None]
+            def showCryAtom(*args,**kwargs):
+                '''Respond to selection of a crystal atom 
+                '''
+                data['testRBObj']['CRYhighLight'] = [
+                    i for i,a in enumerate(data['Atoms']) if a[0] == showAtom[0]]
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
 
             # Start of Draw()
             if not data['testRBObj']: return
@@ -10486,7 +10543,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 G2G.G2MessageBox(G2frame,msg,title='Please note')
                 for i in unmatchedRBatoms:
                     rbAssignments[i] = None
-
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             Osizers = []
@@ -10496,13 +10552,24 @@ def UpdatePhaseData(G2frame,Item,data):
             Orien = rbObj['Orient'][0]
             rbRef = data['testRBObj']['rbRef']
             Torsions = rbObj['Torsions']
-            refName = []
-            for ref in rbRef:
-                refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
+            #refName = []
+            #for ref in rbRef:
+            #    refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
             atNames = data['testRBObj']['atNames']
-            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
                                 'Locating rigid body : '+rbName), 0, WACV)
-            mainSizer.Add((5,5),0)
+            topSizer.Add((10,-1),0)
+            topSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                                'Display crystal structure as:'), 0, WACV)
+            btn = wx.Button(RigidBodies,wx.ID_ANY,"Ball && Sticks")
+            btn.Bind(wx.EVT_BUTTON, BallnSticks)
+            topSizer.Add(btn)
+            btn = wx.Button(RigidBodies,wx.ID_ANY,"Sticks")
+            btn.Bind(wx.EVT_BUTTON, Sticks)
+            topSizer.Add(btn)
+            mainSizer.Add(topSizer)
+            mainSizer.Add((-1,5),0)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Origin: '),0,WACV)
             Xsizers = []
@@ -10546,7 +10613,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
                     torName = ''
                     for item in [seq[0],seq[1],seq[3][0]]:
-                        torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
+                        if data['testRBObj']['NameLookup'][item]:
+                            torName += data['testRBObj']['NameLookup'][item]+' '
+                        else:
+                            torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
                     TorSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Side chain torsion for rb seq: '+torName),0,WACV)
                     torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
                     torSlide.SetRange(0,3600)
@@ -10580,8 +10650,9 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 20)
                 
             SetPhaseWindow(RigidBodies,mainSizer)
-
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
+            
+            gridSizer = wx.BoxSizer(wx.HORIZONTAL)
             colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
             displayTable = []
@@ -10600,11 +10671,13 @@ def UpdatePhaseData(G2frame,Item,data):
                     wg.GRID_VALUE_STRING]
             RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
-
-            labelsChoices = ['         '] + [a[0] for a in data['Atoms']
+            RigidBodies.atomsGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            data['testRBObj']['RBhighLight'] = None
+            data['testRBObj']['CRYhighLight'] = []
+            data['testRBObj']['availAtoms'] = ['         '] + [a[0] for a in data['Atoms']
                                                  if a[-1] not in rbUsedIds]
             choiceeditor = wg.GridCellChoiceEditor(
-                labelsChoices+['Create new'], False)
+                data['testRBObj']['availAtoms']+['Create new'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
             # make all grid entries read only
             attr = wg.GridCellAttr()
@@ -10622,11 +10695,18 @@ def UpdatePhaseData(G2frame,Item,data):
             RigidBodies.atomsGrid.AutoSizeColumns(True)
             RigidBodies.atomsGrid.SetMargins(0,0)
 
-            gridSizer = wx.BoxSizer(wx.HORIZONTAL)
             gridSizer.Add(RigidBodies.atomsGrid)#,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
             gridSizer.Add((5,5))
 
             btnSizer = wx.BoxSizer(wx.VERTICAL)
+            hSizer = wx.BoxSizer(wx.HORIZONTAL)
+            hSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Crystal Highlight: '))
+            data['testRBObj']['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
+                                data['testRBObj']['availAtoms'],
+                                None,None,showAtom,0,showCryAtom,
+                                size=(75,-1))
+            hSizer.Add(data['testRBObj']['showSelect'])
+            btnSizer.Add(hSizer)
             btnSizer.Add((-1,20))
             btnSizer.Add(
                 wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with assigned\natom(s)...'),
@@ -10654,7 +10734,8 @@ def UpdatePhaseData(G2frame,Item,data):
             RigidBodies.SetScrollRate(10,10)
             RigidBodies.SendSizeEvent()
             RigidBodies.Scroll(0,0)
-
+            RigidBodies.SetFocus() # make sure tab presses go to panel
+            data['testRBObj']['UpdateTable'] = UpdateTable
         # start of OnRBAssign(event)
         rbAssignments = {}
         rbUsedIds = []   # Ids of atoms in current phase used inside RBs
@@ -10721,17 +10802,18 @@ def UpdatePhaseData(G2frame,Item,data):
         rbType,rbId = rbNames[selection]
         data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
         data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+        data['testRBObj']['NameLookup'] = RBData[rbType][rbId]['atNames']
         data['testRBObj']['rbType'] = rbType
         data['testRBObj']['rbData'] = RBData
         data['testRBObj']['Sizers'] = {}
         rbRef = RBData[rbType][rbId]['rbRef']
         data['testRBObj']['rbRef'] = rbRef
         refType = []
-        refName = []
+        #refName = []
         for ref in rbRef[:3]:
             reftype = data['testRBObj']['rbAtTypes'][ref]
             refType.append(reftype)
-            refName.append(reftype+' '+str(rbRef[0]))
+            #refName.append(reftype+' '+str(rbRef[0]))
         atNames = [{},{},{}]
         AtNames = {}
         for iatm,atom in enumerate(atomData):
@@ -12623,9 +12705,57 @@ def UpdatePhaseData(G2frame,Item,data):
     G2frame.phaseDisplay.gridList.append(drawAtoms)
     G2frame.phaseDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
+    def rbKeyPress(event):
+        '''Respond to a Tab to highlight the next RB or crystal atom
+        '''
+        if 'testRBObj' not in data: return
+        alt = event.GetModifiers() & wx.MOD_ALT
+        event.Skip()
+        try: # IsKeyInCategory not in wx 2.9
+            if not event.IsKeyInCategory(wx.WXK_CATEGORY_TAB): return
+        except:
+            return
+        if alt:    # advance RB selection
+            #GSASIIpath.IPyBreak()
+            rows = RigidBodies.atomsGrid.GetSelectedRows()
+            if len(rows) == 0:
+                rows = [0]
+            else:
+                rows[0] += 1
+            if rows[0] > RigidBodies.atomsGrid.GetNumberRows()-1:
+                rows = [0]
+            elif rows[0] < 0:
+                rows[0] = RigidBodies.atomsGrid.GetNumberRows()-1
+            RigidBodies.atomsGrid.SelectRow(rows[0])         
+            RigidBodies.atomsGrid.MakeCellVisible(rows[0],0)         
+            data['testRBObj']['RBhighLight'] = rows[0]
+        else:
+            #GSASIIpath.IPyBreak()
+            #return
+            Ind = data['testRBObj'].get('CRYhighLight',[])
+            if len(Ind) == 0:
+                I = -1
+            else:
+                I = Ind[0]
+            wrap = False
+            while True:
+                I += 1
+                if I >= len(data['Atoms']) and wrap:
+                    print('How did this happen?',Ind,I,
+                              len(data['testRBObj']['availAtoms']),len(data['Atoms']))
+                    return
+                elif I >= len(data['Atoms']):
+                    wrap = True
+                    I = 0
+                if data['Atoms'][I][0] in data['testRBObj']['availAtoms']:
+                    data['testRBObj']['CRYhighLight'] = [I]
+                    data['testRBObj']['showSelect'].SetLabelText(data['Atoms'][I][0])
+                    break
+        G2plt.PlotStructure(G2frame,data,False,data['testRBObj']['UpdateTable'])
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')
+        RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
     MapPeaks = G2G.GSGrid(G2frame.phaseDisplay)
 #    MapPeaks.SetScrollRate(0,0)

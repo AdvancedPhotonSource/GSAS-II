@@ -225,6 +225,7 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
         if self.ExportSelect():    # set export parameters; ask for file name
             return
         filename = self.filename
+        self.OpenFile()
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']

@@ -43,6 +43,7 @@ import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIpy3 as G2py3
 import GSASIIphsGUI as G2phG
+import GSASIIIO as G2IO
 import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -2054,6 +2055,11 @@ def UpdateRigidBodies(G2frame,data):
                 GetCoords(atmsel)
                 Page2()
 
+            if 'macromolecular' == rd.Phase['General']['Type']:
+                # for PDB imports, lets see if a quick reformat of atoms list will work
+                rd.Phase['Atoms'] = [a[3:] for a in rd.Phase['Atoms']]
+                rd.Phase['General']['AtomPtrs']  = [i-3 for i in rd.Phase['General']['AtomPtrs']]
+                rd.Phase['General']['Type'] = 'nuclear'
             SetupDrawing(rd.Phase) # add information to reader object to allow plotting
             atomlist = [atom[0] for atom in rd.Phase['Atoms']]
             atmsel = list(range(len(rd.Phase['Atoms'])))
@@ -2266,6 +2272,37 @@ def UpdateRigidBodies(G2frame,data):
                 grid.ForceRefresh()
                 UpdateDraw()
 
+            def onWriteXYZ(event):
+                '''Writes selected atoms in a .xyz file for use in Avogadro, etc.
+                '''
+                grid.completeEdits()
+                center = np.array([0.,0.,0.])
+                count = 0
+                for i in range(len(rd.Phase['RBselection'])):
+                    if rd.Phase['RBselection'][i]:
+                        count += 1
+                        center += rd.Phase['RBcoords'][i]
+                if count:
+                    center /= count
+                else:
+                    print('nothing selected')
+                    return
+                obj = G2IO.ExportBaseclass(G2frame,'XYZ','.xyz')
+                #obj.InitExport(None)
+                if obj.ExportSelect():    # set export parameters; ask for file name
+                    return
+                fp = obj.OpenFile()
+                obj.Write(str(count))
+                obj.Write('')
+                for i in range(len(rd.Phase['RBselection'])):
+                    if rd.Phase['RBselection'][i]:
+                        line = ' ' + rd.Phase['RBtypes'][i]
+                        for xyz in rd.Phase['RBcoords'][i]:
+                            line += ' ' + str(xyz)
+                        obj.Write(line)
+                obj.CloseFile()
+                #GSASIIpath.IPyBreak()
+                
             def onAddVector(event):
                 '''Adds selected atoms as a new vector rigid body.
                 Closes out the importer tab when done. 
@@ -2380,6 +2417,10 @@ def UpdateRigidBodies(G2frame,data):
                 wx.StaticText(RBImpPnl,wx.ID_ANY,'Use selected atoms to\ncreate...'),
                 0,wx.ALL)
             btnSizer.Add((-1,5))
+            btn = wx.Button(RBImpPnl, wx.ID_ANY, 'export as xyz')
+            btn.Bind(wx.EVT_BUTTON,onWriteXYZ)
+            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+            btnSizer.Add((-1,10))
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'a Vector Body')
             btn.Bind(wx.EVT_BUTTON,onAddVector)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
@@ -2481,6 +2522,7 @@ def UpdateRigidBodies(G2frame,data):
                 col = dlg.GetSelection()
             else:
                 col = None
+                return
         finally:
             dlg.Destroy()
         reader = G2sc.Readers['Phase'][col]

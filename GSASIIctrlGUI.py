@@ -3469,11 +3469,13 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     :returns: a list of files or an empty list
     '''
     if not parent: parent = G2frame
-    #if GSASIIpath.GetConfigValue('debug'): print('debug: GetImportFile from '+defaultDir)
+    pth = GetImportPath(G2frame)
+    #if GSASIIpath.GetConfigValue('debug'):
+    #    print('debug: GetImportFile from '+defaultDir)
+    #    print('debug: GetImportFile pth '+pth)
     dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,
                         style=style, **kwargs)
 #    dlg.CenterOnParent()
-    pth = GetImportPath(G2frame)
     if not defaultDir and pth: dlg.SetDirectory(pth)
     try:
         if dlg.ShowModal() == wx.ID_OK:

@@ -1241,11 +1241,14 @@ def UpdateConstraints(G2frame,data):
         '''Called when a tab is pressed or when a "select tab" menu button is
         used (see RaisePage), or to refresh the current tab contents (event=None)
         '''
-        if event is None: return
         if event:       #page change event!
             page = event.GetSelection()
         else: # called directly, get current page
-            page = G2frame.constr.GetSelection()
+            try:
+                page = G2frame.constr.GetSelection()
+            except:
+                if GSASIIpath.GetConfigValue('debug'): print('DBG_gpx open error:C++ Run time error - skipped')
+                return
         G2frame.constr.ChangeSelection(page)
         text = G2frame.constr.GetPageText(page)
         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
@@ -1774,11 +1777,14 @@ def UpdateRigidBodies(G2frame,data):
     def OnPageChanged(event):
         global resList
         resList = []
-        if event is None: return
         if event:       #page change event!
             page = event.GetSelection()
         else:
-            page = G2frame.rbBook.GetSelection()
+            try:
+                page = G2frame.rbBook.GetSelection()
+            except:
+                if GSASIIpath.GetConfigValue('debug'): print('DBG_gpx open error:C++ Run time error - skipped')
+                return
         G2frame.rbBook.ChangeSelection(page)
         text = G2frame.rbBook.GetPageText(page)
         if text == 'Vector rigid bodies':

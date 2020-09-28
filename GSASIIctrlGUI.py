@@ -3895,11 +3895,11 @@ class ShowLSParms(wx.Dialog):
         self.hisNums = sorted(list(set([int(item.split(':')[1]) for item in hisNames])))
         self.hisNums = ['*',]+[str(item) for item in self.hisNums]
         self.hisVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[0]])))
-        phasNames = [':'.join(item) for item in splitNames if not item[1] and 'is' not in item[2]]
+        phasNames = [':'.join(item) for item in splitNames if not item[1] and not item[2].startswith('is')]
         self.choiceDict['Phase'] = G2obj.SortVariables(phasNames)
         self.phasNums = sorted(['*',]+list(set([item.split(':')[0] for item in phasNames])))
         if '' in self.phasNums: self.phasNums.remove('')
-        self.phasVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[1] and 'is' not in item[2]])))
+        self.phasVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[1] and not item[2].startswith('is')])))
         hapNames = [':'.join(item) for item in splitNames if item[0] and item[1]]
         self.choiceDict['Phase/Histo'] = G2obj.SortVariables(hapNames)
         self.hapVars = sorted(list(set([' ',]+[item[2] for item in splitNames if item[0] and item[1]])))

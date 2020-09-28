@@ -5036,7 +5036,14 @@ class GSASII(wx.Frame):
             rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Msg['Rwp'],Msg['GOF'],Msg['Nobs'],Msg['Max shft/sig'])
             lamMax = Msg.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
-            text = 'Detailed results are in ' + lst + '.lst\n\nLoad new result?'
+            text = 'Detailed results are in ' + lst + '.lst\n'
+            if 'GOF0' in Msg and 'GOF' in Msg:
+                text += '\nReduced Chi^2 before refinement={:.3f} and after={:.3f}\n'.format(
+                    Msg['GOF0']**2,Msg['GOF']**2)
+            if 'Max shft/sig' in Msg:
+                text += '\nMax shift/sigma={:.3f}\n'.format(Msg['Max shft/sig'])
+            if 'msg' in Msg: text += '\n' + Msg['msg'] + '\n'
+            text += '\nLoad new result?'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached\nor result may be false minimum.'+  \

@@ -1519,6 +1519,7 @@ def UpdateBackground(G2frame,data):
     def PeaksSizer():
 
         def OnPeaks(event):
+            'Respond to a change in the number of background peaks'
             data[1]['nPeaks'] = int(peaks.GetValue())
             M = len(data[1]['peaksList'])
             N = data[1]['nPeaks']
@@ -1530,7 +1531,17 @@ def UpdateBackground(G2frame,data):
                     del(data[1]['peaksList'][-1])
             if N == 0:
                 CalcBack(G2frame.PatternId)
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+                G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            # this callback is crashing wx when there is an open
+            # peaksGrid cell editor, at least on Mac. Code below
+            # should fix this, but it does not.
+            # https://stackoverflow.com/questions/64082199/wxpython-grid-destroy-with-open-celleditor-crashes-python-even-with-disablece
+            if peaksGrid and peaksGrid.IsCellEditControlEnabled():
+                # complete any grid edits in progress
+                #print('closing')
+                peaksGrid.HideCellEditControl()
+                peaksGrid.DisableCellEditControl()
+                #wx.CallLater(100,peaksGrid.Destroy) # crashes python
             wx.CallAfter(UpdateBackground,G2frame,data)
             
         def KeyEditPeakGrid(event):
@@ -1566,6 +1577,7 @@ def UpdateBackground(G2frame,data):
         topSizer.Add((5,0),0)
         peaksSizer.Add(topSizer)
         G2frame.dataWindow.currentGrids = []
+        peaksGrid = None
         if data[1]['nPeaks']:
             peaksSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Peak list:'),0,WACV)       
             rowLabels = []

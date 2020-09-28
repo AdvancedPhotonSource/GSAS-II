@@ -60,6 +60,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     if ifSeq:
         ifPrint = False
     Rvals = {}
+    chisq0 = None
     while True:
         begin = time.time()
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
@@ -90,6 +91,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
             Controls['Marquardt'] = -3  #reset to default
+            if 'chisq0' in result[2] and chisq0 is None:
+                chisq0 = result[2]['chisq0']
         elif 'Hessian SVD' in Controls['deriv type']:
             maxCyc = Controls['max cyc']
             result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,
@@ -101,6 +104,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 sig = len(varyList)*[None,]
                 break
             ncyc = result[2]['num cyc']+1
+            if 'chisq0' in result[2] and chisq0 is None:
+                chisq0 = result[2]['chisq0']
         else:           #'numeric'
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -181,6 +186,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         break
     if IfOK:
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
+    if chisq0 is not None:
+        Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
@@ -292,10 +299,18 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
-            if len(frozen) > 0:
-                G2fil.G2Print(
-                    ' {} variables were outside limits and were frozen (now {} frozen total)\n'
-                    .format(len(frozen),len(parmFrozenList)))
+            if len(frozen):
+                msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
+                    .format(len(frozen),len(parmFrozenList))
+                    )
+                G2fil.G2Print(msg)
+                Rvals['msg'] = msg
+            elif len(parmFrozenList):
+                msg = ('Note: a total of {} variable(s) are frozen due to refining outside limits'
+                    .format(len(parmFrozenList))
+                    )
+                G2fil.G2Print('Note: ',msg)
+                Rvals['msg'] = msg
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')

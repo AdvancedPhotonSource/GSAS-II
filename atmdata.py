@@ -1189,8 +1189,10 @@ MagFF = {
     'Am+7':{'M':[     .3601, 12.730, 1.9640,  5.120, -1.3560,  3.714,  .0000,   .000,  .0316],
         'N':[    1.8845,  9.161, 2.0746,  4.042,  -.1318,  1.723,  .0000,   .000,  .0020, 2.00]},
 }
-'''
-unused j<0>
+
+pass # placed here so that the following is not processed by Sphinx as a doc string
+''' # unused unused terms follow
+j<0>
 W_6s15d5    FFj0A=0.3811 FFj0a=62.707 FFj0B=0.7523 FFj0b=21.434 FFj0C=12.5449 FFj0c=2.702 FFj0D=12.4130 FFj0d=2.674 FFj0E=0.0023 0.0365
 W_6s25d4    FFj0A=0.3653 FFj0a=53.965 FFj0B=0.7926 FFj0b=20.078 FFj0C=0.8142 FFj0c=3.030 FFj0D=0.6581 FFj0d=2.476 FFj0E=0.0023 0.0247
 W1p_6s15d4  FFj0A=0.3834 FFj0a=46.233 FFj0B=0.7890 FFj0b=19.278 FFj0C=1.4650 FFj0c=2.947 FFj0D=1.2945 FFj0d=2.628 FFj0E=0.0022 0.0138

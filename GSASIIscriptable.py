@@ -3359,11 +3359,12 @@ class G2Project(G2ObjectWrapper):
             G2fil.G2Print('Defined Controls:',self.data['Controls']['data'].keys())
             raise Exception('{} is an invalid control value'.format(control))
         
-    def set_Controls(self, control, value):
+    def set_Controls(self, control, value, variable=None):
         '''Set project controls
 
         :param str control: the item to be set. See below for allowed values. 
         :param value: the value to be set.
+        :param str variable: used only with control set to "parmMin" or "parmMax"
 
         Allowed values for parameter control:
 
@@ -3377,10 +3378,20 @@ class G2Project(G2ObjectWrapper):
               Ignored for non-sequential fits. 
             * Reverse Seq: when True, sequential refinement is performed on the
               reversed list of histograms.
+            * parmMin & parmMax: set a maximum or minimum value for a refined 
+              parameter. Note that variable will be a GSAS-II variable name, 
+              optionally with * specified for a histogram or atom number and
+              value must be a float. 
+              (See :ref:`Parameter Limits<ParameterLimits>` description.)
 
         .. seealso::
             :meth:`get_Controls`
         '''
+        if control.startswith('parmM'):
+            if not variable:
+                raise Exception('set_Controls requires a value for variable for control=parmMin or parmMax')
+            for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+                if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
         if control == 'cycles':
             self.data['Controls']['data']['max cyc'] = int(value)
         elif control == 'seqCopy':
@@ -3397,6 +3408,8 @@ class G2Project(G2ObjectWrapper):
                     raise Exception('item #{} ({}) is an invalid histogram value'
                                         .format(i,j))
             self.data['Controls']['data']['Seq Data'] = histlist
+        elif control == 'parmMin' or control == 'parmMax':
+            self.data['Controls']['data'][control+'Dict'][variable] = float(value)
         else:
             raise Exception('{} is an invalid control value'.format(control))
         

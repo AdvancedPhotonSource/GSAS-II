@@ -208,7 +208,6 @@ nxs = np.newaxis
 plotDebug = False
 timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
 obsInCaption = True # include the observed, calc,... items in the plot caption (PlotPatterns)
-mplv = eval(mpl.__version__.replace('.',','))
 
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
@@ -332,6 +331,7 @@ class G2PlotMpl(_tabPlotWin):
             return self.canvas.SetToolTipString(text)
         
     def ToolBarDraw(self):
+        mplv = eval(mpl.__version__.replace('.',','))
         if mplv[0] >= 3 and mplv[1] >= 3:
             self.toolbar.canvas.draw_idle()
         else:
@@ -10574,6 +10574,7 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     Page.canvas.draw()
 
 def SetupLegendPick(legend,new,delay=5):
+    mplv = eval(mpl.__version__.replace('.',','))
     legend.delay = delay*1000 # Hold time in ms for clear; 0 == forever
     for line in legend.get_lines():
         if mplv[0] >= 3 and mplv[1] >= 3:

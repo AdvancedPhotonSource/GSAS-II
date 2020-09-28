@@ -1140,6 +1140,77 @@ shifts and s.u.'s on the refined modes, using GSAS-II values, but
 in the web site.
 
 
+.. _ParameterLimits:
+
+.. index::
+   single: Parameter limits
+
+Parameter Limits
+------------------------------
+
+One of the most often requested "enhancements" for GSAS-II would be the inclusion 
+of constraints to force parameters such as occupancies or Uiso values to stay within 
+expected ranges. While it is possible for users to supply their own restraints that would
+perform this by supplying an appropriate expression with the "General" restraints, the 
+GSAS-II authors do not feel that use of restraints or constraints are a good solution for
+this common problem where parameters refine to non-physical values. This is because when 
+this occurs, most likely one of the following cases is occurring: 
+
+#. there is a significant problem 
+   with the model, for example for an x-ray fit if an O atom is placed where a S is actually 
+   present, the Uiso will refine artificially small or the occupancy much larger than unity 
+   to try to compensate for the missing electrons; or
+ 
+#. the data are simply insensitive 
+   to the parameter or combination of parameters, for example unless very high-Q data 
+   are included, the effects of a occupancy and Uiso value can have compensating effects,
+   so an assumption must be made; likewise, with neutron data natural-abundance V atoms 
+   are nearly invisible due to weak coherent scattering. No parameters can be fit for a 
+   V atom with neutrons.
+
+#. the parameter is non-physical (such as a negative Uiso value) but within 
+   two sigma (sigma = standard uncertainty, aka e.s.d.) of a reasonable value, 
+   in which case the
+   value is not problematic as it is experimentally indistinguishable from an 
+   expected value.  
+
+#. there is a systematic problem with the data (experimental error)
+
+In all these cases, this situation needs to be reviewed by a crystallographer to decide 
+how to best determine a structural model for these data. An implementation with a constraint
+or restraint is likely to simply hide the problem from the user, making it more probable 
+that a poor model choice is obtained. 
+
+What GSAS-II does implement is to allow users to specify ranges for parameters 
+that works by disabling 
+refinement of parameters that refine beyond either a lower limit or an upper limit, where 
+either or both may be optionally specified. Parameters limits are specified in the Controls 
+tree entry in dicts named as ``Controls['parmMaxDict']`` and ``Controls['parmMinDict']``, where 
+the keys are named using the standard GSAS-II variable 
+(see :func:`getVarDescr` and :func:`CompileVarDesc`) or with a variable name, where a 
+wildcard ('*') is used for histogram number or atom number (phase number is intentionally not 
+allowed as a wildcard as it makes little sense to group together different phases). Note
+that func:`prmLookup` is used to see if a name matches a wildcard. The upper or lower limit
+is placed into these dicts as a float value. These values can be edited using the window 
+created by the Calculate/"View LS parms" menu command or in scripting with the 
+:meth:`GSASIIscriptable.G2Project.set_Controls` function. 
+In the GUI, a checkbox labeled "match all histograms/atoms" is used to insert a wildcard
+into the appropriate part of the variable name.
+
+When a refinement is conducted, routine :func:`GSASIIstrMain.dropOOBvars` is used to 
+find parameters that have refined to values outside their limits. If this occurs, the parameter
+is set to the limiting value and the variable name is added to a list of frozen variables kept in the 
+``Controls['parmFrozen']`` dict. In a sequential refinement, this is kept as a list in 
+``Controls['parmFrozen'][histogram]`` (where the key is the histogram name) or in 
+``Controls['parmFrozen']['FrozenList']`` for a non-sequential fit. 
+This allows different variables
+to be frozen in each section of a sequential fit. 
+Frozen parameters are not included in refinements through removal from the 
+list of parameters to be refined (``varyList``) in :func:`GSASIIstrMain.Refine` or 
+:func:`GSASIIstrMain.SeqRefine`. Once a variable is frozen, it will not be refined in any 
+future refinements unless the the variable is removed (manually) from the list. This can also 
+be done with the Calculate/"View LS parms" menu window or ...
+
 *Classes and routines*
 ----------------------
 

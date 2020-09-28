@@ -165,12 +165,14 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         G2fil.G2Print(' Hessian Levenberg-Marquardt SVD refinement on %d variables:'%(n))
     Lam = np.zeros((n,n))
     Xvec = np.zeros(len(x0))
+    chisq00 = None
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
         Nobs = len(M)
         nfev += 1
         chisq0 = np.sum(M**2)
+        if chisq00 is None: chisq00 = chisq0
         Yvec,Amat = Hess(x0,*args)
         Adiag = np.sqrt(np.diag(Amat))
         psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
@@ -233,13 +235,13 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if Print: G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],
-            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2,'Xvec':Xvec}]
+            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2,'Xvec':Xvec, 'chisq0':chisq00}]
     except nl.LinAlgError:
         G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
-        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1,'Xvec':None}]          
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1,'Xvec':None, 'chisq0':chisq00}]
             
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
@@ -297,11 +299,13 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     nfev = 0
     if Print:
         G2fil.G2Print(' Hessian SVD refinement on %d variables:'%(n))
+    chisq00 = None
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
         nfev += 1
         chisq0 = np.sum(M**2)
+        if chisq00 is None: chisq00 = chisq0
         Yvec,Amat = Hess(x0,*args)
         Adiag = np.sqrt(np.diag(Amat))
         psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
@@ -346,13 +350,15 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':[],
-            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
+            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2,
+                             'chisq0':chisq00}]
     except nl.LinAlgError:
         G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
-        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]          
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1,
+                             'chisq0':chisq00}]
             
 def getVCov(varyNames,varyList,covMatrix):
     '''obtain variance-covariance terms for a set of variables. NB: the varyList 

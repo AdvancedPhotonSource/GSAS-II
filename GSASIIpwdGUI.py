@@ -3502,6 +3502,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
+        '''Called in response to a Load Phase menu command'''
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         if len(data) < 5:
@@ -3524,17 +3525,20 @@ def UpdateUnitCellsGrid(G2frame, data):
         if not len(Phases):
                 wx.MessageBox('NB: Magnetic phases from mcif files are not suitable for this purpose,\n because of space group symbol - operators mismatches',
                     caption='No usable space groups',style=wx.ICON_EXCLAMATION)
-                return            
-        pNum = G2G.ItemSelector(Phases,G2frame,'Select phase',header='Phase')
+                return
+        elif len(Phases) == 1: # don't ask questions when there is only 1 answer
+            pNum = 0
+        else:
+            pNum = G2G.ItemSelector(Phases,G2frame,'Select phase',header='Phase')
         if pNum is None: return
         Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,Phases[pNum]))
         Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible phases
         Cell = Phase['General']['Cell']
-        SGData = Phase['General']['SGData']
+        SGData.update(Phase['General']['SGData'])
         if 'SGGray' not in SGData:
             SGData['SGGray'] = False
         if Phase['General']['Type'] == 'nuclear' and 'MagSpGrp' in SGData:
-            SGData = G2spc.SpcGroup(SGData['SpGrp'])[1]
+            SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
         G2frame.dataWindow.RunSubGroups.Enable(True)
         ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         if 'SuperSg' in Phase['General'] or SGData.get('SGGray',False):
@@ -4203,7 +4207,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
-        atoms = list(set([atom[1] for atom in controls[15]]))        
+        try:
+            atoms = list(set([atom[1] for atom in controls[15]]))
+        except:
+            wx.MessageBox('Error: Problem with phase. Use Load Phase 1st.',
+                    caption='k-SUBGROUPSMAG setup error: Phase loaded?',style=wx.ICON_EXCLAMATION)
+            return
         testAtoms = ['',]+[atom for atom in atoms if len(G2elem.GetMFtable([atom,],[2.0,]))]
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']

@@ -182,15 +182,23 @@ def UpdateImageData(G2frame,data):
     polaCalib.Bind(wx.EVT_BUTTON,OnPolaCalib)
     distSizer.Add(polaCalib,0,WACV)
     mainSizer.Add(distSizer,0)
+#patch
     if 'samplechangerpos' not in data or data['samplechangerpos'] is None:
         data['samplechangerpos'] = 0.0
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample changer position %.2f mm'%data['samplechangerpos']),0,WACV)
+    if 'det2theta' not in data:
+        data['det2theta'] = 0.0
+#end patch
+    tthSizer = wx.BoxSizer(wx.HORIZONTAL)
+    tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Detector 2-theta: '),0,WACV)
+    tthSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'det2theta',xmin=-180.,xmax=180.,nDig=(10,2)),0,WACV)
+    tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample changer position %.2f mm '%data['samplechangerpos']),0,WACV)
+    mainSizer.Add(tthSizer,0)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
 ##### Image Controls
 ################################################################################                    
-blkSize = 128   #128 seems to be optimal; will break in polymask if >1024
+blkSize = 128 #128 seems to be optimal; will break in polymask if >1024
 def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly=False):
     '''Shows and handles the controls on the "Image Controls"
     data tree entry
@@ -220,6 +228,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['setdist'] = data['distance']
     if 'linescan' not in data:
         data['linescan'] = [False,0.0]      #includes azimuth to draw line scan
+    if 'det2theta' not in data:
+        data['det2theta'] = 0.0
 #end patch
 
 # Menu items
@@ -488,7 +498,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
                 try:
                     pId = 0
-                    oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.}
+                    oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
                     oldMhash = 0
                     for icnt,item in enumerate(items):
                         dlgp.Raise()
@@ -500,7 +510,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
                         Data = G2frame.GPXtree.GetItemPyData(CId)
                         same = True
-                        for item in ['tilt','distance','rotation','DetDepth','azmthOff']:
+                        for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
                             if Data[item] != oldData[item]:
                                 same = False
                         if (Data['center'][0] != oldData['center'][0] or
@@ -550,7 +560,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             if dlg.ShowModal() == wx.ID_OK:
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
-                for item in items:
+                for item in items:      #preserve some values
                     name = Names[item]
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     CId = G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls')
@@ -560,6 +570,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Data['size'] = oldData['size']
                     Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
                     Data['samplechangerpos'] = oldData.get('samplechangerpos',0.0)
+                    Data['det2theta'] = oldData.get('det2theta',0.0)
                     Data['ring'] = []
                     Data['rings'] = []
                     Data['ellipses'] = []

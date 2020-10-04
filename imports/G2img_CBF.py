@@ -56,6 +56,7 @@ def GetCbfData(self,filename):
     pixSize = [172,172]     #Pixium4700?
     cent = [0,0]
     wave = 1.54187  #default <CuKa>
+    det2theta = 0.0
     dist = 1000.
     byteOrd = '<'
     stream = File.read()
@@ -90,6 +91,8 @@ def GetCbfData(self,filename):
             sizexy[1] = int(fields[1])
         elif 'Number-of-Elements' in line:
             Npix = int(fields[1])
+        elif 'Detector_2theta' in line:
+            det2theta = float(fields[2])
     nxy = sizexy[0]*sizexy[1]
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
     File.seek(0)
@@ -104,7 +107,7 @@ def GetCbfData(self,filename):
         image = cbf.unpack_cbf(nimg,img,nxy,image)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
-    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
+    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy,'det2theta':det2theta}
     Npix = sizexy[0]*sizexy[1]
     
     return head,data,Npix,image

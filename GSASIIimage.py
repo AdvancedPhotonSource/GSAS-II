@@ -72,11 +72,9 @@ def pointInPolygon(pXY,xy):
         p1x,p1y = p2x,p2y
     return Inside
     
-def peneCorr(tth,dep,dist,tilt=0.,azm=0.):
+def peneCorr(tth,dep,dist):
     'Needs a doc string'
-#    return dep*(1.-npcosd(abs(tilt*npsind(azm))-tth*npcosd(azm)))  #something wrong here
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
-#    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):
     '''Make rotation matrix from Angle and Axis
@@ -181,7 +179,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wave']/(2.*dsp))
         phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
-        dxy = peneCorr(tth,parms['dep'],parms['dist'],parms['tilt'],phi0)
+        dxy = peneCorr(tth,parms['dep'],parms['dist'])
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])        
@@ -322,7 +320,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
         phi0 = npatan2d(y-detY,x-detX)
-        dxy = peneCorr(tth,parms['dep'],dist-deltaDist,parms['tilt'],phi0)
+        dxy = peneCorr(tth,parms['dep'],dist-deltaDist)
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])        
@@ -468,7 +466,7 @@ def GetEllipse(dsp,data):
     dep = data.get('DetDepth',0.0)
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
     dist = data['distance']
-    dxy = peneCorr(tth,dep,dist,tilt)
+    dxy = peneCorr(tth,dep,dist)
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
         
 def GetDetectorXY(dsp,azm,data):
@@ -545,7 +543,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep,dist,tilt,npatan2d(dy,dx))
+    dxy = peneCorr(tth,dep,dist)
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX) 
@@ -564,25 +562,65 @@ def GetTthAzm(x,y,data):
     
 def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
-     calibration info in data - only used in integration
+     calibration info in data - only used in integration - old version
     '''
     'Needs a doc string - checked OK for ellipses & hyperbola'
     tilt = data['tilt']
     dist = data['distance']/npcosd(tilt)
+    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
+    dx = x-data['center'][0]
+    dy = y-data['center'][1]
+    dz = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]    
+    xyZ = dx**2+dy**2-dz**2    
+    tth0 = npatand(np.sqrt(xyZ)/(dist-dz))
+    dzp = peneCorr(tth0,data['DetDepth'],dist)
+    tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp) 
+    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
+    
+    distsq = data['distance']**2
     x0 = data['distance']*nptand(tilt)
     x0x = x0*npcosd(data['rotation'])
     x0y = x0*npsind(data['rotation'])
-    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
-    distsq = data['distance']**2
+    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    return tth,azm,G
+
+def GetTthAzmG2(x,y,data):
+    '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
+     calibration info in data - only used in integration
+     checked OK for ellipses & hyperbola
+     '''
+     
+    def costth(xyz):
+        u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
+        return np.dot(u,np.array([0.,0.,1.]))
+        
+#zero detector 2-theta: tested with tilted images - perfect integrations
     dx = x-data['center'][0]
     dy = y-data['center'][1]
+    tilt = data['tilt']
+    dist = data['distance']/npcosd(tilt)    #sample-beam intersection point
+    T = makeMat(tilt,0)
+    R = makeMat(data['rotation'],2)
+    MN = np.inner(R,np.inner(R,T))
+    dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #correct for 45 deg tilt
+    dxyz0 += np.array([0.,0.,dist])
+    if data['DetDepth']:
+        ctth0 = costth(dxyz0)
+        tth0 = npacosd(ctth0)
+        dzp = peneCorr(tth0,data['DetDepth'],dist,tilt)
+        dxyz0[:,:,2] += dzp
+#non zero detector 2-theta:    
+    tthMat = makeMat(data['det2theta'],1)
+    dxyz = np.inner(dxyz0,tthMat.T)
+    ctth = costth(dxyz)
+    tth = npacosd(ctth)
+    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.
+# G-calculation        
+    x0 = data['distance']*nptand(tilt)
+    x0x = x0*npcosd(data['rotation'])
+    x0y = x0*npsind(data['rotation'])
+    distsq = data['distance']**2
     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    Z = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
-    xyZ = dx**2+dy**2-Z**2    
-    tth = npatand(np.sqrt(xyZ)/(dist-Z))
-    dxy = peneCorr(tth,data['DetDepth'],dist,tilt,npatan2d(dy,dx))
-    tth = npatan2d(np.sqrt(xyZ),dist-Z+dxy) 
-    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
     return tth,azm,G
 
 def GetDsp(x,y,data):
@@ -1241,7 +1279,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = LRazm
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
-    H0 /= npcosd(H2[:-1])           #**2? I don't think so, **1 is right for powders
+    H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

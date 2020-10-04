@@ -743,7 +743,7 @@ def CosAngle(U,V,G):
     v = V/np.sqrt(np.inner(V,np.inner(G,V)))
     cosP = np.inner(u,np.inner(G,v))
     return cosP
-    
+
 def CosSinAngle(U,V,G):
     """ calculate sin & cos of angle between U & V in generalized coordinates 
     defined by metric tensor G

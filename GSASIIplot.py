@@ -8388,6 +8388,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 G2frame.phaseDisplay.showCS.SetValue(CS)
                                 
     def SetRBOrigText():
+        '''Called w/Locate & Insert Rigid Body to update text in DataWindow
+        when the RB origin is moved via a mouse drag 
+        '''
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
@@ -8400,11 +8403,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 pass
             
     def SetRBOrienText():
+        '''Called w/Locate & Insert Rigid Body to update text in DataWindow
+        when the RB orientation is changed via a mouse drag
+        '''
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
-                    sizer.SetLabel('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
+                G2phG.updateAddRBorientText(G2frame,testRBObj,Bmat)
         if pageCallback:
             try:
                 pageCallback()
@@ -8707,6 +8712,50 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
+
+    def RenderRBtriplet(orig,Q,Bmat):
+        '''draw an axes triplet located at the origin of a rigid body
+        and with the x, y & z axes drawn as red, green and blue. 
+        '''
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(3)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glPushMatrix()
+        GL.glTranslate(*orig)
+        GL.glBegin(GL.GL_LINES)
+        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q)
+        colors = [Rd,Gr,Bl]
+        # lines along axial directions
+        for line,color in zip(lines,colors):
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(line)
+        # arrows on line ends, colored by planes
+        for i in range(3):
+            for j in (1,-1):
+                GL.glColor3ubv(colors[(i+1)%3])
+                GL.glVertex3fv(lines[i])
+                GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+1)%3])
+                GL.glColor3ubv(colors[(i+2)%3])
+                GL.glVertex3fv(lines[i])
+                GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+2)%3])
+        # draw vector part of Q in white
+        A,V = G2mth.Q2AVdeg(Q)
+        Vfrac = np.inner(Bmat,V)
+        GL.glColor3ubv([255,255,255])
+        GL.glVertex3fv(np.zeros(3))
+        GL.glVertex3fv(1.5*Vfrac)
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
+
         
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
@@ -9298,6 +9347,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],
+                            testRBObj['rbObj']['Orient'][0],
+                            Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]

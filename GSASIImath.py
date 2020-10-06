@@ -982,12 +982,11 @@ def RotateRBXYZ(Bmat,Cart,oriQ):
     '''rotate & transform cartesian coordinates to crystallographic ones
     no translation applied. To be used for numerical derivatives 
     
-    :param type name: description
+    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
+    :param array Cart: 2D array of coordinates
+    :param array Q: quaternion as an np.array
     
-    :returns: type name: description
-    
-    '''
-    ''' returns crystal coordinates for atoms described by RBObj
+    :returns: 2D array of fractional coordinates, without translation to origin
     '''
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):

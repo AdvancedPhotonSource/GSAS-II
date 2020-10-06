@@ -51,6 +51,10 @@ import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIddataGUI as G2ddG
 import GSASIIplot as G2plt
+# if GSASIIpath.GetConfigValue('debug'):
+#     print('Debug reloading',G2plt)
+#     import imp
+#     imp.reload(G2plt)
 import GSASIIdataGUI as G2gd
 import GSASIIIO as G2IO
 import GSASIIstrMain as G2stMn
@@ -615,7 +619,8 @@ class UseMagAtomDialog(wx.Dialog):
         if ifMag:
             title = 'Magnetic atom selection'
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                            pos=wx.DefaultPosition,size=(450,275),
+                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
 #        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Name = Name
@@ -1330,12 +1335,19 @@ def FindCoordinationByLabel(data):
     return neighborArray
     
 def FindCoordination(ind,data,neighborArray,coordsArray,cmx=0,targets=None):
-    'Find atoms coordinating atom ind, speed-up version'
+    '''Find atoms coordinating atom ind, speed-up version.
+    This only searches to atoms already added to the Draw Array, though we might want
+    to search to all atoms in the asymmetric unity (which would mean searching against 
+    atomsAll, but would also require a reformat of atom entry to match difference in
+    format between atoms and drawatoms. 
+    '''
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     atomTypes,radii = getAtomRadii(data)
     atomData = data['Drawing']['Atoms']
     cx,ct,cs,ci = data['Drawing']['atomPtrs']
+    #atomsAll = data['Atoms']
+    #cxa,cta,csa,cia = generalData['AtomPtrs']
     SGData = generalData['SGData']
     cellArray = G2lat.CellBlock(1)
     newAtomList = []
@@ -1548,6 +1560,19 @@ def SetDrawingDefaults(drawingData):
         }
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
+
+def updateAddRBorientText(G2frame,testRBObj,Bmat):
+    '''Update all orientation text on the Add RB panel
+    '''
+    for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
+        sizer.SetLabel('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
+    A,V = G2mth.Q2AVdeg(testRBObj['rbObj']['Orient'][0])
+    testRBObj['rbObj']['OrientVec'][0] = A
+    testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
+    for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
+        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
+    G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+        int(10*testRBObj['rbObj']['OrientVec'][0]))
             
 def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
@@ -5652,10 +5677,10 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
             # debug stuff
-            if GSASIIpath.GetConfigValue('debug'):
-                print('reloading',G2pwd)
-                import imp
-                imp.reload(G2pwd)
+            #if GSASIIpath.GetConfigValue('debug'):
+            #    print('reloading',G2pwd)
+            #    import imp
+            #    imp.reload(G2pwd)
             # end debug stuff            
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
@@ -10379,6 +10404,40 @@ def UpdatePhaseData(G2frame,Item,data):
                 if added: wx.CallLater(100,Draw)
                 return matchTable
                 
+            def OnAzSlide(event):
+                '''respond to the azimuth slider moving. 
+                Save & put value into azimuth edit widget; show Q &
+                update the plot and table
+                '''
+                Obj = event.GetEventObject()
+                rbObj['OrientVec'][0] = float(Obj.GetValue())/10.
+                for i in range(4):
+                    val = rbObj['OrientVec'][i]
+                    G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
+                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
+                                np.inner(Amat,rbObj['OrientVec'][1:]))
+                rbObj['Orient'][0] = Q
+                A,V = G2mth.Q2AVdeg(Q)
+                rbObj['OrientVec'][1:] = np.inner(Bmat,V)
+                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
+                    sizer.SetLabel('%8.5f'%(rbObj['Orient'][0][i]))
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                UpdateTable()
+                
+            def UpdateOrientation(*args,**kwargs):
+                '''Respond to a change in the azimuth or vector via
+                the edit widget; update Q display & azimuth slider
+                '''
+                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
+                                np.inner(Amat,rbObj['OrientVec'][1:]))
+                rbObj['Orient'][0] = Q
+                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
+                    sizer.SetLabel('%8.5f'%(rbObj['Orient'][0][i]))
+                G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+                    int(10*rbObj['OrientVec'][0]))                
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                UpdateTable()
+                
             def UpdateTablePlot(*args,**kwargs):
                 '''update displayed table and plot
                 '''
@@ -10472,8 +10531,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 vals = rbObj['Orient'][0][:] #+ rbObj['Orig'][0][:]
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
                 data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0])
-                for i,item in enumerate(Osizers):
-                    item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
+                updateAddRBorientText(G2frame,data['testRBObj'],Bmat)
                 UpdateTablePlot()
                 
             def onFitBoth(event):
@@ -10493,8 +10551,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
                 for i,item in enumerate(Xsizers):
                     item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
-                for i,item in enumerate(Osizers):
-                    item.SetLabel('%10.4f'%(data['testRBObj']['rbObj']['Orient'][0][i]))
+                updateAddRBorientText(G2frame,data['testRBObj'],Bmat)
                 UpdateTablePlot()
                 
             def BallnSticks(event):
@@ -10601,6 +10658,35 @@ def UpdatePhaseData(G2frame,Item,data):
                 OriSizer.Add(orien,0,WACV)
                 Osizers.append(orien)
             G2frame.testRBObjSizers.update({'Osizers':Osizers})
+            mainSizer.Add(OriSizer)
+            mainSizer.Add((5,5),0)
+            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
+            rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
+            rbObj['OrientVec'][1:] = np.inner(Bmat,V)
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation azimuth: '),0,WACV)
+            OrientVecSiz = []
+            OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
+                            xmin=0.,xmax=360.,typeHint=float,
+                                                 OnLeave=UpdateOrientation))
+            OriSizer.Add(OrientVecSiz[-1],0,WACV)
+            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
+            azSlide.SetRange(0,3600)
+            azSlide.SetValue(int(rbObj['OrientVec'][0]*10.))
+            azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
+            OriSizer.Add(azSlide,1)
+            mainSizer.Add(OriSizer)
+            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation vector'),0,WACV)
+            for ix,lbl in enumerate('xyz'):
+                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'  '+lbl+': '),0,WACV)
+                OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],ix+1,nDig=(10,4),
+                            xmin=-1.,xmax=1.,typeHint=float,
+                                                 OnLeave=UpdateOrientation))
+                OriSizer.Add(OrientVecSiz[-1],0,WACV)
+            OrientVecSiz.append(azSlide)
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,' (frac coords)'),0,WACV)
+            G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
             mainSizer.Add(OriSizer)
             mainSizer.Add((5,5),0)
             RefSizer = wx.FlexGridSizer(0,7,5,5)

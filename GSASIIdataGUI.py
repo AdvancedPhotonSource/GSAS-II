@@ -8685,9 +8685,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.GPXtree.GetItemText(parentID) == 'Phases':
         data = G2frame.GPXtree.GetItemPyData(item)
-        # print('Debug: reload G2phG')
-        # import imp
-        # imp.reload(G2phG)
+        # debug stuff
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('Debug: reloading G2phG')
+        #     import imp
+        #     imp.reload(G2phG)
+        # end debug stuff            
         G2phG.UpdatePhaseData(G2frame,item,data)
     elif G2frame.GPXtree.GetItemText(parentID) == 'Restraints':
         data = G2frame.GPXtree.GetItemPyData(parentID)
@@ -8814,6 +8817,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data.append({'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})                                 #empty superlattice stuff
             G2frame.GPXtree.SetItemPyData(item,data)  
 #end patch
+        # debug stuff
+        #if GSASIIpath.GetConfigValue('debug'):
+        #    import imp
+        #    imp.reload(G2pdG)  # for testing changes
+        #    print('debug: reloaded',G2pdG)
+        # end debug stuff
         G2pdG.UpdateUnitCellsGrid(G2frame,data)
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)

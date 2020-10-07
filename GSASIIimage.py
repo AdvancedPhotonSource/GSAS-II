@@ -560,7 +560,7 @@ def GetTthAzm(x,y,data):
     'Give 2-theta, azimuth values for detector x,y position; calibration info in data'
     return GetTthAzmDsp(x,y,data)[0:2]
     
-def GetTthAzmG(x,y,data):
+def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration - old version
     '''
@@ -584,7 +584,7 @@ def GetTthAzmG(x,y,data):
     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return tth,azm,G
 
-def GetTthAzmG2(x,y,data):
+def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration
      checked OK for ellipses & hyperbola

@@ -1951,6 +1951,9 @@ def UpdateRigidBodies(G2frame,data):
             dlg.Destroy()
         coords = np.array(coords)
         rbid = ran.randint(0,sys.maxsize)
+        namelist = [data['Residue'][key]['RBname'] for key in data['Residue']
+                        if 'RBname' in data['Residue'][key]]
+        name = G2obj.MakeUniqueLabel(name,namelist)
         data['Residue'][rbid] = {'RBname':name,
                 'rbXYZ': coords,
                 'rbRef':[0,1,2,False],
@@ -1963,9 +1966,13 @@ def UpdateRigidBodies(G2frame,data):
     def AddVectorRB(event):
         'Create a new vector rigid body'
         AtInfo = data['Vector']['AtInfo']
-        dlg = G2G.MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[1,1])
+        dlg = G2G.MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[3,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
+            if nAtoms < 3:
+                dlg.Destroy()
+                G2G.G2MessageBox(G2frame,'A vector rigid body must have 3 or more atoms')
+                return
             rbid = ran.randint(0,sys.maxsize)
             vecMag = [1.0 for i in range(nTrans)]
             vecRef = [False for i in range(nTrans)]
@@ -1973,7 +1980,11 @@ def UpdateRigidBodies(G2frame,data):
             rbTypes = ['C' for i in range(nAtoms)]
             Info = G2elem.GetAtomInfo('C')
             AtInfo['C'] = [Info['Drad'],Info['Color']]
-            data['Vector'][rbid] = {'RBname':'UNKRB','VectMag':vecMag,'rbXYZ':np.zeros((nAtoms,3)),
+            name = 'UNKRB'
+            namelist = [data['Vector'][key]['RBname'] for key in data['Vector']
+                        if 'RBname' in data['Vector'][key]]
+            name = G2obj.MakeUniqueLabel(name,namelist)
+            data['Vector'][rbid] = {'RBname':name,'VectMag':vecMag,'rbXYZ':np.zeros((nAtoms,3)),
                 'rbRef':[0,1,2,False],'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
             data['RBIds']['Vector'].append(rbid)
         dlg.Destroy()
@@ -2316,7 +2327,11 @@ def UpdateRigidBodies(G2frame,data):
                 Closes out the importer tab when done. 
                 '''
                 grid.completeEdits()
-                rb = MakeVectorBody(os.path.split(filename)[1])
+                name = os.path.splitext(os.path.split(filename)[1])[0]
+                namelist = [data['Vector'][key]['RBname'] for key in
+                        data['Vector'] if 'RBname' in data['Vector'][key]]
+                name = G2obj.MakeUniqueLabel(name,namelist)
+                rb = MakeVectorBody(name)
                 UpdateVectorBody(rb,True)
                 if len(rb['rbTypes']) < 3: return # must have at least 3 atoms
                 rbid = ran.randint(0,sys.maxsize)
@@ -2347,6 +2362,9 @@ def UpdateRigidBodies(G2frame,data):
                 if len(rbTypes) < 3: return # must have at least 3 atoms
                 rbXYZ = np.array(rbXYZ)
                 rbid = ran.randint(0,sys.maxsize)
+                namelist = [data['Residue'][key]['RBname'] for key in
+                        data['Residue'] if 'RBname' in data['Residue'][key]]
+                name = G2obj.MakeUniqueLabel(name,namelist)
                 data['Residue'][rbid] = {'RBname':name,'rbXYZ':rbXYZ,
                     'rbTypes':rbTypes,'atNames':atNames,'rbRef':[0,1,2,False],
                     'rbSeq':[],'SelSeq':[0,0],'useCount':0}
@@ -2378,6 +2396,10 @@ def UpdateRigidBodies(G2frame,data):
 
             rd.Phase['RBindex'] = list(range(len(rd.Phase['RBtypes'])))
             rd.Phase['RBselection'] = len(rd.Phase['RBtypes']) * [1]
+            name = 'UNKRB'
+            namelist = [data['Vector'][key]['RBname'] for key in
+                        data['Vector'] if 'RBname' in data['Vector'][key]]
+            name = G2obj.MakeUniqueLabel(name,namelist)
             rbData = MakeVectorBody()
             DrawCallback = G2plt.PlotRigidBody(G2frame,'Vector',
                                     AtInfo,rbData,plotDefaults)
@@ -2704,6 +2726,9 @@ def UpdateRigidBodies(G2frame,data):
         natoms = len(types)
         vecs = [np.array(vecs[i]) for i in range(ntrans)]
         rbid = ran.randint(0,sys.maxsize)
+        namelist = [data['Vector'][key]['RBname'] for key in data['Vector']
+                        if 'RBname' in data['Vector'][key]]
+        name = G2obj.MakeUniqueLabel(name,namelist)
         data['Vector'][rbid] = {'RBname':name,'VectMag':vecMag,
                 'rbXYZ':np.zeros((natoms,3)),
                 'rbRef':[0,1,2,False],'VectRef':ntrans*[False],
@@ -2751,6 +2776,9 @@ def UpdateRigidBodies(G2frame,data):
                         nMove = int(macStr[2])
                         iMove = [int(macStr[i])-1 for i in range(3,nMove+3)]
                         rbSeq.append([iBeg,iFin,angle,iMove])
+                namelist = [data['Residue'][key]['RBname'] for key in
+                           data['Residue'] if 'RBname' in data['Residue'][key]]
+                rbName = G2obj.MakeUniqueLabel(rbName,namelist)
                 data['Residue'][resRBsel] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
                     'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
                     'SelSeq':[0,0],'useCount':0}
@@ -2826,7 +2854,11 @@ def UpdateRigidBodies(G2frame,data):
             Y = Yxyz/np.sqrt(np.sum(Yxyz**2))
             Mat = G2mth.getRBTransMat(X,Y)
             rbXYZ = np.inner(Mat,rbXYZ).T
-            data['Residue'][resRBsel] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
+            name = 'UNKRB'
+            namelist = [data['Residue'][key]['RBname'] for key in data['Residue']
+                        if 'RBname' in data['Residue'][key]]
+            name = G2obj.MakeUniqueLabel(name,namelist)
+            data['Residue'][resRBsel] = {'RBname':name,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
                 'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
             data['RBIds']['Residue'].append(resRBsel)
             print ('Rigid body UNKRB added')
@@ -2920,19 +2952,18 @@ def UpdateRigidBodies(G2frame,data):
         UpdateResidueRB()
 
     def UpdateVectorRB(Scroll=0):
-        AtInfo = data['Vector']['AtInfo']
-        refChoice = {}
-        if 'DELETED' in str(G2frame.GetStatusBar()):   #seems to be no other way to do this (wx bug)
-            if GSASIIpath.GetConfigValue('debug'):
-                print ('DBG_wx error: Rigid Body/Status not cleanly deleted after Refine')
-            return
-        SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
+        '''Display & edit a selected Vector RB
+        '''
         def rbNameSizer(rbid,rbData):
 
             def OnRBName(event):
                 event.Skip()
                 Obj = event.GetEventObject()
-                rbData['RBname'] = Obj.GetValue()
+                name = Obj.GetValue()
+                namelist = [data['Vector'][key]['RBname'] for key in
+                        data['Vector'] if 'RBname' in data['Vector'][key]]
+                name = G2obj.MakeUniqueLabel(name,namelist)
+                rbData['RBname'] = name
                 
             def OnDelRB(event):
                 Obj = event.GetEventObject()
@@ -2951,6 +2982,7 @@ def UpdateRigidBodies(G2frame,data):
                 0,wx.ALIGN_CENTER_VERTICAL)
             RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'])
             Indx[RBname.GetId()] = rbid
+            RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
             nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
@@ -3104,31 +3136,39 @@ def UpdateRigidBodies(G2frame,data):
             
             rbRef = rbData.get('rbRef',[-1,-1,-1,False])
             for i in range(3):
-                choiceIds.remove(rbRef[i])
+                if rbRef[i] in choiceIds: choiceIds.remove(rbRef[i])
             refChoice[rbid] = [choiceIds[:],choiceIds[:],choiceIds[:]]
             for i in range(3):
                 refChoice[rbid][i].append(rbRef[i])
-                refChoice[rbid][i].sort()     
-            
+                refChoice[rbid][i].sort()
+                
+        # beginning of UpdateVectorRB
+        AtInfo = data['Vector']['AtInfo']
+        refChoice = {}
+        if 'DELETED' in str(G2frame.GetStatusBar()):   #seems to be no other way to do this (wx bug)
+            if GSASIIpath.GetConfigValue('debug'):
+                print ('DBG_wx error: Rigid Body/Status not cleanly deleted after Refine')
+            return
+        SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
         if VectorRB.GetSizer(): VectorRB.GetSizer().Clear(True)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
         first = True
         for rbid in data['RBIds']['Vector']:
-            if rbid != 'AtInfo':
-                rbData = data['Vector'][rbid]
-                FillRefChoice(rbid,rbData)
-                if not first:
-                    G2G.HorizontalLine(VectorRBSizer,VectorRBDisplay)
-                VectorRBSizer.Add(rbNameSizer(rbid,rbData),0)
-                VectorRBSizer.Add(rbRefAtmSizer(rbid,rbData),0)
-                XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
-                for imag,mag in enumerate(rbData['VectMag']):
-                    XYZ += mag*rbData['rbVect'][imag]
-                    VectorRBSizer.Add(rbVectMag(rbid,imag,rbData),0)
-                    VectorRBSizer.Add(rbVectors(rbid,imag,mag,XYZ,rbData),0)
-                VectorRBSizer.Add((5,5),0)
-                data['Vector'][rbid]['rbXYZ'] = XYZ        
-                first = False
+            if rbid == 'AtInfo': continue
+            rbData = data['Vector'][rbid]
+            FillRefChoice(rbid,rbData)
+            if not first:
+                G2G.HorizontalLine(VectorRBSizer,VectorRBDisplay)
+            VectorRBSizer.Add(rbNameSizer(rbid,rbData),0)
+            VectorRBSizer.Add(rbRefAtmSizer(rbid,rbData),0)
+            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+            for imag,mag in enumerate(rbData['VectMag']):
+                XYZ += mag*rbData['rbVect'][imag]
+                VectorRBSizer.Add(rbVectMag(rbid,imag,rbData),0)
+                VectorRBSizer.Add(rbVectors(rbid,imag,mag,XYZ,rbData),0)
+            VectorRBSizer.Add((5,5),0)
+            data['Vector'][rbid]['rbXYZ'] = XYZ        
+            first = False
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
@@ -3143,7 +3183,17 @@ def UpdateRigidBodies(G2frame,data):
         '''
         global resRBsel
         def rbNameSizer(rbid,rbData):
-
+            def OnRBName(event):
+                event.Skip()
+                Obj = event.GetEventObject()
+                name = Obj.GetValue()
+                if name == rbData['RBname']: return # no change
+                namelist = [data['Residue'][key]['RBname'] for key in
+                        data['Residue'] if 'RBname' in data['Residue'][key]]
+                name = G2obj.MakeUniqueLabel(name,namelist)
+                rbData['RBname'] = name
+                wx.CallAfter(UpdateResidueRB)
+                
             def OnDelRB(event):
                 Obj = event.GetEventObject()
                 rbid = Indx[Obj.GetId()]
@@ -3169,7 +3219,7 @@ def UpdateRigidBodies(G2frame,data):
                     rbData['rbXYZ'] = newXYZ
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 wx.CallAfter(UpdateResidueRB)
-                    
+
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
@@ -3178,7 +3228,11 @@ def UpdateRigidBodies(G2frame,data):
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
                 0,wx.ALIGN_CENTER_VERTICAL)
-            nameSizer.Add(G2G.ValidatedTxtCtrl(ResidueRBDisplay,rbData,'RBname'),0,WACV)
+            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
+            RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
+            RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
+            RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
+            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
             nameSizer.Add((5,0),)
             plotRB =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Plot',style=wx.BU_EXACTFIT)
             plotRB.Bind(wx.EVT_BUTTON, OnPlotRB)
@@ -3416,9 +3470,9 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbid][i].append(rbRef[i])
                 refChoice[rbid][i].sort()
                 
-        def OnSelect(event):
+        def OnRBSelect(event):
             global resRBsel
-            sel = select.GetSelection()
+            sel = rbSelect.GetSelection()
             if sel == 0: return # 1st entry is blank
             rbname = rbchoice[sel-1]
             resRBsel = RBnames[rbname]
@@ -3442,21 +3496,23 @@ def UpdateRigidBodies(G2frame,data):
         if not RBnames:
             return
         rbchoice = list(RBnames.keys())
+        rbchoice.sort()
         if GS: 
             ResidueRBSizer = GS
         else:
             ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
+        if resRBsel not in data['RBIds']['Residue']:
+            resRBsel = RBnames[rbchoice[0]]
         if len(RBnames) > 1:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             selSizer.Add(wx.StaticText(ResidueRBDisplay,
                                 label=' Select residue to view:'),0)
-            rbchoice.sort()
-            select = wx.ComboBox(ResidueRBDisplay,choices=['']+rbchoice)
-            select.Bind(wx.EVT_COMBOBOX,OnSelect)
-            selSizer.Add(select,0)
+            rbSelect = wx.ComboBox(ResidueRBDisplay,choices=['']+rbchoice)
+            name = data['Residue'][resRBsel]['RBname']
+            rbSelect.SetSelection(1+rbchoice.index(name))
+            rbSelect.Bind(wx.EVT_COMBOBOX,OnRBSelect)
+            selSizer.Add(rbSelect,0)
             ResidueRBSizer.Add(selSizer,0)
-        if resRBsel not in data['RBIds']['Residue']:
-            resRBsel = RBnames[rbchoice[0]]
         rbData = data['Residue'][resRBsel]
         FillRefChoice(resRBsel,rbData)
         ResidueRBSizer.Add(rbNameSizer(resRBsel,rbData),0)

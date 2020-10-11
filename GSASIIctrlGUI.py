@@ -4054,8 +4054,15 @@ class ShowLSParms(wx.Dialog):
             varSizer.Add(numSizer)
         selectionsSizer.Add(varSizer,0)
         parmSizer.Add(selectionsSizer,0)
-        listSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',
-            choices=['All','Refined'],
+        refChoices = ['All','Refined']
+        txt = ('"R" indicates a refined variable\n'+
+               '"C" indicates generated from a constraint')
+        if fcount:
+            refChoices += ['Frozen']
+            txt += '\n"F" indicates a variable that is Frozen due to exceeding min/max'
+        
+        listSel = wx.RadioBox(self,wx.ID_ANY,'Refinement Status:',
+            choices=refChoices,
             majorDimension=0,style=wx.RA_SPECIFY_COLS)
         listSel.SetStringSelection(self.listSel)
         listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
@@ -4070,9 +4077,6 @@ class ShowLSParms(wx.Dialog):
         self.varBox = VirtualVarBox(self)
         mainSizer.Add(self.varBox,1,wx.ALL|wx.EXPAND,1)
 
-        txt = ('"R" indicates a refined variable\n'+
-               '"C" indicates generated from a constraint\n'+
-               '"F" indicates a variable that is Frozen due to exceeding min/max')
         mainSizer.Add(
             wx.StaticText(self,label=txt),0, wx.ALL,0)
 
@@ -4090,6 +4094,9 @@ class ShowLSParms(wx.Dialog):
 class VirtualVarBox(wx.ListCtrl):
     def __init__(self, parent):
         self.parmWin = parent
+        #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
+        G2sc.patchControls(self.parmWin.Controls)
+        # end patch
         wx.ListCtrl.__init__(
             self, parent, -1,
             style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES
@@ -4118,6 +4125,10 @@ class VirtualVarBox(wx.ListCtrl):
             if isinstance(parent.parmDict[name],basestr): continue
             if 'Refined' in parent.listSel and (name not in parent.fullVaryList
                                               ) and (name not in parent.varyList):
+                continue
+            if 'Frozen' in parent.listSel and not (
+                    name in self.parmWin.fullVaryList and
+                    name in self.parmWin.frozenList):
                 continue
             if 'Phase' in parent.parmChoice:
                 if parent.phasNum != '*' and name.split(':')[0] != parent.phasNum: continue
@@ -4159,9 +4170,9 @@ class VirtualVarBox(wx.ListCtrl):
             wx.CallAfter(delMafter,d,name)
         def delMafter(d,name):
             'Delete Max or Min limit once dialog is deleted'
-            n,val = G2obj.prmLookup(name,d) # is this a wild-card?
+            key,val = G2obj.prmLookup(name,d) # is this a wild-card?
             if val is not None:
-                del d[n]
+                del d[key]
             self.OnRowSelected(None, row)
             
         def AddM(event):
@@ -4176,9 +4187,9 @@ class VirtualVarBox(wx.ListCtrl):
         def AddMafter(d,name):
             'Add a Max or Min limit & redraw'
             try:
-                d[name] = float(value)
+                d[G2obj.G2VarObj(name)] = float(value)
             except:
-                d[name] = 0.0
+                pass
             self.OnRowSelected(None, row)
             
         def SetWild(event):
@@ -4199,23 +4210,25 @@ class VirtualVarBox(wx.ListCtrl):
         def SetWildAfter(d,name,wname,mode):
             'Set/clear item as wildcard & delete old name(s), redraw'
             n,val = G2obj.prmLookup(name,d) # is this a wild-card?
+            if val is None:
+                print('Error: Limit for parameter {} not found. Should not happen'.format(name))
+                return
             if mode: # make wildcard
-                if n == name: # confirm not wildcard already
-                    d[wname] = d[name]
                 for n in list(d.keys()): # delete names matching wildcard
-                    if n == wname: continue
-                    if G2obj.prmLookup(n,d)[0] == wname:
+                    if str(n) == wname: continue
+                    if n == wname: # respects wildcards
                         del d[n]
+                d[G2obj.G2VarObj(wname)] = val
             else:
-                if n != name: 
-                    d[name] = d[wname]                
-                    del d[wname]
+                del d[n]
+                d[G2obj.G2VarObj(name)] = val
             self.OnRowSelected(None, row)
 
+        # start of OnRowSelected 
         if event is not None:
             row = event.Index
         elif row is None:
-            print('Error: row and event should not be None!')
+            print('Error: row and event should not both be None!')
             return
         name = self.varList[row]
         dlg = wx.Dialog(self,wx.ID_ANY,'Parameter {} info'.format(name),
@@ -4282,18 +4295,17 @@ class VirtualVarBox(wx.ListCtrl):
             if name.split(':')[1]:             # is this using a histogram?
                 subSizer.Add((5,-1),0,WACV)
                 wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
-                wild.SetValue(n.split(':')[1] == '*')
+                wild.SetValue(str(n).split(':')[1] == '*')
                 wild.Bind(wx.EVT_CHECKBOX,SetWild)
                 wild.hist = True
                 subSizer.Add(wild,0,WACV)
             elif len(name.split(':')) > 3:
                 subSizer.Add((5,-1),0,WACV)
                 wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
-                wild.SetValue(n.split(':')[3] == '*')
+                wild.SetValue(str(n).split(':')[3] == '*')
                 wild.Bind(wx.EVT_CHECKBOX,SetWild)
                 subSizer.Add(wild,0,WACV)
             mainSizer.Add(subSizer,0)
-
         # draw max value widgets
         mainSizer.Add((-1,10),0)
         n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMaxDict']) # is this a wild-card?
@@ -4314,7 +4326,7 @@ class VirtualVarBox(wx.ListCtrl):
             if name.split(':')[1]:             # is this using a histogram?
                 subSizer.Add((5,-1),0,WACV)
                 wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
-                wild.SetValue(n.split(':')[1] == '*')
+                wild.SetValue(str(n).split(':')[1] == '*')
                 wild.Bind(wx.EVT_CHECKBOX,SetWild)
                 wild.max = True
                 wild.hist = True
@@ -4322,7 +4334,7 @@ class VirtualVarBox(wx.ListCtrl):
             elif len(name.split(':')) > 3:
                 subSizer.Add((5,-1),0,WACV)
                 wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
-                wild.SetValue(n.split(':')[3] == '*')
+                wild.SetValue(str(n).split(':')[3] == '*')
                 wild.Bind(wx.EVT_CHECKBOX,SetWild)
                 wild.max = True
                 subSizer.Add(wild,0,WACV)

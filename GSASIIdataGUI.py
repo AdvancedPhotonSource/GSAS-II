@@ -5195,7 +5195,18 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             wx.Yield()
         if OK:
-            dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+            lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
+            text = 'Detailed results are in ' + lst + '.lst\n'
+            if Msg.get('Frozen'):
+                text += '\n' +  Msg['Frozen']
+            if Msg.get('steepestNum',0) > 0:
+                text += '\nNote that {} histograms had extreme correlations where steepest descents dominates\n'.format(Msg['steepestNum'])
+            if len(Msg.get('maxshift/sigma',[])) > 0:
+                avg = np.average(Msg['maxshift/sigma'])
+                mx = np.max(Msg['maxshift/sigma'])
+                text += '\nBiggest Max shft/sig was {:.3f} (average across histograms {:.3f})\n'.format(mx,avg)
+            text += '\nLoad new result?'                
+            dlg = wx.MessageDialog(self,text,'Refinement results',wx.OK|wx.CANCEL)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
@@ -6505,9 +6516,11 @@ def UpdateControls(G2frame,data):
         return authSizer
 
     def ClearFrozen(event):
+        'Removes all frozen parameters by clearing the entire dict'
         Controls['parmFrozen'] = {}
         wx.CallAfter(UpdateControls,G2frame,data)
         
+    # start of UpdateControls
     if 'SVD' in data['deriv type']:
         G2frame.GetStatusBar().SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian',1)
     else:
@@ -6529,8 +6542,9 @@ def UpdateControls(G2frame,data):
     mainSizer.Add(AuthSizer())
     mainSizer.Add((5,5),0)
     Controls = data
-    if 'parmFrozen' not in Controls:
-        Controls['parmFrozen'] = {}
+    # count frozen variables (in appropriate place)
+    for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+        if key not in Controls: Controls[key] = {}
     parmFrozen = Controls['parmFrozen']
     if G2frame.testSeqRefineMode():
         frozenList = set()

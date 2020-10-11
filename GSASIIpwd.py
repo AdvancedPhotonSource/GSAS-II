@@ -1879,9 +1879,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     :param bool oneCycle: True if only one cycle of fitting should be performed
     :param dict controls: a dict specifying two values, Ftol = controls['min dM/M']
       and derivType = controls['deriv type']. If None default values are used. 
-    :param float wtFactor. weight multiplier; = 1.0 by default
+    :param float wtFactor: weight multiplier; = 1.0 by default
     :param wx.Dialog dlg: A dialog box that is updated with progress from the fit.
-      Defaults to None, which means no updates are done. 
+      Defaults to None, which means no updates are done.
     '''
     def GetBackgroundParms(parmList,Background):
         iBak = 0

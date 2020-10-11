@@ -53,6 +53,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
     '''
+    #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
+    import GSASIIscriptable as G2sc
+    G2sc.patchControls(Controls)
+    # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
     G2mv.Map2Dict(parmDict,varyList)
@@ -373,12 +377,17 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2mp.InitMP()
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
-
+    msgs = {}
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     G2fil.G2Print ('Starting Sequential Refinement')
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
-    G2stIO.ShowControls(Controls,printFile,SeqRef=True)
+    preFrozenCount = 0
+    for h in Controls['parmFrozen']:
+        if h == 'FrozenList': continue
+        preFrozenCount += len(Controls['parmFrozen'][h])    
+    G2stIO.ShowControls(Controls,printFile,SeqRef=True,
+                            preFrozenCount=preFrozenCount)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -416,6 +425,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     Histo = {}
     NewparmDict = {}
     G2stIO.SetupSeqSavePhases(GPXfile)
+    msgs['steepestNum'] = 0
+    msgs['maxshift/sigma'] = []
     for ihst,histogram in enumerate(histNames):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
@@ -558,6 +569,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 refPlotUpdate=refPlotUpdate)
             G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],Rvals.get('Max shft/sig',np.nan)))
+            if Rvals.get('lamMax',0) >= 10.:
+                msgs['steepestNum'] += 1
+            if Rvals.get('Max shft/sig'):
+                msgs['maxshift/sigma'].append(Rvals['Max shft/sig'])
             # add the uncertainties into the esd dictionary (sigDict)
             if not IfOK:
                 G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')
@@ -635,10 +650,17 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('debug'):
             import traceback
             print(traceback.format_exc())        
+    postFrozenCount = 0
+    for h in Controls['parmFrozen']:
+        if h == 'FrozenList': continue
+        postFrozenCount += len(Controls['parmFrozen'][h])
+    if postFrozenCount:
+        msgs['Frozen'] = 'Ending refinement with {} Frozen variables ({} added here)\n'.format(postFrozenCount,postFrozenCount-preFrozenCount)
+        printFile.write('\n '+msg)
     printFile.close()
     G2fil.G2Print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
     G2fil.G2Print (' ***** Sequential refinement successful *****')
-    return True,'Success'
+    return True,msgs
 
 def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
     '''Find variables in the parameters dict that are outside the ranges 

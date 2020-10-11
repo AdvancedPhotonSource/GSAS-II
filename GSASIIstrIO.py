@@ -657,9 +657,10 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
     :param dict Phases: dictionary of phases that use histograms
     :param dict RigidBodies: dictionary of rigid bodies
     :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
-    :param list parmFrozenList: list of parameters that are frozen due to limits
-    :param bool makeBack: True if new backup of .gpx file is to be made; else use the last one made
-
+    :param list parmFrozenList: list of parameters (as str) that are frozen 
+      due to limits; converted to :class:`GSASIIobj.G2VarObj` objects.
+    :param bool makeBack: True if new backup of .gpx file is to be made; else 
+      use the last one made
     '''
                         
     import distutils.file_util as dfu
@@ -688,7 +689,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             Controls = data[0][1]
             if 'parmFrozen' not in Controls:
                 Controls['parmFrozen'] = {}
-            Controls['parmFrozen']['FrozenList'] = parmFrozenList
+            Controls['parmFrozen']['FrozenList'] = [G2obj.G2VarObj(i) for i in parmFrozenList]
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
@@ -771,6 +772,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     :param dict RigidBodies: dictionary of rigid bodies
     :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
     :param dict parmFrozen: dict with frozen parameters for all phases
+      and histograms (specified as str values)
     '''
                         
     import distutils.file_util as dfu
@@ -851,7 +853,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         Phases[name] = vals        
     name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
     name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
-    name,parmFrozen = cPickleLoad(fp)[0] # 4th block in file should be frozen parameters
+    name,parmFrozenDict = cPickleLoad(fp)[0] # 4th block in file should be frozen parameters
     fp.close()
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     hist = open(GPXhist,'rb')
@@ -886,7 +888,11 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         elif datum[0] == 'Controls': # reset the Copy Next flag after a sequential fit
             Controls = data[0][1]
             Controls['Copy2Next'] = False
-            Controls['parmFrozen'] = parmFrozen
+            for key in parmFrozenDict:
+                Controls['parmFrozen'][key] = [
+                    i if type(i) is G2obj.G2VarObj
+                    else G2obj.G2VarObj(i)
+                    for i in parmFrozenDict[key]]
         elif datum[0] in histIndex:
             hist.seek(histIndex[datum[0]])
             hdata = cPickleLoad(hist)
@@ -929,7 +935,7 @@ def ShowBanner(pFile=None):
 
     pFile.write(80*'*'+'\n')
 
-def ShowControls(Controls,pFile=None,SeqRef=False):
+def ShowControls(Controls,pFile=None,SeqRef=False,preFrozenCount=0):
     'Print controls information'
     pFile.write(' Least squares controls:\n')
     pFile.write(' Refinement type: %s\n'%Controls['deriv type'])
@@ -943,6 +949,8 @@ def ShowControls(Controls,pFile=None,SeqRef=False):
         pFile.write(' Sequential refinement controls:\n')
         pFile.write(' Copy of histogram results to next: %s\n'%(Controls['Copy2Next']))
         pFile.write(' Process histograms in reverse order: %s\n'%(Controls['Reverse Seq']))
+    if preFrozenCount:
+        pFile.write('\n Starting refinement with {} Frozen variables\n\n'.format(preFrozenCount))
     
 def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
     'needs a doc string'

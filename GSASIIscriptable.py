@@ -1967,6 +1967,27 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     Controls['range'] = [(0,Imax),[0,Imax]]
     return np.asarray(sumImg,dtype='int32')
 
+def patchControls(Controls):
+    '''patch routine to convert variable names used in parmeter limits 
+    to G2VarObj objects
+    '''
+    #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
+    for d in 'parmMaxDict','parmMinDict':
+        for k in Controls[d]:  
+            if type(k) is str:
+                print("Applying patch to Controls['{}']".format(d))
+                Controls[d] = {G2obj.G2VarObj(k):v for k,v in Controls[d].items()}
+                break
+    conv = False
+    for k in Controls['parmFrozen']:
+        for item in Controls['parmFrozen'][k]:
+            if type(item) is str:
+                conv = True
+                Controls['parmFrozen'][k] = [G2obj.G2VarObj(i) for i in Controls['parmFrozen'][k]]
+                break
+    if conv: print("Applying patch to Controls['parmFrozen']")
+    # end patch
+
 class G2ObjectWrapper(object):
     """Base class for all GSAS-II object wrappers.
 
@@ -3050,9 +3071,15 @@ class G2Project(G2ObjectWrapper):
         or individual names of phase, histogram, varname, and atomId.
 
         Automatically converts string phase, hist, or atom names into the ID required
-        by G2VarObj."""
+        by G2VarObj.
+
+        Note that this will cause the project to be saved if not 
+        already done so.
+        """
 
         if reloadIdx:
+            self.index_ids()
+        elif G2obj.TestIndexAll():
             self.index_ids()
 
         # If string representation, short circuit
@@ -3360,7 +3387,10 @@ class G2Project(G2ObjectWrapper):
             raise Exception('{} is an invalid control value'.format(control))
         
     def set_Controls(self, control, value, variable=None):
-        '''Set project controls
+        '''Set project controls.
+
+        Note that use of this with control set to parmMin or parmMax 
+        will cause the project to be saved if not already done so.
 
         :param str control: the item to be set. See below for allowed values. 
         :param value: the value to be set.
@@ -3392,6 +3422,8 @@ class G2Project(G2ObjectWrapper):
                 raise Exception('set_Controls requires a value for variable for control=parmMin or parmMax')
             for key in ('parmMinDict','parmMaxDict','parmFrozen'):
                 if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
+            if G2obj.TestIndexAll(): self.index_ids()
+            patchControls(self.data['Controls']['data'])
         if control == 'cycles':
             self.data['Controls']['data']['max cyc'] = int(value)
         elif control == 'seqCopy':
@@ -3409,7 +3441,8 @@ class G2Project(G2ObjectWrapper):
                                         .format(i,j))
             self.data['Controls']['data']['Seq Data'] = histlist
         elif control == 'parmMin' or control == 'parmMax':
-            self.data['Controls']['data'][control+'Dict'][variable] = float(value)
+            key = G2obj.G2VarObj(variable)
+            self.data['Controls']['data'][control+'Dict'][key] = float(value)
         else:
             raise Exception('{} is an invalid control value'.format(control))
         

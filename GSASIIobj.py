@@ -1186,11 +1186,12 @@ that works by disabling
 refinement of parameters that refine beyond either a lower limit or an upper limit, where 
 either or both may be optionally specified. Parameters limits are specified in the Controls 
 tree entry in dicts named as ``Controls['parmMaxDict']`` and ``Controls['parmMinDict']``, where 
-the keys are named using the standard GSAS-II variable 
-(see :func:`getVarDescr` and :func:`CompileVarDesc`) or with a variable name, where a 
-wildcard ('*') is used for histogram number or atom number (phase number is intentionally not 
-allowed as a wildcard as it makes little sense to group together different phases). Note
-that func:`prmLookup` is used to see if a name matches a wildcard. The upper or lower limit
+the keys are :class:`G2VarObj` objects corresponding to standard GSAS-II variable 
+(see :func:`getVarDescr` and :func:`CompileVarDesc`) names, where a 
+wildcard ('*') may optionally be used for histogram number or atom number 
+(phase number is intentionally not  allowed as a wildcard as it makes little sense 
+to group the same parameter together different phases). Note
+that :func:`prmLookup` is used to see if a name matches a wildcard. The upper or lower limit
 is placed into these dicts as a float value. These values can be edited using the window 
 created by the Calculate/"View LS parms" menu command or in scripting with the 
 :meth:`GSASIIscriptable.G2Project.set_Controls` function. 
@@ -1199,9 +1200,11 @@ into the appropriate part of the variable name.
 
 When a refinement is conducted, routine :func:`GSASIIstrMain.dropOOBvars` is used to 
 find parameters that have refined to values outside their limits. If this occurs, the parameter
-is set to the limiting value and the variable name is added to a list of frozen variables kept in the 
-``Controls['parmFrozen']`` dict. In a sequential refinement, this is kept as a list in 
-``Controls['parmFrozen'][histogram]`` (where the key is the histogram name) or in 
+is set to the limiting value and the variable name is added to a list of frozen variables 
+(as a :class:`G2VarObj` objects) kept in a list in the
+``Controls['parmFrozen']`` dict. In a sequential refinement, this is kept separate for 
+each histogram as a list in 
+``Controls['parmFrozen'][histogram]`` (where the key is the histogram name) or as a list in 
 ``Controls['parmFrozen']['FrozenList']`` for a non-sequential fit. 
 This allows different variables
 to be frozen in each section of a sequential fit. 
@@ -1210,6 +1213,19 @@ list of parameters to be refined (``varyList``) in :func:`GSASIIstrMain.Refine` 
 :func:`GSASIIstrMain.SeqRefine`. Once a variable is frozen, it will not be refined in any 
 future refinements unless the the variable is removed (manually) from the list. This can also 
 be done with the Calculate/"View LS parms" menu window or ...
+
+.. seealso::
+  :class:`G2VarObj` 
+  :func:`getVarDescr` 
+  :func:`CompileVarDesc`
+  :func:`prmLookup`
+  :class:`GSASIIctrlGUI.ShowLSParms`
+  :class:`GSASIIctrlGUI.VirtualVarBox`
+  :func:`GSASIIstrIO.SetUsedHistogramsAndPhases`
+  :func:`GSASIIstrIO.SaveUpdatedHistogramsAndPhases`
+  :func:`GSASIIstrIO.SetSeqResult`
+  :func:`GSASIIstrMain.dropOOBvars`
+  :meth:`GSASIIscriptable.G2Project.set_Controls`
 
 *Classes and routines*
 ----------------------
@@ -1451,6 +1467,16 @@ def ReadCIF(URLorFile):
     except IOError:
         return cif.ReadCif(URLorFile)
 
+def TestIndexAll():
+    '''Test if :func:`IndexAllIds` has been called to index all phases and 
+    histograms (this is needed before :func:`G2VarObj` can be used. 
+
+    :returns: Returns True if indexing is needed.
+    '''
+    if PhaseIdLookup or AtomIdLookup or HistIdLookup:
+        return False
+    return True
+        
 def IndexAllIds(Histograms,Phases):
     '''Scan through the used phases & histograms and create an index
     to the random numbers of phases, histograms and atoms. While doing this,
@@ -1999,17 +2025,39 @@ def LookupWildCard(varname,varlist):
     return sorted([var for var in varlist if rexp.match(var)])
 
 def prmLookup(name,prmDict):
-    '''looks for a parameter in a min/max dictionary, optionally
-    considering a wild card for histogram & atom number
+    '''Looks for a parameter in a min/max dictionary, optionally
+    considering a wild card for histogram or atom number (use of
+    both will never occur at the same time).
+
+    :param name: a GSAS-II parameter name (str, see :func:`getVarDescr` 
+      and :func:`CompileVarDesc`) or a :class:`G2VarObj` object. 
+      If this contains a wildcard (* for
+      histogram or atom number) only the exact same name (with 
+      that wildcard) will be matched in parmDict
+    :param dict prmDict: a min/max dictionary, (parmMinDict 
+      or parmMaxDict in Controls) where keys are :class:`G2VarObj`
+      objects. 
+    :returns: Two values, (**matchname**, **value**), are returned where:
+
+       * **matchname** *(str)* is the :class:`G2VarObj` object 
+         corresponding to the actual matched name, 
+         which could contain a wildcard even if **name** does not; and 
+       * **value** *(float)* which contains the parameter limit.
     '''
-    sn = name.split(':')
-    if sn[1] != '': sn[1] = '*'
-    if len(sn) >= 4 and sn[3] != '': sn[3] = '*'
-    wname = ':'.join(sn)
-    if wname in prmDict:
-        return wname,prmDict[wname]
-    elif name in prmDict:
-        return name,prmDict[name]
+    keyLookup = {str(key):key for key in prmDict}
+    sn = str(name).split(':')
+    if str(name) in keyLookup:
+        return keyLookup[str(name)],prmDict[keyLookup[str(name)]]
+    elif sn[1] != '':
+        sn[1] = '*'
+        wname = ':'.join(sn)
+    elif len(sn) >= 4 and sn[3] != '':
+        sn[3] = '*'
+        wname = ':'.join(sn)
+    else:
+        return None,None
+    if wname in keyLookup:
+        return keyLookup[wname],prmDict[keyLookup[wname]]
     else:
         return None,None
         
@@ -2045,7 +2093,10 @@ class G2VarObj(object):
     '''Defines a GSAS-II variable either using the phase/atom/histogram
     unique Id numbers or using a character string that specifies
     variables by phase/atom/histogram number (which can change).
-    Note that :func:`LoadID` should be used to (re)load the current Ids
+    Note that :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`, 
+    which calls :func:`IndexAllIds` (or 
+    :func:`GSASIIscriptable.G2Project.index_ids`) should be used to 
+    (re)load the current Ids
     before creating or later using the G2VarObj object.
 
     This can store rigid body variables, but does not translate the residue # and
@@ -2136,6 +2187,10 @@ class G2VarObj(object):
     def __str__(self):
         return self.varname()
 
+    def __hash__(self):
+        'Allow G2VarObj to be a dict key by implementing hashing'
+        return hash(self.varname())
+
     def varname(self):
         '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable
         string (p:h:<var>:a) or (p:h:<var>)
@@ -2198,12 +2253,23 @@ class G2VarObj(object):
         return s+" ("+self.varname()+")"
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return (self.phase == other.phase and
-                    self.histogram == other.histogram and
-                    self.name == other.name and
-                    self.atom == other.atom)
-        return False
+        '''Allow comparison of G2VarObj to other G2VarObj objects or strings.
+        If any field is a wildcard ('*') that field matches.
+        '''
+        if type(other) is str:
+            other = G2VarObj(other)
+        elif type(other) is not G2VarObj:
+            raise Exception("Invalid type ({}) for G2VarObj comparison with {}"
+                            .format(type(other),other))
+        if self.phase != other.phase and self.phase != '*' and other.phase != '*':
+            return False
+        if self.histogram != other.histogram and self.histogram != '*' and other.histogram != '*':
+            return False
+        if self.atom != other.atom and self.atom != '*' and other.atom != '*':
+            return False
+        if self.name != other.name:
+            return False
+        return True
 
     def _show(self):
         'For testing, shows the current lookup table'

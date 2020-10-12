@@ -1691,26 +1691,31 @@ def UpdateMasks(G2frame,data):
             
     def OnFindSpotMask(event):
         'Do auto search for spot masks'
-        if wx.MessageDialog(G2frame.dataWindow,'NB: This is slow (5-10min)',
-            'Spot mask search', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
-            Controls = G2frame.GPXtree.GetItemPyData( 
-                G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
-            wave = Controls['wavelength']
-            LUtth = np.array(Controls['IOtth'])
-            dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
-            dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-            x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
-            x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]    
-            nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
-            dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
-                style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
-            time0 = time.time()
-            data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
-            print(' Spot masksearch time: %.2f m'%((time.time()-time0)/60.))
-            wx.CallAfter(UpdateMasks,G2frame,data)
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
-        else:
-            print(' Spot mask search not done')
+        try:
+            if wx.MessageDialog(G2frame.dataWindow,'NB: This is slow (5-10min)',
+                'Spot mask search', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
+                Controls = G2frame.GPXtree.GetItemPyData( 
+                    G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
+                wave = Controls['wavelength']
+                LUtth = np.array(Controls['IOtth'])
+                dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
+                dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
+                x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+                x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
+                if x0 is None or x1 is None:
+                    raise Exception
+                nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
+                dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+                time0 = time.time()
+                data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
+                print(' Spot masksearch time: %.2f m'%((time.time()-time0)/60.))
+                wx.CallAfter(UpdateMasks,G2frame,data)
+                wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            else:
+                print(' Spot mask search not done')
+        except:
+            print('Invalid limits - spot mask search not done')
             
     def OnAutoFindSpotMask(event):
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
@@ -1731,13 +1736,17 @@ def UpdateMasks(G2frame,data):
                     dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
                     dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
                     x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
-                    x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]    
+                    x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
+                    if x0 is None or x1 is None:
+                        raise Exception
                     nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
                     dlg = wx.ProgressDialog("Spot mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
                         style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
                     time0 = time.time()
                     Mask['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
                     print(' Spot mask search time: %.2f m'%((time.time()-time0)/60.))
+        except:
+            print('Invalid limits - spot mask search not done')
         finally:
             dlg.Destroy()
         G2plt.PlotExposedImage(G2frame,event=None)

@@ -6821,8 +6821,12 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
-        xy1.append(G2img.GetDetectorXY(Dsp(angI,wave),azm,Data))      #what about hyperbola
-        xy2.append(G2img.GetDetectorXY(Dsp(angO,wave),azm,Data))      #what about hyperbola
+        XY = G2img.GetDetectorXY(Dsp(angI,wave),azm,Data)
+        if XY is not None:
+            xy1.append(XY)      #what about hyperbola
+        XY = G2img.GetDetectorXY(Dsp(angO,wave),azm,Data)
+        if XY is not None:
+            xy2.append(XY)      #what about hyperbola
     return np.array(xy1).T,np.array(xy2).T
 
 def UpdatePolygon(pick,event,polygon):
@@ -6899,6 +6903,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Page.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
                 else:
                     xcent,ycent = Data['center']
+                    if Data['det2theta']:
+                        xcent += Data['distance']*nptand(-Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
                     xpos = event.xdata-xcent
                     ypos = event.ydata-ycent
                     tth,azm = G2img.GetTthAzm(event.xdata,event.ydata,Data)
@@ -6912,6 +6918,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         Page.SetToolTipString('%6.1f deg'%(azm))
             else:
                 xcent,ycent = Data['center']
+                if Data['det2theta']:
+                    xcent += Data['distance']*nptand(-Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
                 xpos = event.xdata
                 ypos = event.ydata
                 radius = np.sqrt((xpos-xcent)**2+(ypos-ycent)**2)
@@ -7651,6 +7659,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
     xcent,ycent = Data['center']
+    if Data['det2theta']:
+        xcent += Data['distance']*nptand(Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #do threshold mask - "real" mask - others are just bondaries
@@ -7705,6 +7715,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot(arcxI,arcyI,picker=3,label='Itth')
             if ellO:
                 xyO = []
+                arcxO = []
+                arcxI = []
                 for azm in Azm:
                     xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
@@ -7713,7 +7725,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xyO = np.array(xyO)
                     arcxO,arcyO = xyO.T                
                     Plot.plot(arcxO,arcyO,picker=3,label='Otth')
-            if ellO and ellI:
+            if ellO and ellI and len(arcxO) and len(arcxI):
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3,label='Lazm')
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3,label='Uazm')
             for i in range(Nazm):
@@ -7721,7 +7733,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if Data.get('centerAzm',False):
                     cake += delAzm/2.
                 ind = np.searchsorted(Azm,cake)
-                Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
+                if len(arcxO) and len(arcxI):
+                    Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
             IOtth = [0.1,60.]

@@ -468,8 +468,47 @@ def GetEllipse(dsp,data):
     dist = data['distance']
     dxy = peneCorr(tth,dep,dist)
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
-        
+
 def GetDetectorXY(dsp,azm,data):
+    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
+    & image controls dictionary (data) - new version
+    it seems to be only used in plotting 
+    '''
+    def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
+     
+    	ndotu = planeNormal.dot(rayDirection)
+    	if ndotu < epsilon:    
+    		return None
+     
+    	w = rayPoint - planePoint
+    	si = -planeNormal.dot(w) / ndotu
+    	Psi = w + si * rayDirection + planePoint
+    	return Psi
+    
+    
+    dist = data['distance']
+    cent = data['center']
+    T = makeMat(data['tilt'],0)
+    R = makeMat(data['rotation'],2)
+    MN = np.inner(R,np.inner(R,T))
+    iMN= nl.inv(MN)
+    tth = 2.0*npasind(data['wavelength']/(2.*dsp))
+    vect = np.array([npsind(tth)*npcosd(azm),npsind(tth)*npsind(azm),npcosd(tth)])
+    dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
+    dxyz0 += np.array([0.,0.,dist])                 #translate to distance
+    dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
+    dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
+    dxyz1 += np.array([0.,0.,dist])                 #translate to distance
+    dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
+    xyz = LinePlaneCollision(dxyz0,dxyz1,vect,2.*dist*vect)
+    if xyz is None:
+        return None
+    xyz = np.inner(xyz,makeMat(-data['det2theta'],1).T)
+    xyz -= np.array([0.,0.,dist])                 #translate back
+    xyz = np.inner(xyz,iMN)
+    return xyz[:2]+cent
+        
+def GetDetectorXY2(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
     & image controls dictionary (data)
     it seems to be only used in plotting 
@@ -512,6 +551,8 @@ def GetDetectorXY(dsp,azm,data):
             xy = [-R*cosd(azm)-offset,R*sind(azm)]
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
+    if data['det2theta']:
+        xy[0] += dist*nptand(data['det2theta']+data['tilt']*npsind(data['rotation']))
     return xy
     
 def GetDetXYfromThAzm(Th,Azm,data):

@@ -1968,8 +1968,9 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     return np.asarray(sumImg,dtype='int32')
 
 def patchControls(Controls):
-    '''patch routine to convert variable names used in parmeter limits 
-    to G2VarObj objects
+    '''patch routine to convert variable names used in parameter limits 
+    to G2VarObj objects 
+    (See :ref:`Parameter Limits<ParameterLimits>` description.)
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
     for d in 'parmMaxDict','parmMinDict':
@@ -3350,10 +3351,122 @@ class G2Project(G2ObjectWrapper):
                        'varyList':varList,'variables':result[1]}
         return parmDict,covData
                 
-    def get_Controls(self, control):
+    def set_Frozen(self, variable=None, histogram=None, mode='remove'):
+        '''Removes one or more Frozen variables (or adds one)
+        (See :ref:`Parameter Limits<ParameterLimits>` description.)
+        Note that use of this 
+        will cause the project to be saved if not already done so.
+
+        :param str variable: a variable name as a str or 
+          (as a :class:`GSASIIobj.G2VarObj` object). Should
+          not contain wildcards. 
+          If None (default), all frozen variables are deleted
+          from the project, unless a sequential fit and 
+          a histogram is specified. 
+        :param histogram: A reference to a histogram,
+          which can be reference by object, name, or number.
+          Used for sequential fits only. 
+        :param str mode: The default mode is to remove variables
+          from the appropriate Frozen list, but if the mode
+          is specified as 'add', the variable is added to the 
+          list. 
+        :returns: True if the variable was added or removed, False 
+          otherwise. Exceptions are generated with invalid requests.
+        '''
+        Controls = self.data['Controls']['data']
+        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+            if key not in Controls: Controls[key] = {}
+        if G2obj.TestIndexAll(): self.index_ids()
+        patchControls(Controls)
+
+        if mode == 'remove':
+            if variable is None and histogram is None:
+                Controls['parmFrozen'] = {}
+                return True
+        elif mode == 'add':
+            if variable is None:
+                raise Exception('set_Frozen error: variable must be specified')
+        else:
+            raise Exception('Undefined mode ({}) in set_Frozen'.format(mode))
+        
+        if histogram is None:
+            h = 'FrozenList'
+        else:
+            hist = self.histogram(histogram)
+            if hist:
+                h = hist.name
+                if h not in Controls['parmFrozen']: # no such list, not found
+                    return False
+            else:
+                raise Exception('set_Frozen error: histogram {} not found'.format(histogram))
+        if mode == 'remove':
+            if variable is None:
+                Controls['parmFrozen'][h] = []
+                return True
+            if h not in Controls['parmFrozen']:
+                return True
+            delList = []
+            for i,v in enumerate(Controls['parmFrozen'][h]):
+                if v == variable: delList.append(i)
+            if delList:
+                for i in reversed(delList):
+                    del Controls['parmFrozen'][h][i]
+                return True
+            return False
+        elif mode == 'add':
+            if type(variable) is str:
+                variable = G2obj.G2VarObj(variable)
+            elif type(v) is not G2obj.G2VarObj:
+                raise Exception(
+                    'set_Frozen error: variable {} wrong type ({})'
+                    .format(variable,type(variable)))
+            if h not in Controls['parmFrozen']: Controls['parmFrozen'][h] = []
+            Controls['parmFrozen'][h].append(variable)
+            return True
+
+    def get_Frozen(self, histogram=None):
+        '''Gets a list of Frozen variables. 
+        (See :ref:`Parameter Limits<ParameterLimits>` description.)
+        Note that use of this 
+        will cause the project to be saved if not already done so.
+
+        :param histogram: A reference to a histogram,
+          which can be reference by object, name, or number. Used
+          for sequential fits only. If left as the default (None)
+          for a sequential fit, all Frozen variables in all
+          histograms are returned.
+        :returns: a list containing variable names, as str values
+        '''
+        Controls = self.data['Controls']['data']
+        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+            if key not in Controls: Controls[key] = {}
+        if G2obj.TestIndexAll(): self.index_ids()
+        patchControls(Controls)
+        if histogram:
+            hist = self.histogram(histogram)
+            if hist:
+                h = hist.name
+                return [str(i) for i in Controls['parmFrozen'][h]]
+            elif histogram.lower() == 'all':
+                names = set()
+                for h in self.histograms():
+                    if h.name not in Controls['parmFrozen']: continue
+                    names = names.union([str(i) for i in Controls['parmFrozen'][h.name]])
+                return list(names)
+            else:
+                raise Exception('histogram {} not recognized'.format(histogram))
+        elif 'FrozenList' in Controls['parmFrozen']:
+            return [str(i) for i in Controls['parmFrozen']['FrozenList']]
+        else:
+            return []
+        
+    def get_Controls(self, control, variable=None):
         '''Return project controls settings
 
         :param str control: the item to be returned. See below for allowed values.
+        :param str variable: a variable name as a str or 
+          (as a :class:`GSASIIobj.G2VarObj` object). 
+          Used only with control set to "parmMin" or "parmMax".
         :returns: The value for the control.
 
         Allowed values for parameter control:
@@ -3366,12 +3479,24 @@ class G2Project(G2ObjectWrapper):
             * seqCopy: returns True or False. True indicates that results from 
               each sequential fit are used as the starting point for the next
               histogram.
+            * parmMin & parmMax: retrieves a maximum or minimum value for 
+              a refined parameter. Note that variable will be a GSAS-II 
+              variable name, optionally with * specified for a histogram 
+              or atom number. Return value will be a float.
+              (See :ref:`Parameter Limits<ParameterLimits>` description.)
             * Anything else returns the value in the Controls dict, if present. An 
               exception is raised if the control value is not present. 
 
         .. seealso::
             :meth:`set_Controls`
         '''
+        if control.startswith('parmM'):
+            if not variable:
+                raise Exception('set_Controls requires a value for variable for control=parmMin or parmMax')
+            for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+                if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
+            if G2obj.TestIndexAll(): self.index_ids()
+            patchControls(self.data['Controls']['data'])
         if control == 'cycles':
             return self.data['Controls']['data']['max cyc']
         elif control == 'sequential':
@@ -3380,6 +3505,11 @@ class G2Project(G2ObjectWrapper):
             return self.data['Controls']['data']['Reverse Seq']
         elif control == 'seqCopy':
             return self.data['Controls']['data']['Copy2Next']
+        elif control == 'parmMin' or control == 'parmMax':
+            key = G2obj.G2VarObj(variable)
+            return G2obj.prmLookup(
+                variable,
+                self.data['Controls']['data'][control+'Dict'])[1]
         elif control in self.data['Controls']['data']:
             return self.data['Controls']['data'][control]
         else:
@@ -3396,23 +3526,23 @@ class G2Project(G2ObjectWrapper):
         :param value: the value to be set.
         :param str variable: used only with control set to "parmMin" or "parmMax"
 
-        Allowed values for parameter control:
+        Allowed values for *control* parameter:
 
-            * cycles: sets the maximum number of cycles (value must be int)
-            * sequential: sets the histograms to be used for a sequential refinement. 
-              Use an empty list to turn off sequential fitting. 
-              The values in the list may be the name of the histogram (a str), or 
-              a ranId or index (int values), see :meth:`histogram`.
-            * seqCopy: when True, the results from each sequential fit are used as
-              the starting point for the next. After each fit is is set to False. 
-              Ignored for non-sequential fits. 
-            * Reverse Seq: when True, sequential refinement is performed on the
-              reversed list of histograms.
-            * parmMin & parmMax: set a maximum or minimum value for a refined 
-              parameter. Note that variable will be a GSAS-II variable name, 
-              optionally with * specified for a histogram or atom number and
-              value must be a float. 
-              (See :ref:`Parameter Limits<ParameterLimits>` description.)
+        * ``'cycles'``: sets the maximum number of cycles (value must be int)
+        * ``'sequential'``: sets the histograms to be used for a sequential refinement. 
+          Use an empty list to turn off sequential fitting. 
+          The values in the list may be the name of the histogram (a str), or 
+          a ranId or index (int values), see :meth:`histogram`.
+        * ``'seqCopy'``: when True, the results from each sequential fit are used as
+          the starting point for the next. After each fit is is set to False. 
+          Ignored for non-sequential fits. 
+        * ``'Reverse Seq'``: when True, sequential refinement is performed on the
+          reversed list of histograms.
+        * ``'parmMin'`` & ``'parmMax'``: set a maximum or minimum value for a refined 
+          parameter. Note that variable will be a GSAS-II variable name, 
+          optionally with * specified for a histogram or atom number and
+          value must be a float. 
+          (See :ref:`Parameter Limits<ParameterLimits>` description.)
 
         .. seealso::
             :meth:`get_Controls`

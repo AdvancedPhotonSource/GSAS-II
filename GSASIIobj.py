@@ -1210,12 +1210,18 @@ This allows different variables
 to be frozen in each section of a sequential fit. 
 Frozen parameters are not included in refinements through removal from the 
 list of parameters to be refined (``varyList``) in :func:`GSASIIstrMain.Refine` or 
-:func:`GSASIIstrMain.SeqRefine`. Once a variable is frozen, it will not be refined in any 
+:func:`GSASIIstrMain.SeqRefine`. 
+The data window for the Controls tree item shows the number of Frozen variables and
+the individual variables can be viewed with the Calculate/"View LS parms" menu window or 
+obtained with :meth:`GSASIIscriptable.G2Project.get_Frozen`.
+Once a variable is frozen, it will not be refined in any 
 future refinements unless the the variable is removed (manually) from the list. This can also 
-be done with the Calculate/"View LS parms" menu window or ...
+be done with the Calculate/"View LS parms" menu window or 
+:meth:`GSASIIscriptable.G2Project.set_Frozen`.
+
 
 .. seealso::
-  :class:`G2VarObj` 
+  :class:`G2VarObj`
   :func:`getVarDescr` 
   :func:`CompileVarDesc`
   :func:`prmLookup`
@@ -1226,6 +1232,8 @@ be done with the Calculate/"View LS parms" menu window or ...
   :func:`GSASIIstrIO.SetSeqResult`
   :func:`GSASIIstrMain.dropOOBvars`
   :meth:`GSASIIscriptable.G2Project.set_Controls`
+  :meth:`GSASIIscriptable.G2Project.get_Frozen`
+  :meth:`GSASIIscriptable.G2Project.set_Frozen`
 
 *Classes and routines*
 ----------------------
@@ -2031,9 +2039,6 @@ def prmLookup(name,prmDict):
 
     :param name: a GSAS-II parameter name (str, see :func:`getVarDescr` 
       and :func:`CompileVarDesc`) or a :class:`G2VarObj` object. 
-      If this contains a wildcard (* for
-      histogram or atom number) only the exact same name (with 
-      that wildcard) will be matched in parmDict
     :param dict prmDict: a min/max dictionary, (parmMinDict 
       or parmMaxDict in Controls) where keys are :class:`G2VarObj`
       objects. 
@@ -2044,22 +2049,10 @@ def prmLookup(name,prmDict):
          which could contain a wildcard even if **name** does not; and 
        * **value** *(float)* which contains the parameter limit.
     '''
-    keyLookup = {str(key):key for key in prmDict}
-    sn = str(name).split(':')
-    if str(name) in keyLookup:
-        return keyLookup[str(name)],prmDict[keyLookup[str(name)]]
-    elif sn[1] != '':
-        sn[1] = '*'
-        wname = ':'.join(sn)
-    elif len(sn) >= 4 and sn[3] != '':
-        sn[3] = '*'
-        wname = ':'.join(sn)
-    else:
-        return None,None
-    if wname in keyLookup:
-        return keyLookup[wname],prmDict[keyLookup[wname]]
-    else:
-        return None,None
+    for key,value in prmDict.items():
+        if str(key) == str(name): return key,value
+        if key == name: return key,value
+    return None,None
         
 
 def _lookup(dic,key):

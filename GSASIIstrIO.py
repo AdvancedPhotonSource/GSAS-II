@@ -689,7 +689,10 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             Controls = data[0][1]
             if 'parmFrozen' not in Controls:
                 Controls['parmFrozen'] = {}
-            Controls['parmFrozen']['FrozenList'] = [G2obj.G2VarObj(i) for i in parmFrozenList]
+            Controls['parmFrozen']['FrozenList'] = [
+                    i if type(i) is G2obj.G2VarObj
+                    else G2obj.G2VarObj(i)
+                    for i in parmFrozenList]
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]

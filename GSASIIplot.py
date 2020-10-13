@@ -6821,10 +6821,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
-        XY = G2img.GetDetectorXY(Dsp(angI,wave),azm,Data)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angI),wave),azm,Data)
         if XY is not None:
             xy1.append(XY)      #what about hyperbola
-        XY = G2img.GetDetectorXY(Dsp(angO,wave),azm,Data)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angO),wave),azm,Data)
         if XY is not None:
             xy2.append(XY)      #what about hyperbola
     return np.array(xy1).T,np.array(xy2).T
@@ -7247,7 +7247,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         return # don't let the azimuthal range get too small or large
                     azm[0] += off
                     azm[1] -= off
-                (x1,y1),(x2,y2) = ComputeArc(angI,angO,wave,*azm)
+                (x1,y1),(x2,y2) = ComputeArc(np.squeeze(angI),np.squeeze(angO),wave,*azm)
                 pI,pO,pL,pU = G2frame.arcList[pick.itemNumber]
                 pI.set_data((x2,y2))
                 pO.set_data((x1,y1))
@@ -7716,7 +7716,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellO:
                 xyO = []
                 arcxO = []
-                arcxI = []
                 for azm in Azm:
                     xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
@@ -7725,7 +7724,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xyO = np.array(xyO)
                     arcxO,arcyO = xyO.T                
                     Plot.plot(arcxO,arcyO,picker=3,label='Otth')
-            if ellO and ellI and len(arcxO) and len(arcxI):
+            if ellO and ellI and len(arcxO):
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3,label='Lazm')
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3,label='Uazm')
             for i in range(Nazm):
@@ -7733,7 +7732,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if Data.get('centerAzm',False):
                     cake += delAzm/2.
                 ind = np.searchsorted(Azm,cake)
-                if len(arcxO) and len(arcxI):
+                if len(arcxO):
                     Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
@@ -7793,7 +7792,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         G2frame.arcList = []
         for iarc,arc in enumerate(Masks['Arcs']):      # drawing arc masks
             if arc:
-                tth,azm,thick = arc           
+                tth,azm,thick = arc
+                azm = np.squeeze(azm)
                 wave = Data['wavelength']
                 (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,wave,azm[0],azm[1])
                 arcList = []

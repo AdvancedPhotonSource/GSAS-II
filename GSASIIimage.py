@@ -506,7 +506,7 @@ def GetDetectorXY(dsp,azm,data):
     xyz = np.inner(xyz,makeMat(-data['det2theta'],1).T)
     xyz -= np.array([0.,0.,dist])                 #translate back
     xyz = np.inner(xyz,iMN)
-    return xyz[:2]+cent
+    return np.squeeze(xyz)[:2]+cent
         
 def GetDetectorXY2(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
@@ -637,7 +637,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     x0y = x0*npsind(data['rotation'])
     distsq = data['distance']**2
     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return np.array([tth,azm,G,dsp])
+    return tth,azm,G,dsp
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'

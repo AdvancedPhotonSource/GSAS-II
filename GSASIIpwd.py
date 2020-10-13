@@ -307,7 +307,7 @@ def CalcPDF(data,inst,limits,xydata):
         Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
     IofQ = copy.deepcopy(xydata['Sample'])
-    IofQ[1] = np.array(IofQ[1])[:,Ibeg:Ifin]
+    IofQ[1] = np.array([I[Ibeg:Ifin] for I in IofQ[1]])
     if data['Sample Bkg.']['Name']:
         IofQ[1][1] += xydata['Sample Bkg.'][1][1][Ibeg:Ifin]*data['Sample Bkg.']['Mult']
     if data['Container']['Name']:

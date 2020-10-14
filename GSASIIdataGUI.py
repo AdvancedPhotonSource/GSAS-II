@@ -226,12 +226,12 @@ class MergeDialog(wx.Dialog):
             'tetragonal':['4','-4','4 2 2','4 m m','-4 2 m','-4 m 2',], \
             'hexagonal':['6','-6','6 2 2','6 m m','-6 m 2','-6 2 m',],'cubic':['2 3','4 3 2','-4 3 m']}
         centChoice = ['noncentrosymmetric','centrosymmetric']
-        mainSizer.Add(wx.StaticText(self.panel,label=' Select Laue class for new lattice:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select Laue class for new lattice:'),0)
         Class = wx.ComboBox(self.panel,value=self.Class,choices=laueClass,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Class.Bind(wx.EVT_COMBOBOX,OnClass)
-        mainSizer.Add(Class,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0,WACV)
+        mainSizer.Add(Class,0)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0)
         Cent = wx.ComboBox(self.panel,value=self.Cent,choices=centChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Cent.Bind(wx.EVT_COMBOBOX,OnCent)
@@ -2792,9 +2792,14 @@ class GSASII(wx.Frame):
                             return
                         data = self.GPXtree.GetItemPyData(Id)
                         G2IO.ExportSequential(self,data,obj,typ)
-                    if 'mode' in inspect.getargspec(obj.Writer)[0]:
-                        item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
-                        self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+                        if '2' in platform.python_version_tuple()[0]:
+                            if 'mode' in inspect.getargspec(obj.Writer)[0]:
+                                item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                                self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+                        else:
+                            if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
+                                item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                                self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
                         #                    self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
                         # Bind is in UpdateSeqResults
 
@@ -3411,7 +3416,7 @@ class GSASII(wx.Frame):
             self.panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
                 style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            mainSizer.Add(wx.StaticText(self.panel,label=self.text),0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel,label=self.text),0)
             mainSizer.Add((10,10))
             self.dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
             self.dataGridSizer.Add((-1,-1))
@@ -5611,8 +5616,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                         obj.Writer
                     except AttributeError:
                         continue
-                    if 'mode' in inspect.getargspec(obj.Writer)[0]:
-                        objlist.append(obj)
+                    if '2' in platform.python_version_tuple()[0]:
+                        if 'mode' in inspect.getargspec(obj.Writer)[0]:
+                            objlist.append(obj)
+                    else:
+                        if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
+                            objlist.append(obj)
             if objlist:
                 submenu = wx.Menu()
                 item = self.SequentialEx.AppendSubMenu(submenu,lbl+' as',txt)
@@ -6289,7 +6298,7 @@ def UpdateNotebook(G2frame,data):
     for line in data:
         text.AppendText(line+"\n")
     text.AppendText('Notebook entry @ '+time.ctime()+"\n")
-    G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0,WACV)
+    G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 
 ################################################################################
@@ -6559,8 +6568,7 @@ def UpdateControls(G2frame,data):
     if count > 0:
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
         subSizer.Add(wx.StaticText(G2frame.dataWindow,
-                    label='There are {} frozen variables (values refined outside limits)'
-                                .format(count)),0,WACV)
+            label='There are {} frozen variables (values refined outside limits)'.format(count)),0,WACV)
         subSizer.Add((5,-1))
         btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear All Frozen')
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
@@ -8325,7 +8333,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if 'histTitle' not in data[0]: data[0]['histTitle'] = ''
     wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'histTitle',typeHint=str,
         notBlank=False,size=(300,-1)),1,WACV)
-    mainSizer.Add(wtSizer,0,WACV)
+    mainSizer.Add(wtSizer,0)
     if data[0].get('Dummy',False):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)
         Tmin = min(data[1][0])

@@ -960,7 +960,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         if BondRestr.GetSizer(): BondRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(BondRestr,bondRestData),0,WACV)
+        mainSizer.Add(WtBox(BondRestr,bondRestData),0)
 
         bondList = bondRestData['Bonds']
         if len(bondList) and len(bondList[0]) == 6:   #patch
@@ -1024,7 +1024,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(BondRestr,-1,
                     'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(bondList))),0,WACV)
+                    %(chisq,chisq/len(bondList))),0)
                 Bonds.SetScrollRate(10,10)
                 Bonds.SetMinSize((-1,300))
                 mainSizer.Add(Bonds,1,wx.EXPAND,1)
@@ -1092,7 +1092,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             AngleRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(AngleRestr,angleRestData),0,WACV)
+        mainSizer.Add(WtBox(AngleRestr,angleRestData),0)
 
         angleList = angleRestData['Angles']
         if len(angleList):
@@ -1156,7 +1156,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(AngleRestr,-1,
                     'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(angleList))),0,WACV)
+                    %(chisq,chisq/len(angleList))),0)
                 Angles.SetScrollRate(10,10)
                 Angles.SetMinSize((-1,300))
                 mainSizer.Add(Angles,1,wx.EXPAND,1)
@@ -1214,7 +1214,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             PlaneRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,WACV)
+        mainSizer.Add(WtBox(PlaneRestr,planeRestData),0)
 
         planeList = planeRestData['Planes']
         if len(planeList):
@@ -1283,7 +1283,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
                     'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(planeList))),0,WACV)
+                    %(chisq,chisq/len(planeList))),0)
                 Planes.SetScrollRate(10,10)
                 Planes.SetMinSize((-1,300))
                 mainSizer.Add(Planes,1,wx.EXPAND,1)
@@ -1350,7 +1350,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         if ChiralRestr.GetSizer(): ChiralRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,WACV)
+        mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0)
 
         volumeList = chiralRestData['Volumes']
         if len(volumeList):
@@ -1413,7 +1413,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
                     'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(volumeList))),0,WACV)
+                    %(chisq,chisq/len(volumeList))),0)
                 Volumes.SetScrollRate(10,10)
                 Volumes.SetMinSize((-1,300))
                 mainSizer.Add(Volumes,1,wx.EXPAND,1)
@@ -1486,17 +1486,17 @@ def UpdateRestraints(G2frame,data,phaseName):
         if TorsionRestr.GetSizer(): TorsionRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0,WACV)
+        mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0)
         
         coeffDict = torsionRestData['Coeff']
         torsionList = torsionRestData['Torsions']
         if len(coeffDict):
             mainSizer.Add((5,5))
-            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0,WACV)
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0)
             mainSizer.Add(coeffSizer(),1,wx.EXPAND,1)        
         
         if len(torsionList):
-            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion restraints:'),0,WACV)
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion restraints:'),0)
             table = []
             rowLabels = []
             bad = []
@@ -1540,7 +1540,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,
                 'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(torsionList))),0,WACV)
+                %(chisq,chisq/len(torsionList))),0)
             TorsionRestr.Torsions.SetScrollRate(10,10)
             TorsionRestr.Torsions.SetMinSize((-1,300))
             mainSizer.Add(TorsionRestr.Torsions,1,wx.EXPAND,1)
@@ -1613,15 +1613,15 @@ def UpdateRestraints(G2frame,data,phaseName):
         if RamaRestr.GetSizer(): RamaRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(RamaRestr,ramaRestData),0,WACV)
+        mainSizer.Add(WtBox(RamaRestr,ramaRestData),0)
         ramaList = ramaRestData['Ramas']
         coeffDict = ramaRestData['Coeff']
         if len(coeffDict):
-            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran function coefficients:'),0,WACV)
+            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran function coefficients:'),0)
             mainSizer.Add(coeffSizer(),1,wx.EXPAND,1)
             
         if len(ramaList):
-            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran restraints:'),0,WACV)
+            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran restraints:'),0)
             table = []
             rowLabels = []
             bad = []
@@ -1666,7 +1666,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
                     'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(ramaList))),0,WACV)
+                    %(chisq,chisq/len(ramaList))),0)
                 RamaRestr.Ramas.SetScrollRate(10,10)
                 RamaRestr.Ramas.SetMinSize((-1,300))
                 mainSizer.Add(RamaRestr.Ramas,1,wx.EXPAND,1)
@@ -1733,9 +1733,9 @@ def UpdateRestraints(G2frame,data,phaseName):
         if ChemCompRestr.GetSizer(): ChemCompRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0,WACV)
+        mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0)
         mainSizer.Add(wx.StaticText(ChemCompRestr,-1, 
-            'NB: The chemical restraint sum is over the unit cell contents'),0,WACV)
+            'NB: The chemical restraint sum is over the unit cell contents'),0)
         mainSizer.Add((5,5),0)
 
         chemcompList = chemcompRestData['Sites']
@@ -1841,10 +1841,10 @@ def UpdateRestraints(G2frame,data,phaseName):
         if TextureRestr.GetSizer(): TextureRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(TextureRestr,textureRestData),0,WACV)
+        mainSizer.Add(WtBox(TextureRestr,textureRestData),0)
         mainSizer.Add(wx.StaticText(TextureRestr,-1, 
             'NB: The texture restraints suppress negative pole figure values for the selected HKLs\n'
-            '    "unit esd" gives a bias toward a flatter polefigure'),0,WACV)
+            '    "unit esd" gives a bias toward a flatter polefigure'),0)
         mainSizer.Add((5,5),0)
 
         textureList = textureRestData['HKLs']

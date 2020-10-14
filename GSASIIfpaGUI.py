@@ -31,6 +31,7 @@ import GSASIIdataGUI as G2gd
 import GSASIIplot as G2plt
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 simParms = {}
 '''Parameters to set range for pattern simulation
@@ -139,10 +140,10 @@ def FillParmSizer():
     text.SetBackgroundColour(wx.WHITE)
     prmSizer.Add(text,0,wx.EXPAND)
     for lbl,defVal,text in itemList:
-        prmSizer.Add(wx.StaticText(prmPnl,wx.ID_ANY,lbl),1,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL,1)
+        prmSizer.Add(wx.StaticText(prmPnl,wx.ID_ANY,lbl),1,wx.ALIGN_RIGHT|WACV,1)
         if lbl not in parmDict: parmDict[lbl] = defVal
         ctrl = G2G.ValidatedTxtCtrl(prmPnl,parmDict,lbl,size=(70,-1))
-        prmSizer.Add(ctrl,1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,1)
+        prmSizer.Add(ctrl,1,wx.ALL|WACV,1)
         txt = wx.StaticText(prmPnl,wx.ID_ANY,text,size=(400,-1))
         txt.Wrap(380)
         prmSizer.Add(txt)
@@ -250,7 +251,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
         for i in range(numWave):
             if i not in parmDict[prm]: parmDict[prm][i] = defVal
             ctrl = G2G.ValidatedTxtCtrl(FPdlg,parmDict[prm],i,size=(90,-1))
-            waveSizer.Add(ctrl,1,wx.ALIGN_CENTER_VERTICAL,1)
+            waveSizer.Add(ctrl,1,WACV,1)
     MainSizer.Add(waveSizer)
     MainSizer.Add((-1,5))
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -597,32 +598,24 @@ def MakeSimSizer(G2frame, dlg):
         # refine peak positions only
         bxye = np.zeros(len(histData[1][1]))
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
-                                            bkg,limits[1],
-                                            Parms,Parms2,histData[1],bxye,[],
-                                           False,controldat)[0]
+            bkg,limits[1],Parms,Parms2,histData[1],bxye,[],False,controldat)[0]
         pgbar.Update(20,newmsg='Refining peak positions && areas')
         # refine peak areas as well
         for pk in peakData['peaks']:
             pk[1] = True
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
-                                            bkg,limits[1],
-                                            Parms,Parms2,histData[1],bxye,[],
-                                           False,controldat)[0]
+            bkg,limits[1],Parms,Parms2,histData[1],bxye,[],False,controldat)[0]
         pgbar.Update(40,newmsg='Refining profile function')
         # refine profile function
         for p in ('U', 'V', 'W', 'X', 'Y'):
             Parms[p][2] = True
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
-                                            bkg,limits[1],
-                                            Parms,Parms2,histData[1],bxye,[],
-                                           False,controldat)[0]
+            bkg,limits[1],Parms,Parms2,histData[1],bxye,[],False,controldat)[0]
         pgbar.Update(70,newmsg='Refining profile function && asymmetry')
         # add in asymmetry
         Parms['SH/L'][2] = True
         peakData['sigDict'] = G2pwd.DoPeakFit('LSQ',peakData['peaks'],
-                                            bkg,limits[1],
-                                            Parms,Parms2,histData[1],bxye,[],
-                                           False,controldat)[0]
+            bkg,limits[1],Parms,Parms2,histData[1],bxye,[],False,controldat)[0]
         pgbar.Update(100,newmsg='Done')
         # reset "initial" profile
         for p in Parms:
@@ -718,7 +711,7 @@ def MakeSimSizer(G2frame, dlg):
             ):
         if key not in simParms: simParms[key] = defVal
         ctrl = G2G.ValidatedTxtCtrl(dlg,simParms,key,size=(70,-1))
-        prmSizer.Add(ctrl,1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,1)
+        prmSizer.Add(ctrl,1,wx.ALL|WACV,1)
         txt = wx.StaticText(dlg,wx.ID_ANY,text,size=(300,-1))
         txt.Wrap(280)
         prmSizer.Add(txt)
@@ -736,9 +729,7 @@ def MakeSimSizer(G2frame, dlg):
     readBtn.Bind(wx.EVT_BUTTON,_onReadFPA)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,4),1,wx.EXPAND,1)
-    txt = wx.StaticText(dlg,wx.ID_ANY,
-                            'If you use this, please cite: '+Citation,
-                            size=(350,-1))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'If you use this, please cite: '+Citation,size=(350,-1))
     txt.Wrap(340)
     MainSizer.Add(txt,0,wx.ALIGN_CENTER)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)

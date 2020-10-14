@@ -279,7 +279,7 @@ class ConstraintDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topLabl = wx.StaticText(panel,-1,text)
         mainSizer.Add((10,10),1)
-        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+        mainSizer.Add(topLabl,0,wx.LEFT,10)
         mainSizer.Add((10,10),1)
         dataGridSizer = wx.FlexGridSizer(cols=3,hgap=2,vgap=2)
         self.OkBtn = wx.Button(panel,wx.ID_OK)
@@ -288,24 +288,24 @@ class ConstraintDialog(wx.Dialog):
             if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
             name = wx.StaticText(panel,wx.ID_ANY,lbl1,style=wx.ALIGN_RIGHT)
             scale = G2G.ValidatedTxtCtrl(panel,self.data[id],0,OKcontrol=self.DisableOK)
-            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
             dataGridSizer.Add(scale,0,wx.RIGHT,3)
             if ':' in lbl:
                 dataGridSizer.Add(
                     wx.StaticText(panel,-1,G2obj.fmtVarDescr(lbl)),
-                    0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+                    0,wx.RIGHT|WACV,3)
             else:
                 dataGridSizer.Add((-1,-1))
         if title == 'New Variable':
             name = wx.StaticText(panel,wx.ID_ANY,"New variable's\nname (optional)",
                 style=wx.ALIGN_CENTER)
             scale = G2G.ValidatedTxtCtrl(panel,self.newvar,0,notBlank=False)
-            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
-            dataGridSizer.Add(scale,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
+            dataGridSizer.Add(scale,0,wx.RIGHT|WACV,3)
             self.refine = wx.CheckBox(panel,label='Refine?')
             self.refine.SetValue(self.newvar[1]==True)
             self.refine.Bind(wx.EVT_CHECKBOX, self.OnCheckBox)
-            dataGridSizer.Add(self.refine,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+            dataGridSizer.Add(self.refine,0,wx.RIGHT|WACV,3)
             
         mainSizer.Add(dataGridSizer,0,wx.EXPAND)
         self.OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -319,7 +319,7 @@ class ConstraintDialog(wx.Dialog):
         btnSizer.Add(cancelBtn)
         btnSizer.Add((20,20),1)
 
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        mainSizer.Add(btnSizer,0,wx.EXPAND, 10)
         panel.SetSizer(mainSizer)
         panel.Fit()
         self.Fit()
@@ -991,13 +991,13 @@ def UpdateConstraints(G2frame,data):
         if name == 'Sym-Generated':         #show symmetry generated constraints
             Sizer1 =  wx.BoxSizer(wx.VERTICAL)
             Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
-                                    'Equivalences generated based on cell/space group input'))
+                'Equivalences generated based on cell/space group input'))
             Sizer1.Add((-1,5))
             Sizer = wx.FlexGridSizer(0,2,0,0)
             Sizer1.Add(Sizer)
             for sym in G2mv.GetSymEquiv():
                 Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,'EQUIV'),
-                           0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+                    0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
                 Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,sym))
                 Sizer.Add((-1,-1))
                 Sizer.Add((-1,2))
@@ -1022,7 +1022,7 @@ def UpdateConstraints(G2frame,data):
             elif item[-1] == 'f' or item[-1] == 'e' or item[-1] == 'c': # not true on original-style (2011?) constraints
                 constEdit = wx.Button(pageDisplay,wx.ID_ANY,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
-                constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)            # edit button
+                constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)            # edit button
                 Indx[constEdit.GetId()] = [Id,name]
                 if item[-1] == 'f':
                     helptext = "A new variable"
@@ -1124,31 +1124,31 @@ def UpdateConstraints(G2frame,data):
             constDel = wx.Button(pageDisplay,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             constDel.Bind(wx.EVT_BUTTON,OnConstDel)
             Indx[constDel.GetId()] = [Id,name]
-            constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)             # delete button
+            constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)             # delete button
             if helptext:
                 ch = G2G.HelpButton(pageDisplay,helptext)
-                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))
             if refineflag:
                 ch = G2G.G2CheckBox(pageDisplay,'',item,-2)
-                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))                
             constSizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,typeString),
-                           0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+                           0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
             if problemItem: eqString[-1] += ' -- Conflict: see console'
             if len(eqString) > 1:
                 Eq = wx.BoxSizer(wx.VERTICAL)
                 for s in eqString:
                     line = wx.StaticText(pageDisplay,wx.ID_ANY,s)
                     if problemItem: line.SetBackgroundColour(wx.YELLOW)
-                    Eq.Add(line,0,wx.ALIGN_CENTER_VERTICAL)
+                    Eq.Add(line,0)
                 Eq.Add((-1,4))
             else:
                 Eq = wx.StaticText(pageDisplay,wx.ID_ANY,eqString[0])
                 if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
-            constSizer.Add(Eq,1,wx.ALIGN_CENTER_VERTICAL)
+            constSizer.Add(Eq,1,WACV)
         return constSizer
                 
     def OnConstDel(event):
@@ -2401,14 +2401,11 @@ def UpdateRigidBodies(G2frame,data):
                         data['Vector'] if 'RBname' in data['Vector'][key]]
             name = G2obj.MakeUniqueLabel(name,namelist)
             rbData = MakeVectorBody()
-            DrawCallback = G2plt.PlotRigidBody(G2frame,'Vector',
-                                    AtInfo,rbData,plotDefaults)
+            DrawCallback = G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,rbData,plotDefaults)
 
             mainSizer = wx.BoxSizer(wx.HORIZONTAL)
             btnSizer = wx.BoxSizer(wx.VERTICAL)
-            btnSizer.Add(
-                wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorder atoms by dragging'),
-                0,wx.ALL)
+            btnSizer.Add(wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorder atoms by dragging'),0,wx.ALL)
             btnSizer.Add((-1,15))
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Set All')
             btn.Bind(wx.EVT_BUTTON,onSetAll)
@@ -2417,9 +2414,7 @@ def UpdateRigidBodies(G2frame,data):
             btn.Bind(wx.EVT_BUTTON,onToggle)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,15))
-            btnSizer.Add(
-                wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorient using selected\natoms...'),
-                0,wx.ALL)
+            btnSizer.Add(wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorient using selected\natoms...'),0,wx.ALL)
             btnSizer.Add((-1,5))
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Set origin')
             btn.Bind(wx.EVT_BUTTON,onSetOrigin)
@@ -2430,22 +2425,18 @@ def UpdateRigidBodies(G2frame,data):
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Place in plane')
             btn.Bind(wx.EVT_BUTTON,onSetPlane)
             inSizer.Add(btn)
-            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('xy','yz','xz'),
-                                           None,None,bntOpts,'plane'))
+            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('xy','yz','xz'),None,None,bntOpts,'plane'))
             btnSizer.Add(inSizer,0,wx.ALIGN_CENTER)
             
             inSizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Define as')
             btn.Bind(wx.EVT_BUTTON,onSetX)
             inSizer.Add(btn)
-            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('x','y','z'),
-                                           None,None,bntOpts,'direction'))
+            inSizer.Add(G2G.G2ChoiceButton(RBImpPnl,('x','y','z'),None,None,bntOpts,'direction'))
             btnSizer.Add(inSizer,0,wx.ALIGN_CENTER)
             
             btnSizer.Add((-1,15))
-            btnSizer.Add(
-                wx.StaticText(RBImpPnl,wx.ID_ANY,'Use selected atoms to\ncreate...'),
-                0,wx.ALL)
+            btnSizer.Add(wx.StaticText(RBImpPnl,wx.ID_ANY,'Use selected atoms to\ncreate...'),0,wx.ALL)
             btnSizer.Add((-1,5))
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'export as xyz')
             btn.Bind(wx.EVT_BUTTON,onWriteXYZ)
@@ -2978,27 +2969,24 @@ def UpdateRigidBodies(G2frame,data):
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,rbData,plotDefaults)
             
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-            nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),
-                0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),0,WACV)
             RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'])
             Indx[RBname.GetId()] = rbid
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
-            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(RBname,0,WACV)
             nameSizer.Add((5,0),)
-            plotRB =  wx.Button(VectorRBDisplay,wx.ID_ANY,'Plot',
-                                style=wx.BU_EXACTFIT)
+            plotRB =  wx.Button(VectorRBDisplay,wx.ID_ANY,'Plot',style=wx.BU_EXACTFIT)
             plotRB.Bind(wx.EVT_BUTTON, OnPlotRB)
             Indx[plotRB.GetId()] = rbid
-            nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(plotRB,0,WACV)
             nameSizer.Add((5,0),)
             if not rbData['useCount']:
-                delRB = wx.Button(VectorRBDisplay,wx.ID_ANY,"Delete",
-                                style=wx.BU_EXACTFIT)
+                delRB = wx.Button(VectorRBDisplay,wx.ID_ANY,"Delete",style=wx.BU_EXACTFIT)
                 delRB.Bind(wx.EVT_BUTTON, OnDelRB)
                 Indx[delRB.GetId()] = rbid
-                nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+                nameSizer.Add(delRB,0,WACV)
             return nameSizer
             
         def rbRefAtmSizer(rbid,rbData):
@@ -3020,7 +3008,7 @@ def UpdateRigidBodies(G2frame,data):
                      atNames[rbRef[1]],atNames[rbRef[2]])),0)
             else:
                 refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,
-                    'Orientation reference atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    'Orientation reference atoms A-B-C: '),0,WACV)
                 for i in range(3):
                     choices = [atNames[j] for j in refChoice[rbid][i]]
                     refSel = wx.ComboBox(VectorRBDisplay,-1,value='',
@@ -3028,7 +3016,7 @@ def UpdateRigidBodies(G2frame,data):
                     refSel.SetValue(atNames[rbRef[i]])
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
                     Indx[refSel.GetId()] = i
-                    refAtmSizer.Add(refSel,0,wx.ALIGN_CENTER_VERTICAL)
+                    refAtmSizer.Add(refSel,0,WACV)
             return refAtmSizer
                         
         def rbVectMag(rbid,imag,rbData):
@@ -3054,19 +3042,18 @@ def UpdateRigidBodies(G2frame,data):
                 rbData['VectRef'][imag] = Obj.GetValue()
                         
             magSizer = wx.BoxSizer(wx.HORIZONTAL)
-            magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),
-                0,wx.ALIGN_CENTER_VERTICAL)
+            magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),0,WACV)
             magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]))
             Indx[magValue.GetId()] = [rbid,imag]
             magValue.Bind(wx.EVT_TEXT_ENTER,OnRBVectorMag)
             magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
-            magSizer.Add(magValue,0,wx.ALIGN_CENTER_VERTICAL)
+            magSizer.Add(magValue,0,WACV)
             magSizer.Add((5,0),)
             magref = wx.CheckBox(VectorRBDisplay,-1,label=' Refine?') 
             magref.SetValue(rbData['VectRef'][imag])
             magref.Bind(wx.EVT_CHECKBOX,OnRBVectorRef)
             Indx[magref.GetId()] = [rbid,imag]
-            magSizer.Add(magref,0,wx.ALIGN_CENTER_VERTICAL)
+            magSizer.Add(magref,0,WACV)
             return magSizer
             
         def rbVectors(rbid,imag,mag,XYZ,rbData):
@@ -3227,31 +3214,31 @@ def UpdateRigidBodies(G2frame,data):
             # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
-                0,wx.ALIGN_CENTER_VERTICAL)
+                0,WACV)
             RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
-            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(RBname,0,WACV)
             nameSizer.Add((5,0),)
             plotRB =  wx.Button(ResidueRBDisplay,wx.ID_ANY,'Plot',style=wx.BU_EXACTFIT)
             plotRB.Bind(wx.EVT_BUTTON, OnPlotRB)
             Indx[plotRB.GetId()] = rbid
-            nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(plotRB,0,WACV)
             nameSizer.Add((5,0),)
             if not rbData['useCount']:
                 delRB = wx.Button(ResidueRBDisplay,wx.ID_ANY,"Delete",
                                 style=wx.BU_EXACTFIT)
                 delRB.Bind(wx.EVT_BUTTON, OnDelRB)
                 Indx[delRB.GetId()] = rbid
-                nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+                nameSizer.Add(delRB,0,WACV)
                 if 'H'  in rbData['rbTypes']:
                     stripH = wx.Button(ResidueRBDisplay,wx.ID_ANY,
                                 "Strip H-atoms",
                                 style=wx.BU_EXACTFIT)
                     stripH.Bind(wx.EVT_BUTTON, OnStripH)
                     Indx[stripH.GetId()] = rbid
-                    nameSizer.Add(stripH,0,wx.ALIGN_CENTER_VERTICAL)
+                    nameSizer.Add(stripH,0,WACV)
             return nameSizer
             
         def rbResidues(rbid,rbData):
@@ -3351,7 +3338,7 @@ def UpdateRigidBodies(G2frame,data):
                      atNames[rbRef[1]],atNames[rbRef[2]])),0)
             else:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Orientation reference non-H atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    'Orientation reference non-H atoms A-B-C: '),0,WACV)
                 refObj = [0,0,0]
                 for i in range(3):
                     choices = [atNames[j] for j in refChoice[rbid][i]]
@@ -3361,7 +3348,7 @@ def UpdateRigidBodies(G2frame,data):
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
                     Indx[refSel.GetId()] = [i,resGrid,len(RefObjs)]
                     refObj[i] = refSel
-                    refAtmSizer.Add(refSel,0,wx.ALIGN_CENTER_VERTICAL)
+                    refAtmSizer.Add(refSel,0,WACV)
                 RefObjs.append(refObj)
             
             mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -3414,19 +3401,19 @@ def UpdateRigidBodies(G2frame,data):
             seqSizer.Add(delBt)
             bond = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
                         '%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
-            seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
+            seqSizer.Add(bond,0,WACV)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
             Indx[delBt.GetId()] = [rbid,Seq]
             Indx[ang.GetId()] = [rbid,Seq,ang]
             ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
             ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
-            seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
+            seqSizer.Add(ang,0,WACV)
             atms = ''
             for i in iMove:    
                 atms += ' %s,'%(atNames[i])
             moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
                             atms[:-1],size=(200,20))
-            seqSizer.Add(moves,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT)
+            seqSizer.Add(moves,1,WACV|wx.EXPAND|wx.RIGHT)
             return seqSizer
             
         def SlideSizer():
@@ -3677,7 +3664,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
             #GSASIIpath.IPyBreak()
             if str(G2mode) in constDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constDict[str(G2mode)],var))
-                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 subSizer2.Add((-1,-1))
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
@@ -3717,7 +3704,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
                 ISO['OccModeList'],modeVals,ISO['OccNormList'],ISO['G2OccModeList']):
             if str(G2mode) in constDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constDict[str(G2mode)],var))
-                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 subSizer2.Add((-1,-1))
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))

@@ -206,7 +206,7 @@ class ExpressionDialog(wx.Dialog):
         self.exsizer = wx.BoxSizer(wx.HORIZONTAL)
         if VarLabel:
             label = wx.StaticText(self,  wx.ID_ANY, VarLabel + ' = ')
-            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|WACV, 0)
         elif depVarDict:
             self.depParmLists = IndexParmDict(self.depVarDict,False)
             choices = ['','Phase','Hist./Phase','Hist.','Global']
@@ -219,12 +219,12 @@ class ExpressionDialog(wx.Dialog):
                 )
             choice.SetSelection(wx.NOT_FOUND)
             choice.Bind(wx.EVT_CHOICE,self.OnDepChoice)
-            self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND|WACV, 0)
             self.exsizer.Add((5,5))
             self.depLabel = wx.StaticText(self,  wx.ID_ANY, ' ')
-            self.exsizer.Add(self.depLabel, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.exsizer.Add(self.depLabel, 0, wx.ALL|wx.EXPAND|WACV, 0)
             label = wx.StaticText(self,  wx.ID_ANY, ' = ')
-            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|WACV, 0)
 
         #self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
         self.exCtrl = wx.ComboBox(self, wx.ID_ANY, "", (90, 50), (160, -1),
@@ -232,7 +232,7 @@ class ExpressionDialog(wx.Dialog):
         self.exCtrl.Bind(wx.EVT_CHAR, self.OnChar)
         self.exCtrl.Bind(wx.EVT_COMBOBOX, self.OnValidate)
         self.exCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnValidate)
-        self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND|WACV, 0)
         #self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)
         self.mainsizer.Add(self.exsizer, 0, wx.ALL|wx.EXPAND, 5)
         self.mainsizer.Add((-1,5),0,wx.EXPAND,1)
@@ -256,7 +256,7 @@ class ExpressionDialog(wx.Dialog):
             self.ExtraBtn.Bind(wx.EVT_BUTTON,self.OnExtra)
             self.ExtraCallBack = ExtraButton[1]
             self.ExtraBtn.Disable()
-            bSizer.Add(self.ExtraBtn, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+            bSizer.Add(self.ExtraBtn, 0, wx.ALL|WACV, 2)
         else:
             self.ExtraBtn = None
         bSizer.Add((1,1), 1, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 0)
@@ -267,8 +267,8 @@ class ExpressionDialog(wx.Dialog):
         btn = wx.Button(self, wx.ID_CANCEL)
         btnsizer.AddButton(btn)
         btnsizer.Realize()
-        bSizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-        self.mainsizer.Add(bSizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 5)
+        bSizer.Add(btnsizer, 0, WACV|wx.ALL, 5)
+        self.mainsizer.Add(bSizer, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(self.mainsizer)
         self.CenterOnParent()
         if exprObj:
@@ -751,7 +751,7 @@ class BondDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0)
         pNames = list(self.Phases.keys())
         phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
         phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
@@ -894,7 +894,7 @@ class AngleDialog(wx.Dialog):
         neigh = []
         if self.Oatom:
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)[0]
-            mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0)
             bNames = ['',]
             if neigh:
                 for iA,aName in enumerate(neigh):
@@ -903,7 +903,7 @@ class AngleDialog(wx.Dialog):
                 targAtoms = wx.ComboBox(self.panel,value=self.Tatoms,choices=bNames,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 targAtoms.Bind(wx.EVT_COMBOBOX,OnTargAtoms)
-                mainSizer.Add(targAtoms,0,WACV)
+                mainSizer.Add(targAtoms,0)
 
 
         OkBtn = wx.Button(self.panel,-1,"Ok")

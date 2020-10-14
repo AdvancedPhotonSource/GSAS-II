@@ -2251,15 +2251,13 @@ class G2SingleChoiceDialog(wx.Dialog):
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         h = max(35,17*int(len(title)/26.+1)) # adjust height of title box with guessed # of lines
-        topSizer.Add(
-            wx.StaticText(self,wx.ID_ANY,title,size=(-1,h)),
+        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,h)),
             1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Filter: '),0,wx.ALL,1)
-            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),
-                                         style=wx.TE_PROCESS_ENTER)
+            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
             topSizer.Add(self.filterBox,0,wx.ALL,0)
@@ -2267,8 +2265,7 @@ class G2SingleChoiceDialog(wx.Dialog):
         self.clb = wx.ListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         self.clb.Bind(wx.EVT_LEFT_DCLICK,self.onDoubleClick)
         if monoFont:
-            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
-                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             self.clb.SetFont(font1)
         Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
         Sizer.Add((-1,10))
@@ -2909,18 +2906,17 @@ class G2ColumnIDDialog(wx.Dialog):
                 title = title[:-1] + ' using header line(s):'
             else:
                 title += ' using header line(s):'
-            Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+            Sizer.Add(wx.StaticText(panel,label=title),0)
             Sizer.Add((5,5))
             if self.Comments[-1] != '\n': self.Comments += '\n'
             txt = wx.StaticText(panel,label=self.Comments)
             txt.SetBackgroundColour((250,250,250))
-            font1 = wx.Font(txt.GetFont().GetPointSize(),
-                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            font1 = wx.Font(txt.GetFont().GetPointSize(),wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             txt.SetFont(font1)
-            Sizer.Add(txt,0,wx.ALL|wx.EXPAND|WACV,0)
+            Sizer.Add(txt,0,wx.ALL|wx.EXPAND,0)
             txtSize = txt.GetSize()[1]
         else:
-            Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+            Sizer.Add(wx.StaticText(panel,label=title),0)
             txtSize = 0
         columnsSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sel = []
@@ -2941,8 +2937,8 @@ class G2ColumnIDDialog(wx.Dialog):
             Indx[mod.GetId()] = [icol,colData]
             colSizer.Add(mod,0,WACV)
             columnsSizer.Add(colSizer,0,wx.ALL|WACV|wx.EXPAND,10)
-        Sizer.Add(columnsSizer,1,wx.ALL|WACV|wx.EXPAND,1)
-        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0,WACV) 
+        Sizer.Add(columnsSizer,1,wx.ALL|wx.EXPAND,1)
+        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0) 
         Sizer.Add((-1,10))
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
@@ -3039,7 +3035,7 @@ class G2HistoDataDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         Sizer.Add((-1,5))
-        Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+        Sizer.Add(wx.StaticText(panel,label=title),0)
         dataSizer = wx.FlexGridSizer(0,nCol+1,0,0)
         self.sel = []
         self.mod = []
@@ -3652,7 +3648,7 @@ class SGMagSpinBox(wx.Dialog):
         if len(Cents) > 1:
             cents = self.text[-1].split(';')
         for line in self.text:
-            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0)
             if 'equivalent' in line:
                 break
         ncol = self.table[0].count(',')+2
@@ -3660,7 +3656,7 @@ class SGMagSpinBox(wx.Dialog):
         j = 0
         for ng in range(nG):
             if ng:
-                mainSizer.Add(wx.StaticText(self.panel,label="      for (0,0,0)+1'"),0,WACV)
+                mainSizer.Add(wx.StaticText(self.panel,label="      for (0,0,0)+1'"),0)
                 j = 0
             for ic,cent in enumerate(cents):
                 Cent = np.zeros(3)
@@ -3673,7 +3669,7 @@ class SGMagSpinBox(wx.Dialog):
                     label = '      for (%s)+'%(cent)
                     if ng:     #test for gray operators
                         label += "1'"
-                    mainSizer.Add(wx.StaticText(self.panel,label=label),0,WACV)
+                    mainSizer.Add(wx.StaticText(self.panel,label=label),0)
                 tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
                 for item in self.table:
                     if ')' not in item:
@@ -3709,7 +3705,7 @@ class SGMagSpinBox(wx.Dialog):
                     if not j%2:
                         tableSizer.Add((20,0))
                     j += 1
-                mainSizer.Add(tableSizer,0,WACV)
+                mainSizer.Add(tableSizer,0)
             
             
         def OnPrintOps(event):
@@ -3790,8 +3786,7 @@ class DisAglDialog(wx.Dialog):
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,-1,'Controls for phase '+data['Name']),
-            0,WACV|wx.LEFT,10)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'Controls for phase '+data['Name']),0,wx.LEFT,10)
         mainSizer.Add((10,10),1)
         
         ncol = 3
@@ -6230,19 +6225,19 @@ class OpenTutorial(wx.Dialog):
         sizer1b = wx.BoxSizer(wx.VERTICAL)
         btn = wx.Button(pnl, wx.ID_ANY, "Download a tutorial and view")
         btn.Bind(wx.EVT_BUTTON, self.SelectAndDownload)
-        sizer1a.Add(btn,0,WACV)
+        sizer1a.Add(btn,0)
         btn = wx.Button(pnl, wx.ID_ANY, "Select from downloaded tutorials")
         btn.Bind(wx.EVT_BUTTON, self.onSelectDownloaded)
-        sizer1a.Add(btn,0,WACV)
+        sizer1a.Add(btn,0)
         btn = wx.Button(pnl, wx.ID_ANY, "Browse tutorial on web")
         btn.Bind(wx.EVT_BUTTON, self.onWebBrowse)
-        sizer1a.Add(btn,0,WACV)
+        sizer1a.Add(btn,0)
         btn = wx.Button(pnl, wx.ID_ANY, "Update downloaded tutorials")
         btn.Bind(wx.EVT_BUTTON, self.UpdateDownloaded)
-        sizer1b.Add(btn,0,WACV)
+        sizer1b.Add(btn,0)
         btn = wx.Button(pnl, wx.ID_ANY, "Download all tutorials")
         btn.Bind(wx.EVT_BUTTON, self.DownloadAll)
-        sizer1b.Add(btn,0,WACV)
+        sizer1b.Add(btn,0)
         sizer0.Add(sizer1a,0,wx.EXPAND|wx.ALL,0)
         sizer0.Add(sizer1b,0,wx.EXPAND|wx.ALL,0)
         sizer.Add(sizer0,5,wx.EXPAND|wx.ALL,5)
@@ -6417,10 +6412,8 @@ class OpenTutorial(wx.Dialog):
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         pnl = wx.Panel(dlg)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        listbox = wx.ListBox(pnl, wx.ID_ANY, choices=choices,
-                             size=(450, 100),
-                             style=wx.LB_SINGLE)
-        sizer.Add(listbox,1,WACV|wx.EXPAND|wx.ALL,1)
+        listbox = wx.ListBox(pnl, wx.ID_ANY, choices=choices,size=(450, 100),style=wx.LB_SINGLE)
+        sizer.Add(listbox,1,wx.EXPAND|wx.ALL,1)
         listbox.Bind(wx.EVT_LISTBOX_DCLICK, onDoubleClick)
         sizer.Add((10,10))
         btnsizer = wx.StdDialogButtonSizer()
@@ -6869,17 +6862,13 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     mnsizer = wx.BoxSizer(wx.VERTICAL)
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format:'))
-    fmtSel = G2ChoiceButton(mnpnl,fmtchoices,Settings,'fmt',
-                                       onChoice=onSetFmtSelection
-                                    )
+    fmtSel = G2ChoiceButton(mnpnl,fmtchoices,Settings,'fmt',onChoice=onSetFmtSelection)
     sizer.Add(fmtSel,1,wx.EXPAND)
     mnsizer.Add(sizer,0,wx.EXPAND)
 
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select extension:'))
-    extSel = G2ChoiceButton(mnpnl,[],Settings,'ext',Settings,'extStr',
-                                       onChoice=onSetExtSelection
-                                    )
+    extSel = G2ChoiceButton(mnpnl,[],Settings,'ext',Settings,'extStr',onChoice=onSetExtSelection)
     sizer.Add(extSel,0)
     mnsizer.Add(sizer,0,wx.EXPAND)
     
@@ -6892,8 +6881,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
 
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Read from: '),0,wx.ALIGN_CENTER_VERTICAL)
-    fInp3 = ValidatedTxtCtrl(mnpnl,Settings,'indir',size=(300,-1),
-                                        OnLeave=TestInput)
+    fInp3 = ValidatedTxtCtrl(mnpnl,Settings,'indir',size=(300,-1),OnLeave=TestInput)
     sizer.Add(fInp3,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
     btn3.Bind(wx.EVT_BUTTON, OnBrowse)
@@ -6903,8 +6891,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     if FileTyp == 'pwd':
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Instrument parameter file from: '),0,wx.ALIGN_CENTER_VERTICAL)
-        fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),
-                                        OnLeave=TestInput)
+        fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),OnLeave=TestInput)
         sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
         btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)

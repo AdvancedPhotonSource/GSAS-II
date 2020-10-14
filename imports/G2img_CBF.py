@@ -97,6 +97,7 @@ def GetCbfData(self,filename):
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
     File.seek(0)
     img = File.read()[imageBeg:imageBeg+compImageSize]
+    File.close()
     nimg = len(img)
     image = np.zeros(nxy,dtype=np.int32)
     time0 = time.time()

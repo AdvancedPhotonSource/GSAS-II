@@ -344,14 +344,14 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             # Create Sij matrix
             Sij += [val]
             matrixSizer.Add(sizeVal,0,WACV)
-        dataSizer.Add(matrixSizer, 0, WACV)
+        dataSizer.Add(matrixSizer, 0)
         Esize,Rsize = nl.eigh(G2lat.U6toUij(np.asarray(Sij)))
         lengths = Esize
         G,g = G2lat.cell2Gmat(data['General']['Cell'][1:7])       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         hkls = [x/(sum(x**2)**0.5) for x in np.dot(Rsize, GA)]
         Ids = np.argsort(lengths)
-        dataSizer.Add(wx.StaticText(DData,label=' Principal ellipsoid components:'),0,WACV)
+        dataSizer.Add(wx.StaticText(DData,label=' Principal ellipsoid components:'),0)
         compSizer = wx.FlexGridSizer(3,3,5,5)
         Axes = [' Short Axis:',' Middle Axis:',' Long Axis:']
         for Id in Ids:
@@ -410,7 +410,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if abs(UseList[G2frame.hist]['HStrain'][0][Id]) > 1e-8:
                 allzero = False
             hstrainSizer.Add(hstrainVal,0,WACV)
-        hSizer.Add(hstrainSizer,0,WACV)
+        hSizer.Add(hstrainSizer,0)
         if not allzero:   # show Dij shifted unit cell
             DijVals = UseList[G2frame.hist]['HStrain'][0][:]
             # apply the Dij values to the reciprocal cell
@@ -434,7 +434,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 if cellstr: cellstr += ", "
                 cellstr += txt+fmt.format(cell[Id])
             cellstr += ', Vol = {:.3f}'.format(G2lat.calc_V(newA))
-            hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0,WACV)
+            hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0)
         return hSizer
         
     def PoTopSizer(POData):
@@ -550,9 +550,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
             typeSizer.Add(approxTxT)
             if UseList[G2frame.hist]['Extinction'][1] == 'None':
-                extSizer.Add(typeSizer,0,WACV)
+                extSizer.Add(typeSizer,0)
             else:
-                extSizer.Add(typeSizer,0,WACV|wx.BOTTOM,5)        
+                extSizer.Add(typeSizer,0,wx.BOTTOM,5)        
                 if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF   
                     valSizer =wx.BoxSizer(wx.HORIZONTAL)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
@@ -563,7 +563,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     cos2tm = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Cos2TM',
                         xmin=0.,xmax=1.,nDig=(10,3),typeHint=float)
                     valSizer.Add(cos2tm,0,WACV)
-                    extSizer.Add(valSizer,0,WACV)
+                    extSizer.Add(valSizer,0)
                 val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
                 if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
                     Ekey = ['Ep',]
@@ -582,7 +582,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
                         xmin=0.,nDig=(10,3,'g'),typeHint=float)
                     val2Sizer.Add(Eval,0,WACV)
-                extSizer.Add(val2Sizer,0,WACV)
+                extSizer.Add(val2Sizer,0)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
@@ -742,7 +742,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                         Indx[twinv.GetId()] = it
                         twinv.Bind(wx.EVT_CHECKBOX, OnTwinInv)
                         matSizer.Add(twinv,0,WACV)
-                twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
+                twinsizer.Add(matSizer,0,wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
                 if it:
@@ -763,7 +763,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     twinref.SetValue(Twin[1][1])
                     twinref.Bind(wx.EVT_CHECKBOX, OnTwinRef)
                     valSizer.Add(twinref,0,WACV)
-                twinsizer.Add(valSizer,0,WACV|wx.LEFT,5)
+                twinsizer.Add(valSizer,0,wx.LEFT,5)
         return twinsizer
         
     def OnSelect(event):
@@ -889,7 +889,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             useBox.Add(lebail,0,WACV)
             if UseList[G2frame.hist]['LeBail']:
                 G2frame.SetStatusText('To reset LeBail, cycle LeBail check box.',1)
-        bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
+        bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
         fixBox = wx.BoxSizer(wx.HORIZONTAL)
         parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
         if generalData['Type'] == 'magnetic':
@@ -902,7 +902,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         bottomSizer.Add(fixBox)
         #TODO - put Sequential refinement fix F? fix X? fix U? CheckBox here
         
-        bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
+        bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
             
         if G2frame.hist[:4] == 'PWDR':
             if UseList[G2frame.hist]['Size'][0] == 'isotropic':
@@ -912,18 +912,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 isoSizer.Add(LGmixSizer('Size',[0.,1.],OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,WACV)
                 bottomSizer.Add(isoSizer)
-                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size',(10,4),
-                    [0.,4.],OnSizeRef),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size',(10,4),[0.,4.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 uniSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
                     'Size',OnSizeType),0,WACV)
                 uniSizer.Add(LGmixSizer('Size',[0.,1.],OnLGmixRef))
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,WACV)
-                bottomSizer.Add(UniSizer('Size',OnSizeAxis),0,WACV)
+                bottomSizer.Add(UniSizer('Size',OnSizeAxis),0)
                 bottomSizer.Add(uniSizer)
-                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size',(10,3),[0.,4.],OnSizeRef)
-                    ,0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size',(10,3),[0.,4.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                 ellSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
@@ -931,7 +929,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 ellSizer.Add(LGmixSizer('Size',[0.,1.],OnLGmixRef))
                 ellSizer.Add(ResetSizer('ellipsoidal',OnResetSize),0,WACV)
                 bottomSizer.Add(ellSizer)
-                bottomSizer.Add(EllSizeDataSizer(),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(EllSizeDataSizer(),0,wx.BOTTOM,5)
             
             if UseList[G2frame.hist]['Mustrain'][0] == 'isotropic':
                 isoSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -940,8 +938,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 isoSizer.Add(LGmixSizer('Mustrain',[0.,1.],OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetStrain),0,WACV)
                 bottomSizer.Add(isoSizer)
-                bottomSizer.Add(IsoSizer(' microstrain: ','Mustrain',(10,1),
-                    [0.,1.e5],OnStrainRef),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(IsoSizer(' microstrain: ','Mustrain',(10,1),[0.,1.e5],OnStrainRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Mustrain'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 uniSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
@@ -949,9 +946,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 uniSizer.Add(LGmixSizer('Mustrain',[0.,1.],OnLGmixRef))
                 uniSizer.Add(ResetSizer('uniaxial',OnResetStrain),0,WACV)
                 bottomSizer.Add(uniSizer)
-                bottomSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,WACV)
-                bottomSizer.Add(UniDataSizer('mustrain: ','Mustrain',(10,1),[0.,1.e5],OnStrainRef)
-                                ,0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(UniSizer('Mustrain',OnStrainAxis),0)
+                bottomSizer.Add(UniDataSizer('mustrain: ','Mustrain',(10,1),[0.,1.e5],OnStrainRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Mustrain'][0] == 'generalized':
                 genSizer = wx.BoxSizer(wx.HORIZONTAL)
                 genSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
@@ -982,19 +978,19 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     textJ = G2lat.textureIndex(POData[5])
                     poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
                         ,0,WACV|wx.TOP|wx.BOTTOM,5)
-                    poSizer.Add(SHDataSizer(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
-                    poSizer.Add(SHPenalty(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
+                    poSizer.Add(SHDataSizer(POData),0,wx.TOP|wx.BOTTOM,5)
+                    poSizer.Add(SHPenalty(POData),0,wx.TOP|wx.BOTTOM,5)
                     
-            bottomSizer.Add(poSizer,0,WACV|wx.TOP|wx.BOTTOM,5)
-            bottomSizer.Add(ExtSizer('PWDR'),0,WACV|wx.TOP|wx.BOTTOM,5)
+            bottomSizer.Add(poSizer,0,wx.TOP|wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
             if generalData['Type'] != 'magnetic': 
-                bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
         elif G2frame.hist[:4] == 'HKLF':
-            bottomSizer.Add(ExtSizer('HKLF'),0,WACV|wx.BOTTOM,5)
-            bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('HKLF'),0,wx.BOTTOM,5)
+            bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
             if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:
-                bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
-            bottomSizer.Add(twinSizer(),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(FlackSizer(),0,wx.BOTTOM,5)
+            bottomSizer.Add(twinSizer(),0,wx.BOTTOM,5)
         return bottomSizer
 
     ######################################################################
@@ -1032,7 +1028,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             pass
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)
+    mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,wx.LEFT,5)
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
         DData.select = wx.ListBox(DData,choices=G2frame.dataWindow.HistsInPhase,
@@ -1047,13 +1043,12 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2frame.bottomSizer = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
     elif not keyList:
-        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This project has no data; use Import to read it)'),
-                      0,WACV|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,
+            '  (This project has no data; use Import to read it)'),0,wx.TOP,10)
     elif not UseList in G2frame.dataWindow.HistsInPhase:
-        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This phase has no associated data; use appropriate Edit/Add... menu item)'),
-                      0,WACV|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,
+            '  (This phase has no associated data; use appropriate Edit/Add... menu item)'),0,wx.TOP,10)
     else:
-        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),
-                      0,WACV|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),0,wx.TOP,10)
         
     G2phG.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)

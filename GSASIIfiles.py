@@ -21,13 +21,13 @@ move non-wx routines here. It may will likely make sense to rename the module(s)
 at that point.
 '''
 from __future__ import division, print_function
+import platform
 import os
 import sys
 import glob
-import imp
 import inspect
-import platform
 import numpy as np
+import imp
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")

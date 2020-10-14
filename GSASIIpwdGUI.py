@@ -185,7 +185,7 @@ class SubCellsDialog(wx.Dialog):
         magDisplay.SetTable(CellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshGrid)
         magDisplay.AutoSizeColumns(False)
-        mainSizer.Add(magDisplay,0,WACV)
+        mainSizer.Add(magDisplay,0)
         
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -226,7 +226,7 @@ class RDFDialog(wx.Dialog):
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0)
         plotType = wx.BoxSizer(wx.HORIZONTAL)
         plotType.Add(wx.StaticText(self.panel,label=' Select plot type:'),0,WACV)
         Choices = ['obs-back','calc-back','obs-calc']
@@ -235,7 +235,7 @@ class RDFDialog(wx.Dialog):
         useOC.SetValue(self.result['UseObsCalc'])
         useOC.Bind(wx.EVT_COMBOBOX,OnUseOC)
         plotType.Add(useOC,0,WACV)
-        mainSizer.Add(plotType,0,WACV)
+        mainSizer.Add(plotType,0)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
         dataSizer.Add(wx.StaticText(self.panel,label=' Smoothing type: '),0,WACV)
         smChoice = ['linear','nearest',]
@@ -247,7 +247,7 @@ class RDFDialog(wx.Dialog):
         maxR = G2G.ValidatedTxtCtrl(self.panel,self.result,'maxR',nDig=(10,1),xmin=10.,xmax=50.,
             typeHint=float)
         dataSizer.Add(maxR,0,WACV)
-        mainSizer.Add(dataSizer,0,WACV)
+        mainSizer.Add(dataSizer,0)
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -1442,7 +1442,7 @@ def UpdateBackground(G2frame,data):
         topSizer.Add(bakTerms,0,WACV)
         topSizer.Add((5,0),0)
         backSizer.Add(topSizer)
-        backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background coefficients:'),0,WACV)
+        backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background coefficients:'),0)
         bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
             bakVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],i+3,nDig=(10,4),OnLeave=AfterChange)
@@ -1500,7 +1500,7 @@ def UpdateBackground(G2frame,data):
         topSizer.Add((5,0),0)
         debSizer.Add(topSizer)
         if data[1]['nDebye']:
-            debSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye diffuse terms:'),0,WACV)       
+            debSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye diffuse terms:'),0)       
             rowLabels = []
             for i in range(len(data[1]['debyeTerms'])): rowLabels.append(str(i))
             colLabels = ['A','refine','R','refine','U','refine']
@@ -1579,7 +1579,7 @@ def UpdateBackground(G2frame,data):
         G2frame.dataWindow.currentGrids = []
         peaksGrid = None
         if data[1]['nPeaks']:
-            peaksSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Peak list:'),0,WACV)       
+            peaksSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Peak list:'),0)       
             rowLabels = []
             for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
             colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
@@ -1623,7 +1623,7 @@ def UpdateBackground(G2frame,data):
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
 
         fileSizer = wx.BoxSizer(wx.VERTICAL)
-        fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0,WACV)
+        fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0)
         if 'background PWDR' not in data[1]:
             data[1]['background PWDR'] = ['',-1.,False]
         backSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5273,13 +5273,11 @@ def UpdateSubstanceGrid(G2frame,data):
             0,WACV)
         for name in data['Substances']:
             G2G.HorizontalLine(substSizer,G2frame.dataWindow)    
-            substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Data for '+name+':'),
-                0,WACV)
+            substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Data for '+name+':'),0)
             if name == 'vacuum':
-                substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='        Not applicable'),
-                    0,WACV)
+                substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='        Not applicable'),0)
             elif name == 'unit scatter':
-                substSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Scattering density,f: %.3f *10%scm%s'%(data['Substances'][name]['Scatt density'],Pwr10,Pwrm2)),0,WACV)
+                substSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Scattering density,f: %.3f *10%scm%s'%(data['Substances'][name]['Scatt density'],Pwr10,Pwrm2)),0)
             else:    
                 elSizer = wx.FlexGridSizer(0,8,5,5)
                 Substance = data['Substances'][name]
@@ -5639,7 +5637,7 @@ def UpdateModelsGrid(G2frame,data):
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
         sizeSizer = wx.BoxSizer(wx.VERTICAL)
-        sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Size distribution parameters: '),0,WACV)
+        sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Size distribution parameters: '),0)
         binSizer = wx.FlexGridSizer(0,7,5,5)
         binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. size bins: '),0,WACV)
         bins = ['50','100','150','200']
@@ -5756,7 +5754,7 @@ def UpdateModelsGrid(G2frame,data):
             RefreshPlots(True)
             
         pairSizer = wx.BoxSizer(wx.VERTICAL)
-        pairSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pair distribution parameters: '),0,WACV)
+        pairSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pair distribution parameters: '),0)
         binSizer = wx.FlexGridSizer(0,6,5,5)
         binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. R bins: '),0,WACV)
         bins = ['50','100','150','200']
@@ -5784,7 +5782,7 @@ def UpdateModelsGrid(G2frame,data):
             fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=" P.B. Moore, J. Appl. Cryst., 13, 168-175 (1980)"),0,WACV)
         else:
             fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=" D.I. Svergun, J. Appl. Cryst., 24, 485-492 (1991)"),0,WACV)
-        pairSizer.Add(fitSizer,0,WACV)
+        pairSizer.Add(fitSizer,0)
         if 'Moore' in data['Pair']['Method']:
             mooreSizer = wx.BoxSizer(wx.HORIZONTAL)
             mooreSizer.Add(wx.StaticText(G2frame.dataWindow,label='Number of functions: '),0,WACV)
@@ -5793,7 +5791,7 @@ def UpdateModelsGrid(G2frame,data):
             mooreterms = wx.Button(G2frame.dataWindow,label = 'Auto determine?')
             mooreterms.Bind(wx.EVT_BUTTON,OnMooreTerms)
             mooreSizer.Add(mooreterms,0,WACV)
-            pairSizer.Add(mooreSizer,0,WACV)
+            pairSizer.Add(mooreSizer,0)
         errorSizer = wx.BoxSizer(wx.HORIZONTAL)
         errorSizer.Add(wx.StaticText(G2frame.dataWindow,label='Error method: '),0,WACV)
         errors = ['User','Sqrt','Percent']
@@ -5804,7 +5802,7 @@ def UpdateModelsGrid(G2frame,data):
             percent = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Percent error',xmin=0.5,nDig=(10,1))
             errorSizer.Add(percent,0,WACV)
         errorSizer.Add(error,0,WACV)
-        pairSizer.Add(errorSizer,0,WACV)
+        pairSizer.Add(errorSizer,0)
         return pairSizer    
     
     def ShapesSizer():
@@ -5841,7 +5839,7 @@ def UpdateModelsGrid(G2frame,data):
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults,PDBtext)
         
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
-        shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)
+        shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0)
         parmSizer = wx.FlexGridSizer(0,4,5,5)
 #1st row        
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. amino acids: '),0,WACV)
@@ -5883,7 +5881,7 @@ def UpdateModelsGrid(G2frame,data):
         shapeSizer.Add(parmSizer)
         
         if len(data['Pair'].get('Result',[])):
-            shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' SHAPES run results:'),0,WACV)
+            shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' SHAPES run results:'),0)
             Atoms,Patterns,PRcalc = data['Pair']['Result']
             colLabels = ['name','show beads','show shape','Rvalue','P(r) dif','Nbeads','Nshape']
             Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+2*[wg.GRID_VALUE_FLOAT+':10,3',]+2*[wg.GRID_VALUE_LONG,]
@@ -5903,7 +5901,7 @@ def UpdateModelsGrid(G2frame,data):
                     else:
                         ShapesResult.SetReadOnly(r,c,isReadOnly=True)
     
-            shapeSizer.Add(ShapesResult,0,WACV)
+            shapeSizer.Add(ShapesResult,0)
         return shapeSizer
 
     def PartSizer():
@@ -6493,7 +6491,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         resol.Add(dQSel,0,WACV)
         resol.Add(wx.StaticText(G2frame.dataWindow,label=' (FWHM %): '),0,WACV)
         resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Resolution'],0,nDig=(10,3),xmin=0.,xmax=5.,OnLeave=NewRes),0,WACV)
-        controlSizer.Add(resol,0,WACV)
+        controlSizer.Add(resol,0)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
         minimiz.Add(wx.StaticText(G2frame.dataWindow,label=' Minimizer: '),0,WACV)
         minlist = ['LMLS','Basin Hopping','MC/SA Anneal','L-BFGS-B',]
@@ -6507,7 +6505,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         weight.SetValue(data.get('2% weight',False))
         weight.Bind(wx.EVT_CHECKBOX, OnWeight)
         minimiz.Add(weight,0,WACV)
-        controlSizer.Add(minimiz,0,WACV)
+        controlSizer.Add(minimiz,0)
         plotSizer = wx.BoxSizer(wx.HORIZONTAL)
         plotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Plot controls: '),0,WACV)
         sld = wx.Button(G2frame.dataWindow,label='Plot SLD?')
@@ -6522,7 +6520,7 @@ def UpdateREFDModelsGrid(G2frame,data):
 #        q4fft = wx.CheckBox(G2frame.dataWindow,label='Plot fft?')
 #        q4fft.Bind(wx.EVT_CHECKBOX, OnQ4fftplot)
 #        plotSizer.Add(q4fft,0,WACV)
-        controlSizer.Add(plotSizer,0,WACV)
+        controlSizer.Add(plotSizer,0)
         return controlSizer
     
     def OverallSizer():
@@ -6617,11 +6615,11 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         for ilay,layer in enumerate(data['Layers']):
             if not ilay:
-                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Top layer (superphase):'),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Top layer (superphase):'),0)
             elif ilay < len(data['Layers'])-1:
-                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layer no. %d'%(ilay)),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layer no. %d'%(ilay)),0)
             else:
-                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bottom layer (substrate):'),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bottom layer (substrate):'),0)
             midlayer = wx.BoxSizer(wx.HORIZONTAL)
             midlayer.Add(wx.StaticText(G2frame.dataWindow,label=' Substance: '),0,WACV)
             midName = data['Layers'][ilay]['Name']
@@ -6974,11 +6972,11 @@ def UpdatePDFGrid(G2frame,data):
             G2frame.flatBkg.SetValue(data['Flat Bkg'])
                             
         PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
-        PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' PDF data files: '),0,WACV)
+        PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' PDF data files: '),0)
         PDFfileSizer.Add((5,5),0)    
         if 'C' in inst['Type'][0]:
             str = ' Sample file: PWDR%s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[4:],wave,keV,polariz)
-            PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=str),0,WACV)
+            PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=str),0)
         PDFfileSizer.Add((5,5),0)
         fileSizer = wx.FlexGridSizer(0,5,5,1)
         select = ['Sample Bkg.','Container']
@@ -7021,9 +7019,9 @@ def UpdatePDFGrid(G2frame,data):
         
         sampleSizer = wx.BoxSizer(wx.VERTICAL)
         if not ElList:
-            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: fill in this 1st'),0,WACV)
+            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: fill in this 1st'),0)
         else:
-            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: '),0,WACV)
+            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: '),0)
         sampleSizer.Add((5,5),0)    
         Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
         Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
@@ -7623,8 +7621,8 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         PDFPeaks.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, ElTypeSelect)
 
         peakBox = wx.BoxSizer(wx.VERTICAL)
-        peakBox.Add(wx.StaticText(G2frame.dataWindow,label=' PDF Peaks:'),0,WACV)
-        peakBox.Add(PDFPeaks,0,WACV)
+        peakBox.Add(wx.StaticText(G2frame.dataWindow,label=' PDF Peaks:'),0)
+        peakBox.Add(PDFPeaks,0)
         
         return peakBox
         

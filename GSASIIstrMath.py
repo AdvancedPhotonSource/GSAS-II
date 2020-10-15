@@ -150,7 +150,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
                     
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
-    'Needs a doc string'
+    'Computes rigid body derivatives'
     atxIds = ['dAx:','dAy:','dAz:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     OIds = ['Oa:','Oi:','Oj:','Ok:']
@@ -176,6 +176,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
+        symAxis = RBObj.get('symAxis')
         VModel = RBData['Vector'][RBObj['RBId']]
         Q = RBObj['Orient'][0]
         jrb = VRBIds.index(RBObj['RBId'])
@@ -197,9 +198,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q[iv] -= dx
-                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
                 Q[iv] += 2.*dx
-                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
                 Q[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:
@@ -237,6 +238,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 
 
     for irb,RBObj in enumerate(RBModels.get('Residue',[])):
+        symAxis = RBObj.get('symAxis')
         Q = RBObj['Orient'][0]
         jrb = RRBIds.index(RBObj['RBId'])
         torData = RBData['Residue'][RBObj['RBId']]['rbSeq']
@@ -262,9 +264,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q[iv] -= dx
-                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
                 Q[iv] += 2.*dx
-                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
                 Q[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:

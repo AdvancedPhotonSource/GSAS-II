@@ -1564,8 +1564,6 @@ def SetDrawingDefaults(drawingData):
 def updateAddRBorientText(G2frame,testRBObj,Bmat):
     '''Update all orientation text on the Add RB panel
     '''
-    for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
-        sizer.SetLabel('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
     A,V = G2mth.Q2AVdeg(testRBObj['rbObj']['Orient'][0])
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
@@ -9933,20 +9931,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnOrien(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
-                V = np.inner(Bmat,V)
+            def OnOrien(*args, **kwargs):
+                '''Called when the orientation info is changed (vector 
+                or azimuth)
+                '''
                 try:
-                    val = float(Obj.GetValue())
-                    if item:
-                        V[item-1] = val
-                    else:
-                        A = val
-                    Obj.SetValue('%8.5f'%(val))
-                    V = np.inner(Amat,V)
+                    orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
+                    A = orient[0]
+                    V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
                     Q = G2mth.AVdeg2Q(A,V)
                     if not any(Q):
                         raise ValueError
@@ -9964,32 +9956,36 @@ def UpdatePhaseData(G2frame,Item,data):
             if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
                 if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
                 RBObj['Orig'][0] = list(RBObj['Orig'][0])
-            Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
-            Orien = [Orien,]
-            Orien.extend(OrienV/nl.norm(OrienV))
-            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,WACV)
+            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
             for ix in range(3):
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
-                                    typeHint=float,OnLeave=OnOrigX)
+                                    typeHint=float,OnLeave=OnOrigX,
+                                    xmin=-1,xmax=1.,size=(70,-1))
                 topSizer.Add(origX,0,WACV)
             topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
             Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
             Ocheck.SetValue(RBObj['Orig'][1])
             topSizer.Add(Ocheck,0,WACV)
-            topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
+            topSizer.Add(wx.StaticText(RigidBodies,-1,
+                    'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
+            Indx['Orien'] = {}
+            Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
+            Orien = [Orien,]
+            Orien.extend(np.inner(Bmat,OrienV)) # fractional coords
+            dp,xmin,xmax = 2,-180.,360.
             for ix,x in enumerate(Orien):
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
-                orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
-                orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
-                orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
-                Indx[orien.GetId()] = ix
+                orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
+                                    typeHint=float,OnLeave=OnOrien,
+                                    xmin=xmin,xmax=xmax,size=(70,-1))
+                dp, xmin,xmax = 4,-1.,1.
+                Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
-            topSizer.Add(Qcheck)
+            topSizer.Add(Qcheck,0,WACV)
             return topSizer
                          
         def ResrbSizer(RBObj):
@@ -10029,9 +10025,21 @@ def UpdatePhaseData(G2frame,Item,data):
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
+            symAxis = RBObj.get('symAxis')
+            if symAxis:
+                if symAxis[0]:
+                    lbl = 'x'
+                elif symAxis[1]:
+                    lbl = 'y'
+                else:
+                    lbl = 'z'                    
+                topLine.Add(wx.StaticText(RigidBodies,-1,
+                    '   Rigid body {} axis is aligned along oriention vector'
+                        .format(lbl)),0,WACV)
             resrbSizer.Add(topLine)
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
-            resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0)
+            if len(RBObj['Torsions']):
+                resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0)
             torSizer = wx.FlexGridSizer(0,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
@@ -10058,8 +10066,6 @@ def UpdatePhaseData(G2frame,Item,data):
             return resrbSizer
             
         def VecrbSizer(RBObj):
-            G2frame.GetStatusBar().SetStatusText('NB: Rotation vector is in crystallographic space',1)
-                   
             def OnDelVecRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
@@ -10166,8 +10172,8 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
             G2frame.bottomSizer.Add(ResrbSizer(rbObj))
             mainSizer.Add(G2frame.bottomSizer)
-            G2frame.GetStatusBar().SetStatusText('NB: Rotation vector is in crystallographic space',1)
             G2plt.PlotStructure(G2frame,data)
+            G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
             nobody = False
             mainSizer.Add((5,5),0)
@@ -10417,8 +10423,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 rbObj['Orient'][0] = Q
                 A,V = G2mth.Q2AVdeg(Q)
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
-                    sizer.SetLabel('%8.5f'%(rbObj['Orient'][0][i]))
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
                 
@@ -10429,8 +10433,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
-                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
-                    sizer.SetLabel('%8.5f'%(rbObj['Orient'][0][i]))
                 G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
                     int(10*rbObj['OrientVec'][0]))                
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
@@ -10580,6 +10582,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     i for i,a in enumerate(data['Atoms']) if a[0] == cryatom]
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 data['testRBObj']['showSelect'].SetLabelText(cryatom)
+            def OnSymRadioSet(event):
+                '''Set the symmetry axis for the body as 
+                data['testRBObj']['rbObj']['symAxis']. This may never be 
+                set, so use data['testRBObj']['rbObj'].get('symAxis') to 
+                access this so the default value is None. 
+                '''
+                data['testRBObj']['rbObj']['symAxis'] = (None,[1,0,0],[0,1,0],[0,0,1])[event.GetEventObject().GetSelection()]
+                UpdateTablePlot()                
             showAtom = [None]
             def showCryAtom(*args,**kwargs):
                 '''Respond to selection of a crystal atom 
@@ -10600,7 +10610,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     rbAssignments[i] = None
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
-            Osizers = []
             rbObj = data['testRBObj']['rbObj']
             rbName = rbObj['RBname']
             rbId = rbObj['RBId']
@@ -10649,12 +10658,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 choice = list(atNames[0].keys())
                 choice.sort()
                 G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation quaternion: '),0,WACV)
-            for ix,x in enumerate(Orien):
-                orien = wx.StaticText(RigidBodies,wx.ID_ANY,'%10.4f'%(x))
-                OriSizer.Add(orien,0,WACV)
-                Osizers.append(orien)
-            G2frame.testRBObjSizers.update({'Osizers':Osizers})
             mainSizer.Add(OriSizer)
             mainSizer.Add((5,5),0)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -10682,6 +10685,15 @@ def UpdatePhaseData(G2frame,Item,data):
             OrientVecSiz.append(azSlide)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,' (frac coords)'),0,WACV)
             G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
+            mainSizer.Add(OriSizer)
+            mainSizer.Add((5,5),0)
+            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                                    'Rigid body symmetry axis: '),0, WACV)
+            choices = ['None','x','y','z']
+            symRadioSet = wx.RadioBox(RigidBodies,wx.ID_ANY,choices=choices)
+            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+            OriSizer.Add(symRadioSet)
             mainSizer.Add(OriSizer)
             mainSizer.Add((5,5),0)
             RefSizer = wx.FlexGridSizer(0,7,5,5)

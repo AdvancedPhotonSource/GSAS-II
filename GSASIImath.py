@@ -978,23 +978,35 @@ def getRBTransMat(X,Y):
     Mat3 /= np.sqrt(np.sum(Mat3**2))
     return np.array([X,Mat3,Mat2])        
                 
-def RotateRBXYZ(Bmat,Cart,oriQ):
+def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
     '''rotate & transform cartesian coordinates to crystallographic ones
     no translation applied. To be used for numerical derivatives 
     
     :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
     :param array Cart: 2D array of coordinates
     :param array Q: quaternion as an np.array
-    
+    :param tuple symAxis: if not None (default), specifies the symmetry
+      axis of the rigid body, which will be aligned to the quaternion vector.
     :returns: 2D array of fractional coordinates, without translation to origin
     '''
+    if symAxis is None:
+        Q = oriQ
+    else:
+        a,v = Q2AV(oriQ)
+        symaxis = np.array(symAxis)
+        xformAng = np.arccos(np.dot(v,symaxis))
+        xformVec = np.cross(symaxis,v)
+        Q = prodQQ(oriQ,AV2Q(xformAng,xformVec))
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(oriQ,xyz))
+        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))
     return XYZ
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    '''returns crystal coordinates for atoms described by RBObj
+    '''returns crystal coordinates for atoms described by RBObj. 
+    Note that RBObj['symAxis'], if present, determines the symmetry
+    axis of the rigid body, which will be aligned to the 
+    quaternion direction.
     
     :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
     :param dict rbObj: rigid body selection/orientation information
@@ -1016,9 +1028,18 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
+    # if symmetry axis is defined, place symmetry axis along quaternion
+    if RBObj.get('symAxis') is None:
+        Q = RBObj['Orient'][0]
+    else:
+        a,v = Q2AV(RBObj['Orient'][0])
+        symaxis = np.array(RBObj.get('symAxis'))
+        xformAng = np.arccos(np.dot(v,symaxis))
+        xformVec = np.cross(symaxis,v)
+        Q = prodQQ(RBObj['Orient'][0],AV2Q(xformAng,xformVec))
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(RBObj['Orient'][0],xyz))+RBObj['Orig'][0]
+        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
     return XYZ,Cart
 
 def UpdateMCSAxyz(Bmat,MCSA):

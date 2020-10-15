@@ -8726,7 +8726,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-    def RenderRBtriplet(orig,Q,Bmat):
+    def RenderRBtriplet(orig,Q,Bmat,symAxis=None):
         '''draw an axes triplet located at the origin of a rigid body
         and with the x, y & z axes drawn as red, green and blue. 
         '''
@@ -8739,7 +8739,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPushMatrix()
         GL.glTranslate(*orig)
         GL.glBegin(GL.GL_LINES)
-        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q)
+        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
         for line,color in zip(lines,colors):
@@ -9362,7 +9362,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
             RenderRBtriplet(testRBObj['rbObj']['Orig'][0],
                             testRBObj['rbObj']['Orient'][0],
-                            Bmat)
+                            Bmat,testRBObj['rbObj'].get('symAxis'))
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]

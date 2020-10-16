@@ -10744,10 +10744,23 @@ def UpdatePhaseData(G2frame,Item,data):
             btnSizer.Add(CancelBtn)
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 20)
-                
+
             SetPhaseWindow(RigidBodies,mainSizer)
+            data['testRBObj']['RBhighLight'] = None
+            data['testRBObj']['CRYhighLight'] = []
+            assignable = [a[0] for a in data['Atoms'] if a[-1] not in rbUsedIds]
+            data['testRBObj']['availAtoms'] = ['         '] + assignable
+            if len(assignable) == 0:
+                misc['UpdateTable'] = None
+                G2plt.PlotStructure(G2frame,data,True)
+                return
+            
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             
+            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                    'Match between atoms in rigid body and crystal.'+
+                    ' Use assignments to align bodies.'),0)
+            mainSizer.Add((5,5))
             gridSizer = wx.BoxSizer(wx.HORIZONTAL)
             colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
@@ -10768,10 +10781,6 @@ def UpdatePhaseData(G2frame,Item,data):
             RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
             RigidBodies.atomsGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            data['testRBObj']['RBhighLight'] = None
-            data['testRBObj']['CRYhighLight'] = []
-            data['testRBObj']['availAtoms'] = ['         '] + [a[0] for a in data['Atoms']
-                                                 if a[-1] not in rbUsedIds]
             choiceeditor = wg.GridCellChoiceEditor(
                 data['testRBObj']['availAtoms']+['Create new'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
@@ -10827,7 +10836,7 @@ def UpdatePhaseData(G2frame,Item,data):
             RigidBodies.SendSizeEvent()
             RigidBodies.Scroll(0,0)
             RigidBodies.SetFocus() # make sure tab presses go to panel
-            data['testRBObj']['UpdateTable'] = UpdateTable
+            misc['UpdateTable'] = UpdateTable
         # start of OnRBAssign(event)
         rbAssignments = {}
         rbUsedIds = []   # Ids of atoms in current phase used inside RBs
@@ -12844,7 +12853,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     data['testRBObj']['CRYhighLight'] = [I]
                     misc['showSelect'].SetLabelText(data['Atoms'][I][0])
                     break
-        G2plt.PlotStructure(G2frame,data,False,data['testRBObj']['UpdateTable'])
+        G2plt.PlotStructure(G2frame,data,False,misc['UpdateTable'])
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')

@@ -57,7 +57,7 @@ nxs = np.newaxis
 ################################################################################
 
 def pinv(a, rcond=1e-15 ):
-    """
+    '''
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
     Modified from numpy.linalg.pinv; assumes a is Hessian & returns no. zeros found
     Calculate the generalized inverse of a matrix using its
@@ -95,7 +95,7 @@ def pinv(a, rcond=1e-15 ):
     References: 
     .. [1] G. Strang, *Linear Algebra and Its Applications*, 2nd Ed., Orlando, FL, Academic Press, Inc., 1980, pp. 139-142.
 
-    """
+    '''
     u, s, vt = nl.svd(a)
     cutoff = rcond*np.maximum.reduce(s)
     s = np.where(s>cutoff,1./s,0.)
@@ -105,10 +105,10 @@ def pinv(a, rcond=1e-15 ):
     return res,nzero
 
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
-    """
+    '''
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
-    values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`    
-    where :math:`x = arg min(\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
+    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`    
+    where :math:`x = arg min(\\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
 
     :param function func: callable method or function
         should take at least one (possibly length N vector) argument and
@@ -147,7 +147,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
          * 'psing':
          * 'SVD0':
             
-    """
+    '''
                 
     ifConverged = False
     deltaChi2 = -10.
@@ -245,10 +245,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
-    """
+    '''
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
-    values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`    
-    where :math:`x = arg min(\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
+    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`    
+    where :math:`x = arg min(\\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
 
     :param function func: callable method or function
         should take at least one (possibly length N vector) argument and
@@ -286,7 +286,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
          * 'psing':
          * 'SVD0':
             
-    """
+    '''
                 
     ifConverged = False
     deltaChi2 = -10.
@@ -4265,7 +4265,7 @@ class base_schedule(object):
         self.tests = 0
 
     def getstart_temp(self, best_state):
-        """ Find a matching starting temperature and starting parameters vector
+        ''' Find a matching starting temperature and starting parameters vector
         i.e. find x0 such that func(x0) = T0.
 
         :param best_state: _state
@@ -4273,7 +4273,7 @@ class base_schedule(object):
 
         :returns: x0 : array
             The starting parameters vector.
-        """
+        '''
 
         assert(not self.dims is None)
         lrange = self.lower
@@ -4380,12 +4380,12 @@ def anneal(func, x0, args=(), schedule='fast',
            feps=1e-6, quench=1.0, c=1.0,
            lower=-100, upper=100, dwell=50, slope=0.9,ranStart=False,
            ranRange=0.10,autoRan=False,dlg=None):
-    """Minimize a function using simulated annealing.
+    '''Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
     Available ones are 'fast', 'cauchy', 'boltzmann'
 
-    :param callable func: f(x, \*args)
+    :param callable func: f(x, \\*args)
         Function to be optimized.
     :param ndarray x0:
         Initial guess.
@@ -4471,7 +4471,7 @@ def anneal(func, x0, args=(), schedule='fast',
 
         T_new = T0 * exp(-c * k**quench)
 
-    """
+    '''
     
     ''' Scipy license:
         Copyright (c) 2001, 2002 Enthought, Inc.
@@ -4641,14 +4641,14 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     '''
    
     class RandomDisplacementBounds(object):
-        """random displacement with bounds"""
+        '''random displacement with bounds'''
         def __init__(self, xmin, xmax, stepsize=0.5):
             self.xmin = xmin
             self.xmax = xmax
             self.stepsize = stepsize
     
         def __call__(self, x):
-            """take a random step but ensure the new position is within the bounds"""
+            '''take a random step but ensure the new position is within the bounds'''
             while True:
                 # this could be done in a much more clever way, but it will work for example purposes
                 steps = self.xmax-self.xmin
@@ -5074,10 +5074,10 @@ def invQ(Q):
     return Q*np.array([1,-1,-1,-1])
     
 def prodQVQ(Q,V):
-    """
+    '''
     compute the quaternion vector rotation qvq-1 = v'
     q=r+ai+bj+ck
-    """
+    '''
     T2 = Q[0]*Q[1]
     T3 = Q[0]*Q[2]
     T4 = Q[0]*Q[3]

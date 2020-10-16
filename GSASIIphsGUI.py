@@ -9959,8 +9959,7 @@ def UpdatePhaseData(G2frame,Item,data):
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
             for ix in range(3):
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
-                                    typeHint=float,OnLeave=OnOrigX,
-                                    xmin=-1,xmax=1.,size=(70,-1))
+                    typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
                 topSizer.Add(origX,0,WACV)
             topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
@@ -9976,8 +9975,7 @@ def UpdatePhaseData(G2frame,Item,data):
             dp,xmin,xmax = 2,-180.,360.
             for ix,x in enumerate(Orien):
                 orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
-                                    typeHint=float,OnLeave=OnOrien,
-                                    xmin=xmin,xmax=xmax,size=(70,-1))
+                    typeHint=float,OnLeave=OnOrien,xmin=xmin,xmax=xmax,size=(70,-1))
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
@@ -10018,8 +10016,7 @@ def UpdatePhaseData(G2frame,Item,data):
             resrbSizer = wx.BoxSizer(wx.VERTICAL)
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
-            topLine.Add(wx.StaticText(RigidBodies,-1,
-                'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
+            topLine.Add(wx.StaticText(RigidBodies,-1,'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
@@ -10038,8 +10035,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     lbl = 'z'                    
                 topLine.Add(wx.StaticText(RigidBodies,-1,
-                    '   Rigid body {} axis is aligned along oriention vector'
-                        .format(lbl)),0,WACV)
+                    '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
             resrbSizer.Add(topLine)
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
             if len(RBObj['Torsions']):
@@ -10678,11 +10674,10 @@ def UpdatePhaseData(G2frame,Item,data):
             OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
                 xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
             OriSizer.Add(OrientVecSiz[-1],0,WACV)
-            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
+            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,value=int(rbObj['OrientVec'][0]*10.),size=(200,25))
             azSlide.SetRange(0,3600)
-            azSlide.SetValue(int(rbObj['OrientVec'][0]*10.))
             azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
-            OriSizer.Add(azSlide,1,WACV)
+            OriSizer.Add(azSlide,0,WACV)
             mainSizer.Add(OriSizer)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation vector'),0,WACV)

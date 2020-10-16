@@ -105,7 +105,7 @@ def GetTifData(filename):
     polarization = None
     samplechangerpos = None
     try:
-        Meta = open(filename+'.metadata','Ur')
+        Meta = open(filename+'.metadata','r')
         head = Meta.readlines()
         for line in head:
             line = line.strip()

@@ -10027,7 +10027,11 @@ def UpdatePhaseData(G2frame,Item,data):
             topLine.Add(delRB,0,WACV)
             symAxis = RBObj.get('symAxis')
             if symAxis:
-                if symAxis[0]:
+                if symAxis[0] == symAxis[1] == symAxis[2]:
+                    lbl = 'x+y+z'
+                elif symAxis[0] == symAxis[1] != symAxis[2]:
+                    lbl = 'x+y'
+                elif symAxis[0]:
                     lbl = 'x'
                 elif symAxis[1]:
                     lbl = 'y'
@@ -10581,14 +10585,18 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['testRBObj']['CRYhighLight'] = [
                     i for i,a in enumerate(data['Atoms']) if a[0] == cryatom]
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
-                data['testRBObj']['showSelect'].SetLabelText(cryatom)
+                misc['showSelect'].SetLabelText(cryatom)
             def OnSymRadioSet(event):
                 '''Set the symmetry axis for the body as 
                 data['testRBObj']['rbObj']['symAxis']. This may never be 
                 set, so use data['testRBObj']['rbObj'].get('symAxis') to 
                 access this so the default value is None. 
                 '''
-                data['testRBObj']['rbObj']['symAxis'] = (None,[1,0,0],[0,1,0],[0,0,1])[event.GetEventObject().GetSelection()]
+                axis = (None,[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]
+                    )[event.GetEventObject().GetSelection()]
+                if axis:
+                    axis = np.array(axis)/nl.norm(axis)
+                data['testRBObj']['rbObj']['symAxis'] = axis
                 UpdateTablePlot()                
             showAtom = [None]
             def showCryAtom(*args,**kwargs):
@@ -10599,6 +10607,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
 
             # Start of Draw()
+            RBdirlbl = ['x','y','z','x+y','x+y+z']
             if not data['testRBObj']: return
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
             unmatchedRBatoms = []
@@ -10637,9 +10646,9 @@ def UpdatePhaseData(G2frame,Item,data):
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Origin: '),0,WACV)
             Xsizers = []
-            lbl = 'xyz'
             for ix in range(3):
-                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,lbl[ix]),0,WACV,4)
+                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,RBdirlbl[ix]),
+                                 0,WACV,4)
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,rbObj['Orig'][0],ix,nDig=(10,5),
                     xmin=-1.5,xmax=1.5,typeHint=float,OnLeave=UpdateTablePlot)
                 OriSizer.Add(origX,0,WACV)
@@ -10690,7 +10699,7 @@ def UpdatePhaseData(G2frame,Item,data):
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
                                     'Rigid body symmetry axis: '),0, WACV)
-            choices = ['None','x','y','z']
+            choices = ['None']+RBdirlbl
             symRadioSet = wx.RadioBox(RigidBodies,wx.ID_ANY,choices=choices)
             symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
             OriSizer.Add(symRadioSet)
@@ -10793,9 +10802,9 @@ def UpdatePhaseData(G2frame,Item,data):
             btnSizer = wx.BoxSizer(wx.VERTICAL)
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
             hSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Crystal Highlight: '))
-            data['testRBObj']['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
+            misc['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
                 data['testRBObj']['availAtoms'],None,None,showAtom,0,showCryAtom,size=(75,-1))
-            hSizer.Add(data['testRBObj']['showSelect'])
+            hSizer.Add(misc['showSelect'])
             btnSizer.Add(hSizer)
             btnSizer.Add((-1,20))
             btnSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with assigned\natom(s)...'),0,wx.ALL)
@@ -12760,6 +12769,7 @@ def UpdatePhaseData(G2frame,Item,data):
 
     global rbAtmDict   
     rbAtmDict = {}
+    misc = {}
     PhaseName = G2frame.GPXtree.GetItemText(Item)
     G2gd.SetDataMenuBar(G2frame)
     G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow)
@@ -12837,7 +12847,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     I = 0
                 if data['Atoms'][I][0] in data['testRBObj']['availAtoms']:
                     data['testRBObj']['CRYhighLight'] = [I]
-                    data['testRBObj']['showSelect'].SetLabelText(data['Atoms'][I][0])
+                    misc['showSelect'].SetLabelText(data['Atoms'][I][0])
                     break
         G2plt.PlotStructure(G2frame,data,False,data['testRBObj']['UpdateTable'])
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:

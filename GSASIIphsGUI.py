@@ -10751,7 +10751,11 @@ def UpdatePhaseData(G2frame,Item,data):
             assignable = [a[0] for a in data['Atoms'] if a[-1] not in rbUsedIds]
             data['testRBObj']['availAtoms'] = ['         '] + assignable
             if len(assignable) == 0:
+                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                    'No matching atoms between rigid body and crystal.'+
+                    ' All rigid body atoms will be added to structure.'),0)
                 misc['UpdateTable'] = None
+                mainSizer.Layout()
                 G2plt.PlotStructure(G2frame,data,True)
                 return
             

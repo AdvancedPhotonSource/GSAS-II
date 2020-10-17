@@ -3017,6 +3017,15 @@ def UpdateRigidBodies(G2frame,data):
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
                     Indx[refSel.GetId()] = i
                     refAtmSizer.Add(refSel,0,WACV)
+                    refHelpInfo = '''
+The Orientation reference control is used to tranform 
+the Cartesian
+axes for rigid bodies with three atoms, A, B and C. 
+The vector from A to B defines the x-axis and the z axis is placed 
+in the plane defined by A to B and A to C.
+'''
+                hlp = G2G.HelpButton(VectorRBDisplay,refHelpInfo,wrap=400)
+                refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
             return refAtmSizer
                         
         def rbVectMag(rbid,imag,rbData):
@@ -3371,10 +3380,22 @@ def UpdateRigidBodies(G2frame,data):
                     refAtmSizer.Add(refSel,0,WACV)
                 RefObjs.append(refObj)
                 if 'molCent' not in rbData: rbData['molCent'] = False           #patch
-                molcent = wx.Button(ResidueRBDisplay,label=' Use RB center?')
+                molcent = wx.Button(ResidueRBDisplay,label=' Center RB?')
                 molcent.Bind(wx.EVT_BUTTON,OnMolCent)
                 Indx[molcent.GetId()] = resGrid
                 refAtmSizer.Add(molcent,0,WACV)
+                refHelpInfo = '''
+* The "Orientation Reference" control is used to tranform 
+the Cartesian
+axes for rigid bodies with three atoms, A, B and C. 
+The vector from A to B defines the x-axis and the z axis is placed 
+in the plane defined by A to B and A to C.
+
+%%* The "Center RB?" button will redefine the origin of the 
+rigid body to the midpoint of all atoms in the body (not mass weighted)
+'''
+                hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
+                refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
             
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(refAtmSizer)

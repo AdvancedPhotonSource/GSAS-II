@@ -5165,20 +5165,29 @@ class HelpButton(wx.Button):
     me. 
 
     :param parent: the panel/frame where the button will be placed
-    :param str msg: the help text to be displayed
+    :param str msg: the help text to be displayed. Indentation on 
+       multiline help text is stripped (see :func:`StripIndents`). If wrap
+       is set as non-zero, all new lines are 
     :param str helpIndex: location of the help information in the gsasII.html
       help file in the form of an anchor string. The URL will be 
       constructed from: location + gsasII.html + "#" + helpIndex
+    :param int wrap: if specified, the text displayed is reformatted by
+      wrapping it to fit in wrap pixels. Default is None which prevents 
+      wrapping.
     '''
-    def __init__(self,parent,msg='',helpIndex=''):
+    def __init__(self,parent,msg='',helpIndex='',wrap=None):
         if sys.platform == "darwin": 
             wx.Button.__init__(self,parent,wx.ID_HELP)
         else:
             wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
         self.Bind(wx.EVT_BUTTON,self._onPress)
-        self.msg=StripIndents(msg)
+        if wrap:
+            self.msg=StripIndents(msg,True)
+        else:
+            self.msg=StripIndents(msg)
         self.parent = parent
         self.helpIndex = helpIndex
+        self.wrap = wrap
     def _onClose(self,event):
         self.dlg.EndModal(wx.ID_CANCEL)
     def _onPress(self,event):
@@ -5192,6 +5201,8 @@ class HelpButton(wx.Button):
         #self.dlg.SetBackgroundColour(wx.WHITE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         txt = wx.StaticText(self.dlg,wx.ID_ANY,self.msg)
+        if self.wrap:
+            txt.Wrap(self.wrap)
         mainSizer.Add(txt,1,wx.ALL|wx.EXPAND,10)
         txt.SetBackgroundColour(wx.WHITE)
 
@@ -5267,14 +5278,30 @@ class G2HtmlWindow(wx.html.HtmlWindow):
 
 ################################################################################
 def StripIndents(msg,singleLine=False):
-    'Strip indentation from multiline strings'
+    '''Strip unintended indentation from multiline strings. 
+    When singleLine is True, all newline are removed, but inserting "%%"
+    into the string will cause a blank line to be inserted at that point
+
+    :param str msg: a string containing one or more lines of text. 
+      spaces or tabs following a newline are removed.
+    :returns: the string but reformatted
+    '''
     msg1 = msg.replace('\n ','\n')
     while msg != msg1:
         msg = msg1
         msg1 = msg.replace('\n ','\n')
-    msg = msg.replace('\n\t','\n')
+        msg1 = msg1.replace('  ',' ')
+    msg1 = msg.replace('\n\t','\n')
+    while msg != msg1:
+        msg = msg1
+        msg1 = msg.replace('\n\t','\n')
     if singleLine:
-        return msg.replace('\n',' ')
+        msg = msg.replace('\n',' ')
+        msg1 = msg.replace('  ',' ')
+        while msg != msg1:
+            msg = msg1
+            msg1 = msg1.replace('  ',' ')
+        msg = msg.replace('%%','\n\n')
     return msg
 
 def StripUnicode(string,subs='.'):

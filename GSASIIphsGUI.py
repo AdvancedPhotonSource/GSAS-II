@@ -10516,7 +10516,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                       style=wx.ICON_EXCLAMATION)
                     return
                 deltaList = getDeltaXYZ(selDict,data,rbObj)
-                data['testRBObj']['rbObj']['Orig'][0][:] = deltaList.sum(axis=0)/len(deltaList)
+                data['testRBObj']['rbObj']['Orig'][0] += deltaList.sum(axis=0)/len(deltaList)
                 for i,item in enumerate(Xsizers):
                     item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 UpdateTablePlot()
@@ -10545,7 +10545,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     wx.MessageBox('At least three existing atoms must be selected',caption='Select Atoms',
                                       style=wx.ICON_EXCLAMATION)
                     return
-                vals = rbObj['Orient'][0][:] + rbObj['Orig'][0][:]
+                vals = np.concatenate((rbObj['Orient'][0], rbObj['Orig'][0]))
                 out = so.leastsq(objectiveDeltaPos,vals,(selDict,data,rbObj))
                 data['testRBObj']['rbObj']['Orig'][0][:] = out[0][4:]
                 data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
@@ -10609,8 +10609,8 @@ def UpdatePhaseData(G2frame,Item,data):
             unmatchedRBatoms = []
             matchTable = assignAtoms(unmatchedRBatoms=unmatchedRBatoms)
             if unmatchedRBatoms:
-                msg = 'There are {} atoms that will need to be added to atoms list.'.format(len(unmatchedRBatoms))
-                G2G.G2MessageBox(G2frame,msg,title='Please note')
+                # msg = 'There are {} atoms that will need to be added to atoms list.'.format(len(unmatchedRBatoms))
+                # G2G.G2MessageBox(G2frame,msg,title='Please note')
                 for i in unmatchedRBatoms:
                     rbAssignments[i] = None
             mainSizer = wx.BoxSizer(wx.VERTICAL)

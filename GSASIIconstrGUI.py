@@ -3300,7 +3300,6 @@ def UpdateRigidBodies(G2frame,data):
                     row[2:4] = rbXYZ[r]
                     resTable.SetRowValues(r,row)
                 res.ForceRefresh()
-                molcent.SetValue(False)
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 
             def OnMolCent(event):
@@ -3372,9 +3371,8 @@ def UpdateRigidBodies(G2frame,data):
                     refAtmSizer.Add(refSel,0,WACV)
                 RefObjs.append(refObj)
                 if 'molCent' not in rbData: rbData['molCent'] = False           #patch
-                molcent = wx.CheckBox(ResidueRBDisplay,label=' Use RB center?')
-                molcent.SetValue(rbData['molCent'])
-                molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
+                molcent = wx.Button(ResidueRBDisplay,label=' Use RB center?')
+                molcent.Bind(wx.EVT_BUTTON,OnMolCent)
                 Indx[molcent.GetId()] = resGrid
                 refAtmSizer.Add(molcent,0,WACV)
             

@@ -4373,7 +4373,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Angles = []
                     for angles in AngArray:
                         Angles += [item[2][0] for item in AngArray[angles]]
-                    G2plt.PlotBarGraph(G2frame,Angles,Xname='$\mathsf{Angles,{^o}}$',
+                    G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
                         Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
                     print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
                     
@@ -10023,7 +10023,7 @@ def UpdatePhaseData(G2frame,Item,data):
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
             symAxis = RBObj.get('symAxis')
-            if symAxis:
+            if np.any(symAxis):
                 if symAxis[0] == symAxis[1] == symAxis[2]:
                     lbl = 'x+y+z'
                 elif symAxis[0] == symAxis[1] != symAxis[2]:

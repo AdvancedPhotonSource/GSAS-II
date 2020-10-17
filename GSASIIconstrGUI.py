@@ -2772,7 +2772,7 @@ def UpdateRigidBodies(G2frame,data):
                 rbName = G2obj.MakeUniqueLabel(rbName,namelist)
                 data['Residue'][resRBsel] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
                     'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
-                    'SelSeq':[0,0],'useCount':0}
+                    'SelSeq':[0,0],'useCount':0,'molCent':None}
                 data['RBIds']['Residue'].append(resRBsel)
                 print ('Rigid body '+rbName+' added')
             macStr = macro.readline()
@@ -2850,7 +2850,7 @@ def UpdateRigidBodies(G2frame,data):
                         if 'RBname' in data['Residue'][key]]
             name = G2obj.MakeUniqueLabel(name,namelist)
             data['Residue'][resRBsel] = {'RBname':name,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+                'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0,'molCent':False}
             data['RBIds']['Residue'].append(resRBsel)
             print ('Rigid body UNKRB added')
         text.close()
@@ -3049,7 +3049,7 @@ def UpdateRigidBodies(G2frame,data):
             magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
             magSizer.Add(magValue,0,WACV)
             magSizer.Add((5,0),)
-            magref = wx.CheckBox(VectorRBDisplay,-1,label=' Refine?') 
+            magref = wx.CheckBox(VectorRBDisplay,label=' Refine?') 
             magref.SetValue(rbData['VectRef'][imag])
             magref.Bind(wx.EVT_CHECKBOX,OnRBVectorRef)
             Indx[magref.GetId()] = [rbid,imag]
@@ -3292,6 +3292,7 @@ def UpdateRigidBodies(G2frame,data):
                 Mat = G2mth.getRBTransMat(X,Y)
                 rbXYZ = np.inner(Mat,rbXYZ).T
                 rbData['rbXYZ'] = rbXYZ
+                rbData['molCent'] = False
                 res.ClearSelection()
                 resTable = res.GetTable()
                 for r in range(res.GetNumberRows()):
@@ -3299,7 +3300,27 @@ def UpdateRigidBodies(G2frame,data):
                     row[2:4] = rbXYZ[r]
                     resTable.SetRowValues(r,row)
                 res.ForceRefresh()
+                molcent.SetValue(False)
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+                
+            def OnMolCent(event):
+                rbData['molCent'] = not rbData['molCent']
+                if rbData['molCent']:
+                    Obj = event.GetEventObject()
+                    res = Indx[Obj.GetId()]
+                    rbXYZ = rbData['rbXYZ']
+                    rbCent = np.array([np.sum(rbXYZ[:,0]),np.sum(rbXYZ[:,1]),np.sum(rbXYZ[:,2])])/rbXYZ.shape[0]
+                    rbXYZ -= rbCent
+                    rbData['rbXYZ'] = rbXYZ
+                    res.ClearSelection()
+                    resTable = res.GetTable()
+                    for r in range(res.GetNumberRows()):
+                        row = resTable.GetRowValues(r)
+                        row[2:4] = rbXYZ[r]
+                        resTable.SetRowValues(r,row)
+                    res.ForceRefresh()
+                    G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+                    
                 
             Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
             colLabels = ['Name','Type','Cart x','Cart y','Cart z']
@@ -3350,6 +3371,12 @@ def UpdateRigidBodies(G2frame,data):
                     refObj[i] = refSel
                     refAtmSizer.Add(refSel,0,WACV)
                 RefObjs.append(refObj)
+                if 'molCent' not in rbData: rbData['molCent'] = False           #patch
+                molcent = wx.CheckBox(ResidueRBDisplay,label=' Use RB center?')
+                molcent.SetValue(rbData['molCent'])
+                molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
+                Indx[molcent.GetId()] = resGrid
+                refAtmSizer.Add(molcent,0,WACV)
             
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(refAtmSizer)

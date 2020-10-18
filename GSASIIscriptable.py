@@ -1974,12 +1974,14 @@ def patchControls(Controls):
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
     for d in 'parmMaxDict','parmMinDict':
+        if d not in Controls: Controls[d] = {}
         for k in Controls[d]:  
             if type(k) is str:
                 print("Applying patch to Controls['{}']".format(d))
                 Controls[d] = {G2obj.G2VarObj(k):v for k,v in Controls[d].items()}
                 break
     conv = False
+    if 'parmFrozen' not in Controls: Controls['parmFrozen'] = {}
     for k in Controls['parmFrozen']:
         for item in Controls['parmFrozen'][k]:
             if type(item) is str:

@@ -3021,7 +3021,7 @@ def UpdateRigidBodies(G2frame,data):
 The Orientation reference control is used to tranform 
 the Cartesian
 axes for rigid bodies with three atoms, A, B and C. 
-The vector from A to B defines the x-axis and the z axis is placed 
+The vector from A to B defines the x-axis and the y axis is placed 
 in the plane defined by A to B and A to C.
 '''
                 hlp = G2G.HelpButton(VectorRBDisplay,refHelpInfo,wrap=400)
@@ -3388,7 +3388,7 @@ in the plane defined by A to B and A to C.
 * The "Orientation Reference" control is used to tranform 
 the Cartesian
 axes for rigid bodies with three atoms, A, B and C. 
-The vector from A to B defines the x-axis and the z axis is placed 
+The vector from A to B defines the x-axis and the y axis is placed 
 in the plane defined by A to B and A to C.
 
 %%* The "Center RB?" button will redefine the origin of the 

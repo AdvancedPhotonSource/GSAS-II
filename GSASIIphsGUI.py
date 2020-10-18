@@ -3756,7 +3756,7 @@ def UpdatePhaseData(G2frame,Item,data):
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
                 
-    def AtomAdd(x,y,z,El='H',Name='UNK'):
+    def AtomAdd(x,y,z,El='H',Name='UNK',update=True):
         atomData = data['Atoms']
         generalData = data['General']
         atId = ran.randint(0,sys.maxsize)
@@ -3778,11 +3778,13 @@ def UpdatePhaseData(G2frame,Item,data):
                 atomData.append([Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             
         SetupGeneral()
+        # might be better to add new atom to Draw Atoms
         data['Drawing']['Atoms'] = []
-        UpdateDrawAtoms()
-        G2plt.PlotStructure(G2frame,data)
 #        if 'Atoms' in data['Drawing']:            
 #            DrawAtomAdd(data['Drawing'],atomData[-1])
+        if update:
+            UpdateDrawAtoms()
+            G2plt.PlotStructure(G2frame,data)
 
     def OnAtomInsert(event):
         '''Inserts a new atom into list immediately before every selected atom
@@ -10224,88 +10226,92 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid,True)
                 
+    def assignAtoms(RBData,selDict={},unmatchedRBatoms=None):
+        '''Find the closest RB atoms to atoms in the structure 
+        If selDict is specified, it overrides the assignments to specify 
+        atoms that should be matched.
+        '''
+        general = data['General']
+        cx,ct = general['AtomPtrs'][:2]
+        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
+
+        rbType = data['testRBObj']['rbType']
+        rbObj = data['testRBObj']['rbObj']
+        rbId = rbObj['RBId']
+        rbAtmTypes = RBData[rbType][rbId]['rbTypes']
+        atomData = data['Atoms']
+        if 'atNames' in RBData[rbType][rbId]:
+            rbAtmLbs = RBData[rbType][rbId]['atNames']
+        else:
+            rbAtmLbs = None
+
+        newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
+        # categorize atoms by type, omitting any that are already assigned
+        # in a rigid body
+        atmTypes = [None if atomData[i][-1] in rbUsedIds
+                        else atomData[i][ct]
+                        for i in range(len(atomData))]
+        # remove assigned atoms from search groups
+        for i in selDict:
+            if selDict[i] is None: continue
+            atmTypes[selDict[i]] = None
+        atmXYZ = G2mth.getAtomXYZ(atomData,cx)
+        # separate structure's atoms by type (w/o assigned atoms)
+        oXYZbyT = {}
+        atmNumByT = {}               
+        for t in set(atmTypes):
+            if t is None: continue
+            oXYZbyT[t] = np.array([atmXYZ[i] for i in range(len(atmXYZ)) if atmTypes[i] == t])
+            atmNumByT[t] = [i for i in range(len(atmXYZ)) if atmTypes[i] == t]
+        Ids = []
+        # create table of fixed and found assignments
+        matchTable = []
+        unmatched = []
+        for i,xyz in enumerate(newXYZ):
+            t = rbAtmTypes[i]
+            if rbAtmLbs:
+                lbl = rbAtmLbs[i]
+            else:
+                lbl = ''
+            if i in selDict and selDict[i] is None:
+                matchTable.append([t , lbl] + list(xyz))
+                continue
+            elif i in selDict:
+                searchXYZ = [atmXYZ[selDict[i]]] #assigned
+                numLookup = [selDict[i]]
+            else:
+                if t not in oXYZbyT:
+                    unmatched.append(i)
+                    matchTable.append([t , lbl] + list(xyz))
+                    continue
+                searchXYZ = oXYZbyT[t]
+                numLookup = atmNumByT[t]
+            dist = G2mth.GetXYZDist(xyz,searchXYZ,Amat)
+            while True:
+                pidIndx = np.argmin(dist)
+                d = dist[pidIndx]
+                pid = numLookup[pidIndx]
+                if atomData[pid][-1] in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
+                    dist[pidIndx] = 100.
+                    if min(dist) == 100:
+                        pid = None
+                        break
+                else:
+                    break
+            if pid is not None:
+                Ids.append(atomData[pid][-1])
+                matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
+                                  + atomData[pid][cx:cx+3] + [d, Ids[-1]])
+            else:
+                unmatched.append(i)
+                matchTable.append([t , lbl] + list(xyz))
+        if unmatched and unmatchedRBatoms is not None:
+            unmatchedRBatoms[:] = unmatched
+        return matchTable
+        
     def OnRBAssign(event):
         '''Assign RB to atoms in a phase with tools to locate the RB in the structure
         '''
-        
-        def assignAtoms(selDict={},unmatchedRBatoms=None):
-            '''Find the closest RB atoms to atoms in the structure 
-            If selDict is specified, it overrides the assignments to specify 
-            atoms that should be matched.
-            '''
-            rbType = data['testRBObj']['rbType']
-            rbObj = data['testRBObj']['rbObj']
-            rbId = rbObj['RBId']
-            rbAtmTypes = RBData[rbType][rbId]['rbTypes']
-            atomData = data['Atoms']
-            if 'atNames' in RBData[rbType][rbId]:
-                rbAtmLbs = RBData[rbType][rbId]['atNames']
-            else:
-                rbAtmLbs = None
-                
-            newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
-            # categorize atoms by type, omitting any that are already assigned
-            # in a rigid body
-            atmTypes = [None if atomData[i][-1] in rbUsedIds
-                            else atomData[i][ct]
-                            for i in range(len(atomData))]
-            # remove assigned atoms from search groups
-            for i in selDict:
-                if selDict[i] is None: continue
-                atmTypes[selDict[i]] = None
-            atmXYZ = G2mth.getAtomXYZ(atomData,cx)
-            # separate structure's atoms by type (w/o assigned atoms)
-            oXYZbyT = {}
-            atmNumByT = {}               
-            for t in set(atmTypes):
-                if t is None: continue
-                oXYZbyT[t] = np.array([atmXYZ[i] for i in range(len(atmXYZ)) if atmTypes[i] == t])
-                atmNumByT[t] = [i for i in range(len(atmXYZ)) if atmTypes[i] == t]
-            Ids = []
-            # create table of fixed and found assignments
-            matchTable = []
-            unmatched = []
-            for i,xyz in enumerate(newXYZ):
-                t = rbAtmTypes[i]
-                if rbAtmLbs:
-                    lbl = rbAtmLbs[i]
-                else:
-                    lbl = ''
-                if i in selDict and selDict[i] is None:
-                    matchTable.append([t , lbl] + list(xyz))
-                    continue
-                elif i in selDict:
-                    searchXYZ = [atmXYZ[selDict[i]]] #assigned
-                    numLookup = [selDict[i]]
-                else:
-                    if t not in oXYZbyT:
-                        unmatched.append(i)
-                        matchTable.append([t , lbl] + list(xyz))
-                        continue
-                    searchXYZ = oXYZbyT[t]
-                    numLookup = atmNumByT[t]
-                dist = G2mth.GetXYZDist(xyz,searchXYZ,Amat)
-                while True:
-                    pidIndx = np.argmin(dist)
-                    d = dist[pidIndx]
-                    pid = numLookup[pidIndx]
-                    if atomData[pid][-1] in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
-                        dist[pidIndx] = 100.
-                        if min(dist) == 100:
-                            pid = None
-                            break
-                    else:
-                        break
-                if pid is not None:
-                    Ids.append(atomData[pid][-1])
-                    matchTable.append([t , lbl] + list(xyz) + [pid, atomData[pid][0]]
-                                      + atomData[pid][cx:cx+3] + [d, Ids[-1]])
-                else:
-                    unmatched.append(i)
-                    matchTable.append([t , lbl] + list(xyz))
-            if unmatched and unmatchedRBatoms is not None:
-                unmatchedRBatoms[:] = unmatched
-            return matchTable
             
         def Draw():
             '''Create the window for assigning RB to atoms'''
@@ -10314,7 +10320,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 'respond to RB Add button, sets RB info in phase'
                 cx,ct,cs,cia = data['General']['AtomPtrs']
                 atomData = data['Atoms']                
-                matchTable = UpdateTable()
+                if RigidBodies.atomsGrid:
+                    matchTable = UpdateTable()
+                else:
+                    matchTable = assignAtoms(RBData)
                 dmax = 0.
                 for line in matchTable:
                     if len(line) >= 11:
@@ -10327,17 +10336,22 @@ def UpdatePhaseData(G2frame,Item,data):
                         return
                     dlg.Destroy()
                 Ids = []
+                updateNeeded = False
                 for line in matchTable:
                     if len(line) < 11:
                         elem = line[0]
                         nextNum = len(data['Atoms'])
                         lbl = 'Rb' + elem + str(nextNum)
                         x,y,z = line[2:5]
-                        AtomAdd(x,y,z,El=elem,Name=lbl)
+                        AtomAdd(x,y,z,El=elem,Name=lbl,update=False)
                         Ids.append(atomData[nextNum][-1])
+                        updateNeeded = True
                     else:
                         atomData[line[5]][cx:cx+3] = line[2:5]
                         Ids.append(line[11])
+                if updateNeeded:
+                    UpdateDrawAtoms()
+                    G2plt.PlotStructure(G2frame,data)
                     
                 rbType = data['testRBObj']['rbType']
                 rbObj['Ids'] = Ids
@@ -10390,6 +10404,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 '''get fixed atom assignments, find closest mappings & 
                 update displayed table
                 '''
+                if not RigidBodies.atomsGrid: return []
                 RigidBodies.atomsGrid.completeEdits()
                 # add new atoms and reassign
                 added = False
@@ -10400,11 +10415,12 @@ def UpdatePhaseData(G2frame,Item,data):
                         l[1:4] = -1,'?',-1
                         rbAssignments[i] = None
                         selDict[i] = None
-                matchTable = assignAtoms(selDict)
+                matchTable = assignAtoms(RBData,selDict)
                 for i,l in enumerate(matchTable):
                     if len(l) < 11: continue
                     RigidBodies.atomsTable.data[i][1:4] = l[5],l[6],l[10]
-                RigidBodies.atomsGrid.ForceRefresh()
+                if RigidBodies.atomsGrid: 
+                    RigidBodies.atomsGrid.ForceRefresh()
                 if added: wx.CallLater(100,Draw)
                 return matchTable
                 
@@ -10446,6 +10462,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def getSelectedAtoms():
                 'Find the FB atoms that have been assigned to specific atoms in structure'
+                if not RigidBodies.atomsGrid: return
                 RigidBodies.atomsGrid.completeEdits()
                 tbl = RigidBodies.atomsGrid.GetTable()
                 selDict = {}
@@ -10593,7 +10610,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 if axis:
                     axis = np.array(axis)/nl.norm(axis)
                 data['testRBObj']['rbObj']['symAxis'] = axis
-                UpdateTablePlot()                
+                UpdateTablePlot()
+                
             showAtom = [None]
             def showCryAtom(*args,**kwargs):
                 '''Respond to selection of a crystal atom 
@@ -10607,7 +10625,7 @@ def UpdatePhaseData(G2frame,Item,data):
             if not data['testRBObj']: return
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
             unmatchedRBatoms = []
-            matchTable = assignAtoms(unmatchedRBatoms=unmatchedRBatoms)
+            matchTable = assignAtoms(RBData,unmatchedRBatoms=unmatchedRBatoms)
             if unmatchedRBatoms:
                 # msg = 'There are {} atoms that will need to be added to atoms list.'.format(len(unmatchedRBatoms))
                 # G2G.G2MessageBox(G2frame,msg,title='Please note')
@@ -10728,14 +10746,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0)
-            if not matchTable: # not sure if this will ever be true
-                OkBtn = None
-                mainSizer.Add((15,15))
-                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
-                    'Error: unable to match atoms in rigid body to structure (see console window)'),0)
-            else:
-                OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
-                OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
+            OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
+            OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
             CancelBtn = wx.Button(RigidBodies,wx.ID_ANY,'Cancel')
             CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -10757,6 +10769,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 misc['UpdateTable'] = None
                 mainSizer.Layout()
                 G2plt.PlotStructure(G2frame,data,True)
+                RigidBodies.atomsGrid = None
                 return
             
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
@@ -12815,6 +12828,7 @@ def UpdatePhaseData(G2frame,Item,data):
         '''Respond to a Tab to highlight the next RB or crystal atom
         '''
         if 'testRBObj' not in data: return
+        if not RigidBodies.atomsGrid: return
         alt = event.GetModifiers() & wx.MOD_ALT
         event.Skip()
         try: # IsKeyInCategory not in wx 2.9
@@ -12836,8 +12850,6 @@ def UpdatePhaseData(G2frame,Item,data):
             RigidBodies.atomsGrid.MakeCellVisible(rows[0],0)         
             data['testRBObj']['RBhighLight'] = rows[0]
         else:
-            #GSASIIpath.IPyBreak()
-            #return
             Ind = data['testRBObj'].get('CRYhighLight',[])
             if len(Ind) == 0:
                 I = -1

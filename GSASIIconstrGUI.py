@@ -3017,12 +3017,11 @@ def UpdateRigidBodies(G2frame,data):
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
                     Indx[refSel.GetId()] = i
                     refAtmSizer.Add(refSel,0,WACV)
-                    refHelpInfo = '''
-The Orientation reference control is used to tranform 
-the Cartesian
-axes for rigid bodies with three atoms, A, B and C. 
-The vector from A to B defines the x-axis and the y axis is placed 
-in the plane defined by A to B and A to C.
+                refHelpInfo = '''
+* The "Orientation Reference" control defines the Cartesian
+axes for rigid bodies with the three atoms, A, B and C. 
+The vector from B to A defines the x-axis and the y axis is placed 
+in the plane defined by B to A and C to A. A,B,C must not be collinear.
 '''
                 hlp = G2G.HelpButton(VectorRBDisplay,refHelpInfo,wrap=400)
                 refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
@@ -3385,14 +3384,15 @@ in the plane defined by A to B and A to C.
                 Indx[molcent.GetId()] = resGrid
                 refAtmSizer.Add(molcent,0,WACV)
                 refHelpInfo = '''
-* The "Orientation Reference" control is used to tranform 
-the Cartesian
-axes for rigid bodies with three atoms, A, B and C. 
-The vector from A to B defines the x-axis and the y axis is placed 
-in the plane defined by A to B and A to C.
+* The "Orientation Reference" control defines the Cartesian
+axes for rigid bodies with the three atoms, A, B and C. 
+The vector from B to A defines the x-axis and the y axis is placed 
+in the plane defined by B to A and C to A. A,B,C must not be collinear.
+ 
+%%* The origin is at A unless the "Center RB?" button is pressed.
 
-%%* The "Center RB?" button will redefine the origin of the 
-rigid body to the midpoint of all atoms in the body (not mass weighted)
+%%* The "Center RB?" button will shift the origin of the 
+rigid body to be the midpoint of all atoms in the body (not mass weighted).
 '''
                 hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
                 refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)

@@ -1581,12 +1581,10 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
-    invTrans = nl.inv(Trans)
     opId = oldPhase['pId']
     npId = newPhase['pId']
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
     nAtoms = newPhase['Atoms']
-    oSGData = oldPhase['General']['SGData']
     nSGData = newPhase['General']['SGData']
     #oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
     #nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
@@ -1670,15 +1668,15 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 
     # constraints on lattice parameters between phases
 #    T = nl.inv(Trans).T
-    T = Trans.T
-    conMat = [
-        [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
-        [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
-        [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
-        [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
-        [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
-        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]
-        ]
+    # T = Trans.T
+    # conMat = [
+    #     [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
+    #     [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
+    #     [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
+    #     [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
+    #     [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
+    #     [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]
+    #     ]
     # Gnew = conMat * A: 
 #         T00**2*a0  T01**2*a1 T02**2*a2 T00*T01*a3    T00*T02*a4    T01*T02*a5 
 #         T10**2*a0  T11**2*a1 T12**2*a2 T10*T11*a3    T10*T12*a4    T11*T12*a5 
@@ -2039,9 +2037,9 @@ def UpdateRigidBodies(G2frame,data):
                             isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
                             generalData['Isotope'][atom[ct]] = isotope
                     generalData['Color'].append(Info['Color'])
-                    if generalData['Type'] == 'magnetic':
-                        if len(landeg) < len(generalData['AtomTypes']):
-                            landeg.append(2.0)
+                    # if generalData['Type'] == 'magnetic':
+                    #     if len(landeg) < len(generalData['AtomTypes']):
+                    #         landeg.append(2.0)
             atmData['Drawing']['Atoms'] = []
             for atom in atmData['Atoms']:
                 atmData['Drawing']['Atoms'].append(MakeDrawAtom(atmData,atom))
@@ -2310,7 +2308,7 @@ def UpdateRigidBodies(G2frame,data):
                 #obj.InitExport(None)
                 if obj.ExportSelect():    # set export parameters; ask for file name
                     return
-                fp = obj.OpenFile()
+                obj.OpenFile()
                 obj.Write(str(count))
                 obj.Write('')
                 for i in range(len(rd.Phase['RBselection'])):
@@ -2337,7 +2335,6 @@ def UpdateRigidBodies(G2frame,data):
                 rbid = ran.randint(0,sys.maxsize)
                 data['Vector'][rbid] = rb
                 data['RBIds']['Vector'].append(rbid)
-                AtInfo = data['Vector']['AtInfo']
                 for t in rb['rbTypes']:
                     if t in data['Vector']['AtInfo']: continue
                     Info = G2elem.GetAtomInfo(t)
@@ -2369,7 +2366,6 @@ def UpdateRigidBodies(G2frame,data):
                     'rbTypes':rbTypes,'atNames':atNames,'rbRef':[0,1,2,False],
                     'rbSeq':[],'SelSeq':[0,0],'useCount':0}
                 data['RBIds']['Residue'].append(rbid)
-                AtInfo = data['Residue']['AtInfo']
                 for t in rbTypes:
                     if t in data['Residue']['AtInfo']: continue
                     Info = G2elem.GetAtomInfo(t)
@@ -2385,9 +2381,7 @@ def UpdateRigidBodies(G2frame,data):
             RBImpPnl = wx.Panel(RBImp)
             G2frame.rbBook.AddPage(RBImp,pagename)
             G2frame.rbBook.SetSelection(G2frame.rbBook.FindPage(pagename))
-            generalData = rd.Phase['General']
             AtInfo = {}
-            ct = 1
             for t in rd.Phase['RBtypes']:
                 if t in AtInfo: continue
                 Info = G2elem.GetAtomInfo(t)
@@ -2511,7 +2505,6 @@ def UpdateRigidBodies(G2frame,data):
             '''Make the basic vector rigid body dict (w/o coordinates) used for
             export and for plotting
             '''
-            nTrans = 1
             vecMag = [1.0]
             vecRef = [False]
             rb = {'RBname':name,'VectMag':vecMag,
@@ -2566,7 +2559,7 @@ def UpdateRigidBodies(G2frame,data):
         # read in the phase file
         filename = filelist[0]
         rd = reader
-        with open(filename, 'Ur') as fp:
+        with open(filename, 'Ur'):
             rd.ReInitialize()
             rd.errors = ""
             if not rd.ContentsValidator(filename):   # Report error
@@ -2579,7 +2572,7 @@ def UpdateRigidBodies(G2frame,data):
 
             rd.objname = os.path.basename(filename)
             try:
-                flag = rd.Reader(filename)
+                rd.Reader(filename)
             except Exception as msg:
                 G2fl.G2Print("Warning: read of file {} failed\n{}".format(
                     filename,rd.errors))
@@ -2945,16 +2938,19 @@ def UpdateRigidBodies(G2frame,data):
     def UpdateVectorRB(Scroll=0):
         '''Display & edit a selected Vector RB
         '''
+        global resRBsel
         def rbNameSizer(rbid,rbData):
 
             def OnRBName(event):
                 event.Skip()
                 Obj = event.GetEventObject()
                 name = Obj.GetValue()
+                if name == rbData['RBname']: return # no change
                 namelist = [data['Vector'][key]['RBname'] for key in
                         data['Vector'] if 'RBname' in data['Vector'][key]]
                 name = G2obj.MakeUniqueLabel(name,namelist)
                 rbData['RBname'] = name
+                wx.CallAfter(UpdateVectorRB)
                 
             def OnDelRB(event):
                 Obj = event.GetEventObject()
@@ -2964,14 +2960,14 @@ def UpdateRigidBodies(G2frame,data):
                     data['RBIds']['Vector'].remove(rbid)
                     rbData['useCount'] -= 1
                 wx.CallAfter(UpdateVectorRB)
+                
             def OnPlotRB(event):
-                Obj = event.GetEventObject()
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,rbData,plotDefaults)
             
+            # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),0,WACV)
             RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'])
-            Indx[RBname.GetId()] = rbid
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
@@ -3137,47 +3133,87 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 refChoice[rbid][i].append(rbRef[i])
                 refChoice[rbid][i].sort()
                 
+        def OnRBSelect(event):
+            global resRBsel
+            sel = rbSelect.GetSelection()
+            if sel == 0: return # 1st entry is blank
+            rbname = rbchoice[sel-1]
+            resRBsel = RBnames[rbname]
+            wx.CallLater(100,UpdateVectorRB)
+            
         # beginning of UpdateVectorRB
         AtInfo = data['Vector']['AtInfo']
         refChoice = {}
+        RefObjs = []
+
+        GS = VectorRBDisplay.GetSizer()
+        if GS: 
+            try:        #get around a c++ error in wx 4.0; doing is again seems to be OK
+                GS.Clear(True)
+            except:
+                GS.Clear(True)
+        
+        RBnames = {}
+        for rbid in data['RBIds']['Vector']:
+            RBnames.update({data['Vector'][rbid]['RBname']:rbid,})
+        if not RBnames:
+            return
+        rbchoice = list(RBnames.keys())
+        rbchoice.sort()
+        if GS: 
+            VectorRBSizer = GS
+        else:
+            VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
+        if resRBsel not in data['RBIds']['Vector']:
+            resRBsel = RBnames[rbchoice[0]]
+        if len(RBnames) > 1:
+            selSizer = wx.BoxSizer(wx.HORIZONTAL)
+            selSizer.Add(wx.StaticText(VectorRBDisplay,label=' Select rigid body to view:'),0)
+            rbSelect = wx.ComboBox(VectorRBDisplay,choices=['']+rbchoice)
+            name = data['Vector'][resRBsel]['RBname']
+            rbSelect.SetSelection(1+rbchoice.index(name))
+            rbSelect.Bind(wx.EVT_COMBOBOX,OnRBSelect)
+            selSizer.Add(rbSelect,0)
+            VectorRBSizer.Add(selSizer,0)
+        rbData = data['Vector'][resRBsel]
         if 'DELETED' in str(G2frame.GetStatusBar()):   #seems to be no other way to do this (wx bug)
             if GSASIIpath.GetConfigValue('debug'):
                 print ('DBG_wx error: Rigid Body/Status not cleanly deleted after Refine')
             return
         SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
-        if VectorRB.GetSizer(): VectorRB.GetSizer().Clear(True)
-        VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
-        first = True
-        for rbid in data['RBIds']['Vector']:
-            if rbid == 'AtInfo': continue
-            rbData = data['Vector'][rbid]
-            FillRefChoice(rbid,rbData)
-            if not first:
-                G2G.HorizontalLine(VectorRBSizer,VectorRBDisplay)
-            VectorRBSizer.Add(rbNameSizer(rbid,rbData),0)
-            VectorRBSizer.Add(rbRefAtmSizer(rbid,rbData),0)
-            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
-            for imag,mag in enumerate(rbData['VectMag']):
-                XYZ += mag*rbData['rbVect'][imag]
-                VectorRBSizer.Add(rbVectMag(rbid,imag,rbData),0)
-                VectorRBSizer.Add(rbVectors(rbid,imag,mag,XYZ,rbData),0)
-            VectorRBSizer.Add((5,5),0)
-            data['Vector'][rbid]['rbXYZ'] = XYZ        
-            first = False
+        FillRefChoice(resRBsel,rbData)
+        VectorRBSizer.Add(rbNameSizer(resRBsel,rbData),0)
+        VectorRBSizer.Add(rbRefAtmSizer(resRBsel,rbData),0)
+        XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+        for imag,mag in enumerate(rbData['VectMag']):
+            XYZ += mag*rbData['rbVect'][imag]
+            VectorRBSizer.Add(rbVectMag(rbid,imag,rbData),0)
+            VectorRBSizer.Add(rbVectors(rbid,imag,mag,XYZ,rbData),0)
+        VectorRBSizer.Add((5,5),0)
+        data['Vector'][rbid]['rbXYZ'] = XYZ        
+        
+        VectorRBSizer.Add((5,25),)
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
+        VectorRBDisplay.SetAutoLayout(True)
         Size = VectorRBSizer.GetMinSize()
+        VectorRBDisplay.SetSize(Size)
+       
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
-        VectorRBDisplay.SetSize(Size)
+        VectorRB.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        VectorRB.Scroll(0,Scroll)
+        G2frame.dataWindow.SendSizeEvent()
+        
+        VectorRBDisplay.Show()
+        
         
     def UpdateResidueRB():
         '''Draw the contents of the Residue Rigid Body tab for Rigid Bodies tree entry
         '''
         global resRBsel
         def rbNameSizer(rbid,rbData):
+            
             def OnRBName(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -3216,13 +3252,11 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 wx.CallAfter(UpdateResidueRB)
 
             def OnPlotRB(event):
-                Obj = event.GetEventObject()
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 
             # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-            nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
-                0,WACV)
+            nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),0,WACV)
             RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
@@ -3235,15 +3269,12 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             nameSizer.Add(plotRB,0,WACV)
             nameSizer.Add((5,0),)
             if not rbData['useCount']:
-                delRB = wx.Button(ResidueRBDisplay,wx.ID_ANY,"Delete",
-                                style=wx.BU_EXACTFIT)
+                delRB = wx.Button(ResidueRBDisplay,wx.ID_ANY,"Delete",style=wx.BU_EXACTFIT)
                 delRB.Bind(wx.EVT_BUTTON, OnDelRB)
                 Indx[delRB.GetId()] = rbid
                 nameSizer.Add(delRB,0,WACV)
                 if 'H'  in rbData['rbTypes']:
-                    stripH = wx.Button(ResidueRBDisplay,wx.ID_ANY,
-                                "Strip H-atoms",
-                                style=wx.BU_EXACTFIT)
+                    stripH = wx.Button(ResidueRBDisplay,wx.ID_ANY,"Strip H-atoms",style=wx.BU_EXACTFIT)
                     stripH.Bind(wx.EVT_BUTTON, OnStripH)
                     Indx[stripH.GetId()] = rbid
                     nameSizer.Add(stripH,0,WACV)
@@ -3276,6 +3307,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                         rbData['rbXYZ'][r][c-2] = val
                     except ValueError:
                         pass
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                         
             def OnRefSel(event):
                 Obj = event.GetEventObject()
@@ -3292,7 +3324,6 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 rbXYZ = rbData['rbXYZ']
                 if not iref:     #origin change
                     rbXYZ -= rbXYZ[ind]
-                #TODO - transform all atom XYZ by axis choices
                 Xxyz = rbXYZ[rbData['rbRef'][1]]
                 X = Xxyz/np.sqrt(np.sum(Xxyz**2))
                 Yxyz = rbXYZ[rbData['rbRef'][2]]
@@ -3509,6 +3540,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             if sel == 0: return # 1st entry is blank
             rbname = rbchoice[sel-1]
             resRBsel = RBnames[rbname]
+            G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
             wx.CallLater(100,UpdateResidueRB)
             
         #----- beginning of UpdateResidueRB -----------------------------------------------

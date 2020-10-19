@@ -9349,7 +9349,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]
-                if testRBObj['NameLookup'][ind]:
+                if ind in testRBObj['NameLookup']:
                     name = testRBObj['NameLookup'][ind]+' '
                 else:
                     name = '  '+aType+str(ind)

@@ -10105,18 +10105,22 @@ def UpdatePhaseData(G2frame,Item,data):
                 vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer                
         
-        def OnSelect(event):
+        def OnVecSelect(event):
             rbId = select.GetSelection()
-            wx.CallLater(100,RepaintRBInfo,rbId)
+            wx.CallLater(100,RepaintRBInfo,'Vector',rbId)
            
-        def RepaintRBInfo(rbId,Scroll=0):
+        def OnResSelect(event):
+            rbId = select.GetSelection()
+            wx.CallLater(100,RepaintRBInfo,'Residue',rbId)
+           
+        def RepaintRBInfo(rbType,rbId,Scroll=0):
             oldFocus = wx.Window.FindFocus()
             if 'phoenix' in wx.version():
                 G2frame.bottomSizer.Clear(True)
             else:
                 G2frame.bottomSizer.DeleteWindows()
             Indx.clear()
-            rbObj = data['RBModels']['Residue'][rbId]
+            rbObj = data['RBModels'][rbType][rbId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
@@ -10160,7 +10164,6 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add((5,5),0)
             RBnames = []
             for RBObj in data['RBModels']['Residue']:
-#                RBnames.append(RBObj['RBname'].split(':')[0]+RBObj['numChain'])
                 RBnames.append(RBObj['RBname']+RBObj['numChain'])
             rbName = RBnames[0]
             rbObj = data['RBModels']['Residue'][0]
@@ -10169,7 +10172,7 @@ def UpdatePhaseData(G2frame,Item,data):
             select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
             select.SetSelection(RBnames.index(rbName))
             select.SetFirstItem(RBnames.index(rbName))
-            select.Bind(wx.EVT_LISTBOX,OnSelect)
+            select.Bind(wx.EVT_LISTBOX,OnResSelect)
             mainSizer.Add(select,0)
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
             G2frame.bottomSizer.Add(ResrbSizer(rbObj))
@@ -10181,8 +10184,23 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
+            RBnames = []
             for RBObj in data['RBModels']['Vector']:
-                mainSizer.Add(VecrbSizer(RBObj))
+                RBnames.append(RBObj['RBname'])
+            rbName = RBnames[0]
+            rbObj = data['RBModels']['Vector'][0]
+            data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            data['Drawing']['Quaternion'] = rbObj['Orient'][0]
+            select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            select.SetSelection(RBnames.index(rbName))
+            select.SetFirstItem(RBnames.index(rbName))
+            select.Bind(wx.EVT_LISTBOX,OnVecSelect)
+            mainSizer.Add(select,0)            
+            G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
+            G2frame.bottomSizer.Add(VecrbSizer(rbObj))
+            mainSizer.Add(G2frame.bottomSizer)
+            G2plt.PlotStructure(G2frame,data)
+            G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
         if nobody:
             mainSizer.Add((5,5),0)
             msg = 'Define a rigid body with the "Rigid Bodies" tree entry before adding it to the phase here'
@@ -10246,11 +10264,13 @@ def UpdatePhaseData(G2frame,Item,data):
             rbAtmLbs = None
 
         newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
+        rbUsedIds = []   # Ids of atoms in current phase used inside RBs
+        for i in data['RBModels']: 
+            for j in data['RBModels'][i]:
+                rbUsedIds += j['Ids']
         # categorize atoms by type, omitting any that are already assigned
         # in a rigid body
-        atmTypes = [None if atomData[i][-1] in rbUsedIds
-                        else atomData[i][ct]
-                        for i in range(len(atomData))]
+        atmTypes = [None if atomData[i][-1] in rbUsedIds else atomData[i][ct] for i in range(len(atomData))]
         # remove assigned atoms from search groups
         for i in selDict:
             if selDict[i] is None: continue
@@ -10528,7 +10548,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                       style=wx.ICON_EXCLAMATION)
                     return
                 selDict = getSelectedAtoms()
-                if len(selDict) < 1:
+                if selDict and len(selDict) < 1:
                     wx.MessageBox('No existing atoms were selected',caption='Select Atom(s)',
                                       style=wx.ICON_EXCLAMATION)
                     return
@@ -10920,7 +10940,7 @@ def UpdatePhaseData(G2frame,Item,data):
         rbType,rbId = rbNames[selection]
         data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
         data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
-        data['testRBObj']['NameLookup'] = RBData[rbType][rbId]['atNames']
+        data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
         data['testRBObj']['rbType'] = rbType
         data['testRBObj']['rbData'] = RBData
         data['testRBObj']['Sizers'] = {}

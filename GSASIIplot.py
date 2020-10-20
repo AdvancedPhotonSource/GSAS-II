@@ -9349,9 +9349,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]
-                if ind in testRBObj['NameLookup']:
-                    name = testRBObj['NameLookup'][ind]+' '
-                else:
+                try:
+                    name = '  '+testRBObj['NameLookup'][ind]
+                except:
                     name = '  '+aType+str(ind)
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 if 'RBhighLight' in testRBObj and testRBObj['RBhighLight'] == ind: # highlighted atom is green

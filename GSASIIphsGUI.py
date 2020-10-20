@@ -10850,7 +10850,7 @@ def UpdatePhaseData(G2frame,Item,data):
             btnSizer.Add((-1,20))
             btnSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with assigned\natom(s)...'),0,wx.ALL)
             btnSizer.Add((-1,10))
-            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Process Assignments')
+            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Update Assignments')
             btn.Bind(wx.EVT_BUTTON,UpdateTable)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,10))

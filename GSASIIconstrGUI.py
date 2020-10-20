@@ -3094,9 +3094,12 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             colLabels = ['Vector x','Vector y','Vector z','Type','Cart x','Cart y','Cart z']
             table = []
             rowLabels = []
+            atNames = []
             for ivec,xyz in enumerate(rbData['rbVect'][imag]):
                 table.append(list(xyz)+[rbData['rbTypes'][ivec],]+list(XYZ[ivec]))
                 rowLabels.append(str(ivec))
+                atNames.append(rbData['rbTypes'][ivec]+str(ivec))
+            rbData['atNames'] = atNames
             vecTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             vecGrid = G2G.GSGrid(VectorRBDisplay)
             vecGrid.SetTable(vecTable, True)

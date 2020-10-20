@@ -10799,7 +10799,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     ' Use assignments to align bodies.'),0)
             mainSizer.Add((5,5))
             gridSizer = wx.BoxSizer(wx.HORIZONTAL)
-            colLabels = ['RB\ntype','phase\n#','phase\nlabel','delta, A','Assign as atom']
+            colLabels = ['RB\ntype','Atom\n#','Atom\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
             displayTable = []
             for i,l in enumerate(matchTable):

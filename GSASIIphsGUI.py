@@ -10548,7 +10548,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                       style=wx.ICON_EXCLAMATION)
                     return
                 selDict = getSelectedAtoms()
-                if selDict and len(selDict) < 1:
+                if len(selDict) < 1:
                     wx.MessageBox('No existing atoms were selected',caption='Select Atom(s)',
                                       style=wx.ICON_EXCLAMATION)
                     return

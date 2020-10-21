@@ -994,7 +994,8 @@ def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
     else:
         a,v = Q2AV(oriQ)
         symaxis = np.array(symAxis)
-        xformAng = np.arccos(np.dot(v,symaxis))
+        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
+        xformAng = np.arccos(vdotsym)
         xformVec = np.cross(symaxis,v)
         Q = prodQQ(oriQ,AV2Q(xformAng,xformVec))
     XYZ = np.zeros_like(Cart)
@@ -1034,7 +1035,8 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     else:
         a,v = Q2AV(RBObj['Orient'][0])
         symaxis = np.array(RBObj.get('symAxis'))
-        xformAng = np.arccos(np.dot(v,symaxis))
+        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
+        xformAng = np.arccos(vdotsym)
         xformVec = np.cross(symaxis,v)
         Q = prodQQ(RBObj['Orient'][0],AV2Q(xformAng,xformVec))
     XYZ = np.zeros_like(Cart)

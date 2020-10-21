@@ -10355,6 +10355,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         dlg.Destroy()
                         return
                     dlg.Destroy()
+                Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[1]
                 Ids = []
                 updateNeeded = False
                 for line in matchTable:
@@ -10364,10 +10365,12 @@ def UpdatePhaseData(G2frame,Item,data):
                         lbl = 'Rb' + elem + str(nextNum)
                         x,y,z = line[2:5]
                         AtomAdd(x,y,z,El=elem,Name=lbl,update=False)
+                        atomData[nextNum][6] = Mult/atomData[nextNum][8]
                         Ids.append(atomData[nextNum][-1])
                         updateNeeded = True
                     else:
                         atomData[line[5]][cx:cx+3] = line[2:5]
+                        atomData[line[5]][6] = Mult/atomData[line[5]][8]
                         Ids.append(line[11])
                 if updateNeeded:
                     UpdateDrawAtoms()
@@ -10479,6 +10482,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 '''
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
+                
+            def UpdateSytSym(*args,**kwargs):
+                
+                Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
+                sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
+                UpdateTablePlot(args,kwargs)
                 
             def getSelectedAtoms():
                 'Find the FB atoms that have been assigned to specific atoms in structure'
@@ -10598,13 +10607,15 @@ def UpdatePhaseData(G2frame,Item,data):
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 RigidBodies.SetFocus() # make sure tab presses go to panel
+                
             def Sticks(event):
                 '''Set all draw atoms in crystal structure to stick
                 '''
                 for a in data['Drawing']['Atoms']: a[6] = "sticks"
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
-                RigidBodies.SetFocus() # make sure tab presses go to panel                
+                RigidBodies.SetFocus() # make sure tab presses go to panel
+                
             def OnRowSelect(event):
                 '''Respond to the selection of a rigid body atom.
                 Highlight the atom in the body and the paired atom in the
@@ -10619,6 +10630,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     i for i,a in enumerate(data['Atoms']) if a[0] == cryatom]
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 misc['showSelect'].SetLabelText(cryatom)
+                
             def OnSymRadioSet(event):
                 '''Set the symmetry axis for the body as 
                 data['testRBObj']['rbObj']['symAxis']. This may never be 
@@ -10664,27 +10676,24 @@ def UpdatePhaseData(G2frame,Item,data):
             #    refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
             atNames = data['testRBObj']['atNames']
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
-                                'Locating rigid body : '+rbName), 0, WACV)
+            topSizer.Add(wx.StaticText(RigidBodies,label='Locating rigid body : '+rbName), 0, WACV)
             topSizer.Add((10,-1),0)
-            topSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
-                                'Display crystal structure as:'), 0, WACV)
-            btn = wx.Button(RigidBodies,wx.ID_ANY,"Ball && Sticks")
+            topSizer.Add(wx.StaticText(RigidBodies,label='Display crystal structure as:'), 0, WACV)
+            btn = wx.Button(RigidBodies,label="Ball && Sticks")
             btn.Bind(wx.EVT_BUTTON, BallnSticks)
             topSizer.Add(btn)
-            btn = wx.Button(RigidBodies,wx.ID_ANY,"Sticks")
+            btn = wx.Button(RigidBodies,label="Sticks")
             btn.Bind(wx.EVT_BUTTON, Sticks)
             topSizer.Add(btn)
             mainSizer.Add(topSizer)
             mainSizer.Add((-1,5),0)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Origin: '),0,WACV)
+            OriSizer.Add(wx.StaticText(RigidBodies,label='Origin: '),0,WACV)
             Xsizers = []
             for ix in range(3):
-                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,RBdirlbl[ix]),
-                                 0,WACV,4)
+                OriSizer.Add(wx.StaticText(RigidBodies,label=RBdirlbl[ix]),0,WACV,4)
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,rbObj['Orig'][0],ix,nDig=(10,5),
-                    xmin=-1.5,xmax=1.5,typeHint=float,OnLeave=UpdateTablePlot)
+                    xmin=-1.5,xmax=1.5,typeHint=float,OnLeave=UpdateSytSym)
                 OriSizer.Add(origX,0,WACV)
                 Xsizers.append(origX)
             try:
@@ -10693,50 +10702,50 @@ def UpdatePhaseData(G2frame,Item,data):
                 rbObj['fixOrig'] = False
             fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
             OriSizer.Add(fixOrig,0,WACV,10)
-
             mainSizer.Add(OriSizer)
-            OriSizer.Add((5,0),)
-            OriSizer = wx.FlexGridSizer(0,5,5,5)
+            Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
+            sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
+            mainSizer.Add(sytsymtxt,0,WACV)
+            OriSizer1 = wx.FlexGridSizer(0,5,5,5)
             if len(atomData):
                 choice = list(atNames[0].keys())
                 choice.sort()
                 G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
-            mainSizer.Add(OriSizer)
+            mainSizer.Add(OriSizer1)
             mainSizer.Add((5,5),0)
-            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer2 = wx.BoxSizer(wx.HORIZONTAL)
             if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
             rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
             rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation azimuth: '),0,WACV)
+            OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
             OrientVecSiz = []
             OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
                 xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
-            OriSizer.Add(OrientVecSiz[-1],0,WACV)
+            OriSizer2.Add(OrientVecSiz[-1],0,WACV)
             azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,value=int(rbObj['OrientVec'][0]*10.),size=(200,25))
             azSlide.SetRange(0,3600)
             azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
-            OriSizer.Add(azSlide,0,WACV)
-            mainSizer.Add(OriSizer)
-            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Orientation vector'),0,WACV)
+            OriSizer2.Add(azSlide,0,WACV)
+            mainSizer.Add(OriSizer2)
+            OriSizer3 = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer3.Add(wx.StaticText(RigidBodies,label='Orientation vector'),0,WACV)
             for ix,lbl in enumerate('xyz'):
-                OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'  '+lbl+': '),0,WACV)
+                OriSizer3.Add(wx.StaticText(RigidBodies,label='  '+lbl+': '),0,WACV)
                 OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],ix+1,nDig=(10,4),
                     xmin=-1.,xmax=1.,typeHint=float,OnLeave=UpdateOrientation))
-                OriSizer.Add(OrientVecSiz[-1],0,WACV)
+                OriSizer3.Add(OrientVecSiz[-1],0,WACV)
             OrientVecSiz.append(azSlide)
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,' (frac coords)'),0,WACV)
+            OriSizer3.Add(wx.StaticText(RigidBodies,label=' (frac coords)'),0,WACV)
             G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
-            mainSizer.Add(OriSizer)
+            mainSizer.Add(OriSizer3)
             mainSizer.Add((5,5),0)
-            OriSizer = wx.BoxSizer(wx.HORIZONTAL)
-            OriSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
-                                    'Rigid body symmetry axis: '),0, WACV)
+            OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
+            OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
             choices = ['None']+RBdirlbl
-            symRadioSet = wx.RadioBox(RigidBodies,wx.ID_ANY,choices=choices)
+            symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
             symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-            OriSizer.Add(symRadioSet)
-            mainSizer.Add(OriSizer)
+            OriSizer4.Add(symRadioSet)
+            mainSizer.Add(OriSizer4)
             mainSizer.Add((5,5),0)
             RefSizer = wx.FlexGridSizer(0,7,5,5)
             mainSizer.Add(RefSizer)
@@ -10752,23 +10761,23 @@ def UpdatePhaseData(G2frame,Item,data):
                             torName += data['testRBObj']['NameLookup'][item]+' '
                         else:
                             torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
-                    TorSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Side chain torsion for rb seq: '+torName),0,WACV)
+                    TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
                     torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
                     torSlide.SetRange(0,3600)
                     torSlide.SetValue(int(torsion[0]*10.))
                     torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                     TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
-                    TorSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,' Angle: '),0,WACV)
+                    TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)
                     ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
                     Indx[torSlide.GetId()] = [t,ang]
                     Indx[ang.GetId()] = [t,torSlide]
                     TorSizer.Add(ang,0,WACV)                            
                 mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
             else:
-                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'No side chain torsions'),0)
-            OkBtn = wx.Button(RigidBodies,wx.ID_ANY,"Add")
+                mainSizer.Add(wx.StaticText(RigidBodies,label='No side chain torsions'),0)
+            OkBtn = wx.Button(RigidBodies,label="Add")
             OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
-            CancelBtn = wx.Button(RigidBodies,wx.ID_ANY,'Cancel')
+            CancelBtn = wx.Button(RigidBodies,label='Cancel')
             CancelBtn.Bind(wx.EVT_BUTTON, OnCancel)
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
             btnSizer.Add((20,20),1)
@@ -10783,7 +10792,7 @@ def UpdatePhaseData(G2frame,Item,data):
             assignable = [a[0] for a in data['Atoms'] if a[-1] not in rbUsedIds]
             data['testRBObj']['availAtoms'] = ['         '] + assignable
             if len(assignable) == 0:
-                mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+                mainSizer.Add(wx.StaticText(RigidBodies,label=
                     'No matching atoms between rigid body and crystal.'+
                     ' All rigid body atoms will be added to structure.'),0)
                 misc['UpdateTable'] = None
@@ -10794,7 +10803,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             
-            mainSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,
+            mainSizer.Add(wx.StaticText(RigidBodies,label=
                     'Match between atoms in rigid body and crystal.'+
                     ' Use assignments to align bodies.'),0)
             mainSizer.Add((5,5))
@@ -10842,28 +10851,28 @@ def UpdatePhaseData(G2frame,Item,data):
 
             btnSizer = wx.BoxSizer(wx.VERTICAL)
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
-            hSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Crystal Highlight: '))
+            hSizer.Add(wx.StaticText(RigidBodies,label='Crystal Highlight: '))
             misc['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
                 data['testRBObj']['availAtoms'],None,None,showAtom,0,showCryAtom,size=(75,-1))
             hSizer.Add(misc['showSelect'])
             btnSizer.Add(hSizer)
             btnSizer.Add((-1,20))
-            btnSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Actions with assigned\natom(s)...'),0,wx.ALL)
+            btnSizer.Add(wx.StaticText(RigidBodies,label='Actions with assigned\natom(s)...'),0,wx.ALL)
             btnSizer.Add((-1,10))
-            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Update Assignments')
+            btn = wx.Button(RigidBodies,label='Update Assignments')
             btn.Bind(wx.EVT_BUTTON,UpdateTable)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,10))
 
-            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Origin')
+            btn = wx.Button(RigidBodies,label='Set Origin')
             btn.Bind(wx.EVT_BUTTON,onSetOrigin)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,5))
-            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set Orientation')
+            btn = wx.Button(RigidBodies,label='Set Orientation')
             btn.Bind(wx.EVT_BUTTON,onFitOrientation)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             btnSizer.Add((-1,5))
-            btn = wx.Button(RigidBodies, wx.ID_ANY, 'Set both')
+            btn = wx.Button(RigidBodies,label='Set both')
             btn.Bind(wx.EVT_BUTTON,onFitBoth)
             btnSizer.Add(btn,0,wx.ALIGN_CENTER)
             gridSizer.Add(btnSizer)
@@ -11805,7 +11814,7 @@ def UpdatePhaseData(G2frame,Item,data):
             pawlNegWt.Enable(generalData['doPawley'])
         generalData = data['General']
         startDmin = generalData['Pawley dmin']
-        genDlg = wx.Dialog(G2frame,wx.ID_ANY,'Set Pawley Parameters',
+        genDlg = wx.Dialog(G2frame,label='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,

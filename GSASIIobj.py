@@ -3276,11 +3276,9 @@ def validateAtomDrawType(typ,generalData={}):
     '''
     if typ in ('lines','vdW balls','sticks','balls & sticks','ellipsoids'):
         return typ
-    elif generalData.get('Type','') == 'macromolecular':
-        if typ in ('backbone','ribbons','schematic'):
-            return typ
-    elif typ == 'polyhedra':
-        return 'polyhedra'
+    # elif generalData.get('Type','') == 'macromolecular':
+    #     if typ in ('backbone',):
+    #         return typ
     return 'vdW balls'
 
 if __name__ == "__main__":

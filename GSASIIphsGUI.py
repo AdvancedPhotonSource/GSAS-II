@@ -9928,11 +9928,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnOrigX(invalid,value,tc):
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
+                sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                    data['Atoms'][AtLookUp[Id]][cx+3] = Mult/maxMult
                 data['Drawing']['Atoms'] = []
-                Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
-                sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)
                 
@@ -9957,6 +9958,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 except ValueError:
                     pass
                 
+            SGData = data['General']['SGData']
+            maxMult = len(SGData['SGOps'])*len(SGData['SGCen'])
+            if SGData['SGInv']: maxMult *= 2
             topSizer = wx.FlexGridSizer(0,6,5,5)
             if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
                 if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
@@ -9989,7 +9993,7 @@ def UpdatePhaseData(G2frame,Item,data):
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
-            Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
+            Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             topSizer.Add(sytsymtxt)
             return topSizer

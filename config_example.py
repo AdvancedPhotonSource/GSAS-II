@@ -222,3 +222,17 @@ Image_2theta_max = 50.0
 as the Outer 2-theta value. Will be applied for 
 newly-read images, but if changed the new value will be saved.
 '''
+
+enum_DrawAtoms_default = ['','lines','vdW balls','sticks','balls & sticks',
+       'ellipsoids','polyhedra','backbone','ribbons','schematic']
+'choices for DrawAtoms_default'
+DrawAtoms_default = ''
+'''Allows selection of the default plotting mode for structures
+in Draw Atoms. The only valid values are:
+'lines', 'vdW balls', 'sticks', 'balls & sticks', 'ellipsoids', 'polyhedra',
+'backbone', 'ribbons', 'schematic', where 'polyhedra' is invalid for 
+macromolecular phases and 'backbone', 'ribbons' & 'schematic' is invalid for
+non-macromolecular phases. %% If a non-valid choice is used (the default)
+'vdW balls' is used.
+'''
+

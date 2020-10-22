@@ -259,9 +259,11 @@ class RBDataTable(wg.GridTableBase):
 def MakeDrawAtom(data,atom):
     'Convert atom to format needed to draw it'
     generalData = data['General']
+    deftype = G2obj.validateAtomDrawType(
+        GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
     if generalData['Type'] in ['nuclear','faulted',]:
-        atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
-                    ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
+        atomInfo = [atom[:2]+atom[3:6]+['1']+[deftype]+
+                    ['']+[[255,255,255]]+atom[9:]+[[],[]]][0]
     ct,cs = [1,8]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])
     atomInfo[cs] = list(generalData['Color'][atNum])

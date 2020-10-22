@@ -1118,6 +1118,8 @@ def MakeDrawAtom(data,atom,oldatom=None):
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
+    deftype = G2obj.validateAtomDrawType(
+        GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
     if generalData['Type'] in ['nuclear','faulted',]:
         if oldatom:
             opr = oldatom[5]
@@ -1128,7 +1130,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
                 X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
                 atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+oldatom[17:]][0]
         else:
-            atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
+            atomInfo = [atom[:2]+atom[3:6]+['1',]+[deftype]+
                 ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
         ct,cs = [1,8]         #type & color
     elif  generalData['Type'] == 'magnetic':
@@ -1147,7 +1149,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
                 X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
                 atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:]+oldatom[20:]][0]
         else:
-            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
+            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+[deftype]+
                 ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
         ct,cs = [1,11]         #type & color
     elif generalData['Type'] == 'macromolecular':
@@ -1157,7 +1159,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
             oneLetter = -1
         atomInfo = [[atom[1].strip()+atom[0],]+
             [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-            atom[6:9]+['1',]+['vdW balls',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+            atom[6:9]+['1',]+[deftype]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
         ct,cs = [4,11]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])
     atomInfo[cs] = list(generalData['Color'][atNum])

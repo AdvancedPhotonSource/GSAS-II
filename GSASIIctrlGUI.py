@@ -5188,6 +5188,7 @@ class HelpButton(wx.Button):
         self.parent = parent
         self.helpIndex = helpIndex
         self.wrap = wrap
+        self.msg = self.msg.replace(' & ',' && ')
     def _onClose(self,event):
         self.dlg.EndModal(wx.ID_CANCEL)
     def _onPress(self,event):
@@ -5651,7 +5652,9 @@ class SelectConfigSetting(wx.Dialog):
             )
         self.sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         self.choice = {}
-        btn = G2ChoiceButton(self, sorted(self.vars.keys(),key=lambda s: s.lower()),
+        choices = sorted([k for k in self.vars if not k.startswith('enum_')],
+                         key=lambda s: s.lower())
+        btn = G2ChoiceButton(self, choices,
             strLoc=self.choice,strKey=0,onChoice=self.OnSelection)
         btn.SetLabel("")
         self.sizer.Add(btn)
@@ -5754,7 +5757,12 @@ class SelectConfigSetting(wx.Dialog):
         showdef = True
         if var not in self.vars:
             raise Exception("How did this happen?")
-        if type(self.vars[var][0]) is int:
+        if 'enum_'+var in self.vars:
+            choices = self.vars['enum_'+var][0]
+            self.colSel = EnumSelector(self,self.vars[var],1,choices,
+                                               OnChange=self.OnChange)       
+            self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        elif type(self.vars[var][0]) is int:
             ed = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=int,OKcontrol=self.OnChange)
             self.varsizer.Add(ed, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         elif type(self.vars[var][0]) is float:
@@ -5828,11 +5836,14 @@ class SelectConfigSetting(wx.Dialog):
             self.resetBtn.Enable(False)
         self.varsizer.Add(self.resetBtn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         # show meaning, if defined
-        self.doclbl.SetLabel("Description of "+str(var)) 
-        if self.vars[var][3]:
-            self.docinfo.SetLabel(self.vars[var][3])
+        self.doclbl.SetLabel("Description of "+str(var))
+        vartxt = self.vars[var][3]
+        vartxt = StripIndents(vartxt.replace(' & ',' && '),True)
+        if vartxt:
+            self.docinfo.SetLabel(vartxt)
         else:
             self.docinfo.SetLabel("(not documented)")
+        self.docinfo.Wrap(500)
         self.sizer.Fit(self)
         self.CenterOnParent()
         wx.CallAfter(self.SendSizeEvent)

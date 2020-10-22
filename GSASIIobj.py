@@ -3269,6 +3269,20 @@ class ShowTiming(object):
             print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
 #%%
 
+def validateAtomDrawType(typ,generalData={}):
+    '''Confirm that the selected Atom drawing type is valid for the current 
+    phase. If not, use 'vdW balls'. This is currently used only for setting a 
+    default when atoms are added to the atoms draw list.
+    '''
+    if typ in ('lines','vdW balls','sticks','balls & sticks','ellipsoids'):
+        return typ
+    elif generalData.get('Type','') == 'macromolecular':
+        if typ in ('backbone','ribbons','schematic'):
+            return typ
+    elif typ == 'polyhedra':
+        return 'polyhedra'
+    return 'vdW balls'
+
 if __name__ == "__main__":
     # test variable descriptions
     for var in '0::Afrac:*',':1:Scale','1::dAx:0','::undefined':

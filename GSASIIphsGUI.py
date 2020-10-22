@@ -1118,8 +1118,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
-    deftype = G2obj.validateAtomDrawType(
-        GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
+    deftype = G2obj.validateAtomDrawType(GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
     if generalData['Type'] in ['nuclear','faulted',]:
         if oldatom:
             opr = oldatom[5]
@@ -9932,6 +9931,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                 data['Drawing']['Atoms'] = []
+                Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
+                sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)
                 
@@ -9988,6 +9989,9 @@ def UpdatePhaseData(G2frame,Item,data):
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
+            Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
+            sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
+            topSizer.Add(sytsymtxt)
             return topSizer
                          
         def ResrbSizer(RBObj):
@@ -10028,9 +10032,9 @@ def UpdatePhaseData(G2frame,Item,data):
             topLine.Add(delRB,0,WACV)
             symAxis = RBObj.get('symAxis')
             if np.any(symAxis):
-                if symAxis[0] == symAxis[1] == symAxis[2]:
+                if np.all(symAxis):
                     lbl = 'x+y+z'
-                elif symAxis[0] == symAxis[1] != symAxis[2]:
+                elif np.all(symAxis[:2]):
                     lbl = 'x+y'
                 elif symAxis[0]:
                     lbl = 'x'
@@ -10357,7 +10361,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         dlg.Destroy()
                         return
                     dlg.Destroy()
-                Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[1]
+                SGData = data['General']['SGData']
+                maxMult = len(SGData['SGOps'])*len(SGData['SGCen'])
+                if SGData['SGInv']: maxMult *= 2
+                Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[1]
                 Ids = []
                 updateNeeded = False
                 for line in matchTable:
@@ -10367,12 +10374,12 @@ def UpdatePhaseData(G2frame,Item,data):
                         lbl = 'Rb' + elem + str(nextNum)
                         x,y,z = line[2:5]
                         AtomAdd(x,y,z,El=elem,Name=lbl,update=False)
-                        atomData[nextNum][6] = Mult/atomData[nextNum][8]
+                        atomData[nextNum][6] = Mult/maxMult
                         Ids.append(atomData[nextNum][-1])
                         updateNeeded = True
                     else:
                         atomData[line[5]][cx:cx+3] = line[2:5]
-                        atomData[line[5]][6] = Mult/atomData[line[5]][8]
+                        atomData[line[5]][6] = Mult/maxMult
                         Ids.append(line[11])
                 if updateNeeded:
                     UpdateDrawAtoms()

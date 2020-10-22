@@ -9441,7 +9441,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         
     # PlotStructure starts here
     global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
-    global cell, Vol, Amat, Bmat, A4mat, B4mat
+    global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
     txID = 0
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']

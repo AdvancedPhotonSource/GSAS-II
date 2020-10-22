@@ -15,7 +15,7 @@
 This module defines and/or documents the data structures used in GSAS-II, as well
 as provides misc. support routines.
 
-.. Next command allows \AA to be used in HTML
+.. Next command allows \\AA to be used in HTML
 
 .. only:: html
 
@@ -1453,7 +1453,7 @@ def ReadCIF(URLorFile):
     '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
     (from James Hester).
     The open routine gets confused with DOS names that begin with a letter and colon
-    "C:\dir\" so this routine will try to open the passed name as a file and if that
+    "C:\\dir\" so this routine will try to open the passed name as a file and if that
     fails, try it as a URL
 
     :param str URLorFile: string containing a URL or a file name. Code will try first
@@ -1836,8 +1836,8 @@ def CompileVarDesc():
         'Absorption' : 'Absorption coef.',
         'Displace([XY])' : ('Debye-Scherrer sample displacement \\1',0.1),
         'Lam' : ('Wavelength',1e-6),
-        'I\(L2\)\/I\(L1\)' : ('Ka2/Ka1 intensity ratio',0.001),
-        'Polariz\.' : ('Polarization correction',1e-3),
+        'I\\(L2\\)\\/I\\(L1\\)' : ('Ka2/Ka1 intensity ratio',0.001),
+        'Polariz\\.' : ('Polarization correction',1e-3),
         'SH/L' : ('FCJ peak asymmetry correction',1e-4),
         '([UVW])$' : ('Gaussian instrument broadening \\1',1e-5),
         '([XYZ])$' : ('Cauchy instrument broadening \\1',1e-5),
@@ -1911,7 +1911,7 @@ def CompileVarDesc():
         'beta-[01q]':'TOF/Pink profile term',
         'sig-[012q]':'TOF profile term',
         'dif[ABC]':'TOF to d-space calibration',
-        'C\([0-9]*,[0-9]*\)' : 'spherical harmonics preferred orientation coef.',
+        'C\\([0-9]*,[0-9]*\\)' : 'spherical harmonics preferred orientation coef.',
         }.items():
         if len(value) == 2:
             #VarDesc[key] = value[0]
@@ -2024,7 +2024,7 @@ def LookupWildCard(varname,varlist):
     that match wildcard name in varname
 
     :param str varname: a G2 variable name containing a wildcard
-      (such as \*::var)
+      (such as \\*::var)
     :param list varlist: the list of all variable names used in
       the current project
     :returns: a list of matching GSAS-II variables (may be empty)

@@ -3544,11 +3544,11 @@ class GSASII(wx.Frame):
                     if self.Limits is not None:
                         xMin = np.searchsorted(x,self.Limits[1][0])
                         xMax = np.searchsorted(x,self.Limits[1][1])
-                        x = x[xMin:xMax]
-                        y = y[xMin:xMax]
-                        lenX = xMax-xMin
+                        x = x[xMin:xMax+1]
+                        y = y[xMin:xMax+1]
+                        lenX = xMax-xMin+1
                     XY.append([x,scale*y])
-                    v = 1./w
+                    v = 1./w[xMin:xMax+1]
                     if lenX:
                         if lenX != len(x):
                             self.GetParent().ErrorDialog('Data length error','Data to be summed must have same number of points'+

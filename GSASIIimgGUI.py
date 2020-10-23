@@ -1163,19 +1163,28 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 
         def OnApplyPola(event):
             data['PolaVal'][1] = not data['PolaVal'][1]
+            
+        def OnIfPink(event):
+            data['IfPink'] = not data['IfPink']
                 
         dataSizer = wx.FlexGridSizer(0,2,5,3)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Integration coefficients'),0,WACV)    
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Integration coefficients'),0,WACV)    
         dataSizer.Add((5,0),0)
         if 'PWDR' in data['type']:
             binChoice = ['2-theta','Q']
         elif 'SASD' in data['type']:
             binChoice = ['2-theta','Q','log(q)']
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Bin style: Constant step bins in'),0,WACV)            
-        binSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['binType'],choices=binChoice,
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bin style: Constant step bins in'),0,WACV)
+        littleSizer = wx.BoxSizer(wx.HORIZONTAL)                   
+        binSel = wx.ComboBox(G2frame.dataWindow,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
-        dataSizer.Add(binSel,0,WACV)
+        littleSizer.Add(binSel,0,WACV)
+        pinkSel = wx.CheckBox(G2frame.dataWindow,label=' Pink beam source?')
+        pinkSel.SetValue(data['IfPink'])
+        pinkSel.Bind(wx.EVT_CHECKBOX,OnIfPink)
+        littleSizer.Add(pinkSel,0,WACV)
+        dataSizer.Add(littleSizer)
         binType = '2-theta'
         if 'q' in data['binType'].lower():
             binType = 'Q'
@@ -1479,6 +1488,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['Oblique'] = [0.5,False]
     if 'PolaVal' not in data:
         data['PolaVal'] = [0.99,False]
+    if 'IfPink' not in data:
+        data['IfPink'] = False
     #end fix
     
     if IntegrateOnly:

@@ -101,7 +101,7 @@ def trim(val):
 
     :returns: the (usually) shortened version of the string
     '''
-    return re.sub('\s+', ' ', val).strip()
+    return re.sub('\\s+', ' ', val).strip()
 
 def FileDlgFixExt(dlg,file):
     'this is needed to fix a problem in linux wx.FileDialog'
@@ -841,8 +841,12 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
             codes = [0 for i in range(14)]
         else:
-            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
-            codes = [0 for i in range(12)]
+            if data.get('IfPink',False):
+                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','Azimuth']
+                codes = [0 for i in range(15)]
+            else:
+                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                codes = [0 for i in range(12)]
     elif 'SASD' in name:
         names = ['Type','Lam','Zero','Azimuth'] 
         codes = [0 for i in range(4)]
@@ -894,7 +898,10 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 wave1,wave2 = waves[data['target']]
                 parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
             else:
-                parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
+                if data.get('IfPink',False):
+                    parms = ['PXB',data['wavelength'],0.0,polariz,0.,8000.,-150.,-24.,0.,0.,0.,13.,-1300.,3.,-7.,Azms[i]]   #from Sect 35 LSS
+                else:
+                    parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
@@ -1812,8 +1819,8 @@ class ExportBaseclass(object):
             x, y, z and fractional occupancy and
             their standard uncertainty (or a negative value)
           * td is contains a list with either one or six pairs of numbers:
-            if one number it is U\ :sub:`iso` and with six numbers it is
-            U\ :sub:`11`, U\ :sub:`22`, U\ :sub:`33`, U\ :sub:`12`, U\ :sub:`13` & U\ :sub:`23`
+            if one number it is U\\ :sub:`iso` and with six numbers it is
+            U\\ :sub:`11`, U\\ :sub:`22`, U\\ :sub:`33`, U\\ :sub:`12`, U\\ :sub:`13` & U\\ :sub:`23`
             paired with their standard uncertainty (or a negative value)
         """
         phasedict = self.Phases[phasenam] # pointer to current phase info            

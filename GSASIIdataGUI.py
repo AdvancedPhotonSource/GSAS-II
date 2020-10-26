@@ -5035,7 +5035,7 @@ class GSASII(wx.Frame):
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-            wx.Yield()
+#            wx.Yield()
         if OK:
             Rw = Msg['Rwp']
             rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Msg['Rwp'],Msg['GOF'],Msg['Nobs'],Msg['Max shft/sig'])
@@ -5105,7 +5105,7 @@ class GSASII(wx.Frame):
             self.GPXtree.SelectItem(Id)
             # selection above appears to trigger a tree event (all platforms?),
             # but if not call SelectDataTreeItem(self,Id)
-            wx.Yield()
+#            wx.Yield()
             time.sleep(0.1)
             pltNumber = self.G2plotNB.nb.GetSelection()
             if pltNumber >= 0:

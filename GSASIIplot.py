@@ -2741,12 +2741,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
     # save information needed to reload from tree and redraw
-    if not refineMode:
-        kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
-        if G2frame.PickId:
-            kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
-        G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-            (G2frame,newPlot,plotType),kwargs)
+    try:
+        if not refineMode:
+            kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
+            if G2frame.PickId:
+                kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
+            G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
+                (G2frame,newPlot,plotType),kwargs)
+    except:         #skip a C++ error
+        pass
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Page.tickDict = {}

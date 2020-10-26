@@ -11827,7 +11827,7 @@ def UpdatePhaseData(G2frame,Item,data):
             pawlNegWt.Enable(generalData['doPawley'])
         generalData = data['General']
         startDmin = generalData['Pawley dmin']
-        genDlg = wx.Dialog(G2frame,label='Set Pawley Parameters',
+        genDlg = wx.Dialog(G2frame,title='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,

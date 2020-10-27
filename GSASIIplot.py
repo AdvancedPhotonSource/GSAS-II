@@ -424,7 +424,8 @@ class G2PlotNoteBook(wx.Panel):
         '''
         try:
             Page = self.nb.GetPage(self.nb.GetSelection())
-        except ValueError: # occurs with no plot tabs
+        except: # occurs with no plot tabs
+            event.Skip()
             return
         try:
             Page.canvas.SetFocus()

@@ -1840,7 +1840,7 @@ class G2MultiChoiceWindow(wx.BoxSizer):
     '''
     def __init__(self, parent, title, ChoiceList, SelectList, toggle=True,
                  monoFont=False, filterBox=True,
-                     OnChange=None, OnChangeArgs=[]):
+                     OnChange=None, OnChangeArgs=[], helpText=None):
         self.SelectList = SelectList
         self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
         self.frm = parent
@@ -1854,8 +1854,10 @@ class G2MultiChoiceWindow(wx.BoxSizer):
         # fill the sizer
         Sizer = self
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self.frm,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND|WACV,1)
+        topSizer.Add(wx.StaticText(self.frm,wx.ID_ANY,title,size=(-1,35)),0,WACV)
+        if helpText:
+            topSizer.Add(HelpButton(self.frm,helpText,wrap=400),0,wx.ALL,5)
+        topSizer.Add((1,-1),1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -6021,11 +6023,11 @@ def ShowWebPage(URL,frame):
 G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 tutorialIndex = (
     # tutorial dir,      web page file name,      title for page,  description
-    ['Getting started'],
+['Getting started'],
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II',
      '''An introduction to GSAS-II with starting instructions and a brief description of the displays.'''],
 
-    ['Rietveld refinement'],
+['Rietveld refinement'],
     ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet',
      '''This shows a simple Rietveld refinement with constraints from CW neutron powder diffraction data.'''],
      
@@ -6052,7 +6054,10 @@ tutorialIndex = (
      as a bitmap file, a pdf file or be exported to the Grace or Igor Pro 
      plotting programs.'''],
      
-    ['Magnetic Structure Analysis'],
+    ['RigidBody', 'RigidBodyRef.html', 'Rietveld Fitting with Rigid Bodies',
+     '''Shows how to set up and refine with rigid bodies to simplify and improve the crystal structure model.'''],
+     
+['Magnetic Structure Analysis'],
     ['SimpleMagnetic', 'SimpleMagnetic.htm',"Simple Magnetic Structure Analysis",
      '''Analysis of a simple antiferromagnet and a simple ferromagnet from CW neutron powder data'''],
      
@@ -6071,7 +6076,7 @@ tutorialIndex = (
     ['Magnetic-V', 'Magnetic-V.htm',"Magnetic Structure Analysis-V",
      '''Analysis of a complex Type IV antiferromagnet with two propagation vectorse using Bilbao k-SUBGROUPSMAG from TOF neutron powder data'''],
          
-    ['Parametric sequential fitting'],
+['Parametric sequential fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
      '''This shows the fitting of a structural model to multiple data sets collected as a function of temperature (7-300K). 
      This tutorial is the prerequisite for the next one.'''],
@@ -6084,7 +6089,7 @@ tutorialIndex = (
       '''This shows the fitting of single peaks in a sequence of TOF powder patterns from a sample under load; includes
       fitting of the result to get Hookes Law coefficients for elastic deformations.'''],
 
-    ['Structure solution'],
+['Structure solution'],
     ['FitPeaks', 'Fit Peaks.htm', 'Fitting individual peaks & autoindexing',
      '''This covers two examples of selecting individual powder diffraction peaks, fitting them and then 
      indexing to determine the crystal lattice and possible space group. This is the prerequisite for the next two tutorials.'''],
@@ -6109,7 +6114,7 @@ tutorialIndex = (
      '''Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data 
      via Monte Carlo/Simulated Annealing (MC/SA).'''],
      
-    ['Reverse Monte Carlo Modeling'],
+['Reverse Monte-Carlo Modeling'],
     ['RMCProfile-I', 'RMCProfile-I.htm','RMC Modeling with RMCProfile-I',
      '''Big box modelling for real and reciprocal space diffraction data for SF6'''],
     ['RMCProfile-II', 'RMCProfile-II.htm','RMC Modeling with RMCProfile-II',
@@ -6119,7 +6124,7 @@ tutorialIndex = (
     ['RMCProfile-IV', 'RMCProfile-IV.htm','RMC Modeling with RMCProfile-IV',
      '''x-ray big box modelling with potential energy restraints for real and reciprocal space diffraction data for GaPO4'''],
 
-    ['Stacking Fault Modeling'],
+['Stacking Fault Modeling'],
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',
      '''This shows how to simulate the diffraction patterns from faulted diamond.'''],
      
@@ -6129,7 +6134,7 @@ tutorialIndex = (
     ['StackingFaults-III', 'Stacking Faults-III.htm', 'Stacking fault simulations for Georgia kaolinite',
      '''This shows how to simulate some diffraction patterns from poorly ordered Georgia kaolinite (Al2Si2O5(OH)4) clay.'''],
 
-    ['Powder diffractometer calibration'],
+['Powder diffractometer calibration'],
     ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
      '''This shows how to determine profile parameters by fitting individual peaks
         with data collected on a standard using a lab diffractometer.'''],
@@ -6145,7 +6150,7 @@ tutorialIndex = (
      calculating TOF peak positions from d-spacings. In addition, the peak fitting includes the various profile 
      coefficients thus fully describing the instrument contribution to the peak profiles.''' ],
 
-    ['2D Image Processing'],
+['2D Image Processing'],
     ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector',
      '''A demonstration of calibrating a Perkin-Elmer area detector,  where the detector was intentionally tilted at 45 degrees.
      This exercise is the prerequisite for the next one.'''],
@@ -6171,7 +6176,7 @@ tutorialIndex = (
      this exercise calibrates the detector distances and shows examples of how to mask, integrate, and save those parameters
      for future reuse.'''],
                    
-    ['Small-Angle Scattering'],       
+['Small-Angle Scattering'],       
     ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)',
      '''This shows how to determine the size distribution of particles using data from a constant 
      wavelength synchrotron X-ray USAXS instrument. This is the prerequisite for the next tutorial'''],
@@ -6187,7 +6192,7 @@ tutorialIndex = (
      sequential refinement technique in GSAS-II for SASD and demonstrates fitting with a hard sphere structure 
      factor for non-dilute systems. '''],
 
-    ['Other'],    
+['Other'],    
     ['MerohedralTwins', 'Merohedral twin refinement in GSAS.htm', 'Merohedral twin refinements',
      '''This shows how to use GSAS-II to refine the structure of a few single crystal structures where there is merohedral twinning. '''],
      

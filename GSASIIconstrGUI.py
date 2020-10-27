@@ -2097,9 +2097,18 @@ def UpdateRigidBodies(G2frame,data):
             G2frame.rbBook.AddPage(RBImp,pagename)
             G2frame.rbBook.SetSelection(G2frame.rbBook.FindPage(pagename))
 
+            HelpInfo = '''
+This window shows all the atoms that were read from the 
+selected phase file. Select the atoms that will be used in the
+rigid body processing (this may include atoms needed to 
+define an axis or origin that will not be included in the 
+eventual rigid body.) Note that in the plot window, 
+unselected atoms appear much darker than selected atoms.
+'''
             mainSizer = G2G.G2MultiChoiceWindow(RBImpPnl,
                             'Select atoms to import',
-                            atomlist,atmsel,OnChange=ShowSelection)
+                            atomlist,atmsel,OnChange=ShowSelection,
+                            helpText=HelpInfo)
 
             # OK/Cancel buttons        
             btnsizer = wx.StdDialogButtonSizer()
@@ -2401,6 +2410,18 @@ def UpdateRigidBodies(G2frame,data):
 
             mainSizer = wx.BoxSizer(wx.HORIZONTAL)
             btnSizer = wx.BoxSizer(wx.VERTICAL)
+            helpText = '''
+In this window, if wanted,
+one can select one or more atoms and use them
+to define an origin, a specified axis or place the selected atoms into 
+a selected plane. (Different sets of atoms can be used for each
+operation.)
+%%Once that is done, atoms can be selected and can be exported in a
+"XYZ" file for use in a program such as Avogadro or can be used to 
+create a Vector or Residue rigid body. 
+'''
+            btnSizer.Add(G2G.HelpButton(RBImpPnl,helpText,wrap=400),
+                             0,wx.ALIGN_RIGHT)
             btnSizer.Add(wx.StaticText(RBImpPnl,wx.ID_ANY,'Reorder atoms by dragging'),0,wx.ALL)
             btnSizer.Add((-1,15))
             btn = wx.Button(RBImpPnl, wx.ID_ANY, 'Set All')

@@ -3313,25 +3313,34 @@ class GSASII(wx.Frame):
     def CheckNotebook(self):
         '''Make sure the data tree has the minimally expected controls.
         '''
+        new = False
         if not GetGPXtreeItemId(self,self.root,'Notebook'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Notebook')
             self.GPXtree.SetItemPyData(sub,[''])
         if not GetGPXtreeItemId(self,self.root,'Controls'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Controls')
             self.GPXtree.SetItemPyData(sub,copy.copy(G2obj.DefaultControls))
         if not GetGPXtreeItemId(self,self.root,'Covariance'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Covariance')
             self.GPXtree.SetItemPyData(sub,{})
         if not GetGPXtreeItemId(self,self.root,'Constraints'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Constraints')
             self.GPXtree.SetItemPyData(sub,{'Hist':[],'HAP':[],'Phase':[]})
         if not GetGPXtreeItemId(self,self.root,'Restraints'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Restraints')
             self.GPXtree.SetItemPyData(sub,{})
         if not GetGPXtreeItemId(self,self.root,'Rigid bodies'):
+            new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Rigid bodies')
             self.GPXtree.SetItemPyData(sub,{'Vector':{'AtInfo':{}},
                 'Residue':{'AtInfo':{}},'RBIds':{'Vector':[],'Residue':[]}})
+        if new:
+            self.GPXtree.Expand(self.GPXtree.root)
                 
     class CopyDialog(wx.Dialog):
         '''Creates a dialog for copying control settings between
@@ -3815,10 +3824,11 @@ class GSASII(wx.Frame):
             subr = GetGPXtreeItemId(self,self.root,'Restraints')
             self.GPXtree.GetItemPyData(subr).update({PhaseName:{}})
         self.GPXtree.AppendItem(parent=subr,text=PhaseName)
-        sub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
+        newphase = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
-        self.GPXtree.SetItemPyData(sub,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
-        SelectDataTreeItem(self,sub) #bring up new phase General tab
+        self.GPXtree.SetItemPyData(newphase,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
+        self.GPXtree.Expand(sub)
+        SelectDataTreeItem(self,newphase) #bring up new phase General tab
         
     def OnDeletePhase(self,event):
         '''Delete one or more phases from the tree. Called by Data/Delete Phase menu.

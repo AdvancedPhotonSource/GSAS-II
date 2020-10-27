@@ -9852,7 +9852,7 @@ def UpdatePhaseData(G2frame,Item,data):
 ##### Rigid bodies
 ################################################################################
 
-    def FillRigidBodyGrid(refresh=True):
+    def FillRigidBodyGrid(refresh=True,vecId=None,resId=None):
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
         '''
@@ -9872,11 +9872,16 @@ def UpdatePhaseData(G2frame,Item,data):
                 RBObj['ThermalMotion'][0] = 'TLS'
             elif val == 'None':
                 RBObj['ThermalMotion'][0] = 'None'
-            wx.CallAfter(FillRigidBodyGrid,True)
             if val != 'None':
                 cia = data['General']['AtomPtrs'][3]
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cia] = Ttype
+            resId,vecId = None,None
+            if resSelect:
+                resId = resSelect.GetSelection()
+            if select:
+                vecId = select.GetSelection()
+            wx.CallAfter(FillRigidBodyGrid,True,vecId=vecId,resId=resId)
             G2plt.PlotStructure(G2frame,data)
             
         def ThermDataSizer(RBObj,rbType):
@@ -9961,6 +9966,7 @@ def UpdatePhaseData(G2frame,Item,data):
             SGData = data['General']['SGData']
             maxMult = len(SGData['SGOps'])*len(SGData['SGCen'])
             if SGData['SGInv']: maxMult *= 2
+            rbSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.FlexGridSizer(0,6,5,5)
             if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
                 if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
@@ -9995,8 +10001,9 @@ def UpdatePhaseData(G2frame,Item,data):
             topSizer.Add(Qcheck,0,WACV)
             Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
-            topSizer.Add(sytsymtxt)
-            return topSizer
+            rbSizer.Add(topSizer)
+            rbSizer.Add(sytsymtxt)
+            return rbSizer
                          
         def ResrbSizer(RBObj):
             
@@ -10120,7 +10127,7 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.CallLater(100,RepaintRBInfo,'Vector',rbId)
            
         def OnResSelect(event):
-            rbId = select.GetSelection()
+            rbId = resSelect.GetSelection()
             wx.CallLater(100,RepaintRBInfo,'Residue',rbId)
            
         def RepaintRBInfo(rbType,rbId,Scroll=0):
@@ -10167,6 +10174,8 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         nobody = True
+        resSelect = None
+        select = None
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             nobody = False
             mainSizer.Add((5,5),0)
@@ -10175,15 +10184,17 @@ def UpdatePhaseData(G2frame,Item,data):
             RBnames = []
             for RBObj in data['RBModels']['Residue']:
                 RBnames.append(RBObj['RBname']+RBObj['numChain'])
-            rbName = RBnames[0]
-            rbObj = data['RBModels']['Residue'][0]
+            if resId is None:
+                resId = 0
+            rbName = RBnames[resId]
+            rbObj = data['RBModels']['Residue'][resId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
-            select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
-            select.SetSelection(RBnames.index(rbName))
-            select.SetFirstItem(RBnames.index(rbName))
-            select.Bind(wx.EVT_LISTBOX,OnResSelect)
-            mainSizer.Add(select,0)
+            resSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            resSelect.SetSelection(RBnames.index(rbName))
+            resSelect.SetFirstItem(RBnames.index(rbName))
+            resSelect.Bind(wx.EVT_LISTBOX,OnResSelect)
+            mainSizer.Add(resSelect,0)
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
             G2frame.bottomSizer.Add(ResrbSizer(rbObj))
             mainSizer.Add(G2frame.bottomSizer)
@@ -10197,8 +10208,10 @@ def UpdatePhaseData(G2frame,Item,data):
             RBnames = []
             for RBObj in data['RBModels']['Vector']:
                 RBnames.append(RBObj['RBname'])
-            rbName = RBnames[0]
-            rbObj = data['RBModels']['Vector'][0]
+            if vecId is None:
+                vecId = 0
+            rbName = RBnames[vecId]
+            rbObj = data['RBModels']['Vector'][vecId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
             select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
@@ -10689,7 +10702,56 @@ def UpdatePhaseData(G2frame,Item,data):
             #    refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
             atNames = data['testRBObj']['atNames']
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(RigidBodies,label='Locating rigid body : '+rbName), 0, WACV)
+            helpText = '''
+This window is used to insert a rigid body into a unit cell, determining 
+the initial settings for the position and orientation of the body, 
+as well as any torsion angles. The origin 
+determines where the origin of the rigid body will be placed in the
+unit cell (expressed in fractional coordinates).
+The orientation is determined by a quaternion 
+that is expressed here as vector (in fraction coordinates) and an azimuthal 
+rotation (in degrees) around that quaternion vector. For systems where symmetry 
+dictates that the rigid body needs to be oriented in a particular direction, 
+the rigid body coordinate system must be defined with the symmetry 
+direction along the Cartesian x, y, z, x+y or x+y+z and this must be 
+selected with the "Rigid body symmetry axis." This places the 
+selected Cartesian axis along the quaternion vector.
+
+%%If there are atoms in the unit cell that are of the appropriate type and
+are not already assigned to rigid bodies, a table shows each 
+atom in the rigid body and the closest atom unit cell atom, as well 
+as the distance between them. This pairing can be set manually using the 
+pulldown menu in the "Assign as atom" column, where a particular atom
+can be selected. One option is "create new" which means that that RB atom 
+will not be paired to a unit cell atom. "Update Assignments" recomputes distance
+between paired atoms. 
+Note that when a row in the table is selected, the corresponding atoms 
+are highlighted in green. The tab key or the "Crystal Highlight" pulldown
+can be used to highlight differing unit cell atoms. Alt-Tab highlights different
+RB atoms. 
+If at least one atom is paired manually using "Assign as", the 
+"Set Origin" button can be used to place the rigid body origin to best fit
+the paired atom(s). Likewise, with two or more atoms assigned, the 
+"Set Orientation" button will determine the quaternion azimuth and vector. Three
+or more pairs are assignments allow use of the "Set both" button, which 
+sets the orientation and origin to best give the smallest distances between 
+the assigned atoms. 
+%%The GSAS-II graphics window shows the unit cell contents (use the 
+"Ball & Sticks" or "Sticks" buttons to change the display of this) and 
+the rigid body is shown with small balls and green sticks. At the origin of the 
+RB the axes are indicated with red, green and blue lines (for x, y, & z). 
+A white line indicates the quaternion vector direction. 
+The mouse can also be used to position the rigid body in the plot by holding 
+the Alt key down while dragging with the mouse: Alt+left button to rotates 
+the RB in the screen x & y; Alt+middle mouse to rotates around the screen z 
+(out of plane); Alt+right mouse translates the RB in the screen x-y plane.
+Note that dragging the mouse without the Alt button changes the view
+of the crystal structure.
+%%Once the rigid body has been placed in the desired position, press the "Add" button.
+'''
+            topSizer.Add(G2G.HelpButton(RigidBodies,helpText,wrap=700),
+                             0,wx.RIGHT,5)
+            topSizer.Add(wx.StaticText(RigidBodies,label='Locating rigid body: '+rbName), 0, WACV)
             topSizer.Add((10,-1),0)
             topSizer.Add(wx.StaticText(RigidBodies,label='Display crystal structure as:'), 0, WACV)
             btn = wx.Button(RigidBodies,label="Ball && Sticks")
@@ -10735,8 +10797,9 @@ def UpdatePhaseData(G2frame,Item,data):
             OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
                 xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
             OriSizer2.Add(OrientVecSiz[-1],0,WACV)
-            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,value=int(rbObj['OrientVec'][0]*10.),size=(200,25))
+            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25))
             azSlide.SetRange(0,3600)
+            azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
             azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
             OriSizer2.Add(azSlide,0,WACV)
             mainSizer.Add(OriSizer2)

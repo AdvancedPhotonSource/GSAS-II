@@ -549,7 +549,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             firstVaryList = newVaryList
 
         ifSeq = True
-        printFile.write('\n Refinement results for histogram: %s\n'%histogram)
+        printFile.write('\n Refinement results for histogram id {}: {}\n'
+                            .format(hId,histogram))
         printFile.write(135*'-'+'\n')
         # remove frozen vars
         if 'parmFrozen' not in Controls:
@@ -560,9 +561,14 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         frozenList = [i for i in varyList if i in parmFrozenList]
         if len(frozenList) != 0: 
            varyList = [i for i in varyList if i not in parmFrozenList]
+           s = ''
+           for a in frozenList:
+               if s:
+                   s+= ', '
+               s += a
            printFile.write(
-               ' The following refined variables have previously been frozen due to exceeding limits\n\t:{}\n'
-               .format(frozenList))
+               ' The following refined variables have previously been frozen due to exceeding limits:\n\t{}\n'
+               .format(s))
         try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
@@ -582,11 +588,13 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
+            msg = None
             if len(frozen) > 0:
                msg = ('Hist {}: {} variables were outside limits and were frozen (now {} frozen total)'
                    .format(ihst,len(frozen),len(parmFrozenList)))
                G2fil.G2Print(msg)
-               printFile.write(msg+'\n')
+               msg = (' {} variables were outside limits and were frozen (now {} frozen total)'
+                   .format(len(frozen),len(parmFrozenList)))
                for p in frozen:
                    if p not in varyList:
                        print('Frozen Warning: {} not in varyList. This should not happen!'.format(p))
@@ -610,8 +618,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,Controls['parmFrozen'])
+            if msg: 
+                printFile.write(msg+'\n')
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
             # next histogram, for use in next refinement.
@@ -655,8 +665,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if h == 'FrozenList': continue
         postFrozenCount += len(Controls['parmFrozen'][h])
     if postFrozenCount:
-        msgs['Frozen'] = 'Ending refinement with {} Frozen variables ({} added here)\n'.format(postFrozenCount,postFrozenCount-preFrozenCount)
-        printFile.write('\n '+msg)
+        msgs['Frozen'] = 'Ending refinement with {} Frozen variables ({} added now)\n'.format(postFrozenCount,postFrozenCount-preFrozenCount)
+        printFile.write('\n'+msgs['Frozen'])
     printFile.close()
     G2fil.G2Print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
     G2fil.G2Print (' ***** Sequential refinement successful *****')

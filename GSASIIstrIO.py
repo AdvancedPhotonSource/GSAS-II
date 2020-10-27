@@ -3466,8 +3466,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
     
-def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None):
-    'needs a doc string'
+def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None,seq=False):
+    'Shows histogram data after a refinement'
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         Back = Background[0]
@@ -3659,8 +3659,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
             Sample = Histogram['Sample Parameters']
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
-            pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
-            pFile.write(135*'='+'\n')
+            if not seq:
+                pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
+                pFile.write(135*'='+'\n')
             pFile.write(' PWDR histogram weight factor = '+'%.3f\n'%(Histogram['wtFactor']))
             pFile.write(' Final refinement wR = %.2f%% on %d observations in this histogram\n'%
                 (Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs']))

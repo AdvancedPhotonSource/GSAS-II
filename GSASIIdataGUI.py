@@ -7731,6 +7731,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
     deltaChiCol = len(colLabels)-1
+    # frozen variables?
+    f = [len(Controls['parmFrozen'].get(h,[])) for h in histNames]
+    if any(f):
+        G2frame.colList += [f]
+        G2frame.colSigs += [None]
+        colLabels += ['frozen']
+        Types += [wg.GRID_VALUE_LONG]
     # add changing sample parameters to table
     for key in sampleParms:
         G2frame.colList += [sampleParms[key]]

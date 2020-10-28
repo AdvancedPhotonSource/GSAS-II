@@ -160,7 +160,6 @@ def GetFFC5(ElSym):
 def GetBVS(Pair,atSeq,Valences):
     Els = Pair.strip().split('-')
     iAt = atSeq.index(Els[0])
-    jAt = atSeq.index(Els[1])
     iVal = Valences[iAt][0]
     if Els[1] in ['O','F','Cl']:
         iEls = ['O','F','Cl'].index(Els[1])
@@ -281,7 +280,7 @@ def GetXsectionCoeff(El):
     ElS = ElS.ljust(2)
     filename = os.path.join(os.path.split(__file__)[0],'Xsect.dat')
     try:
-        xsec = open(filename,'Ur')
+        xsec = open(filename,'r')
     except:
         print ('**** ERROR - File Xsect.dat not found in directory %s'%os.path.split(filename)[0])
         sys.exit()

@@ -719,6 +719,9 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             dfu.copy_file(GPXback,GPXfile)
             G2fil.G2Print ('GPX file save failed - old version retained',mode='error')
             return
+        
+    infile.close()
+    outfile.close()
             
     G2fil.G2Print ('GPX file save successful')
     

@@ -3921,30 +3921,48 @@ class ShowLSParms(wx.Dialog):
         '''
         def _OnParmSel(event):
             self.parmChoice = parmSel.GetStringSelection()
-            self.varName = ' '
+            if varSel:
+                varSel.SetSelection(0)
+                self.varName = ' '
             wx.CallLater(100,self.DrawPanel)
             
         def OnPhasSel(event):
             event.Skip()
             self.phasNum = phasSel.GetValue()
-            self.varName = ' '
-            if varSel: varSel.SetSelection(0)
+            if varSel:
+                try:
+                    varSel.SetSelection(varSel.GetItems().index(self.varName))
+                except:
+                    varSel.SetSelection(0)
+                    self.varName = ' '
             wx.CallAfter(self.repaintScrollTbl)
 
         def OnHistSel(event):
             event.Skip()
             self.hisNum = histSel.GetValue()
-            self.varName = ' '
-            if varSel: varSel.SetSelection(0)
+            if varSel:
+                try:
+                    varSel.SetSelection(varSel.GetItems().index(self.varName))
+                except:
+                    varSel.SetSelection(0)
+                    self.varName = ' '
             wx.CallAfter(self.repaintScrollTbl)
             
         def OnVarSel(event):
             event.Skip()
             self.varName = varSel.GetValue()
-            self.phasNum = '*'
-            if phasSel: phasSel.SetSelection(0)
-            self.hisNum = '*'
-            if histSel: histSel.SetSelection(0)
+            if phasSel:
+                try:
+                    phasSel.SetSelection(phasSel.GetItems().index(self.phasNum))
+                except:
+                    phasSel.SetSelection(0)
+                    self.phasNum = '*'
+            if histSel:
+                try:
+                    histSel.SetSelection(histSel.GetItems().index(self.hisNum))
+                except:
+                    histSel.SetSelection(0)
+                    self.hisNum = '*'
             wx.CallAfter(self.repaintScrollTbl)
             
         def OnListSel(event):
@@ -4066,17 +4084,15 @@ class ShowLSParms(wx.Dialog):
         parmSizer.Add(listSel,0,wx.CENTER|wx.ALL,15)
         mainSizer.Add(parmSizer,0)
         
-        
         self.countSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self.countSizer)
         self.headSizer = wx.BoxSizer(wx.HORIZONTAL) # non-scrolling header        
         mainSizer.Add(self.headSizer,0)
         self.varBox = VirtualVarBox(self)
         mainSizer.Add(self.varBox,1,wx.ALL|wx.EXPAND,1)
-
         mainSizer.Add(
             wx.StaticText(self,label=txt),0, wx.ALL,0)
-
+        
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)          # make Close button 
         btn = wx.Button(self, wx.ID_CLOSE,"Close") 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
@@ -4188,7 +4204,6 @@ class VirtualVarBox(wx.ListCtrl):
             except:
                 pass
             self.OnRowSelected(None, row)
-            
         def SetWild(event):
             'Get event info & prepare to set/clear item as wildcard'
             if hasattr(event.EventObject,'max'):
@@ -4228,7 +4243,7 @@ class VirtualVarBox(wx.ListCtrl):
             print('Error: row and event should not both be None!')
             return
         name = self.varList[row]
-        dlg = wx.Dialog(self,wx.ID_ANY,'Parameter {} info'.format(name),
+        dlg = wx.Dialog(self.parmWin,wx.ID_ANY,'Parameter {} info'.format(name),
                             size=(600,-1),
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4270,9 +4285,9 @@ class VirtualVarBox(wx.ListCtrl):
         if msg:
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,msg),0,wx.CENTER)
-        if freezebtn:
-            subSizer.Add(freezebtn,0,wx.ALL|wx.CENTER,5)
-        mainSizer.Add(subSizer,0)
+            if freezebtn:
+                subSizer.Add(freezebtn,0,wx.ALL|wx.CENTER,5)
+            mainSizer.Add(subSizer,0)
 
         # draw min value widgets
         mainSizer.Add((-1,10),0)

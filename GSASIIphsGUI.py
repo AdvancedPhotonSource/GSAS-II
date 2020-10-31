@@ -12262,18 +12262,16 @@ of the crystal structure.
                 return
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             dims = mapData['rho'].shape
-            dims = [[-D,D] for D in dims]
-            dlg = G2G.MultiDataDialog(G2frame,title='Roll map by steps',
-                prompts=['X steps (%d to %d)'%(dims[0][0],dims[0][1]),
-                         'Y steps (%d to %d)'%(dims[1][0],dims[1][1]),
-                         'Z steps (%d to %d)'%(dims[2][0],dims[2][1])],values=[0,0,0,],
-                    limits=dims,formats=['%6d','%6d','%6d'])
+            dlg = G2G.MultiDataDialog(G2frame,title='Roll map shifts',
+                prompts=['delt-X (-1. to 1.)','delt-Y (-1. to 1.)',
+                         'delt-Z (-1. to 1.)'],values=[0.,0.,0.,],
+                    limits=[[-1.,1.],[-1.,1.],[-1.,1.]],formats=['%.4f','%.4f','%.4f'])
+            
             if dlg.ShowModal() == wx.ID_OK:
                 rollsteps = dlg.GetValues()
-                rollsteps = [int(R) for R in rollsteps]
+                dxy = np.array([float(R) for R in rollsteps])
+                rollsteps = np.array([round(float(R)*dims[iR]) for iR,R in enumerate(rollsteps)])
                 mapData['rho'] = np.roll(np.roll(np.roll(mapData['rho'],rollsteps[0],axis=0),rollsteps[1],axis=1),rollsteps[2],axis=2)
-                steps = 1./np.array(dims)
-                dxy = rollsteps*steps.T[1]
                 for peak in mapPeaks:
                     peak[1:4] += dxy
                     peak[1:4] %= 1.

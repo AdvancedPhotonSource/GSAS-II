@@ -5927,6 +5927,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         sq2 = 1.0/math.sqrt(2.0)
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
         rId = G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists')
+        if not rId:
+            return
         RefData = G2frame.GPXtree.GetItemPyData(rId)[phase]
         if 'Type' not in RefData or 'RefList' not in RefData:
             G2G.G2MessageBox(G2frame,'Reflection list not ready','RefData error')

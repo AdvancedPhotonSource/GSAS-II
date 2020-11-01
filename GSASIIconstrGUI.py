@@ -1819,7 +1819,7 @@ def UpdateRigidBodies(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
-                macro = open(macfile,'Ur')
+                macro = open(macfile,'r')
                 head = macro.readline()
                 if macName not in head:
                     print (head)
@@ -1840,7 +1840,7 @@ def UpdateRigidBodies(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()
                 ext = os.path.splitext(txtfile)[1]
-                text = open(txtfile,'Ur')
+                text = open(txtfile,'r')
             else: # cancel was pressed
                 ext = ''
                 text = []
@@ -2582,7 +2582,7 @@ create a Vector or Residue rigid body.
         # read in the phase file
         filename = filelist[0]
         rd = reader
-        with open(filename, 'Ur'):
+        with open(filename, 'r'):
             rd.ReInitialize()
             rd.errors = ""
             if not rd.ContentsValidator(filename):   # Report error

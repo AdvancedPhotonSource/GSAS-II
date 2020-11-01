@@ -51,8 +51,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
         
     def ContentsValidator(self, filename):
         fp = open(filename,'r')
-        return self.CIFValidator(fp)
+        ok = self.CIFValidator(fp)
         fp.close()
+        return ok
 
     def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
         isodistort_warnings = '' # errors that would prevent an isodistort analysis

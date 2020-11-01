@@ -643,7 +643,7 @@ def readColMetadata(imagefile):
         else:
             G2Print('Read '+lblFil)
         # scan through each line in this .par file, looking for the matching image rootname
-        fp = open(parFil,'Ur')
+        fp = open(parFil,'r')
         for iline,line in enumerate(fp):
             items = line.strip().split(' ')
             nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
@@ -679,7 +679,7 @@ def readColMetadataLabels(lblFil):
     keyCols = {}
     labels = {}
     errors = []
-    fp = open(lblFil,'Ur')         # read column labels
+    fp = open(lblFil,'r')         # read column labels
     for iline,line in enumerate(fp): # read label definitions
         line = line.strip()
         if not line or line[0] == '#': continue # comments

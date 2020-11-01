@@ -79,7 +79,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             macro = ''
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
-                macro = open(macfile,'Ur')
+                macro = open(macfile,'r')
                 head = macro.readline()
                 if macName not in head:
                     print (head)
@@ -97,7 +97,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             mogul = ''
             if dlg.ShowModal() == wx.ID_OK:
                 csvfile = dlg.GetPath()
-                mogul = open(csvfile,'Ur')
+                mogul = open(csvfile,'r')
                 head = mogul.readline()
                 if 'Type' not in head:
                     print (head)

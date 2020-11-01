@@ -693,6 +693,7 @@ class GSASII(wx.Frame):
             rdmsg += '\n\nDo you want to read this file?'
         except UnicodeDecodeError:
             rdmsg = None
+        fp.close()
         if rdmsg is None or not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
             rdmsg = u'File '+ filename +u' is a binary file. Do you want to read this file?'
         # it would be better to use something that
@@ -1463,7 +1464,7 @@ class GSASII(wx.Frame):
             return {}
         fp = 0
         try:
-            fp = open(instfile,'Ur')
+            fp = open(instfile,'r')
             Iparm = {}
             for S in fp:
                 if '#' in S[0]:

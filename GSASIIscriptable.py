@@ -471,16 +471,16 @@ Limits                                      The range of 2-theta (degrees) or TO
                                             microsec) range of values to use. Can
                                             be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
-\                     low                   Sets the low limit
-\                     high                  Sets the high limit
+\\                    low                   Sets the low limit
+\\                    high                  Sets the high limit
 
 Sample Parameters                           Should be provided as a **list** of subkeys
-                                            to set or clear, e.g. ['DisplaceX', 'Scale']
-\                     Absorption
-\                     Contrast
-\                     DisplaceX             Sample displacement along the X direction
-\                     DisplaceY             Sample displacement along the Y direction
-\                     Scale                 Histogram Scale factor
+                                            to set or clear,\\e.g. ['DisplaceX', 'Scale']
+\\                    Absorption
+\\                    Contrast
+\\                    DisplaceX             Sample displacement along the X direction
+\\                    DisplaceY             Sample displacement along the Y direction
+\\                    Scale                 Histogram Scale factor
 
 Background                                  Sample background. Value will be a dict or 
                                             a boolean. If True or False, the refine 
@@ -490,15 +490,15 @@ Background                                  Sample background. Value will be a d
                                             :meth:`G2PwdrData.ref_back_peak` instead.
                                             When value is a dict,
                                             supply any of the following keys:
-\                     type                  The background model, e.g. 'chebyschev-1'
-\                     refine                The value of the refine flag, boolean
-\                     'no. coeffs'          Number of coefficients to use, integer
-\                     coeffs                List of floats, literal values for background
-\                     FixedPoints           List of (2-theta, intensity) values for fixed points
-\                     'fit fixed points'    If True, triggers a fit to the fixed points to
+\\                    type                  The background model, e.g. 'chebyschev-1'
+\\                    refine                The value of the refine flag, boolean
+\\                    'no. coeffs'          Number of coefficients to use, integer
+\\                    coeffs                List of floats, literal values for background
+\\                    FixedPoints           List of (2-theta, intensity) values for fixed points
+\\                    'fit fixed points'    If True, triggers a fit to the fixed points to
                                             be calculated. It is calculated when this key is
                                             detected, regardless of calls to refine.
-\                     peaks                 Specifies a set of flags for refining 
+\\                    peaks                 Specifies a set of flags for refining 
                                             background peaks as a nested list. There may
                                             be an item for each defined background peak
                                             (or fewer) and each item is a list with the flag 
@@ -508,17 +508,17 @@ Background                                  Sample background. Value will be a d
 Instrument Parameters                       As in Sample Paramters, provide as a **list** of
                                             subkeys to
                                             set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
-\                     U, V, W               Gaussian peak profile terms
-\                     X, Y, Z               Lorentzian peak profile terms
-\                     alpha, beta-0,        TOF profile terms 
+\\                    U, V, W               Gaussian peak profile terms
+\\                    X, Y, Z               Lorentzian peak profile terms
+\\                    alpha, beta-0,        TOF profile terms 
                       beta-1, beta-q,
-\                     sig-0, sig-1,         TOF profile terms
+\\                    sig-0, sig-1,         TOF profile terms
                       sig-2, sig-q
-\                     difA, difB, difC      TOF Calibration constants
-\                     Zero                  Zero shift
-\                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
-\                     Polariz.              Polarization parameter
-\                     Lam                   Lambda, the incident wavelength
+\\                    difA, difB, difC      TOF Calibration constants
+\\                    Zero                  Zero shift
+\\                    SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
+\\                    Polariz.              Polarization parameter
+\\                    Lam                   Lambda, the incident wavelength
 ===================== ====================  =================================================
 
 .. _Phase_parameters_table:
@@ -571,37 +571,37 @@ key             subkey                 explanation
 Babinet                                Should be a **list** of the following
                                        subkeys. If not, assumes both
                                        BabA and BabU
-\               BabA
-\               BabU
+\\              BabA
+\\              BabU
 Extinction                             Boolean, True to refine.
 HStrain                                Boolean or list/tuple, True to refine all 
-                                       appropriate D\ :sub:`ij` terms or False
+                                       appropriate D\\ :sub:`ij` terms or False
                                        to not refine any. If a list/tuple, will
                                        be a set of True & False values for each 
-                                       D\ :sub:`ij` term; number of items must 
+                                       D\\ :sub:`ij` term; number of items must 
                                        match number of terms.
 Mustrain
-\               type                   Mustrain model. One of 'isotropic',
+\\              type                   Mustrain model. One of 'isotropic',
                                        'uniaxial', or 'generalized'. **Should always
                                        be included when Mustrain is used.**
-\              direction               For uniaxial only. A list of three
+\\              direction              For uniaxial only. A list of three
                                        integers,
                                        the [hkl] direction of the axis.
-\               refine                 Usually boolean, set to True to refine.
+\\              refine                 Usually boolean, set to True to refine.
                                        or False to clear. 
                                        For uniaxial model, can specify a value
                                        of 'axial' or 'equatorial' to set that flag
                                        to True or a single
                                        boolean sets both axial and equatorial.
 Size                                   
-\               type                   Size broadening model. One of 'isotropic',
+\\              type                   Size broadening model. One of 'isotropic',
                                        'uniaxial', or 'ellipsoid'. **Should always
                                        be specified when Size is used.**
-\              direction               For uniaxial only. A list of three
+\\              direction              For uniaxial only. A list of three
                                        integers,
                                        the [hkl] direction of the axis.
-\               refine                 Boolean, True to refine.
-\               value                  float, size value in microns 
+\\              refine                 Boolean, True to refine.
+\\              value                  float, size value in microns 
 Pref.Ori.                              Boolean, True to refine
 Show                                   Boolean, True to refine
 Use                                    Boolean, True to refine
@@ -717,7 +717,7 @@ such as diff (on Linux/OS X) or fc (in Windows).
 
 in Windows:: 
 
-    Z:\>fc before.txt after.txt
+    Z:\\>fc before.txt after.txt
     Comparing files before.txt and after.txt
     ***** before.txt
            fill_value = 1e+20)
@@ -1185,7 +1185,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 from __future__ import division, print_function
 import argparse
 import os.path as ospath
-import datetime as dt
+#import datetime as dt
 import sys
 import platform
 if '2' in platform.python_version_tuple()[0]:
@@ -1194,7 +1194,7 @@ if '2' in platform.python_version_tuple()[0]:
 else:
     import pickle as cPickle
     strtypes = (str,bytes)
-import imp
+#import imp
 import copy
 import os
 import random as ran
@@ -1689,7 +1689,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None):
     if not secondaryReaders and not primaryReaders:
         raise G2ImportException("Could not read file: ", filename)
 
-    with open(filename, 'Ur') as fp:
+    with open(filename, 'r'):
         rd_list = []
 
         for rd in primaryReaders + secondaryReaders:
@@ -1767,7 +1767,7 @@ def load_iprms(instfile, reader, bank=None):
 
     # It's an old GSAS file, load appropriately
     Iparm = {}
-    with open(instfile, 'Ur') as fp:
+    with open(instfile, 'r') as fp:
         for line in fp:
             if '#' in line:
                 continue
@@ -4075,7 +4075,7 @@ class G2PwdrData(G2ObjectWrapper):
                 print('Hint ',fmthint,'not found. Defined ',extension,'exporters are:')
                 for o in obj:
                     print('\t',o.formatName)
-                raise G2ScriptException('Bad format hint for file type = "'+exten+'"')
+                raise G2ScriptException('Bad format hint for file type = "'+extension+'"')
         self._SetFromArray(obj)
         obj.Writer(self.name,fil)
         return fil
@@ -4793,16 +4793,16 @@ class G2Phase(G2ObjectWrapper):
         import GSASIImapvars as G2mv
         from exports import G2export_CIF as cif
 
-        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
+#        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         CIFname = os.path.splitext(self.proj.filename)[0]
         CIFname = os.path.split(CIFname)[1]
         CIFname = ''.join([c if ord(c) < 128 else ''
                            for c in CIFname.replace(' ', '_')])
-        try:
-            author = self.proj['Controls']['data'].get('Author','').strip()
-        except KeyError:
-            pass
-        oneblock = True
+        # try:
+        #     author = self.proj['Controls']['data'].get('Author','').strip()
+        # except KeyError:
+        #     pass
+        # oneblock = True
 
         covDict = self.proj['Covariance']['data']
         parmDict = dict(zip(covDict.get('varyList',[]),
@@ -5235,10 +5235,10 @@ class G2Phase(G2ObjectWrapper):
             those in the phase.
         :param str parmType: should be 'size' or 'microstrain' (can be abbreviated to 's' or 'm')
         :param str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
-        :param float val1: value for isotropic size (in :math:`\mu m`) or  
-           microstrain (unitless, :math:`\Delta Q/Q \\times 10^6`) or the equatorial value in the uniaxial case
-        :param float val2: value for axial size (in :math:`\mu m`) or  
-           axial microstrain (unitless, :math:`\Delta Q/Q \\times 10^6`) 
+        :param float val1: value for isotropic size (in :math:`\\mu m`) or  
+           microstrain (unitless, :math:`\\Delta Q/Q \\times 10^6`) or the equatorial value in the uniaxial case
+        :param float val2: value for axial size (in :math:`\\mu m`) or  
+           axial microstrain (unitless, :math:`\\Delta Q/Q \\times 10^6`) 
            in uniaxial case; not used for isotropic 
         :param list axis: tuple or list with three values indicating the preferred direction
           for uniaxial broadening; not used for isotropic 
@@ -5327,10 +5327,10 @@ class G2Phase(G2ObjectWrapper):
         for item in skip:
             if item in list(copydict.keys()):
                 del copydict[item]
-            else:
-                G2fil.G2Print('items in HAP dict are: {}'.format(
-                    list(self.data['Histograms'][sourcehist])))
-                raise Exception('HAP skip list entry {} invalid'.format(item))
+            # else:
+            #     G2fil.G2Print('items in HAP dict are: {}'.format(
+            #         list(self.data['Histograms'][sourcehist])))
+            #     raise Exception('HAP skip list entry {} invalid'.format(item))
         if use:
             for item in list(copydict.keys()):
                 if item not in use:
@@ -6880,7 +6880,7 @@ def dictDive(d,search="",keylist=[],firstcall=True,l=None):
         for k in keylist:
             d = d[k]
         l = []
-        first = True
+#        first = True
     if type(d) is dict:
         [dictDive(d[key],search,keylist+[key],False,l) for key in d]
     elif search:

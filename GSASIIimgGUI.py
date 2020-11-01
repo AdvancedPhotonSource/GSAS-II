@@ -4014,7 +4014,7 @@ def testColumnMetadata(G2frame):
     except:
         imageName = os.path.splitext(os.path.split(fileorline)[1])[0]
 
-    fp = open(parFile,'Ur')
+    fp = open(parFile,'r')
     for iline,line in enumerate(fp):
         if linenum is not None:
             if iline == linenum:

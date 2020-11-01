@@ -115,7 +115,7 @@ def GetPowderPeaks(fileName):
     sind = lambda x: math.sin(x*math.pi/180.)
     asind = lambda x: 180.*math.asin(x)/math.pi
     wave = 1.54052
-    File = open(fileName,'Ur')
+    File = open(fileName,'r')
     Comments = []
     peaks = []
     S = File.readline()

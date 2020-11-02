@@ -4091,6 +4091,7 @@ class GSASII(wx.Frame):
                         wx.CallAfter(G2plt.PlotPatterns,self,True)
                     else:
                         self.G2plotNB.Delete('Powder Patterns')
+                        self.lastPlotType = None
                     if not nItems['IMG']:
                         self.G2plotNB.Delete('2D Powder Image')
                     if not nItems['HKLF']:
@@ -5144,6 +5145,8 @@ class GSASII(wx.Frame):
             if win.plotInvalid and win.plotRequiresRedraw:
                 if GSASIIpath.GetConfigValue('debug'):
                     print('Closing out-of-date plot',lbl)
+                if lbl == 'Powder Patterns':
+                    self.lastPlotType = None
                 self.G2plotNB.Delete(lbl)
         # put the previously last-raised plot tab on top, if present.
         # Search by label text, since tab number may have changed

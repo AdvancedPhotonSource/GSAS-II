@@ -2674,6 +2674,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
             'refDelt':0.1*Ymax,})
 #end patch
+    # reset plot when changing between different data types
+    try:
+        G2frame.lastPlotType
+    except:
+        G2frame.lastPlotType = None
+    if plotType == 'PWDR':
+        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
+            G2frame.PatternId, 'Instrument Parameters'))
+        if G2frame.lastPlotType != Parms['Type'][1]:
+            print('triggering newplot from G2frame.lastPlotType')
+            Ymax = max(data[1][1])
+            if Page.plotStyle['sqrtPlot']:
+                Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
+                Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
+                Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+            else:
+                Page.plotStyle['delOffset'] = .02*Ymax
+                Page.plotStyle['refOffset'] = -0.1*Ymax
+                Page.plotStyle['refDelt'] = .1*Ymax
+            newPlot = True
+        G2frame.lastPlotType = Parms['Type'][1]
+        
     try:
         G2frame.FixedLimits
     except:

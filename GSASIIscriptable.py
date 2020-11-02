@@ -471,16 +471,16 @@ Limits                                      The range of 2-theta (degrees) or TO
                                             microsec) range of values to use. Can
                                             be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
-\\                    low                   Sets the low limit
-\\                    high                  Sets the high limit
+\\                     low                   Sets the low limit
+\\                     high                  Sets the high limit
 
 Sample Parameters                           Should be provided as a **list** of subkeys
                                             to set or clear,\\e.g. ['DisplaceX', 'Scale']
-\\                    Absorption
-\\                    Contrast
-\\                    DisplaceX             Sample displacement along the X direction
-\\                    DisplaceY             Sample displacement along the Y direction
-\\                    Scale                 Histogram Scale factor
+\\                     Absorption
+\\                     Contrast
+\\                     DisplaceX             Sample displacement along the X direction
+\\                     DisplaceY             Sample displacement along the Y direction
+\\                     Scale                 Histogram Scale factor
 
 Background                                  Sample background. Value will be a dict or 
                                             a boolean. If True or False, the refine 
@@ -490,15 +490,15 @@ Background                                  Sample background. Value will be a d
                                             :meth:`G2PwdrData.ref_back_peak` instead.
                                             When value is a dict,
                                             supply any of the following keys:
-\\                    type                  The background model, e.g. 'chebyschev-1'
-\\                    refine                The value of the refine flag, boolean
-\\                    'no. coeffs'          Number of coefficients to use, integer
-\\                    coeffs                List of floats, literal values for background
-\\                    FixedPoints           List of (2-theta, intensity) values for fixed points
-\\                    'fit fixed points'    If True, triggers a fit to the fixed points to
+\\                     type                  The background model, e.g. 'chebyschev-1'
+\\                     refine                The value of the refine flag, boolean
+\\                     'no. coeffs'          Number of coefficients to use, integer
+\\                     coeffs                List of floats, literal values for background
+\\                     FixedPoints           List of (2-theta, intensity) values for fixed points
+\\                     'fit fixed points'    If True, triggers a fit to the fixed points to
                                             be calculated. It is calculated when this key is
                                             detected, regardless of calls to refine.
-\\                    peaks                 Specifies a set of flags for refining 
+\\                     peaks                 Specifies a set of flags for refining 
                                             background peaks as a nested list. There may
                                             be an item for each defined background peak
                                             (or fewer) and each item is a list with the flag 
@@ -508,17 +508,17 @@ Background                                  Sample background. Value will be a d
 Instrument Parameters                       As in Sample Paramters, provide as a **list** of
                                             subkeys to
                                             set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
-\\                    U, V, W               Gaussian peak profile terms
-\\                    X, Y, Z               Lorentzian peak profile terms
-\\                    alpha, beta-0,        TOF profile terms 
+\\                     U, V, W               Gaussian peak profile terms
+\\                     X, Y, Z               Lorentzian peak profile terms
+\\                     alpha, beta-0,        TOF profile terms 
                       beta-1, beta-q,
-\\                    sig-0, sig-1,         TOF profile terms
+\\                     sig-0, sig-1,         TOF profile terms
                       sig-2, sig-q
-\\                    difA, difB, difC      TOF Calibration constants
-\\                    Zero                  Zero shift
-\\                    SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
-\\                    Polariz.              Polarization parameter
-\\                    Lam                   Lambda, the incident wavelength
+\\                     difA, difB, difC      TOF Calibration constants
+\\                     Zero                  Zero shift
+\\                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
+\\                     Polariz.              Polarization parameter
+\\                     Lam                   Lambda, the incident wavelength
 ===================== ====================  =================================================
 
 .. _Phase_parameters_table:

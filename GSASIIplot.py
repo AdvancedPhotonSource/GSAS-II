@@ -2683,7 +2683,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         if G2frame.lastPlotType != Parms['Type'][1]:
-            print('triggering newplot from G2frame.lastPlotType')
+            if GSASIIpath.GetConfigValue('debug'): 
+                print('triggering newplot from G2frame.lastPlotType')
             Ymax = max(data[1][1])
             if Page.plotStyle['sqrtPlot']:
                 Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)

@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+#GSASIIpath - file location & update routines
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 '''
 *GSASIIpath: locations & updates*
 ---------------------------------
@@ -473,10 +481,46 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
                 print(err)
             else:
                 return
+        if 'Checksum' in err:  # deal with Checksum problem
+            err = svnChecksumPatch(svn,fpath,verstr)
+            if err:
+                print('error from svnChecksumPatch\n\t',err)
+            else:
+                return
         raise Exception('svn update failed')
     elif verbose:
         print(out)
 
+def svnChecksumPatch(svn,fpath,verstr):
+    '''This performs a fix when svn cannot finish an update because of
+    a Checksum mismatch error. This seems to be happening on OS X for 
+    unclear reasons. 
+    '''
+    print('\nAttempting patch for svn Checksum mismatch error\n')
+    svnCleanup(fpath)
+    cmd = ['svn','update','--set-depth','empty',
+               os.path.join(fpath,'bindist')]
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
+    #if err: print('error=',err)
+    DownloadG2Binaries(g2home,verbose=True)
+    cmd = ['svn','update','--set-depth','infinity',
+               os.path.join(fpath,'bindist')]
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
+    #if err: print('error=',err)
+    cmd = [svn,'update',fpath,verstr,
+                       '--non-interactive',
+                       '--accept','theirs-conflict','--force']
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--trust-server-cert']
+    if proxycmds: cmd += proxycmds
+    #print(cmd)
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
+    #if err: print('error=',err)
+    return err
+        
 def svnUpgrade(fpath=os.path.split(__file__)[0]):
     '''This reformats subversion files, which may be needed if an upgrade of subversion is
     done. 

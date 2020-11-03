@@ -373,8 +373,18 @@ def ShowVersions():
         "no SVN"
     else:
         rev = "SVN version {}".format(rev)
-    print ("This is GSAS-II revision {} ({})\n".format(
+    print ("Latest GSAS-II revision (from .py files): {} ({})\n".format(
         GSASIIpath.GetVersionNumber(),rev))
+    # patch 11/2020: warn if GSASII path has not been updated past v4576.
+    # For unknown reasons on Mac with gsas2full, there have been checksum
+    # errors in the .so files that prevented svn from completing updates.
+    # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
+    # has not been retrieved, so warn. Keep for a year or so. 
+    try:
+        GSASIIpath.svnChecksumPatch
+    except:
+        print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
+    # end patch
 
 def warnNumpyVersion(application):
     dlg = wx.MessageDialog(application.main,

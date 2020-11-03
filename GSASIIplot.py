@@ -8147,8 +8147,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+txt,1)
             
         elif key in ['K'] and generalData['Map']['MapType']:
-            drawingData['showSlice'] = not drawingData.get('showSlice',False)
+            drawingData['showSlice'] = (drawingData['showSlice']+1)%4
             SetShowCS(drawingData['showSlice'])
+            
+        elif key in ['S']:
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                drawingData['contourColor'] = choice[sel]
+            dlg.Destroy()
                 
         elif key in ['P']:
             drawAtoms = drawingData['Atoms']
@@ -8387,15 +8396,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     Q = drawingData['Quaternion']
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
-        elif drawingData.get('showSlice'):
+        elif drawingData['showSlice']:
             View = GL.glGetIntegerv(GL.GL_VIEWPORT)
             Tx,Ty,Tz = drawingData['viewPoint'][0]
             tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
             Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
             rho = G2mth.getRho([Cx,Cy,Cz],mapData)
-            contlevels = contourSet.get_array()
-            contstr = str(contlevels).strip('[]')
-            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
+            if drawingData['showSlice'] in [1,3]:
+                contlevels = contourSet.get_array()
+                contstr = str(contlevels).strip('[]')
+                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
+            else:
+                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -9414,7 +9426,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
                 for plane in Planes:
                     RenderPlane(plane,color)
-        if drawingData.get('showSlice',False):      #must be done last to properly show things behind as faded
+        if drawingData.get('showSlice',0):      #must be done last to properly show things behind as faded
             global contourSet,Zslice
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
@@ -9440,11 +9452,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             else:
                 Zslice = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Zslice<=Rmax,Zslice,Rmax)
+            ZU = np.flipud(Z)
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
             oldSize = plt.rcParams['figure.figsize']
             plt.rcParams['figure.figsize'] = [6.0,6.0]
             plt.cla()
-            contourSet = plt.contour(Z,colors='k',linewidths=1)
+            if drawingData['showSlice'] in [1,]:
+                contourSet = plt.contour(Z,colors='k',linewidths=1)
+            if drawingData['showSlice'] in [2,3]:
+                acolor = mpl.cm.get_cmap(drawingData.get('contourColor','Paired'))                    
+                plt.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.75,interpolation='bilinear')
+                if drawingData['showSlice'] in [3,]:
+                    contourSet = plt.contour(ZU,colors='k',linewidths=1)
             plt.axis("off")
             plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
             canvas = plt.get_current_fig_manager().canvas
@@ -9574,7 +9593,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2']
     if mapData['MapType']:
-        choice += ['k: toggle contour plot',]
+        choice += ['k: none, lines, color, color+lines contour plot switch',]
+        choice += ['s: select map slice color scheme',]
     if mapData.get('Flip',False):
         choice += ['u: roll up','d: roll down','l: roll left','r: roll right']
     else:

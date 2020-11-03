@@ -7514,7 +7514,9 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
         if 'showSlice' not in drawingData:
-            drawingData['showSlice'] = False
+            drawingData['showSlice'] = 0
+        if 'contourColor' not in drawingData:
+            drawingData['contourColor'] = 'RdYlGn'
         if 'Plane' not in drawingData:
             drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
         if 'magMult' not in drawingData:
@@ -8805,7 +8807,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnShowSlice(event):
-                drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetValue()
+                drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetSelection()
+                G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnContourMax(event):
@@ -8881,8 +8884,8 @@ def UpdatePhaseData(G2frame,Item,data):
                                 
             showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(drawOptions,-1,' Background color:'),0,WACV)
-            backColor = wcs.ColourSelect(drawOptions, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
+            lineSizer.Add(wx.StaticText(drawOptions,label=' Background color:'),0,WACV)
+            backColor = wcs.ColourSelect(drawOptions,colour=drawingData['backColor'],size=wx.Size(25,25))
             backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
@@ -8950,11 +8953,14 @@ def UpdatePhaseData(G2frame,Item,data):
             if generalData['Map']['rhoMax']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
-                G2frame.phaseDisplay.showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
-                G2frame.phaseDisplay.showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
-                G2frame.phaseDisplay.showCS.SetValue(drawingData['showSlice'])            
+                slices = ['','lines','colors','lines+colors']
+                line3Sizer.Add(wx.StaticText(drawOptions,label=' Show map slice as '),0,WACV)
+                G2frame.phaseDisplay.showCS = wx.ComboBox(drawOptions,value=slices[drawingData['showSlice']],
+                    choices=slices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                G2frame.phaseDisplay.showCS.Bind(wx.EVT_COMBOBOX, OnShowSlice)
+                G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])            
                 line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
-                contourMaxTxt = wx.StaticText(drawOptions,-1,' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+                contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
                 line3Sizer.Add(contourMaxTxt,0,WACV)
                 contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),value=int(100*drawingData['contourMax']))
                 contourMax.SetRange(1,100)
@@ -9405,12 +9411,12 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(0,6,5,5)
         shSizer.Add(wx.StaticText(Texture,-1,' Texture model: '),0,WACV)
-        shModel = wx.ComboBox(Texture,-1,value=textureData['Model'],choices=shModels,
+        shModel = wx.ComboBox(Texture,value=textureData['Model'],choices=shModels,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shModel.Bind(wx.EVT_COMBOBOX,OnShModel)
         shSizer.Add(shModel,0,WACV)
         shSizer.Add(wx.StaticText(Texture,-1,'  Harmonic order: '),0,WACV)
-        shOrder = wx.ComboBox(Texture,-1,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
+        shOrder = wx.ComboBox(Texture,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shOrder.Bind(wx.EVT_COMBOBOX,OnShOrder)
         shSizer.Add(shOrder,0,WACV)

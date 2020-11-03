@@ -136,9 +136,9 @@ Rvals          \\                (dict) R-factors, GOF, Marquardt value for last
                                 refinement cycle 
 \\              Nobs             (int) Number of observed data points 
 \\              Rwp              (float) overall weighted profile R-factor (%)
-\\              chisq            (float) :math:`\sum w*(I_{obs}-I_{calc})^2`                                
+\\              chisq            (float) :math:`\\sum w*(I_{obs}-I_{calc})^2`                                
                                 for all data.
-                                Note: this is not the reduced :math:`\chi^2`. 
+                                Note: this is not the reduced :math:`\\chi^2`. 
 \\              lamMax           (float) Marquardt value applied to Hessian diagonal
 \\              GOF              (float) The goodness-of-fit, aka square root of
                                 the reduced chi squared. 
@@ -409,7 +409,7 @@ SGOps       (list) symmetry operations as a list of form
             Atom coordinates are transformed where the
             Asymmetric unit coordinates [X is (x,y,z)]
             are transformed using
-            :math:`X^\prime = M_n*X+T_n`
+            :math:`X^\\prime = M_n*X+T_n`
 SGPolax     (str) Axes for space group polarity. Will be one of
             '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
             'xyz'. In the case where axes are arbitrary
@@ -839,7 +839,7 @@ The columns in that array are documented below.
  3              (int) multiplicity
  4              (float) d-space, :math:`\\AA`
  5              (float) :math:`F_{obs}^2`
- 6              (float) :math:`\sigma(F_{obs}^2)`
+ 6              (float) :math:`\\sigma(F_{obs}^2)`
  7              (float) :math:`F_{calc}^2`
  8              (float) :math:`F_{obs}^2T`
  9              (float) :math:`F_{calc}^2T`

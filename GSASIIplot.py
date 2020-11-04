@@ -706,6 +706,19 @@ class GSASIItoolbar(Toolbar):
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
         Toolbar._update_view(self)
+        
+    def AnyActive(self):
+        for Itool in range(self.GetToolsCount()):
+            if self.GetToolState(self.GetToolByPos(Itool).GetId()):
+                return True
+        return False
+    
+    def GetActive(self):
+        for Itool in range(self.GetToolsCount()):
+            tool = self.GetToolByPos(Itool)
+            if self.GetToolState(tool.GetId()):
+                return tool.GetLabel()
+        return None
 
     def OnArrow(self,event):
         'reposition limits to scan or zoom by button press'
@@ -799,7 +812,7 @@ class GSASIItoolbar(Toolbar):
         """Return "ZOOM" if Zoom is active, , "PAN" if Pan is active,
         or None if neither
         """
-        return self._active
+        return self.GetActive()
 
     def reset_zoompan(self):
         '''Turns off Zoom or Pan mode, if on. Ignored if neither is set
@@ -838,13 +851,13 @@ class GSASIItoolbar(Toolbar):
                 print('Unable to reset Pan button, please report this with matplotlib version')
                 
 def SetCursor(page):
-    mode = page.toolbar._active
-    if mode == 'PAN':
+    mode = page.toolbar.GetActive()
+    if mode == 'Pan':
         if 'phoenix' in wx.version():
             page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
         else:
             page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
-    elif mode == 'ZOOM':
+    elif mode == 'Zoom':
         if 'phoenix' in wx.version():
             page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
         else:
@@ -2325,7 +2338,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
         PickId = G2frame.PickId                             # points to item in tree
         if G2frame.GPXtree.GetItemText(PickId) == 'Background' and event.xdata:
-            if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
+            if Page.toolbar.AnyActive():    # prevent ops. if a toolbar zoom button pressed
                 # after any mouse release event (could be a zoom), redraw magnification lines
                 if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return 
@@ -5074,7 +5087,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
                     G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
                     
     def OnPress(event):
-        if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
+        if Page.toolbar.AnyActive():    # prevent ops. if a toolbar zoom button pressed
             return 
         xpos,ypos = event.xdata,event.ydata
         if xpos and buttonHandler:
@@ -7389,7 +7402,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if not (Xpos and G2frame.ifGetRing):                   #got point out of frame
                 return
             Ypos = event.ydata
-            if Ypos and not Page.toolbar._active:         #make sure zoom/pan not selected
+            if Ypos and not Page.toolbar.AnyActive():         #make sure zoom/pan not selected
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
@@ -7421,7 +7434,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         elif G2frame.MaskKey and treeItem == 'Masks':
             # nothing being dragged, create a new mask
             Xpos,Ypos = [event.xdata,event.ydata]
-            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+            if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
             if G2frame.MaskKey == 's':
                 if event.button == 3:
@@ -7524,7 +7537,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             wx.CallAfter(PlotImage,G2frame,newImage=True)
         elif treeItem == 'Stress/Strain' and G2frame.StrainKey:
             Xpos,Ypos = [event.xdata,event.ydata]
-            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+            if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,'Ivar':0.0,
@@ -7539,7 +7552,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             wx.CallAfter(PlotImage,G2frame,newPlot=False)            
         else:   # start here after dragging of integration range lines or a mask
             Xpos,Ypos = [event.xdata,event.ydata]
-            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+            if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
             tth,azm,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)[:3]
             itemPicked = str(G2frame.itemPicked)

@@ -2495,6 +2495,10 @@ def UpdatePhaseData(G2frame,Item,data):
             
             def OnMapType(event):
                 Map['MapType'] = mapType.GetValue()
+                if 'delt-F' in Map['MapType']:
+                    data['Drawing']['contourColor'] = 'RdYlGn'
+                else:
+                    data['Drawing']['contourColor'] = 'YlGnBu'
                 
             def OnRefList(event):
                 if not refsList: 

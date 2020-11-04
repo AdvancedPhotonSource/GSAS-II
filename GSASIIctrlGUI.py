@@ -437,7 +437,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     this type (or the one in :obj:`typeHint`) is preserved.
 
     Float values can be entered in the TextCtrl as numbers or also
-    as algebraic expressions using operators + - / \* () and \*\*,
+    as algebraic expressions using operators + - / \\* () and \\*\\*,
     in addition pi, sind(), cosd(), tand(), and sqrt() can be used,
     as well as appreviations s, sin, c, cos, t, tan and sq. 
 
@@ -498,7 +498,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       * tc:      (*wx.TextCtrl*)  the TextCtrl object
 
       The number of keyword arguments may be increased in the future should needs arise,
-      so it is best to code these functions with a \*\*kwargs argument so they will
+      so it is best to code these functions with a \\*\\*kwargs argument so they will
       continue to run without errors
 
       The default for OnLeave is None, which indicates no function should
@@ -1344,7 +1344,7 @@ class ScrolledMultiEditor(wx.Dialog):
     The type for each TextCtrl validation is determined by the
     initial value of the entry (int, float or string). 
     Float values can be entered in the TextCtrl as numbers or also
-    as algebraic expressions using operators + - / \* () and \*\*,
+    as algebraic expressions using operators + - / \\* () and \\*\\*,
     in addition pi, sind(), cosd(), tand(), and sqrt() can be used,
     as well as appreviations s(), sin(), c(), cos(), t(), tan() and sq(). 
 

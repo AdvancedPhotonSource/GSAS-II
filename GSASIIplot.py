@@ -8439,7 +8439,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
-                G2frame.phaseDisplay.showCS.SetValue(CS)
+                G2frame.phaseDisplay.showCS.SetSelection(CS)
                                 
     def SetRBOrigText():
         '''Called w/Locate & Insert Rigid Body to update text in DataWindow

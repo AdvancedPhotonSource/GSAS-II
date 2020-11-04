@@ -335,7 +335,7 @@ def ShowVersions():
     import GSASIIpath
     # print (versions)
     print ("Python module versions loaded:")
-    print ("  Python:     %s"%sys.version.split()[0])
+    print ("  Python:     %s from %s"%(sys.version.split()[0],sys.executable))
     print ("  wx:         %s"%wx.__version__)
     print ("  matplotlib: %s"%mpl.__version__)
     print ("  numpy:      %s"%np.__version__)

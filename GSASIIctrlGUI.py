@@ -5034,6 +5034,29 @@ For DIFFaX use cite:
             return
         print ('GSAS-II version on server: '+repos)
         if local == repos:
+            up,mod,lock = GSASIIpath.svnGetFileStatus()
+        else:
+            up = 0
+            mods = GSASIIpath.svnFindLocalChanges()
+            mod = len(mods)
+        if local == repos and up:
+            dlg = wx.MessageDialog(self.frame,
+                                   'You have the current version '+
+                                   ' of GSAS-II installed ('+repos+
+                                   '). However, '+str(up)+
+                                   ' file(s) still need to be updated.'+
+                                   ' Most likely a previous update failed to finish.'+
+                                   '\n\nPress OK to retry the update.'+
+                                   '\n\nIf this problem continues contact toby@anl.gov',
+                                   'Failed Update Likely',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+            else:
+                dlg.Destroy()
+            if lock: GSASIIpath.svnCleanup()
+        elif local == repos:
             dlg = wx.MessageDialog(self.frame,
                                    'GSAS-II is up-to-date. Version '+local+' is already loaded.',
                                    'GSAS-II Up-to-date',
@@ -5041,19 +5064,18 @@ For DIFFaX use cite:
             dlg.ShowModal()
             dlg.Destroy()
             return
-        mods = GSASIIpath.svnFindLocalChanges()
-        if mods:
+        if mod:
             dlg = wx.MessageDialog(self.frame,
                                    'You have version '+local+
                                    ' of GSAS-II installed, but the current version is '+repos+
-                                   '. However, '+str(len(mods))+
+                                   '. However, '+str(mod)+
                                    ' file(s) on your local computer have been modified.'
                                    ' Updating will attempt to merge your local changes with '
                                    'the latest GSAS-II version, but if '
                                    'conflicts arise, local changes will be '
                                    'discarded. It is also possible that the '
-                                   'local changes my prevent GSAS-II from running. '
-                                   'Press OK to start an update if this is acceptable:',
+                                   'local changes may prevent GSAS-II from running. '
+                                   '\n\nPress OK to start an update if this is acceptable:',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
             if dlg.ShowModal() != wx.ID_OK:
@@ -5073,17 +5095,15 @@ For DIFFaX use cite:
                 return
             dlg.Destroy()
         print ('start updates')
-        dlg = wx.MessageDialog(self.frame,
-                               'Your project will now be saved, GSAS-II will exit and an update '
-                               'will be performed and GSAS-II will restart. Press Cancel to '
-                               'abort the update',
-                               'Start update?',
-                               wx.OK|wx.CANCEL)
-        if dlg.ShowModal() != wx.ID_OK:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
         if self.frame.GPXtree.GetCount() > 1:
+            dlg = wx.MessageDialog(self.frame,
+                               'Your project will now be saved, GSAS-II will exit and an update '+
+                               'will be performed and GSAS-II will restart. Press Cancel '+
+                               'in next dialog to avoid saving the project.',
+                               'Starting update',
+                               wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
             self.frame.OnFileSave(event)
             GPX = self.frame.GSASprojectfile
             GSASIIpath.svnUpdateProcess(projectfile=GPX)

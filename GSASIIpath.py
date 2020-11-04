@@ -413,10 +413,7 @@ def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
     if not svn: return
     if verbose: print(u"Performing svn cleanup at "+fpath)
     cmd = [svn,'cleanup',fpath]
-    if verbose:
-        s = 'subversion command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
+    if verbose: showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     if err:
@@ -491,6 +488,11 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
     elif verbose:
         print(out)
 
+def showsvncmd(cmd):
+    s = '\nsvn command:  '
+    for i in cmd: s += i + ' '
+    print(s)
+
 def svnChecksumPatch(svn,fpath,verstr):
     '''This performs a fix when svn cannot finish an update because of
     a Checksum mismatch error. This seems to be happening on OS X for 
@@ -500,12 +502,21 @@ def svnChecksumPatch(svn,fpath,verstr):
     svnCleanup(fpath)
     cmd = ['svn','update','--set-depth','empty',
                os.path.join(fpath,'bindist')]
+    showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
+    cmd = ['svn','switch',g2home+'/trunk/bindist',
+               os.path.join(fpath,'bindist'),
+               '--non-interactive', '--trust-server-cert', '--accept',
+               'theirs-conflict', '--force', '-rHEAD', '--ignore-ancestry']
+    showsvncmd(cmd)        
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
     DownloadG2Binaries(g2home,verbose=True)
     cmd = ['svn','update','--set-depth','infinity',
                os.path.join(fpath,'bindist')]
+    showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
@@ -515,7 +526,7 @@ def svnChecksumPatch(svn,fpath,verstr):
     if svnVersionNumber() >= 1.6:
         cmd += ['--trust-server-cert']
     if proxycmds: cmd += proxycmds
-    #print(cmd)
+    showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
@@ -659,6 +670,63 @@ def svnInstallDir(URL,loadpath):
             return False
     print ("Files installed at: "+loadpath)
     return True
+
+def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
+    '''Compare file status to repository (svn status -u)
+
+    :returns: updatecount,modcount,locked where 
+       updatecount is the number of files waiting to be updated from 
+       repository 
+       modcount is the number of files that have been modified locally
+       locked  is the number of files tagged as locked
+    '''
+    import xml.etree.ElementTree as ET
+    svn = whichsvn()
+    if version is not None:
+        vstr = '-r'+str(version)
+    else:
+        vstr = '-rHEAD'
+    cmd = [svn,'st',fpath,'--xml','-u',vstr]
+    if proxycmds: cmd += proxycmds
+    s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
+    if err:
+        print ('out=%s'%out)
+        print ('err=%s'%err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
+        return None
+
+    locked = 0
+    updatecount = 0
+    modcount = 0
+    x = ET.fromstring(out)
+    for i0 in x.iter('entry'):
+        filename = i0.attrib.get('path','?')
+        wc_rev = ''
+        status = ''
+        switched = ''
+        for i1 in i0.iter('wc-status'):
+            wc_rev = i1.attrib.get('revision','')
+            status = i1.attrib.get('item','')
+            switched = i1.attrib.get('switched','')
+            if i1.attrib.get('wc-locked',''): locked += 1
+        if status == "unversioned": continue
+        if switched == "true": continue
+        if status == "modified":
+            modcount += 1
+        elif status == "normal":
+            updatecount += 1
+        file_rev = ''
+        for i2 in i1.iter('commit'):
+            file_rev = i2.attrib.get('revision','')
+        local_status = ''
+        for i1 in i0.iter('repos-status'):
+            local_status = i1.attrib.get('item','')
+        #print(filename,wc_rev,file_rev,status,local_status,switched)
+    return updatecount,modcount,locked
 
 def GetBinaryPrefix():
     if sys.platform == "win32":

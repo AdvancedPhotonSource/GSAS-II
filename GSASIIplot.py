@@ -8409,13 +8409,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     Q = drawingData['Quaternion']
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
-        elif drawingData['showSlice']:
+        elif drawingData.get('showSlice'):
             View = GL.glGetIntegerv(GL.GL_VIEWPORT)
             Tx,Ty,Tz = drawingData['viewPoint'][0]
             tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
             Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
             rho = G2mth.getRho([Cx,Cy,Cz],mapData)
-            if drawingData['showSlice'] in [1,3]:
+            if drawingData.get('showSlice') in [1,3]:
                 contlevels = contourSet.get_array()
                 contstr = str(contlevels).strip('[]')
                 G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
@@ -9470,12 +9470,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             oldSize = plt.rcParams['figure.figsize']
             plt.rcParams['figure.figsize'] = [6.0,6.0]
             plt.cla()
-            if drawingData['showSlice'] in [1,]:
+            if drawingData.get('showSlice') in [1,]:
                 contourSet = plt.contour(Z,colors='k',linewidths=1)
-            if drawingData['showSlice'] in [2,3]:
+            if drawingData.get('showSlice') in [2,3]:
                 acolor = mpl.cm.get_cmap(drawingData.get('contourColor','Paired'))                    
                 plt.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.75,interpolation='bilinear')
-                if drawingData['showSlice'] in [3,]:
+                if drawingData.get('showSlice') in [3,]:
                     contourSet = plt.contour(ZU,colors='k',linewidths=1)
             plt.axis("off")
             plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)

@@ -347,7 +347,6 @@ class G2PlotOgl(_tabPlotWin):
             attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,wx.glcanvas.WX_GL_DEPTH_SIZE,24)
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
             GL.glEnable(GL.GL_NORMALIZE)
-        #GSASIIpath.IPyBreak()
         # create GL context
         i,j= wx.__version__.split('.')[0:2]
         if int(i)+int(j)/10. > 2.8:
@@ -8110,6 +8109,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 
     def OnKey(event):           #on key UP!!
         keyBox = False
+        NPkey = False
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -8118,8 +8118,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         except AttributeError:       #if from OnKeyBox above
             keyBox = True
             key = str(event.key).upper()
-        indx = drawingData['selectedAtoms']
-        cx,ct = drawingData['atomPtrs'][:2]
+#        indx = drawingData['selectedAtoms']
         if key in ['C']:
             drawingData['viewPoint'] = [np.array([.5,.5,.5]),[0,0]]
             drawingData['viewDir'] = [0,0,1]
@@ -8133,31 +8132,36 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetViewPointText(drawingData['viewPoint'][0])
             SetViewDirText(drawingData['viewDir'])
             G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-        elif key in ['N']:
-            drawAtoms = drawingData['Atoms']
-            if not len(drawAtoms):      #no atoms
+        elif key in ['N','P',]:
+            if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
+                cx = 1
+                ct = 0
+                atoms = data.get('Map Peaks',[])
+            elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
+                cx,ct = drawingData['atomPtrs'][:2]
+                atoms = drawingData['Atoms']
+            elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Atoms':
+                cx,ct = data['General']['AtomPtrs'][:2]
+                atoms = data['Atoms'] 
+            else:
+                return
+            if not len(atoms):      #no atoms
                 return
             pI = drawingData['viewPoint'][1]
             if not len(pI):
                 pI = [0,0]
-            if indx:
-                try:
-                    pI[0] = indx[pI[1]]
-                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                except IndexError:
-                    pI = [0,0]
-                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+            if key in ['N',]:
                 pI[1] += 1
-                pI[1] %= len(indx)
-                txt = ' in selection'
             else:
-                pI[0] += 1
-                pI[0] %= len(drawAtoms)
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                txt = ''
+                pI[1] -= 1                    
+            pI[1] %= len(atoms)
+            Tx,Ty,Tz = atoms[pI[1]][cx:cx+3]
+            txt = ''
+            SetSelectedAtoms(pI[1])
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+txt,1)
+            if ct: G2frame.G2plotNB.status.SetStatusText('View point at atom '+atoms[pI[0]][ct-1]+txt,1)
+            NPkey = True
             
         elif key in ['K'] and generalData['Map']['MapType']:
             drawingData['showSlice'] = (drawingData['showSlice']+1)%4
@@ -8172,31 +8176,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 drawingData['contourColor'] = choice[sel]
             dlg.Destroy()
                 
-        elif key in ['P']:
-            drawAtoms = drawingData['Atoms']
-            if not len(drawAtoms):      #no atoms
-                return
-            pI = drawingData['viewPoint'][1]
-            if not len(pI):
-                pI = [0,0]
-            if indx:
-                try:
-                    pI[0] = indx[pI[1]]
-                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                except IndexError:
-                    pI = [0,0]
-                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                pI[1] -= 1
-                pI[1] %= len(indx)
-                txt = ' in selection'
-            else:
-                pI[0] -= 1
-                pI[0] %= len(drawAtoms)
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                txt = ''
-            drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
-            SetViewPointText(drawingData['viewPoint'][0])            
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+txt,1)
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
             dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
@@ -8247,7 +8226,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if keyBox:
                 OnKeyPressed(event)
             return
-        Draw('key up')
+        Draw('key up',NPkey=NPkey)
         
     def OnKeyPressed(event):    #On key down for repeating operation - used to change tau...
         try:
@@ -9161,7 +9140,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             ax,ay,az = xyz
             RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
                 
-    def Draw(caller='',Fade=[]):
+    def Draw(caller='',Fade=[],NPkey=False):
         vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']
         D4mapData = generalData.get('4DmapData',{})
@@ -9266,7 +9245,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 bndColor = Or/255.
             else:
                 bndColor = atColor
-            if iat in Ind and G2frame.phaseDisplay.GetPageText(getSelection()) != 'Map peaks':
+            if iat in Ind and (G2frame.phaseDisplay.GetPageText(getSelection()) != 'Map peaks') and not NPkey:
                 atColor = np.array(Gr)/255.
                 bndColor = atColor
 #            color += [.25,]
@@ -9761,10 +9740,6 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         GL.glPopMatrix()
         
     def Draw(caller=''):
-#useful debug?        
-#        if caller:
-#            print caller
-# end of useful debug
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])

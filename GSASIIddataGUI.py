@@ -192,9 +192,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             muiso = 1000.
             cell = generalData['Cell'][1:7]
             vals = G2spc.Muiso2Shkl(muiso,SGData,cell)
-            nTerm = len(UseList[item]['Mustrain'][4])
-            for i in range(nTerm):
-                UseList[item]['Mustrain'][4][i] = vals[i]
+            UseList[item]['Mustrain'][4] = vals
         G2plt.PlotSizeStrainPO(G2frame,data,item)
         wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
@@ -369,7 +367,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Mustrain'][4].append(0.0)
             UseList[G2frame.hist]['Mustrain'][5].append(False)
             onumb += 1
-        muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4])
+        muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4][:numb])
         parms = zip(Snames,UseList[G2frame.hist]['Mustrain'][5],range(numb))
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,ref,Id in parms:

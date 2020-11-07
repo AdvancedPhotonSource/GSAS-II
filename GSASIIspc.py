@@ -3045,9 +3045,9 @@ def MustrainNames(SGData):
     uniq = SGData['SGUniq']
     if laue in ['m3','m3m']:
         return ['S400','S220']
-    elif laue in ['6/m','6/mmm','3m1']:
+    elif laue in ['6/m','6/mmm','3m1','3']:
         return ['S400','S004','S202']
-    elif laue in ['31m','3']:
+    elif laue in ['31m',]:
         return ['S400','S004','S202','S301']
     elif laue in ['3R','3mR']:
         return ['S400','S220','S310','S211']
@@ -3133,11 +3133,11 @@ def MustrainCoeff(HKL,SGData):
     if laue in ['m3','m3m']:
         Strm.append(h**4+k**4+l**4)
         Strm.append(3.0*((h*k)**2+(h*l)**2+(k*l)**2))
-    elif laue in ['6/m','6/mmm','3m1']:
+    elif laue in ['6/m','6/mmm','3m1','3']:
         Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
         Strm.append(l**4)
         Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
-    elif laue in ['31m','3']:
+    elif laue in ['31m',]:
         Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
         Strm.append(l**4)
         Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
@@ -3240,7 +3240,7 @@ def Muiso2Shkl(muiso,SGData,cell):
     elif laue in ['6/m','6/mmm']:
         S0 = [1000.,1000.,1000.]
     elif laue in ['31m','3','3m1']:
-        S0 = [1000.,1000.,1000.,1000.]
+        S0 = [1000.,1000.,1000.]
     elif laue in ['3R','3mR']:
         S0 = [1000.,1000.,1000.,1000.]
     elif laue in ['4/m','4/mmm']:

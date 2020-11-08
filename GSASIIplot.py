@@ -250,7 +250,8 @@ try:
         0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
     #This can be done on request for other colors
-    mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=256)
+    oldpaired = mpl.colors.LinearSegmentedColormap('Paired',_Old_Paired_data,N=256)
+    mpl.cm.register_cmap(cmap=oldpaired,lut=256)   
     blue = [tuple(1.-np.array(item)) for item in _Old_Paired_data['blue']]
     blue.reverse()
     green = [tuple(1.-np.array(item)) for item in _Old_Paired_data['green']]
@@ -258,7 +259,9 @@ try:
     red = [tuple(1.-np.array(item)) for item in _Old_Paired_data['red']]
     red.reverse()
     Old_Paired_data_r = {'blue':blue,'green':green,'red':red}
-    mpl.cm.register_cmap('Paired_r',data=Old_Paired_data_r,lut=256)
+    oldpaired_r = mpl.colors.LinearSegmentedColormap('Paired_r',Old_Paired_data_r,N=256)
+    mpl.cm.register_cmap(cmap=oldpaired_r,lut=256)   
+
 except:  # causes error in Sphinx 
     pass
 # options for publication-quality Rietveld plots

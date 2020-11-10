@@ -1008,14 +1008,12 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfile.write('rmin = %.2f\n'%(PDFControls['Rmin']))
         grfile.write('rmax = %.2f\n'%(PDFControls['Rmax']))
         grfile.write('rstep = 0.01\n')
-
-
         grfile.write('\n')
         grfile.write('# End of config '+63*'-')
         grfile.write('\n')
         grfile.write('#### start data\n')
         grfile.write('#S 1\n')
-        grfile.write('#L r($\AA$)  G($\AA^{-2}$)\n')            
+        grfile.write('#L r($\\AA$)  G($\\AA^{-2}$)\n')            
         for r,gr in grnew:
             grfile.write("%15.2F %15.6F\n" % (r,gr))
         grfile.close()

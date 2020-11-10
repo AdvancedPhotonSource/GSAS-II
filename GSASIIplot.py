@@ -9456,7 +9456,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 contourSet = plt.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
                 acolor = mpl.cm.get_cmap(drawingData.get('contourColor','Paired'))                    
-                plt.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.75,interpolation='bilinear')
+                plt.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
                     contourSet = plt.contour(ZU,colors='k',linewidths=1)
             plt.axis("off")

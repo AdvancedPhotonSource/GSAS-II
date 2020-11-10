@@ -2717,6 +2717,58 @@ cosd = cos = c = lambda x: np.cos(x*np.pi/180.)
 tand = tan = t = lambda x: np.tan(x*np.pi/180.)
 sqrt = sq = lambda x: np.sqrt(x)
 pi = lambda: np.pi
+
+def FindFunction(f):
+    '''Find the object corresponding to function f
+
+    :param str f: a function name such as 'numpy.exp'
+    :returns: (pkgdict,pkgobj) where pkgdict contains a dict
+      that defines the package location(s) and where pkgobj
+      defines the object associated with the function.
+      If the function is not found, pkgobj is None.
+    '''
+    df = f.split('.')
+    pkgdict = {}
+    # no listed module name, try in current namespace
+    if len(df) == 1:
+        try:
+            fxnobj = eval(f)
+            return pkgdict,fxnobj
+        except (AttributeError, NameError):
+            return None,None
+
+    # includes a package, see if package is already imported
+    pkgnam = '.'.join(df[:-1])
+    try:
+        fxnobj = eval(f)
+        pkgdict[pkgnam] = eval(pkgnam)
+        return pkgdict,fxnobj
+    except (AttributeError, NameError):
+        pass
+    # package not yet imported, so let's try
+    if '.' not in sys.path: sys.path.append('.')
+    pkgnam = '.'.join(df[:-1])
+    #for pkg in f.split('.')[:-1]: # if needed, descend down the tree
+    #    if pkgname:
+    #        pkgname += '.' + pkg
+    #    else:
+    #        pkgname = pkg
+    try:
+        exec('import '+pkgnam)
+        pkgdict[pkgnam] = eval(pkgnam)
+        fxnobj = eval(f)
+    except Exception as msg:
+        print('load of '+pkgnam+' failed with error='+str(msg))
+        return {},None
+    # can we access the function? I am not exactly sure what
+    #    I intended this to test originally (BHT)
+    try:
+        fxnobj = eval(f,globals(),pkgdict)
+        return pkgdict,fxnobj
+    except Exception as msg:
+        print('call to',f,' failed with error=',str(msg))
+        return None,None # not found
+                
 class ExpressionObj(object):
     '''Defines an object with a user-defined expression, to be used for
     secondary fits or restraints. Object is created null, but is changed
@@ -2872,55 +2924,6 @@ class ExpressionObj(object):
         '''
         self.lastError = ('','')
         import ast
-        def FindFunction(f):
-            '''Find the object corresponding to function f
-            :param str f: a function name such as 'numpy.exp'
-            :returns: (pkgdict,pkgobj) where pkgdict contains a dict
-              that defines the package location(s) and where pkgobj
-              defines the object associated with the function.
-              If the function is not found, pkgobj is None.
-            '''
-            df = f.split('.')
-            pkgdict = {}
-            # no listed module name, try in current namespace
-            if len(df) == 1:
-                try:
-                    fxnobj = eval(f)
-                    return pkgdict,fxnobj
-                except (AttributeError, NameError):
-                    return None,None
-
-            # includes a package, see if package is already imported
-            pkgnam = '.'.join(df[:-1])
-            try:
-                fxnobj = eval(f)
-                pkgdict[pkgnam] = eval(pkgnam)
-                return pkgdict,fxnobj
-            except (AttributeError, NameError):
-                pass
-            # package not yet imported, so let's try
-            if '.' not in sys.path: sys.path.append('.')
-            pkgnam = '.'.join(df[:-1])
-            #for pkg in f.split('.')[:-1]: # if needed, descend down the tree
-            #    if pkgname:
-            #        pkgname += '.' + pkg
-            #    else:
-            #        pkgname = pkg
-            try:
-                exec('import '+pkgnam)
-                pkgdict[pkgnam] = eval(pkgnam)
-                fxnobj = eval(f)
-            except Exception as msg:
-                print('load of '+pkgnam+' failed with error='+str(msg))
-                return {},None
-            # can we access the function? I am not exactly sure what
-            #    I intended this to test originally (BHT)
-            try:
-                fxnobj = eval(f,globals(),pkgdict)
-                return pkgdict,fxnobj
-            except Exception as msg:
-                print('call to',f,' failed with error=',str(msg))
-                return None,None # not found
         def ASTtransverse(node,fxn=False):
             '''Transverse a AST-parsed expresson, compiling a list of variables
             referenced in the expression. This routine is used recursively.

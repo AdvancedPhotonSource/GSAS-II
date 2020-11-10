@@ -51,6 +51,7 @@ onlineVideos.append('https://anl.box.com/v/StartingGSAS')
 onlineVideos.append('https://anl.box.com/v/Strainfittingof2DdatainGSAS-II')
 onlineVideos.append('https://anl.box.com/v/Textureanalysisof2DdatainGSAS-')
 onlineVideos.append('https://anl.box.com/v/TOFSequentialSinglePeakFit')
+onlineVideos.append('https://anl.box.com/v/RigidBodyRef')
 #onlineVideos.append('
 
 if __name__ == '__main__':

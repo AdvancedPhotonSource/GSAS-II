@@ -1345,43 +1345,6 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
         file.close()
     G2fil.G2Print('gpx file saved as %s'%ProjFile)
 
-# def ImportPowder(reader,filename):
-#     '''Use a reader to import a powder diffraction data file
-
-#     :param str reader: a scriptable reader
-#     :param str filename: full name of powder data file; can be "multi-Bank" data
-
-#     :returns: list rdlist: list of reader objects containing powder data, one for each
-#         "Bank" of data encountered in file. Items in reader object of interest are:
-
-#           * rd.comments: list of str: comments found on powder file
-#           * rd.dnames: list of str: data nammes suitable for use in GSASII data tree NB: duplicated in all rd entries in rdlist
-#           * rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed for a PWDR entry in  GSASII data tree.
-#     '''
-#     rdfile,rdpath,descr = imp.find_module(reader)
-#     rdclass = imp.load_module(reader,rdfile,rdpath,descr)
-#     rd = rdclass.GSAS_ReaderClass()
-#     if not rd.scriptable:
-#         G2fil.G2Print(u'**** ERROR: '+reader+u' is not a scriptable reader')
-#         return None
-#     rdlist = []
-#     if rd.ContentsValidator(filename):
-#         repeat = True
-#         rdbuffer = {} # create temporary storage for file reader
-#         block = 0
-#         while repeat: # loop if the reader asks for another pass on the file
-#             block += 1
-#             repeat = False
-#             rd.objname = ospath.basename(filename)
-#             flag = rd.Reader(filename,None,buffer=rdbuffer,blocknum=block,)
-#             if flag:
-#                 rdlist.append(copy.deepcopy(rd)) # save the result before it is written over
-#                 if rd.repeat:
-#                     repeat = True
-#         return rdlist
-#     G2fil.G2Print(rd.errors)
-#     return None
-
 def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
     '''Create an initial Histogram dictionary
 

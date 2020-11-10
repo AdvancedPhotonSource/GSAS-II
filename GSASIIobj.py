@@ -1242,7 +1242,6 @@ be done with the Calculate/"View LS parms" menu window or
 from __future__ import division, print_function
 import platform
 import re
-import imp
 import random as ran
 import sys
 import os.path as ospath
@@ -2883,49 +2882,45 @@ class ExpressionObj(object):
             '''
             df = f.split('.')
             pkgdict = {}
-            # no listed package, try in current namespace
+            # no listed module name, try in current namespace
             if len(df) == 1:
                 try:
                     fxnobj = eval(f)
                     return pkgdict,fxnobj
                 except (AttributeError, NameError):
                     return None,None
-            else:
-                try:
-                    fxnobj = eval(f)
-                    pkgdict[df[0]] = eval(df[0])
-                    return pkgdict,fxnobj
-                except (AttributeError, NameError):
-                    pass
-            # includes a package, lets try to load the packages
-            pkgname = ''
-            path = sys.path+['./',]
-            for pkg in f.split('.')[:-1]: # if needed, descend down the tree
-                if pkgname:
-                    pkgname += '.' + pkg
-                else:
-                    pkgname = pkg
-                fp = None
-                try:
-                    fp, fppath,desc = imp.find_module(pkg,path)
-                    pkgobj = imp.load_module(pkg,fp,fppath,desc)
-                    pkgdict[pkgname] = pkgobj
-                    path = [fppath]
-                except Exception as msg:
-                    print('load of '+pkgname+' failed with error='+str(msg))
-                    return {},None
-                finally:
-                    if fp: fp.close()
-                try:
-                    #print 'before',pkgdict.keys()
-                    fxnobj = eval(f,globals(),pkgdict)
-                    #print 'after 1',pkgdict.keys()
-                    #fxnobj = eval(f,pkgdict)
-                    #print 'after 2',pkgdict.keys()
-                    return pkgdict,fxnobj
-                except:
-                    continue
-            return None # not found
+
+            # includes a package, see if package is already imported
+            pkgnam = '.'.join(df[:-1])
+            try:
+                fxnobj = eval(f)
+                pkgdict[pkgnam] = eval(pkgnam)
+                return pkgdict,fxnobj
+            except (AttributeError, NameError):
+                pass
+            # package not yet imported, so let's try
+            if '.' not in sys.path: sys.path.append('.')
+            pkgnam = '.'.join(df[:-1])
+            #for pkg in f.split('.')[:-1]: # if needed, descend down the tree
+            #    if pkgname:
+            #        pkgname += '.' + pkg
+            #    else:
+            #        pkgname = pkg
+            try:
+                exec('import '+pkgnam)
+                pkgdict[pkgnam] = eval(pkgnam)
+                fxnobj = eval(f)
+            except Exception as msg:
+                print('load of '+pkgnam+' failed with error='+str(msg))
+                return {},None
+            # can we access the function? I am not exactly sure what
+            #    I intended this to test originally (BHT)
+            try:
+                fxnobj = eval(f,globals(),pkgdict)
+                return pkgdict,fxnobj
+            except Exception as msg:
+                print('call to',f,' failed with error=',str(msg))
+                return None,None # not found
         def ASTtransverse(node,fxn=False):
             '''Transverse a AST-parsed expresson, compiling a list of variables
             referenced in the expression. This routine is used recursively.

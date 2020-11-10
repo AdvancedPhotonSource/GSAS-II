@@ -27,7 +27,6 @@ import sys
 import glob
 import inspect
 import numpy as np
-import imp
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -387,25 +386,21 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
         errprefix = prefix
 
     readerlist = []
-    pathlist = sys.path[:]
-    if '.' not in pathlist:
-        pathlist.append('.')
-
-    potential_files = []
-    for path in pathlist:
+    import_files = {}
+    if '.' not in sys.path: sys.path.append('.')
+    for path in sys.path:
         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
-            potential_files.append(filename)
+            pkg = os.path.splitext(os.path.split(filename)[1])[0]
+            if pkg in import_files:
+                G2Print('Warning: file {} hidden by {}'
+                                  .format(os.path.abspath(filename),import_files[pkg]))
+            else:
+                import_files[pkg] = filename            
 
-    potential_files = sorted(list(set(potential_files)))
-    for filename in potential_files:
-        path, rootname = os.path.split(filename)
-        pkg = os.path.splitext(rootname)[0]
-
+    for pkg in sorted(import_files.keys()):
         try:
-            fp = None
-            fp, fppath, desc = imp.find_module(pkg, [path])
-            pkg = imp.load_module(pkg, fp, fppath, desc)
-            for name, value in inspect.getmembers(pkg):
+            exec('import '+pkg)
+            for name, value in inspect.getmembers(eval(pkg)):
                 if name.startswith('_'):
                     continue
                 if inspect.isclass(value):
@@ -419,40 +414,36 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                         if reader.UseReader:
                             readerlist.append(reader)
         except AttributeError:
-            G2Print ('Import_' + errprefix + ': Attribute Error ' + filename)
+            G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            G2Print ('\nImport_' + errprefix + ': Error importing file ' + filename)
+            G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
             G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)
-        finally:
-            if fp:
-                fp.close()
-
     return readerlist
 
 def LoadExportRoutines(parent, traceback=False):
     '''Routine to locate GSASII exporters 
     '''
     exporterlist = []
-    pathlist = sys.path
-    filelist = []
-    for path in pathlist:
+    import_files = {}
+    if '.' not in sys.path: sys.path.append('.')
+    for path in sys.path:
         for filename in glob.iglob(os.path.join(path,"G2export*.py")):
-                    filelist.append(filename)    
-    filelist = sorted(list(set(filelist))) # remove duplicates
+            pkg = os.path.splitext(os.path.split(filename)[1])[0]
+            if pkg in import_files:
+                G2Print('Warning: file {} hidden by {}'
+                                  .format(os.path.abspath(filename),import_files[pkg]))
+            else:
+                import_files[pkg] = filename            
     # go through the routines and import them, saving objects that
     # have export routines (method Exporter)
-    for filename in filelist:
-        path,rootname = os.path.split(filename)
-        pkg = os.path.splitext(rootname)[0]
+    for pkg in sorted(import_files.keys()):
         try:
-            fp = None
-            fp, fppath,desc = imp.find_module(pkg,[path,])
-            pkg = imp.load_module(pkg,fp,fppath,desc)
-            for clss in inspect.getmembers(pkg): # find classes defined in package
+            exec('import '+pkg)
+            for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
                 if clss[0].startswith('_'): continue
                 if not inspect.isclass(clss[1]): continue
                 # check if we have the required methods
@@ -483,9 +474,6 @@ def LoadExportRoutines(parent, traceback=False):
             G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)
-        finally:
-            if fp:
-                fp.close()
     return exporterlist
 
 def readColMetadata(imagefile):

@@ -233,3 +233,7 @@ in Draw Atoms. The only valid values are:
 'vdW balls' is used.
 '''
 
+show_gpxSize = False
+'''When True, the sizes of the sections of the GPX file are listed
+when the GPX file is opened. Default is False.
+'''

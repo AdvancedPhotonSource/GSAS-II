@@ -7769,7 +7769,8 @@ def UpdatePhaseData(G2frame,Item,data):
             drawAtoms.MakeCellVisible(next,0)
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
             G2plt.PlotStructure(G2frame,data)
-
+            G2frame.Raise()
+            
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if r < 0 and c < 0:
@@ -10665,7 +10666,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['testRBObj']['CRYhighLight'] = [
                     i for i,a in enumerate(data['Atoms']) if a[0] == cryatom]
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
-                misc['showSelect'].SetLabelText(cryatom)
+                misc['showSelect'].setByString(cryatom)
+                G2frame.Raise()
+                #RigidBodies.atomsGrid.SetFocus()
                 
             def OnSymRadioSet(event):
                 '''Set the symmetry axis for the body as 
@@ -12939,6 +12942,7 @@ of the crystal structure.
     Pages.append('Draw Atoms')
     def rbKeyPress(event):
         '''Respond to a Tab to highlight the next RB or crystal atom
+        TODO: this is not getting called in Windows. Is a bind needed elsewhere?
         '''
         if 'testRBObj' not in data: return
         if not RigidBodies.atomsGrid: return
@@ -12980,12 +12984,17 @@ of the crystal structure.
                     I = 0
                 if data['Atoms'][I][0] in data['testRBObj']['availAtoms']:
                     data['testRBObj']['CRYhighLight'] = [I]
-                    misc['showSelect'].SetLabelText(data['Atoms'][I][0])
+                    misc['showSelect'].setByString(data['Atoms'][I][0])
                     break
         G2plt.PlotStructure(G2frame,data,False,misc['UpdateTable'])
+        G2frame.Raise()
+        return
+    
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')
+        # note the bind is here so that it is only done once, but
+        # TODO: might need to be on a different widget for Windows 
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
     MapPeaks = G2G.GSGrid(G2frame.phaseDisplay)

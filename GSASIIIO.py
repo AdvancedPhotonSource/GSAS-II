@@ -676,12 +676,18 @@ def ProjFileOpen(G2frame,showProvenance=True):
             dlg.Destroy()
     wx.BeginBusyCursor()
     try:
+        if GSASIIpath.GetConfigValue('show_gpxSize'):
+            posPrev = 0
+            sizeList = {}
         while True:
             try:
                 data = cPickleLoad(filep)
             except EOFError:
                 break
             datum = data[0]
+            if GSASIIpath.GetConfigValue('show_gpxSize'):
+                sizeList[datum[0]] = filep.tell()-posPrev
+                posPrev = filep.tell()
             # scan the GPX file for unexpected objects
             if GSASIIpath.GetConfigValue('debug'):
                 global unexpectedObject
@@ -760,6 +766,13 @@ def ProjFileOpen(G2frame,showProvenance=True):
             print('GPX load successful. Last saved with GSAS-II revision '+LastSavedUsing)
         else:
             print('project load successful')
+        if GSASIIpath.GetConfigValue('show_gpxSize'):
+            print(50*'=')
+            print('File section sizes (Kb)')
+            for item in sizeList:
+                print('  {:20s} {:10.3f}'.format(
+                    item[:20],sizeList[item]/1024.))
+            print(50*'=')
         G2frame.NewPlot = True
     except Exception as errmsg:
         if GSASIIpath.GetConfigValue('debug'):

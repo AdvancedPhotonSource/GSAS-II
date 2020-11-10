@@ -1277,6 +1277,10 @@ class G2ChoiceButton(wx.Choice):
             log.LogVarChange(self.strLoc,self.strKey)
         if self.onChoice:
             self.onChoice()
+    def setByString(self,string):
+        'Find an entry matching string and select it'
+        num = self.FindString(string)
+        if num >= 0: self.SetSelection(num)
 
 ##############################################################
 # Custom checkbox that saves values into dict/list as used

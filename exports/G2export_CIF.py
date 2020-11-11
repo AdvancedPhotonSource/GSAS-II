@@ -355,7 +355,6 @@ def HillSortElements(elmlist):
     return newlist+sorted(oldlist)
 
 
-# Refactored over here to allow access by GSASIIscriptable.py
 def FmtAtomType(sym):
     'Reformat a GSAS-II atom type symbol to match CIF rules'
     sym = sym.replace('_','') # underscores are not allowed: no isotope designation?
@@ -367,12 +366,14 @@ def FmtAtomType(sym):
     return sym
 
 
-# Refactored over here to allow access by GSASIIscriptable.py
 def PutInCol(val, wid):
     val = str(val).replace(' ', '')
     if not val: val = '?'
     fmt = '{:' + str(wid) + '} '
-    return fmt.format(val)
+    try:
+        return fmt.format(val)
+    except TypeError:
+        return fmt.format('.')
 
 
 # Refactored over here to allow access by GSASIIscriptable.py
@@ -1176,10 +1177,12 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         def Yfmt(ndec,val):
             'Format intensity values'
-            out = ("{:."+str(ndec)+"f}").format(val)
-            out = out.rstrip('0')  # strip zeros to right of decimal
-            return out.rstrip('.')  # and decimal place when not needed
-
+            try:
+                out = ("{:."+str(ndec)+"f}").format(val)
+                out = out.rstrip('0')  # strip zeros to right of decimal
+                return out.rstrip('.')  # and decimal place when not needed
+            except TypeError:
+                return '.'
         def WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,nRefSets=1):
             'Write reflection statistics'
             WriteCIFitem(self.fp, '_reflns_number_total', str(refcount))
@@ -1405,8 +1408,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,len(phaselist))
             WriteCIFitem(self.fp, '\n# POWDER DATA TABLE')
             # is data fixed step? If the step varies by <0.01% treat as fixed step
-            steps = histblk['Data'][0][1:] - histblk['Data'][0][:-1]
-            if abs(max(steps)-min(steps)) > abs(max(steps))/10000.:
+            steps = abs(histblk['Data'][0][1:] - histblk['Data'][0][:-1])
+            if (max(steps)-min(steps)) > np.mean(steps)/10000.:
                 fixedstep = False
             else:
                 fixedstep = True
@@ -1415,7 +1418,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if fixedstep and 'T' not in inst['Type'][0]: # and not TOF
                 WriteCIFitem(self.fp, '_pd_meas_2theta_range_min', G2mth.ValEsd(histblk['Data'][0][0],-0.00009))
                 WriteCIFitem(self.fp, '_pd_meas_2theta_range_max', G2mth.ValEsd(histblk['Data'][0][-1],-0.00009))
-                WriteCIFitem(self.fp, '_pd_meas_2theta_range_inc', G2mth.ValEsd(steps.sum()/len(steps),-0.00009))
+                WriteCIFitem(self.fp, '_pd_meas_2theta_range_inc', G2mth.ValEsd(np.mean(steps),-0.00009))
                 # zero correct, if defined
                 zerolst = histblk['Instrument Parameters'][0].get('Zero')
                 if zerolst: zero = zerolst[1]
@@ -2099,6 +2102,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                     instnam = histblk["Instrument Parameters"][0]['InstrName']
                     break # ignore all but 1st data histogram
         # give the user a window to edit CIF contents
+        if not self.author:
+            self.author = self.OverallParms['Controls']["Author"]
+            self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
         if not self.author:
             if not EditAuthor(): return
         self.ValidateAscii([('Author name',self.author),]) # check for ASCII strings where needed, warn on problems

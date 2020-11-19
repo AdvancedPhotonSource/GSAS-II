@@ -32,6 +32,7 @@ else:
     except:
         print('Warning: failed to import the optimized Py3 pickle (_pickle)')
         import pickle as cPickle
+import re
 import numpy as np
 import numpy.ma as ma
 import matplotlib as mpl
@@ -324,6 +325,90 @@ def GUIpatches():
     # else should care much about this. 
     sys.stderr = sys.stdout
 
+def convVersion(version):
+    '''Convert a version string ("x", "x.y", "x.y.z") into a series of 
+    ints. 
+
+    :returns: [i0, i1, i2] where None is used if a value is not specified 
+       and 0 is used if a field cannot be parsed.
+    '''
+    vIntList = [None,None,None]
+    for i,v in enumerate(version.split('.')):
+        if i >= 3: break
+        if len(v) == 0: break
+        v = list(filter(None,re.split('(\\d+)',v)))[0]   # conv '1b2' to '1'
+        try:
+            vIntList[i] = int(v)
+        except:
+            vIntList[i] = 0
+    return vIntList
+
+def compareVersions(version1,version2):
+    '''Compare two version strings ("x", "x.y", "x.y.z")
+    Note that '3.' matches '3.1', and '3.0' matches '3.0.1'
+    but '3.0.0' does not match '3.0.1'
+
+    :returns: 0 if the versions match, -1 if version1 < version2, 
+       or 1 if version1 > version2
+    '''
+    for v1,v2 in zip(convVersion(version1),convVersion(version2)):
+        if v1 is None or v2 is None:
+            return 0
+        if v1 < v2: return -1
+        if v1 > v2: return 1
+    return 0
+
+# tabulate package versions that users should be warned about
+versionDict = {}
+'''Variable versionDict is used to designate versions of packages that 
+should generate warnings or error messages. 
+
+* ``versionDict['tooOld']`` is a dict with module versions that are too old and are 
+  known to cause serious errors
+* ``versionDict['tooOldWarn']`` is a dict with module versions that are 
+  significantly out of date and should be updated, but will probably function OK.
+* ``versionDict['badVersionWarn']`` is a dict of with lists of package 
+  versions that are known to have bugs. One should select an older or 
+  newer version of the package. 
+* ``versionDict['tooNewWarn']`` is a dict with module versions that have not 
+  been tested but have changes that lead us to believe that errors are 
+  likely to happen. 
+
+**Packages/versions to be avoided**
+
+* wxPython:
+
+ * <=2.x.x: while most of GSAS-II has been written to be 
+    compatible with older versions of wxpython, we are now testing with 
+    version 4.0 only. Version 3.0 is pretty similar to 4.0 and should not 
+    have problems. 
+
+* Matplotlib:
+
+  * 1.x: there have been significant API changes since these versions and 
+    significant graphics errors will occur. 
+  * 3.1.x and 3.2.x: these versions have a known bug for plotting
+    3-D surfaces, such as microstrain vs crystal axes. The plots may appear 
+    distorted as the lengths of x, y & z will not be constrained as equal.
+    Preferably use 3.0.x as 3.3.x is not fully tested.
+
+* numpy: 
+
+  * 1.16.0: produces .gpx files that are not compatible with older 
+    version numpy versions. This is a pretty outmoded version; upgrade.
+
+'''
+# add comments above when changing anything below
+versionDict['tooOld'] = {'matplotlib': '1.'}
+'modules that will certainly fail'
+versionDict['tooOldWarn'] = {'wx': '2.'}
+'modules that may fail but should be updated'
+versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
+                                 'matplotlib': ['3.1','3.2']}
+'versions of modules that are known to have bugs'
+versionDict['tooNewWarn'] = {'matplotlib': '3.3'}
+'module versions newer than what we have tested where problems are suspected'
+    
 def ShowVersions():
     '''Show the versions all of required Python packages, etc.
     '''
@@ -336,13 +421,37 @@ def ShowVersions():
     # print (versions)
     print ("Python module versions loaded:")
     print ("  Python:     %s from %s"%(sys.version.split()[0],sys.executable))
-    print ("  wx:         %s"%wx.__version__)
-    print ("  matplotlib: %s"%mpl.__version__)
-    print ("  numpy:      %s"%np.__version__)
-    print ("  scipy:      %s"%sp.__version__)
-    print ("  OpenGL:     %s"%ogl.__version__)
     Image = None
     version = '?'
+    versionDict['errors'] = ''
+    warn = False
+    for s,m in [('wx',wx), ('matplotlib', mpl), ('numpy',np),
+                    ('scipy',sp), ('OpenGL',ogl)]:
+        msg = ''
+        if s in versionDict['tooOld']:
+            match = compareVersions(m.__version__,versionDict['tooOld'][s])
+            if match <= 0:
+                msg = "version will cause problems"
+                warn = True
+                if versionDict['errors']: versionDict['errors'] += '\n'
+                versionDict['errors'] += 'Package {} version {} is too old for GSAS-II. An update is required'.format(s,m.__version__)
+        if s in versionDict['tooOldWarn']:
+            match = compareVersions(m.__version__,versionDict['tooOldWarn'][s])
+            if match <= 0:
+                msg = "version can cause problems"
+                warn = True
+        if s in versionDict['tooNewWarn']:
+            match = compareVersions(m.__version__,versionDict['tooNewWarn'][s])
+            if match >= 0:
+                msg = "version is too new and could cause problems"
+                warn = True
+        if s in versionDict['badVersionWarn']:
+            for v in versionDict['badVersionWarn'][s]:
+                if compareVersions(m.__version__,v) == 0:
+                    msg = "version is known to be buggy"
+                    warn = True
+                    break
+        print("  {:12s}{}  {}".format(s+':',m.__version__,msg))
     try:
         from PIL import Image
     except ImportError:
@@ -385,18 +494,11 @@ def ShowVersions():
     except:
         print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
     # end patch
+    if warn:
+        print('You are suggested to install a new version of GSAS-II.\nSee https://bit.ly/G2install',
+              '\n\nFor information on packages see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html and',
+              '\nhttps://gsas-ii.readthedocs.io/en/latest/GSASIIGUI.html#GSASIIdataGUI.versionDict')
 
-def warnNumpyVersion(application):
-    dlg = wx.MessageDialog(application.main,
-                'version '+ np.__version__ +
-                ' of numpy produces .gpx files that are not compatible with older versions: please upgrade or downgrade numpy to avoid this version',
-                'numpy Warning',wx.OK)
-    try:
-        dlg.CenterOnParent()
-        dlg.ShowModal()
-    finally:
-        dlg.Destroy()
-        
 ###############################################################################
 #### GUI creation
 ###############################################################################
@@ -404,17 +506,7 @@ def GSASIImain(application):
     '''Start up the GSAS-II GUI'''                        
     ShowVersions()
     GUIpatches()
-    knownVersions = ['2.7','3.6','3.7','3.8']
-    if platform.python_version()[:3] not in knownVersions: 
-        dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
-                'Python version error',  wx.OK)
-        try:
-            dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        sys.exit()
-
+    
     if platform.python_version()[:3] == '2.7':
         msg = '''The end-of-life for python 2.7 was January 1, 2020. 
 We strongly recommend reinstalling GSAS-II from a new installation kit as we may not be able to offer support for operation of GSAS-II in python 2.7. See instructions for details.
@@ -450,7 +542,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         txt = wx.StaticText(dlg,wx.ID_ANY,G2G.StripIndents(msg))
         mainSizer.Add(txt)
-        txt.Wrap(600)
+        txt.Wrap(400)
         dlg.SetSizer(mainSizer)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer.Add((1,1),1,wx.EXPAND,1)
@@ -503,12 +595,30 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
                 G2G.ShowWebPage(instructions,None)
                 GSASIIpath.runScript(cmds, wait=True)    
                 sys.exit()
+    if versionDict['errors']:
+        dlg = wx.MessageDialog(None, versionDict['errors']+
+             '\n\nThe simplest solution is to install a new version of GSAS-II. '+
+             'See https://bit.ly/G2install',
+                'Python package problem',  wx.OK)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        sys.exit()
+    elif platform.python_version()[:3] not in ['2.7','3.6','3.7','3.8','3.9']:
+        dlg = wx.MessageDialog(None, 
+                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
+                'Python version error',  wx.OK)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        sys.exit()
+                
     application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
     application.SetTopWindow(application.main)
     # save the current package versions
     application.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
-    if np.__version__ == '1.16.0':
-        wx.CallLater(100,warnNumpyVersion,application)
     if GSASIIpath.GetConfigValue('wxInspector'):
         import wx.lib.inspection as wxeye
         wxeye.InspectionTool().Show()
@@ -8926,3 +9036,6 @@ def SetDataMenuBar(G2frame,menu=None):
         G2frame.SetMenuBar(G2frame.GSASIIMenu)
     else:
         G2frame.SetMenuBar(menu)
+
+if __name__ == '__main__':
+    ShowVersions()

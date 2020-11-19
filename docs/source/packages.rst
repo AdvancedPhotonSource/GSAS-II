@@ -16,7 +16,10 @@ many other fine distributions, such as Enthought Inc.'s Canopy and
 Python(x,y), see here: https://www.python.org/download/alternatives/. 
 We do some testing using the older Enthought Python Distribution
 (EPD); this is known to have some problems with reading CIFs and
-encourage updating from that. 
+encourage updating from that.
+
+More details on allowed and prefered package versions can be found in
+the documentation for variable :attr:`GSASIIdataGUI.versionDict`.
 
 GUI Requirements
 ----------------

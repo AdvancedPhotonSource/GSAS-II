@@ -2431,6 +2431,7 @@ class ImportPhase(ImportBaseclass):
         ImportBaseclass.__init__(self,formatName,longFormatName,
             extensionlist,strictExtension)
         self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
+        self.SymOps = {} # specified when symmetry ops are in file (e.g. CIF)
         self.Constraints = None
 
 ######################################################################

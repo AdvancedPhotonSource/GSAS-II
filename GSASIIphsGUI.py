@@ -79,8 +79,7 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
 WACV = wx.ALIGN_CENTER_VERTICAL
-mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -1614,162 +1613,10 @@ def UpdatePhaseData(G2frame,Item,data):
         return ReflData
 
     def SetupGeneral():
-        generalData = data['General']
-        atomData = data['Atoms']
-        generalData['AtomTypes'] = []
-        generalData['Isotopes'] = {}
-# various patches
-        if 'Isotope' not in generalData:
-            generalData['Isotope'] = {}
-        if 'Data plot type' not in generalData:
-            generalData['Data plot type'] = 'Mustrain'
-        if 'POhkl' not in generalData:
-            generalData['POhkl'] = [0,0,1]
-        if 'Map' not in generalData:
-            generalData['Map'] = mapDefault.copy()
-        if 'Flip' not in generalData:
-            generalData['Flip'] = {'RefList':'','GridStep':0.25,'Norm element':'None',
-                'k-factor':0.1,'k-Max':20.,}
-        if 'testHKL' not in generalData['Flip']:
-            generalData['Flip']['testHKL'] = [[0,0,2],[2,0,0],[1,1,1],[0,2,0],[1,2,3]]
-        if 'doPawley' not in generalData:
-            generalData['doPawley'] = False     #ToDo: change to ''
-        if 'Pawley dmin' not in generalData:
-            generalData['Pawley dmin'] = 1.0
-        if 'Pawley dmax' not in generalData:
-            generalData['Pawley dmax'] = 100.0
-        if 'Pawley neg wt' not in generalData:
-            generalData['Pawley neg wt'] = 0.0
-        if '3Dproj' not in generalData:
-            generalData['3Dproj'] = ''
-        if 'doDysnomia' not in generalData:
-            generalData['doDysnomia'] = False
-        if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
-            'MCSA controls' not in generalData:
-            generalData['MCSA controls'] = {'Data source':'','Annealing':[0.7,0.1,250],
-            'dmin':2.8,'Algorithm':'log','fast parms':[0.8,0.6],'log slope':0.9,
-            'Cycles':1,'Results':[],'newDmin':True}
-        if 'AtomPtrs' not in generalData:
-            generalData['AtomPtrs'] = [3,1,7,9]
-            if generalData['Type'] == 'macromolecular':
-                generalData['AtomPtrs'] = [6,4,10,12]
-            elif generalData['Type'] == 'magnetic':
-                generalData['AtomPtrs'] = [3,1,10,12]
-        if generalData['Modulated']:
-            if 'Super' not in generalData:
-                generalData['Super'] = 1
-                generalData['SuperVec'] = [[0.,0.,0.],False,1]
-                generalData['SSGData'] = {}
-            if '4DmapData' not in generalData:
-                generalData['4DmapData'] = mapDefault.copy()
-                generalData['4DmapData'].update({'MapType':'Fobs'})
-            atomData = data['Atoms']
-            for atom in atomData:
-#                if 'SS1' not in atom:
-#                    atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
-                if isinstance(atom[-1],dict) and 'waveType' in atom[-1]['SS1']:
-                    waveType = atom[-1]['SS1']['waveType']
-                    for parm in ['Sfrac','Spos','Sadp','Smag']:
-                        if len(atom[-1]['SS1'][parm]):
-                            wType = 'Fourier'
-                            if parm == 'Sfrac':
-                                if 'Crenel' in waveType:
-                                    wType = 'Crenel'
-                            elif parm == 'Spos':
-                                if not 'Crenel' in waveType:
-                                    wType = waveType
-                            atom[-1]['SS1'][parm] = [wType,]+list(atom[-1]['SS1'][parm])
-                    del atom[-1]['SS1']['waveType']
-        else:
-            generalData['Super'] = 0
-        if 'Modulated' not in generalData:
-            generalData['Modulated'] = False
-        if 'HydIds' not in generalData:
-            generalData['HydIds'] = {}
-        if generalData['Type'] == 'magnetic':
-            if 'SGGray' not in generalData['SGData']:
-                generalData['SGData']['SGGray'] = False
-        if 'Resolution' in generalData['Map']:
-            generalData['Map']['GridStep'] = generalData['Map']['Resolution']/2.
-            generalData['Flip']['GridStep'] = generalData['Flip']['Resolution']/2.
-            del generalData['Map']['Resolution']
-            del generalData['Flip']['Resolution']
-        if 'Compare' not in generalData:
-            generalData['Compare'] = {'Oatoms':'','Tatoms':'',
-                    'Tilts':{'Otilts':[],'Ttilts':[]},
-                'Bonds':{'Obonds':[],'Tbonds':[]},'Vects':{'Ovec':[],'Tvec':[]},
-                'dVects':{'Ovec':[],'Tvec':[]},'Sampling':1.0}
-        if 'Sampling' not in generalData['Compare']:
-            generalData['Compare']['Sampling'] = 1.0
-                
-# end of patches
-        cx,ct,cs,cia = generalData['AtomPtrs']
-        generalData['NoAtoms'] = {}
-        generalData['BondRadii'] = []
-        generalData['AngleRadii'] = []
-        generalData['vdWRadii'] = []
-        generalData['AtomMass'] = []
-        generalData['Color'] = []
-        if generalData['Type'] == 'magnetic':
-            generalData['MagDmin'] = generalData.get('MagDmin',1.0)
-            landeg = generalData.get('Lande g',[])
-        generalData['Mydir'] = G2frame.dirname
-        badList = {}
-        for iat,atom in enumerate(atomData):
-            atom[ct] = atom[ct].lower().capitalize()              #force to standard form
-            if generalData['AtomTypes'].count(atom[ct]):
-                generalData['NoAtoms'][atom[ct]] += atom[cx+3]*float(atom[cs+1])
-            elif atom[ct] != 'UNK':
-                Info = G2elem.GetAtomInfo(atom[ct])
-                if not Info:
-                    if atom[ct] not in badList:
-                        badList[atom[ct]] = 0
-                    badList[atom[ct]] += 1
-                    atom[ct] = 'UNK'
-                    continue
-                atom[ct] = Info['Symbol'] # N.B. symbol might be changed by GetAtomInfo
-                generalData['AtomTypes'].append(atom[ct])
-                generalData['Z'] = Info['Z']
-                generalData['Isotopes'][atom[ct]] = Info['Isotopes']
-                generalData['BondRadii'].append(Info['Drad'])
-                generalData['AngleRadii'].append(Info['Arad'])
-                generalData['vdWRadii'].append(Info['Vdrad'])
-                if atom[ct] in generalData['Isotope']:
-                    if generalData['Isotope'][atom[ct]] not in generalData['Isotopes'][atom[ct]]:
-                        isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
-                        generalData['Isotope'][atom[ct]] = isotope
-                    generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]]['Mass'])
-                else:
-                    generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
-                    if 'Nat. Abund.' not in generalData['Isotopes'][atom[ct]]:
-                        isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
-                        generalData['Isotope'][atom[ct]] = isotope
-                    generalData['AtomMass'].append(Info['Mass'])
-                generalData['NoAtoms'][atom[ct]] = atom[cx+3]*float(atom[cs+1])
-                generalData['Color'].append(Info['Color'])
-                if generalData['Type'] == 'magnetic':
-                    if len(landeg) < len(generalData['AtomTypes']):
-                        landeg.append(2.0)
-        if generalData['Type'] == 'magnetic':
-            generalData['Lande g'] = landeg[:len(generalData['AtomTypes'])]
-                        
-        if badList:
-            msg = 'Warning: element symbol(s) not found:'
-            for key in badList:
-                msg += '\n\t' + key
-                if badList[key] > 1:
-                    msg += ' (' + str(badList[key]) + ' times)'
+        try:
+            G2elem.SetupGeneral(data,G2frame.dirname)
+        except ValueError as msg:
             wx.MessageBox(msg,caption='Element symbol error')
-        F000X = 0.
-        F000N = 0.
-        for i,elem in enumerate(generalData['AtomTypes']):
-            F000X += generalData['NoAtoms'][elem]*generalData['Z']
-            isotope = generalData['Isotope'][elem]
-            F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
-        generalData['F000X'] = F000X
-        generalData['F000N'] = F000N
-        generalData['Mass'] = G2mth.getMass(generalData)
-       
 
 ################################################################################
 ##### General phase routines
@@ -3004,7 +2851,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     if not '_' in BNSlatt:
                         SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
                 else:
-                    dlg.Destroy()
                     return
             finally:
                 dlg.Destroy()
@@ -3018,8 +2864,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 for atom in Atoms:
                     for i in [0,1,2]:
                         atom[cx+i] += T[i]
+                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData) # update symmetry & mult
+                    atom[cs:cs+2] = SytSym,Mul
                 data['Drawing'] = []
-                break
+                #force redraw of page
+                sub = G2frame.GPXtree.GetSelection()
+                G2frame.GPXtree.SelectItem(G2frame.GPXtree.root)
+                wx.CallAfter(G2frame.GPXtree.SelectItem,sub)
+                return
             else:
                 phaseName = newPhase['General']['Name']
                 newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)

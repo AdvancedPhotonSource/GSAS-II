@@ -249,6 +249,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
+            # save symmetry operators, if specified (use to check for origin 1 in GSASIIdataGUI OnImportPhase)
+            ops = blk.get("_symmetry_equiv_pos_as_xyz")   # try older name 1st
+            if ops:
+                self.SymOps['xyz'] = ops
+            elif blk.get("_space_group_symop_operation_xyz"):
+                self.SymOps['xyz'] = blk.get("_space_group_symop_operation_xyz")
+            else:
+                if 'xyz' in self.SymOps: del self.SymOps['xyz']
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:

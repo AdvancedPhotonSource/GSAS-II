@@ -168,9 +168,12 @@ import GSASIIpy3 as G2py3
 import GSASIIlog as log
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
+import GSASIIElem as G2elem
 import GSASIIscriptable as G2sc
 import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
+import GSASIImath as G2mth
+import GSASIIstrMain as G2stMn
 if sys.version_info[0] >= 3:
     unicode = str
     basestring = str
@@ -7007,6 +7010,131 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     dlg.Show()
     AutoLoadWindow = dlg # save window reference
 
+################################################################################
+# Deal with Origin 1/2 ambiguities
+################################################################################
+def ChooseOrigin(G2frame,rd):    
+    # make copy of Phase but shift atoms Origin 1->2
+    O2Phase = copy.deepcopy(rd.Phase)
+    # make copy of atoms, shift to alternate origin
+    T = G2spc.spg2origins[rd.Phase['General']['SGData']['SpGrp']]
+    O2atoms = O2Phase['Atoms']
+    cx,ct,cs,cia = rd.Phase['General']['AtomPtrs']
+    SGData = rd.Phase['General']['SGData']
+    for atom in O2atoms:
+        for i in [0,1,2]:
+            atom[cx+i] += T[i]
+            atom[cs:cs+2] = G2spc.SytSym(atom[3:6],SGData)[0:2] # update symmetry & mult
+    #get density & distances
+    DisAglData = {}
+    DisAglData['SGData'] = rd.Phase['General']['SGData']
+    DisAglData['Cell'] = rd.Phase['General']['Cell'][1:] #+ volume
+    DisAglCtls = {'Factors': [0.85, 0],
+                 'BondRadii': [], 'AngleRadii': [], 'AtomTypes': []}
+    for atom in rd.Phase['Atoms']:
+        DisAglCtls['BondRadii'].append(1.5)
+        DisAglCtls['AngleRadii'].append(0)
+        DisAglCtls['AtomTypes'].append(atom[ct])
+    txt = ''
+    for i,phObj in enumerate([rd.Phase,O2Phase]):
+        if i:
+            txt += "\n\nWith origin shift applied\n"
+        else:
+            txt += "\nWith original origin\n"
+        cellContents = {}
+        for atom in phObj['Atoms']:
+            if atom[ct] in cellContents:
+                cellContents[atom[ct]] += atom[cs+1]
+            else:
+                cellContents[atom[ct]] = atom[cs+1]
+        txt += '   Unit cell Contents: '
+        for i,k in enumerate(cellContents):
+            if i: txt += ', '
+            txt += '{}*{}'.format(cellContents[k],k)
+        G2elem.SetupGeneral(phObj,G2frame.dirname)
+        den,_ = G2mth.getDensity(phObj['General'])
+        txt += "\n   Density {:.2f} g/cc\n".format(den)
+                    
+        DisAglData['OrigAtoms'] = DisAglData['TargAtoms'] = [
+                        [i,]+atom[ct-1:ct+1]+atom[cx:cx+3] for
+                        i,atom in enumerate(phObj['Atoms'])]
+        lbl,dis,angle = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+        # get unique distances
+        minDis = {} 
+        for i in dis: 
+            for j,o,s,d,e in dis[i]: 
+                key = '-'.join(sorted([lbl[i],lbl[j]])) 
+                if key not in minDis: 
+                    minDis[key] = d 
+                elif d < minDis[key]: 
+                    minDis[key] = d
+        thirdShortest = sorted([minDis[k] for k in minDis])[:3][-1]
+        shortTxt = ''
+        for k in minDis:
+            if minDis[k] <= thirdShortest:
+                if shortTxt: shortTxt += ', '
+                shortTxt += "{}: {:.2f}".format(k,minDis[k])
+        txt += "   Shortest distances are "+shortTxt
+
+    # do we know if there is a center of symmetry at origin?
+    centro = None
+    if 'xyz' in rd.SymOps:
+        centro = False
+        if '-x,-y,-z' in [i.replace(' ','').lower() for i in rd.SymOps['xyz']]:
+            centro = True
+            
+    msg = 'Be careful here. This space group has two origin settings. GSAS-II requires the origin to be placed at a center of symmetry (Origin 2). You must choose the correct option below or all subsequent results will be *wrong*. For more info, press the help button (bottom right).\n'
+    if centro:
+        msg += '\nThere is an -x,-y,-z symmetry op in the file input, so this is likely already in Origin 2.\n'
+    elif centro is None:
+        msg += '\nNo symmetry operations read from the input file; you must decide what to do. You are recommended to review a plot of the structure to make sure the symmetry is correct.\n'
+    else:
+        msg += '\nSymmetry operations in the input file do not contain -x,-y,-z, indicating an origin shift is likely needed.\n'
+
+    msg += '\nNote that computations below, made from the coordinates, may help determine the correct origin choice:'
+
+    width = 600
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'Warning: Shift origin?',
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE,
+                size=(width,-1))
+    dlg.CenterOnParent()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    txtbox = wx.StaticText(dlg,wx.ID_ANY,msg)
+    txtbox.Wrap(width-10)
+    mainSizer.Add(txtbox,0)
+    mainSizer.Add((5,5))
+    txtbox = wx.StaticText(dlg,wx.ID_ANY,txt)
+    mainSizer.Add(txtbox,0,wx.ALIGN_CENTER,1)
+    mainSizer.Add((10,10))
+
+    O1Btn = wx.Button(dlg,wx.ID_ANY,"Shift to Origin 2")
+    O1Btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    O2Btn = wx.Button(dlg,wx.ID_ANY,"Keep current coordinates")
+    O2Btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_YES))
+    if centro:
+        O2Btn.SetDefault()
+    elif centro is not None:
+        O1Btn.SetDefault()
+    btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+    btnSizer.Add((20,20),1)
+    btnSizer.Add(O1Btn)
+    btnSizer.Add((10,10),0)
+    btnSizer.Add(O2Btn)
+    btnSizer.Add((20,20),1)
+    btnSizer.Add(HelpButton(dlg,helpIndex='Origin1'),0,wx.RIGHT,5)
+    mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+    dlg.SetSizer(mainSizer)
+    dlg.Fit()
+    ans = dlg.ShowModal()
+    if ans == wx.ID_OK:
+        dlg.Destroy()
+        return O2Phase
+    elif ans == wx.ID_YES:
+        dlg.Destroy()
+        return rd.Phase
+    else:
+        dlg.Destroy()
+        return None
 
 if __name__ == '__main__':
     app = wx.PySimpleApp()

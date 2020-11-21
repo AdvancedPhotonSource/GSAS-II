@@ -1126,10 +1126,9 @@ class GSASII(wx.Frame):
             # make new phase names unique
             rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName,phaseNameList)
             if rd.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
-                wx.MessageDialog(self,' The atom positions for this structure must be in the 2nd setting for the space group '+
-                    rd.Phase['General']['SGData']['SpGrp'], 
-                    'Is this 2nd setting?',  wx.OK).ShowModal()
-                
+                choice = G2G.ChooseOrigin(self,rd)
+                if choice is None: return # dialog cancelled
+                rd.Phase = choice
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
             print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))

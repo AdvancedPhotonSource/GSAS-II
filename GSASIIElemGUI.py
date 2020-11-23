@@ -53,8 +53,7 @@ class PickElement(wx.Dialog):
             i+=1
         if self.multiple:
             b = wx.Button(self,wx.ID_CLOSE,
-                          pos=wx.Point(16.5*self.butWid+25,7.75*24+24),
-                          label="Done")
+                pos=wx.Point(16.5*self.butWid+25,7.75*24+24),label="Done")
             b.Bind(wx.EVT_BUTTON, self.OnClose)
 
     def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,multiple=False):

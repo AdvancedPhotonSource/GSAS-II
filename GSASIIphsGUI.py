@@ -4245,6 +4245,35 @@ def UpdatePhaseData(G2frame,Item,data):
         else:
             print ("select one or more rows of atoms")
             G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            
+    def OnFracSplit(event):
+        'Split atom frac accordintg to atom type & refined site fraction'    
+        cx,ct,cs,ci = getAtomPtrs(data)      
+        indx = getAtomSelections(Atoms,ct-1)
+        if indx:
+            atomData = data['Atoms']
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+            if PE.ShowModal() == wx.ID_OK:
+                Atype2 = PE.Elem.strip()
+                AtomInfo2 = G2elem.GetAtomInfo(Atype2)
+                Z2 = AtomInfo2['Z']
+                B2 = AtomInfo2['Isotopes']['Nat. Abund.']['SL'][0]
+            PE.Destroy()
+            for ind in indx:
+                Aname1 = atomData[ind][ct-1]
+                Atype1 = G2elem.FixValence(atomData[ind][ct])
+                Afrac = atomData[ind][cx+3]
+                AtomInfo1 = G2elem.GetAtomInfo(Atype1)
+                if Atype1 == Atype2:
+                    print('ERROR - 2nd atom type must be different from selected atom')
+                    continue
+                Z1 = AtomInfo1['Z']
+                B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
+                frac1 = (Z1*Afrac-Z2)/(Z1-Z2)
+                bfrac1 = (B1*Afrac-B2)/(B1-B2)
+                print(' For %s: X-ray based %s site fraction = %.3f, %s site fraction = %.3f'%(Aname1,Atype1,frac1,Atype2,(1.-frac1)))
+                print('        neutron based %s site fraction = %.3f, %s site fraction = %.3f\n'%(Atype1,bfrac1,Atype2,(1.-bfrac1)))
                         
     def OnValidProtein(event):
         
@@ -12634,6 +12663,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAngleHist, id=G2G.wxID_ATOMSBNDANGLHIST)
+        G2frame.Bind(wx.EVT_MENU, OnFracSplit, id=G2G.wxID_ATOMFRACSPLIT)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
         G2frame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:

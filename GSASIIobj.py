@@ -1849,11 +1849,11 @@ def CompileVarDesc():
         'DebyeR' : 'Debye model radius',
         'DebyeU' : 'Debye model Uiso',
         'RBV.*' : 'Vector rigid body parameter',
-        'RBR.*' : 'Residue rigid body parameter',
         'RBRO([aijk])' : 'Residue rigid body orientation parameter',
         'RBRP([xyz])' : 'Residue rigid body position parameter',
         'RBRTr;.*' : 'Residue rigid body torsion parameter',
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
+        'RBRU' : 'Residue rigid body group Uiso param.',
         'constr([0-9]*)' : 'Parameter from constraint',
         # supersymmetry parameters  p::<var>:a:o 'Flen','Fcent'?
         'mV([0-2])$' : 'Modulation vector component \\1',
@@ -1899,7 +1899,7 @@ def CompileVarDesc():
         'PkPos': 'Bragg peak position',
         'PkSig': 'Bragg peak sigma',
         'PkGam': 'Bragg peak gamma',
-        'e([12][12])' : 'strain tensor e\1',   # strain vars e11, e22, e12
+        'e([12][12])' : 'strain tensor e\\1',   # strain vars e11, e22, e12
         'Dcalc': 'Calc. d-spacing',
         'Back$': 'background parameter',
         'pos$': 'peak position',
@@ -1911,7 +1911,14 @@ def CompileVarDesc():
         'sig-[012q]':'TOF profile term',
         'dif[ABC]':'TOF to d-space calibration',
         'C\\([0-9]*,[0-9]*\\)' : 'spherical harmonics preferred orientation coef.',
+        'Pressure': 'Pressure level for measurement in MPa',
+        'Temperature': 'T value for measurement, K',
+        'FreePrm([123])': 'User defined measurement parameter \\1',
+        'Gonio. radius': 'Distance from sample to detector, mm',
         }.items():
+        # Needs documentation: HAP: LayerDisp, LeBail, newLeBail
+        # hist: Azimuth, Chi, Omega, Phi, Bank, nDebye, nPeaks
+        
         if len(value) == 2:
             #VarDesc[key] = value[0]
             reVarDesc[re.compile(key)] = value[0]

@@ -1549,6 +1549,12 @@ class ExportBaseclass(object):
                 phaseName = self.G2frame.GPXtree.GetItemText(item)
                 self.Phases[phaseName] =  self.G2frame.GPXtree.GetItemPyData(item)
                 item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
+            # Get rigid body info into self.OverallParms 
+            for key in ('Rigid bodies','Covariance'):
+                item = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,key)
+                if item:
+                    self.OverallParms[key] = self.G2frame.GPXtree.GetItemPyData(item)
+                item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
             return
         elif self.currentExportType == 'single':
             histType = 'HKLF'

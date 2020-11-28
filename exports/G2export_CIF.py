@@ -56,6 +56,7 @@ import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
+import GSASIIstrIO as G2strIO        
 import GSASIImapvars as G2mv
 import GSASIIElem as G2el
 
@@ -86,9 +87,13 @@ def WriteCIFitem(fp, name, value=''):
     else:
         fp.write(name+'\n')
 
+def RBheader(fp):
+    WriteCIFitem(fp,'\n# RIGID BODY DETAILS')
+    WriteCIFitem(fp,'loop_\n    _restr_rigid_body_class.class_id\n    _restr_rigid_body_class.details')
 
 # Refactored over here to allow access by GSASIIscriptable.py
-def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist):
+def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
+                          RBparms={}):
     'Write atom positions to CIF'
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     General = phasedict['General']
@@ -173,25 +178,99 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)
-    if naniso == 0: return
-    # now loop over aniso atoms
-    WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_aniso_label' +
-                 '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
-                 '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
-                 '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
-    for i,at in enumerate(Atoms):
-        fval = parmDict.get(fpfx+str(i),at[cfrac])
-        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
-        if at[cia] == 'I': continue
-        s = PutInCol(labellist[i],6) # label
-        for j in (2,3,4,5,6,7):
-            sigdig = -0.0009
-            var = pfx+varnames[cia+j]+":"+str(i)
-            val = parmDict.get(var,at[cia+j])
-            sig = sigDict.get(var,sigdig)
-            s += PutInCol(G2mth.ValEsd(val,sig),11)
-        WriteCIFitem(fp, s)
+    if naniso != 0: 
+        # now loop over aniso atoms
+        WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_aniso_label' +
+                     '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
+                     '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
+                     '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
+        for i,at in enumerate(Atoms):
+            fval = parmDict.get(fpfx+str(i),at[cfrac])
+            if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+            if at[cia] == 'I': continue
+            s = PutInCol(labellist[i],6) # label
+            for j in (2,3,4,5,6,7):
+                sigdig = -0.0009
+                var = pfx+varnames[cia+j]+":"+str(i)
+                val = parmDict.get(var,at[cia+j])
+                sig = sigDict.get(var,sigdig)
+                s += PutInCol(G2mth.ValEsd(val,sig),11)
+            WriteCIFitem(fp, s)
+    # save information about rigid bodies
+    header = False
+    num = 0
+    rbAtoms = []
+    for irb,RBObj in enumerate(phasedict['RBModels'].get('Residue',[])):
+        if not header:
+            header = True
+            RBheader(fp)
+        jrb = RBparms['RBIds']['Residue'].index(RBObj['RBId'])
+        rbsx = str(irb)+':'+str(jrb)
+        num += 1
+        WriteCIFitem(fp,'',str(num))
+        RBModel = RBparms['Residue'][RBObj['RBId']]
+        SGData = phasedict['General']['SGData']
+        Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+        s = '''GSAS-II residue rigid body "{}" with {} atoms
+  Site symmetry @ origin: {}, multiplicity: {}
+'''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
+        for i in G2strIO.WriteResRBModel(RBModel):
+            s += i
+        s += '\n Location:\n'
+        for i in G2strIO.WriteRBObjPOAndSig(pfx,'RBR',rbsx,parmDict,sigDict):
+            s += i+'\n'
+        for i in G2strIO.WriteRBObjTLSAndSig(pfx,'RBR',rbsx,
+                        RBObj['ThermalMotion'][0],parmDict,sigDict):
+            s += i
+        nTors = len(RBObj['Torsions'])
+        if nTors:
+            for i in G2strIO.WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,
+                        nTors):
+                s += i
+        WriteCIFitem(fp,'',s.rstrip())
+        
+        pId = phasedict['pId']
+        for i in RBObj['Ids']:
+            lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
+            rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
+        #GSASIIpath.IPyBreak()
 
+    for irb,RBObj in enumerate(phasedict['RBModels'].get('Vector',[])):
+        if not header:
+            header = True
+            RBheader(fp)
+        jrb = RBparms['RBIds']['Vector'].index(RBObj['RBId'])
+        rbsx = str(irb)+':'+str(jrb)
+        num += 1
+        WriteCIFitem(fp,'',str(num))
+        RBModel = RBparms['Vector'][RBObj['RBId']]
+        SGData = phasedict['General']['SGData']
+        Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+        s = '''GSAS-II vector rigid body "{}" with {} atoms
+  Site symmetry @ origin: {}, multiplicity: {}
+'''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
+        for i in G2strIO.WriteVecRBModel(RBModel,sigDict,irb):
+            s += i
+        s += '\n Location:\n'
+        for i in G2strIO.WriteRBObjPOAndSig(pfx,'RBV',rbsx,parmDict,sigDict):
+            s += i+'\n'
+        for i in G2strIO.WriteRBObjTLSAndSig(pfx,'RBV',rbsx,
+                        RBObj['ThermalMotion'][0],parmDict,sigDict):
+            s += i
+        WriteCIFitem(fp,'',s.rstrip())
+        
+        pId = phasedict['pId']
+        for i in RBObj['Ids']:
+            lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
+            rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
+
+    if rbAtoms:
+        WriteCIFitem(fp,'loop_\n    _restr_rigid_body.id'+
+            '\n    _restr_rigid_body.atom_site_label\n    _restr_rigid_body.site_symmetry'+
+            '\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details')
+        for i,l in enumerate(rbAtoms):
+            WriteCIFitem(fp,'   {:5d} {}'.format(i+1,l))
+            
 def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
     'Write atom positions to CIF'
     # phasedict = self.Phases[phasenam] # pointer to current phase info
@@ -559,11 +638,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             if self.ifHKLF:
                 controls = self.OverallParms['Controls']
-                if controls['F**2']:
-                    thresh = 'F**2>%.1fu(F**2)'%(controls['UsrReject']['minF/sig'])
-                else:
-                    thresh = 'F>%.1fu(F)'%(controls['UsrReject']['minF/sig'])
-                WriteCIFitem(self.fp, '_reflns_threshold_expression', thresh)
+                try:
+                    if controls['F**2']:
+                        thresh = 'F**2>%.1fu(F**2)'%(controls['UsrReject']['minF/sig'])
+                    else:
+                        thresh = 'F>%.1fu(F)'%(controls['UsrReject']['minF/sig'])
+                    WriteCIFitem(self.fp, '_reflns_threshold_expression', thresh)
+                except KeyError:
+                    pass
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))
             except:
@@ -1142,7 +1224,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 except AttributeError:
                     self.labellist = []
                 WriteAtomsNuclear(self.fp, self.Phases[phasenam], phasenam,
-                                  self.parmDict, self.sigDict, self.labellist)
+                                  self.parmDict, self.sigDict, self.labellist,
+                                      self.OverallParms['Rigid bodies'])
             else:
                 try:
                     self.labellist
@@ -1521,7 +1604,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += PutInCol(G2mth.ValEsd(ref[8],0),12)
                     s += PutInCol('.',10)
                     s += PutInCol(G2mth.ValEsd(ref[9],0),12)
-                    s += PutInCol(G2mth.ValEsd(ref[10],-0.9),7)
                 else:
                     sig = ref[6] * ref[8] / ref[5]
                     s += PutInCol(G2mth.ValEsd(ref[8],-abs(sig/10)),12)
@@ -1917,7 +1999,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.CIFname = s
         # load saved CIF author name
         try:
-            self.author = self.OverallParms['Controls'].get("Author",'').strip()
+            self.author = self.OverallParms['Controls'].get("Author",'?').strip()
         except KeyError:
             pass
         #=================================================================
@@ -2103,7 +2185,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     break # ignore all but 1st data histogram
         # give the user a window to edit CIF contents
         if not self.author:
-            self.author = self.OverallParms['Controls']["Author"]
+            self.author = self.OverallParms['Controls'].get("Author",'?').strip()
             self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
         if not self.author:
             if not EditAuthor(): return

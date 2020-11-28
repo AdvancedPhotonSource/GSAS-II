@@ -1044,40 +1044,22 @@ def modVary(pfx,SSGData):
 ################################################################################
         
 def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
-    'needs a doc string'
+    'Get Rigid body info from tree entry and print it to .LST file'
     
     def PrintResRBModel(RBModel):
-        atNames = RBModel['atNames']
-        rbRef = RBModel['rbRef']
-        rbSeq = RBModel['rbSeq']
         pFile.write('Residue RB name: %s no.atoms: %d, No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
-        pFile.write('    At name       x          y          z\n')
-        for name,xyz in zip(atNames,RBModel['rbXYZ']):
-            pFile.write('  %8s %10.4f %10.4f %10.4f\n'%(name,xyz[0],xyz[1],xyz[2]))
-        pFile.write('Orientation defined by: %s -> %s & %s -> %s\n'%
-            (atNames[rbRef[0]],atNames[rbRef[1]],atNames[rbRef[0]],atNames[rbRef[2]]))
-        if rbSeq:
-            for i,rbseq in enumerate(rbSeq):
-#                nameLst = [atNames[i] for i in rbseq[3]]
-                pFile.write('Torsion sequence %d Bond: %s - %s riding: %s\n'%
-                    (i,atNames[rbseq[0]],atNames[rbseq[1]],str([atNames[i] for i in rbseq[3]])))
+        for i in WriteResRBModel(RBModel):
+            pFile.write(i)
         
     def PrintVecRBModel(RBModel):
-        rbRef = RBModel['rbRef']
-        atTypes = RBModel['rbTypes']
         pFile.write('Vector RB name: %s no.atoms: %d No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
-        for i in range(len(RBModel['VectMag'])):
-            pFile.write('Vector no.: %d Magnitude: %8.4f Refine? %s\n'%(i,RBModel['VectMag'][i],RBModel['VectRef'][i]))
-            pFile.write('  No. Type     vx         vy         vz\n')
-            for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i])):
-                pFile.write('  %d   %2s %10.4f %10.4f %10.4f\n'%(j,name,xyz[0],xyz[1],xyz[2]))
-        pFile.write('  No. Type      x          y          z\n')
-        for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'])):
-            pFile.write('  %d   %2s %10.4f %10.4f %10.4f\n'%(i,name,xyz[0],xyz[1],xyz[2]))
+        for i in WriteVecRBModel(RBModel):
+            pFile.write(i)
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
-            (rbRef[0],rbRef[1],rbRef[0],rbRef[2]))
+            (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
+            
     rbVary = []
     rbDict = {}
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -2088,105 +2070,18 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         
                 
     def PrintRBObjPOAndSig(rbfx,rbsx):
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
-        for i,px in enumerate(['Px:','Py:','Pz:']):
-            name = pfx+rbfx+px+rbsx
-            namstr += '%12s'%('Pos '+px[1])
-            valstr += '%12.5f'%(parmDict[name])
-            if name in sigDict:
-                sigstr += '%12.5f'%(sigDict[name])
-            else:
-                sigstr += 12*' '
-        for i,po in enumerate(['Oa:','Oi:','Oj:','Ok:']):
-            name = pfx+rbfx+po+rbsx
-            namstr += '%12s'%('Ori '+po[1])
-            valstr += '%12.5f'%(parmDict[name])
-            if name in sigDict:
-                sigstr += '%12.5f'%(sigDict[name])
-            else:
-                sigstr += 12*' '
-        pFile.write(namstr+'\n')
-        pFile.write(valstr+'\n')
-        pFile.write(sigstr+'\n')
+        for i in WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
+            pFile.write(i+'\n')
         
     def PrintRBObjTLSAndSig(rbfx,rbsx,TLS):
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
-        if 'N' not in TLS:
-            pFile.write(' Thermal motion:\n')
-        if 'T' in TLS:
-            for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
-                name = pfx+rbfx+pt+rbsx
-                namstr += '%12s'%(pt[:3])
-                valstr += '%12.5f'%(parmDict[name])
-                if name in sigDict:
-                    sigstr += '%12.5f'%(sigDict[name])
-                else:
-                    sigstr += 12*' '
-            pFile.write(namstr+'\n')
-            pFile.write(valstr+'\n')
-            pFile.write(sigstr+'\n')
-        if 'L' in TLS:
-            namstr = '  names :'
-            valstr = '  values:'
-            sigstr = '  esds  :'
-            for i,pt in enumerate(['L11:','L22:','L33:','L12:','L13:','L23:']):
-                name = pfx+rbfx+pt+rbsx
-                namstr += '%12s'%(pt[:3])
-                valstr += '%12.3f'%(parmDict[name])
-                if name in sigDict:
-                    sigstr += '%12.3f'%(sigDict[name])
-                else:
-                    sigstr += 12*' '
-            pFile.write(namstr+'\n')
-            pFile.write(valstr+'\n')
-            pFile.write(sigstr+'\n')
-        if 'S' in TLS:
-            namstr = '  names :'
-            valstr = '  values:'
-            sigstr = '  esds  :'
-            for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
-                name = pfx+rbfx+pt+rbsx
-                namstr += '%12s'%(pt[:3])
-                valstr += '%12.4f'%(parmDict[name])
-                if name in sigDict:
-                    sigstr += '%12.4f'%(sigDict[name])
-                else:
-                    sigstr += 12*' '
-            pFile.write(namstr+'\n')
-            pFile.write(valstr+'\n')
-            pFile.write(sigstr+'\n')
-        if 'U' in TLS:
-            name = pfx+rbfx+'U:'+rbsx
-            namstr = '  names :'+'%12s'%('Uiso')
-            valstr = '  values:'+'%12.5f'%(parmDict[name])
-            if name in sigDict:
-                sigstr = '  esds  :'+'%12.5f'%(sigDict[name])
-            else:
-                sigstr = '  esds  :'+12*' '
-            pFile.write(namstr+'\n')
-            pFile.write(valstr+'\n')
-            pFile.write(sigstr+'\n')
+        for i in WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
+            pFile.write(i)
         
     def PrintRBObjTorAndSig(rbsx):
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
         nTors = len(RBObj['Torsions'])
         if nTors:
-            pFile.write(' Torsions:\n')
-            for it in range(nTors):
-                name = pfx+'RBRTr;'+str(it)+':'+rbsx
-                namstr += '%12s'%('Tor'+str(it))
-                valstr += '%12.4f'%(parmDict[name])
-                if name in sigDict:
-                    sigstr += '%12.4f'%(sigDict[name])
-            pFile.write(namstr+'\n')
-            pFile.write(valstr+'\n')
-            pFile.write(sigstr+'\n')
+            for i in WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
+                pFile.write(i)
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
         Tindx = 1.0
@@ -3678,3 +3573,155 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None,
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
                 
+def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
+    '''Cribbed version of PrintRBObjPOAndSig but returns lists of strings. 
+    Moved so it can be used in ExportCIF
+    '''
+    namstr = '  names :'
+    valstr = '  values:'
+    sigstr = '  esds  :'
+    for i,px in enumerate(['Px:','Py:','Pz:']):
+        name = pfx+rbfx+px+rbsx
+        namstr += '%12s'%('Pos '+px[1])
+        valstr += '%12.5f'%(parmDict[name])
+        if name in sigDict:
+            sigstr += '%12.5f'%(sigDict[name])
+        else:
+            sigstr += 12*' '
+    for i,po in enumerate(['Oa:','Oi:','Oj:','Ok:']):
+        name = pfx+rbfx+po+rbsx
+        namstr += '%12s'%('Ori '+po[1])
+        valstr += '%12.5f'%(parmDict[name])
+        if name in sigDict:
+            sigstr += '%12.5f'%(sigDict[name])
+        else:
+            sigstr += 12*' '
+    return (namstr,valstr,sigstr)
+
+def WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
+    '''Cribbed version of PrintRBObjTLSAndSig but returns lists of strings. 
+    Moved so it can be used in ExportCIF
+    '''
+    out = []
+    namstr = '  names :'
+    valstr = '  values:'
+    sigstr = '  esds  :'
+    if 'N' not in TLS:
+        out.append(' Thermal motion:\n')
+    if 'T' in TLS:
+        for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.5f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.5f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        out.append(namstr+'\n')
+        out.append(valstr+'\n')
+        out.append(sigstr+'\n')
+    if 'L' in TLS:
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,pt in enumerate(['L11:','L22:','L33:','L12:','L13:','L23:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.3f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.3f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        out.append(namstr+'\n')
+        out.append(valstr+'\n')
+        out.append(sigstr+'\n')
+    if 'S' in TLS:
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.4f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.4f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        out.append(namstr+'\n')
+        out.append(valstr+'\n')
+        out.append(sigstr+'\n')
+    if 'U' in TLS:
+        name = pfx+rbfx+'U:'+rbsx
+        namstr = '  names :'+'%12s'%('Uiso')
+        valstr = '  values:'+'%12.5f'%(parmDict[name])
+        if name in sigDict:
+            sigstr = '  esds  :'+'%12.5f'%(sigDict[name])
+        else:
+            sigstr = '  esds  :'+12*' '
+        out.append(namstr+'\n')
+        out.append(valstr+'\n')
+        out.append(sigstr+'\n')
+    return out
+
+def WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
+    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings. 
+    Moved so it can be used in ExportCIF
+    '''
+    out = []
+    namstr = '  names :'
+    valstr = '  values:'
+    sigstr = '  esds  :'
+    out.append(' Torsions:\n')
+    for it in range(nTors):
+        name = pfx+'RBRTr;'+str(it)+':'+rbsx
+        namstr += '%12s'%('Tor'+str(it))
+        valstr += '%12.4f'%(parmDict[name])
+        if name in sigDict:
+            sigstr += '%12.4f'%(sigDict[name])
+    out.append(namstr+'\n')
+    out.append(valstr+'\n')
+    out.append(sigstr+'\n')
+    return out
+
+def WriteResRBModel(RBModel):
+    '''Write description of a residue rigid body. Code shifted from 
+    PrintResRBModel to make usable from G2export_CIF
+    '''
+    out = []
+    atNames = RBModel['atNames']
+    rbRef = RBModel['rbRef']
+    rbSeq = RBModel['rbSeq']
+    out.append('    At name       x          y          z\n')
+    for name,xyz in zip(atNames,RBModel['rbXYZ']):
+        out.append('  %8s %10.4f %10.4f %10.4f\n'%(name,xyz[0],xyz[1],xyz[2]))
+    out.append('  Orientation defined by: %s -> %s & %s -> %s\n'%
+        (atNames[rbRef[0]],atNames[rbRef[1]],atNames[rbRef[0]],atNames[rbRef[2]]))
+    if rbSeq:
+        for i,rbseq in enumerate(rbSeq):
+#                nameLst = [atNames[i] for i in rbseq[3]]
+            out.append('  Torsion sequence %d Bond: %s - %s riding: %s\n'%
+                    (i,atNames[rbseq[0]],atNames[rbseq[1]],str([atNames[i] for i in rbseq[3]])))
+    return out
+
+def WriteVecRBModel(RBModel,sigDict={},irb=None):
+    '''Write description of a vector rigid body. Code shifted from 
+    PrintVecRBModel to make usable from G2export_CIF
+    '''
+    out = []
+    rbRef = RBModel['rbRef']
+    atTypes = RBModel['rbTypes']
+    for i in range(len(RBModel['VectMag'])):
+        if sigDict and irb is not None:
+            name = '::RBV;'+str(i)+':'+str(irb)
+            s = G2mth.ValEsd(RBModel['VectMag'][i],sigDict.get(name,-.0001))
+            out.append('Vector no.: %d Magnitude: %s\n'%(i,s))
+        else:
+            out.append('Vector no.: %d Magnitude: %8.4f Refine? %s\n'%
+                           (i,RBModel['VectMag'][i],RBModel['VectRef'][i]))
+        out.append('  No. Type     vx         vy         vz\n')
+        for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i])):
+            out.append('  %d   %2s %10.4f %10.4f %10.4f\n'%(j,name,xyz[0],xyz[1],xyz[2]))
+    out.append('  No. Type      x          y          z\n')
+    for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'])):
+        out.append('  %d   %2s %10.4f %10.4f %10.4f\n'%(i,name,xyz[0],xyz[1],xyz[2]))
+    return out

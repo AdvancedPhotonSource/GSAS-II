@@ -1059,16 +1059,19 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:
                     Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',
-                                picker=True,pickradius=1.,gid=hid))
+                                #picker=True,pickradius=1.,
+                                               gid=hid))
                 else:
                     Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w',
-                                picker=True,pickradius=1.,gid=hid))
+                                #picker=True,pickradius=1.,
+                                               gid=hid))
             else:
                 if A > 0.0 and A > B:
                     Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                 if B:
                     Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w',
-                                picker=True,pickradius=1.,gid=hid))
+                                #picker=True,pickradius=1.,
+                                               gid=hid))
                     if A < B:
                         Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                     radius = C
@@ -7061,8 +7064,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if not (event.xdata and event.ydata): return
                 spot = [event.xdata,event.ydata,G2frame.spotSize]
                 Masks['Points'].append(spot)
-                artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',
-                                picker=True,pickradius=3)
+                artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r')
+#                                picker=True,pickradius=3)
                 Page.figure.gca().add_artist(artist)
                 artist.itemNumber = len(Masks['Points'])-1
                 artist.itemType = 'Spot'
@@ -7494,8 +7497,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                             return
                     spot = [Xpos,Ypos,sig]
                     Masks['Points'].append(spot)
-                    artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',
-                                picker=True,pickradius=3)
+                    artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r')
+#                                picker=True,pickradius=3)
                     Page.figure.gca().add_artist(artist)
                     artist.itemNumber = len(Masks['Points'])-1
                     artist.itemType = 'Spot'
@@ -7853,8 +7856,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks
             if len(spot):
                 x,y,d = spot
-                artist = Circle((x,y),radius=d/2,fc='none',ec='r',
-                                picker=True,pickradius=3)
+                artist = Circle((x,y),radius=d/2,fc='none',ec='r')
+#                                picker=True,pickradius=3)
                 Plot.add_artist(artist)
                 artist.itemNumber = i
                 artist.itemType = 'Spot'

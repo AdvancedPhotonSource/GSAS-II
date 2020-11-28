@@ -3231,7 +3231,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do someting if Dij << 0. 
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         if np.any(np.diag(G)<0.) or np.any(np.isnan(A)):
-            raise G2obj.G2Exception('invalid metric tensor \n cell/Dij refinement not advised')
+            G2obj.HowDidIgetHere()
+            raise G2obj.G2Exception('Error in metric tensor refinement\nCheck for refinement of conflicting variables')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
         if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:

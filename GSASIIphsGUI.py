@@ -4252,7 +4252,6 @@ def UpdatePhaseData(G2frame,Item,data):
         indx = getAtomSelections(Atoms,ct-1)
         if indx:
             atomData = data['Atoms']
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
             if PE.ShowModal() == wx.ID_OK:
                 Atype2 = PE.Elem.strip()

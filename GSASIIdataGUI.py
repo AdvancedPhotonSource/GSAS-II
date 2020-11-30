@@ -6540,18 +6540,17 @@ def UpdateControls(G2frame,data):
                     
         seqSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sequential Refinement: '),0,WACV)
-        selSeqData = wx.Button(G2frame.dataWindow,-1,label=' Select data')
-        selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
-        dataSizer.Add(selSeqData,0,WACV)
         SeqData = data.get('Seq Data',[])
         if not SeqData:
-            lbl = ' (no data selected)'
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select datasets to switch to sequential refinement: '),0,WACV)
+            selSeqData = wx.Button(G2frame.dataWindow,label='Select datasets')
         else:
-            lbl = ' ('+str(len(SeqData))+' dataset(s) selected)'
-
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
-        seqSizer.Add(dataSizer,0)
+            lbl = 'Sequential Refinement with '+str(len(SeqData))+' dataset(s) selected'
+            dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+            selSeqData = wx.Button(G2frame.dataWindow,label=' Reselect datasets')            
+        selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+        dataSizer.Add(selSeqData,0,WACV)
+        seqSizer.Add(dataSizer)
         if SeqData:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             reverseSel = wx.CheckBox(G2frame.dataWindow,-1,label=' Reverse order?')
@@ -6562,7 +6561,7 @@ def UpdateControls(G2frame,data):
             copySel.Bind(wx.EVT_CHECKBOX,OnCopySel)
             copySel.SetValue(data['Copy2Next'])
             selSizer.Add(copySel,0,WACV)
-            clrSeq = wx.Button(G2frame.dataWindow,label='Clear previous seq.results')
+            clrSeq = wx.Button(G2frame.dataWindow,label='Clear previous seq. results')
             clrSeq.Bind(wx.EVT_BUTTON,OnClrSeq)
             selSizer.Add(clrSeq,0,WACV)
             seqSizer.Add(selSizer,0)
@@ -6596,7 +6595,11 @@ def UpdateControls(G2frame,data):
             data['F**2'] = fsqRef.GetValue()
             
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
-        LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Refinement derivatives: '),0,WACV)
+
+        tmpSizer=wx.BoxSizer(wx.HORIZONTAL)
+        tmpSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Refinement type: '),0,WACV)
+        tmpSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='RefineType'))
+        LSSizer.Add(tmpSizer,0,WACV)
         Choice=['analytic Jacobian','numeric','analytic Hessian','Hessian SVD']   #TODO +'SVD refine' - what flags will it need?
         derivSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -6626,7 +6629,10 @@ def UpdateControls(G2frame,data):
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Initial shift factor: '),0,WACV)
             Factr = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'shift factor',nDig=(10,5),xmin=1.e-5,xmax=100.)
             LSSizer.Add(Factr,0,WACV)
+
+        ShklSizer = None
         if G2frame.Sngl:
+            ShklSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
             userReject = data['UsrReject']
             usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0.,5.], ],'MinExt':[' Min extinct. (0-.9): ',[0.,.9],],
                 'MaxDF/F':[' Max delt-F/sig (3-1000): ',[3.,1000.],],'MaxD':[' Max d-spacing (3-500): ',[3.,500.],],
@@ -6635,14 +6641,14 @@ def UpdateControls(G2frame,data):
             fsqRef = wx.CheckBox(G2frame.dataWindow,-1,label='Refine HKLF as F^2? ')
             fsqRef.SetValue(data['F**2'])
             fsqRef.Bind(wx.EVT_CHECKBOX,OnFsqRef)
-            LSSizer.Add(fsqRef,0,WACV)
-            LSSizer.Add((1,0),)
+            ShklSizer.Add(fsqRef,0,WACV)
+            ShklSizer.Add((1,0),)
             for item in usrRej:
-                LSSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=usrRej[item][0]),0,WACV)
+                ShklSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=usrRej[item][0]),0,WACV)
                 usrrej = G2G.ValidatedTxtCtrl(G2frame.dataWindow,userReject,item,nDig=(10,2),
                     xmin=usrRej[item][1][0],xmax=usrRej[item][1][1])
-                LSSizer.Add(usrrej,0,WACV)
-        return LSSizer
+                ShklSizer.Add(usrrej,0,WACV)
+        return LSSizer,ShklSizer
         
     def AuthSizer():
         def OnAuthor(event):
@@ -6676,12 +6682,36 @@ def UpdateControls(G2frame,data):
     subSizer.Add((-1,-1),1,wx.EXPAND)
     subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement Controls'),0,WACV)    
     subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Controls'))
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(LSSizer())
-    mainSizer.Add((5,5),0)
+    LSSizer,ShklSizer = LSSizer()
+    mainSizer.Add(LSSizer)
+    if ShklSizer:
+        mainSizer.Add((5,15),0)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Single Crystal Refinement Settings'),0,WACV)    
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        mainSizer.Add(subSizer,0,wx.EXPAND)
+        mainSizer.Add(ShklSizer)
+        
+    mainSizer.Add((5,15),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sequential Settings'),0,WACV)    
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add(SeqSizer())
-    mainSizer.Add((5,5),0)
+    mainSizer.Add((5,15),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)    
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add(AuthSizer())
     mainSizer.Add((5,5),0)
     Controls = data
@@ -6714,7 +6744,7 @@ def UpdateControls(G2frame,data):
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
-     
+    
 ################################################################################
 #####  Display of Sequential Results
 ################################################################################           

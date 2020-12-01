@@ -367,6 +367,20 @@ def PrintFprime(FFtables,pfx,pFile):
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')
+    
+def PrintBlength(BLtables,wave,pFile):
+    pFile.write('\n Resonant neutron scattering lengths:\n')
+    Elstr = ' Element:'
+    FPstr = " b'     :"
+    FPPstr = ' b"     :'
+    for El in BLtables:
+        BP,BPP = G2el.BlenResCW([El,],BLtables,wave)
+        Elstr += ' %8s'%(El)
+        FPstr += ' %8.3f'%(BP)
+        FPPstr += ' %8.3f'%(BPP)
+    pFile.write(Elstr+'\n')
+    pFile.write(FPstr+'\n')
+    pFile.write(FPPstr+'\n')
 
 def PrintISOmodes(pFile,Phases,parmDict,sigDict):
     '''Prints the values for the ISODISTORT modes into the project's
@@ -2747,7 +2761,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 
     return hapVary,hapDict,controlDict
     
-def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True,pFile=None):
+def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=True,pFile=None):
     'needs a doc string'
     
     def PrintSizeAndSig(hapData,sizeSig):
@@ -3059,6 +3073,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     continue
                 pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                 pFile.write(135*'='+'\n')
+                Inst = Histogram['Instrument Parameters'][0]
                 if 'PWDR' in histogram:
                     pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections\n'%
                         (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref']))
@@ -3068,6 +3083,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     if parmDict[pfx+'LeBail']:
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     else:
+                        # if calcControls != None:    #skipped in seqRefine
+                        #     if 'X'in Inst['Type'][0]:
+                        #         PrintFprime(calcControls['FFtables'],hfx,pFile)
+                        #     elif 'NC' in Inst['Type'][0]:
+                        #         PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)
                         if pfx+'Scale' in PhFrExtPOSig:
                             wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
                             sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
@@ -3090,12 +3110,14 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                             PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
-                    Inst = Histogram['Instrument Parameters'][0]
                     pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)\n'%
                         (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
                         Histogram['Residuals'][pfx+'Nrej'],Histogram['Residuals'][pfx+'Next']))
-                    if FFtables != None and 'N' not in Inst['Type'][0]:
-                        PrintFprime(FFtables,hfx,pFile)
+                    if calcControls != None:    #skipped in seqRefine
+                        if 'X'in Inst['Type'][0]:
+                            PrintFprime(calcControls['FFtables'],hfx,pFile)
+                        elif 'NC' in Inst['Type'][0]:
+                            PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)
                     pFile.write(' HKLF histogram weight factor = %.3f\n'%(Histogram['wtFactor']))
                     if pfx+'Scale' in ScalExtSig:
                         pFile.write(' Scale factor : %10.4f, sig %10.4f\n'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale']))
@@ -3364,7 +3386,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
     
-def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None,seq=False):
+def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=None,seq=False):
     'Shows histogram data after a refinement'
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
@@ -3567,8 +3589,11 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None,
                 (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin']))
             if Print:
                 pFile.write(' Instrument type: %s\n'%Sample['Type'])
-                if FFtables != None and 'N' not in Inst['Type'][0]:
-                    PrintFprime(FFtables,pfx,pFile)
+                if calcControls != None:    #skipped in seqRefine
+                    if 'X' in Inst['Type'][0]:
+                        PrintFprime(calcControls['FFtables'],pfx,pFile)
+                    elif 'NC' in Inst['Type'][0]:
+                        PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)

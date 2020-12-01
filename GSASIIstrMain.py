@@ -301,8 +301,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
             G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
             if len(frozen):
                 msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
                     .format(len(frozen),len(parmFrozenList))

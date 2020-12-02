@@ -1681,6 +1681,12 @@ def UpdateBackground(G2frame,data):
     Choices = ['chebyschev','chebyschev-1','cosine','Q^2 power series','Q^-2 power series','lin interpolate','inv interpolate','log interpolate']
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background used in refinement'),0,WACV)
+    # add help button to bring up help web page - at right sede of window
+    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
     mainSizer.Add(BackSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
@@ -1763,7 +1769,12 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     def Draw():
         G2frame.dataWindow.ClearData()
         mainSizer = G2frame.dataWindow.GetSizer()
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
+        # add help button to bring up help web page - at right sede of window
+        topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
         mainSizer.Add((5,5))
         mainSizer.Add(LimitSizer())
         if len(data)>2:
@@ -2172,7 +2183,11 @@ def UpdateInstrumentGrid(G2frame,data):
             insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
         subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text),0,WACV)
-        mainSizer.Add(subSizer)
+        # add help button to bring up help web page - at right sede of window
+        subSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(subSizer,0,WACV|wx.EXPAND)
+#        mainSizer.Add(subSizer)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
             [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
@@ -2906,13 +2921,10 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
-    # add help button to bring up help web page
-    helpkey = G2frame.dataWindow.helpKey
-    topSizer.Add((30,-1))
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=helpkey))
+    # add help button to bring up help web page - at right sede of window
     topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
     nameSizer = wx.BoxSizer(wx.HORIZONTAL)
     nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Instrument Name '),0,WACV)
@@ -4376,7 +4388,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.LoadCell.Enable(True)
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
+    # add help button to bring up help web page - at right sede of window
+    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(0,5,5,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)

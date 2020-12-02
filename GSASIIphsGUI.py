@@ -1869,6 +1869,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 modulated.SetValue(generalData['Modulated'])
                 modulated.Bind(wx.EVT_CHECKBOX,OnModulated)
                 nameSizer.Add(modulated,0,WACV)           
+            # add help button to bring up help web page - at right sede of window
+            nameSizer.Add((-1,-1),1,WACV)
+            nameSizer.Add(G2G.HelpButton(General,helpIndex=G2frame.dataWindow.helpKey),0,WACV)
             return nameSizer
             
         def CellSizer():
@@ -2768,7 +2771,7 @@ def UpdatePhaseData(G2frame,Item,data):
             General.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(NameSizer(),0)
+        mainSizer.Add(NameSizer(),0,wx.EXPAND)
         mainSizer.Add((5,5),0)        
         mainSizer.Add(CellSizer(),0)
         mainSizer.Add((5,5),0)
@@ -5157,7 +5160,13 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
  Jour. Phys.: Cond. Matter 2007, 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218 
  '''))
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'),0,WACV)
+            # add help button to bring up help web page - at right sede of window
+            topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+#            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
             if not data['RMC']['RMCProfile']:
                 Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
@@ -8976,9 +8985,12 @@ def UpdatePhaseData(G2frame,Item,data):
         if drawOptions.GetSizer():
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        #mainSizer.Add(wx.StaticText(drawOptions,-1,' Drawing controls'),0,
-        #                  wx.ALL|wx.CENTER)
-        #G2G.HorizontalLine(mainSizer,drawOptions)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(drawOptions,label=' Drawing controls:'),0,WACV)
+        # add help button to bring up help web page - at right sede of window
+        topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(drawOptions,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
         mainSizer.Add(SlopSizer(),0)
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(ShowSizer(),0,)
@@ -9292,7 +9304,10 @@ def UpdatePhaseData(G2frame,Item,data):
         titleSizer.Add(wx.StaticText(Texture,-1,
             ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
             0,WACV)
-        mainSizer.Add(titleSizer,0)
+        # add help button to bring up help web page - at right sede of window
+        titleSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        titleSizer.Add(G2G.HelpButton(Texture,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(titleSizer,0,wx.EXPAND)
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(0,6,5,5)
         shSizer.Add(wx.StaticText(Texture,-1,' Texture model: '),0,WACV)
@@ -11497,7 +11512,12 @@ of the crystal structure.
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA models:'),0)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(G2frame.MCSA,label='MC/SA models:'),0,WACV)
+            # add help button to bring up help web page - at right sede of window
+            topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(G2frame.MCSA,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
             mainSizer.Add((5,5),0)
             rbNames = []
             rbids = []

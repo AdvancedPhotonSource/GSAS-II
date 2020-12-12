@@ -1812,12 +1812,14 @@ def CompileVarDesc():
         'Afrac': ('Atomic site fraction parameter',1e-5),
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
-        # Hist & Phase (HAP) vars (p:h:<var>)
+        # Hist (:h:<var>) & Phase (HAP) vars (p:h:<var>)
         'Back': 'Background term',
         'BkPkint;(.*)':'Background peak #\\1 intensity',
         'BkPkpos;(.*)':'Background peak #\\1 position',
         'BkPksig;(.*)':'Background peak #\\1 Gaussian width',
         'BkPkgam;(.*)':'Background peak #\\1 Cauchy width',
+#        'Back File' : 'Background file name',
+        'BF mult' : 'Background file multiplier',
         'Bab([AU])': 'Babinet solvent scattering coef. \\1',
         'D([123][123])' : 'Anisotropic strain coef. \\1',
         'Extinction' : 'Extinction coef.',

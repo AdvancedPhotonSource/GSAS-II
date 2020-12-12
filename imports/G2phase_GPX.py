@@ -80,6 +80,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         self.Phase['Histograms'] = {}       #remove any histograms
         self.Phase['Pawley ref'] = []       # & any Pawley refl.
         self.Phase['RBModels'] = {}
+        self.Phase['Drawing'] = {}
         if 'MCSA' in self.Phase:
             del self.Phase['MCSA']
         if 'Map Peaks' in self.Phase:

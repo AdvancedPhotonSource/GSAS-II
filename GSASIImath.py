@@ -190,7 +190,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             try:
                 Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
             except nl.LinAlgError:
-                psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
+                psing = list(np.where(np.abs(np.diag(nl.qr(Amatlam)[1])) < 1.e-14)[0])
                 G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization for ',psing, mode='error')
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
             Xvec = np.inner(Ainv,Yvec)      #solve
@@ -320,7 +320,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             Ainv,Nzeros = pinv(Amat,xtol)    #do Moore-Penrose inversion (via SVD)
         except nl.LinAlgError:
             G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization', mode='warn')
-            psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
+            psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
         Xvec = np.inner(Ainv,Yvec)      #solve
         Xvec /= Adiag

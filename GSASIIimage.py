@@ -502,7 +502,8 @@ def GetDetectorXY(dsp,azm,data):
     dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
     xyz = LinePlaneCollision(dxyz0,dxyz1,vect,2.*dist*vect)
     if xyz is None:
-        return None
+        return np.zeros(2)
+#        return None
     xyz = np.inner(xyz,makeMat(-data['det2theta'],1).T)
     xyz -= np.array([0.,0.,dist])                 #translate back
     xyz = np.inner(xyz,iMN)
@@ -637,7 +638,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     x0y = x0*npsind(data['rotation'])
     distsq = data['distance']**2
     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return tth,azm,G,dsp
+    return [tth,azm,G,dsp]
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -762,7 +763,8 @@ def GetLineScan(image,data):
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)
     dsp = wave/(2.0*npsind(Tx/2.0))
-    xy = np.array([GetDetectorXY(d,azm,data) for d in dsp]).T
+    xy = [GetDetectorXY(d,azm,data) for d in dsp]
+    xy = np.array(xy).T
     xy[1] *= scalex
     xy[0] *= scaley
     xy = np.array(xy,dtype=int)
@@ -1458,11 +1460,11 @@ def IntStrSta(Image,StrSta,Controls):
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
             XY = np.array(ringxy).T
             Th,Azm = GetTthAzm(XY[0],XY[1],Controls)
-            pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]
+            pola = G2pwd.Polarization(Controls['PolaVal'][0],Th,Azm-90.)[0]     #get pola not dpola
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
-            ringint /= pola
+            ringint /= pola[0]      #just 1st column
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
     return RingsAI

@@ -2699,22 +2699,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     except:
         G2frame.lastPlotType = None
     if plotType == 'PWDR':
-        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
-            G2frame.PatternId, 'Instrument Parameters'))
-        if G2frame.lastPlotType != Parms['Type'][1]:
-            if GSASIIpath.GetConfigValue('debug'): 
-                print('triggering newplot from G2frame.lastPlotType')
-            Ymax = max(data[1][1])
-            if Page.plotStyle['sqrtPlot']:
-                Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
-                Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
-                Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
-            else:
-                Page.plotStyle['delOffset'] = .02*Ymax
-                Page.plotStyle['refOffset'] = -0.1*Ymax
-                Page.plotStyle['refDelt'] = .1*Ymax
-            newPlot = True
-        G2frame.lastPlotType = Parms['Type'][1]
+        try:
+            Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
+                G2frame.PatternId, 'Instrument Parameters'))
+            if G2frame.lastPlotType != Parms['Type'][1]:
+                if GSASIIpath.GetConfigValue('debug'): 
+                    print('triggering newplot from G2frame.lastPlotType')
+                Ymax = max(data[1][1])
+                if Page.plotStyle['sqrtPlot']:
+                    Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
+                    Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
+                    Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+                else:
+                    Page.plotStyle['delOffset'] = .02*Ymax
+                    Page.plotStyle['refOffset'] = -0.1*Ymax
+                    Page.plotStyle['refDelt'] = .1*Ymax
+                newPlot = True
+            G2frame.lastPlotType = Parms['Type'][1]
+        except TypeError:       #bad id from GetGPXtreeItemId - skip
+            pass
         
     try:
         G2frame.FixedLimits
@@ -2869,10 +2872,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
-        PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-        Pattern[0]['BackFile'] = ['',-1.0,False]
-        if PId:
-            Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
+        # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
+        # Pattern[0]['BackFile'] = ['',-1.0,False]
+        # if PId:
+        #     Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
@@ -2904,10 +2907,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if 'Offset' not in Page.plotStyle:     #plot offset data
                 Ymax = max(Pattern[1][1])
                 Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
-            PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-            Pattern[0]['BackFile'] = ['',-1.0,False]
-            if PId:
-                Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
+            # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
+            # Pattern[0]['BackFile'] = ['',-1.0,False]
+            # if PId:
+            #     Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
             PlotList.append(Pattern)
             ParmList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 pid,'Instrument Parameters'))[0])
@@ -2924,7 +2927,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Ymax = None
     for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
-        #bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
@@ -6900,10 +6902,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     Azm = np.linspace(*aR)
     for azm in Azm:
         XY = G2img.GetDetectorXY(Dsp(np.squeeze(angI),wave),azm,Data)
-        if XY is not None:
+        if np.any(XY):
             xy1.append(XY)      #what about hyperbola
         XY = G2img.GetDetectorXY(Dsp(np.squeeze(angO),wave),azm,Data)
-        if XY is not None:
+        if np.any(XY):
             xy2.append(XY)      #what about hyperbola
     return np.array(xy1).T,np.array(xy2).T
 
@@ -7579,7 +7581,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
-            dsp = G2img.GetDsp(Xpos,Ypos,Data)
+            dsp = float(G2img.GetDsp(Xpos,Ypos,Data))
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,'Ivar':0.0,
                 'ImxyObs':[[],[]],'ImxyCalc':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'Ivar':0})
             R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
@@ -7827,7 +7829,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             xyO = G2img.GetDetectorXY(dspO,azm,Data)
             Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
-                                picker=True,pickradius=3,label='linescan')
+#                picker=True,pickradius=3,label='linescan')
+                picker=False,label='linescan')
                     
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:
@@ -8435,13 +8438,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     Q = drawingData['Quaternion']
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
-        elif drawingData.get('showSlice'):
+        elif drawingData.get('showSlice',False):
             View = GL.glGetIntegerv(GL.GL_VIEWPORT)
             Tx,Ty,Tz = drawingData['viewPoint'][0]
             tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
             Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
             rho = G2mth.getRho([Cx,Cy,Cz],mapData)
-            if drawingData.get('showSlice') in [1,3]:
+            if drawingData.get('showSlice',False) in [1,3]:
                 contlevels = contourSet.get_array()
                 contstr = str(contlevels).strip('[]')
                 G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)

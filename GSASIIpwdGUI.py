@@ -283,18 +283,22 @@ class RDFDialog(wx.Dialog):
 ##### Setup routines
 ################################################################################
 
-def GetFileBackground(G2frame,xye,Pattern):
+def GetFileBackground(G2frame,xye,background,scale=True):
     bxye = np.zeros(len(xye[1]))
-    if 'BackFile' in Pattern[0]:
-        backfile,mult = Pattern[0]['BackFile'][:2]
+    mult = 1.0
+    if 'background PWDR' in background[1]:
+        backfile,mult = background[1]['background PWDR'][:2]
         if backfile:
             bId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile)
             if bId:
-                bxye = mult*G2frame.GPXtree.GetItemPyData(bId)[1][1]
+                bxye = G2frame.GPXtree.GetItemPyData(bId)[1][1]
             else:
                 print('Error: background PWDR {} not found'.format(backfile))
-                Pattern[0]['BackFile'][0] = ''
-    return bxye
+                background[1]['background PWDR'] = ['',1.0,False]
+    if scale:
+        return bxye*mult
+    else:
+        return bxye
     
 def IsHistogramInAnyPhase(G2frame,histoName):
     '''Tests a Histogram to see if it is linked to any phases.
@@ -640,15 +644,16 @@ def UpdatePeakGrid(G2frame, data):
     def OnAutoSearch(event):
         PatternId = G2frame.PatternId
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         profile = Pattern[1]
-        bxye = GetFileBackground(G2frame,profile,Pattern)
+        bxye = GetFileBackground(G2frame,profile,background)
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
         iFin = np.searchsorted(x0,limits[1])
         x = x0[iBeg:iFin]
-        y0 = (profile[1]+bxye)[iBeg:iFin]
+        y0 = (profile[1]-bxye)[iBeg:iFin]
         ysig = 1.0*np.std(y0)
         offset = [-1,1]
         ymask = ma.array(y0,mask=(y0<ysig))
@@ -833,7 +838,7 @@ def UpdatePeakGrid(G2frame, data):
                 inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
                 Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
                 data = Pattern[1]
-                fixback = GetFileBackground(G2frame,data,Pattern)
+                fixback = GetFileBackground(G2frame,data,background,scale=False)
                 peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
                     background,limits,inst,inst2,data,fixback,prevVaryList,oneCycle,controls)   #needs wtFactor after controls?
                 if len(result[0]) != len(fullvaryList):
@@ -880,7 +885,7 @@ def UpdatePeakGrid(G2frame, data):
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         data = Pattern[1]
         wtFactor = Pattern[0]['wtFactor']
-        bxye = GetFileBackground(G2frame,data,Pattern)
+        bxye = GetFileBackground(G2frame,data,background,scale=False)
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -1136,7 +1141,9 @@ def UpdatePeakGrid(G2frame, data):
     reflGrid.AutoSizeColumns(False)
     reflGrid.SetScrollRate(10,10)
     G2frame.reflGrid = reflGrid
-    mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
+#    mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
+    mainSizer.Add(reflGrid)
+    mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -1156,7 +1163,8 @@ def UpdateBackground(G2frame,data):
         if backDict['nPeaks']:
             PKflags = []
             for term in backDict['peaksList']:
-                PKflags.append(term[1::2])            
+                PKflags.append(term[1::2])
+        FBflag = backDict['background PWDR'][2]
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
@@ -1181,7 +1189,8 @@ def UpdateBackground(G2frame,data):
                     term[1::2] = copy.copy(DBflags[i])
             if bkDict['nPeaks'] == backDict['nPeaks']:
                 for i,term in enumerate(bkDict['peaksList']):
-                    term[1::2] = copy.copy(PKflags[i])                    
+                    term[1::2] = copy.copy(PKflags[i])
+            backData[1]['background PWDR'] = copy.copy(FBflag)
             
     def OnBackCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -1600,7 +1609,7 @@ def UpdateBackground(G2frame,data):
         
         def OnBackPWDR(event):
             data[1]['background PWDR'][0] = back.GetValue()
-            if  data[1]['background PWDR'][0]:
+            if len(data[1]['background PWDR'][0]):
                 curHist = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
                 Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data[1]['background PWDR'][0])
                 if not Id:
@@ -1614,13 +1623,19 @@ def UpdateBackground(G2frame,data):
                     back.SetValue('')
                     data[1]['background PWDR'][0] = back.GetValue()
                     return
+            else:
+                data[1]['background PWDR'][2] = False
             CalcBack()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            wx.CallLater(100,UpdateBackground,G2frame,data)
         
         def AfterChange(invalid,value,tc):
             if invalid: return
             CalcBack()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            
+        def OnBackFit(event):
+            data[1]['background PWDR'][2] = not data[1]['background PWDR'][2]            
 
         fileSizer = wx.BoxSizer(wx.VERTICAL)
         fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0)
@@ -1637,36 +1652,39 @@ def UpdateBackground(G2frame,data):
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
         backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1]['background PWDR'],1,nDig=(10,3),OnLeave=AfterChange)
         backSizer.Add(backMult,0,WACV)
+        if len(data[1]['background PWDR'][0]):
+            backFit = wx.CheckBox(G2frame.dataWindow,label=' Refine?')
+            backFit.SetValue(data[1]['background PWDR'][2])
+            backFit.Bind(wx.EVT_CHECKBOX, OnBackFit)
+            backSizer.Add(backFit,0,WACV)
         fileSizer.Add(backSizer)
         return fileSizer
     
     def CalcBack(PatternId=G2frame.PatternId):
-            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
-            inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-            backData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
-            dataType = inst['Type'][0]
-            insDict = {inskey:inst[inskey][1] for inskey in inst}
-            parmDict = {}
-            bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(data)
-            parmDict.update(bakDict)
-            parmDict.update(insDict)
-            pwddata = G2frame.GPXtree.GetItemPyData(PatternId)
-            xBeg = np.searchsorted(pwddata[1][0],limits[0])
-            xFin = np.searchsorted(pwddata[1][0],limits[1])
-            fixBack = backData[1]['background PWDR']
-            try:    #typically bad grid value or no fixed bkg file
-                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,fixBack[0])
-                fixData = G2frame.GPXtree.GetItemPyData(Id)
-                fixedBkg = {'_fixedVary':False,'_fixedMult':fixBack[1],'_fixedValues':fixData[1][1][xBeg:xFin]} 
-                pwddata[1][4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[1][0][xBeg:xFin],fixedBkg)[0]
-            except:
-                pass
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        backData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+        dataType = inst['Type'][0]
+        insDict = {inskey:inst[inskey][1] for inskey in inst}
+        parmDict = {}
+        bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(data)
+        parmDict.update(bakDict)
+        parmDict.update(insDict)
+        pwddata = G2frame.GPXtree.GetItemPyData(PatternId)
+        xBeg = np.searchsorted(pwddata[1][0],limits[0])
+        xFin = np.searchsorted(pwddata[1][0],limits[1])
+        fixBack = GetFileBackground(G2frame,pwddata[1],backData,scale=False)
+        pwddata[1][4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[1][0][xBeg:xFin],fixBack[xBeg:xFin])[0]
 
     # UpdateBackground execution starts here    
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
-        data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
+        data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]})
     if 'nPeaks' not in data[1]:
-        data[1].update({'nPeaks':0,'peaksList':[]})
+        data[1].update({'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]})
+    if 'background PWDR' not in data[1]:
+        data[1].update({'background PWDR':['',1.0,False]})
+    elif len(data[1]['background PWDR']) < 3:
+        data[1]['background PWDR'].append(False)
     G2frame.dataWindow.currentGrids = []
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.BackMenu)
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2G.wxID_BACKCOPY)
@@ -5003,6 +5021,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             else:
                 G2frame.RefList = ''
                 phaseName = ''
+    G2frame.dataWindow.GetSizer().Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     if phaseName: ShowReflTable(phaseName)
     G2frame.refBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataWindow.SetDataSize()

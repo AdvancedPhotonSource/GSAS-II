@@ -1967,8 +1967,8 @@ class GSASII(wx.Frame):
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Background'),
                 rd.pwdparms.get('Background',
-                    [['chebyschev-1',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-                    )
+                    [['chebyschev-1',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],
+                    'background PWDR':['',1.0,False]}]))
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
                 [Iparm1,Iparm2])
@@ -2164,7 +2164,7 @@ class GSASII(wx.Frame):
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Background'),
             [['chebyschev-1',True,3,1.0,0.0,0.0],
-             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]}])
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
             [Iparm1,Iparm2])
@@ -2298,7 +2298,7 @@ class GSASII(wx.Frame):
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Background'),
             [['chebyschev-1',True,3,1.0,0.0,0.0],
-             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]}])
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
             [Iparm1,Iparm2])
@@ -3802,7 +3802,7 @@ class GSASII(wx.Frame):
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),Comments)                    
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Background'),[['chebyschev-1',True,3,1.0,0.0,0.0],
-                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]}])
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Peak List'),{'peaks':[],'sigDict':{}})

@@ -1713,7 +1713,7 @@ def UpdateMasks(G2frame,data):
                 dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
                 x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
                 x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
-                if x0 is None or x1 is None:
+                if not np.any(x0) or not np.any(x1):
                     raise Exception
                 nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
                 dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
@@ -1748,7 +1748,7 @@ def UpdateMasks(G2frame,data):
                     dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
                     x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
                     x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
-                    if x0 is None or x1 is None:
+                    if not np.any(x0) or not np.any(x1):
                         raise Exception
                     nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
                     dlg = wx.ProgressDialog("Spot mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,

@@ -1680,7 +1680,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     Tmax = np.max(reader.powderdata[0])
 
     default_background = [['chebyschev-1', False, 3, 1.0, 0.0, 0.0],
-                          {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 'peaksList': []}]
+        {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 
+        'peaksList': [],'background PWDR':['',1.0,False]}]
 
     output_dict = {u'Reflection Lists': {},
                    u'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin, Tmax]]),

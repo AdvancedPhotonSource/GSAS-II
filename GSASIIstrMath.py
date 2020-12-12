@@ -3189,8 +3189,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
-    fixedBkg = {i:Histogram['Background'][1][i] for i in Histogram['Background'][1] if i.startswith("_")} 
-    yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixedBkg)
+    fixback = Histogram['Background'][1].get('fixback',None)
+    yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixback)
     yc = np.zeros_like(yb)
     cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
@@ -3440,7 +3440,8 @@ def getPowderProfileDervMP(args):
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
-    dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
+    fixback = Histogram['Background'][1].get('fixback',None)
+    dMdb,dMddb,dMdpk,dMdfb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixback)
     if prc == 0 and hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
         bBpos = varylist.index(hfx+'Back;0')
         dMdv[bBpos:bBpos+len(dMdb)] += dMdb     #TODO crash if bck parms tossed
@@ -3459,6 +3460,8 @@ def getPowderProfileDervMP(args):
             if parm in names:
                 ip = names.index(parm)
                 dMdv[varylist.index(name)] += dMdpk[4*Id+ip]
+    if hfx+'BF mult' in varylist:
+        dMdv[varylist.index(hfx+'BF mult')] += dMdfb
     cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!

@@ -6814,8 +6814,8 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 G2frame.GPXtree.SetItemPyData(
                     G2frame.GPXtree.AppendItem(Id,text='Background'),
                     rd.pwdparms.get('Background',
-                        [['chebyschev-1',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-                        )
+                        [['chebyschev-1',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],
+                        'background PWDR':['',1.0,False]}]))
                 G2frame.GPXtree.SetItemPyData(
                     G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),
                     [Iparm1,Iparm2])

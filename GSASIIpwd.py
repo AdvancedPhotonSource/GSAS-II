@@ -227,10 +227,10 @@ def Polarization(Pola,Tth,Azm=0.0):
     """   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
 
     :param Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
-    :param Azm: azimuthal angle e.g. 0.0 in plane of polarization
+    :param Azm: azimuthal angle e.g. 0.0 in plane of polarization - can be numpy array
     :param Tth: 2-theta scattering angle - can be numpy array
       which (if either) of these is "right"?
-    :return: (pola, dpdPola)
+    :return: (pola, dpdPola) - both 2-d arrays
       * pola = ((1-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+ \
         (1-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
       * dpdPola: derivative needed for least squares
@@ -855,7 +855,7 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
 
-def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
+def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
     '''Computes the background from vars pulled from gpx file or tree.
     '''
     if 'T' in dataType:
@@ -984,18 +984,12 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
         except ValueError:
             G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break
-    # fixed background from file
-    if len(fixedBkg) >= 3:
-        mult = fixedBkg.get('_fixedMult',0.0)
-        if len(fixedBkg.get('_fixedValues',[])) != len(yb):
-            G2fil.G2Print('Lengths of backgrounds do not agree: yb={}, fixed={}'.format(
-                len(yb),len(fixedBkg.get('_fixedValues',[]))))
-        elif mult: 
-            yb -= mult*fixedBkg.get('_fixedValues',[]) # N.B. mult is negative
-            sumBk[0] = sum(yb)
+    if fixback is not None:   
+        yb += parmDict[pfx+'BF mult']*fixback
+        sumBk[0] = sum(yb)
     return yb,sumBk
     
-def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
+def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
     'needs a doc string'
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[hfx+'difC']/xdata
@@ -1012,6 +1006,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     dydb = np.zeros(shape=(nBak,len(xdata)))
     dyddb = np.zeros(shape=(3*parmDict[hfx+'nDebye'],len(xdata)))
     dydpk = np.zeros(shape=(4*parmDict[hfx+'nPeaks'],len(xdata)))
+    dydfb = []
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
 
@@ -1125,7 +1120,10 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
         except ValueError:
             G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break        
-    return dydb,dyddb,dydpk
+    # fixed background from file
+    if  fixback is not None:
+        dydfb = fixback
+    return dydb,dyddb,dydpk,dydfb
 
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
@@ -1280,10 +1278,10 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                         HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
     return G2lat.sortHKLd(HKLs,True,True,True)
 
-def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
+def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     'Computes the profile for a powder pattern'
     
-    yb = getBackground('',parmDict,bakType,dataType,xdata)[0]
+    yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
     yc = np.zeros_like(yb)
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
@@ -1433,11 +1431,11 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
             
-def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
+def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
     'needs a doc string'
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
-    dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,dataType,xdata)
+    dMdb,dMddb,dMdpk,dMdfb = getBackgroundDerv('',parmDict,bakType,dataType,xdata,fixback)
     if 'Back;0' in varyList:            #background derivs are in front if present
         dMdv[0:len(dMdb)] = dMdb
     names = ['DebyeA','DebyeR','DebyeU']
@@ -1711,6 +1709,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 break
+    if 'BF mult' in varyList:
+        dMdv[varyList.index('BF mult')] = fixback
+        
     return dMdv
         
 def Dict2Values(parmdict, varylist):
@@ -1763,6 +1764,12 @@ def SetBackgroundParms(Background):
             peaksVary.append(item[0])
     backDict.update(peaksDict)
     backVary += peaksVary
+    if 'background PWDR' in Background[1]:
+        backDict['Back File'] = Background[1]['background PWDR'][0]
+        backDict['BF mult'] = Background[1]['background PWDR'][1]
+        if len(Background[1]['background PWDR']) > 2:
+            if Background[1]['background PWDR'][2]:
+                backVary += ['BF mult',]
     return bakType,backDict,backVary
     
 def DoCalibInst(IndexPeaks,Inst):
@@ -1873,7 +1880,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     :param numpy.array data: a 5xn array. data[0] is the x-values,
       data[1] is the y-values, data[2] are weight values, data[3], [4] and [5] are
       calc, background and difference intensities, respectively. 
-    :param array fixback: fixed background values
+    :param array fixback: fixed background array; same size as data[0-5]
     :param list prevVaryList: Used in sequential refinements to override the
       variable list. Defaults as an empty list.
     :param bool oneCycle: True if only one cycle of fitting should be performed
@@ -1912,6 +1919,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 iDb += 1
             except KeyError:
                 break
+        if 'BF mult' in parmList:
+            Background[1]['background PWDR'][1] = parmList['BF mult']
                 
     def BackgroundPrint(Background,sigDict):
         print ('Background coefficients for '+Background[0][0]+' function')
@@ -1968,6 +1977,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 print (names)
                 print (ptstr)
                 print (sigstr)
+        if 'BF mult' in sigDict:
+            print('Background file mult: %.3f(%d)'%(Background[1]['background PWDR'][1],int(1000*sigDict['BF mult'])))
                             
     def SetInstParms(Inst):
         dataType = Inst['Type'][0]
@@ -2118,13 +2129,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             ptstr += '%9.2f'%(ptsperFW[i])
             print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
                 
-    def devPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):
+    def devPeakProfile(values,xdata,ydata,fixback, weights,dataType,parmdict,varylist,bakType,dlg):
         parmdict.update(zip(varylist,values))
-        return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,varylist,bakType)
+        return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,fixback,varylist,bakType)
             
-    def errPeakProfile(values,xdata,ydata,weights,dataType,parmdict,varylist,bakType,dlg):        
+    def errPeakProfile(values,xdata,ydata,fixback,weights,dataType,parmdict,varylist,bakType,dlg):        
         parmdict.update(zip(varylist,values))
-        M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,varylist,bakType)-ydata)
+        M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,fixback,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
             dlg.Raise()
@@ -2168,12 +2179,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         Rvals = {}
         badVary = []
         result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-               args=(x[xBeg:xFin],(y+fixback)[xBeg:xFin],wtFactor*w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
+               args=(x[xBeg:xFin],y[xBeg:xFin],fixback[xBeg:xFin],wtFactor*w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin    
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
-        Rvals['Rwp'] = np.sqrt(chisq/np.sum(wtFactor*w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
+        Rvals['Rwp'] = np.sqrt(chisq/np.sum(wtFactor*w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
         Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
         G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],xFin-xBeg,len(varyList)))
         if ncyc:
@@ -2199,8 +2210,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 break
     if dlg: dlg.Destroy()
     sigDict = dict(zip(varyList,sig))
-    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]-fixback[xBeg:xFin]
-    yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)-fixback[xBeg:xFin]
+    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin],fixback[xBeg:xFin])[0]
+    yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],fixback[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
@@ -4169,16 +4180,16 @@ def test0():
     if NeedTestData: TestData()
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
     gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata)[0])   
-    gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
+    gplot.plot(xdata,getPeakProfile(parmDict0,xdata,np.zeros_like(xdata),varyList,bakType))
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
     fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata)[0])   
-    fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
+    fplot.plot(xdata,getPeakProfile(parmDict1,xdata,np.zeros_like(xdata),varyList,bakType))
    
 def test1():
     if NeedTestData: TestData()
     time0 = time.time()
     for i in range(100):
-        getPeakProfile(parmDict1,xdata,varyList,bakType)
+        getPeakProfile(parmDict1,xdata,np.zeros_like(xdata),varyList,bakType)
     G2fil.G2Print ('100+6*Ka1-2 peaks=1200 peaks %.2f'%time.time()-time0)
     
 def test2(name,delt):
@@ -4186,10 +4197,10 @@ def test2(name,delt):
     varyList = [name,]
     xdata = np.linspace(5.6,5.8,400)
     hplot = plotter.add('derivatives test for '+name).gca()
-    hplot.plot(xdata,getPeakProfileDerv(parmDict2,xdata,varyList,bakType)[0])
-    y0 = getPeakProfile(parmDict2,xdata,varyList,bakType)
+    hplot.plot(xdata,getPeakProfileDerv(parmDict2,xdata,np.zeros_like(xdata),varyList,bakType)[0])
+    y0 = getPeakProfile(parmDict2,xdata,np.zeros_like(xdata),varyList,bakType)
     parmDict2[name] += delt
-    y1 = getPeakProfile(parmDict2,xdata,varyList,bakType)
+    y1 = getPeakProfile(parmDict2,xdata,np.zeros_like(xdata),varyList,bakType)
     hplot.plot(xdata,(y1-y0)/delt,'r+')
     
 def test3(name,delt):

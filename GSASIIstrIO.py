@@ -605,8 +605,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 x = Histograms[hist]['Data'][0]
                 xB = np.searchsorted(x,Limits[0])
                 xF = np.searchsorted(x,Limits[1])+1
-                h['_fixedValues'] = allHistograms[fixedBkg[0]]['Data'][1][xB:xF]
-                h['_fixedMult'],h['_fixedVary'] = fixedBkg[1:]
+                h['fixback'] = allHistograms[fixedBkg[0]]['Data'][1][xB:xF]
             except KeyError: # would happen if a referenced histogram were renamed or deleted
                 G2fil.G2Print('Warning: For hist "{}" unresolved background reference to hist "{}"'
                           .format(hist,fixedBkg[0]))
@@ -3174,6 +3173,14 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 peakVary.append(item[0])
         backDict.update(peakDict)
         backVary += peakVary
+        if 'background PWDR' in Background[1]:
+            backDict[':'+str(hId)+':Back File'] = Background[1]['background PWDR'][0]
+            backDict[':'+str(hId)+':BF mult'] = Background[1]['background PWDR'][1]
+            try:
+                if Background[1]['background PWDR'][2]:
+                    backVary.append(':'+str(hId)+':BF mult')
+            except IndexError:  # old version withut refine flag
+                pass
         return bakType,backDict,backVary            
         
     def GetInstParms(hId,Inst):
@@ -3262,6 +3269,12 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 for i in range(4):
                     line += '%12.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
                 pFile.write(line+'\n')
+        if 'background PWDR' in DebyePeaks:
+            try:
+                pFile.write(' Fixed background file: %s; mult: %.3f  Refine? %s\n'%(DebyePeaks['background PWDR'][0],
+                    DebyePeaks['background PWDR'][1],DebyePeaks['background PWDR'][2]))
+            except IndexError:  #old version without refine flag
+                pass
         
     def PrintInstParms(Inst):
         pFile.write('\n Instrument Parameters:\n')
@@ -3413,6 +3426,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                     DebyePeaks['peaksList'][i][2*j] = parmDict[name]
                     if name in sigDict:
                         backSig[lenBack+3*DebyePeaks['nDebye']+4*i+j] = sigDict[name]
+        if pfx+'BF mult' in sigDict:
+            DebyePeaks['background PWDR'][1] = parmDict[pfx+'BF mult']
+            backSig.append(sigDict[pfx+'BF mult'])
+                
         return backSig
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
@@ -3499,6 +3516,8 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                     else:
                         ptstr += 12*' '
                 pFile.write(ptstr+'\n')
+        if 'background PWDR' in DebyePeaks and DebyePeaks['background PWDR'][2]:
+            pFile.write(' Fixed background scale: %.3f(%d)\n'%(DebyePeaks['background PWDR'][1],int(1000*backSig[-1])))
         sumBk = np.array(Histogram['sumBk'])
         pFile.write(' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g\n'%
             (sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk)))

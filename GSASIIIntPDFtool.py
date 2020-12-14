@@ -539,7 +539,7 @@ class AutoIntFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '),0,wx.ALIGN_CENTER_VERTICAL)
         fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',notBlank=False,size=(300,-1))
-        sizer.Add(fInp3,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        sizer.Add(fInp3,1,wx.EXPAND)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
@@ -559,7 +559,7 @@ class AutoIntFrame(wx.Frame):
         self.params['SeparateDir'] = False
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'SeparateDir'))
         lblsizr.Add(sizer)
-        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER|wx.EXPAND,1)
+        mnsizer.Add(lblsizr,0,wx.EXPAND,1)
         
         mnsizer.Add((-1,15))
         lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "PDF settings")
@@ -585,7 +585,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(lbl4,0,wx.ALIGN_CENTER_VERTICAL)
         self.pdfSel = G2G.G2ChoiceButton(mnpnl,[''],self.params,'pdfprm',
                                        onChoice=checkPDFselection)
-        sizer.Add(self.pdfSel,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND,1)
+        sizer.Add(self.pdfSel,1,wx.EXPAND,1)
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         lbl5a = wx.StaticText(mnpnl, wx.ID_ANY,'Chemical formula: ')
@@ -623,7 +623,7 @@ class AutoIntFrame(wx.Frame):
             sizer.Add(self.pbkg[i][4])
             lblsizr.Add(sizer,0,wx.EXPAND,0)
         
-        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER|wx.EXPAND,1)
+        mnsizer.Add(lblsizr,0,wx.EXPAND,1)
 
         # buttons on bottom
         sizer = wx.BoxSizer(wx.HORIZONTAL)

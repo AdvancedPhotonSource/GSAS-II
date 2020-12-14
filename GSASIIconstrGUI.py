@@ -3516,7 +3516,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
                 atms += ' %s,'%(atNames[i])
             moves = wx.StaticText(ResidueRBDisplay,wx.ID_ANY,
                             atms[:-1],size=(200,20))
-            seqSizer.Add(moves,1,WACV|wx.EXPAND|wx.RIGHT)
+            seqSizer.Add(moves,1,wx.EXPAND|wx.RIGHT)
             return seqSizer
             
         def SlideSizer():

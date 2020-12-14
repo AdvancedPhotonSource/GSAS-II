@@ -157,13 +157,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.Results = wx.TextCtrl( parent=panel,style=wx.TE_MULTILINE|wx.TE_DONTWRAP )
         self.Results.SetEditable(False)
-        mainSizer.Add(self.Results,1,wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND)
+        mainSizer.Add(self.Results,1,wx.EXPAND)
         mainSizer.Add((10,15),0)
 
         selSizer = wx.BoxSizer(wx.HORIZONTAL)
         selSizer.Add((5,10),0)
-        selSizer.Add(wx.StaticText(parent=panel, label='Wavelength:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        selSizer.Add(wx.StaticText(parent=panel, label='Wavelength:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=panel, 
               size=wx.Size(100,20), value = "%6.4f" % (self.Wave),style=wx.TE_PROCESS_ENTER )
@@ -171,8 +170,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         selSizer.Add((5,10),0)
         self.SpinText1.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText1, id=wxID_SPINTEXT1)
         
-        selSizer.Add(wx.StaticText(parent=panel, label='Energy:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        selSizer.Add(wx.StaticText(parent=panel, label='Energy:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=panel, 
               size=wx.Size(100,20), value = "%7.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER) 
@@ -192,15 +190,14 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.slider1 = wx.Slider(id=wxID_FPRIMESLIDER1, maxValue=int(1000.*self.Wmax),
             minValue=int(1000.*self.Wmin), parent=panel,style=wx.SL_HORIZONTAL,
             value=int(self.Wave*1000.), )
-        slideSizer.Add(self.slider1,1,wx.EXPAND|wx.ALIGN_RIGHT)
+        slideSizer.Add(self.slider1,1,wx.EXPAND)
         self.slider1.Bind(wx.EVT_SLIDER, self.OnSlider1, id=wxID_FPRIMESLIDER1)
         mainSizer.Add(slideSizer,0,wx.EXPAND)
         mainSizer.Add((10,10),0)
         
         choiceSizer = wx.BoxSizer(wx.HORIZONTAL)
         choiceSizer.Add((5,10),0)
-        choiceSizer.Add(wx.StaticText(parent=panel, label='Plot scales:'),
-            0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        choiceSizer.Add(wx.StaticText(parent=panel, label='Plot scales:'),0,wx.EXPAND)
         choiceSizer.Add((5,10),0)
 
         self.choice1 = wx.ComboBox(id=wxID_FPRIMECHOICE1, parent=panel, value='Wavelength',

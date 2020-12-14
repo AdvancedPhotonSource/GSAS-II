@@ -206,7 +206,7 @@ class ExpressionDialog(wx.Dialog):
         self.exsizer = wx.BoxSizer(wx.HORIZONTAL)
         if VarLabel:
             label = wx.StaticText(self,  wx.ID_ANY, VarLabel + ' = ')
-            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|WACV, 0)
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND, 0)
         elif depVarDict:
             self.depParmLists = IndexParmDict(self.depVarDict,False)
             choices = ['','Phase','Hist./Phase','Hist.','Global']
@@ -219,12 +219,12 @@ class ExpressionDialog(wx.Dialog):
                 )
             choice.SetSelection(wx.NOT_FOUND)
             choice.Bind(wx.EVT_CHOICE,self.OnDepChoice)
-            self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND|WACV, 0)
+            self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND, 0)
             self.exsizer.Add((5,5))
             self.depLabel = wx.StaticText(self,  wx.ID_ANY, ' ')
-            self.exsizer.Add(self.depLabel, 0, wx.ALL|wx.EXPAND|WACV, 0)
+            self.exsizer.Add(self.depLabel, 0, wx.ALL|wx.EXPAND, 0)
             label = wx.StaticText(self,  wx.ID_ANY, ' = ')
-            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|WACV, 0)
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND, 0)
 
         #self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
         self.exCtrl = wx.ComboBox(self, wx.ID_ANY, "", (90, 50), (160, -1),
@@ -232,7 +232,7 @@ class ExpressionDialog(wx.Dialog):
         self.exCtrl.Bind(wx.EVT_CHAR, self.OnChar)
         self.exCtrl.Bind(wx.EVT_COMBOBOX, self.OnValidate)
         self.exCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnValidate)
-        self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND|WACV, 0)
+        self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND, 0)
         #self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)
         self.mainsizer.Add(self.exsizer, 0, wx.ALL|wx.EXPAND, 5)
         self.mainsizer.Add((-1,5),0,wx.EXPAND,1)
@@ -259,7 +259,7 @@ class ExpressionDialog(wx.Dialog):
             bSizer.Add(self.ExtraBtn, 0, wx.ALL|WACV, 2)
         else:
             self.ExtraBtn = None
-        bSizer.Add((1,1), 1, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 0)
+        bSizer.Add((1,1), 1, wx.ALL|wx.EXPAND, 0)
         self.OKbtn = wx.Button(self, wx.ID_OK)
         self.OKbtn.SetDefault()
         self.OKbtn.Disable()
@@ -520,14 +520,14 @@ class ExpressionDialog(wx.Dialog):
         self.varSizer.Add(self.errbox,1,wx.ALL|wx.EXPAND,1)
         Siz = wx.BoxSizer(wx.VERTICAL)
         errMsg1 = wx.StaticText(self.errbox, wx.ID_ANY,"")
-        Siz.Add(errMsg1, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        Siz.Add(errMsg1, 0, wx.LEFT|wx.EXPAND, 5)
         errMsg2 = wx.StaticText(self.errbox, wx.ID_ANY,"\n\n")
         font1 = wx.Font(errMsg2.GetFont().GetPointSize(),
                         wx.MODERN, wx.NORMAL, wx.NORMAL, False)
         errMsg2.SetFont(font1)
-        Siz.Add(errMsg2, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        Siz.Add(errMsg2, 0, wx.LEFT|wx.EXPAND, 5)
         errMsg3 = wx.StaticText(self.errbox, wx.ID_ANY,"")
-        Siz.Add(errMsg3, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        Siz.Add(errMsg3, 0, wx.LEFT|wx.EXPAND, 5)
         self.errbox.SetSizer(Siz,True)
         Siz.Fit(self.errbox)
         errMsg1.SetLabel(msg1)
@@ -569,7 +569,7 @@ class ExpressionDialog(wx.Dialog):
         Siz.Add(
             wx.StaticText(self.varbox,wx.ID_ANY,
                           'Assignment of variables to labels:'),
-            0,wx.EXPAND|wx.ALIGN_CENTER,0)
+            0,wx.EXPAND,0)
         GridSiz = wx.FlexGridSizer(0,5,2,2)
         GridSiz.Add(
             wx.StaticText(self.varbox,wx.ID_ANY,'label',style=wx.CENTER),
@@ -609,20 +609,20 @@ class ExpressionDialog(wx.Dialog):
 
             # var name/var assignment
             if self.varSelect.get(v) is None:
-                GridSiz.Add((-1,-1),0,wx.ALIGN_LEFT|wx.EXPAND,0)
+                GridSiz.Add((-1,-1),0,wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
                 wid = G2G.ValidatedTxtCtrl(self.varbox,self.varName,v,size=(50,-1))
-                GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
+                GridSiz.Add(wid,0,wx.EXPAND,0)
             else:
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,self.varName[v])
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
 
             # value
             if self.varSelect.get(v) is None:
-                GridSiz.Add((-1,-1),0,wx.ALIGN_RIGHT|wx.EXPAND,0)
+                GridSiz.Add((-1,-1),0,wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
                 wid = G2G.ValidatedTxtCtrl(self.varbox,self.varValue,v,size=(75,-1))
-                GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
+                GridSiz.Add(wid,0,wx.EXPAND,0)
                 wid.Bind(wx.EVT_CHAR,self.OnChar)
             else:
                 var = self.varName[v]
@@ -641,10 +641,10 @@ class ExpressionDialog(wx.Dialog):
             if self.varSelect.get(v) == 0 and self.fit:
                 self.varRefflag[v] = self.varRefflag.get(v,True)
                 wid = G2G.G2CheckBox(self.varbox,'',self.varRefflag,v)
-                GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
+                GridSiz.Add(wid,0,wx.EXPAND,0)
             else:
                 wid = (-1,-1)
-                GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
+                GridSiz.Add(wid,0,wx.EXPAND,0)
 
         Siz.Add(GridSiz)
         self.varbox.SetSizer(Siz,True)

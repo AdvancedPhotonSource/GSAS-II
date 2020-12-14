@@ -3182,8 +3182,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         
     def GetPinkReflAlpBet(refl,im,hfx,parmDict):
         tanPos = tand(refl[5+im]/2.0)
-        alp = parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-0']*tanPos
-        bet = parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos
+        alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*tanPos)
+        bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
         return alp,bet
 
     hId = Histogram['hId']
@@ -3311,7 +3311,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5+im] = GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5+im]/2.)**2*cosd(refl[5+im]/2.))           #Lorentz correction
                 refl[6+im:8+im] = GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
-                refl[12+im:14+im] = GetPinkReflAlpBet(refl,im,hfx,parmDict)             #TODO - skip if alp, bet tabulated?
+                refl[12+im:14+im] = GetPinkReflAlpBet(refl,im,hfx,parmDict)
                 refl[11+im],refl[14+im],refl[15+im],refl[16+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11+im] *= Vst*Lorenz
                  

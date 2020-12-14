@@ -1029,9 +1029,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,wx.LEFT,5)
     # add help button to bring up help web page - at right sede of window
-    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(DData,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
         DData.select = wx.ListBox(DData,choices=G2frame.dataWindow.HistsInPhase,

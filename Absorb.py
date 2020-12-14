@@ -201,7 +201,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Results = wx.TextCtrl( parent=self.panel,
             style=wx.TE_MULTILINE|wx.TE_DONTWRAP )
         self.Results.SetEditable(False)
-        mainSizer.Add(self.Results,1,wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND)
+        mainSizer.Add(self.Results,1,wx.EXPAND)
         mainSizer.Add((10,15),0)
         
         if self.Elems:
@@ -225,8 +225,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
         selSizer = wx.BoxSizer(wx.HORIZONTAL)
         selSizer.Add((5,10),0)
-        selSizer.Add(wx.StaticText(parent=self.panel, label='Wavelength:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        selSizer.Add(wx.StaticText(parent=self.panel, label='Wavelength:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=self.panel, 
             size=wx.Size(100,20), value = "%.4f" % (self.Wave),style=wx.TE_PROCESS_ENTER )
@@ -234,8 +233,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         selSizer.Add((5,10),0)
         self.SpinText1.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText1, id=wxID_SPINTEXT1)
         
-        selSizer.Add(wx.StaticText(parent=self.panel, label='Energy:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        selSizer.Add(wx.StaticText(parent=self.panel, label='Energy:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=self.panel, 
             size=wx.Size(100,20), value = "%.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER) 
@@ -243,8 +241,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         selSizer.Add((5,10),0)
         self.SpinText2.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText2, id=wxID_SPINTEXT2)
         
-        selSizer.Add(wx.StaticText(parent=self.panel, label='Plot scale:'),
-            0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        selSizer.Add(wx.StaticText(parent=self.panel, label='Plot scale:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.choice1 = wx.ComboBox(id=wxID_CHOICE1, parent=self.panel, value='Wavelength',
              choices=['Wavelength','Energy'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -265,15 +262,14 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.slider1 = wx.Slider(id=wxID_SLIDER1, maxValue=int(1000.*self.Wmax),
             minValue=int(1000.*self.Wmin), parent=self.panel,style=wx.SL_HORIZONTAL,
             value=int(self.Wave*1000.), )
-        slideSizer.Add(self.slider1,1,wx.EXPAND|wx.ALIGN_RIGHT)
+        slideSizer.Add(self.slider1,1,wx.EXPAND)
         self.slider1.Bind(wx.EVT_SLIDER, self.OnSlider1, id=wxID_SLIDER1)
         mainSizer.Add(slideSizer,0,wx.EXPAND)
         mainSizer.Add((10,10),0)
         
         cellSizer = wx.BoxSizer(wx.HORIZONTAL)
         cellSizer.Add((5,10),0)
-        cellSizer.Add(wx.StaticText(parent=self.panel, label='Volume:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        cellSizer.Add(wx.StaticText(parent=self.panel, label='Volume:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
         self.SpinText3 = wx.TextCtrl(id=wxID_SPINTEXT3, parent=self.panel, 
               size=wx.Size(100,20), value = "%.2f" % (self.Volume),style=wx.TE_PROCESS_ENTER )
@@ -282,8 +278,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText3.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText3, id=wxID_SPINTEXT3)
         
         cellSizer.Add((5,10),0)
-        cellSizer.Add(wx.StaticText(parent=self.panel, label='Z(vol):'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        cellSizer.Add(wx.StaticText(parent=self.panel, label='Z(vol):'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
         self.SpinText4 = wx.TextCtrl(id=wxID_SPINTEXT4, parent=self.panel, 
               size=wx.Size(50,20), value = "%d" % (self.Zcell),style=wx.TE_PROCESS_ENTER )
@@ -292,8 +287,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText4.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText4, id=wxID_SPINTEXT4)
         
         cellSizer.Add((5,10),0)
-        cellSizer.Add(wx.StaticText(parent=self.panel, label='Sample R:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        cellSizer.Add(wx.StaticText(parent=self.panel, label='Sample R:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
         self.SpinText5 = wx.TextCtrl(id=wxID_SPINTEXT5, parent=self.panel, 
               size=wx.Size(50,20), value = "%.2f" % (self.Radius),style=wx.TE_PROCESS_ENTER )
@@ -302,8 +296,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText5.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText5, id=wxID_SPINTEXT5)
 
         cellSizer.Add((5,10),0)
-        cellSizer.Add(wx.StaticText(parent=self.panel, label='packing:'),0,
-            wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        cellSizer.Add(wx.StaticText(parent=self.panel, label='packing:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
         self.SpinText6 = wx.TextCtrl(id=wxID_SPINTEXT6, parent=self.panel, 
               size=wx.Size(50,20), value = "%.2f" % (self.Pack),style=wx.TE_PROCESS_ENTER )
@@ -588,13 +581,13 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
-        ax = self.Page.figure.add_subplot(111,label='absorb')
+            self.ax = self.Page.figure.add_subplot(111,label='absorb')
         self.fplot.set_visible(False)
         self.Page.Choice = (' key press','g: toggle grid',)
         self.Page.keyPress = self.OnKeyPress    
-        ax.clear()
-        ax.set_title('X-Ray Absorption',x=0,ha='left')
-        ax.set_ylabel(r"$\mu R$",fontsize=14)
+        self.ax.clear()
+        self.ax.set_title('X-Ray Absorption',x=0,ha='left')
+        self.ax.set_ylabel(r"$\mu R$",fontsize=14)
         Ymin = 0.0
         Ymax = 0.0
         if self.FPPS: 
@@ -603,19 +596,19 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 Ymax = max(Ymax,max(Fpps[2]))
                 fppsP1 = np.array(Fpps[1])
                 fppsP2 = np.array(Fpps[2])
-                ax.plot(fppsP1,fppsP2,label=r'$\mu R$ '+Fpps[0])
+                self.ax.plot(fppsP1,fppsP2,label=r'$\mu R$ '+Fpps[0])
         if self.ifWave: 
-            ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
-            ax.axvline(x=Wave,picker=3,color='black')
+            self.ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
+            self.ax.axvline(x=Wave,picker=3,color='black')
         else:
-            ax.set_xlabel(r'$\mathsf{E, keV}$',fontsize=14)
-            ax.set_xscale('log')
-            ax.axvline(x=self.Kev/Wave,picker=3,color='black')
-        ax.axhline(y=1.0,color='b')
-        ax.axhline(y=5.0,color='r')
-        ax.set_ylim(Ymin,Ymax)
+            self.ax.set_xlabel(r'$\mathsf{E, keV}$',fontsize=14)
+            self.ax.set_xscale('log')
+            self.ax.axvline(x=self.Kev/Wave,picker=3,color='black')
+        self.ax.axhline(y=1.0,color='b')
+        self.ax.axhline(y=5.0,color='r')
+        self.ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
-            ax.legend(loc='best')
+            self.ax.legend(loc='best')
         if newPlot:
             newPlot = False
             self.Page.canvas.draw()
@@ -623,8 +616,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if rePlot:
                 tb = self.Page.canvas.toolbar
                 tb.push_current()
-                ax.set_xlim(xylim[0])
-                ax.set_ylim(xylim[1])
+                self.ax.set_xlim(xylim[0])
+                self.ax.set_ylim(xylim[1])
                 xylim = []
                 tb.push_current()
             self.Page.canvas.draw()

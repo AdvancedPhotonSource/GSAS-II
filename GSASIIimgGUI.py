@@ -2055,7 +2055,7 @@ def UpdateMasks(G2frame,data):
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL]
         colIds = ['position, mm','diameter, mm','Delete?']
         rowIds = [str(i) for i in range(len(Spots))]
@@ -2075,7 +2075,7 @@ def UpdateMasks(G2frame,data):
     if Rings:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Ring masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,3,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' 2-theta,deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' thickness, deg'),0,WACV)
@@ -2097,7 +2097,7 @@ def UpdateMasks(G2frame,data):
     if Arcs:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Arc masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,4,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' 2-theta,deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' azimuth, deg'),0,WACV)
@@ -2127,7 +2127,7 @@ def UpdateMasks(G2frame,data):
     if Xlines:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' X line masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Xlines)):
             if Xlines[i]:
@@ -2140,7 +2140,7 @@ def UpdateMasks(G2frame,data):
     if Ylines:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Y line masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Ylines)):
             if Ylines[i]:
@@ -2154,7 +2154,7 @@ def UpdateMasks(G2frame,data):
         lbl = wx.StaticText(parent=G2frame.dataWindow,
             label=' Polygon masks (on plot LB vertex drag to move, RB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Polygons)):
             if Polygons[i]:
@@ -2171,7 +2171,7 @@ def UpdateMasks(G2frame,data):
         lbl = wx.StaticText(parent=G2frame.dataWindow,
             label=' Frame mask (on plot LB vertex drag to move, RB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
-        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         frameList = []
         for x,y in frame:
@@ -2991,7 +2991,7 @@ class AutoIntFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '),0,WACV)
         fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',notBlank=False,size=(300,-1))
-        sizer.Add(fInp3,1,WACV|wx.EXPAND)
+        sizer.Add(fInp3,1,wx.EXPAND)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn3,0,wx.ALIGN_RIGHT|WACV)
@@ -3047,12 +3047,12 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(lbl4,0,WACV)
         fInp4 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfprm',notBlank=True,size=(300,-1),
                                      OnLeave=scanPDFprm)
-        sizer.Add(fInp4,1,WACV|wx.EXPAND)
+        sizer.Add(fInp4,1,wx.EXPAND)
         btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn4,0,wx.ALIGN_RIGHT|WACV)
         lblsizr.Add(sizer,0,wx.EXPAND)
-        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER|wx.EXPAND,1)
+        mnsizer.Add(lblsizr,0,wx.EXPAND,1)
         # buttons on bottom
         mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'),0,wx.TOP,5)
         sizer = wx.BoxSizer(wx.HORIZONTAL)

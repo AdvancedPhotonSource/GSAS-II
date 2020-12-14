@@ -1123,7 +1123,7 @@ def HorizontalLine(sizer,parent):
         line.SetBackgroundColour((128,128,128))
     else:
         line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
-    sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
+    sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
 
 ################################################################################
 class G2LoggedButton(wx.Button):
@@ -1620,7 +1620,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND|WACV,1)
+            1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -2261,7 +2261,7 @@ class G2SingleChoiceDialog(wx.Dialog):
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         h = max(35,17*int(len(title)/26.+1)) # adjust height of title box with guessed # of lines
         topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,h)),
-            1,wx.ALL|wx.EXPAND|WACV,1)
+            1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -2780,7 +2780,7 @@ class MultiStringDialog(wx.Dialog):
             hlp = HelpButton(self,self.hlp)
             btnsizer.Add((-1,-1),1, wx.EXPAND, 1)
             btnsizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
-            mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER|wx.EXPAND)
+            mainSizer.Add(btnsizer,0,wx.EXPAND)
         promptSizer = wx.FlexGridSizer(0,2,5,5)
         promptSizer.AddGrowableCol(1,1)
         self.Indx = {}
@@ -2789,7 +2789,7 @@ class MultiStringDialog(wx.Dialog):
             valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(self.size,-1))
             self.Indx[valItem.GetId()] = prompt
             valItem.Bind(wx.EVT_TEXT,self.newValue)
-            promptSizer.Add(valItem,1,WACV|wx.EXPAND,1)
+            promptSizer.Add(valItem,1,wx.EXPAND,1)
         mainSizer.Add(promptSizer,1,wx.ALL|wx.EXPAND,1)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         OKbtn = wx.Button(self, wx.ID_OK)
@@ -2803,7 +2803,7 @@ class MultiStringDialog(wx.Dialog):
             btn = wx.Button(self, wx.ID_ANY,'+',style=wx.BU_EXACTFIT)
             btn.Bind(wx.EVT_BUTTON,self.onExpand)
             btnsizer.Add(btn,0,wx.ALIGN_RIGHT)
-        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER|wx.EXPAND)
+        mainSizer.Add(btnsizer,0,wx.EXPAND)
         self.SetSizer(mainSizer)
         self.Fit()
 
@@ -2938,14 +2938,14 @@ class G2ColumnIDDialog(wx.Dialog):
             colSizer.Add(self.sel[-1])
             colData = wx.TextCtrl(panel,value='\n'.join(self.ColumnData[icol]),size=(120,-1),
                 style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
-            colSizer.Add(colData,1,wx.ALL|WACV|wx.EXPAND,1)
+            colSizer.Add(colData,1,wx.ALL|wx.EXPAND,1)
             colSizer.Add(wx.StaticText(panel,label=' Modify by:'),0,WACV)
             mod = wx.TextCtrl(panel,size=(120,-1),value='',style=wx.TE_PROCESS_ENTER)
             mod.Bind(wx.EVT_TEXT_ENTER,OnModify)
             mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
             Indx[mod.GetId()] = [icol,colData]
             colSizer.Add(mod,0,WACV)
-            columnsSizer.Add(colSizer,0,wx.ALL|WACV|wx.EXPAND,10)
+            columnsSizer.Add(colSizer,0,wx.ALL|wx.EXPAND,10)
         Sizer.Add(columnsSizer,1,wx.ALL|wx.EXPAND,1)
         Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0) 
         Sizer.Add((-1,10))
@@ -3161,7 +3161,7 @@ def GetItemOrder(parent,keylist,vallookup,posdict):
     #btn = wx.Button(dlg, wx.ID_CANCEL)
     #btnsizer.AddButton(btn)
     btnsizer.Realize()
-    sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 5)
+    sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
     dlg.SetSizer(sizer)
     sizer.Fit(dlg)
     dlg.ShowModal()
@@ -3374,7 +3374,7 @@ class OrderBox(wxscroll.ScrolledPanel):
             wid = wx.StaticText(self,wx.ID_ANY,str(i),style=wx.ALIGN_CENTER)
             wid.SetBackgroundColour(DULL_YELLOW)
             wid.SetMinSize((50,-1))
-            self.GBsizer.Add(wid,(0,i),flag=wx.ALIGN_CENTER|wx.EXPAND)
+            self.GBsizer.Add(wid,(0,i),flag=wx.EXPAND)
         self.chceDict = {}
         for row,nam in enumerate(self.keylist):
             posdict = self.posdict[nam]
@@ -3448,7 +3448,7 @@ class OrderBox(wxscroll.ScrolledPanel):
                 wid = wx.StaticText(self,wx.ID_ANY,str(i),style=wx.ALIGN_CENTER)
                 wid.SetBackgroundColour(DULL_YELLOW)
                 wid.SetMinSize((50,-1))
-                self.GBsizer.Add(wid,(0,i),flag=wx.ALIGN_CENTER|wx.EXPAND)
+                self.GBsizer.Add(wid,(0,i),flag=wx.EXPAND)
             colList = [str(i) for i in range(self.maxcol+2)]
             for wid in self.chceDict:
                 wid.SetItems(colList)
@@ -5714,7 +5714,7 @@ class SelectConfigSetting(wx.Dialog):
         self.doclblsizr = wx.StaticBoxSizer(self.doclbl)
         self.docinfo = wx.StaticText(self,  wx.ID_ANY, "")
         self.doclblsizr.Add(self.docinfo, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer.Add(self.doclblsizr, 0, wx.ALIGN_LEFT|wx.EXPAND|wx.ALL, 5)
+        self.sizer.Add(self.doclblsizr, 0, wx.EXPAND|wx.ALL, 5)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.saveBtn = wx.Button(self,-1,"Save current settings")
         btnsizer.Add(self.saveBtn, 0, wx.ALL, 2) 
@@ -5938,13 +5938,13 @@ class downdate(wx.Dialog):
         sizer.Add(sizer1)
 
         line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
-        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+        sizer.Add(line, 0, wx.EXPAND|wx.ALL, 10)
 
         self.text = wx.StaticText(pnl,  wx.ID_ANY, "")
-        sizer.Add(self.text, 0, wx.ALIGN_LEFT|wx.EXPAND|wx.ALL, 5)
+        sizer.Add(self.text, 0, wx.EXPAND|wx.ALL, 5)
 
         line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
-        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+        sizer.Add(line, 0, wx.EXPAND|wx.ALL, 10)
         sizer.Add(
             wx.StaticText(
                 pnl,  wx.ID_ANY,
@@ -6975,7 +6975,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Read from: '),0,wx.ALIGN_CENTER_VERTICAL)
     fInp3 = ValidatedTxtCtrl(mnpnl,Settings,'indir',size=(300,-1),OnLeave=TestInput)
-    sizer.Add(fInp3,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    sizer.Add(fInp3,1,wx.EXPAND)
     btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
     btn3.Bind(wx.EVT_BUTTON, OnBrowse)
     sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
@@ -6985,7 +6985,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Instrument parameter file from: '),0,wx.ALIGN_CENTER_VERTICAL)
         fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),OnLeave=TestInput)
-        sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        sizer.Add(fInp4,1,wx.EXPAND)
         btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)

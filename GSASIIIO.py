@@ -291,7 +291,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     OKbtn.Bind(wx.EVT_BUTTON,onClose)
     btnsizer.AddButton(OKbtn) # not sure why this is needed
     btnsizer.Realize()
-    mainsizer.Add(btnsizer, 1, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5)
+    mainsizer.Add(btnsizer, 1, wx.ALL|wx.EXPAND, 5)
     dlg.SetSizer(mainsizer)
     dlg.CenterOnParent()
     dlg.ShowModal()

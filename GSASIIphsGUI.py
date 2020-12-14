@@ -2030,7 +2030,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     style=wx.CB_READONLY)
                 isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
                 Indx[isoSel.GetId()] = elem
-                elemSizer.Add(isoSel,1,WACV|wx.EXPAND)
+                elemSizer.Add(isoSel,1,wx.EXPAND)
             elemSizer.Add(wx.StaticText(General,label=' No. per cell'),0,WACV)
             for elem in generalData['AtomTypes']:
                 numbTxt = wx.TextCtrl(General,value='%.1f'%(generalData['NoAtoms'][elem]),
@@ -2227,7 +2227,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 btn = wx.Button(dlg, wx.ID_CANCEL)
                 btnsizer.AddButton(btn)
                 btnsizer.Realize()
-                sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 5)
+                sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
                 dlg.SetSizer(sizer)
                 sizer.Fit(dlg)
                 dlg.CenterOnParent()
@@ -5163,9 +5163,9 @@ def UpdatePhaseData(G2frame,Item,data):
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             topSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'),0,WACV)
             # add help button to bring up help web page - at right sede of window
-            topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
             topSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
-            mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+            mainSizer.Add(topSizer,0,wx.EXPAND)
 #            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
             if not data['RMC']['RMCProfile']:
                 Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]

@@ -1347,7 +1347,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     bet = parmDict[betName]
                 else:
                     bet = G2mth.getPinkbeta(parmDict,tth)
-                bet = max(0.0001,bet)
+                bet = max(0.1,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]

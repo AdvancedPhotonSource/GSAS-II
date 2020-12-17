@@ -1326,6 +1326,9 @@ def UpdateBackground(G2frame,data):
         ydata = si.interp1d(X,Y)(ma.getdata(xdata))
         W = [1]*len(xdata)
         Z = [0]*len(xdata)
+        bxye = GetFileBackground(G2frame,data,background,scale=False)[xBeg:xFin]
+        if not np.any(bxye):
+            bxye = None
 
         # load instrument and background params
         print (' NB: Any instrument parameter refinement flags will be cleared')
@@ -1343,7 +1346,7 @@ def UpdateBackground(G2frame,data):
         wx.BeginBusyCursor()
         try:
             G2pwd.DoPeakFit('LSQ',[],background,limits,inst,inst2,
-                np.array((xdata,ydata,W,Z,Z,Z)),Z,prevVaryList=bakVary,controls=controls)
+                np.array((xdata,ydata,W,Z,Z,Z)),bxye,prevVaryList=bakVary,controls=controls)
         finally:
             wx.EndBusyCursor()
         # compute the background values and plot them
@@ -1354,7 +1357,7 @@ def UpdateBackground(G2frame,data):
         # Note that this generates a MaskedArrayFutureWarning, but these items are not always masked
         pwddata[3][xBeg:xFin] *= 0.
         pwddata[5][xBeg:xFin] *= 0.
-        pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,xdata)[0]
+        pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,xdata,bxye)[0]
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)

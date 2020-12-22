@@ -5645,9 +5645,9 @@ def SaveConfigVars(vars,parent=None):
                 print('Error trying to write configuration to '+savefile)
             return True
     import datetime
-    fp.write("'''\n")
+    fp.write("# -*- coding: utf-8 -*-\n'''\n")
     fp.write("*config.py: Configuration options*\n----------------------------------\n")
-    fp.write("This file created in SelectConfigSetting on {:%d %b %Y %H:%M}\n".
+    fp.write("This file created in SelectConfigSetting on {:%d %m %Y %H:%M}\n".
              format(datetime.datetime.now()))
     fp.write("'''\n\n")
     fp.write("import os.path\n")

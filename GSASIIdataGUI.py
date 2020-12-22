@@ -381,7 +381,8 @@ should generate warnings or error messages.
  * <=2.x.x: while most of GSAS-II has been written to be 
     compatible with older versions of wxpython, we are now testing with 
     version 4.0 only. Version 3.0 is pretty similar to 4.0 and should not 
-    have problems. 
+    have problems. wxpython 4.1 seems to create a lot of errors for 
+    conflicting options that will need to be checked up upon.
 
 * Matplotlib:
 
@@ -406,7 +407,7 @@ versionDict['tooOldWarn'] = {'wx': '2.'}
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {'matplotlib': '3.3'}
+versionDict['tooNewWarn'] = {'matplotlib': '3.3', 'wx':'4.1'}
 'module versions newer than what we have tested where problems are suspected'
     
 def ShowVersions():
@@ -5162,28 +5163,28 @@ class GSASII(wx.Frame):
         else:
             refPlotUpdate = None
         try:
-            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)    #Msg is Rvals dict if Ok=True
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
 #            wx.Yield()
         if OK:
-            Rw = Msg['Rwp']
-            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Msg['Rwp'],Msg['GOF'],Msg['Nobs'],Msg['Max shft/sig'])
-            lamMax = Msg.get('lamMax',0.001)
+            Rw = Rvals['Rwp']
+            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'],Rvals['Max shft/sig'])
+            lamMax = Rvals.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'
-            if 'GOF0' in Msg and 'GOF' in Msg:
+            if 'GOF0' in Rvals and 'GOF' in Rvals:
                 text += '\nReduced Chi^2 before refinement={:.3f} and after={:.3f}\n'.format(
-                    Msg['GOF0']**2,Msg['GOF']**2)
-            if 'Max shft/sig' in Msg:
-                text += '\nMax shift/sigma={:.3f}\n'.format(Msg['Max shft/sig'])
-            if 'msg' in Msg: text += '\n' + Msg['msg'] + '\n'
+                    Rvals['GOF0']**2,Rvals['GOF']**2)
+            if 'Max shft/sig' in Rvals:
+                text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
+            if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
             text += '\nLoad new result?'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached\nor result may be false minimum.'+  \
-                ' You should reconsider your parameter suite'
+                ' You should reconsider which parameters you refine'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
@@ -5193,8 +5194,45 @@ class GSASII(wx.Frame):
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
                 dlg2.Destroy()
+        elif 'SingVars' in Rvals:
+            if 'msg' in Rvals:
+                msg = 'Refinement results:\n\n'
+                msg += Rvals['msg']
+                msg += '\n\n'
+            else:
+                msg = ''
+            if len(Rvals['SingVars']) == 1:
+                h = 'This variable appears'
+                # that = 'that variable'
+            else:
+                h = 'These variables appear'
+                # that = 'those variables'
+            msg += h + ' to cause a singular matrix:\n\t'
+            for i,var in enumerate(Rvals['SingVars']):
+                if i: msg += ', '
+                msg += var
+            # msg += '\n\nRefine again with '+that+' frozen?'
+            result = wx.ID_NO
+            try:
+                # dlg = wx.MessageDialog(self, msg,'Refine again?', 
+                #     wx.YES_NO | wx.ICON_QUESTION)
+                dlg = wx.MessageDialog(self, msg,'Note singularities', 
+                    wx.OK)
+                dlg.SetSize((700,300)) # does not resize on Mac
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            # if result != wx.ID_YES: return
+            # Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+            # if 'parmFrozen' not in Controls:
+            #     Controls['parmFrozen'] = {}
+            # if 'FrozenList' not in Controls['parmFrozen']: 
+            #     Controls['parmFrozen']['FrozenList'] = []
+            # Controls['parmFrozen']['FrozenList'] += [
+            #     G2obj.G2VarObj(i) for i in Rvals['SingVars']]
+            # wx.CallAfter(self.OnRefine,event)
         else:
-            self.ErrorDialog('Refinement error',Msg)
+            self.ErrorDialog('Refinement error',Rvals['msg'])
             
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
@@ -8782,10 +8820,20 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Covariance':
             data = G2frame.GPXtree.GetItemPyData(item)
             text = ''
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            if 'Rvals' in data:
+                lbl = 'Refinement results'
+            else:
+                lbl = 'No refinement results'
+            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
+            G2frame.dataWindow.GetSizer().Add(subSizer,0,wx.EXPAND)
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = ('Residuals after last refinement:\n'+
+                text = ('\nResiduals after last refinement:\n'+
                         '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
@@ -8793,9 +8841,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 text += '\n\tmax shift/esd = {:.3f}'.format(Rvals.get('Max shft/sig',0.0))
                 if 'lamMax' in Rvals:
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
+                if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
+                    text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 G2frame.dataWindow.GetSizer().Add(
                     wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text)
                 )
+            G2frame.dataWindow.GetSizer().Add((-1,-1),1,wx.EXPAND,1)
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)

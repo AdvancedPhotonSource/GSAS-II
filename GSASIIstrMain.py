@@ -47,6 +47,40 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 ateln2 = 8.0*math.log(2.0)
 DEBUG = True
 
+def ReportProblems(result,Rvals,varyList):
+    '''Create a message based results from the refinement
+    '''
+    #report on SVD 0's and highly correlated variables
+    msg = ''
+    SVD0 = result[2].get('SVD0')
+    if SVD0 > 0: 
+        msg += 'Warning: There were {} singularities in the Hessian'.format(SVD0)
+    # process singular variables
+    psing = result[2].get('psing',[])
+    if psing:
+        if msg: msg += '\n'
+        msg += 'Parameters dropped due to singularities:'
+    for i,val in enumerate(psing):
+        if i == 0:
+            msg += '\n\t{}'.format(varyList[val])
+        else:
+            msg += ', {}'.format(varyList[val])
+    #report on highly correlated variables
+    Hcorr = result[2].get('Hcorr',[])
+    for i,(v1,v2,corr) in enumerate(Hcorr):
+        if msg: msg += '\n'
+        if i == 0:
+            msg += 'Note highly correlated parameters:\n'
+        if corr > .95:
+            stars = '**'
+        else:
+            stars = '   '
+        msg += ' {} {} and {} (@{:.2f}%)'.format(
+            stars,varyList[v1],varyList[v2],100.*corr)
+    if msg:
+        if 'msg' not in Rvals: Rvals['msg'] = ''
+        Rvals['msg'] += msg
+
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
     '''Core optimization routines, shared between SeqRefine and Refine
@@ -59,13 +93,13 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
-    G2mv.Map2Dict(parmDict,varyList)
     ifPrint = True
     if ifSeq:
         ifPrint = False
     Rvals = {}
     chisq0 = None
     while True:
+        G2mv.Map2Dict(parmDict,varyList)
         begin = time.time()
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
         if np.any(np.isnan(values)):
@@ -94,6 +128,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 refPlotUpdate=refPlotUpdate)
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
+            if 'msg' in result[2]:
+                Rvals['msg'] = result[2]['msg']
             Controls['Marquardt'] = -3  #reset to default
             if 'chisq0' in result[2] and chisq0 is None:
                 chisq0 = result[2]['chisq0']
@@ -163,25 +199,41 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
+            # report on refinement issues. Result in Rvals['msg']
+            ReportProblems(result,Rvals,varyList)
             break                   #refinement succeeded - finish up!
-        except TypeError:          #result[1] is None on singular matrix or LinAlgError
+        except TypeError:
+            # if we get here, no result[1] (covar matrix) was returned or other calc error: refinement failed
             IfOK = False
             if not len(varyList):
                 covMatrix = []
                 break
-            G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
             if 'Hessian' in Controls['deriv type']:
+                SVD0 = result[2].get('SVD0')
+                if SVD0 == -1:
+                    G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
+                elif SVD0 == -2:
+                    G2fil.G2Print ('**** Refinement failed - other problem ****',mode='error')
+                elif SVD0 > 0:
+                    G2fil.G2Print ('**** Refinement failed with {} SVD singularities ****'.format(SVD0),mode='error')
+                else:
+                    G2fil.G2Print ('**** Refinement failed ****',mode='error')
                 if result[1] is None:
                     IfOK = False
                     covMatrix = []
                     sig = len(varyList)*[None,]
-                    break
-                num = len(varyList)-1
-                for i,val in enumerate(np.flipud(result[2]['psing'])):
-                    if val:
-                        G2fil.G2Print ('Removing parameter: '+varyList[num-i])
-                        del(varyList[num-i])
+                # report on highly correlated variables
+                ReportProblems(result,Rvals,varyList)
+                # process singular variables
+                psing = result[2].get('psing',[])
+                if dlg: break # refining interactively
+                # non-interactive refinement
+                for val in sorted(psing,reverse=True):
+                    G2fil.G2Print ('Removing parameter: '+varyList[val])
+                    del(varyList[val])
+                if not psing: break    # removed variable(s), try again
             else:
+                G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
                     if not np.sum(result[2]['fjac'],axis=1)[i]:
@@ -195,7 +247,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     return IfOK,Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
-    'Global refinement -- refines to minimize against all histograms'
+    '''Global refinement -- refines to minimize against all histograms. 
+    This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
+    interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
+    :meth:`GSASIIscriptable.G2Project.refine` or from :func:`main`, where dlg will be None.
+    '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
     import pytexture as ptx
@@ -216,11 +272,11 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     if not Phases:
         G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
         G2fil.G2Print (' *** Refine aborted ***')
-        return False,'No phases'
+        return False,{'msg':'No phases'}
     if not Histograms:
         G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
         G2fil.G2Print (' *** Refine aborted ***')
-        return False,'No data'
+        return False,{'msg':'No data'}
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
@@ -249,7 +305,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
     msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
     if msg:
-        return False,'Unable to interpret multiplier(s): '+msg
+        return False,{'msg':'Unable to interpret multiplier(s): '+msg}
     try:
         G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
         #print(G2mv.VarRemapShow(varyList))
@@ -260,7 +316,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
         #print 'Errors',errmsg
         #if warnmsg: print 'Warnings',warnmsg
-        return False,' Constraint error'
+        return False,{'msg':' Constraint error'}
 #    print G2mv.VarRemapShow(varyList)
 
     # remove frozen vars from refinement
@@ -279,6 +335,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     ifSeq = False
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
+    Rvals = {}
     try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
@@ -304,32 +361,65 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
             if len(frozen):
+                if 'msg' in Rvals:
+                    Rvals['msg'] += '\n'
+                else:
+                    Rvals['msg'] = ''
                 msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
                     .format(len(frozen),len(parmFrozenList))
                     )
                 G2fil.G2Print(msg)
-                Rvals['msg'] = msg
+                Rvals['msg'] += msg
             elif len(parmFrozenList):
+                if 'msg' in Rvals:
+                    Rvals['msg'] += '\n'
+                else:
+                    Rvals['msg'] = ''
                 msg = ('Note: a total of {} variable(s) are frozen due to refining outside limits'
                     .format(len(parmFrozenList))
                     )
                 G2fil.G2Print('Note: ',msg)
-                Rvals['msg'] = msg
+                Rvals['msg'] += msg
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
             G2fil.G2Print (' ***** Refinement successful *****')
         else:
-            G2fil.G2Print ('****ERROR - Refinement failed')
-            raise G2obj.G2Exception('****ERROR - Refinement failed')
+            G2fil.G2Print ('****ERROR - Refinement failed',mode='error')
+            if 'msg' in Rvals:
+                G2fil.G2Print ('Note refinement problem:',mode='warn')
+                G2fil.G2Print (Rvals['msg'],mode='warn')
+            raise G2obj.G2Exception('**** ERROR: Refinement failed ****')
     except G2obj.G2RefineCancel as Msg:
         printFile.close()
         G2fil.G2Print (' ***** Refinement stopped *****')
-        return False,Msg.msg
-    except G2obj.G2Exception as Msg:  # cell metric error, others?
+        if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
+        if 'msg' in Rvals:
+            Rvals['msg'] += '\n'
+            Rvals['msg'] += Msg.msg
+            if not dlg:
+                G2fil.G2Print ('Note refinement problem:',mode='warn')
+                G2fil.G2Print (Rvals['msg'],mode='warn')
+        else:
+            Rvals['msg'] = Msg.msg
+        return False,Rvals
+#    except G2obj.G2Exception as Msg:  # cell metric error, others?
+    except Exception as Msg:  # cell metric error, others?
+        if GSASIIpath.GetConfigValue('debug'):
+            import traceback
+            print(traceback.format_exc())        
+        if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
         printFile.close()
         G2fil.G2Print (' ***** Refinement error *****')
-        return False,Msg.msg
+        if 'msg' in Rvals:
+            Rvals['msg'] += '\n\n'
+            Rvals['msg'] += Msg.msg
+            if not dlg:
+                G2fil.G2Print ('Note refinement problem:',mode='warn')
+                G2fil.G2Print (Rvals['msg'],mode='warn')
+        else:
+            Rvals['msg'] = Msg.msg
+        return False,Rvals
 
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
@@ -345,6 +435,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         fl.close()
     if dlg:
         return True,Rvals
+    elif 'msg' in Rvals:
+        G2fil.G2Print ('Reported from refinement:',mode='warn')
+        G2fil.G2Print (Rvals['msg'],mode='warn')
 
 def phaseCheck(phaseVary,Phases,histogram):
     '''
@@ -641,10 +734,12 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                         NewparmDict[parm] = parmDict[parm]
                     
         except G2obj.G2RefineCancel as Msg:
+            if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement stopped *****')
             return False,Msg.msg
         except G2obj.G2Exception as Msg:  # cell metric error, others?
+            if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement error *****')
             return False,Msg.msg
@@ -656,7 +751,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     try:
         G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     except Exception as msg:
-        print('Error reading Sequential results')
+        print('Error reading Sequential results\n',str(msg))
         if GSASIIpath.GetConfigValue('debug'):
             import traceback
             print(traceback.format_exc())        

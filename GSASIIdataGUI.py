@@ -5175,8 +5175,8 @@ class GSASII(wx.Frame):
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'
             if 'GOF0' in Rvals and 'GOF' in Rvals:
-                text += '\nReduced Chi^2 before refinement={:.3f} and after={:.3f}\n'.format(
-                    Rvals['GOF0']**2,Rvals['GOF']**2)
+                text += '\nFinal Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
+                    Rvals['GOF']**2,Rvals['GOF0']**2)
             if 'Max shft/sig' in Rvals:
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
             if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
@@ -5186,6 +5186,7 @@ class GSASII(wx.Frame):
                 ' minimum may not have been reached\nor result may be false minimum.'+  \
                 ' You should reconsider which parameters you refine'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+            dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
@@ -5194,30 +5195,31 @@ class GSASII(wx.Frame):
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
                 dlg2.Destroy()
-        elif 'SingVars' in Rvals:
+        elif 'psing' in Rvals:
             if 'msg' in Rvals:
                 msg = 'Refinement results:\n\n'
                 msg += Rvals['msg']
                 msg += '\n\n'
             else:
                 msg = ''
-            if len(Rvals['SingVars']) == 1:
-                h = 'This variable appears'
-                # that = 'that variable'
-            else:
-                h = 'These variables appear'
-                # that = 'those variables'
-            msg += h + ' to cause a singular matrix:\n\t'
-            for i,var in enumerate(Rvals['SingVars']):
-                if i: msg += ', '
-                msg += var
-            # msg += '\n\nRefine again with '+that+' frozen?'
+            # if len(Rvals['psing']) == 1:
+            #     h = 'This variable appears'
+            #     # that = 'that variable'
+            # else:
+            #     h = 'These variables appear'
+            #     # that = 'those variables'
+            # msg += h + ' to cause a singular matrix:\n\t'
+            # for i,var in enumerate(Rvals['psing']):
+            #     if i: msg += ', '
+            #     msg += varyList[var]
+            # # msg += '\n\nRefine again with '+that+' frozen?'
             result = wx.ID_NO
             try:
                 # dlg = wx.MessageDialog(self, msg,'Refine again?', 
                 #     wx.YES_NO | wx.ICON_QUESTION)
                 dlg = wx.MessageDialog(self, msg,'Note singularities', 
                     wx.OK)
+                dlg.CenterOnParent()
                 dlg.SetSize((700,300)) # does not resize on Mac
                 result = dlg.ShowModal()
             finally:
@@ -5229,7 +5231,7 @@ class GSASII(wx.Frame):
             # if 'FrozenList' not in Controls['parmFrozen']: 
             #     Controls['parmFrozen']['FrozenList'] = []
             # Controls['parmFrozen']['FrozenList'] += [
-            #     G2obj.G2VarObj(i) for i in Rvals['SingVars']]
+            #     G2obj.G2VarObj(varyList[i]) for i in Rvals['plist']]
             # wx.CallAfter(self.OnRefine,event)
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
@@ -5383,6 +5385,7 @@ class GSASII(wx.Frame):
                 text += '\nBiggest Max shft/sig was {:.3f} (average across histograms {:.3f})\n'.format(mx,avg)
             text += '\nLoad new result?'                
             dlg = wx.MessageDialog(self,text,'Refinement results',wx.OK|wx.CANCEL)
+            dlg.CenterOnParent()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)

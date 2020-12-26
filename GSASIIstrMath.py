@@ -3228,12 +3228,24 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             im = 1  #offset in SS reflection list
             #??
         Dij = GetDij(phfx,SGData,parmDict)
-        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do someting if Dij << 0. 
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0. 
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
-        if np.any(np.diag(G)<0.) or np.any(np.isnan(A)):
-            #G2obj.HowDidIgetHere()
-            raise G2obj.G2Exception('Error in metric tensor refinement\nCheck for refinement of conflicting variables')
-        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+        if np.any(np.diag(G)<0.):
+            msg = 'Invalid metric tensor for phase #{}\n   ({})'.format(
+                pId,Phase['General']['Name'])
+        elif np.any(np.isnan(A)):
+            msg = 'Infinite metric tensor for phase #{}\n   ({})'.format(
+                pId,Phase['General']['Name'])
+        else:
+            msg = None
+        if msg:
+            print('\nInvalid cell metric tensor for phase #{} ({})\n'.format(
+                pId,Phase['General']['Name']),
+                'values (A): {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n'
+                .format(*A))
+            raise G2obj.G2Exception('Error: '+msg+
+                        ' See console.\nCheck for refinement of conflicting variables')
+        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
         Vst = np.sqrt(nl.det(G))    #V*
         if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
             if im:

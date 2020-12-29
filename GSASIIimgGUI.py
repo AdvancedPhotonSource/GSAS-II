@@ -121,8 +121,10 @@ def GetImageZ(G2frame,data,newRange=False):
         if gainMap:
             GMid = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, gainMap)
             if GMid:
-                Npix,gainfile,imagetag = G2IO.GetCheckImageFile(G2frame,GMid)
-                GMimage = G2IO.GetImageData(G2frame,gainfile,True,ImageTag=imagetag,FormatName=formatName)
+                Npix,gainfile,imagetag = G2IO.GetCheckImageFile(G2frame,GMid)                
+                Gdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,GMid,'Image Controls'))
+                gformat = Gdata['formatName']
+                GMimage = G2IO.GetImageData(G2frame,gainfile,True,ImageTag=imagetag,FormatName=gformat)
                 sumImg = sumImg*GMimage/1000
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
@@ -153,6 +155,40 @@ def UpdateImageData(G2frame,data):
             UpdateImageData(G2frame,data)
         dlg.Destroy()
         
+    def OnMakeGainMap(event):
+        sumImg = GetImageZ(G2frame,data)
+        masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
+        Data = copy.deepcopy(data)
+        #force defaults for GainMap calc
+        Data['IOtth'] = [0.1,60.0]
+        Data['outAzimuths'] = 1
+        Data['LRazimuth'] = [0.,360.]
+        Data['outChannels'] = 2500
+        Data['SampleAbs'] = [0.0,False]
+        Data['binType'] = '2-theta'
+        G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
+        Iy,azms,Ix = G2frame.Integrate[:3]
+        GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,masks,blkSize)*1000.
+        Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
+        pth = os.path.split(os.path.abspath(imagefile))[0]
+        outname = 'GainMap'
+        dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
+            'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            newimagefile = dlg.GetPath()
+            newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
+            Data['formatName'] = 'GSAS-II image'
+            Data['range'] = [(800,1200),[800,1200]]
+            G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
+            Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='IMG '+os.path.split(newimagefile)[1])
+            G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
+            G2frame.GPXtree.Expand(Id)
+            G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
+
     G2frame.dataWindow.ClearData()
     G2frame.ImageZ = GetImageZ(G2frame,data)
     mainSizer = G2frame.dataWindow.GetSizer()
@@ -193,6 +229,10 @@ def UpdateImageData(G2frame,data):
     tthSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'det2theta',xmin=-180.,xmax=180.,nDig=(10,2)),0,WACV)
     tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample changer position %.2f mm '%data['samplechangerpos']),0,WACV)
     mainSizer.Add(tthSizer,0)
+    if not data['Gain map']:
+        makeGain = wx.Button(G2frame.dataWindow,label='Make gain map from this image? NB: use only an amorphous pattern for this')
+        makeGain.Bind(wx.EVT_BUTTON,OnMakeGainMap)
+        mainSizer.Add(makeGain)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -472,7 +512,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     def OnIntegrate(event,useTA=None,useMask=None):
         '''Integrate image in response to a menu event or from the AutoIntegrate
         dialog. In the latter case, event=None. 
-        TODO: think of not repeating x,y-->2th,azm calc for unchanging calibrations?
         '''
         CleanupMasks(masks)
         sumImg = GetImageZ(G2frame,data)
@@ -1310,7 +1349,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
-        
+            
         backSizer = wx.FlexGridSizer(0,6,5,5)
         oldFlat = data.get('Flat Bkg',0.)
 
@@ -1343,7 +1382,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         backSizer.Add((5,5),0)
         backSizer.Add((5,5),0)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Gain map'),0,WACV)
-        gainMap = wx.ComboBox(parent=G2frame.dataWindow,value=data['Gain map'],choices=Choices,
+        gainMap = wx.ComboBox(G2frame.dataWindow,value=data['Gain map'],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         gainMap.Bind(wx.EVT_COMBOBOX,OnGainMap)
         backSizer.Add(gainMap)

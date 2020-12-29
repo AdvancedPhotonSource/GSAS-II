@@ -3870,8 +3870,7 @@ class GSASII(wx.Frame):
                     if not Found:
                         self.ErrorDialog('Image sum error','No nonzero image multipliers found')
                         return
-                        
-                        
+                                               
                     newImage = np.array(newImage,dtype=np.int32)                        
                     outname = 'IMG '+result[-1]
                     Id = 0

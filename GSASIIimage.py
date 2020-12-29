@@ -1261,6 +1261,32 @@ def MakeUseMask(data,masks,blkSize=128):
         useMask.append(useMaskj)
     return useMask
 
+def MakeGainMap(image,Ix,Iy,data,masks,blkSize=128):
+    import scipy.ndimage.filters as sdif
+    Iy *= npcosd(Ix[:-1])**3       #undo parallax 3 or 4?
+    Iy *= (1000./data['distance'])**2    #undo r^2 effect
+    Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
+    if data['Oblique'][1]:
+        Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
+    IyInt = scint.interp1d(Ix[:-1],Iy[0],bounds_error=False)
+    GainMap = np.zeros_like(image,dtype=float)
+    #do interpolation on all points - fills in the empty bins; leaves others the same
+    Nx,Ny = data['size']
+    nXBlks = (Nx-1)//blkSize+1
+    nYBlks = (Ny-1)//blkSize+1
+    for iBlk in range(nYBlks):
+        iBeg = iBlk*blkSize
+        iFin = min(iBeg+blkSize,Ny)
+        for jBlk in range(nXBlks):
+            jBeg = jBlk*blkSize
+            jFin = min(jBeg+blkSize,Nx)
+            TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            Ipix = IyInt(TA[0])
+            GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
+    GainMap = np.nan_to_num(GainMap)
+    GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
+    return 1./GainMap
+
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
@@ -1372,6 +1398,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
+    H0 *= (data['distance']/1000.)**2    #remove r^2 effect
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

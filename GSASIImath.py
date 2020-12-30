@@ -175,7 +175,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if chisq00 is None: chisq00 = chisq0
         Yvec,Amat = Hess(x0,*args)
         Adiag = np.sqrt(np.diag(Amat))
-        psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
+        #psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
+        psing = np.where(np.abs(Adiag) < 1.e-14)[0]
         if np.any(psing):                #hard singularity in matrix
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
         Anorm = np.outer(Adiag,Adiag)

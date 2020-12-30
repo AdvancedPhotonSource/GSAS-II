@@ -3177,9 +3177,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             backDict[':'+str(hId)+':Back File'] = Background[1]['background PWDR'][0]
             backDict[':'+str(hId)+':BF mult'] = Background[1]['background PWDR'][1]
             try:
-                if Background[1]['background PWDR'][2]:
+                if Background[1]['background PWDR'][0] and Background[1]['background PWDR'][2]:
                     backVary.append(':'+str(hId)+':BF mult')
-            except IndexError:  # old version withut refine flag
+            except IndexError:  # old version without refine flag
                 pass
         return bakType,backDict,backVary            
         

@@ -290,7 +290,7 @@ class CifDic(StarFile.StarFile):
             self.DDL2_normalise()   #iron out some DDL2 tricky bits
         elif self.diclang == "DDLm":
             self.scoping = 'dictionary'   #expose all save frames
-            if do_imports is not 'No':
+            if do_imports != 'No':
                self.ddlm_import(import_mode=do_imports)#recursively calls this routine
             self.create_alias_table()
             self.create_cat_obj_table()

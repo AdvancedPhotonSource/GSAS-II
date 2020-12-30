@@ -84,7 +84,7 @@ def G2Print(*args,**kwargs):
       error messages and 'warn' for warning messages
       (capitalization and additional letters ignored.)
     '''
-    if G2printLevel is 'none': return
+    if G2printLevel == 'none': return
     if kwargs.get('mode') is None:
         testStr = str(args[0]).lower()
     else:

@@ -247,6 +247,7 @@ def whichsvn():
             try:
                 p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
                 res = p.stdout.read()
+                if not res: return
                 p.communicate()
                 svnLocCache = os.path.abspath(exe_file)
                 return svnLocCache
@@ -657,7 +658,7 @@ def svnInstallDir(URL,loadpath):
         s = '\nsvn command:  '
         for i in cmd: s += i + ' '
         print(s)
-        if svnCleanup(fpath):
+        if svnCleanup(loadpath):
             s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             out,err = MakeByte2str(s.communicate())
             if err:
@@ -1251,7 +1252,11 @@ if __name__ == '__main__':
     import time
     time.sleep(1) # delay to give the main process a chance to exit
     # perform an update and restart GSAS-II
-    project,version = sys.argv[1:3]
+    try:
+        project,version = sys.argv[1:3]
+    except ValueError:
+        project = None
+        version = 'trunk'
     loc = os.path.dirname(__file__)
     if version == 'trunk':
         svnSwitch2branch('')

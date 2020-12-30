@@ -1873,6 +1873,34 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.Contour:
                 Page.plotStyle['qPlot'] = False
                 Page.plotStyle['dPlot'] = False
+        elif (event.key == 'e' and 'PWDR' in plottype and G2frame.SinglePlot and ifLimits
+                  and not G2frame.Contour):
+            Page.excludeMode = not Page.excludeMode
+            if Page.excludeMode:
+                try: # fails from key menu
+                    Page.startExclReg = event.xdata
+                except AttributeError:
+                    G2G.G2MessageBox(G2frame,'To create an excluded region, after clicking on "OK", move to the beginning of the region and press the "e" key. Then move to the end of the region and press "e" again','How to exclude')
+                    return
+                Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
+                Page.canvas.draw() 
+                Page.savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                y1, y2= Page.figure.axes[0].get_ylim()
+                Page.vLine = Plot.axvline(Page.startExclReg,color='b',
+                                               dashes=(2,3))
+                Page.canvas.draw()
+            else:
+                Page.savedplot = None
+                wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
+                                 plotType=plottype,extraKeys=extraKeys)
+                if abs(Page.startExclReg - event.xdata) < 0.1: return
+                LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
+                data = G2frame.GPXtree.GetItemPyData(LimitId)
+                mn = min(Page.startExclReg, event.xdata)
+                mx = max(Page.startExclReg, event.xdata)
+                data.append([mn,mx])
+                G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+            return
         elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
                  Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             # add a magnification region
@@ -1956,8 +1984,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
-        'Update the status line with infor based on the mouse position'        
+        'Update the status line with info based on the mouse position'
         SetCursor(Page)
+        # excluded region animation
+        if Page.excludeMode and Page.savedplot:
+            if event.xdata is None or G2frame.GPXtree.GetItemText(
+                    G2frame.GPXtree.GetSelection()) != 'Limits': # reset if out of bounds or not on limits
+                Page.savedplot = None
+                Page.excludeMode = False
+                wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
+                                 plotType=plottype,extraKeys=extraKeys)
+                return
+            else:
+                Page.canvas.restore_region(Page.savedplot)
+                Page.vLine.set_xdata([event.xdata,event.xdata])
+                Page.figure.gca().draw_artist(Page.vLine)
+                Page.canvas.blit(Page.figure.gca().bbox)
+                return
+        elif Page.excludeMode or Page.savedplot: # reset if out of mode somehow
+            Page.savedplot = None            
+            Page.excludeMode = False
+            wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
+                                 plotType=plottype,extraKeys=extraKeys)
+            return
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(Temps),ytics,-1)
@@ -2217,6 +2266,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
+                # likely that these conversions are not needed, Q & d not allowed on limits (BHT)
                 if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
                 elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
@@ -2674,7 +2724,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     plottype = plotType
-    
+
     if not G2frame.PatternId:
         return
     if 'PKS' in plottype:
@@ -2687,6 +2737,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         publish = None
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    Page.excludeMode = False  # True when defining an excluded region
+    Page.savedplot = None
 #patch
     if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
@@ -2824,8 +2876,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Page.Choice += ['o: add obs, calc,... to legend',]
             if ifLimits:
-                Page.Choice += ['s: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
-                    '+: no selection']
+                Page.Choice += ['e: create excluded region',
+                        's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
+                        '+: no selection']
             else:
                 Page.Choice += ['q: toggle q plot','s: toggle sqrt plot',
                     't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
@@ -7065,7 +7118,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Masks['Points'].append(spot)
                 artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',
                                 picker=True)
-                GSASIIpath.IPyBreak()
+                #GSASIIpath.IPyBreak()
                 Page.figure.gca().add_artist(artist)
                 artist.itemNumber = len(Masks['Points'])-1
                 artist.itemType = 'Spot'

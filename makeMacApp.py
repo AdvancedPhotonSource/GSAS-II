@@ -4,29 +4,33 @@
 ===============================
 
 This script creates an AppleScript app bundle to launch GSAS-II. The app is
-created in the directory where the GSAS-II script (GSASII.py) is located.
-A softlink to Python is created, but is named GSAS-II, and placed inside
-the bundle so that GSAS-II shows up as the name of the app rather than 
-Python in the menu bar, etc. A soft link named GSAS-II.py, referencing 
-GSASII.py, is created so that appropriate menu items also are labeled with 
-GSAS-II (but not the right capitalization, alas). 
+created in the directory where the GSAS-II script (.../GSASII/GSASII.py) 
+is located. A softlink to Python is created inside that app bundle, 
+but the softlink name is GSAS-II so that GSAS-II shows up as the name 
+of the app rather than  Python in the menu bar, etc. A soft link named 
+GSAS-II.py, referencing the GSASII.py script, is created so that some file 
+menu items also are labeled with GSAS-II (but not the right capitalization, 
+alas). 
 
 This has been tested with several versions of Python interpreters 
 from Anaconda and does not require pythonw (Python.app). It tests to 
 make sure that a wx python script will run inside Python and if not, 
 it searches for a pythonw image and tries that. 
 
-Run this script with no arguments or with one optional argument, 
-a reference to the GSASII.py, with a relative or absolute path. Either way 
-the path will be converted via an absolute path. If no arguments are 
-supplied, the GSASII.py script must be located in the same directory as 
-this file.
-
+Run this script with no arguments or with one or two arguments.
+The first argument, if supplied, is a reference to the GSASII.py script, 
+which can have a relative or absolute path (the absolute path is determined). 
+If not supplied, the GSASII.py script will be used from the directory where 
+this (makeMacApp.py) script is found. The second argument, if supplied, 
+provides the name for the app to be created. This can be used to create 
+multiple copies of the app using different Python versions (likely use for
+development only).
 '''
+
 from __future__ import division, print_function
 import sys, os, os.path, stat, shutil, subprocess, plistlib
 def Usage():
-    print("\n\tUsage: python "+sys.argv[0]+" [<GSAS-II script>]\n")
+    print("\n\tUsage: python "+sys.argv[0]+" [<GSAS-II script>] [project]\n")
     sys.exit()
 
 def RunPython(image,cmd):
@@ -56,7 +60,10 @@ if __name__ == '__main__':
                 "GSASII.py"
                 ))
     elif len(sys.argv) == 2:
-            script = os.path.abspath(sys.argv[1])
+        script = os.path.abspath(sys.argv[1])
+    elif len(sys.argv) == 3:
+        script = os.path.abspath(sys.argv[1])
+        project = sys.argv[2]
     else:
         Usage()
         raise Exception
@@ -138,7 +145,7 @@ on open names
 end open
 '''
     # create a link named GSAS-II.py to the script
-    newScript = os.path.join(scriptdir,project+'.py')
+    newScript = os.path.join(scriptdir,'GSAS-II.py')
     if os.path.exists(newScript): # cleanup
         print("\nRemoving sym link",newScript)
         os.remove(newScript)

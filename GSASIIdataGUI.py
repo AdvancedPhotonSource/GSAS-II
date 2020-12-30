@@ -8674,6 +8674,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
     G2frame.dataWindow.SetDataSize()
+    # make sure parent histogram item is displayed
+    if item != G2frame.GPXtree.GetSelection():
+        wx.CallAfter(G2frame.GPXtree.SelectItem,item)
                  
 ################################################################################
 #####  Data (GPX) tree routines

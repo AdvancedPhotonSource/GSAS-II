@@ -57,7 +57,7 @@ def ReportProblems(result,Rvals,varyList):
         msg += 'Warning: There were {} singularities in the Hessian'.format(SVD0)
     # process singular variables
     psing = result[2].get('psing',[])
-    if psing:
+    if len(psing):
         if msg: msg += '\n'
         msg += 'Parameters dropped due to singularities:'
     for i,val in enumerate(psing):

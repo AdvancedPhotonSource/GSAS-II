@@ -8834,11 +8834,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
-            G2frame.dataWindow.GetSizer().Add(subSizer,0,wx.EXPAND)
+            G2frame.dataWindow.GetSizer().Add(subSizer)             #,0,wx.EXPAND)
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = ('\nResiduals after last refinement:\n'+
+                text = ('\nResiduals after last refinement:          \n'+
                         '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
@@ -8849,9 +8849,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 G2frame.dataWindow.GetSizer().Add(
-                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text)
-                )
-            G2frame.dataWindow.GetSizer().Add((-1,-1),1,wx.EXPAND,1)
+                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+#            G2frame.dataWindow.GetSizer().Add((-1,-1),1,wx.EXPAND,1)
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)

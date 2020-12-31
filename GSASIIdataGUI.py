@@ -5179,11 +5179,11 @@ class GSASII(wx.Frame):
             if 'Max shft/sig' in Rvals:
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
             if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
-            text += '\nLoad new result?'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached or result may be false minimum.'+  \
-                ' You should reconsider which parameters you refine'
+                ' You should reconsider which parameters you refine. Check covariance matrix.\n'
+            text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:

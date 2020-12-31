@@ -59,23 +59,27 @@ def ReportProblems(result,Rvals,varyList):
     psing = result[2].get('psing',[])
     if len(psing):
         if msg: msg += '\n'
-        msg += 'Parameters dropped due to singularities:'
-    for i,val in enumerate(psing):
-        if i == 0:
-            msg += '\n\t{}'.format(varyList[val])
-        else:
-            msg += ', {}'.format(varyList[val])
+        msg += '{} Parameters dropped due to singularities:'.format(len(psing))
+        for i,val in enumerate(psing):
+            if i == 0:
+                msg += '\n\t{}'.format(varyList[val])
+            else:
+                msg += ', {}'.format(varyList[val])
+        G2fil.G2Print(msg, mode='warn')
     #report on highly correlated variables
     Hcorr = result[2].get('Hcorr',[])
-    for i,(v1,v2,corr) in enumerate(Hcorr):
+    if len(Hcorr) > 0: 
         if msg: msg += '\n'
-        if i == 0:
-            msg += 'Note highly correlated parameters:\n'
+        msg += 'Note highly correlated parameters:'
+    elif SVD0 > 0:
+        if msg: msg += '\n'
+        msg += 'Check covariance matrix for parameter correlation'
+    for v1,v2,corr in Hcorr:
         if corr > .95:
             stars = '**'
         else:
             stars = '   '
-        msg += ' {} {} and {} (@{:.2f}%)'.format(
+        msg += '\n {} {} and {} (@{:.2f}%)'.format(
             stars,varyList[v1],varyList[v2],100.*corr)
     if msg:
         if 'msg' not in Rvals: Rvals['msg'] = ''

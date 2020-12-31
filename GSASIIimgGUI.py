@@ -164,7 +164,7 @@ def UpdateImageData(G2frame,data):
         Data['IOtth'] = [0.1,60.0]
         Data['outAzimuths'] = 1
         Data['LRazimuth'] = [0.,360.]
-        Data['outChannels'] = 2500
+        Data['outChannels'] = 5000
         Data['SampleAbs'] = [0.0,False]
         Data['binType'] = '2-theta'
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            

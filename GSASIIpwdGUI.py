@@ -3362,6 +3362,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[5] = brav
         controls[13] = SPGlist[brav][0]       
         ssopt['Use'] = False
+        OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnSpcSel(event):
@@ -3440,7 +3441,13 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnCellChange(invalid,value,tc):
         if invalid:
             return
-        SetCellValue(tc,Info[tc.GetId()],value)
+        try: # fails when zero is updated
+            SetCellValue(tc,Info[tc.GetId()],value)
+        except:
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+            if 'Zero' in Inst: 
+                Inst['Zero'][1] = value
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -4480,7 +4487,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     else:
         littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
         zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
-                                    xmin=-5.,xmax=5.,size=(50,-1))
+                                    xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
         littleSizer.Add(zero,0,WACV)
         zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
         zeroVar.SetValue(controls[0])

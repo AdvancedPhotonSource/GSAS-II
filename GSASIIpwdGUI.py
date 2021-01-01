@@ -3444,10 +3444,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         try: # fails when zero is updated
             SetCellValue(tc,Info[tc.GetId()],value)
         except:
-            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
-                G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-            if 'Zero' in Inst: 
-                Inst['Zero'][1] = value
+            pass
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         

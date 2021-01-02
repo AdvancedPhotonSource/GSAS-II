@@ -180,6 +180,8 @@ def UpdateImageData(G2frame,data):
             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
             Data['formatName'] = 'GSAS-II image'
             Data['range'] = [(800,1200),[800,1200]]
+            GainMap = np.where(GainMap > 1200,1000,GainMap)
+            GainMap = np.where(GainMap < 800,1000,GainMap)
             G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='IMG '+os.path.split(newimagefile)[1])
             G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])

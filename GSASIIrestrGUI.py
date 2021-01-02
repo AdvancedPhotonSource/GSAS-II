@@ -1170,7 +1170,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         
         items = G2frame.dataWindow.RestraintEdit.GetMenuItems()
         for item in items:
-            if item.GetLabel() in ['Change value']:
+            if item.GetItemLabelText() in ['Change value']:
                 item.Enable(False)
 
         def OnCellChange(event):

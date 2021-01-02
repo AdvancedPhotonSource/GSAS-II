@@ -64,6 +64,7 @@ if '2' in platform.python_version_tuple()[0]:
     Pwrm6 = unichr(0x207b)+unichr(0x2076)
     Pwrm4 = unichr(0x207b)+unichr(0x2074)
     Angstr = unichr(0x00c5)
+    superMinusOne = unichr(0xaf)+unichr(0xb9)
 else:
     GkDelta = chr(0x0394)
     Pwr10 = chr(0x0b9)+chr(0x2070)
@@ -73,6 +74,7 @@ else:
     Pwrm6 = chr(0x207b)+chr(0x2076)
     Pwrm4 = chr(0x207b)+chr(0x2074)
     Angstr = chr(0x00c5)   
+    superMinusOne = chr(0xaf)+chr(0xb9)
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -1392,10 +1394,6 @@ def UpdateBackground(G2frame,data):
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
-        if '2' in platform.python_version_tuple()[0]:
-            superMinusOne = unichr(0xaf)+unichr(0xb9)
-        else:
-            superMinusOne = chr(0xaf)+chr(0xb9)
         for plot in auxPlot:
             XY = np.array(plot[:2])
             if 'D(R)' in plot[2]:

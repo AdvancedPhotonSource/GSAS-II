@@ -1283,7 +1283,7 @@ def MakeGainMap(image,Ix,Iy,data,masks,blkSize=128):
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
             Ipix = IyInt(TA[0])
             GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
-    GainMap = np.nan_to_num(GainMap)
+    GainMap = np.nan_to_num(GainMap,1.0)
     GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
     return 1./GainMap
 

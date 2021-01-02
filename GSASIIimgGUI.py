@@ -167,6 +167,7 @@ def UpdateImageData(G2frame,data):
         Data['outChannels'] = 5000
         Data['SampleAbs'] = [0.0,False]
         Data['binType'] = '2-theta'
+        Data['color'] = 'gray'
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
         Iy,azms,Ix = G2frame.Integrate[:3]
         GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,masks,blkSize)*1000.

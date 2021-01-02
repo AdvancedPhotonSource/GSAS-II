@@ -273,7 +273,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                                         Amat, indices, Xvec, Yvec, Adiag)
                 Amatlam = Amat*(1.+np.eye(Amat.shape[0])*lam)
                 Ainv,nz = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
-                if nz > 0: G2fil.G2Print('Note: there are {} new SVD Zeros after drop',
+                if nz > 0: G2fil.G2Print('Note: there are {} new SVD Zeros after drop'.format(nz),
                                              mode='warn')
             Xvec = np.inner(Ainv,Yvec)/Adiag      #solve for LS terms
             XvecAll[indices] = Xvec         # expand

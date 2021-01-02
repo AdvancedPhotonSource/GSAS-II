@@ -59,28 +59,53 @@ def ReportProblems(result,Rvals,varyList):
     psing = result[2].get('psing',[])
     if len(psing):
         if msg: msg += '\n'
-        msg += '{} Parameters dropped due to singularities:'.format(len(psing))
+        m = '{} Parameters dropped due to singularities:'.format(len(psing))
+        msg += m
+        G2fil.G2Print(m, mode='warn')
+        m = ''
         for i,val in enumerate(psing):
             if i == 0:
-                msg += '\n\t{}'.format(varyList[val])
+                msg += '\n{}'.format(varyList[val])
+                m = '  {}'.format(varyList[val])
             else:
-                msg += ', {}'.format(varyList[val])
-        G2fil.G2Print(msg, mode='warn')
+                if len(m) > 70:
+                    G2fil.G2Print(m, mode='warn')
+                    m = '  '
+                else:
+                    m += ', '
+                m += '{}'.format(varyList[val])
+                if i == 10:
+                    msg += ', {}... see console for full list'.format(varyList[val])
+                elif i > 10:
+                    pass
+                else:
+                    msg += ', {}'.format(varyList[val])
+        if m: G2fil.G2Print(m, mode='warn')
     #report on highly correlated variables
     Hcorr = result[2].get('Hcorr',[])
     if len(Hcorr) > 0: 
         if msg: msg += '\n'
-        msg += 'Note highly correlated parameters:'
+        m = 'Note highly correlated parameters:'
+        G2fil.G2Print(m, mode='warn')
+        msg += m
     elif SVD0 > 0:
         if msg: msg += '\n'
-        msg += 'Check covariance matrix for parameter correlation'
-    for v1,v2,corr in Hcorr:
+        m = 'Check covariance matrix for parameter correlation'
+        G2fil.G2Print(m, mode='warn')
+        msg += m
+    for i,(v1,v2,corr) in enumerate(Hcorr):
         if corr > .95:
             stars = '**'
         else:
             stars = '   '
-        msg += '\n {} {} and {} (@{:.2f}%)'.format(
+        m = ' {} {} and {} (@{:.2f}%)'.format(
             stars,varyList[v1],varyList[v2],100.*corr)
+        G2fil.G2Print(m, mode='warn')
+        if i == 5:
+            msg += '\n' + m
+            msg += '\n   ... check console for more'
+        elif i < 5:
+            msg += '\n' + m
     if msg:
         if 'msg' not in Rvals: Rvals['msg'] = ''
         Rvals['msg'] += msg

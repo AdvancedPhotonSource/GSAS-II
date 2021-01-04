@@ -6954,10 +6954,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
-        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angI),wave),azm,Data)
+        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angI),wave),azm,Data)
         if np.any(XY):
             xy1.append(XY)      #what about hyperbola
-        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angO),wave),azm,Data)
+        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angO),wave),azm,Data)
         if np.any(XY):
             xy2.append(XY)      #what about hyperbola
     return np.array(xy1).T,np.array(xy2).T
@@ -7239,7 +7239,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -7248,7 +7248,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):
@@ -7719,7 +7719,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             wx.CallAfter(PlotImage,G2frame,newImage=True)
             G2frame.itemPicked = None
             
-    # PlotImage execution starts here
+#### PlotImage execution starts here
     if not len(G2frame.ImageZ):
         return
     xylim = []
@@ -7843,7 +7843,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -7854,7 +7854,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xyO = []
                 arcxO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):

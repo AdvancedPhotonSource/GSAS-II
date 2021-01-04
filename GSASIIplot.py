@@ -3677,7 +3677,8 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         fp.write('@{}axis tick major {}\n'.format('y',yticks[1]-yticks[0]))
         fp.write('@{}axis ticklabel char size {}\n'.format('x',0)) # turns off axis labels
         if 'sqrt' in Plot.yaxis.get_label().get_text():
-            ylbl = 'sqrt(Intensity)' # perhaps there is a way to get the symbol in xmgrace but I did not find it
+            #ylbl = 'sqrt(Intensity)' # perhaps there is a way to get the symbol in xmgrace but I did not find it
+            ylbl = r'\x\#{d6}\f{}\oIntensity\O' # from Carlo Segre
         else:
             ylbl = 'Intensity'
         fp.write('@{0}axis label "{1}"\n@{0}axis label char size {2}\n'.format(

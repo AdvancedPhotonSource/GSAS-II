@@ -184,11 +184,19 @@ def UpdateImageData(G2frame,data):
             GainMap = np.where(GainMap > 1200,1000,GainMap)
             GainMap = np.where(GainMap < 800,1000,GainMap)
             G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
-            Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='IMG '+os.path.split(newimagefile)[1])
-            G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
+            GMname = 'IMG '+os.path.split(newimagefile)[1]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)
+            if not Id:            
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=GMname)
+                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
+            else:
+                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),Data)
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),masks)
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
 

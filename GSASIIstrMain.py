@@ -223,7 +223,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             if Lastshft is None:
                 Rvals['Max shft/sig'] = 0.0
             else:
-                Rvals['Max shft/sig'] = np.max(Lastshft/sig)
+                Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))

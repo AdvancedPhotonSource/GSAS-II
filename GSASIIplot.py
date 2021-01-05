@@ -9689,8 +9689,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2']
     if mapData['MapType']:
-        choice += ['k: none, lines, color, color+lines contour plot switch',]
-        choice += ['s: select map slice color scheme',]
+        choice += ['k: contour plot switch',]
+        choice += ['s: map slice colors',]
     if mapData.get('Flip',False):
         choice += ['u: roll up','d: roll down','l: roll left','r: roll right']
     else:

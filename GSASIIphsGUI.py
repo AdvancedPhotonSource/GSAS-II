@@ -4266,6 +4266,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Aname1 = atomData[ind][ct-1]
                 Atype1 = G2elem.FixValence(atomData[ind][ct])
                 Afrac = atomData[ind][cx+3]
+                Amult = float(atomData[ind][cx+5])
                 AtomInfo1 = G2elem.GetAtomInfo(Atype1)
                 if Atype1 == Atype2:
                     print('ERROR - 2nd atom type must be different from selected atom')
@@ -4274,8 +4275,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
                 frac1 = (Z1*Afrac-Z2)/(Z1-Z2)
                 bfrac1 = (B1*Afrac-B2)/(B1-B2)
-                print(' For %s: X-ray based %s site fraction = %.3f, %s site fraction = %.3f'%(Aname1,Atype1,frac1,Atype2,(1.-frac1)))
-                print('        neutron based %s site fraction = %.3f, %s site fraction = %.3f\n'%(Atype1,bfrac1,Atype2,(1.-bfrac1)))
+                print(' For %s: X-ray based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'     \
+                      %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))
+                print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell\n'      \
+                      %(Atype1,bfrac1,bfrac1*Amult,Atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
                         
     def OnValidProtein(event):
         

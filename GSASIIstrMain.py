@@ -36,6 +36,8 @@ import GSASIIstrIO as G2stIO
 import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
+import GSASIIElem as G2elem
+import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -1018,6 +1020,14 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         for dist in Dist[:-1]:
             line += '%12s'%(AtomLabels[dist[0]].center(12))
         MyPrint('  To       cell +(sym. op.)      dist.  '+line.rstrip())
+        BVS = {}
+        BVdat = {}
+        Otyp = G2elem.FixValence(Oatom[2]).split('+')[0].split('-')[0]
+        BVox = [BV for BV in atmdata.BVSoxid[Otyp] if '+' in BV]
+        if len(BVox):
+            BVS = {BV:0.0 for BV in BVox}
+            BVdat = {BV:dict(zip(['O','F','Cl'],atmdata.BVScoeff[BV])) for BV in BVox}
+            pvline = 'Bond Valence sums for: '
         for i,dist in enumerate(Dist):
             line = ''
             for j,angle in enumerate(angles[i][0:i]):
@@ -1034,8 +1044,18 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
                 val = G2mth.ValEsd(dist[3],dist[4])
             else:
                 val = '%8.4f'%(dist[3])
+            if len(BVox):
+                Tatm = G2elem.FixValence(DisAglData['TargAtoms'][dist[0]][2]).split('-')[0]
+                if Tatm in ['O','F','Cl']:
+                    for BV in BVox:
+                        BVS[BV] += np.exp((BVdat[BV][Tatm]-dist[3])/0.37)                
             tunit = '[%2d%2d%2d]'% dist[1]
             MyPrint(('  %8s%10s+(%4d) %12s'%(AtomLabels[dist[0]].ljust(8),tunit.ljust(10),dist[2],val.center(12)))+line.rstrip())
+        if len(BVox):
+            MyPrint(80*'*')
+            for BV in BVox:
+                pvline += ' %s: %.3f  '%(BV,BVS[BV])
+            MyPrint(pvline)
 
 def DisAglTor(DATData):
     'Needs a doc string'

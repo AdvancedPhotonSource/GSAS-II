@@ -223,6 +223,19 @@ end open
     else:
         plistlib.writePlist(d,os.path.join(appPath,"Contents",'Info.plist'))
 
+    # open & save the file in the editor to help set authorization levels
+    osascript = '''
+    tell application "Script Editor"
+       activate
+       set MyName to open "{}"
+       save MyName
+       close MyName
+       quit
+    end tell	
+'''.format(appPath)
+    print(script)
+    subprocess.Popen(["osascript","-e",osascript])
+        
     print("\nCreated "+project+" app ("+str(appPath)+
           ").\nViewing app in Finder so you can drag it to the dock if, you wish.")
     subprocess.call(["open","-R",appPath])

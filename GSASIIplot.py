@@ -8166,6 +8166,19 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Bonds[j].append(-Dx[j]/2.)
         return Bonds
     
+    def SetCursorStatus(newxy,contours=False):
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
+        Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+        rho = G2mth.getRho([Cx,Cy,Cz],mapData)
+        if contours:
+            contlevels = contourSet.get_array()
+            contstr = str(contlevels).strip('[]')
+            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
+        else:
+            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
+    
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -8264,7 +8277,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetSelectedAtoms(pI[1])
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
-            if ct: G2frame.G2plotNB.status.SetStatusText('View point at atom '+atoms[pI[0]][ct-1]+txt,1)
+            if ct: G2frame.G2plotNB.status.SetStatusText('View point at atom '+atoms[pI[1]][ct-1]+txt,1)
             NPkey = True
             
         elif key in ['K'] and generalData['Map']['MapType']:
@@ -8389,7 +8402,21 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     G2phG.FindBondsDrawCell(data,cell)           #rebuild bonds & polygons
                     Draw('key down')                    
                 else:
-                    pass
+                    if key in ['=','-']:    #meaning '+','-'
+                        if key == '=':      #'+'
+                            Zstep = drawingData['Zstep']
+                        else:
+                            Zstep = -drawingData['Zstep']
+                        VP = np.inner(Amat,np.array(drawingData['viewPoint'][0]))
+                        VD = np.inner(Amat,np.array(drawingData['viewDir']))
+                        VD /= np.sqrt(np.sum(VD**2))
+                        VP += Zstep*VD
+                        VP = np.inner(Bmat,VP)
+                        drawingData['viewPoint'][0] = VP
+                        SetViewPointText(VP)                           
+                        Draw('key down')
+                        newxy = event.GetPosition()
+                        SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])                        
             
     def GetTruePosition(xy,Add=False):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
@@ -8493,17 +8520,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
         elif drawingData.get('showSlice',False):
-            View = GL.glGetIntegerv(GL.GL_VIEWPORT)
-            Tx,Ty,Tz = drawingData['viewPoint'][0]
-            tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
-            Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
-            rho = G2mth.getRho([Cx,Cy,Cz],mapData)
-            if drawingData.get('showSlice',False) in [1,3]:
-                contlevels = contourSet.get_array()
-                contstr = str(contlevels).strip('[]')
-                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
-            else:
-                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
+            SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -9188,6 +9205,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 
     def distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot):
         # find and display atoms within atomsExpandRadius A
+        vdWRadii = generalData['vdWRadii']
         vdwScale = drawingData['vdwScale']
         ballScale = drawingData['ballScale']
         xyzA = np.array((x,y,z))
@@ -9689,14 +9707,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2']
     if mapData['MapType']:
-        choice += ['k: contour plot switch',]
-        choice += ['s: map slice colors',]
+        choice += ['k: contour plot switch','s: map slice colors',]
     if mapData.get('Flip',False):
         choice += ['u: roll up','d: roll down','l: roll left','r: roll right']
     else:
         choice += ['n: next','p: previous']
     if generalData['Modulated'] and len(drawAtoms):
         choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
+    else:
+        choice += ['+: pos z-step','-: neg z-step',]
 
     Tx,Ty,Tz = drawingData['viewPoint'][0]
     rho = G2mth.getRho([Tx,Ty,Tz],mapData)

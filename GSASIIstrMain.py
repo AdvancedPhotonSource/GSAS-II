@@ -1054,7 +1054,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         if len(BVox):
             MyPrint(80*'*')
             for BV in BVox:
-                pvline += ' %s: %.3f  '%(BV,BVS[BV])
+                pvline += ' %s: %.2f  '%(BV,BVS[BV])
             MyPrint(pvline)
 
 def DisAglTor(DATData):

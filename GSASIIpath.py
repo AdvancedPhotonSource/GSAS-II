@@ -595,8 +595,26 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         URL = baseURL + filename
     if loadpath:
         fpath = os.path.join(loadpath,rpath,filename)
+        svntmp = os.path.join(loadpath,'.svn','tmp')
     else:
         fpath = os.path.join(path2GSAS2,rpath,filename)
+        svntmp = os.path.join(path2GSAS2,'.svn','tmp')
+    # fix up problems with missing empty directories
+    if not os.path.exists(fpath):
+        print('Repairing missing directory',fpath)
+        cmd = [svn,'revert',fpath]
+        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
+        out,err = MakeByte2str(s.communicate())
+        if out: print(out)
+        if err: print(err)
+    if not os.path.exists(svntmp):
+        print('Repairing missing directory',svntmp)
+        cmd = ['mkdir',svntmp]
+        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
+        out,err = MakeByte2str(s.communicate())
+        if out: print(out)
+        if err: print(err)
+        
     cmd = [svn,'switch',URL,fpath,
            '--non-interactive','--trust-server-cert',
            '--accept','theirs-conflict','--force','-rHEAD']

@@ -30,7 +30,10 @@ import sys
 import platform
 import glob
 import subprocess
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    print("skipping numpy in GSASIIpath")
 g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS'
 'Define the location of the GSAS-II subversion repository'
     

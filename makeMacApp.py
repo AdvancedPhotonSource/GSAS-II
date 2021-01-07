@@ -6,15 +6,15 @@
 This script creates an AppleScript app bundle to launch GSAS-II. The app is
 created in the directory where the GSAS-II script (.../GSASII/GSASII.py) 
 is located. A softlink to Python is created inside that app bundle, 
-but the softlink name is GSAS-II so that GSAS-II shows up as the name 
-of the app rather than  Python in the menu bar, etc. A soft link named 
+but the softlink name is GSAS-II so that "GSAS-II" shows up as the name 
+of the app in the menu bar, etc. rather than "Python". A soft link named 
 GSAS-II.py, referencing the GSASII.py script, is created so that some file 
 menu items also are labeled with GSAS-II (but not the right capitalization, 
 alas). 
 
 This has been tested with several versions of Python interpreters 
 from Anaconda and does not require pythonw (Python.app). It tests to 
-make sure that a wx python script will run inside Python and if not, 
+make sure that a wxpython script will run inside the app but if not, 
 it searches for a pythonw image and tries that. 
 
 Run this script with no arguments or with one or two arguments.
@@ -50,7 +50,7 @@ AppleScript = ''
 GSAS-II python script
 '''
 
-if __name__ == '__main__':
+if __name__ == '__main__' and sys.platform == "darwin":
     project="GSAS-II"
 
     # set scriptdir: find the main GSAS-II script if not on command line

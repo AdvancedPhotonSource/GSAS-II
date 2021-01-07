@@ -29,7 +29,8 @@ Categories=Science;
 def Usage():
     print("\n\tUsage: python "+sys.argv[0]+" [<GSAS-II script>]\n")
     sys.exit()
-if __name__ == '__main__':
+
+if __name__ == '__main__' and sys.platform.startswith('linux'):
     # find the main GSAS-II script if not on command line
     if len(sys.argv) == 1:
         script = os.path.abspath(os.path.join(

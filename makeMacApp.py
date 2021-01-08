@@ -109,7 +109,6 @@ on run
 	TestFilePresent(appwithpath)
 	TestFilePresent(python)
 	tell application "Terminal"
-		activate
 		do script env & python & " " & appwithpath & "; exit"
 	end tell
 end run
@@ -226,7 +225,6 @@ end open
     # open & save the file in the editor to help set authorization levels
     osascript = '''
     tell application "Script Editor"
-       activate
        set MyName to open "{}"
        save MyName
        close MyName

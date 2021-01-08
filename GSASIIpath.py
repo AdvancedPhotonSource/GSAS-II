@@ -750,7 +750,7 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
         #print(filename,wc_rev,file_rev,status,local_status,switched)
     return updatecount,modcount,locked
 
-def GetBinaryPrefix():
+def GetBinaryPrefix(pyver=None):
     if sys.platform == "win32":
         prefix = 'win'
     elif sys.platform == "darwin":
@@ -766,7 +766,10 @@ def GetBinaryPrefix():
         bits = '32'
 
     # format current python version
-    pyver = 'p{}.{}'.format(*sys.version_info[0:2])
+    if pyver:
+        pyver = 'p'+pyver
+    else:
+        pyver = 'p{}.{}'.format(*sys.version_info[0:2])
 
     items = [prefix,bits,pyver]
     return '_'.join(items)

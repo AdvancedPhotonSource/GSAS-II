@@ -8273,11 +8273,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 pI[1] -= 1                    
             pI[1] %= len(atoms)
             Tx,Ty,Tz = atoms[pI[1]][cx:cx+3]
+            rho = G2mth.getRho([Tx,Ty,Tz],mapData)
             txt = ''
             SetSelectedAtoms(pI[1])
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
-            if ct: G2frame.G2plotNB.status.SetStatusText('View point at atom '+atoms[pI[1]][ct-1]+txt,1)
+            if ct:
+                line = 'View point at atom '+atoms[pI[1]][ct-1]+txt
+                if rho:
+                    line += ', density = %.2f'%rho
+                G2frame.G2plotNB.status.SetStatusText(line,1)
             NPkey = True
             
         elif key in ['K'] and generalData['Map']['MapType']:

@@ -102,6 +102,12 @@ if __name__ == '__main__' and sys.platform == "darwin" and os.path.exists(
         subprocess.call(["rm","-rf",appPath])
         subprocess.call(["mkdir","-p",appPath])
         subprocess.call(["tar","xzvf",os.path.join(path2GSAS,"g2app.tar.gz"),'-C',appPath])
+        # create a link named GSAS-II.py to the script
+        newScript = os.path.join(path2GSAS,'GSAS-II.py')
+        if os.path.exists(newScript): # cleanup
+            print("\nRemoving sym link",newScript)
+            os.remove(newScript)
+        os.symlink(os.path.split(script)[1],newScript)
         print("\nCreated "+projectname+" app ("+str(appPath)+
           ").\nViewing app in Finder so you can drag it to the dock if, you wish.")
         subprocess.call(["open","-R",appPath])

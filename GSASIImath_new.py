@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2020-12-12 13:30:31 -0600 (Sat, 12 Dec 2020) $
+# $Date: 2021-01-04 10:41:46 -0600 (Mon, 04 Jan 2021) $
 # $Author: vondreele $
-# $Revision: 4671 $
+# $Revision: 4709 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 4671 2020-12-12 19:30:31Z vondreele $
+# $Id: GSASIImath.py 4709 2021-01-04 16:41:46Z vondreele $
 ########### SVN repository information ###################
 '''
 *GSASIImath: computation module*
@@ -23,7 +23,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 4671 $")
+GSASIIpath.SetVersionNumber("$Revision: 4709 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -101,7 +101,6 @@ def pinv(a, rcond=1e-15 ):
     cutoff = rcond*np.maximum.reduce(s)
     s = np.where(s>cutoff,1./s,0.)
     nzero = s.shape[0]-np.count_nonzero(s)
-#    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis], np.transpose(u)))
     res = np.dot(vt.T,s[:,nxs]*u.T)
     return res,nzero
 
@@ -124,8 +123,6 @@ def dropTerms(bad, hessian, indices, *vectors):
     for v in vectors:
         out.append(np.delete(v,bad))
     return out
-
-        
         
 def setHcorr(info,Amat,xtol,problem=False):
     Adiag = np.sqrt(np.diag(Amat))
@@ -232,8 +229,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if len(psing):
             G2fil.G2Print('ouch #1 dropping singularities for variable(s) #{}'.format(
                 psing), mode='warn')
-            Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,
-                                        Amat, indices, Xvec, Yvec, Adiag)
+            Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
         Anorm = np.outer(Adiag,Adiag)        # normalize matrix & vector
         Yvec /= Adiag
         Amat /= Anorm
@@ -252,9 +248,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 if not len(psing): # make sure at least the worst term is removed
                     psing = [np.argmin(d)]
                 G2fil.G2Print('ouch #2 bad SVD inversion; dropping terms for for variable(s) #{}'.
-                                  format(psing), mode='warn')
-                Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,
-                                        Amat, indices, Xvec, Yvec, Adiag)
+                    format(psing), mode='warn')
+                Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
                 if loops < maxdrop: continue # try again, same lam but fewer vars
                 G2fil.G2Print('giving up with ouch #2', mode='error')
                 info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros}
@@ -268,13 +263,12 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 if not len(psing): # make sure at least the worst term is removed
                     psing = [np.argmin(d)]
                 G2fil.G2Print('{} SVD Zeros: dropping terms for for variable(s) #{}'.
-                                  format(Nzeros,psing), mode='warn')
-                Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,
-                                        Amat, indices, Xvec, Yvec, Adiag)
+                    format(Nzeros,psing), mode='warn')
+                Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
                 Amatlam = Amat*(1.+np.eye(Amat.shape[0])*lam)
                 Ainv,nz = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
                 if nz > 0: G2fil.G2Print('Note: there are {} new SVD Zeros after drop'.format(nz),
-                                             mode='warn')
+                    mode='warn')
             Xvec = np.inner(Ainv,Yvec)/Adiag      #solve for LS terms
             XvecAll[indices] = Xvec         # expand
             try:
@@ -284,8 +278,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 G2fil.G2Print(Msg.msg,mode='warn')
                 loops += 1
                 d = np.abs(np.diag(nl.qr(Amatlam)[1]))
-                G2fil.G2Print('ouch #3 unable to evaluate objective function;',
-                                      mode='error')
+                G2fil.G2Print('ouch #3 unable to evaluate objective function;',mode='error')
                 info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros}
                 info['psing'] = [i for i in range(n) if i not in indices]
                 try:         # try to report highly correlated parameters from full Hessian
@@ -309,10 +302,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                     lam *= 10.
                 if Print:
                     G2fil.G2Print(('divergence: chi^2 %.5g on %d obs. (%d SVD zeros)\n'+
-                                    '\tincreasing Marquardt lambda to %.1e')%(chisq1,Nobs,Nzeros,lam))
+                        '\tincreasing Marquardt lambda to %.1e')%(chisq1,Nobs,Nzeros,lam))
                 if lam > 10.:
                     G2fil.G2Print('ouch #4 stuck: chisq-new %.4g > chisq0 %.4g with lambda %.1g'%
-                                  (chisq1,chisq0,lam), mode='warn')
+                        (chisq1,chisq0,lam), mode='warn')
                     try:         # report highly correlated parameters from full Hessian, if we can
                         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,
                          'Converged':False, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00}
@@ -368,7 +361,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     try:         # report highly correlated parameters from full Hessian, if we can
         Bmat,Nzeros = setHcorr(info,Amat,xtol,problem=False)
         info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,'psing':psing_prev,
-                         'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
+            'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
         return [x0,Bmat,info]
     except nl.LinAlgError:
         G2fil.G2Print('Warning: Hessian too ill-conditioned to get full covariance matrix')
@@ -402,8 +395,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             psing = list(np.where(d <= sorted(d)[Nzeros-1])[0])
         if Print:
             G2fil.G2Print('Found %d SVD zeros w/o Lambda. '+
-                              'Likely problem with variable(s) #%s'%
-                              (Nzeros,psing), mode='warn')
+                'Likely problem with variable(s) #%s'%(Nzeros,psing), mode='warn')
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
     # expand Bmat by filling with zeros if columns have been dropped
     psing = [i for i in range(n) if i not in indices]
@@ -411,7 +403,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         ins = [j-i for i,j in enumerate(psing)]
         Bmat = np.insert(np.insert(Bmat,ins,0,1),ins,0,0)
     info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,
-                         'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
+        'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
     info['psing'] = [i for i in range(n) if i not in indices]
     return [x0,Bmat,info]
             
@@ -491,7 +483,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         try:
             Ainv,Nzeros = pinv(Amat,xtol)    #do Moore-Penrose inversion (via SVD)
         except nl.LinAlgError:
-            G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization', mode='error')
+            G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization', mode='warn')
             psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
         Xvec = np.inner(Ainv,Yvec)      #solve
@@ -517,17 +509,18 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Anorm = np.outer(Adiag,Adiag)
     Amat = Amat/Anorm        
     try:
-        Bmat,Nzeros = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-        G2fil.G2Print('Found %d SVD zeros'%(Nzeros), mode='warn')
+        Bmat,Nzero = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
+        G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
+#        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':[],
-            'SVD0':Nzeros,'Converged': ifConverged, 'DelChi2':deltaChi2,
+            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2,
                              'chisq0':chisq00}]
     except nl.LinAlgError:
         G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
-            psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
+            psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1,
                              'chisq0':chisq00}]
             

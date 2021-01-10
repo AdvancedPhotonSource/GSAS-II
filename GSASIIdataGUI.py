@@ -8577,7 +8577,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         but = wx.Button(G2frame.dataWindow,wx.ID_ANY,"Edit range")
         but.Bind(wx.EVT_BUTTON,onEditSimRange)
         mainSizer.Add(simSizer)
-        mainSizer.Add(but,0,WACV)
+        mainSizer.Add(but,0)
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))

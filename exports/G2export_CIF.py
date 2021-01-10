@@ -2938,7 +2938,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 txt = wx.StaticText(self,wx.ID_ANY,str(i+1))
                 fbox.Add(txt,(i+2,0))
             line = wx.StaticLine(self,wx.ID_ANY, size=(-1,3), style=wx.LI_HORIZONTAL)
-            vbox.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+            vbox.Add(line, 0, wx.EXPAND|wx.ALL, 10)
 
         # post the non-looped CIF items
         for item in sorted(self.cifblk.keys()):

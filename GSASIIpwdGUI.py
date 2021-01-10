@@ -1702,10 +1702,10 @@ def UpdateBackground(G2frame,data):
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background used in refinement'),0,WACV)
-    # add help button to bring up help web page - at right sede of window
-    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    # add help button to bring up help web page - at right side of window
+    topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(BackSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
@@ -1790,10 +1790,10 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         mainSizer = G2frame.dataWindow.GetSizer()
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
-        # add help button to bring up help web page - at right sede of window
-        topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        # add help button to bring up help web page - at right side of window
+        topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+        mainSizer.Add(topSizer,0,wx.EXPAND)
         mainSizer.Add((5,5))
         mainSizer.Add(LimitSizer())
         if len(data)>2:
@@ -2202,10 +2202,10 @@ def UpdateInstrumentGrid(G2frame,data):
             insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
         subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text),0,WACV)
-        # add help button to bring up help web page - at right sede of window
-        subSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        # add help button to bring up help web page - at right side of window
+        subSizer.Add((-1,-1),1,wx.EXPAND)
         subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(subSizer,0,WACV|wx.EXPAND)
+        mainSizer.Add(subSizer,0,wx.EXPAND)
 #        mainSizer.Add(subSizer)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
@@ -2941,10 +2941,10 @@ def UpdateSampleGrid(G2frame,data):
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
-    # add help button to bring up help web page - at right sede of window
-    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    # add help button to bring up help web page - at right side of window
+    topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     nameSizer = wx.BoxSizer(wx.HORIZONTAL)
     nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Instrument Name '),0,WACV)
     nameSizer.Add((-1,-1),1,WACV)
@@ -2952,7 +2952,7 @@ def UpdateSampleGrid(G2frame,data):
         size=(200,-1),style=wx.TE_PROCESS_ENTER)        
     nameSizer.Add(instNameVal)
     instNameVal.Bind(wx.EVT_CHAR,OnNameVal)
-    mainSizer.Add(nameSizer,0,WACV)
+    mainSizer.Add(nameSizer,0)
     mainSizer.Add((5,5),0)
     labelLst.append('Instrument Name')
     elemKeysLst.append(['InstrName'])
@@ -2971,7 +2971,7 @@ def UpdateSampleGrid(G2frame,data):
                     strLoc=data,strKey='Type',
                     onChoice=OnHistoChange)
         nameSizer.Add(histoType)
-        mainSizer.Add(nameSizer,0,WACV)
+        mainSizer.Add(nameSizer,0)
         mainSizer.Add((5,5),0)
 
     parmSizer = wx.FlexGridSizer(0,2,5,0)
@@ -2980,14 +2980,14 @@ def UpdateSampleGrid(G2frame,data):
         dspLst.append(nDig)
         if 'list' in str(type(data[key])):
             parmRef = G2G.G2CheckBox(G2frame.dataWindow,' '+lbl,data[key],1)
-            parmSizer.Add(parmRef,0,WACV|wx.EXPAND)
+            parmSizer.Add(parmRef,0,wx.EXPAND)
             parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[key],0,
                 nDig=nDig,typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key,0])
             refFlgElem.append([key,1])
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' '+lbl),
-                0,WACV|wx.EXPAND)
+                0,wx.EXPAND)
             parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,key,
                 typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key])
@@ -4413,10 +4413,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
-    # add help button to bring up help web page - at right sede of window
-    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    # add help button to bring up help web page - at right side of window
+    topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(0,5,5,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
@@ -4435,7 +4435,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),
-        0,WACV)
+        0)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(0,5,5,5)
     bravList = []
@@ -4455,7 +4455,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,WACV)    
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' cell step ',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' cell step ',style=wx.ALIGN_RIGHT),0,WACV)
     shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
     shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
     shiftSel.SetSelection(3)
@@ -6267,13 +6267,13 @@ def UpdateModelsGrid(G2frame,data):
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
         G2frame.dataWindow.SasSeqFit.Enable(True)
-        mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+        mainSizer.Add(PartSizer(),1,wx.EXPAND)
     elif 'Pair' in data['Current']:
         G2frame.dataWindow.SasSeqFit.Enable(False)
-        mainSizer.Add(PairSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+        mainSizer.Add(PairSizer(),1,wx.EXPAND)
     elif 'Shape' in data['Current']:
         G2frame.dataWindow.SasSeqFit.Enable(False)
-        mainSizer.Add(ShapesSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+        mainSizer.Add(ShapesSizer(),1,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background:'),0,WACV)
@@ -7220,7 +7220,7 @@ def UpdatePDFGrid(G2frame,data):
         backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'BackRatio',nDig=(10,3),xmin=0.0,xmax=1.0,
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         bkBox.Add(backVal,0,WACV)    
-        sfgSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+        sfgSizer.Add(bkBox,0,wx.EXPAND)
 
         if 'XC' in inst['Type'][0]:
             sqBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -7232,7 +7232,7 @@ def UpdatePDFGrid(G2frame,data):
             rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Ruland',nDig=(10,3),xmin=0.001,xmax=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(rulandWdt,0,WACV)    
-            sfgSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+            sfgSizer.Add(sqBox,0,wx.EXPAND)
         
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Scaling Q-range: '),0,WACV)

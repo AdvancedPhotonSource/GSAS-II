@@ -10814,10 +10814,10 @@ def SetupLegendPick(legend,new,delay=5):
         # bug: legend items with single markers don't seem to respond to a "pick"
     #GSASIIpath.IPyBreak()
     for txt in legend.get_texts():
-        if mplv[0] >= 3 and mplv[1] >= 3:
-            txt.set_pickradius(4)
-        else:
+        try: # as of MPL 3.3.2 this has not changed
             txt.set_picker(4)
+        except AttributeError:
+            txt.set_pickradius(4)
     if new:
         legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
         

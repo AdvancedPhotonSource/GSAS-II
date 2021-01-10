@@ -1916,7 +1916,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         hSizer.Add((5,5),0)
         btn = wx.Button(GeneralRestr, wx.ID_ANY,"Add restraint")
         btn.Bind(wx.EVT_BUTTON,OnAddRestraint)
-        hSizer.Add(btn,0,wx.ALIGN_CENTER|wx.EXPAND|wx.ALL)
+        hSizer.Add(btn,0,wx.EXPAND|wx.ALL)
         mainSizer.Add(hSizer,0)
         mainSizer.Add((5,5),0)
         if generalRestData['General']:

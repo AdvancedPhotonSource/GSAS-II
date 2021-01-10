@@ -8990,10 +8990,10 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(drawOptions,label=' Drawing controls:'),0,WACV)
-        # add help button to bring up help web page - at right sede of window
-        topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        # add help button to bring up help web page - at right side of window
+        topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(drawOptions,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+        mainSizer.Add(topSizer,0,wx.EXPAND)
         mainSizer.Add(SlopSizer(),0)
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(ShowSizer(),0,)
@@ -9308,7 +9308,7 @@ def UpdatePhaseData(G2frame,Item,data):
             ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
             0,WACV)
         # add help button to bring up help web page - at right sede of window
-        titleSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+        titleSizer.Add((-1,-1),1,wx.EXPAND)
         titleSizer.Add(G2G.HelpButton(Texture,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(titleSizer,0,wx.EXPAND)
         mainSizer.Add((0,5),0)
@@ -11518,9 +11518,9 @@ of the crystal structure.
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             topSizer.Add(wx.StaticText(G2frame.MCSA,label='MC/SA models:'),0,WACV)
             # add help button to bring up help web page - at right sede of window
-            topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
             topSizer.Add(G2G.HelpButton(G2frame.MCSA,helpIndex=G2frame.dataWindow.helpKey))
-            mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
+            mainSizer.Add(topSizer,0,wx.EXPAND)
             mainSizer.Add((5,5),0)
             rbNames = []
             rbids = []

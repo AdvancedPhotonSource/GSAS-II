@@ -223,7 +223,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             sig = np.sqrt(np.diag(covMatrix))
             Lastshft = result[2].get('Xvec',None)
             if Lastshft is None:
-                Rvals['Max shft/sig'] = 0.0
+                Rvals['Max shft/sig'] = None
             else:
                 Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
             if np.any(np.isnan(sig)) or not sig.shape:

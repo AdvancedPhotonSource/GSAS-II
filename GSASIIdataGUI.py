@@ -5181,14 +5181,15 @@ class GSASII(wx.Frame):
 #            wx.Yield()
         if OK:
             Rw = Rvals['Rwp']
-            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Max delt/sig = %.3f'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'],Rvals['Max shft/sig'])
+            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'])
             lamMax = Rvals.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'
             if 'GOF0' in Rvals and 'GOF' in Rvals:
                 text += '\nFinal Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
                     Rvals['GOF']**2,Rvals['GOF0']**2)
-            if 'Max shft/sig' in Rvals:
+            if Rvals.get('Max shft/sig') is not None:
+                rtext += ', Max delt/sig = {:.3f}'.format(Rvals['Max shft/sig'])
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
             if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
             if lamMax >= 10.:
@@ -8855,7 +8856,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
                     Rvals['Nobs'],Nvars,Rvals.get('SVD0',0.))
-                text += '\n\tmax shift/esd = {:.3f}'.format(Rvals.get('Max shft/sig',0.0))
+                if Rvals.get('Max shft/sig') is not None:
+                    text += '\n\tmax shift/esd = {:.3f}'.format(Rvals['Max shft/sig'])
                 if 'lamMax' in Rvals:
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?

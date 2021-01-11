@@ -212,8 +212,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     if n == 0:
         info = {'num cyc':0,'fvec':M2,'nfev':1,'lamMax':0,'psing':[],'SVD0':0}
         info['msg'] = 'no variables: skipping refinement\n'
-        info.update({'Converged':True, 'DelChi2':0, 'Xvec':[], 'chisq0':chisq00})
-        return [x0,[],info]
+        info.update({'Converged':True, 'DelChi2':0, 'Xvec':None, 'chisq0':chisq00})
+        return [x0,np.array([]),info]
     indices = range(n)
     while icycle < maxcyc:
         M = M2
@@ -363,7 +363,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     try:         # report highly correlated parameters from full Hessian, if we can
         Bmat,Nzeros = setHcorr(info,Amat,xtol,problem=False)
         info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,'psing':psing_prev,
-            'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
+            'Converged':ifConverged, 'DelChi2':deltaChi2, 'chisq0':chisq00})
+        if icycle > 0: info.update({'Xvec':XvecAll})
         return [x0,Bmat,info]
     except nl.LinAlgError:
         G2fil.G2Print('Warning: Hessian too ill-conditioned to get full covariance matrix')

@@ -212,7 +212,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     if n == 0:
         info = {'num cyc':0,'fvec':M2,'nfev':1,'lamMax':0,'psing':[],'SVD0':0}
         info['msg'] = 'no variables: skipping refinement\n'
-        return [x0,None,info]
+        info.update({'Converged':True, 'DelChi2':0, 'Xvec':[], 'chisq0':chisq00})
+        return [x0,[],info]
+    indices = range(n)
     while icycle < maxcyc:
         M = M2
         time0 = time.time()

@@ -240,7 +240,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     def onClose(event):
         dlg.EndModal(wx.ID_OK)
     mainsizer = wx.BoxSizer(wx.VERTICAL)
-    h,w = Image.shape[:2]
+    h,w = Image.size[:2]
     mainsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'File '+str(filename)+'\nImage size: '+str(h)+' x '+str(w)),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     

@@ -6228,7 +6228,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'wxID_RELOADDRAWATOMS', 'wxID_ATOMSDISAGL', 'wxID_ATOMMOVE', 'wxID_MAKEMOLECULE',
             'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM',
             'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST', 
-            'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL','wxID_ATOMFRACSPLIT',)
+            'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL','wxID_ATOMFRACSPLIT','wxID_COLLECTATOMS')
         self.AtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.AtomsMenu)
         self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6252,6 +6252,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.AtomEdit.Append(G2G.wxID_UPDATEHATOM,'Update H atoms','Update H atoms in standard positions')
         self.AtomEdit.Append(G2G.wxID_ATOMMOVE,'Move selected atom to view point','Select a single atom to be moved to view point in plot')
         self.AtomEdit.Append(G2G.wxID_MAKEMOLECULE,'Assemble molecule','Select a single atom to assemble as a molecule from scattered atom positions')
+        self.AtomEdit.Append(G2G.wxID_COLLECTATOMS,'Collect atoms','Collect selected atoms to specified unit cell location')
         self.AtomEdit.Append(G2G.wxID_RELOADDRAWATOMS,'Reload draw atoms','Reload atom drawing list')
         submenu = wx.Menu()
         self.AtomEdit.AppendSubMenu(submenu,'Reimport atoms','Reimport atoms from file; sequence must match')

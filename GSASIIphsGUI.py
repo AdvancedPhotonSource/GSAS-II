@@ -1198,19 +1198,6 @@ def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False):
     dlg.Destroy()
     return indx
 
-def getAtomPtrs(data,draw=False):
-    ''' get atom data pointers cx,ct,cs,cia in Atoms or Draw Atoms lists
-    NB:may not match column numbers in displayed table
-    
-        param: dict: data phase data structure
-        draw: boolean True if Draw Atoms list pointers are required
-        return: cx,ct,cs,cia pointers to atom xyz, type, site sym, uiso/aniso flag
-    '''
-    if draw:
-        return data['Drawing']['atomPtrs']
-    else:
-        return data['General']['AtomPtrs']
-
 def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
     if mainSizer is not None:
         phasePage.SetSizer(mainSizer)
@@ -3649,7 +3636,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnAtomInsert(event):
         '''Inserts a new atom into list immediately before every selected atom
         '''
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         for a in reversed(sorted(indx)):
             AtomInsert(a,0.,0.,0.)
@@ -3670,7 +3657,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnHydAtomAdd(event):
         '''Adds H atoms to fill out coordination sphere for selected atoms
         '''
-        cx,ct,cs,cia = getAtomPtrs(data)      
+        cx,ct,cs,cia = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         DisAglCtls = {}
@@ -3793,7 +3780,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
         
     def OnAtomMove(event):
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         drawData = data['Drawing']
         atomData = data['Atoms']
@@ -3840,7 +3827,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomDelete(event):
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms)
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         HydIds = data['General']['HydIds']
@@ -3876,7 +3863,7 @@ def UpdatePhaseData(G2frame,Item,data):
         event.StopPropagation()
         
     def AtomRefine(event):
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
@@ -3901,7 +3888,7 @@ def UpdatePhaseData(G2frame,Item,data):
         dlg.Destroy()
 
     def AtomModify(event):
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         atomData = data['Atoms']
@@ -4012,7 +3999,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def AtomTransform(event):
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if not indx: return
         generalData = data['General']
@@ -4082,7 +4069,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
 #            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
-#        cx,ct,cs,ci = getAtomPtrs(data)      
+#        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
 #        indx = getAtomSelections(Atoms,ct-1)
 #        if indx:
 #            generalData = data['General']
@@ -4125,9 +4112,29 @@ def UpdatePhaseData(G2frame,Item,data):
 #        else:
 #            print "select one or more rows of atoms"
 #            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
+
+    def CollectAtoms(event):
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
+        Ind = getAtomSelections(Atoms,ct-1)
+        if Ind:
+            choice = ['x=0','y=0','z=0','origin','center']
+            dlg = wx.SingleChoiceDialog(G2frame,'Atoms closest to:','Select',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()+1
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            wx.BeginBusyCursor()
+            data['Atoms'] = G2mth.AtomsCollect(data,Ind,sel)
+            wx.EndBusyCursor()
+            Atoms.ClearSelection()
+            data['Drawing']['Atoms'] = []
+            OnReloadDrawAtoms(event)            
+            FillAtomsGrid(Atoms)
                 
     def MakeMolecule(event):      
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         DisAglCtls = {}
         if indx is not None and len(indx) == 1:
@@ -4180,7 +4187,7 @@ def UpdatePhaseData(G2frame,Item,data):
         
     def OnDistAngle(event,fp=None,hist=False):
         'Compute distances and angles'    
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         Oxyz = []
         xyz = []
@@ -4251,7 +4258,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
     def OnFracSplit(event):
         'Split atom frac accordintg to atom type & refined site fraction'    
-        cx,ct,cs,ci = getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms,ct-1)
         if indx:
             atomData = data['Atoms']
@@ -7443,7 +7450,7 @@ def UpdatePhaseData(G2frame,Item,data):
         drawingData['Atoms'].append(MakeDrawAtom(data,atom))
         
     def OnRestraint(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx = drawAtoms.GetSelectedRows()
@@ -7499,7 +7506,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
     def OnDefineRB(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx.sort()
@@ -7762,7 +7769,7 @@ def UpdatePhaseData(G2frame,Item,data):
         drawAtoms.ClearSelection()
 
     def DrawAtomStyle(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         generalData = data['General']
@@ -7784,7 +7791,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomLabel(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         generalData = data['General']
@@ -7804,7 +7811,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
             
     def DrawAtomColor(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         if len(indx) > 1:
@@ -7864,7 +7871,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)         
         
     def SetViewPoint(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         atomData = data['Drawing']['Atoms']
@@ -7880,7 +7887,7 @@ def UpdatePhaseData(G2frame,Item,data):
             return True
                 
     def AddSymEquiv(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         indx.sort()
@@ -7935,7 +7942,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotStructure(G2frame,data)
             
     def AddSphere(event):
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1,'as center of sphere addition',
                                      includeView=True)
         if not indx: return
@@ -8134,7 +8141,7 @@ def UpdatePhaseData(G2frame,Item,data):
         time1 = time.time()
         added = 0
         targets = [item for item in atomTypes if params[item]]
-        cx,ct,cs,ci = getAtomPtrs(data,draw=True)
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)
         rep = 0
         allrep = 0
         while True:
@@ -12681,6 +12688,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2G.wxID_UPDATEHATOM)
         G2frame.Bind(wx.EVT_MENU, OnAtomMove, id=G2G.wxID_ATOMMOVE)
         G2frame.Bind(wx.EVT_MENU, MakeMolecule, id=G2G.wxID_MAKEMOLECULE)
+        G2frame.Bind(wx.EVT_MENU, CollectAtoms, id=G2G.wxID_COLLECTATOMS)
         G2frame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2G.wxID_RELOADDRAWATOMS)
         G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)

@@ -557,6 +557,19 @@ def getVCov(varyNames,varyList,covMatrix):
 ##### Atom manipulations
 ################################################################################
 
+def getAtomPtrs(data,draw=False):
+    ''' get atom data pointers cx,ct,cs,cia in Atoms or Draw Atoms lists
+    NB:may not match column numbers in displayed table
+    
+        param: dict: data phase data structure
+        draw: boolean True if Draw Atoms list pointers are required
+        return: cx,ct,cs,cia pointers to atom xyz, type, site sym, uiso/aniso flag
+    '''
+    if draw:
+        return data['Drawing']['atomPtrs']
+    else:
+        return data['General']['AtomPtrs']
+
 def FindMolecule(ind,generalData,atomData):                    #uses numpy & masks - very fast even for proteins!
 
     def getNeighbors(atom,radius):
@@ -751,9 +764,9 @@ def ApplySeqData(data,seqData):
     '''
     generalData = data['General']
     SGData = generalData['SGData']
-    cx,ct,cs,cia = generalData['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(data)
     drawingData = data['Drawing']
-    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    dcx,dct,dcs,dci = getAtomPtrs(data,True)
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
     pId = data['pId']
@@ -784,7 +797,7 @@ def ApplySeqData(data,seqData):
     
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(phase)
     Atoms = phase['Atoms']
     atNames = [atom[ct-1] for atom in Atoms]
     Cell = General['Cell'][1:7]
@@ -872,7 +885,7 @@ def FindTetrahedron(results):
     
 def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     General = phase['General']
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(phase)
     Atoms = phase['Atoms']
     atNames = [atom[ct-1] for atom in Atoms]
     atTypes = [atom[ct] for atom in Atoms]
@@ -1884,10 +1897,10 @@ def ApplyModulation(data,tau):
     G,g = G2lat.cell2Gmat(cell)
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
-    cx,ct,cs,cia = generalData['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(data)
     drawingData = data['Drawing']
     modul = generalData['SuperVec'][0]
-    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    dcx,dct,dcs,dci = getAtomPtrs(data,True)
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
     Fade = np.ones(len(drawAtoms))
@@ -2942,7 +2955,7 @@ def validProtein(Phase,old):
     avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
     Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(data)
     Atoms = Phase['Atoms']
     cartAtoms = []
     xyzmin = 999.*np.ones(3)
@@ -4147,6 +4160,45 @@ def PeaksUnique(data,Ind,Sel):
             Unique.append(icntr)
     return Unique
 
+def AtomsCollect(data,Ind,Sel):
+    '''Finds the symmetry set of atoms for those selected. Selects
+    the one closest to the selected part of the unit cell. 
+    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
+    GSASIIphsGUI.py,
+
+    :param data: the phase data structure
+    :param list Ind: list of selected peak indices
+    :param int Sel: selected part of unit to find atoms closest to
+
+    :returns: the list of symmetry unique peaks from among those given in Ind
+    '''        
+    cx,ct,cs,ci = getAtomPtrs(data) 
+    cent = np.ones(3)*.5     
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    SGData = generalData['SGData']
+    Atoms = copy.deepcopy(data['Atoms'])
+    Indx = [True for ind in Ind]
+    # scan through peaks, finding all peaks equivalent to peak ind
+    for ind in Ind:
+        if Indx[ind]:
+            xyz = Atoms[ind][cx:cx+3]
+            uij = Atoms[ind][ci+2:ci+8]
+            if Atoms[ind][ci] == 'A':
+                Equiv = list(G2spc.GenAtom(xyz,SGData,Uij=uij))
+                Uijs = np.array([x[1] for x in Equiv])
+            else:
+                Equiv = G2spc.GenAtom(xyz,SGData)
+            xyzs = np.array([x[0] for x in Equiv])
+            dzeros = np.sqrt(np.sum(np.inner(Amat,xyzs)**2,axis=0))
+            dcent = np.sqrt(np.sum(np.inner(Amat,xyzs-cent)**2,axis=0))
+            xyzs = np.hstack((xyzs,dzeros[:,nxs],dcent[:,nxs]))
+            cind = np.argmin(xyzs.T[Sel-1])
+            Atoms[ind][cx:cx+3] = xyzs[cind][:3]
+            if Atoms[ind][ci] == 'A':
+                Atoms[ind][ci+2:ci+8] = Uijs[cind]
+    return Atoms
+
 ################################################################################
 ##### Dysnomia setup & return stuff
 ################################################################################
@@ -5060,7 +5112,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     SGMT = np.array([SGData['SGOps'][i][0].T for i in range(len(SGData['SGOps']))])
     SGT = np.array([SGData['SGOps'][i][1] for i in range(len(SGData['SGOps']))])
     fixAtoms = data['Atoms']                       #if any
-    cx,ct,cs = generalData['AtomPtrs'][:3]
+    cx,ct,cs = getAtomPtrs(data)[:3]
     aTypes = set([])
     parmDict = {'Bmat':Bmat,'Gmat':Gmat}
     varyList = []

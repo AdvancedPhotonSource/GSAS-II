@@ -68,27 +68,13 @@ class TIF_ReaderClass(G2obj.ImportImage):
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:
             G2fil.G2Print("GetTifData failed to read "+str(filename)+" Trying PIL")
-#            import scipy.misc
-#            self.Image = scipy.misc.imread(filename,flatten=True)
             import PIL.Image as PI
             self.Image = PI.open(filename,mode='r')
-#            self.Image.shape = self.Image.size
-            # for scipy 1.2 & later  scipy.misc.imread will be removed
-            # with note to use imageio.imread instead 
-            # (N.B. scipy.misc.imread uses PIL/pillow perhaps better to just use pillow)
             self.Npix = self.Image.size
             if ParentFrame:
                 self.SciPy = True
                 self.Comments = ['no metadata']
                 self.Data = {'wavelength': 0.1, 'pixelSize': [200., 200.], 'distance': 100.0}
-                # try:        #as suggested by Adam Creuziger 1/12/2021
-                #     self.Data['size'] = list(self.Image.shape)
-                # except:
-                #     self.Data['size'] = list(self.Image.size)
-                # try:
-                #     self.Data['center'] = [int(i/2) for i in self.Image.shape]
-                # except:
-                #     self.Data['center'] = [int(i/2) for i in self.Image.size]  
                 self.Data['size'] = list(self.Image.size)
                 self.Data['center'] = [int(i/2) for i in self.Image.size]
         if self.Npix == 0:

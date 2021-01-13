@@ -8451,11 +8451,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             return
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms
-            cx,ct,cs,cia = G2phG.getAtomPtrs(data,True)
+            cx,ct,cs,cia = G2mth.getAtomPtrs(data,True)
             cs -= 1  #cs points at style for drawings; want sytsym         
         else:
             atomList = data['Atoms']
-            cx,ct,cs,ciax = G2phG.getAtomPtrs(data)
+            cx,ct,cs,ciax = G2mth.getAtomPtrs(data)
         for i,atom in enumerate(atomList):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
@@ -9214,7 +9214,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         vdwScale = drawingData['vdwScale']
         ballScale = drawingData['ballScale']
         xyzA = np.array((x,y,z))
-        cx,ct,cs,ci = G2phG.getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         cellArray = G2lat.CellBlock(1)
         radDict = dict(zip(*G2phG.getAtomRadii(data)))
         Names = []

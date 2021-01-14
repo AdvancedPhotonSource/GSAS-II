@@ -98,9 +98,9 @@ class TextElement(object):
         
     #---Functions
     
-    def draw_text(self, position = wx.Point(0,0), scale = 1.0, rotation = 0):
+    def draw_text(self, position = wx.RealPoint(0.,0.), scale = 1.0, rotation = 0):
         """
-        position (wx.Point)    - x/y Position to draw in scene
+        position (wx.RealPoint)    - x/y Position to draw in scene
         scale    (float)       - Scale
         rotation (int)         - Rotation in degree
         
@@ -120,7 +120,7 @@ class TextElement(object):
         w , h  = self._texture_size
         #Perform transformations
         GL.glPushMatrix()
-        GL.glTranslated(position.x, position.y, 0)
+        GL.glTranslatef(position.x, position.y, 0)
         GL.glRotate(-rotation, 0, 0, 1)
         GL.glScaled(scale, scale, scale)
         if self._centered:
@@ -414,9 +414,9 @@ class Text(object):
     
     #---Functions
         
-    def draw_text(self, position = wx.Point(0,0), scale = 1.0, rotation = 0):
+    def draw_text(self, position = wx.RealPoint(0.,0.), scale = 1.0, rotation = 0):
         """
-        position (wx.Point)    - x/y Position to draw in scene
+        position (wx.RealPoint)    - x/y Position to draw in scene
         scale    (float)       - Scale
         rotation (int)         - Rotation in degree
         

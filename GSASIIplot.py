@@ -9152,7 +9152,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()        
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         
-    def RenderLabel(x,y,z,label,r,color,matRot):
+    def RenderLabel(x,y,z,label,r,color,matRot,offset=wx.RealPoint(0.,0.)):
         '''
         color wx.Colour object
         '''       
@@ -9164,7 +9164,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glMultMatrixf(matRot)
         GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.Text(text='   '+label,font=Font,foreground=color)
-        text.draw_text(scale=0.025)
+        text.draw_text(scale=0.025,position=offset)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
          
@@ -9249,7 +9249,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         lbl = '{:.2f}'.format(dist)
                         RenderLabel(lx,ly,lz,lbl,radius,wxGreen,matRot)
                         ax,ay,az = xyz
-                        RenderLabel(ax,ay,az,'  '+atomB[0],radius,wxGreen,matRot)
+                        RenderLabel(ax,ay,az,atomB[0],radius,wxGreen,matRot,offset=wx.RealPoint(0.,-.5))
         # find bonds
         bondData = [[] for i in range(len(Atoms))]
         Atoms = np.array(Atoms)

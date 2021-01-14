@@ -1107,33 +1107,49 @@ be specified.
 Installation of GSASIIscriptable
 =======================================
 
-It is assumed that most people using GSASIIscriptable will also want to use the GUI, noting that not all GSAS-II capabilities are not available by scripting (yet) and some would not make sense to implement without a graphical view of the data, for this the standard 
+It is assumed that most people using GSASIIscriptable will also want to use the GUI, for this the standard 
 `installation instructions <https://subversion.xray.aps.anl.gov/trac/pyGSAS#Installationinstructions>`_ should be followed. The GUI includes all files needed to run scriptable. 
+Noting that not all GSAS-II capabilities are not available 
+by scripting -- yet. Even if the scripting API were to be fully completed, 
+there will still be some things that GSAS-II does
+with the GUI would be almost impossible to implement without a 
+interactive graphical view of the data.
 
-There may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server. As `described here
-<https://gsas-ii.readthedocs.io/en/latest/packages.html#scripting-requirements>'_ the minimal python requirements are only numpy and scipy. It is assumed that 
+Nonetheless, there may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server. As `described here
+<https://gsas-ii.readthedocs.io/en/latest/packages.html#scripting-requirements>`_ the minimal python requirements are only numpy and scipy. It is assumed that 
 anyone able to use scripting is well posed to install from the command line. 
 Below are example commands to install GSAS-II for use for scripting only.
 
-.. code-block::  bash
-
-    bash ~/Downloads/Miniconda3-latest-MacOSX-x86_64.sh -b -p /loc/pyg2script
-    source /loc/pyg2script/bin/activate
-    conda install numpy scipy matplotlib pillow h5py hdf5 svn
-    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
-    python /loc/GSASII/GSASIIscriptable.py
-
-Some discussion on these commands follows. Note I have chosen to use the free 
+Installing a minimal Python configuration: Note I have chosen below 
+to use the free 
 miniconda installer from Anaconda, Inc., but there are also plenty of 
 other ways to install Python, Numpy and Scipy on Linux, Windows and MacOS. 
 For Linux a reasonable alternative is to install these packages 
 (and perhaps others) as supplied by the Linux dist (``apt-get`` etc.).
 
-* the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use ``~/pyg2script``.
+.. code-block::  bash
+
+    bash ~/Downloads/Miniconda3-latest-<platform>-x86_64.sh -b -p /loc/pyg2script
+    source /loc/pyg2script/bin/activate
+    conda install numpy scipy matplotlib pillow h5py hdf5 svn
+
+Some discussion on these commands follows:
+
+* the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use something like ``~/pyg2script``.
 * the 2nd command (source) is needed to access Python with miniconda. 
 * the 3rd command (conda) installs all possible packages that might be used by scripting, but matplotlib, pillow, and hdf5 are not commonly needed and could be omitted. The svn package is not needed (for example on Linux) where this has been installed in another way.
-* the 4th command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software.
-* the 5th command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
+
+Once svn and Python has been installed and is in the path, use these commands to install GSAS-II:
+
+.. code-block::  bash
+
+    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
+    python /loc/GSASII/GSASIIscriptable.py
+
+Notes on these commands:
+
+* the 1st command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software. You can select something different. 
+* the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
 
 =======================================
 GSASIIscriptable Command-line Interface

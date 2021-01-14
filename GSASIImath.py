@@ -356,7 +356,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         info['msg'] = Msg.msg + '\n'
         return [x0,None,info]
     chisqf = np.sum(M**2) # ending chi**2
-    Yvec,Amat = Hess(x0,*args)    # we could save some time and use the last Hessian from the last refinement cycle
+#    Yvec,Amat = Hess(x0,*args)    # we could save some time and use the last Hessian from the last refinement cycle
     psing_prev = [i for i in range(n) if i not in indices] # save dropped vars
     indices = range(n)
     info = {}
@@ -2955,7 +2955,7 @@ def validProtein(Phase,old):
     avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
     Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
-    cx,ct,cs,cia = getAtomPtrs(data)
+    cx,ct,cs,cia = getAtomPtrs(Phase)
     Atoms = Phase['Atoms']
     cartAtoms = []
     xyzmin = 999.*np.ones(3)

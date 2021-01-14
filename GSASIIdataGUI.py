@@ -3272,7 +3272,6 @@ class GSASII(wx.Frame):
             except:
                 print('Ignoring Config Starting_directory value: '+
                       GSASIIpath.GetConfigValue('Starting_directory'))
-                
 
     def GetTreeItemsList(self,item):
         return self.GPXtree._getTreeItemsList(item)
@@ -4343,6 +4342,8 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
+#        if self.G2plotNB.plotList:
+#            self.G2plotNB.clear()
         self.init_vars()
         try:
             self.StartProject()         #open the file if possible

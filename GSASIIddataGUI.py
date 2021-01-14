@@ -369,6 +369,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             onumb += 1
         muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4][:numb])
         parms = zip(Snames,UseList[G2frame.hist]['Mustrain'][5],range(numb))
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,ref,Id in parms:
             strainRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
@@ -380,8 +381,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             strainVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Mustrain'][4],
                 Id,nDig=(10,2),OnLeave=OnNewValueReDraw)
             dataSizer.Add(strainVal,0,WACV)
-        dataSizer.Add(wx.StaticText(DData,label=' Mean mustrain %.1f'%muMean),0,WACV)
-        return dataSizer
+        mainSizer.Add(dataSizer)
+        mainSizer.Add(wx.StaticText(DData,label=' Mean mustrain %.1f'%muMean)
+                          ,0,wx.ALIGN_CENTER_HORIZONTAL)
+        return mainSizer
 
     def HstrainSizer():
         
@@ -953,7 +956,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 genSizer.Add(LGmixSizer('Mustrain',[0.,1.],OnLGmixRef))
                 genSizer.Add(ResetSizer('generalized',OnResetStrain),0,WACV)
                 bottomSizer.Add(genSizer)
-                bottomSizer.Add(GenStrainDataSizer(),0,WACV|wx.BOTTOM,5)
+                bottomSizer.Add(GenStrainDataSizer(),0,wx.BOTTOM,5)
             
             bottomSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Hydrostatic/elastic strain:'))
             bottomSizer.Add(HstrainSizer())

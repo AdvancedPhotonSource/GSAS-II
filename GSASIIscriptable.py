@@ -1104,14 +1104,50 @@ be specified.
 .. _CommandlineInterface:
 
 =======================================
+Installation of GSASIIscriptable
+=======================================
+
+It is assumed that most people using GSASIIscriptable will also want to use the GUI, noting that not all GSAS-II capabilities are not available by scripting (yet) and some would not make sense to implement without a graphical view of the data, for this the standard 
+`installation instructions <https://subversion.xray.aps.anl.gov/trac/pyGSAS#Installationinstructions>`_ should be followed. The GUI includes all files needed to run scriptable. 
+
+There may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server. As `described here
+<https://gsas-ii.readthedocs.io/en/latest/packages.html#scripting-requirements>'_ the minimal python requirements are only numpy and scipy. It is assumed that 
+anyone able to use scripting is well posed to install from the command line. 
+Below are example commands to install GSAS-II for use for scripting only.
+
+.. code-block::  bash
+
+    bash ~/Downloads/Miniconda3-latest-MacOSX-x86_64.sh -b -p /loc/pyg2script
+    source /loc/pyg2script/bin/activate
+    conda install numpy scipy matplotlib pillow h5py hdf5 svn
+    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
+    python /loc/GSASII/GSASIIscriptable.py
+
+Some discussion on these commands follows. Note I have chosen to use the free 
+miniconda installer from Anaconda, Inc., but there are also plenty of 
+other ways to install Python, Numpy and Scipy on Linux, Windows and MacOS. 
+For Linux a reasonable alternative is to install these packages 
+(and perhaps others) as supplied by the Linux dist (``apt-get`` etc.).
+
+* the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use ``~/pyg2script``.
+* the 2nd command (source) is needed to access Python with miniconda. 
+* the 3rd command (conda) installs all possible packages that might be used by scripting, but matplotlib, pillow, and hdf5 are not commonly needed and could be omitted. The svn package is not needed (for example on Linux) where this has been installed in another way.
+* the 4th command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software.
+* the 5th command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
+
+=======================================
 GSASIIscriptable Command-line Interface
 =======================================
 
 The routines described above are intended to be called from a Python script, but an
 alternate way to access some of the same functionality is to 
 invoke the ``GSASIIscriptable.py`` script from 
-the command line usually from within a shell script or batch file. This
-will usually be done with a command such as::
+the command line usually from within a shell script or batch file. 
+This mode of accessing GSAS-II scripting does not appear to get much use and 
+is no longer being developed. Please do communicate to the developers if 
+keeping this mode of access would be of value in your work.
+
+To use the command-line mode is done with a command like this::
 
        python <path/>GSASIIscriptable.py <subcommand> <file.gpx> <options>
 
@@ -4147,7 +4183,8 @@ class G2PwdrData(G2ObjectWrapper):
         peaks['sigDict'] = {}        #no longer valid
         peaks['peaks'].append(G2mth.setPeakparms(Parms,Parms2,pos,area))
 
-    def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None):
+    def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None,
+                          alp=None,bet=None):
         '''Set refinement flags for peaks
         
         :param list peaklist: a list of peaks to change flags. If None (default), changes
@@ -4156,9 +4193,13 @@ class G2PwdrData(G2ObjectWrapper):
           If None (the default), no change is made.
         :param bool pos: Sets or clears the refinement flag for the peak position value.
           If None (the default), no change is made.
-        :param bool sig: Sets or clears the refinement flag for the peak sig (Gaussian width) value.
+        :param bool sig: Sets or clears the refinement flag for the peak sigma (Gaussian width) value.
           If None (the default), no change is made.
-        :param bool gam: Sets or clears the refinement flag for the peak sig (Lorentzian width) value.
+        :param bool gam: Sets or clears the refinement flag for the peak gamma (Lorentzian width) value.
+          If None (the default), no change is made.
+        :param bool alp: Sets or clears the refinement flag for the peak alpha (TOF width) value.
+          If None (the default), no change is made.
+        :param bool bet: Sets or clears the refinement flag for the peak beta (TOF width) value.
           If None (the default), no change is made.
           
         Note that when peaks are first created the area flag is on and the other flags are
@@ -4175,10 +4216,15 @@ class G2PwdrData(G2ObjectWrapper):
         if peaklist is None:
             peaklist = range(len(peaks['peaks']))
         for i in peaklist:
-            for var,j in [(area,3),(pos,1),(sig,5),(gam,7)]:
-                if var is not None:
-                    peaks['peaks'][i][j] = var
-            
+            if 'C' in self.data['Instrument Parameters'][0]['Type'][0]:
+                for var,j in [(area,3),(pos,1),(sig,5),(gam,7)]:
+                    if var is not None:
+                        peaks['peaks'][i][j] = var
+            else:
+                for var,j in [(area,3),(pos,1),(alp,5),(bet,7),(sig,9),(gam,11)]:
+                    if var is not None:
+                        peaks['peaks'][i][j] = var
+
     def refine_peaks(self):
         '''Causes a refinement of peak position, background and instrument parameters
         '''
@@ -6682,7 +6728,10 @@ def main():
 
     # Parse and trigger subcommand
     result = parser.parse_args()
-    result.func(result)
+    try:
+        result.func(result)
+    except:
+        print('Use {} -h or --help'.format(sys.argv[0]))
 
 def dictDive(d,search="",keylist=[],firstcall=True,l=None):
     '''Recursive routine to scan a nested dict. Reports a list of keys 

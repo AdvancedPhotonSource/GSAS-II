@@ -548,12 +548,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if min is not None:
             xmin=min
             if GSASIIpath.GetConfigValue('debug'):
-                print('Change min to xmin here:')
+                print('Call to ValidatedTxtCtrl using min (change to xmin) here:')
                 G2obj.HowDidIgetHere(True)
         if max is not None:
             xmax=max
             if GSASIIpath.GetConfigValue('debug'):
-                print('Change max to xmax here:')
+                print('Call to ValidatedTxtCtrl using max (change to xmax) here:')
                 G2obj.HowDidIgetHere(True)
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
@@ -1471,9 +1471,9 @@ class ScrolledMultiEditor(wx.Dialog):
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(prelbl[i])))
             kargs = {}
             if i < len(minvals):
-                if minvals[i] is not None: kargs['min']=minvals[i]
+                if minvals[i] is not None: kargs['xmin']=minvals[i]
             if i < len(maxvals):
-                if maxvals[i] is not None: kargs['max']=maxvals[i]
+                if maxvals[i] is not None: kargs['xmax']=maxvals[i]
             if i < len(sizevals):
                 if sizevals[i]: kargs['size']=sizevals[i]
             if CopyButton:
@@ -1517,6 +1517,7 @@ class ScrolledMultiEditor(wx.Dialog):
         # by restoring the initial values
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer.Add(self.OKbtn)
+        self.OKbtn.Bind(wx.EVT_BUTTON,lambda event: self.EndModal(wx.ID_OK))
         btn = wx.Button(self, wx.ID_CLOSE,"Cancel") 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
         btnsizer.Add(btn)

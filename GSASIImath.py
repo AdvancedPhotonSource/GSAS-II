@@ -186,7 +186,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     '''
     ifConverged = False
     deltaChi2 = -10.
-    x0 = np.array(x0, ndmin=1)      #might be redundant?
+    x0 = np.array(x0, ndmin=1, dtype=np.float64)      #might be redundant?
     n = len(x0)
     if type(args) != type(()):
         args = (args,)

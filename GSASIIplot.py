@@ -125,6 +125,7 @@ try:
     import wx.aui
     import wx.glcanvas
     import matplotlib as mpl
+    import matplotlib.pyplot as plt
     if not mpl.get_backend():       #could be assigned by spyder debugger
         mpl.use('wxAgg')
     import matplotlib.collections as mplC
@@ -9160,14 +9161,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
         GL.glDisable(GL.GL_LIGHTING)
-#        GL.glWindowPos3f(0,0,0)
         GL.glMultMatrixf(matRot)
         GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.Text(text='   '+label,font=Font,foreground=color)
         text.draw_text(scale=0.025,position=offset)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
-         
+        
     def RenderMap(rho,rhoXYZ,indx,Rok):
         GL.glShadeModel(GL.GL_FLAT)
         cLevel = drawingData['contourLevel']
@@ -9556,7 +9556,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             else:
                 return
             Rmax = np.max(rho)*drawingData['contourMax']
-            import matplotlib.pyplot as plt
             Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
             invModel = nl.inv(Model)
             msize = 5.      #-5A - 5A slice

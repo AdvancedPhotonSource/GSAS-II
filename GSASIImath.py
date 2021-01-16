@@ -356,7 +356,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         info['msg'] = Msg.msg + '\n'
         return [x0,None,info]
     chisqf = np.sum(M**2) # ending chi**2
-#    Yvec,Amat = Hess(x0,*args)    # we could save some time and use the last Hessian from the last refinement cycle
+    Yvec,Amat = Hess(x0,*args)    # we could save some time and use the last Hessian from the last refinement cycle
     psing_prev = [i for i in range(n) if i not in indices] # save dropped vars
     indices = range(n)
     info = {}

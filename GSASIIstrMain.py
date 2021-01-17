@@ -54,18 +54,46 @@ def ReportProblems(result,Rvals,varyList):
     '''
     #report on SVD 0's and highly correlated variables
     msg = ''
-    SVD0 = result[2].get('SVD0')
-    if SVD0 > 0: 
-        msg += 'Warning: There were {} singularities in the Hessian'.format(SVD0)
-    # process singular variables
+    # process singular variables; all vars go to console, first 10 to
+    # dialog window
     psing = result[2].get('psing',[])
     if len(psing):
         if msg: msg += '\n'
-        m = '{} Parameters dropped due to singularities:'.format(len(psing))
+        m = 'Error: {} Parameter(s) dropped:'.format(len(psing))
         msg += m
         G2fil.G2Print(m, mode='warn')
         m = ''
         for i,val in enumerate(psing):
+            if i == 0:
+                msg += '\n{}'.format(varyList[val])
+                m = '  {}'.format(varyList[val])
+            else:
+                if len(m) > 70:
+                    G2fil.G2Print(m, mode='warn')
+                    m = '  '
+                else:
+                    m += ', '
+                m += '{}'.format(varyList[val])
+                if i == 10:
+                    msg += ', {}... see console for full list'.format(varyList[val])
+                elif i > 10:
+                    pass
+                else:
+                    msg += ', {}'.format(varyList[val])
+        if m: G2fil.G2Print(m, mode='warn')
+    SVD0 = result[2].get('SVD0')
+    if SVD0 == 1: 
+        msg += 'Warning: Soft (SVD) singularity in the Hessian'
+    elif SVD0 > 0: 
+        msg += 'Warning: {} soft (SVD) Hessian singularities'.format(SVD0)
+    SVDsing = result[2].get('SVDsing',[])
+    if len(SVDsing):
+        if msg: msg += '\n'
+        m = 'SVD problem(s) likely from:'
+        msg += m
+        G2fil.G2Print(m, mode='warn')
+        m = ''
+        for i,val in enumerate(SVDsing):
             if i == 0:
                 msg += '\n{}'.format(varyList[val])
                 m = '  {}'.format(varyList[val])
@@ -208,6 +236,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             G2fil.G2Print ('Warning: **** Refinement failed - singular matrix ****')
             if 'Hessian' in Controls['deriv type']:
                 num = len(varyList)-1
+                # BHT -- I am not sure if this works correctly:
                 for i,val in enumerate(np.flipud(result[2]['psing'])):
                     if val:
                         G2fil.G2Print('Bad parameter: '+varyList[num-i],mode='warn')
@@ -259,10 +288,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 psing = result[2].get('psing',[])
                 if dlg: break # refining interactively
                 # non-interactive refinement
-                for val in sorted(psing,reverse=True):
-                    G2fil.G2Print ('Removing parameter: '+varyList[val])
-                    del(varyList[val])
-                if not psing: break    # removed variable(s), try again
+                #for val in sorted(psing,reverse=True):
+                #    G2fil.G2Print ('Removing parameter: '+varyList[val])
+                #    del(varyList[val])
+                #if not psing: break    # removed variable(s), try again
             else:
                 G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
                 Ipvt = result[2]['ipvt']

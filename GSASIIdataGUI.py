@@ -5215,21 +5215,8 @@ class GSASII(wx.Frame):
                 msg += '\n\n'
             else:
                 msg = ''
-            # if len(Rvals['psing']) == 1:
-            #     h = 'This variable appears'
-            #     # that = 'that variable'
-            # else:
-            #     h = 'These variables appear'
-            #     # that = 'those variables'
-            # msg += h + ' to cause a singular matrix:\n\t'
-            # for i,var in enumerate(Rvals['psing']):
-            #     if i: msg += ', '
-            #     msg += varyList[var]
-            # # msg += '\n\nRefine again with '+that+' frozen?'
             result = wx.ID_NO
             try:
-                # dlg = wx.MessageDialog(self, msg,'Refine again?', 
-                #     wx.YES_NO | wx.ICON_QUESTION)
                 dlg = wx.MessageDialog(self, msg,'Note singularities', 
                     wx.OK)
                 dlg.CenterOnParent()
@@ -5237,15 +5224,6 @@ class GSASII(wx.Frame):
                 result = dlg.ShowModal()
             finally:
                 dlg.Destroy()
-            # if result != wx.ID_YES: return
-            # Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-            # if 'parmFrozen' not in Controls:
-            #     Controls['parmFrozen'] = {}
-            # if 'FrozenList' not in Controls['parmFrozen']: 
-            #     Controls['parmFrozen']['FrozenList'] = []
-            # Controls['parmFrozen']['FrozenList'] += [
-            #     G2obj.G2VarObj(varyList[i]) for i in Rvals['plist']]
-            # wx.CallAfter(self.OnRefine,event)
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
             

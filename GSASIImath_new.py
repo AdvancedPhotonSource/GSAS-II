@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2021-01-04 10:41:46 -0600 (Mon, 04 Jan 2021) $
+# $Date: 2021-01-14 14:10:10 -0600 (Thu, 14 Jan 2021) $
 # $Author: vondreele $
-# $Revision: 4709 $
+# $Revision: 4767 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 4709 2021-01-04 16:41:46Z vondreele $
+# $Id: GSASIImath.py 4767 2021-01-14 20:10:10Z vondreele $
 ########### SVN repository information ###################
 '''
 *GSASIImath: computation module*
@@ -23,7 +23,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 4709 $")
+GSASIIpath.SetVersionNumber("$Revision: 4767 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -125,6 +125,8 @@ def dropTerms(bad, hessian, indices, *vectors):
     return out
         
 def setHcorr(info,Amat,xtol,problem=False):
+    '''Find & report high correlation terms in covariance matrix
+    '''
     Adiag = np.sqrt(np.diag(Amat))
     if np.any(np.abs(Adiag) < 1.e-14): raise G2NormException  # test for any hard singularities
     Anorm = np.outer(Adiag,Adiag)
@@ -140,7 +142,21 @@ def setHcorr(info,Amat,xtol,problem=False):
         m = max(0.95,0.99*np.amax(AcovUp))
     info['Hcorr'] = [(i,j,AcovUp[i,j]) for i,j in zip(*np.where(AcovUp > m))]
     return Bmat,Nzeros
-    
+
+def setSVDwarn(info,Amat,Nzeros,indices):
+    '''Find & report terms causing SVN zeros
+    '''
+    if Nzeros == 0: return
+    d = np.abs(np.diag(nl.qr(Amat)[1]))
+    svdsing = list(np.where(d < 1.e-14)[0])
+    if len(svdsing) < Nzeros: # try to get the Nzeros worst terms
+        svdsing = list(np.where(d <= sorted(d)[Nzeros-1])[0])
+
+
+    if not len(svdsing): # make sure at least the worst term is shown
+        svdsing = [np.argmin(d)]
+    info['SVDsing'] = [indices[i] for i in svdsing]
+
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     '''
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
@@ -186,12 +202,14 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     '''
     ifConverged = False
     deltaChi2 = -10.
-    x0 = np.array(x0, ndmin=1)      #might be redundant?
+    x0 = np.array(x0, ndmin=1, dtype=np.float64) # make sure that x0 float 1-D
+    # array (in case any parameters were set to int)
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
         
     icycle = 0
+    AmatAll = None # changed only if cycles > 0
     lamMax = lam = 0  #  start w/o Marquardt and add it in if needed
     nfev = 0
     if Print:
@@ -212,13 +230,16 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     if n == 0:
         info = {'num cyc':0,'fvec':M2,'nfev':1,'lamMax':0,'psing':[],'SVD0':0}
         info['msg'] = 'no variables: skipping refinement\n'
-        return [x0,None,info]
+        info.update({'Converged':True, 'DelChi2':0, 'Xvec':None, 'chisq0':chisq00})
+        return [x0,np.array([]),info]
+    indices = range(n)
     while icycle < maxcyc:
         M = M2
         time0 = time.time()
         nfev += 1
         chisq0 = np.sum(M**2)
-        Yvec,AmatAll = Hess(x0,*args) # compute hessian & vectors with all variables
+        YvecAll,AmatAll = Hess(x0,*args) # compute hessian & vectors with all variables
+        Yvec = copy.copy(YvecAll)
         Amat = copy.copy(AmatAll)
         Xvec = copy.copy(XvecAll)
         # we could remove vars that were dropped in previous cycles here (use indices), but for
@@ -254,21 +275,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 G2fil.G2Print('giving up with ouch #2', mode='error')
                 info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros}
                 info['psing'] = [i for i in range(n) if i not in indices]
-
                 info['msg'] = 'SVD inversion failure\n'
                 return [x0,None,info]
-            if Nzeros:     # remove bad vars from the matrix
-                d = np.abs(np.diag(nl.qr(Amatlam)[1]))
-                psing = list(np.where(d < 1.e-14)[0])
-                if not len(psing): # make sure at least the worst term is removed
-                    psing = [np.argmin(d)]
-                G2fil.G2Print('{} SVD Zeros: dropping terms for for variable(s) #{}'.
-                    format(Nzeros,psing), mode='warn')
-                Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
-                Amatlam = Amat*(1.+np.eye(Amat.shape[0])*lam)
-                Ainv,nz = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
-                if nz > 0: G2fil.G2Print('Note: there are {} new SVD Zeros after drop'.format(nz),
-                    mode='warn')
             Xvec = np.inner(Ainv,Yvec)/Adiag      #solve for LS terms
             XvecAll[indices] = Xvec         # expand
             try:
@@ -292,6 +300,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                     G2fil.G2Print('Error determining highly correlated vars',mode='warn')
                     G2fil.G2Print(Msg.msg,mode='warn')
                 info['msg'] = Msg.msg + '\n\n'
+                setSVDwarn(info,Amatlam,Nzeros,indices)
                 return [x0,None,info]
             nfev += 1
             chisq1 = np.sum(M2**2)
@@ -312,6 +321,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                         info['psing'] = [i for i in range(n) if i not in indices]
                         Bmat,Nzeros = setHcorr(info,AmatAll,xtol,problem=True)
                         info['SVD0'] = Nzeros
+                        setSVDwarn(info,Amatlam,Nzeros,indices)
                         return [x0,Bmat,info]
                     except Exception as Msg:
                         if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
@@ -328,12 +338,12 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print and n-len(indices):
             G2fil.G2Print(
-                'Cycle %d: %.2fs Chi2: %.5g; Obs: %d; Lam: %.3g Del: %.3g; drop=%d'%
-                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,n-len(indices)))
+                'Cycle %d: %.2fs Chi2: %.5g; Obs: %d; Lam: %.3g Del: %.3g; drop=%d, SVD=%d'%
+                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,n-len(indices),Nzeros))
         elif Print:
             G2fil.G2Print(
-                'Cycle %d: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g'%
-                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2))
+                'Cycle %d: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g, SVD=%d'%
+                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,Nzeros))
         Histograms = args[0][0]
         if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
@@ -352,16 +362,27 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         psing = [i for i in range(n) if i not in indices]
         info = {'num cyc':icycle,'fvec':M2,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-2}
         info['msg'] = Msg.msg + '\n'
+        setSVDwarn(info,Amatlam,Nzeros,indices)
         return [x0,None,info]
     chisqf = np.sum(M**2) # ending chi**2
-    Yvec,Amat = Hess(x0,*args)    # we could save some time and use the last Hessian from the last refinement cycle
     psing_prev = [i for i in range(n) if i not in indices] # save dropped vars
+    if AmatAll is None: # Save some time and use Hessian from the last refinement cycle
+        Yvec,Amat = Hess(x0,*args)
+    else:
+        Yvec = copy.copy(YvecAll)
+        Amat = copy.copy(AmatAll)
     indices = range(n)
     info = {}
     try:         # report highly correlated parameters from full Hessian, if we can
         Bmat,Nzeros = setHcorr(info,Amat,xtol,problem=False)
         info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,'psing':psing_prev,
-            'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
+            'Converged':ifConverged, 'DelChi2':deltaChi2, 'chisq0':chisq00})
+        if icycle > 0: info.update({'Xvec':XvecAll})
+        setSVDwarn(info,Amatlam,Nzeros,indices)
+        # expand Bmat by filling with zeros if columns have been dropped
+        if len(psing_prev):
+            ins = [j-i for i,j in enumerate(psing_prev)]
+            Bmat = np.insert(np.insert(Bmat,ins,0,1),ins,0,0)
         return [x0,Bmat,info]
     except nl.LinAlgError:
         G2fil.G2Print('Warning: Hessian too ill-conditioned to get full covariance matrix')
@@ -388,15 +409,6 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':-1,'Xvec':None, 'chisq0':chisqf}
         info['psing'] = [i for i in range(n) if i not in indices]
         return [x0,None,info]
-    if Nzeros: # sometimes SVD zeros show up when lam=0
-        d = np.abs(np.diag(nl.qr(Amat)[1]))
-        psing = list(np.where(d < 1.e-14)[0])
-        if len(psing) < Nzeros:
-            psing = list(np.where(d <= sorted(d)[Nzeros-1])[0])
-        if Print:
-            G2fil.G2Print('Found %d SVD zeros w/o Lambda. '+
-                'Likely problem with variable(s) #%s'%(Nzeros,psing), mode='warn')
-        Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
     # expand Bmat by filling with zeros if columns have been dropped
     psing = [i for i in range(n) if i not in indices]
     if len(psing):
@@ -405,6 +417,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,
         'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
     info['psing'] = [i for i in range(n) if i not in indices]
+    setSVDwarn(info,Amat,Nzeros,indices)
     return [x0,Bmat,info]
             
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
@@ -553,6 +566,19 @@ def getVCov(varyNames,varyList,covMatrix):
 ################################################################################
 ##### Atom manipulations
 ################################################################################
+
+def getAtomPtrs(data,draw=False):
+    ''' get atom data pointers cx,ct,cs,cia in Atoms or Draw Atoms lists
+    NB:may not match column numbers in displayed table
+    
+        param: dict: data phase data structure
+        draw: boolean True if Draw Atoms list pointers are required
+        return: cx,ct,cs,cia pointers to atom xyz, type, site sym, uiso/aniso flag
+    '''
+    if draw:
+        return data['Drawing']['atomPtrs']
+    else:
+        return data['General']['AtomPtrs']
 
 def FindMolecule(ind,generalData,atomData):                    #uses numpy & masks - very fast even for proteins!
 
@@ -748,9 +774,9 @@ def ApplySeqData(data,seqData):
     '''
     generalData = data['General']
     SGData = generalData['SGData']
-    cx,ct,cs,cia = generalData['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(data)
     drawingData = data['Drawing']
-    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    dcx,dct,dcs,dci = getAtomPtrs(data,True)
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
     pId = data['pId']
@@ -781,7 +807,7 @@ def ApplySeqData(data,seqData):
     
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(phase)
     Atoms = phase['Atoms']
     atNames = [atom[ct-1] for atom in Atoms]
     Cell = General['Cell'][1:7]
@@ -869,7 +895,7 @@ def FindTetrahedron(results):
     
 def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     General = phase['General']
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(phase)
     Atoms = phase['Atoms']
     atNames = [atom[ct-1] for atom in Atoms]
     atTypes = [atom[ct] for atom in Atoms]
@@ -1881,10 +1907,10 @@ def ApplyModulation(data,tau):
     G,g = G2lat.cell2Gmat(cell)
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
-    cx,ct,cs,cia = generalData['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(data)
     drawingData = data['Drawing']
     modul = generalData['SuperVec'][0]
-    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    dcx,dct,dcs,dci = getAtomPtrs(data,True)
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
     Fade = np.ones(len(drawAtoms))
@@ -2939,7 +2965,7 @@ def validProtein(Phase,old):
     avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
     Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
-    cx,ct,cs,cia = General['AtomPtrs']
+    cx,ct,cs,cia = getAtomPtrs(Phase)
     Atoms = Phase['Atoms']
     cartAtoms = []
     xyzmin = 999.*np.ones(3)
@@ -4144,6 +4170,45 @@ def PeaksUnique(data,Ind,Sel):
             Unique.append(icntr)
     return Unique
 
+def AtomsCollect(data,Ind,Sel):
+    '''Finds the symmetry set of atoms for those selected. Selects
+    the one closest to the selected part of the unit cell. 
+    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
+    GSASIIphsGUI.py,
+
+    :param data: the phase data structure
+    :param list Ind: list of selected peak indices
+    :param int Sel: selected part of unit to find atoms closest to
+
+    :returns: the list of symmetry unique peaks from among those given in Ind
+    '''        
+    cx,ct,cs,ci = getAtomPtrs(data) 
+    cent = np.ones(3)*.5     
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    SGData = generalData['SGData']
+    Atoms = copy.deepcopy(data['Atoms'])
+    Indx = [True for ind in Ind]
+    # scan through peaks, finding all peaks equivalent to peak ind
+    for ind in Ind:
+        if Indx[ind]:
+            xyz = Atoms[ind][cx:cx+3]
+            uij = Atoms[ind][ci+2:ci+8]
+            if Atoms[ind][ci] == 'A':
+                Equiv = list(G2spc.GenAtom(xyz,SGData,Uij=uij))
+                Uijs = np.array([x[1] for x in Equiv])
+            else:
+                Equiv = G2spc.GenAtom(xyz,SGData)
+            xyzs = np.array([x[0] for x in Equiv])
+            dzeros = np.sqrt(np.sum(np.inner(Amat,xyzs)**2,axis=0))
+            dcent = np.sqrt(np.sum(np.inner(Amat,xyzs-cent)**2,axis=0))
+            xyzs = np.hstack((xyzs,dzeros[:,nxs],dcent[:,nxs]))
+            cind = np.argmin(xyzs.T[Sel-1])
+            Atoms[ind][cx:cx+3] = xyzs[cind][:3]
+            if Atoms[ind][ci] == 'A':
+                Atoms[ind][ci+2:ci+8] = Uijs[cind]
+    return Atoms
+
 ################################################################################
 ##### Dysnomia setup & return stuff
 ################################################################################
@@ -5057,7 +5122,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     SGMT = np.array([SGData['SGOps'][i][0].T for i in range(len(SGData['SGOps']))])
     SGT = np.array([SGData['SGOps'][i][1] for i in range(len(SGData['SGOps']))])
     fixAtoms = data['Atoms']                       #if any
-    cx,ct,cs = generalData['AtomPtrs'][:3]
+    cx,ct,cs = getAtomPtrs(data)[:3]
     aTypes = set([])
     parmDict = {'Bmat':Bmat,'Gmat':Gmat}
     varyList = []

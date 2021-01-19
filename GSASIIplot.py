@@ -125,7 +125,6 @@ try:
     import wx.aui
     import wx.glcanvas
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
     if not mpl.get_backend():       #could be assigned by spyder debugger
         mpl.use('wxAgg')
     import matplotlib.collections as mplC
@@ -1226,7 +1225,6 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
     Draw()
     
-        
 ################################################################################
 ##### Plot3DSngl
 ################################################################################
@@ -1708,7 +1706,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Draw('main')
 #    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
 
-       
 ################################################################################
 ##### PlotPatterns
 ################################################################################
@@ -7121,7 +7118,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Masks['Points'].append(spot)
                 artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',
                                 picker=True)
-                #GSASIIpath.IPyBreak()
                 Page.figure.gca().add_artist(artist)
                 artist.itemNumber = len(Masks['Points'])-1
                 artist.itemType = 'Spot'
@@ -9572,27 +9568,23 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Zslice = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Zslice<=Rmax,Zslice,Rmax)
             ZU = np.flipud(Z)
-            plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
-            oldSize = plt.rcParams['figure.figsize']
-            plt.rcParams['figure.figsize'] = [6.0,6.0]
-            plt.cla()
+            figure = mpl.figure.Figure(figsize=(6,6),facecolor=(1.,1.,1.,.5))
+            canvas = hcCanvas(figure)
+            figure.clf()
+            ax0 = figure.add_subplot(111)
             if drawingData.get('showSlice') in [1,]:
-                contourSet = plt.contour(Z,colors='k',linewidths=1)
+                contourSet = ax0.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
                 acolor = mpl.cm.get_cmap(drawingData.get('contourColor','Paired'))                    
-                plt.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
+                ax0.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
-                    contourSet = plt.contour(ZU,colors='k',linewidths=1)
-            plt.axis("off")
-            plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-            canvas = plt.get_current_fig_manager().canvas
+                    contourSet = ax0.contour(ZU,colors='k',linewidths=1)
+            ax0.axis("off")
+            figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
             agg = canvas.switch_backends(hcCanvas)
             agg.draw()
             img, (width, height) = agg.print_to_buffer()
             Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-            plt.rcParams['figure.facecolor'] = (1.,1.,1.,1.)
-            plt.rcParams['figure.figsize'] = oldSize
-#            agg = canvas.switch_backends(Canvas)
             RenderViewPlane(msize*eplane,Zimg,width,height)
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)

@@ -1120,12 +1120,12 @@ Nonetheless, there may be times where it does make sense to install GSAS-II with
 anyone able to use scripting is well posed to install from the command line. 
 Below are example commands to install GSAS-II for use for scripting only.
 
-Installing a minimal Python configuration: Note I have chosen below 
+**Installing a minimal Python configuration**: Note I have chosen below 
 to use the free 
 miniconda installer from Anaconda, Inc., but there are also plenty of 
 other ways to install Python, Numpy and Scipy on Linux, Windows and MacOS. 
 For Linux a reasonable alternative is to install these packages 
-(and perhaps others) as supplied by the Linux dist (``apt-get`` etc.).
+(and perhaps others as below) using the Linux dist (``apt-get`` etc.).
 
 .. code-block::  bash
 
@@ -4256,7 +4256,7 @@ class G2PwdrData(G2ObjectWrapper):
         bxye = np.zeros(len(self.data['data'][1][1]))
         peaks['sigDict'] = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
                                            Parms,Parms2,self.data['data'][1],bxye,[],
-                                           False,controls,None)[0]
+                                           oneCycle=False,controls=controls,dlg=None)[0]
 
     @property
     def Peaks(self):

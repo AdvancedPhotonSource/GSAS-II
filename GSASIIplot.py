@@ -517,6 +517,7 @@ class G2PlotNoteBook(wx.Panel):
                 Plot = mp3d.Axes3D(self.add3D(label))
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)
+            self.SetSelectionNoRefresh(plotNum) # raises plot tab
 
         Page.plotInvalid = False # plot has just been drawn
         self.lastRaisedPlotTab = label

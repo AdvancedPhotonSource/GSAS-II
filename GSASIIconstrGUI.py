@@ -205,7 +205,10 @@ class RBDataTable(wg.GridTableBase):
         if col == 0:
             return self.labels[row]
         elif col == 1:
-            return int(self.select[row])
+            if self.select[row]:
+                return '1'
+            else:
+                return ''
         elif col == 2:
             return self.types[row]
         else:
@@ -216,7 +219,7 @@ class RBDataTable(wg.GridTableBase):
             if col == 0:
                 self.labels[row] = value
             elif col == 1:
-                self.select[row] = int(value)
+                self.select[row] = bool(value)
             elif col == 2:
                 self.types[row] = value
             else:
@@ -229,7 +232,7 @@ class RBDataTable(wg.GridTableBase):
     def GetColLabelValue(self, col):
         return self.colLabels[col]
     def GetRowLabelValue(self,row):
-        return str(row+1)
+        return str(row)
 
     # Implement "row movement" by updating the pointer array
     def MoveRow(self,frm,to):
@@ -2990,7 +2993,8 @@ create a Vector or Residue rigid body.
             # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),0,WACV)
-            RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'])
+            RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'],
+                                     style=wx.TE_PROCESS_ENTER)
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
@@ -3283,7 +3287,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),0,WACV)
-            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
+            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'],
+                                     style=wx.TE_PROCESS_ENTER)
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)

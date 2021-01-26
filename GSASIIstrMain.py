@@ -726,8 +726,12 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
-            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %.4f'%(
-                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],Rvals.get('Max shft/sig',np.nan)))
+            try:
+                shft = '%.4f'% Rvals['Max shft/sig']
+            except:
+                shft = '?'
+            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %s'%(
+                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],shft))
             if Rvals.get('lamMax',0) >= 10.:
                 msgs['steepestNum'] += 1
             if Rvals.get('Max shft/sig'):

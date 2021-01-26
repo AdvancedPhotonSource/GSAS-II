@@ -2751,16 +2751,18 @@ class MultiStringDialog(wx.Dialog):
     
     :param wx.Frame parent: name of parent frame
     :param str title: title string for dialog
-    :param str prompts: strings to tell use what they are inputting
-    :param str values: default input values, if any
+    :param list prompts: list of strings to tell user what they are inputting
+    :param list values: list of str default input values, if any
     :param int size: length of the input box in pixels
     :param bool addRows: if True, users can add rows to the table 
       (default is False)
     :param str hlp: if supplied, a help button is added to the dialog that
       can be used to display the supplied help text in this variable.
+    :param str lbl: label placed at top of dialog  
+    :returns: a wx.Dialog instance
     '''
     def __init__(self,parent,title,prompts,values=[],size=-1,
-                     addRows=False,hlp=None):
+                     addRows=False,hlp=None, lbl=None):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
                            pos=wx.DefaultPosition,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -2768,7 +2770,8 @@ class MultiStringDialog(wx.Dialog):
         self.prompts = list(prompts)
         self.addRows = addRows
         self.size = size
-        self.hlp = hlp
+        self.hlp = StripIndents(hlp,True)
+        self.lbl = lbl
         self.CenterOnParent()
         self.Paint()
 
@@ -2778,10 +2781,13 @@ class MultiStringDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if self.hlp:
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hlp = HelpButton(self,self.hlp)
+            hlp = HelpButton(self, self.hlp, wrap=450)
             btnsizer.Add((-1,-1),1, wx.EXPAND, 1)
             btnsizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
             mainSizer.Add(btnsizer,0,wx.EXPAND)
+        if self.lbl:
+            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,self.lbl),0,WACV,0)
+            mainSizer.Add((-1,15))
         promptSizer = wx.FlexGridSizer(0,2,5,5)
         promptSizer.AddGrowableCol(1,1)
         self.Indx = {}
@@ -2821,6 +2827,7 @@ class MultiStringDialog(wx.Dialog):
 
     def Show(self):
         '''Use this method after creating the dialog to post it
+        
         :returns: True if the user pressed OK; False if the User pressed Cancel
         '''
         if self.ShowModal() == wx.ID_OK:
@@ -2829,8 +2836,9 @@ class MultiStringDialog(wx.Dialog):
             return False
 
     def GetValues(self):
-        '''Use this method to get the value entered by the user
-        :returns: string entered by user
+        '''Use this method to get the value(s) entered by the user
+        
+        :returns: a list of strings entered by user
         '''
         return self.values
 

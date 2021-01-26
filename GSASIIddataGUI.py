@@ -978,7 +978,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 if POData[4]:       #SH order > 0
                     textJ = G2lat.textureIndex(POData[5])
                     poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
-                        ,0,WACV|wx.TOP|wx.BOTTOM,5)
+                        ,0,wx.TOP|wx.BOTTOM,5)
                     poSizer.Add(SHDataSizer(POData),0,wx.TOP|wx.BOTTOM,5)
                     poSizer.Add(SHPenalty(POData),0,wx.TOP|wx.BOTTOM,5)
                     

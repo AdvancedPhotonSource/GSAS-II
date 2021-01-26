@@ -9397,7 +9397,7 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add(PTSizer,0)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
-            mainSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonic coefficients: '),0,WACV)
+            mainSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonic coefficients: '))
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(0,8,2,2)
             ODFkeys = list(textureData['SH Coeff'][1].keys())
@@ -9406,7 +9406,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 ODFSizer.Add(wx.StaticText(Texture,-1,item),0,WACV)
                 ODFval = G2G.ValidatedTxtCtrl(Texture,textureData['SH Coeff'][1],item,nDig=(8,3),OnLeave=OnODFValue)
                 ODFSizer.Add(ODFval,0,WACV)
-            mainSizer.Add(ODFSizer,0,WACV)
+            mainSizer.Add(ODFSizer,0)
             mainSizer.Add((0,5),0)
         mainSizer.Add((0,5),0)
         mainSizer.Add(wx.StaticText(Texture,-1,' Sample orientation angle zeros: '),0)

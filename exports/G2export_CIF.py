@@ -119,7 +119,7 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                  '\n   _atom_site_occupancy'+
                  '\n   _atom_site_adp_type'+
                  '\n   _atom_site_U_iso_or_equiv'+
-                 '\n   _atom_site_symmetry_multiplicity')
+                 '\n   _atom_site_site_symmetry_multiplicity')
 
     varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                 cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
@@ -297,7 +297,7 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                  '\n   _atom_site_occupancy'+
                  '\n   _atom_site_adp_type'+
                  '\n   _atom_site_U_iso_or_equiv'+
-                 '\n   _atom_site_symmetry_multiplicity')
+                 '\n   _atom_site_site_symmetry_multiplicity')
 
     varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                 cx+4:'AMx',cx+5:'AMy',cx+6:'AMz',

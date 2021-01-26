@@ -167,7 +167,7 @@ method                                                Use
 :meth:`G2PwdrData.Export`                             Writes the diffraction data or reflection list into a file
 :meth:`G2PwdrData.add_peak`                           Adds a peak to the peak list. Also see :ref:`PeakRefine`.
 :meth:`G2PwdrData.set_peakFlags`                      Sets refinement flags for peaks
-:meth:`G2PwdrData.refine_peaks`                       Starts a peak/background fitting cycle
+:meth:`G2PwdrData.refine_peaks`                       Starts a peak/background fitting cycle, returns refinement results
 :attr:`G2PwdrData.Peaks`                              Provides access to the peak list data structure
 :attr:`G2PwdrData.PeakList`                           Provides the peak list parameter values 
 :meth:`G2PwdrData.Export_peaks`                       Writes the peak parameters to a text file 
@@ -809,7 +809,7 @@ peak refinement script, where the data files are taken from the
     hist.set_peakFlags(area=True,pos=True)
     hist.refine_peaks()
     hist.set_peakFlags(area=True, pos=True, sig=True, gam=True)
-    hist.refine_peaks()
+    res = hist.refine_peaks()
     print('peak positions: ',[i[0] for i in hist.PeakList])
     for i in range(len(hist.Peaks['peaks'])):
         print('peak',i,'pos=',hist.Peaks['peaks'][i][0],'sig=',hist.Peaks['sigDict']['pos'+str(i)])
@@ -4243,6 +4243,12 @@ class G2PwdrData(G2ObjectWrapper):
 
     def refine_peaks(self):
         '''Causes a refinement of peak position, background and instrument parameters
+
+        :returns: a list of dicts with refinement results. Element 0 has uncertainties 
+          on refined values (also placed in self.data['Peak List']['sigDict'])
+          element 1 has the peak fit result, element 2 has the peak fit uncertainties
+          and element 3 has r-factors from the fit. 
+          (These are generated in :meth:`GSASIIpwd.DoPeakFit`).
         '''
         import GSASIIpwd as G2pwd
         controls = self.proj.data.get('Controls',{})
@@ -4254,10 +4260,12 @@ class G2PwdrData(G2ObjectWrapper):
         background = self.data['Background']
         limits = self.data['Limits'][1]
         bxye = np.zeros(len(self.data['data'][1][1]))
-        peaks['sigDict'] = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
+        result = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
                                            Parms,Parms2,self.data['data'][1],bxye,[],
-                                           oneCycle=False,controls=controls,dlg=None)[0]
-
+                                           oneCycle=False,controls=controls,dlg=None)
+        peaks['sigDict'] = result[0]
+        return result
+        
     @property
     def Peaks(self):
         '''Provides a dict with the Peak List parameters

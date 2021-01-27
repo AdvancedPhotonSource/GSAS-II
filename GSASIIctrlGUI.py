@@ -56,6 +56,8 @@ Class or function name             Description
                                    defaults.
 :class:`OrderBox`                  Creates a wx.Panel with scrollbars where items can be
                                    ordered into columns.
+:class:`SortableLstCtrl`           Creates a wx.Panel for a table of data that  
+                                   can be sorted by clicking on a column label.
 :class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
                                    with validation. Results are placed in dict or list.
 :class:`SGMagSpinBox`               Special version of MessageBox that displays magnetic spin text
@@ -2783,16 +2785,17 @@ class MultiStringDialog(wx.Dialog):
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
             hlp = HelpButton(self, self.hlp, wrap=450)
             btnsizer.Add((-1,-1),1, wx.EXPAND, 1)
-            btnsizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
+            #btnsizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
+            btnsizer.Add(hlp,0)
             mainSizer.Add(btnsizer,0,wx.EXPAND)
         if self.lbl:
-            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,self.lbl),0,WACV,0)
+            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,self.lbl))
             mainSizer.Add((-1,15))
         promptSizer = wx.FlexGridSizer(0,2,5,5)
         promptSizer.AddGrowableCol(1,1)
         self.Indx = {}
         for prompt,value in zip(self.prompts,self.values):
-            promptSizer.Add(wx.StaticText(self,-1,prompt),0,WACV,0)
+            promptSizer.Add(wx.StaticText(self,-1,prompt))
             valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(self.size,-1))
             self.Indx[valItem.GetId()] = prompt
             valItem.Bind(wx.EVT_TEXT,self.newValue)
@@ -2809,7 +2812,7 @@ class MultiStringDialog(wx.Dialog):
         if self.addRows:
             btn = wx.Button(self, wx.ID_ANY,'+',style=wx.BU_EXACTFIT)
             btn.Bind(wx.EVT_BUTTON,self.onExpand)
-            btnsizer.Add(btn,0,wx.ALIGN_RIGHT)
+            btnsizer.Add(btn)
         mainSizer.Add(btnsizer,0,wx.EXPAND)
         self.SetSizer(mainSizer)
         self.Fit()
@@ -5991,6 +5994,116 @@ class downdate(wx.Dialog):
     def getVersion(self):
         'Get the version number in the dialog'
         return self.spin.GetValue()
+
+################################################################################
+################################################################################
+import wx.lib.mixins.listctrl  as  listmix
+class SortableLstCtrl(wx.Panel):
+    '''Creates a read-only table with sortable columns. Sorting is done by 
+    clicking on a column label. A triangle facing up or down is added to 
+    indicate the column is sorted.
+
+    To use, the header is labeled using 
+    :meth:`PopulateHeader`, then :meth:`PopulateLine` is called for every 
+    row in table and finally :meth:`SetColWidth` is called to set the column
+    widths.
+
+    :param wx.Frame parent: parent object for control
+    '''
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent, wx.ID_ANY)#, style=wx.WANTS_CHARS)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.list = G2LstCtrl(self, wx.ID_ANY, style=wx.LC_REPORT| wx.BORDER_SUNKEN)
+        sizer.Add(self.list, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        self.SetAutoLayout(True)
+        #self.SortListItems(0, True)
+
+    def PopulateHeader(self, header, justify):
+        '''Defines the column labels
+
+        :param list header: a list of strings with header labels
+        :param list justify: a list of int values where 0 causes left justification, 
+          1 causes right justification, and -1 causes centering
+        '''
+        info = wx.ListItem()
+        info.Mask = wx.LIST_MASK_TEXT | wx.LIST_MASK_IMAGE | wx.LIST_MASK_FORMAT
+        info.Image = -1
+        for i,(h,j) in enumerate(zip(header, justify)):
+            info.Text = h
+            if j > 0:
+                info.Align =  wx.LIST_FORMAT_RIGHT
+            elif j < 0:
+                info.Align =  wx.LIST_FORMAT_CENTER
+            else:
+                info.Align = 0
+            self.list.InsertColumn(i, info)
+        listmix.ColumnSorterMixin.__init__(self.list, len(header))
+        self.list.itemDataMap = {}
+
+    def PopulateLine(self, key, data):
+        '''Enters each row into the table
+
+        :param int key: a unique int value for each line, probably should
+          be sequential
+        :param list data: a list of strings for each column in that row
+        '''
+        index = self.list.InsertItem(self.list.GetItemCount(), data[0])
+        for i,d in enumerate(data[1:]):
+            self.list.SetItem(index, i+1, d)
+        self.list.SetItemData(index, key)
+        self.list.itemDataMap[key] = data
+
+    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None):
+        '''Sets the column width.
+
+        :param int width: the column width in pixels
+        :param bool auto: if True (default) and width is None (default) the
+          width is set by the maximum width entry in the column
+        :param int minwidth: used when auto is True, sets a minimum 
+          column width
+        :param int maxwidth: used when auto is True, sets a maximum 
+          column width. Do not use with minwidth
+        '''
+        if width:
+            self.list.SetColumnWidth(col, width)
+        elif auto:
+            self.list.SetColumnWidth(col, wx.LIST_AUTOSIZE)
+            if minwidth and self.list.GetColumnWidth(col) < minwidth:
+                self.list.SetColumnWidth(col, minwidth)
+            elif maxwidth and self.list.GetColumnWidth(col) > maxwidth:
+                self.list.SetColumnWidth(col, maxwidth)
+        else:
+            print('Error in SetColWidth: use either auto or width')
+            
+class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
+    '''Creates a custom ListCtrl with support for images in column labels
+    '''
+    def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=0):
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        from wx.lib.embeddedimage import PyEmbeddedImage
+        # from demo/images.py
+        SmallUpArrow = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
+            b"REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
+            b"cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
+        SmallDnArrow = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
+            b"REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
+            b"bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
+        self.il = wx.ImageList(16, 16)
+        self.UpArrow = self.il.Add(SmallUpArrow.GetBitmap())
+        self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
+        self.parent=parent
+        self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+        
+    def GetListCtrl(self): # needed for sorting
+        return self
+    def GetSortImages(self):
+        #return (self.parent.DownArrow, self.parent.UpArrow)
+        return (self.DownArrow, self.UpArrow)
 
 ################################################################################
 #### Display Help information

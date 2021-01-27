@@ -17,13 +17,14 @@
 
 #TODO:
 # Prince-test next
-# Make PWDR unique? (use histlist)
+# Make Phase unique? (need a phaselist)
 # more graphics
 # display more in datawindow
 
 import sys
 import os
 import platform
+import glob
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
@@ -46,6 +47,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIfiles as G2fil
 import GSASIIplot as G2plt
+import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
 
@@ -104,10 +106,10 @@ def cPickleLoad(fp):
             
 def main(application):
     '''Start up the GSAS-II GUI'''                        
-    knownVersions = ['2.7','3.6','3.7','3.8']
+    knownVersions = ['3.6','3.7','3.8','3.9']
     if platform.python_version()[:3] not in knownVersions: 
         dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
+                'GSAS-II requires Python 3.6+\n Yours is '+sys.version.split()[0],
                 'Python version error',  wx.OK)
         try:
             dlg.ShowModal()
@@ -157,17 +159,22 @@ class MakeTopWindow(wx.Frame):
         self.MenuBar = wx.MenuBar()
         File = wx.Menu(title='')
         self.MenuBar.Append(menu=File, title='&File')
-        item = File.Append(wx.ID_ANY,'&Import project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
+        item = File.Append(wx.ID_ANY,'&Import single project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.onLoadGPX, id=item.GetId())
+        item = File.Append(wx.ID_ANY,'&Import multiple projects...\tCtrl+M','Open a GSAS-II project file (*.gpx)')            
+        self.Bind(wx.EVT_MENU, self.onLoadMultGPX, id=item.GetId())
+        item = File.Append(wx.ID_ANY,'&Wildcard import of projects...\tCtrl+W','Open a GSAS-II project file (*.gpx)')            
+        self.Bind(wx.EVT_MENU, self.onLoadWildGPX, id=item.GetId())
 #        item = File.Append(wx.ID_ANY,'&Import selected...','Open a GSAS-II project file (*.gpx)')
 #        self.Bind(wx.EVT_MENU, self.onLoadSel, id=item.GetId())
 
         self.Mode = wx.Menu(title='')
         self.MenuBar.Append(menu=self.Mode, title='&Mode')
         self.wxID_Mode = {}
-        for m in "Histogram","Phase","Project":
-            i = self.wxID_Mode[m] = wx.NewId()
-            item = self.Mode.AppendRadioItem(i,m,'Display {}s'.format(m))
+        for i,m in enumerate(("Histogram","Phase","Project")):
+            self.wxID_Mode[m] = i+1
+            item = self.Mode.AppendRadioItem(i+1,m+'\tCtrl+{}'.format(i+1),
+                                                 'Display {}s'.format(m))
             self.Bind(wx.EVT_MENU, self.onRefresh, id=item.GetId())
         item = self.Mode.Append(wx.ID_ANY,'Set histogram filter','Set a filter for histograms to display')
         self.Bind(wx.EVT_MENU, self.onHistFilter, id=item.GetId())
@@ -197,7 +204,7 @@ class MakeTopWindow(wx.Frame):
         self.treePanel.SetSizer(treeSizer)
         self.GPXtree = G2G.G2TreeCtrl(id=wx.ID_ANY,
             parent=self.treePanel, size=self.treePanel.GetClientSize(),style=wx.TR_DEFAULT_STYLE )
-        TreeId = self.GPXtree.Id
+        #TreeId = self.GPXtree.Id
 
         treeSizer.Add(self.GPXtree,1,wx.EXPAND|wx.ALL,0)
         #self.GPXtree.Bind(wx.EVT_TREE_SEL_CHANGED,self.OnDataTreeSelChanged)
@@ -220,6 +227,7 @@ class MakeTopWindow(wx.Frame):
 
         self.fileList = []  # list of files read for use in Reload
         self.histList = []  # list of histograms loaded for unique naming
+        self.projList = []
 
         self.PWDRfilter = None
         for win,var in ((self.plotFrame,'Plot_Pos'),):
@@ -228,7 +236,7 @@ class MakeTopWindow(wx.Frame):
                 pos = GSASIIpath.GetConfigValue(var)
                 if type(pos) is str: pos = eval(pos)
                 win.SetPosition(pos)
-                if GetDisplay(pos) is None: win.Center()
+                if G2gd.GetDisplay(pos) is None: win.Center()
             except:
                 if GSASIIpath.GetConfigValue(var):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
@@ -246,11 +254,32 @@ class MakeTopWindow(wx.Frame):
         finally:
             dlg.Destroy()
         if os.path.exists(fil):
-            self.fileList.append([fil,'GPX'])
+            #self.fileList.append([fil,'GPX'])
             return fil
         else:
             print('File {} not found, skipping'.format(fil))
             return
+
+    def SelectMultGPX(self):
+        '''Select multiple .GPX files to be read
+        '''
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file', 
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',
+                style=wx.FD_OPEN|wx.FD_MULTIPLE)
+        try:
+            if dlg.ShowModal() != wx.ID_OK: return
+            files = dlg.GetPaths()
+        finally:
+            dlg.Destroy()
+        fileList = []
+        for f in files:
+            fil = os.path.splitext(f)[0]+'.gpx'
+            if os.path.exists(fil):
+                if fil not in fileList:
+                    fileList.append(fil)
+            else:
+                print('File {} not found, skipping'.format(fil))
+        return fileList
         
     def getMode(self):
         '''returns the display mode (one of "Histogram","Phase","Project").
@@ -268,8 +297,10 @@ class MakeTopWindow(wx.Frame):
         '''
         self.GPXtree.DeleteChildren(self.root)  # delete tree contents
         self.histList = []  # clear list of loaded histograms
+        self.projList = []
         for fil,mode in self.fileList:
             self.loadFile(fil)
+        self.doneLoad()
         self.SetModeMenu()
             
     def SetModeMenu(self):
@@ -299,7 +330,13 @@ class MakeTopWindow(wx.Frame):
         else:
             print("mode not implemented")
             #raise Exception("mode not implemented")
-        
+
+    def doneLoad(self):
+        self.GPXtree.Expand(self.root)
+        if self.getMode() == "Project":
+            overId = self.GPXtree.InsertItem(pos=0,parent=self.root,text='Project Overview')
+            self.GPXtree.SelectItem(overId)
+
     def onLoadGPX(self,event):
         '''Initial load of GPX file in response to a menu command
         '''
@@ -308,6 +345,52 @@ class MakeTopWindow(wx.Frame):
         if not os.path.exists(fil): return
         self.fileList.append([fil,'GPX'])
         self.loadFile(fil)
+        self.doneLoad()
+
+    def onLoadMultGPX(self,event):
+        '''Initial load of multiple GPX files in response to a menu command
+        '''
+        for fil in self.SelectMultGPX():
+            if not os.path.exists(fil): continue
+            self.fileList.append([fil,'GPX'])
+            self.loadFile(fil)
+        self.doneLoad()
+
+    def onLoadWildGPX(self,event,wildcard=None):
+        '''Initial load of GPX file in response to a menu command
+        '''
+        home = os.path.abspath(os.getcwd())
+        hlp = '''Enter a wildcard version of a file name. 
+The directory is assumed to be "{}" unless specified otherwise.
+Extensions will be set to .gpx and .bak files will be ignored unless
+the wildcard string includes "bak". For example, "*abc*" will match any 
+.gpx file in that directory containing "abc". String "/tmp/A*" will match
+files in "/tmp" beginning with "A". Supplying two strings, "A*" and "B*bak*" 
+will match files names beginning with "A" or "B", but ".bak" files will 
+be included for the files beginning with "B" only.
+'''.format(home)
+        if wildcard is None:
+            dlg = G2G.MultiStringDialog(self, 'Enter wildcard file names', 
+                    ['wild-card 1'] , values=['*'], 
+                    lbl='Provide string(s) with "*" to find matching files',
+                    addRows=True, hlp=hlp)
+            res = dlg.Show()
+            wl = dlg.GetValues()
+            dlg.Destroy()
+            if not res: return
+        else:
+            wl = [wildcard]
+        for w in wl:
+            if not os.path.split(w)[0]:
+                w = os.path.join(home,w)
+            w = os.path.splitext(w)[0] + '.gpx'
+            for fil in glob.glob(w): 
+                if not os.path.exists(fil): continue
+                if '.bak' in fil and 'bak' not in w: continue
+                if fil in [i for i,j in self.fileList]: continue
+                self.fileList.append([fil,'GPX'])
+                self.loadFile(fil)
+        self.doneLoad()
 
     def LoadPwdr(self,fil):
         '''Load PWDR entries from a .GPX file to the tree.
@@ -368,7 +451,7 @@ class MakeTopWindow(wx.Frame):
     #end patch
                 G2frame.GPXtree.SetItemPyData(sub,datus[1])
         if datum: # was anything loaded?
-            print('project load successful for {}'.format(datum[0]))
+            print('data load successful for {}'.format(datum[0]))
     #        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
@@ -448,7 +531,7 @@ class MakeTopWindow(wx.Frame):
                 G2frame.GPXtree.SetItemPyData(sub,datus[1])
         if datum: # was anything loaded?
             self.GPXtree.Expand(Id)
-            print('project load successful for {}'.format(datum[0]))
+            print('Phase load successful for {}'.format(datum[0]))
     #        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
@@ -457,26 +540,42 @@ class MakeTopWindow(wx.Frame):
         '''Load the Covariance entry from a .GPX file to the tree.
         see :func:`GSASIIIO.ProjFileOpen`
         '''
+        import datetime
         G2frame = self
         filep = open(fil,'rb')
+        saved = datetime.datetime.fromtimestamp(os.path.getmtime(fil)).strftime("%Y-%h-%d %H:%M")
         shortname = os.path.splitext(os.path.split(fil)[1])[0]
-
+        projInfo = [shortname,saved]
         wx.BeginBusyCursor()
-        Phases = None
+        #Phases = None
+        #G2frame.GPXtree.SetItemPyData(Id,Covar[1])
         try:
             while True:
                 try:
                     data = cPickleLoad(filep)
                 except EOFError:
                     break
+                #if data[0][0] == 'Controls' and 'LastSavedUsing' in data[0][1]:
                 if not data[0][0].startswith('Covariance'): continue
                 Covar = data[0]
+                f = '{:d}'
+                if 'varyList' in data[0][1]:
+                    projInfo += [f.format(len(data[0][1]['varyList']))]
+                else:
+                    projInfo += ['?']
+                for v in 'Nobs','GOF':
+                    if 'Rvals' in data[0][1] and v in data[0][1]['Rvals']:
+                        projInfo += [f.format(data[0][1]['Rvals'][v])]
+                    else:
+                        projInfo += ['?']
+                    f = '{:6.2f}'
                 #GSASIIpath.IPyBreak_base()
                 #if self.PWDRfilter is not None: # implement filter
                 #    if self.PWDRfilter not in data[0][0]: continue
-                Covar[0] = shortname + ' Covariance'
+                Covar[0] = shortname # + ' Covariance'
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Covar[0])
                 G2frame.GPXtree.SetItemPyData(Id,Covar[1])
+                self.projList.append(projInfo)
                 break
             else:
                 print("{} does not have refinement results".format(shortname))
@@ -492,7 +591,6 @@ class MakeTopWindow(wx.Frame):
         finally:
             filep.close()
             wx.EndBusyCursor()
-        self.GPXtree.Expand(self.root)
 
     def OnDataTreeSelChanged(self,event):
         def ClearData(self):
@@ -509,7 +607,23 @@ class MakeTopWindow(wx.Frame):
         G2frame = self
         item = event.GetItem()
         #print('selected',item)
-        if self.getMode() == "Project":
+        lbl = G2frame.GPXtree.GetItemText(item)
+        if self.getMode() == "Project" and lbl == 'Project Overview':
+            ClearData(G2frame.dataWindow)
+            #import imp
+            #imp.reload(G2G)
+            pnl = G2G.SortableLstCtrl(G2frame.dataWindow)
+            h = ["File", "last saved", "vars", "Nobs", "GOF"]
+            j = [ 0,       0,           1,      1,      1]
+            pnl.PopulateHeader(h,j)
+            for i,line in enumerate(self.projList):
+                pnl.PopulateLine(i,line)
+            G2frame.dataWindow.GetSizer().Add(pnl,1,wx.EXPAND)
+            pnl.SetColWidth(0,maxwidth=170)
+            for i in range(1,len(h)):
+                pnl.SetColWidth(i,minwidth=50)
+            G2frame.dataWindow.SendSizeEvent()
+        elif self.getMode() == "Project":
             ClearData(G2frame.dataWindow)
             data = G2frame.GPXtree.GetItemPyData(item)
             if data is None:
@@ -527,6 +641,7 @@ class MakeTopWindow(wx.Frame):
                 text += '\n\tmax shift/esd = {:.3f}'.format(Rvals.get('Max shft/sig',0.0))
                 if 'lamMax' in Rvals:
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
+                text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 G2frame.dataWindow.GetSizer().Add(
                     wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text)
                 )
@@ -721,15 +836,15 @@ class MakeTopWindow(wx.Frame):
         if max(abs((data0[0]-data1[0])/data0[0])) > 0.01:
             G2G.G2MessageBox(self,'Unable to use test: "X" values differ','Comparison not valid')
             return
-        X = data0[3] - data1[3]
-        #Z = np.sqrt(data0[3]) * (data0[1] - (data0[3] + data1[3])/2)
-        X = (data0[3] - data1[3]) / np.sqrt(data0[1])
-        Z = (data0[1] - (data0[3] + data1[3])/2) / np.sqrt(data0[1])
-        lam = np.sum(X*Z) / np.sum(X)
-        sig = np.sqrt(
-            (np.sum(Z*Z) - lam*lam*np.sum(X*X)) / 
-            ((len(data0[0]) - 1) * np.sum(X*X))
-            )
+        # X = data0[3] - data1[3]
+        # #Z = np.sqrt(data0[3]) * (data0[1] - (data0[3] + data1[3])/2)
+        # X = (data0[3] - data1[3]) / np.sqrt(data0[1])
+        # Z = (data0[1] - (data0[3] + data1[3])/2) / np.sqrt(data0[1])
+        # lam = np.sum(X*Z) / np.sum(X)
+        # sig = np.sqrt(
+        #     (np.sum(Z*Z) - lam*lam*np.sum(X*X)) / 
+        #     ((len(data0[0]) - 1) * np.sum(X*X))
+        #     )
             
 #    0 the x-postions (two-theta in degrees),
 #    1 the intensity values (Yobs),
@@ -751,14 +866,13 @@ if __name__ == '__main__':
     except:
         print('Unable to run with current setup, do you want to update to the')
         try:
-            if '2' in platform.python_version_tuple()[0]:            
-                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
-            else:
+#            if '2' in platform.python_version_tuple()[0]:            
+#                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+#            else:
                 ans = input("latest GSAS-II version? Update ([Yes]/no): ")                
         except:
             ans = 'no'
         if ans.strip().lower() == "no":
-            import sys
             print('Exiting')
             sys.exit()
         print('Updating...')
@@ -773,10 +887,10 @@ if __name__ == '__main__':
             Frame.loadFile(fil)
         else:
             print('File {} not found. Skipping'.format(fil))
-
-    # debug code to select in initial mode
-    #self=Frame
-    #self.Mode.FindItemById(self.wxID_Mode['Project']).Check(True)
-    #self.onRefresh(None)
+    Frame.doneLoad()
+    # debug code to select Project in initial mode
+    #Frame.onLoadWildGPX(None,wildcard='*')
+    #Frame.Mode.FindItemById(Frame.wxID_Mode['Project']).Check(True)
+    #Frame.onRefresh(None)
     
     application.MainLoop()

@@ -976,8 +976,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     try:
-        Plot.set_aspect(aspect='equal')
-    except:  #broken in mpl 3.1.1; worked in mpl 3.0.3
+        Plot.set_box_aspect((1,1,1))
+#                Plot.set_aspect('equal')
+    except: #broken in mpl 3.1.1; worked in mpl 3.0.3
         pass
     
     Type = Data['Type']            
@@ -5329,7 +5330,11 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
             Plot.set_xlabel(labelX)
             Plot.set_ylabel(labelY)
             Plot.set_zlabel(labelZ)
-            Plot.set_aspect('equal')
+            try:
+                Plot.set_box_aspect((1,1,1))
+#                Plot.set_aspect('equal')
+            except: #broken in mpl 3.1.1; worked in mpl 3.0.3
+                pass
         # except:
         #     print('Plot3dXYZ failure')
         #     pass
@@ -6016,7 +6021,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_ylim3d(XYZlim)
             Plot.set_zlim3d(XYZlim)
             try:
-                Plot.set_aspect('equal')
+                Plot.set_box_aspect((1,1,1))
+#                Plot.set_aspect('equal')
             except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                 pass
 #            Plot.autoscale()
@@ -6291,9 +6297,10 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.set_ylim3d(XYZlim)
                 Plot.set_zlim3d(XYZlim)
                 try:
-                    Plot.set_aspect('equal')
+                    Plot.set_box_aspect((1,1,1))
+    #                Plot.set_aspect('equal')
                 except: #broken in mpl 3.1.1; worked in mpl 3.0.3
-                    pass                       
+                    pass
                 Plot.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))
                 Plot.set_xlabel(r'X, MRD')
                 Plot.set_ylabel(r'Y, MRD')
@@ -9164,6 +9171,24 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         text.draw_text(scale=0.025,position=offset)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
+        
+    def RenderLabel2(x,y,z,label,r,color,matRot,offset=wx.RealPoint(0.,0.)):
+        '''
+        color wx.Colour object - doesn't work
+        '''                     
+        figure = mpl.figure.Figure(figsize=(1.,1.),facecolor=(0.,0.,0.,0.))
+        figure.clf()
+        canvas = hcCanvas(figure)
+        ax0 = figure.add_subplot(111)
+        ax0.text(0.,0.,label)
+        ax0.axis("off")
+        figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
+        agg = canvas.switch_backends(hcCanvas)
+        agg.draw()
+        img, (width, height) = agg.print_to_buffer()
+        Timg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+        RenderViewPlane(1.0*eplane,Timg,width,height)
+        
         
     def RenderMap(rho,rhoXYZ,indx,Rok):
         GL.glShadeModel(GL.GL_FLAT)

@@ -324,7 +324,7 @@ class G2PlotMpl(_tabPlotWin):
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
-        sizer.Add(self.toolbar,0,wx.LEFT|wx.EXPAND)
+        sizer.Add(self.toolbar,0,)
         self.SetSizer(sizer)
         
     def SetToolTipString(self,text):
@@ -368,14 +368,13 @@ class G2Plot3D(_tabPlotWin):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
         self.canvas = Canvas(self,-1,self.figure)
-        self.toolbar = Toolbar(self.canvas)
-        self.toolbar = GSASIItoolbar(self.canvas)
+        self.toolbar = GSASIItoolbar(self.canvas,Arrows=False)
 
         self.toolbar.Realize()
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
-        sizer.Add(self.toolbar,0,wx.LEFT|wx.EXPAND)
+        sizer.Add(self.toolbar,)
         self.SetSizer(sizer)
                               
     def SetToolTipString(self,text):
@@ -387,9 +386,14 @@ class G2Plot3D(_tabPlotWin):
     def ToolBarDraw(self):
         mplv = eval(mpl.__version__.replace('.',','))
         if mplv[0] >= 3 and mplv[1] >= 3:
-            self.toolbar.draw_idle()
+            self.toolbar.canvas.draw_idle()
         else:
             self.toolbar.draw()
+        # mplv = eval(mpl.__version__.replace('.',','))
+        # if mplv[0] >= 3 and mplv[1] >= 3:
+        #     self.toolbar.draw_idle()
+        # else:
+        #     self.toolbar.draw()
         
 class G2PlotNoteBook(wx.Panel):
     'create a tabbed panel to hold a GSAS-II graphics window'
@@ -637,7 +641,6 @@ class G2PlotNoteBook(wx.Panel):
         tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
         self.lastRaisedPlotTab = tabLabel
         if plotDebug: 
-        #    print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel+str(self.skipPageChange))
             print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel)
             print ('event type='+event.GetEventType())
         self.status.DestroyChildren()    #get rid of special stuff on status bar
@@ -655,36 +658,29 @@ class G2PlotNoteBook(wx.Panel):
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
-    def __init__(self,plotCanvas,publish=None):
+    def __init__(self,plotCanvas,publish=None,Arrows=True):
         '''Adds additional icons to toolbar'''
         self.arrows = {}
         # try to remove a button from the bar
         POS_CONFIG_SPLTS_BTN = 6 # position of button to remove
-        try:
-            self.toolitems = self.toolitems[:POS_CONFIG_SPLTS_BTN]+self.toolitems[POS_CONFIG_SPLTS_BTN+1:]
-            deleted = True
-        except:
-            deleted = False
-        Toolbar.__init__(self,plotCanvas)
-#        G2path = os.path.split(os.path.abspath(__file__))[0]
-        self.updateActions = None # defines a call to be made as part of plot updates
         self.plotCanvas = plotCanvas
-        # 2nd try to remove a button from the bar
-        if not deleted: self.DeleteToolByPos(POS_CONFIG_SPLTS_BTN) #doesn't work in some wxpython versions
+        Toolbar.__init__(self,plotCanvas)
+        self.updateActions = None # defines a call to be made as part of plot updates
+        self.DeleteToolByPos(POS_CONFIG_SPLTS_BTN)
         self.parent = self.GetParent()
         self.AddToolBarTool('Key press','Select key press','key.ico',self.OnKey)
         self.AddToolBarTool('Help on','Show help on this plot','help.ico',self.OnHelp)
         # add arrow keys to control zooming
-        for direc in ('left','right','up','down', 'Expand X','Shrink X','Expand Y','Shrink Y'):
-            if ' ' in direc:
-                sprfx = ''
-                prfx = 'Zoom: '
-            else:
-                sprfx = 'Shift '
-                prfx = 'Shift plot '
-            fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
-            self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
-#        G2path = os.path.split(os.path.abspath(__file__))[0]
+        if Arrows:
+            for direc in ('left','right','up','down', 'Expand X','Shrink X','Expand Y','Shrink Y'):
+                if ' ' in direc:
+                    sprfx = ''
+                    prfx = 'Zoom: '
+                else:
+                    sprfx = 'Shift '
+                    prfx = 'Shift plot '
+                fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
+                self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
         if publish:
             self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
             
@@ -1735,7 +1731,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     elif GSASIIpath.GetConfigValue('debug'):
         print('Possible PickId problem PickId=',G2frame.PickId)
     # for now I am not sure how to regenerate G2frame.HKL
-    G2frame.HKL = [] # TODO
+    G2frame.HKL = []
     PlotPatterns(G2frame,newPlot,plotType)
 
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
@@ -6212,7 +6208,6 @@ def PlotTexture(G2frame,data,Start=False):
         Dettext = pick.get_gid()
         Page.SetToolTipString(Dettext)
 
-#TODO: add histogram positions to polefigures
     if '3D' in SHData['PlotType']:
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Texture','3d')
     else:
@@ -6809,7 +6804,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             else:
                 Plot.plot(Xnew,Ynew,color=Ncol)
                 Plot.plot(Xnew,Ynew,marker='o',color=Ncol,label=name)
-        if Page.fitvals: # TODO: deal with fitting of None values
+        if Page.fitvals:
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
             Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%NC])
@@ -8381,7 +8376,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if not np.any(Fade):
                     Fade += 1
                 Draw('key down',Fade)
-            else:        #TODO sequential result movie here
+            else:
                 SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
                 if SeqId:
                     Seqdata = G2frame.GPXtree.GetItemPyData(SeqId)

@@ -569,10 +569,7 @@ class G2PlotNoteBook(wx.Panel):
         self._addPage(name,page)
         mplv = eval(mpl.__version__.replace('.',','))
         if mplv[0] == 3:
-            if mplv[1] >= 3:
-                #page.set_box_aspect((1,1,1)) # does not work in mpl 3.3.2. 
-                page.figure.gca().set_box_aspect(1) # Is this correct?
-            elif mplv == [3,0,3]:
+            if mplv == [3,0,3] or mplv[1] >= 3:
                 pass
             elif not self.MPLwarn: # patch for bad MPL 3D
                 self.MPLwarn = True

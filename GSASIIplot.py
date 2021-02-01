@@ -969,8 +969,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     try:
-        Plot.set_box_aspect((1,1,1))
-#                Plot.set_aspect('equal')
+        Plot.set_aspect(aspect='equal')
     except: #broken in mpl 3.1.1; worked in mpl 3.0.3
         pass
     
@@ -994,7 +993,6 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLF = []
     sumFo = 0.
     sumDF = 0.
-#    GSASIIpath.IPyBreak()
     for refl in HKLref:
         H = refl[:3]
         if 'HKLF' in Name:
@@ -5325,7 +5323,6 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
             Plot.set_zlabel(labelZ)
             try:
                 Plot.set_box_aspect((1,1,1))
-#                Plot.set_aspect('equal')
             except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                 pass
         # except:
@@ -6015,17 +6012,15 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_zlim3d(XYZlim)
             try:
                 Plot.set_box_aspect((1,1,1))
-#                Plot.set_aspect('equal')
             except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                 pass
-#            Plot.autoscale()
         if plotType == 'Size':
-            Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
+            Plot.set_title('Crystallite size for '+phase+'; '+coeff[0]+' model')
             Plot.set_xlabel(r'X, $\mu$m')
             Plot.set_ylabel(r'Y, $\mu$m')
             Plot.set_zlabel(r'Z, $\mu$m')
         else:    
-            Plot.set_title(r'$\mu$strain for '+phase+'\n'+coeff[0]+' model')
+            Plot.set_title(r'$\mu$strain for '+phase+'; '+coeff[0]+' model')
             Plot.set_xlabel(r'X, $\mu$strain')
             Plot.set_ylabel(r'Y, $\mu$strain')
             Plot.set_zlabel(r'Z, $\mu$strain')
@@ -6290,7 +6285,6 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.set_zlim3d(XYZlim)
                 try:
                     Plot.set_box_aspect((1,1,1))
-    #                Plot.set_aspect('equal')
                 except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                     pass
                 Plot.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))

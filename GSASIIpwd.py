@@ -1,8 +1,8 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-*GSASII powder calculation module*
-==================================
+*GSASII powder calculation module (GSASIIpwd)*
+==============================================
 
 '''
 ########### SVN repository information ###################
@@ -2143,7 +2143,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if not GoOn:
                 return -M           #abort!!
         return M
-        
+
+    # beginning of DoPeakFit
     if controls:
         Ftol = controls['min dM/M']
     else:

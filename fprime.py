@@ -182,7 +182,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         slideSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=panel, 
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
-        slideSizer.Add(self.SpinButton,0,wx.ALIGN_RIGHT)
+        slideSizer.Add(self.SpinButton)
         self.SpinButton.SetRange(-1,1)
         self.SpinButton.SetValue(0)
         self.SpinButton.Bind(wx.EVT_SPIN, self.OnSpinButton, id=wxID_SPINBUTTON)

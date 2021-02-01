@@ -10698,7 +10698,7 @@ of the crystal structure.
             mainSizer.Add(OriSizer)
             Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
-            mainSizer.Add(sytsymtxt,0,WACV)
+            mainSizer.Add(sytsymtxt)
             OriSizer1 = wx.FlexGridSizer(0,5,5,5)
             if len(atomData):
                 choice = list(atNames[0].keys())

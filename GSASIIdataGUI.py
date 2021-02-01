@@ -5193,6 +5193,8 @@ class GSASII(wx.Frame):
                 rtext += ', Max delt/sig = {:.3f}'.format(Rvals['Max shft/sig'])
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
             if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
+            if 'Aborted' in Rvals:
+                text += '\ERROR: Minimizer failed to reduce chi**2!\n'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached or result may be false minimum.'+  \

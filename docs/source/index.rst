@@ -40,3 +40,9 @@ Contents
   exports.rst
   G2tools.rst
 
+.. only:: html
+
+	  `General Index <./genindex.html>`_
+
+	  `Module Index <./py-modindex.html>`_
+

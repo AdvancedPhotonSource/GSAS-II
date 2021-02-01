@@ -130,7 +130,7 @@ try:
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
     from scipy.ndimage.interpolation import map_coordinates
-except ImportError:
+except (ImportError, ValueError):
     pass
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)

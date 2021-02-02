@@ -786,7 +786,7 @@ def refinePeaksTSS(peaks,difC,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,Z
     M20,X20 = calc_M20SS(peaks,HKL)
     return len(HKL),M20,X20,Aref,Vref,Z
     
-def refinePeaks(peaks,ibrav,A,ifX20=True,sg_type=None):
+def refinePeaks(peaks,ibrav,A,ifX20=True,cctbx_args=None):
     'needs a doc string'
     dmin = getDmin(peaks)
     smin = 1.0e10
@@ -794,8 +794,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True,sg_type=None):
     maxTries = 10
     OK = False
     tries = 0
-    sg_type = G2lat.make_sgtype(ibrav)
-    HKL = G2lat.GenHBravais(dmin,ibrav,A,sg_type)
+    HKL = G2lat.GenHBravais(dmin,ibrav,A,cctbx_args)
     while len(HKL) > 2 and IndexPeaks(peaks,HKL)[0]:
         Pwr = pwr - (tries % 2)
         HKL = []
@@ -810,7 +809,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True,sg_type=None):
             OK = False
             continue
         try:
-            HKL = G2lat.GenHBravais(dmin,ibrav,A,sg_type)
+            HKL = G2lat.GenHBravais(dmin,ibrav,A,cctbx_args)
         except FloatingPointError:
             A = oldA
             OK = False

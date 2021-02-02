@@ -1113,7 +1113,30 @@ def GetBraviasNum(center,system):
         return 15
     raise ValueError('non-standard Bravais lattice center=%s, cell=%s' % (center,system))
 
-def GenHBravais(dmin,Bravais,A, sg_type=None):
+def _GenHBravais_cctbx(dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_generator):
+    '''Alternate form of :func:`GenHBravais` that uses CCTBX internals
+    '''
+    g_inv = np.array([[A[0],   A[3]/2, A[4]/2],
+                      [A[3]/2, A[1],   A[5]/2], 
+                      [A[4]/2, A[5]/2, A[2]]])
+    g = np.linalg.inv(g_inv)
+    g_elems = (g[0][0], g[1][1], g[2][2], g[0][1], g[0][2], g[1][2])
+    try:
+        uc = uctbx_unit_cell(metrical_matrix=g_elems)
+    except ValueError: # this function sometimes receives an A matrix that gives
+                           # numbers <0 in the diagonal elems of g. Not sure why.
+        return []
+    #if sg_type is None:
+    #    sg_type = make_sgtype(Bravais)
+    mig = miller_index_generator(uc, sg_type, 0, dmin)
+    result = []
+    for h,k,l in mig:
+        d = uc.d((h,k,l))
+        result.append([h, k, l, d, -1])
+    result.sort(key=lambda l: l[3], reverse=True)
+    return result
+
+def GenHBravais(dmin, Bravais, A, cctbx_args=None):
     """Generate the positionally unique powder diffraction reflections
      
     :param dmin: minimum d-spacing in A
@@ -1138,10 +1161,19 @@ def GenHBravais(dmin,Bravais,A, sg_type=None):
             * 16 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
-    :param sg_type: alternate specification for Bravais lattice used in CCTBX
-    :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
+    :param dict cctbx_args: items defined in CCTBX: 
+
+         * 'sg_type': value from cctbx.sgtbx.space_group_type(symmorphic_sgs[ibrav])
+         * 'uctbx_unit_cell': pointer to :meth:`cctbx.uctbx.unit_cell`
+         * 'miller_index_generator':  pointer to :meth:`cctbx.miller.index_generator`
+
+    :returns: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
             
     """
+    if cctbx_args:
+        return _GenHBravais_cctbx(dmin, Bravais, A,
+                    cctbx_args['sg_type'], cctbx_args['uctbx_unit_cell'], cctbx_args['miller_index_generator'])
+    
     if Bravais in [9,]:
         Cent = 'A'
     elif Bravais in [10,]:

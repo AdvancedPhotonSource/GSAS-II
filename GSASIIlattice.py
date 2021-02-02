@@ -1113,7 +1113,7 @@ def GetBraviasNum(center,system):
         return 15
     raise ValueError('non-standard Bravais lattice center=%s, cell=%s' % (center,system))
 
-def GenHBravais(dmin,Bravais,A):
+def GenHBravais(dmin,Bravais,A, sg_type=None):
     """Generate the positionally unique powder diffraction reflections
      
     :param dmin: minimum d-spacing in A
@@ -1138,6 +1138,7 @@ def GenHBravais(dmin,Bravais,A):
             * 16 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :param sg_type: alternate specification for Bravais lattice used in CCTBX
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
             
     """

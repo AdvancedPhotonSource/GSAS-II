@@ -19,30 +19,26 @@ Contents
 ---------
 
 .. toctree::
+    :maxdepth: 2
+    :numbered: 4
 
-  packages.rst
-  GSASII.rst
-  GSASIIobj.rst
-  GSASIIutil.rst
-  GSASIIGUIr.rst
-  GSASIIGUI.rst
-  GSASIIstruc.rst
-  GSASIImapvars.rst
-  GSASIIimage.rst
-  GSASIImath.rst
-  GSASIIindex.rst
-  GSASIIplot.rst
-  GSASIIpwd.rst
-  SAS.rst
-  GSASIIscriptable.rst
-  GSASIIscripts.rst
-  imports.rst 
-  exports.rst
-  G2tools.rst
-
-.. only:: html
-
-	  `General Index <./genindex.html>`_
-
-	  `Module Index <./py-modindex.html>`_
-
+    packages.rst
+    GSASII.rst
+    GSASIIobj.rst
+    GSASIIutil.rst
+    GSASIIGUIr.rst
+    GSASIIGUI.rst
+    GSASIIstruc.rst
+    GSASIImapvars.rst
+    GSASIIimage.rst
+    GSASIImath.rst
+    GSASIIindex.rst
+    GSASIIplot.rst
+    GSASIIpwd.rst
+    SAS.rst
+    GSASIIscriptable.rst
+    GSASIIscripts.rst
+    imports.rst 
+    exports.rst
+    G2tools.rst
+    indices.rst

@@ -786,7 +786,7 @@ def refinePeaksTSS(peaks,difC,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,Z
     M20,X20 = calc_M20SS(peaks,HKL)
     return len(HKL),M20,X20,Aref,Vref,Z
     
-def refinePeaks(peaks,ibrav,A,ifX20=True):
+def refinePeaks(peaks,ibrav,A,ifX20=True,sg_type=None):
     'needs a doc string'
     dmin = getDmin(peaks)
     smin = 1.0e10
@@ -794,7 +794,8 @@ def refinePeaks(peaks,ibrav,A,ifX20=True):
     maxTries = 10
     OK = False
     tries = 0
-    HKL = G2lat.GenHBravais(dmin,ibrav,A)
+    sg_type = G2lat.make_sgtype(ibrav)
+    HKL = G2lat.GenHBravais(dmin,ibrav,A,sg_type)
     while len(HKL) > 2 and IndexPeaks(peaks,HKL)[0]:
         Pwr = pwr - (tries % 2)
         HKL = []
@@ -809,7 +810,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True):
             OK = False
             continue
         try:
-            HKL = G2lat.GenHBravais(dmin,ibrav,A)
+            HKL = G2lat.GenHBravais(dmin,ibrav,A,sg_type)
         except FloatingPointError:
             A = oldA
             OK = False
@@ -918,7 +919,8 @@ def monoCellReduce(ibrav,A):
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 
-def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
+def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
+            timeout=None,M20_min=2.0,X20_max=None,return_Nc=False):
     'needs a doc string'
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
@@ -962,6 +964,10 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                     while GoOn:                                                 #Loop over increment of volume
                         N2 = 0
                         while N2 < N2s[ibrav]:                                  #Table 2 step (iii)               
+                            if timeout and time.time() - begin > timeout:
+                                GoOn = False
+                                break
+
                             if ibrav > 2:
                                 if not N2:
                                     A = []
@@ -992,12 +998,16 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                                     peaks = IndexPeaks(peaks,HKL)[1]
                                     a,b,c,alp,bet,gam = G2lat.A2cell(A)
                                     V = G2lat.calc_V(A)
-                                    if M20 >= 2.0:
+                                    if (
+                                        (M20 >= M20_min) and
+                                        (X20_max is None or X20 <= X20_max)
+                                    ):
                                         cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
+                                        if return_Nc: cell.append(Nc)
                                         newcell = np.array(cell[3:10])
                                         if not np.allclose(newcell,lastcell):
-                                            print ("%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f"  \
-                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1))
+                                            print ("%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f %s"
+                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1,bravaisNames[ibrav]))
                                             cells.append(cell)
                                         lastcell = np.array(cell[3:10])
                             if not GoOn:
@@ -1017,7 +1027,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                                 if cells:
                                     V1 = cells[0][9]
                                 else:
-                                    V1 = 25
+                                    V1 = controls[3]
                                 ncMax += Nobs
                                 cycle += 1
                                 print ('Restart search, new Max Nc = %d'%ncMax)

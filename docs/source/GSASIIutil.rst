@@ -28,9 +28,6 @@
 .. automodule:: GSASIImpsubs
     :members: 
 
-.. automodule:: gltext
-    :members: 
-
 .. automodule:: ElementTable
     :members: 
 
@@ -46,3 +43,5 @@
 .. automodule:: defaultIparms
     :members: 
 
+.. automodule:: ReadMarCCDFrame
+    :members: 

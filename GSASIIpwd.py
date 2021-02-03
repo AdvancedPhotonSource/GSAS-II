@@ -1,7 +1,7 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-*GSASII powder calculation module (GSASIIpwd)*
+*GSASIIpwd: Powder calculations module*
 ==============================================
 
 '''

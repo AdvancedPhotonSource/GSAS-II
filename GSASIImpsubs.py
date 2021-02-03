@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-*GSASIImpsubs - routines used in multiprocessing*
+*GSASIImpsubs: routines used in multiprocessing*
 -------------------------------------------------
 
 The routines here are called either directly when GSAS-II is used without multiprocessing

@@ -13,6 +13,9 @@
 
 Module to provide logging services, e.g. track and replay "actions"
 such as menu item, tree item, button press, value change and so on. 
+
+This capability is not currently implemented, but might be resurrected
+in some future version of GSAS-II.
 '''
 from __future__ import division, print_function
 try:

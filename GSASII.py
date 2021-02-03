@@ -9,10 +9,11 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSAS-II GUI*
+*GSASII: GSAS-II GUI*
 =====================
 
-This is the script to start the GSAS-II graphical user interface (GUI). 
+File GSASII.py is the script to start the GSAS-II graphical user 
+interface (GUI). 
 This script imports GSASIIpath, which does some minor initialization
 and then (before any wxPython calls can be made) creates a wx.App application. 
 A this point :func:`GSASIIpath.SetBinaryPath` is called to establish

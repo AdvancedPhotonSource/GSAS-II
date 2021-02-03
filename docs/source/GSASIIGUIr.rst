@@ -7,9 +7,9 @@
 .. automodule:: GSASIIIO
     :members: 
 
-.. automodule:: ReadMarCCDFrame
+.. automodule:: GSASIIpy3
     :members: 
 
-.. automodule:: GSASIIpy3
+.. automodule:: gltext
     :members: 
 

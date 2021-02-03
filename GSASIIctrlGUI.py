@@ -149,8 +149,10 @@ except ImportError:
 # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
 # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
 # in docs build
-if listmix.ListCtrlAutoWidthMixin == listmix.ColumnSorterMixin:
-    print('Dummy out listmix classes for docs build')
+try: 
+    class _(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin): pass
+except TypeError:
+    print('docs build conflict in listmix classes')
     class Placeholder(object):
         def __init__(self, vals):
             for val in vals:
@@ -159,10 +161,10 @@ if listmix.ListCtrlAutoWidthMixin == listmix.ColumnSorterMixin:
             if value[0].isupper():
                 return object
             return Placeholder([])
-        
     listmix = Placeholder()
     listmix.ListCtrlAutoWidthMixin = Placeholder()
     listmix.ColumnSorterMixin = Placeholder()
+    class _(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin): pass
 
         
 import time

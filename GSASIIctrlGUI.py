@@ -134,10 +134,11 @@ try:
     import wx.aui
     import wx.lib.scrolledpanel as wxscroll
     import wx.html        # could postpone this for quicker startup
+    import wx.lib.mixins.listctrl  as  listmix
     import matplotlib as mpl
 except ImportError:
-    raise
-    # Dumm 'wx' so this file can be imported
+    pass
+    # Emulate 'wx' so this file can be imported
     vals = ('TreeCtrl TextCtrl PyValidator Button ComboBox Choice CheckBox'.split() +
             'Dialog ID_ANY OPEN'.split())
     class Placeholder(object):
@@ -148,12 +149,20 @@ except ImportError:
             if value[0].isupper():
                 return object
             return Placeholder([])
-    wx = Placeholder(vals)
-    wxscroll = Placeholder(['ScrolledPanel'])
-    if 'phoenix' in wx.version():
-        wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
-    else:
-        wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
+    # wx = Placeholder(vals)
+    # wxscroll = Placeholder(['ScrolledPanel'])
+    # if 'phoenix' in wx.version():
+    #     wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
+    # else:
+    #     wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
+    # # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
+    # # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
+    # # in docs build
+    listmix = Placeholder()
+    listmix.ListCtrlAutoWidthMixin = Placeholder()
+    listmix.ColumnSorterMixin = Placeholder()
+
+        
 import time
 import glob
 import copy
@@ -5997,7 +6006,6 @@ class downdate(wx.Dialog):
 
 ################################################################################
 ################################################################################
-import wx.lib.mixins.listctrl  as  listmix
 class SortableLstCtrl(wx.Panel):
     '''Creates a read-only table with sortable columns. Sorting is done by 
     clicking on a column label. A triangle facing up or down is added to 

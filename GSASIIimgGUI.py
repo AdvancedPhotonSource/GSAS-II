@@ -234,6 +234,8 @@ def UpdateImageData(G2frame,data):
         data['samplechangerpos'] = 0.0
     if 'det2theta' not in data:
         data['det2theta'] = 0.0
+    if 'Gain map' not in data:
+        data['Gain map'] = ''
 #end patch
     tthSizer = wx.BoxSizer(wx.HORIZONTAL)
     tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Detector 2-theta: '),0,WACV)

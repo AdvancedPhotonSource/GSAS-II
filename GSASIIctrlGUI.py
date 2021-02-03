@@ -161,11 +161,8 @@ except TypeError:
             if value[0].isupper():
                 return object
             return Placeholder([])
-    listmix = Placeholder()
-    listmix.ListCtrlAutoWidthMixin = Placeholder()
-    listmix.ColumnSorterMixin = Placeholder()
+    listmix = Placeholder(['ListCtrlAutoWidthMixin','ColumnSorterMixin'])
     class _(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin): pass
-
         
 import time
 import glob

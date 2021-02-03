@@ -137,10 +137,20 @@ try:
     import wx.lib.mixins.listctrl  as  listmix
     import matplotlib as mpl
 except ImportError:
-    pass
-    # Emulate 'wx' so this file can be imported
-    vals = ('TreeCtrl TextCtrl PyValidator Button ComboBox Choice CheckBox'.split() +
-            'Dialog ID_ANY OPEN'.split())
+    print('ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build')
+    # wx = Placeholder(vals)
+    # wxscroll = Placeholder(['ScrolledPanel'])
+    # if 'phoenix' in wx.version():
+    #     wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
+    # else:
+    #     wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
+
+
+# avoid "duplicate base class _MockObject" error in class G2LstCtrl():
+# where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
+# in docs build
+if listmix.ListCtrlAutoWidthMixin == listmix.ColumnSorterMixin:
+    print('Dummy out listmix classes for docs build')
     class Placeholder(object):
         def __init__(self, vals):
             for val in vals:
@@ -149,15 +159,7 @@ except ImportError:
             if value[0].isupper():
                 return object
             return Placeholder([])
-    # wx = Placeholder(vals)
-    # wxscroll = Placeholder(['ScrolledPanel'])
-    # if 'phoenix' in wx.version():
-    #     wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
-    # else:
-    #     wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
-    # # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
-    # # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
-    # # in docs build
+        
     listmix = Placeholder()
     listmix.ListCtrlAutoWidthMixin = Placeholder()
     listmix.ColumnSorterMixin = Placeholder()

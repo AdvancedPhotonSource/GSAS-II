@@ -138,31 +138,6 @@ try:
     import matplotlib as mpl
 except ImportError:
     print('ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build')
-    # wx = Placeholder(vals)
-    # wxscroll = Placeholder(['ScrolledPanel'])
-    # if 'phoenix' in wx.version():
-    #     wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
-    # else:
-    #     wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
-
-
-# avoid "duplicate base class _MockObject" error in class G2LstCtrl():
-# where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
-# in docs build
-try: 
-    class _(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin): pass
-except TypeError:
-    print('docs build conflict in listmix classes')
-    class Placeholder(object):
-        def __init__(self, vals):
-            for val in vals:
-                setattr(self, val, object)
-        def __getattr__(self, value):
-            if value[0].isupper():
-                return object
-            return Placeholder([])
-    listmix = Placeholder(['ListCtrlAutoWidthMixin','ColumnSorterMixin'])
-    class _(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin): pass
         
 import time
 import glob
@@ -6084,36 +6059,46 @@ class SortableLstCtrl(wx.Panel):
                 self.list.SetColumnWidth(col, maxwidth)
         else:
             print('Error in SetColWidth: use either auto or width')
-            
-class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
-    '''Creates a custom ListCtrl with support for images in column labels
-    '''
-    def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        listmix.ListCtrlAutoWidthMixin.__init__(self)
-        from wx.lib.embeddedimage import PyEmbeddedImage
-        # from demo/images.py
-        SmallUpArrow = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
-            b"REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
-            b"cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
-        SmallDnArrow = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
-            b"REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
-            b"bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
-        self.il = wx.ImageList(16, 16)
-        self.UpArrow = self.il.Add(SmallUpArrow.GetBitmap())
-        self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
-        self.parent=parent
-        self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
-        
-    def GetListCtrl(self): # needed for sorting
-        return self
-    def GetSortImages(self):
-        #return (self.parent.DownArrow, self.parent.UpArrow)
-        return (self.DownArrow, self.UpArrow)
 
+try:
+    class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
+        '''Creates a custom ListCtrl with support for images in column labels
+        '''
+        def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
+                     size=wx.DefaultSize, style=0):
+            wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+            listmix.ListCtrlAutoWidthMixin.__init__(self)
+            from wx.lib.embeddedimage import PyEmbeddedImage
+            # from demo/images.py
+            SmallUpArrow = PyEmbeddedImage(
+                b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
+                b"REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
+                b"cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
+            SmallDnArrow = PyEmbeddedImage(
+                b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
+                b"REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
+                b"bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
+            self.il = wx.ImageList(16, 16)
+            self.UpArrow = self.il.Add(SmallUpArrow.GetBitmap())
+            self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
+            self.parent=parent
+            self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+
+        def GetListCtrl(self): # needed for sorting
+            return self
+        def GetSortImages(self):
+            #return (self.parent.DownArrow, self.parent.UpArrow)
+            return (self.DownArrow, self.UpArrow)
+except TypeError:
+    # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
+    # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
+    # in docs build
+    class G2LstCtrl(wx.ListCtrl):
+        '''Creates a custom ListCtrl with support for images in column labels
+        '''
+        pass
+    print('docs build kludge for G2LstCtrl')
+    
 ################################################################################
 #### Display Help information
 ################################################################################

@@ -15,8 +15,6 @@ the information on the GSAS-II home page:
 https://subversion.xray.aps.anl.gov/trac/pyGSAS
 and pages referenced there. 
 
-Contents
----------
 
 .. toctree::
     :maxdepth: 2
@@ -42,3 +40,6 @@ Contents
     exports.rst
     G2tools.rst
     indices.rst
+
+
+---------

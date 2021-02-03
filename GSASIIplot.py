@@ -131,7 +131,16 @@ try:
     import mpl_toolkits.mplot3d.axes3d as mp3d
     from scipy.ndimage.interpolation import map_coordinates
 except (ImportError, ValueError):
-    pass
+    # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
+    # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
+    # in docs build
+    class Placeholder(object):
+        def __init__(self):
+            self.Dialog = object
+    class Placeholder1(object): pass
+    listmix = Placeholder()
+    listmix.ListCtrlAutoWidthMixin = Placeholder()
+    listmix.ColumnSorterMixin = Placeholder1()
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 GSASIIpath.SetVersionNumber("$Revision$")

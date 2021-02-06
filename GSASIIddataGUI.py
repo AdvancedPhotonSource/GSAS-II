@@ -1000,6 +1000,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
     UseList = data['Histograms']
+    # look for histgrams that are no longer in the project (should not happen!)
+    broken = [i for i in UseList if i not in keyList]
+    if broken:
+        msg = 'Removing histogram(s) referenced in this phase that are no longer in project:\n\n'
+        for i,j in enumerate(broken): 
+            if i > 0: msg += ', '
+            msg += j
+            del data['Histograms'][j]
+        G2G.G2MessageBox(G2frame,msg,'Removing bad histograms')
     if UseList:
         G2frame.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,True)
         for item in G2frame.Refine: item.Enable(True)

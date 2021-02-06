@@ -4570,7 +4570,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
             wx.CallAfter(UpdateRMC)
             
-        def GetAtmChoice(RMCPdict):
+        def GetAtmChoice(pnl,RMCPdict):
             
             Indx = {}
             def OnAtSel(event):
@@ -4603,19 +4603,19 @@ def UpdatePhaseData(G2frame,Item,data):
     
             nTypes = len(RMCPdict['aTypes'])
             atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
-            atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set atom ordering: '),0,WACV)
+            atmChoice.Add(wx.StaticText(pnl,label='atom ordering: '),0,WACV)
             for iType in range(nTypes):
                 atChoice = RMCPdict['atSeq'][iType:]
-                atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                atmSel = wx.ComboBox(pnl,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
                 atmSel.SetStringSelection(RMCPdict['atSeq'][iType])
                 atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
                 Indx[atmSel.GetId()] = iType
                 atmChoice.Add(atmSel,0,WACV)
             if RMCPdict['useBVS']:    
-                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Select valence: '),0,WACV)
+                atmChoice.Add(wx.StaticText(pnl,label='Valence: '),0,WACV)
                 for itype in range(nTypes):
                     valChoice = atmdata.BVSoxid[RMCPdict['atSeq'][itype]]
-                    valSel = wx.ComboBox(G2frame.FRMC,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    valSel = wx.ComboBox(pnl,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
                     try:
                         valSel.SetStringSelection(RMCPdict['Oxid'][itype][0])
                     except IndexError:
@@ -4623,14 +4623,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     valSel.Bind(wx.EVT_COMBOBOX,OnValSel)
                     Indx[valSel.GetId()] = itype
                     atmChoice.Add(valSel,0,WACV)
-                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' BVS weight: '),0,WACV)
+                atmChoice.Add(wx.StaticText(pnl,label='BVS weight: '),0,WACV)
                 for itype in range(nTypes):
-                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,xmin=0.),0,WACV)
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Oxid'][itype],1,xmin=0.),0,WACV)
             if G2frame.RMCchoice == 'RMCProfile':
-                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
+                atmChoice.Add(wx.StaticText(pnl,label='max shift: '),0,WACV)
                 for iType in range(nTypes):
                     atId = RMCPdict['atSeq'][iType]
-                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,xmin=0.,xmax=1.),0,WACV)
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['aTypes'],atId,xmin=0.,xmax=1.),0,WACV)
             return atmChoice
         
         def GetSwapSizer(RMCPdict):
@@ -4663,22 +4663,22 @@ def UpdatePhaseData(G2frame,Item,data):
                 swapSizer.Add(delBtn,0,WACV)
             return swapSizer
         
-        def GetPairSizer(RMCdict):
+        def GetPairSizer(pnl,RMCdict):
             pairSizer = wx.FlexGridSizer(len(RMCPdict['Pairs'])+1,5,5)
             pairSizer.Add((5,5),0)
             for pair in RMCPdict['Pairs']:
-                pairSizer.Add(wx.StaticText(G2frame.FRMC,label=pair),0,WACV)
+                pairSizer.Add(wx.StaticText(pnl,label=pair),0,WACV)
             if G2frame.RMCchoice == 'RMCProfile':
-                pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Hard min: '),0,WACV)
+                pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Hard min: '),0,WACV)
                 for pair in RMCPdict['Pairs']:
-                    pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
-            pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%' Search from: '),0,WACV)
+                    pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
+            pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Search from: '),0,WACV)
             for pair in RMCPdict['Pairs']:
-                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],
+                pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],
                     1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
-            pairSizer.Add(wx.StaticText(G2frame.FRMC,label='%14s'%'to: '),0,WACV)
+            pairSizer.Add(wx.StaticText(pnl,label='%14s'%'to: '),0,WACV)
             for pair in RMCPdict['Pairs']:
-                pairSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
+                pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             return pairSizer
                     
         def FileSizer(RMCdict,mainSizer):
@@ -4863,6 +4863,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
+        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         runFile = ' '
         choice = ['RMCProfile','fullrmc',]
@@ -5167,16 +5168,17 @@ def UpdatePhaseData(G2frame,Item,data):
             FileSizer(RMCPdict,mainSizer)
                 
         elif G2frame.RMCchoice ==  'RMCProfile':
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
- Jour. Phys.: Cond. Matter 2007, 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218 
- '''))
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'),0,WACV)
-            # add help button to bring up help web page - at right sede of window
-            topSizer.Add((-1,-1),1,wx.EXPAND)
-            topSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
-            mainSizer.Add(topSizer,0,wx.EXPAND)
-#            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            subSizer.Add(wx.StaticText(G2frame.FRMC,label='RMCProfile setup'),0,WACV)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            mainSizer.Add(subSizer,0,wx.EXPAND)
+            mainSizer.Add((5,5))
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
+'''"RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, 
+D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007), 
+19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218'''))
+            mainSizer.Add((5,5))
             if not data['RMC']['RMCProfile']:
                 Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
@@ -5275,7 +5277,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         i,xmin=1,xmax=20,size=(50,25),OnLeave=SetRestart),0,WACV)
                 return superSizer
                       
-            def GetBvsSizer():
+            def GetBvsSizer(pnl):
                 
                 def OnResetBVS(event):
                     Obj = event.GetEventObject()
@@ -5294,22 +5296,22 @@ def UpdatePhaseData(G2frame,Item,data):
                 bvsSizer = wx.FlexGridSizer(len(RMCPdict['BVS'])+1,5,5)
                 bvsSizer.Add((5,5),0)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=pair),0,WACV)
-                bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' Reset:'),0,WACV)
+                    bvsSizer.Add(wx.StaticText(pnl,label=pair),0,WACV)
+                bvsSizer.Add(wx.StaticText(pnl,label=' Reset:'),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    reset = wx.Button(G2frame.FRMC,label='Yes')
+                    reset = wx.Button(pnl,label='Yes')
                     bvsSizer.Add(reset,0,WACV)
                     reset.Bind(wx.EVT_BUTTON,OnResetBVS)
                     Indx[reset.GetId()] = pair
-                bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' Bond length:'),0,WACV)
+                bvsSizer.Add(wx.StaticText(pnl,label=' Bond length:'),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
-                bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' B constant (0.37): '),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['BVS'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
+                bvsSizer.Add(wx.StaticText(pnl,label=' B constant (0.37): '),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
-                bvsSizer.Add(wx.StaticText(G2frame.FRMC,label=' Cut off: '),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['BVS'][pair],1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
+                bvsSizer.Add(wx.StaticText(pnl,label=' Cut off: '),0,WACV)
                 for pair in RMCPdict['BVS']:
-                    bvsSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['BVS'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
+                    bvsSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['BVS'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
                 return bvsSizer
             
             def GetFxcnSizer():
@@ -5469,8 +5471,18 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers; if changed will force reset of atom positions:'),0)
             mainSizer.Add(GetSuperSizer(),0)
             
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' NB: be sure to set cations first && anions last in atom ordering'),0)
-            mainSizer.Add(GetAtmChoice(RMCPdict),0)
+            aPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+                style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            mSizer = wx.BoxSizer(wx.VERTICAL)
+            mSizer.Add(wx.StaticText(aPanel,label='Enter atom settings'),0)
+            mSizer.Add(GetAtmChoice(aPanel,RMCPdict),0)
+            mSizer.Add(wx.StaticText(aPanel,label=' N.B.: be sure to set cations first && anions last in atom ordering'))
+            mSizer.Layout()
+            aPanel.SetSizer(mSizer)
+            aPanel.SetMinSize((300,mSizer.GetMinSize()[1]))
+            aPanel.SetAutoLayout(1)
+            aPanel.SetupScrolling()
+            mainSizer.Add(aPanel,1,wx.EXPAND)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             swapBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5483,9 +5495,18 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add(GetSwapSizer(RMCPdict),0)            
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Set minimum && maximum distances for:'),0)        
-            mainSizer.Add(GetPairSizer(RMCPdict),0)
+
+            sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+                style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            mSizer = wx.BoxSizer(wx.VERTICAL)
+            mSizer.Add(wx.StaticText(sPanel,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
+            mSizer.Add(GetPairSizer(sPanel,RMCPdict),0)
+            sPanel.SetSizer(mSizer)
+            mSizer.Layout()
+            sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
+            sPanel.SetAutoLayout(1)
+            sPanel.SetupScrolling()
+            mainSizer.Add(sPanel,1,wx.EXPAND)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             useBVS = wx.CheckBox(G2frame.FRMC,label=' Use bond valence sum restraints for (set to 0 for non-bonded ones):')
@@ -5493,8 +5514,17 @@ def UpdatePhaseData(G2frame,Item,data):
             useBVS.Bind(wx.EVT_CHECKBOX,OnUseBVS)
             mainSizer.Add(useBVS,0)
             if RMCPdict.get('useBVS',False):
-                mainSizer.Add(GetBvsSizer(),0)
-        
+                sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+                    style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+                mSizer = wx.BoxSizer(wx.VERTICAL)
+                mSizer.Add(GetBvsSizer(sPanel),0)
+                sPanel.SetSizer(mSizer)
+                mSizer.Layout()
+                sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
+                sPanel.SetAutoLayout(1)
+                sPanel.SetupScrolling()
+                mainSizer.Add(sPanel,1,wx.EXPAND)
+                
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             fxcnBox = wx.BoxSizer(wx.HORIZONTAL)
             fxcnAdd = wx.Button(G2frame.FRMC,label='Add')
@@ -5567,7 +5597,10 @@ def UpdatePhaseData(G2frame,Item,data):
 
             FileSizer(RMCPdict,mainSizer)
     
-        SetPhaseWindow(G2frame.FRMC,mainSizer)
+        bigSizer.Add(mainSizer,1,wx.EXPAND)
+        # add help button to bring up help web page - at right sede of window
+        bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
+        SetPhaseWindow(G2frame.FRMC,bigSizer)
         
     def OnSetupRMC(event):
         generalData = data['General']

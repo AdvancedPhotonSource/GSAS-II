@@ -6632,7 +6632,7 @@ def UpdateControls(G2frame,data):
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
 
         tmpSizer=wx.BoxSizer(wx.HORIZONTAL)
-        tmpSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Refinement type: '),0,WACV)
+        tmpSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement\ntype: '),0,WACV)
         tmpSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='RefineType'))
         LSSizer.Add(tmpSizer,0,WACV)
         Choice=['analytic Jacobian','numeric','analytic Hessian','Hessian SVD']   #TODO +'SVD refine' - what flags will it need?
@@ -6642,10 +6642,10 @@ def UpdateControls(G2frame,data):
         derivSel.Bind(wx.EVT_COMBOBOX, OnDerivType)
             
         LSSizer.Add(derivSel,0,WACV)
-        LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Min delta-M/M: '),0,WACV)
+        LSSizer.Add(wx.StaticText(G2frame.dataWindow,label='Min delta-M/M: '),0,WACV)
         LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'min dM/M',nDig=(10,2,'g'),xmin=1.e-9,xmax=1.),0,WACV)
         if 'Hessian' in data['deriv type']:
-            LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max cycles: '),0,WACV)
+            LSSizer.Add(wx.StaticText(G2frame.dataWindow,label='Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
             maxCyc = wx.ComboBox(parent=G2frame.dataWindow,value=str(data['max cyc']),choices=Choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -6658,7 +6658,7 @@ def UpdateControls(G2frame,data):
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
                 LSSizer.Add(marqLam,0,WACV)
-            LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' SVD zero tolerance:'),0,WACV)
+            LSSizer.Add(wx.StaticText(G2frame.dataWindow,label='SVD zero\ntolerance:'),0,WACV)
             LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'SVDtol',nDig=(10,1,'g'),xmin=1.e-9,xmax=.01),0,WACV)
         else:       #TODO what for SVD refine?
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Initial shift factor: '),0,WACV)
@@ -6711,13 +6711,13 @@ def UpdateControls(G2frame,data):
         G2frame.GetStatusBar().SetStatusText('',1)
     G2frame.dataWindow.ClearData()
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
+    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
     subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement Controls'),0,WACV)    
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Controls'))
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
     LSSizer,ShklSizer = LSSizer()
@@ -6773,10 +6773,12 @@ def UpdateControls(G2frame,data):
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
         subSizer.Add(btn)
         mainSizer.Add(subSizer)
+    bigSizer.Add(mainSizer)
         
-    mainSizer.Layout()
-    mainSizer.FitInside(G2frame.dataWindow)    
-    G2frame.dataWindow.SetSizer(mainSizer)
+    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Controls'))
+    bigSizer.Layout()
+    bigSizer.FitInside(G2frame.dataWindow)
+    G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
     
@@ -8820,16 +8822,13 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Covariance':
             data = G2frame.GPXtree.GetItemPyData(item)
             text = ''
-            subSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer.Add((-1,-1),1,wx.EXPAND)
+            mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer = wx.BoxSizer(wx.VERTICAL)
             if 'Rvals' in data:
                 lbl = 'Refinement results'
             else:
                 lbl = 'No refinement results'
-            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
-            subSizer.Add((-1,-1),1,wx.EXPAND)
-            subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
-            G2frame.dataWindow.GetSizer().Add(subSizer)             #,0,wx.EXPAND)
+            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
@@ -8844,8 +8843,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
-                G2frame.dataWindow.GetSizer().Add(
-                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+            mainSizer.Add(subSizer)
+            mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
+            #mainSizer.Add((-1,-1),1,wx.EXPAND)
+            G2frame.dataWindow.GetSizer().Add(mainSizer)
 #            G2frame.dataWindow.GetSizer().Add((-1,-1),1,wx.EXPAND,1)
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':

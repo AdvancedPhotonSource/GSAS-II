@@ -2688,8 +2688,16 @@ class SingleStringDialog(wx.Dialog):
     :param str title: title string for dialog
     :param str prompt: string to tell use what they are inputting
     :param str value: default input value, if any
+    :param tuple size: specifies default size and width for dialog 
+      [default (200,-1)]
+    :param str help: if supplied, a help button is added to the dialog that
+      can be used to display the supplied help text/URL for setting this 
+      variable. (Default is '', which is ignored.)
+    :param list choices: a set of strings that provide optional values that 
+      can be selected from; these can be edited if desired.
     '''
-    def __init__(self,parent,title,prompt,value='',size=(200,-1),help=''):
+    def __init__(self,parent,title,prompt,value='',size=(200,-1),help='',
+                     choices=None):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.value = value
@@ -2699,7 +2707,12 @@ class SingleStringDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
+        if choices:
+            self.valItem = wx.ComboBox(self.panel, wx.ID_ANY, value,
+                                size=size,choices=[value]+choices,
+                                style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+        else:
+            self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
         sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
         if help:
             sizer1.Add(HelpButton(self.panel,help),0,wx.ALIGN_RIGHT|wx.ALL)
@@ -6132,10 +6145,32 @@ def ShowHelp(helpType,frame):
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(helplink)
     else:
-        if sys.platform == "darwin": # for Mac, force use of safari to preserve anchors on file URLs
-            wb = webbrowser.MacOSXOSAScript('safari')
-        else:
-            wb = webbrowser
+        wb = webbrowser
+        if sys.platform == "darwin": # on Mac, use a OSXscript so that file anchors work
+            # Get the default browser, this will fail in py2.7 and might fail, so 
+            # use safari as a backup
+            appleScript = '''    
+    use framework "AppKit"
+    use AppleScript version "2.4"
+    use scripting additions
+
+    property NSWorkspace : a reference to current application's NSWorkspace
+    property NSURL : a reference to current application's NSURL
+
+    set wurl to NSURL's URLWithString:"https://www.apple.com"
+    set thisBrowser to (NSWorkspace's sharedWorkspace)'s ¬
+                        URLForApplicationToOpenURL:wurl
+    set appname to (thisBrowser's absoluteString)'s lastPathComponent()'s ¬
+                    stringByDeletingPathExtension() as text
+    return appname as text
+            '''
+            import subprocess
+            try:
+                browser = subprocess.check_output(["osascript","-e",appleScript], encoding='UTF-8').strip()
+                wb = webbrowser.MacOSXOSAScript(browser)
+            except:
+                wb = webbrowser.MacOSXOSAScript('safari')
+        # open the link
         helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):

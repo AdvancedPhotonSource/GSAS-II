@@ -161,7 +161,7 @@ class MakeTopWindow(wx.Frame):
         self.MenuBar.Append(menu=File, title='&File')
         item = File.Append(wx.ID_ANY,'&Import single project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.onLoadGPX, id=item.GetId())
-        item = File.Append(wx.ID_ANY,'&Import multiple projects...\tCtrl+M','Open a GSAS-II project file (*.gpx)')            
+        item = File.Append(wx.ID_ANY,'&Import multiple projects...\tCtrl+U','Open a GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.onLoadMultGPX, id=item.GetId())
         item = File.Append(wx.ID_ANY,'&Wildcard import of projects...\tCtrl+W','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.onLoadWildGPX, id=item.GetId())
@@ -176,12 +176,11 @@ class MakeTopWindow(wx.Frame):
             item = self.Mode.AppendRadioItem(i+1,m+'\tCtrl+{}'.format(i+1),
                                                  'Display {}s'.format(m))
             self.Bind(wx.EVT_MENU, self.onRefresh, id=item.GetId())
-        item = self.Mode.Append(wx.ID_ANY,'Set histogram filter','Set a filter for histograms to display')
-        self.Bind(wx.EVT_MENU, self.onHistFilter, id=item.GetId())
+        self.hFilter = self.Mode.Append(wx.ID_ANY,'Filter by histogram\tCtrl+F','Only show selected histograms')
+        self.Bind(wx.EVT_MENU, self.onHistFilter, id=self.hFilter.GetId())
         modeMenu = wx.Menu(title='')
         self.MenuBar.Append(menu=modeMenu, title='TBD')
         self.modeMenuPos = self.MenuBar.FindMenu('TBD')
-        #item = modeMenu.Append(wx.ID_ANY,'test') # menu can't be empty
         
         Frame.SetMenuBar(self.MenuBar)
         # status bar
@@ -226,7 +225,8 @@ class MakeTopWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, lambda event: sys.exit())
 
         self.fileList = []  # list of files read for use in Reload
-        self.histList = []  # list of histograms loaded for unique naming
+        self.histListOrg = [] # list of histograms, before mods for unique naming
+        self.histList = []  # list of histograms, after mods for unique naming
         self.projList = []
 
         self.PWDRfilter = None
@@ -297,7 +297,9 @@ class MakeTopWindow(wx.Frame):
         '''
         self.GPXtree.DeleteChildren(self.root)  # delete tree contents
         self.histList = []  # clear list of loaded histograms
+        self.histListOrg = []
         self.projList = []
+        self.hFilter.Enable(not self.getMode() == "Phase") # Filter disabled for Phase display
         for fil,mode in self.fileList:
             self.loadFile(fil)
         self.doneLoad()
@@ -409,6 +411,7 @@ be included for the files beginning with "B" only.
                 except EOFError:
                     break
                 if not data[0][0].startswith('PWDR'): continue
+                self.histListOrg.append(data[0][0])
                 if self.PWDRfilter is not None: # implement filter
                     if self.PWDRfilter not in data[0][0]: continue
                 data[0][0] += ' ('
@@ -458,12 +461,13 @@ be included for the files beginning with "B" only.
         
     def onHistFilter(self,event):
         'Load a filter string via a dialog in response to a menu event'
-        lbl = ''
+        defval = ''
         if self.PWDRfilter is not None:
-            lbl = self.PWDRfilter
+            defval = self.PWDRfilter
+        uniqueHist = sorted(set(self.histListOrg))
         dlg = G2G.SingleStringDialog(self,'Set string',
                                 'Set a string that must be in histogram name',
-                                 lbl,size=(400,-1))
+                                defval, choices=uniqueHist, size=(400,-1))
         if dlg.Show():
             if dlg.GetValue().strip() == '':
                 self.PWDRfilter = None
@@ -549,13 +553,21 @@ be included for the files beginning with "B" only.
         wx.BeginBusyCursor()
         #Phases = None
         #G2frame.GPXtree.SetItemPyData(Id,Covar[1])
+        if self.PWDRfilter is None: # implement filter
+            match = True
+        else:
+            match = False
+        Covar = None
         try:
             while True:
                 try:
                     data = cPickleLoad(filep)
                 except EOFError:
                     break
-                #if data[0][0] == 'Controls' and 'LastSavedUsing' in data[0][1]:
+                if data[0][0].startswith('PWDR'): 
+                    self.histListOrg.append(data[0][0])
+                    if self.PWDRfilter is not None: # implement filter
+                        if self.PWDRfilter in data[0][0]: match = True
                 if not data[0][0].startswith('Covariance'): continue
                 Covar = data[0]
                 f = '{:d}'
@@ -569,16 +581,11 @@ be included for the files beginning with "B" only.
                     else:
                         projInfo += ['?']
                     f = '{:6.2f}'
-                #GSASIIpath.IPyBreak_base()
-                #if self.PWDRfilter is not None: # implement filter
-                #    if self.PWDRfilter not in data[0][0]: continue
                 Covar[0] = shortname # + ' Covariance'
+            if match and Covar:
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Covar[0])
                 G2frame.GPXtree.SetItemPyData(Id,Covar[1])
                 self.projList.append(projInfo)
-                break
-            else:
-                print("{} does not have refinement results".format(shortname))
         except Exception as errmsg:
             if GSASIIpath.GetConfigValue('debug'):
                 print('\nError reading GPX file:',errmsg)
@@ -879,18 +886,22 @@ if __name__ == '__main__':
         GSASIIpath.svnUpdateProcess()
     GSASIIpath.InvokeDebugOpts()
     Frame = main(application) # start the GUI
+    loadall = False
     argLoadlist = sys.argv[1:]
     for arg in argLoadlist:
         fil = os.path.splitext(arg)[0] + '.gpx'
         if os.path.exists(fil):
             Frame.fileList.append([fil,'GPX'])
             Frame.loadFile(fil)
+        elif '-d' in arg:
+            loadall = True
         else:
             print('File {} not found. Skipping'.format(fil))
     Frame.doneLoad()
     # debug code to select Project in initial mode
-    #Frame.onLoadWildGPX(None,wildcard='*')
-    #Frame.Mode.FindItemById(Frame.wxID_Mode['Project']).Check(True)
-    #Frame.onRefresh(None)
+    if loadall:
+        Frame.onLoadWildGPX(None,wildcard='*')
+        Frame.Mode.FindItemById(Frame.wxID_Mode['Project']).Check(True)
+        Frame.onRefresh(None)
     
     application.MainLoop()

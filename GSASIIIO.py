@@ -849,6 +849,10 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     name = name.replace('IMG ',data['type']+' ')
     Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Comments'))
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    Comments.append('Dark image = %s\n'%str(data['dark image']))
+    Comments.append('Background image = %s\n'%str(data['background image']))
+    Comments.append('Gain map = %s\n'%str(data['Gain map']))
+    
     if 'PWDR' in name:
         if 'target' in data:
             names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 

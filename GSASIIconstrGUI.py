@@ -1758,25 +1758,7 @@ resRBsel = None
 def UpdateRigidBodies(G2frame,data):
     '''Called when Rigid bodies tree item is selected.
     Displays the rigid bodies in the data window
-    '''
-    if not data.get('RBIds') or not data:
-        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
-            'RBIds':{'Vector':[],'Residue':[]}})       #empty/bad dict - fill it
-            
-    global resList,resRBsel
-    Indx = {}
-    resList = []
-    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
-
-    G2frame.rbBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
-    VectorRB = wx.ScrolledWindow(G2frame.rbBook)
-    VectorRBDisplay = wx.Panel(VectorRB)
-    G2frame.rbBook.AddPage(VectorRB,'Vector rigid bodies')
-    ResidueRB = wx.ScrolledWindow(G2frame.rbBook)
-    ResidueRBDisplay = wx.Panel(ResidueRB)
-    G2frame.rbBook.AddPage(ResidueRB,'Residue rigid bodies')
-    
+    '''  
     def OnPageChanged(event):
         global resList
         resList = []
@@ -3644,6 +3626,26 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     def SetStatusLine(text):
         G2frame.GetStatusBar().SetStatusText(text,1)                                      
 
+    #================== UpdateRigidBodies starts here =========
+    global resList,resRBsel            
+    if not data.get('RBIds') or not data:
+        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
+            'RBIds':{'Vector':[],'Residue':[]}})       #empty/bad dict - fill it
+    Indx = {}
+    resList = []
+    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+    G2frame.rbBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
+    VectorRB = wx.ScrolledWindow(G2frame.rbBook)
+    VectorRBDisplay = wx.Panel(VectorRB)
+    G2frame.rbBook.AddPage(VectorRB,'Vector rigid bodies')
+    ResidueRB = wx.ScrolledWindow(G2frame.rbBook)
+    ResidueRBDisplay = wx.Panel(ResidueRB)
+    G2frame.rbBook.AddPage(ResidueRB,'Residue rigid bodies')
+    # vector RBs are not too common, so select Residue as the default when one is present
+    if len(data['RBIds']['Residue']) > 0 and len(data['RBIds']['Vector']) == 0:
+        G2frame.rbBook.ChangeSelection(1)
+        OnPageChanged(None)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodyMenu)
     SetStatusLine('')
     UpdateVectorRB()

@@ -1126,7 +1126,7 @@ def UpdatePeakGrid(G2frame, data):
     for key in T: X.append(D[key])
     data['peaks'] = X
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
     G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Peak List')
@@ -1146,6 +1146,7 @@ def UpdatePeakGrid(G2frame, data):
 #    mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
     mainSizer.Add(reflGrid)
     mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -1788,7 +1789,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
             
     def Draw():
         G2frame.dataWindow.ClearData()
-        mainSizer = G2frame.dataWindow.GetSizer()
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
         # add help button to bring up help web page - at right side of window
@@ -1801,6 +1802,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
             mainSizer.Add((0,5),0)
             mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Excluded regions:'),0,WACV)
             mainSizer.Add(ExclSizer())
+        G2frame.dataWindow.SetSizer(mainSizer)
         G2frame.dataWindow.SetDataSize()
 
     G2frame.ifGetExclude = False
@@ -2196,7 +2198,7 @@ def UpdateInstrumentGrid(G2frame,data):
     def MakeParameterWindow():
         'Displays the Instrument parameters in the dataWindow frame'
         G2frame.dataWindow.ClearData()
-        mainSizer = G2frame.dataWindow.GetSizer()
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
         instSizer = wx.FlexGridSizer(0,3,5,5)
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
         if insVal['Bank'] == None:      #patch
@@ -2430,6 +2432,7 @@ def UpdateInstrumentGrid(G2frame,data):
 
         mainSizer.Add(instSizer,0)
         G2frame.dataWindow.SetDataSize()
+        G2frame.dataWindow.SetSizer(mainSizer)
         # end of MakeParameterWindow
                 
     # beginning of UpdateInstrumentGrid code    
@@ -2939,7 +2942,7 @@ def UpdateSampleGrid(G2frame,data):
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
     parms = SetupSampleLabels(histName,data.get('Type'),Inst['Type'][0])
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
     # add help button to bring up help web page - at right side of window
@@ -3043,6 +3046,7 @@ def UpdateSampleGrid(G2frame,data):
         mut =  mu*data['Thick']
         conSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Transmission (calc): %10.3f  '%(np.exp(-mut))),0,WACV)
         mainSizer.Add(conSizer,0)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################
@@ -3208,8 +3212,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
         XY = np.array(XY)
         G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(G2frame.indxPeaks,0,wx.ALL|wx.EXPAND,1)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -4411,7 +4416,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     if G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases'):
         G2frame.dataWindow.LoadCell.Enable(True)
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
     # add help button to bring up help web page - at right side of window
@@ -4722,6 +4727,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     magDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(magDisplay,0,WACV)
         
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################
@@ -5007,7 +5013,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             
     G2frame.dataWindow.ClearData()
     G2frame.refBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.refBook,1,wx.ALL|wx.EXPAND,1)
+    mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+    mainSizer.Add(G2frame.refBook,1,wx.ALL|wx.EXPAND,1)
     G2frame.refTable = {}
     G2frame.dataWindow.currentGrids = []
     for tabnum,phase in enumerate(phases):
@@ -5027,9 +5034,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             else:
                 G2frame.RefList = ''
                 phaseName = ''
-    G2frame.dataWindow.GetSizer().Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     if phaseName: ShowReflTable(phaseName)
     G2frame.refBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################
@@ -6241,7 +6249,7 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnAddModel, id=G2G.wxID_MODELADD)
     Indx = {}
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     models = ['Size dist.','Particle fit','Pair distance',]
     if len(data['Pair']['Distribution']):
@@ -6295,6 +6303,7 @@ def UpdateModelsGrid(G2frame,data):
     backFile.Bind(wx.EVT_COMBOBOX,OnBackFile)
     backSizer.Add(backFile)    
     mainSizer.Add(backSizer)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -6824,7 +6833,7 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2G.wxID_MODELFITALL)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_MODELUNDO)
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name),0,WACV)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Controls:'),0,WACV)
     mainSizer.Add(ControlSizer())
@@ -6851,6 +6860,7 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
     mainSizer.Add(LayerSizer())
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################
@@ -7566,7 +7576,7 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2G.wxID_PDFCOMPUTEALL)
 
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     if powId:
         ElList = data['ElList']
         mainSizer.Add(PDFFileSizer(),0,WACV)
@@ -7579,6 +7589,7 @@ def UpdatePDFGrid(G2frame,data):
     else:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
                                      powName+' not in Tree'))
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 
 ###############################################################################################################
@@ -7763,7 +7774,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     G2frame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2G.wxID_PDFPKSFITALL)
     G2frame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2G.wxID_CLEARPDFPEAKS)
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0) 
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' PDF peak fit controls:'),0,WACV)
     mainSizer.Add((5,5),0) 
@@ -7773,5 +7784,6 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     if len(peaks['Peaks']):
         mainSizer.Add((5,5),0)
         mainSizer.Add(peakSizer())
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
     

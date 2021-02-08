@@ -887,14 +887,25 @@ if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
     Frame = main(application) # start the GUI
     loadall = False
+    loadbak = False
     argLoadlist = sys.argv[1:]
     for arg in argLoadlist:
+        if '-d' in arg:
+            loadall = True
+            break
+        elif '-b' in arg:
+            loadbak = True
+            continue
+        elif '.bak' in os.path.splitext(arg)[0] and not loadbak:
+            continue
         fil = os.path.splitext(arg)[0] + '.gpx'
         if os.path.exists(fil):
+            if [fil,'GPX'] in Frame.fileList:
+                print('Skipping over {}: previously read'.format(fil))
+                continue
             Frame.fileList.append([fil,'GPX'])
             Frame.loadFile(fil)
-        elif '-d' in arg:
-            loadall = True
+            continue
         else:
             print('File {} not found. Skipping'.format(fil))
     Frame.doneLoad()

@@ -1940,7 +1940,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key == 'f' and not G2frame.SinglePlot:
             choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
-            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select dataset to plot', 
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select dataset(s) to plot\n(select all or none to reset)', 
                 'Multidata plot selection',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 G2frame.selections = []
@@ -3235,7 +3236,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     else:
                         YB = Y
                         ZB = Z+B
-                    Plot.set_yscale("log",nonposy='mask')
+                    try:
+                        Plot.set_yscale("log",nonpositive='mask') # >=3.3
+                    except:
+                        Plot.set_yscale("log",nonposy='mask')
                     if np.any(W>0.):
                         lims = [np.min(np.trim_zeros(W))/2.,np.max(Y)*2.]
                     else:
@@ -3260,7 +3264,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
-                        Plot.set_yscale("log",nonposy='mask')
+                        try:
+                            Plot.set_yscale("log",nonpositive='mask') # >=3.3
+                        except:
+                            Plot.set_yscale("log",nonposy='mask')
                         Plot.plot(X,Y,marker=pP,color=colors[0],
                             picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
@@ -3268,8 +3275,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             if G2frame.plusPlot:
                                 Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))     #background
                     elif plottype in ['SASD','REFD']:
-                        Plot.set_xscale("log",nonposx='mask')
-                        Plot.set_yscale("log",nonposy='mask')
+                        try:
+                            Plot.set_xscale("log",nonpositive='mask') # >=3.3
+                            Plot.set_yscale("log",nonpositive='mask')
+                        except:
+                            Plot.set_xscale("log",nonposx='mask')
+                            Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
                             if Page.plotStyle['sqPlot']:
                                 Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
@@ -3345,17 +3356,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 icolor = 256*N//len(PlotList)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
-                        Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                          picker=False,nonposy='mask')
+                        try:
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor), # >=3.3
+                                            picker=False,nonpositive='mask')
+                        except:
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
+                                            picker=False,nonposy='mask')
                     elif plottype in ['SASD','REFD']:
-                        Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                          picker=False,nonposy='mask')
+                        try:
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
+                                            picker=False,nonpositive='mask')
+                        except:
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
+                                            picker=False,nonposy='mask')
                 else:
                     if 'PWDR' in plottype:
                         Plot.plot(X,Y,color=mcolors.cmap(icolor),picker=False)
                     elif plottype in ['SASD','REFD']:
-                        Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                        picker=False,nonposy='mask')
+                        try:
+                            Plot.loglog(X,Y,mcolors.cmap(icolor),
+                                            picker=False,nonpositive='mask')
+                        except:
+                            Plot.loglog(X,Y,mcolors.cmap(icolor),
+                                            picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
@@ -4551,12 +4574,13 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             G2frame.Waterfall = not G2frame.Waterfall
         elif event.key == 'f' and not G2frame.SinglePlot:
             choices = G2gd.GetGPXtreeDataNames(G2frame,'PDF ')
-            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select dataset to plot', 
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select PDF(s) to plot\n(select all or none to reset)', 
                 'Multidata plot selection',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 G2frame.PDFselections = []
                 select = dlg.GetSelections()
-                if select:
+                if select and len(select) != len(choices):
                     for Id in select:
                         G2frame.PDFselections.append(choices[Id])
                 else:

@@ -8524,10 +8524,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if G2frame.dataWindow:
         G2frame.dataWindow.ClearData()
     #G2frame.dataWindow.GetSizer() # don't use this since may be wx.HORIZONTAL or wx.VERTICAL
-    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
     wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),xmin=1.e-9),0,WACV)
 #    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
@@ -8538,6 +8538,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.SetValue(str(data[0]['Compression']))
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
+
     mainSizer.Add(wtSizer)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
@@ -8637,9 +8638,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
         mainSizer.Add(mSizer)
         
-    bigSizer.Add(mainSizer)    
-    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=kind))
-    G2frame.dataWindow.SetSizer(bigSizer)
+    G2frame.dataWindow.SetSizer(mainSizer)
     
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item

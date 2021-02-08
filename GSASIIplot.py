@@ -320,7 +320,7 @@ class G2PlotMpl(_tabPlotWin):
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
         self.toolbar.Realize()
-        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,'logPlot':False}
+        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,'logPlot':False,'exclude':False}
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
@@ -1778,6 +1778,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
+        elif event.key == 'x'and 'PWDR' in plottype:
+            Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
             Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
             newPlot = True
@@ -2862,8 +2864,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
-                'c: contour on','g: toggle grid','m: toggle multidata plot',
-                'n: toggle log(I)',]
+                'c: contour on','x: toggle excluded regions','g: toggle grid',
+                'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
                 Page.Choice += ['o: remove obs, calc,... from legend',]
             else:
@@ -3148,6 +3150,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY*X**4
             else:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY
+        if Page.plotStyle['exclude']:
+            Y = ma.array(Y,mask=ma.getmask(X))
+                
         if LimitId and ifpicked:
             limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
             lims = limits[1]
@@ -3251,6 +3256,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 CalcLine = None
                 BackLine = None
                 DifLine = [None]
+                if 'PWDR' in plottype and Page.plotStyle['exclude']:
+                    Emask = ma.getmask(ma.masked_less_equal(xye[3],0.))
+                    Xum = ma.array(Xum,mask=Emask)
+                    X = ma.array(X,mask=Emask)
+                    Y = ma.array(Y,mask=Emask)
+                    Z = ma.array(Z,mask=Emask)
+                    W = ma.array(W,mask=Emask)
+
                 if G2frame.Weight:
                     Plot1.set_yscale("linear")                                                  
                     wtFactor = Pattern[0]['wtFactor']
@@ -3258,10 +3271,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (Y-B-Z)*np.sqrt(wtFactor*xye[2])
                     else:
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
+                        if Page.plotStyle['exclude']:
+                            DZ = ma.array(DZ,mask=Emask)
                     DifLine = Plot1.plot(X,DZ,colors[3],
                         picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
-
+                    
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         try:

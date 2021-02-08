@@ -5194,7 +5194,7 @@ class GSASII(wx.Frame):
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
             if 'msg' in Rvals: text += '\n' + Rvals['msg'] + '\n'
             if 'Aborted' in Rvals:
-                text += '\ERROR: Minimizer failed to reduce chi**2!\n'
+                text += '\nWARNING: Minimizer halted because chi**2 increased\n'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached or result may be false minimum.'+  \
@@ -8522,8 +8522,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
     
     if G2frame.dataWindow:
-        G2frame.dataWindow.ClearData() 
-    mainSizer = G2frame.dataWindow.GetSizer()
+        G2frame.dataWindow.ClearData()
+    #G2frame.dataWindow.GetSizer() # don't use this since may be wx.HORIZONTAL or wx.VERTICAL
+    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
@@ -8635,6 +8637,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
         mainSizer.Add(mSizer)
         
+    bigSizer.Add(mainSizer)    
+    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=kind))
+    G2frame.dataWindow.SetSizer(bigSizer)
+    
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
     if kind in ['PWDR','SASD','REFD',]:

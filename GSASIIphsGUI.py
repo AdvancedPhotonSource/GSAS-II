@@ -10960,7 +10960,7 @@ of the crystal structure.
         else:
             choices = sorted(list(rbNames.keys()))
             dlg = G2G.G2SingleChoiceDialog(
-                G2frame,'Select rigid body to add to structure',
+                G2frame,'Select rigid body to\nadd to structure',
                 'Select rigid body',choices)
             dlg.CenterOnParent()
             try:

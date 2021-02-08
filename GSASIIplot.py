@@ -1945,7 +1945,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if dlg.ShowModal() == wx.ID_OK:
                 G2frame.selections = []
                 select = dlg.GetSelections()
-                if select:
+                if select and len(select) != len(choices):
                     for Id in select:
                         G2frame.selections.append(choices[Id])
                 else:

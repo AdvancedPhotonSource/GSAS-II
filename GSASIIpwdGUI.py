@@ -1699,7 +1699,7 @@ def UpdateBackground(G2frame,data):
     BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','chebyschev-1','cosine','Q^2 power series','Q^-2 power series','lin interpolate','inv interpolate','log interpolate']
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background used in refinement'),0,WACV)
     # add help button to bring up help web page - at right side of window
@@ -1713,6 +1713,7 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add(PeaksSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(BackFileSizer())
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
         
 ################################################################################

@@ -3256,8 +3256,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 CalcLine = None
                 BackLine = None
                 DifLine = [None]
-                if 'PWDR' in plottype and Page.plotStyle['exclude']:
-                    Emask = ma.getmask(ma.masked_less_equal(xye[3],0.))
+                if 'PWDR' in plottype and Page.plotStyle['exclude'] and len(limits[2:]):
+                    Emask = ma.getmask(X)
+                    excls = limits[2:]
+                    for excl in excls:
+                        Emask += ma.getmask(ma.masked_inside(xye[0],excl[0],excl[1],copy=False))
                     Xum = ma.array(Xum,mask=Emask)
                     X = ma.array(X,mask=Emask)
                     Y = ma.array(Y,mask=Emask)

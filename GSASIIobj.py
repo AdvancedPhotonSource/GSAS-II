@@ -453,14 +453,56 @@ modSymb     (list of str) Modulation symbols
 ==========  ====================================================
 
 
+Phase Information
+--------------------
+
+.. index::
+   single: Phase information record description
+
+Phase information is placed in one of the following keys:
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+==========  ==============================================================
+  key         explanation
+==========  ==============================================================
+General       Overall information about a phase
+Histograms    Information about each histogram linked to the 
+              current phase as well as parameters that 
+              are defined for each histogram and phase
+              (such as sample peak widths and preferred 
+              orientation parameters. 
+Atoms         Contains a list of atoms, as described in the 
+              :ref:`Atom Records <Atoms_table>` description.
+Drawing       Parameters that determine how the phase is 
+              displayed, including a list of atoms to be 
+              included, as described in the 
+              :ref:`Drawing Atom Records <Drawing_atoms_table>`
+              description
+MCSA          Monte-Carlo simulated annealing parameters
+pId           The index of each phase in the project, numbered
+              starting at 0
+ranId         An int value with a unique value for each phase 
+RBModels      A list of dicts with parameters for each 
+              rigid body inserted into the current phase, 
+              as defined in the 
+              :ref:`Rigid Body Insertions <Rigid_Body_Insertions>`.
+              Note that the rigid bodies are defined as 
+              :ref:`Rigid Body Objects <RBData_table>` 
+RMC           PDF modeling parameters
+Pawley ref    Pawley refinement parameters 
+
+==========  ==============================================================
+
 .. _Atoms_table:
 
 .. index::
    single: Atoms record description
    single: Data object descriptions; Atoms record
 
+--------------------
 Atom Records
-------------
+--------------------
 
 If ``phasedict`` points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
@@ -499,8 +541,9 @@ atom[cia+8]         (int) unique atom identifier
    single: Drawing atoms record description
    single: Data object descriptions; Drawing atoms record
 
+----------------------------
 Drawing Atom Records
---------------------
+----------------------------
 
 If ``phasedict`` points to the phase information in the data tree, then
 drawing atoms are contained in a list of drawing atom records (list) in
@@ -530,6 +573,37 @@ cs+3                (str) ADP flag: Isotropic ('I') or Anisotropic ('A')
 cs+4                (float) Uiso 
 cs+5...cs+11        (6 floats) U11, U22, U33, U12, U13, U23 
 ci                  (int) unique atom identifier; matches source atom Id in Atom Records 
+==============   ===================================================================================
+
+.. _Rigid_Body_Insertions:
+
+----------------------------
+Rigid Body Insertions
+----------------------------
+
+If ``phasedict`` points to the phase information in the data tree, then
+rigid body information is contained in list(s) in
+``phasedict['RBModels']['Residue']`` and/or ``phasedict['RBModels']['Vector']``
+for each rigid body inserted into the current phase. 
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+==============   ===================================================================================
+key              explanation
+==============   ===================================================================================
+fixOrig           Should the origin be fixed (when editing, not the refinement flag)
+Ids               Ids for assignment of atoms in the rigid body
+numChain          Chain number for macromolecular fits 
+Orient            Orientation of the RB as a quaternion and a refinement flag (' ', 'A' or 'AV')
+OrientVec         Orientation of the RB expressed as a vector and azimuthal rotation angle
+Orig              Origin of the RB in fractional coordinates and refinement flag (bool)
+RBId              References the unique ID of a rigid body in the 
+                  :ref:`Rigid Body Objects <RBData_table>`
+RBname            The name for the rigid body (str)
+ThermalMotion     The thermal motion description for the rigid body, which includes a choice for 
+                  the model and can include TLS parameters or an overall Uiso value. 
+Torsions          Defines the torsion angle and refinement flag for each torsion defined in 
+                  the :ref:`Rigid Body Object <RBData_table>`
 ==============   ===================================================================================
 
 .. _Powder_table:
@@ -1712,7 +1786,7 @@ def VarDescr(varname):
         elif l[4] is not None: # rigid body parameter or modulation parm
             lbl = ShortPhaseNames.get(l[0],'phase?')
             if 'RB' in l[2]:    #rigid body parm
-                s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
+                s = "RB body #"+str(l[3])+" (type "+str(l[4])+") in "+str(lbl) + ','
             else: #modulation parm
                 s = 'Atom %s wave %s in %s'%(LookupAtomLabel(l[0],l[3])[0],l[4],lbl)
         elif l[3] is not None: # atom parameter,

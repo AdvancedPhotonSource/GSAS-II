@@ -89,6 +89,10 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
+# previous rigid body selections
+prevResId = None
+prevVecId = None
+
 if '2' in platform.python_version_tuple()[0]:
     GkDelta = unichr(0x0394)
     Angstr = unichr(0x00c5)
@@ -9805,6 +9809,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
         '''
+        resVarLookup = []
         def OnThermSel(event):       #needs to be seen by VecRbSizer!
             Obj = event.GetEventObject()
             RBObj = Indx[Obj.GetId()]
@@ -9954,8 +9959,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             rbSizer.Add(sytsymtxt)
             return rbSizer
                          
-        def ResrbSizer(RBObj):
-            
+        def ResrbSizer(RBObj,resIndx):
+            '''Displays details for selected rigid body'''
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -10004,6 +10009,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     lbl = 'z'                    
                 topLine.Add(wx.StaticText(RigidBodies,-1,
                     '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
+            varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
+            topLine.Add(wx.StaticText(RigidBodies,-1,
+                    '  (variables '+varname+')'),0,WACV)
             resrbSizer.Add(topLine)
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
             if len(RBObj['Torsions']):
@@ -10072,25 +10080,27 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             return vecrbSizer                
         
         def OnVecSelect(event):
-            rbId = select.GetSelection()
-            wx.CallLater(100,RepaintRBInfo,'Vector',rbId)
+            global prevVecId
+            prevVecId = select.GetSelection()
+            wx.CallLater(100,RepaintRBInfo,'Vector',prevVecId)
            
         def OnResSelect(event):
-            rbId = resSelect.GetSelection()
-            wx.CallLater(100,RepaintRBInfo,'Residue',rbId)
+            global prevResId
+            prevResId = resSelect.GetSelection()
+            wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
            
-        def RepaintRBInfo(rbType,rbId,Scroll=0):
+        def RepaintRBInfo(rbType,rbIndx,Scroll=0):
             oldFocus = wx.Window.FindFocus()
             if 'phoenix' in wx.version():
                 G2frame.bottomSizer.Clear(True)
             else:
                 G2frame.bottomSizer.DeleteWindows()
             Indx.clear()
-            rbObj = data['RBModels'][rbType][rbId]
+            rbObj = data['RBModels'][rbType][rbIndx]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
-            G2frame.bottomSizer =  ResrbSizer(rbObj)
+            G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
             G2frame.dataWindow.Refresh()
@@ -10131,11 +10141,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0)
             mainSizer.Add((5,5),0)
             RBnames = []
-            for RBObj in data['RBModels']['Residue']:
-                RBnames.append(RBObj['RBname']+RBObj['numChain'])
-            if resId is None:
+            resVarLookup = []
+            for irb,RBObj in enumerate(data['RBModels']['Residue']):
+                name = RBObj['RBname']+RBObj['numChain']
+                RBnames.append(name)
+                jrb = RBData['RBIds']['Residue'].index(RBObj['RBId'])
+                resVarLookup.append(str(irb)+':'+str(jrb)) # var name suffix following G2strMath.ApplyRBModels()
+            if prevResId is not None:
+                resId = prevResId
+            try:
+                rbName = RBnames[resId]
+            except TypeError:
                 resId = 0
-            rbName = RBnames[resId]
+                rbName = RBnames[resId]
             rbObj = data['RBModels']['Residue'][resId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -10145,7 +10163,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             resSelect.Bind(wx.EVT_LISTBOX,OnResSelect)
             mainSizer.Add(resSelect,0)
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
-            G2frame.bottomSizer.Add(ResrbSizer(rbObj))
+            G2frame.bottomSizer.Add(ResrbSizer(rbObj,resId))
             mainSizer.Add(G2frame.bottomSizer)
             G2plt.PlotStructure(G2frame,data)
             G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
@@ -10157,9 +10175,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             RBnames = []
             for RBObj in data['RBModels']['Vector']:
                 RBnames.append(RBObj['RBname'])
-            if vecId is None:
+            if prevVecId is not None:
+                vecId = prevVecId
+            try:
+                rbName = RBnames[vecId]
+            except TypeError:
                 vecId = 0
-            rbName = RBnames[vecId]
+                rbName = RBnames[vecId]
             rbObj = data['RBModels']['Vector'][vecId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]

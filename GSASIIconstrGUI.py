@@ -3291,6 +3291,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     stripH.Bind(wx.EVT_BUTTON, OnStripH)
                     Indx[stripH.GetId()] = rbid
                     nameSizer.Add(stripH,0,WACV)
+            nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'  body type #'+
+                                        str(data['RBIds']['Residue'].index(rbid))),0,WACV)
             return nameSizer
             
         def rbResidues(rbid,rbData):

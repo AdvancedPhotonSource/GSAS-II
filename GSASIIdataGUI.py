@@ -8527,7 +8527,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
-    wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
     wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),xmin=1.e-9),0,WACV)
 #    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
@@ -8538,8 +8537,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.SetValue(str(data[0]['Compression']))
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
-
-    mainSizer.Add(wtSizer)
+    wtSizer.Add((-1,-1),1,wx.EXPAND)
+    wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(wtSizer,0,wx.EXPAND)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
     if 'histTitle' not in data[0]: data[0]['histTitle'] = ''

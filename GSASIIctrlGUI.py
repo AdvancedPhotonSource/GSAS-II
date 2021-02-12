@@ -776,9 +776,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._setValue(self.result[self.key])
         if self.OnLeave:
             self.event = event
-            self.OnLeave(invalid=self.invalid,value=self.result[self.key],
-                tc=self,**self.OnLeaveArgs)
-
+            try:
+                self.OnLeave(invalid=self.invalid,value=self.result[self.key],
+                    tc=self,**self.OnLeaveArgs)
+            except:
+                pass
 ################################################################################
 class NumberValidator(wx.PyValidator):
     '''A validator to be used with a TextCtrl to prevent
@@ -2713,10 +2715,14 @@ class SingleStringDialog(wx.Dialog):
                                 style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
         else:
             self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
-        sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
         if help:
-            sizer1.Add(HelpButton(self.panel,help),0,wx.ALIGN_RIGHT|wx.ALL)
-        mainSizer.Add(sizer1,0,wx.ALIGN_CENTER)
+            sizer1.Add((-1,-1),1,wx.EXPAND)
+            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+            sizer1.Add((-1,-1),1,wx.EXPAND)
+            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
+        else:
+            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+        mainSizer.Add(sizer1,0,wx.EXPAND)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()
@@ -3575,14 +3581,14 @@ class SGMessageBox(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
         for line in text:
-            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)))
         ncol = self.table[0].count(',')+1
         tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
         j = 0
         for item in self.table:
             if 'for' in item:
                 mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
-                mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
+                mainSizer.Add(wx.StaticText(self.panel,label=item),0)
                 tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
                 continue
             num,flds = item.split(')')

@@ -379,7 +379,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,'psing':psing_prev,
             'Converged':ifConverged, 'DelChi2':deltaChi2, 'chisq0':chisq00})
         if icycle > 0: info.update({'Xvec':XvecAll})
-        setSVDwarn(info,Amatlam,Nzeros,indices)
+        setSVDwarn(info,Amat,Nzeros,indices)
         # expand Bmat by filling with zeros if columns have been dropped
         if len(psing_prev):
             ins = [j-i for i,j in enumerate(psing_prev)]

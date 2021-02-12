@@ -9979,10 +9979,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
                 RBObjs = data['RBModels']['Residue']
-                for rbObj in RBObjs:
+                for i,rbObj in enumerate(RBObjs):
                     if RBId == rbObj['RBId']:
                         RBData['Residue'][RBId]['useCount'] -= 1
-                        data['RBModels']['Residue'].remove(rbObj)                 
+                        del data['RBModels']['Residue'][i]
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
                 
@@ -10009,7 +10009,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     lbl = 'z'                    
                 topLine.Add(wx.StaticText(RigidBodies,-1,
                     '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
-            varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
+            try:
+                varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
+            except:  # happens when phase has no histograms
+                varname = '?::RBRxxx:'+resVarLookup[resIndx]
             topLine.Add(wx.StaticText(RigidBodies,-1,
                     '  (variables '+varname+')'),0,WACV)
             resrbSizer.Add(topLine)
@@ -10151,7 +10154,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 resId = prevResId
             try:
                 rbName = RBnames[resId]
-            except TypeError:
+            except:
                 resId = 0
                 rbName = RBnames[resId]
             rbObj = data['RBModels']['Residue'][resId]
@@ -12851,6 +12854,56 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnPawleySelNone, id=G2G.wxID_PAWLEYSELNONE)
         G2frame.Bind(wx.EVT_MENU, OnPawleyToggle, id=G2G.wxID_PAWLEYSELTOGGLE)
         
+    def rbKeyPress(event):
+        '''Respond to a Tab to highlight the next RB or crystal atom
+        TODO: this is not getting called in Windows. Is a bind needed elsewhere?
+        '''
+        if 'testRBObj' not in data: return
+        if not RigidBodies.atomsGrid: return
+        alt = event.GetModifiers() & wx.MOD_ALT
+        event.Skip()
+        try: # IsKeyInCategory not in wx 2.9
+            if not event.IsKeyInCategory(wx.WXK_CATEGORY_TAB): return
+        except:
+            return
+        if alt:    # advance RB selection
+            #GSASIIpath.IPyBreak()
+            rows = RigidBodies.atomsGrid.GetSelectedRows()
+            if len(rows) == 0:
+                rows = [0]
+            else:
+                rows[0] += 1
+            if rows[0] > RigidBodies.atomsGrid.GetNumberRows()-1:
+                rows = [0]
+            elif rows[0] < 0:
+                rows[0] = RigidBodies.atomsGrid.GetNumberRows()-1
+            RigidBodies.atomsGrid.SelectRow(rows[0])         
+            RigidBodies.atomsGrid.MakeCellVisible(rows[0],0)         
+            data['testRBObj']['RBhighLight'] = rows[0]
+        else:
+            Ind = data['testRBObj'].get('CRYhighLight',[])
+            if len(Ind) == 0:
+                I = -1
+            else:
+                I = Ind[0]
+            wrap = False
+            while True:
+                I += 1
+                if I >= len(data['Atoms']) and wrap:
+                    print('How did this happen?',Ind,I,
+                              len(data['testRBObj']['availAtoms']),len(data['Atoms']))
+                    return
+                elif I >= len(data['Atoms']):
+                    wrap = True
+                    I = 0
+                if data['Atoms'][I][0] in data['testRBObj']['availAtoms']:
+                    data['testRBObj']['CRYhighLight'] = [I]
+                    misc['showSelect'].setByString(data['Atoms'][I][0])
+                    break
+        G2plt.PlotStructure(G2frame,data,False,misc['UpdateTable'])
+        G2frame.Raise()
+        return
+        
     # UpdatePhaseData execution starts here
 #patch
     if 'RBModels' not in data:
@@ -12907,55 +12960,6 @@ of the crystal structure.
     G2frame.phaseDisplay.gridList.append(drawAtoms)
     G2frame.phaseDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
-    def rbKeyPress(event):
-        '''Respond to a Tab to highlight the next RB or crystal atom
-        TODO: this is not getting called in Windows. Is a bind needed elsewhere?
-        '''
-        if 'testRBObj' not in data: return
-        if not RigidBodies.atomsGrid: return
-        alt = event.GetModifiers() & wx.MOD_ALT
-        event.Skip()
-        try: # IsKeyInCategory not in wx 2.9
-            if not event.IsKeyInCategory(wx.WXK_CATEGORY_TAB): return
-        except:
-            return
-        if alt:    # advance RB selection
-            #GSASIIpath.IPyBreak()
-            rows = RigidBodies.atomsGrid.GetSelectedRows()
-            if len(rows) == 0:
-                rows = [0]
-            else:
-                rows[0] += 1
-            if rows[0] > RigidBodies.atomsGrid.GetNumberRows()-1:
-                rows = [0]
-            elif rows[0] < 0:
-                rows[0] = RigidBodies.atomsGrid.GetNumberRows()-1
-            RigidBodies.atomsGrid.SelectRow(rows[0])         
-            RigidBodies.atomsGrid.MakeCellVisible(rows[0],0)         
-            data['testRBObj']['RBhighLight'] = rows[0]
-        else:
-            Ind = data['testRBObj'].get('CRYhighLight',[])
-            if len(Ind) == 0:
-                I = -1
-            else:
-                I = Ind[0]
-            wrap = False
-            while True:
-                I += 1
-                if I >= len(data['Atoms']) and wrap:
-                    print('How did this happen?',Ind,I,
-                              len(data['testRBObj']['availAtoms']),len(data['Atoms']))
-                    return
-                elif I >= len(data['Atoms']):
-                    wrap = True
-                    I = 0
-                if data['Atoms'][I][0] in data['testRBObj']['availAtoms']:
-                    data['testRBObj']['CRYhighLight'] = [I]
-                    misc['showSelect'].setByString(data['Atoms'][I][0])
-                    break
-        G2plt.PlotStructure(G2frame,data,False,misc['UpdateTable'])
-        G2frame.Raise()
-        return
     
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)

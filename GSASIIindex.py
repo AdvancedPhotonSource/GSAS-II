@@ -272,7 +272,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
                 i += 1
             else:
                 Vec.append(vec[j])
-        return np.array(Vec)  
+        return np.array(Vec,dtype=float)  
      
     def ZSSfunc(values,peaks,dmin,Inst,SGData,SSGData,vec,Vref,maxH,A,wave,Z,dlg=None):
         Vec = Val2Vec(vec,Vref,values)

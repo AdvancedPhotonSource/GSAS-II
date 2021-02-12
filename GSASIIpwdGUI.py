@@ -3327,7 +3327,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
-        print (' Trying: ',controls[13],ssopt['ssSymb'], ' maxH: 1')
+        print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
@@ -3347,17 +3347,18 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ssSymb'] = ssSym            
             Peaks = np.copy(peaks[0])
             ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
-            print (' Trying: '+controls[13]+ssSym+ ' maxH: 1')
+            print (' Trying: '+controls[13]+ssSym+' maxH: 1')
             ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
             OnHklShow(event)
             if result[1] < best:
                 bestSS = ssSym
                 best = result[1]
-        ssopt['ssSymb'] = bestSS
-        ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
-        if len(result[0]) == 2:
-            G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
-                newPlot=True,Title='Modulation vector search')
+        if bestSS != '':
+            ssopt['ssSymb'] = bestSS
+            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+            if len(result[0]) == 2:
+                G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                    newPlot=True,Title='Modulation vector search')
         
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         

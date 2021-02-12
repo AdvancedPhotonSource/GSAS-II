@@ -962,7 +962,7 @@ def MaxIndex(dmin,A):
     except:
         cell = [1.,1.,1.,90.,90.,90.]
     for i in range(3):
-        Hmax[i] = int(round(cell[i]/dmin))
+        Hmax[i] = int(np.round(cell[i]/dmin))
     return Hmax
     
 def transposeHKLF(transMat,Super,refList):

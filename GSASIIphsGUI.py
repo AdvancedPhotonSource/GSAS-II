@@ -10365,12 +10365,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         lbl = 'Rb' + elem + str(nextNum)
                         x,y,z = line[2:5]
                         AtomAdd(x,y,z,El=elem,Name=lbl,update=False)
-                        atomData[nextNum][6] = Mult/maxMult
                         Ids.append(atomData[nextNum][-1])
                         updateNeeded = True
                     else:
                         atomData[line[5]][cx:cx+3] = line[2:5]
-                        atomData[line[5]][6] = Mult/maxMult
                         Ids.append(line[11])
                 if updateNeeded:
                     UpdateDrawAtoms()

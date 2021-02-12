@@ -3374,6 +3374,18 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     res.ForceRefresh()
                     G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                     
+            def OnCycleXYZ(event):
+                Obj = event.GetEventObject()
+                res = Indx[Obj.GetId()]
+                rbXYZ = rbData['rbXYZ']
+                resTable = res.GetTable()
+                for r in range(res.GetNumberRows()):
+                    rbXYZ[r] = np.roll(rbXYZ[r],1)
+                    row = resTable.GetRowValues(r)
+                    row[2:4] = rbXYZ[r]
+                    resTable.SetRowValues(r,row)
+                res.ForceRefresh()
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 
             Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
             colLabels = ['Name','Type','Cart x','Cart y','Cart z']
@@ -3424,6 +3436,10 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     refObj[i] = refSel
                     refAtmSizer.Add(refSel,0,WACV)
                 RefObjs.append(refObj)
+                cycleXYZ = wx.Button(ResidueRBDisplay,label=' Cycle XYZ?')
+                cycleXYZ.Bind(wx.EVT_BUTTON,OnCycleXYZ)
+                Indx[cycleXYZ.GetId()] = resGrid
+                refAtmSizer.Add(cycleXYZ,0,WACV)
                 if 'molCent' not in rbData: rbData['molCent'] = False           #patch
                 molcent = wx.Button(ResidueRBDisplay,label=' Center RB?')
                 molcent.Bind(wx.EVT_BUTTON,OnMolCent)
@@ -3436,6 +3452,9 @@ The vector from B to A defines the x-axis and the y axis is placed
 in the plane defined by B to A and C to A. A,B,C must not be collinear.
  
 %%* The origin is at A unless the "Center RB?" button is pressed.
+
+%%* The 'Cycle XYZ' button will permute the rigid body XYZ coordinates so
+XYZ --> ZXY. Repeat if needed.
 
 %%* The "Center RB?" button will shift the origin of the 
 rigid body to be the midpoint of all atoms in the body (not mass weighted).

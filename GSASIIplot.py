@@ -8940,14 +8940,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GL.glVertex3fv(np.zeros(3))
             GL.glVertex3fv(line)
         # arrows on line ends, colored by planes
-        for i in range(3):
-            for j in (1,-1):
-                GL.glColor3ubv(colors[(i+1)%3])
-                GL.glVertex3fv(lines[i])
-                GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+1)%3])
-                GL.glColor3ubv(colors[(i+2)%3])
-                GL.glVertex3fv(lines[i])
-                GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+2)%3])
+        # for i in range(3):
+        #     for j in (1,-1):
+        #         GL.glColor3ubv(colors[(i+1)%3])
+        #         GL.glVertex3fv(lines[i])
+        #         GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+1)%3])
+        #         GL.glColor3ubv(colors[(i+2)%3])
+        #         GL.glVertex3fv(lines[i])
+        #         GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+2)%3])
         # draw vector part of Q in white
         A,V = G2mth.Q2AVdeg(Q)
         Vfrac = np.inner(Bmat,V)

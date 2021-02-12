@@ -1368,6 +1368,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             if RB['Orig'][1]:
                 phaseVary += [name,]
         pfxRB = pfx+'RB'+rbKey+'O'
+        A,V = G2mth.Q2AV(RB['Orig'][0])
+        fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
             name = pfxRB+ostr[i]+':'+str(iRB)+':'+rbid
             phaseDict[name] = RB['Orient'][0][i]
@@ -1375,7 +1377,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 phaseVary += [name,]
             elif RB['Orient'][1] == 'A' and not i:
                 phaseVary += [name,]
-            
+            elif RB['Orient'][1] == 'V' and i not in fixAxis:
+                phaseVary += [name,]
+                print('refine',name)
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']

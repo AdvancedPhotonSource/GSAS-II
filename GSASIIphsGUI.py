@@ -9948,7 +9948,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
-            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV'],
+            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV','V'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])

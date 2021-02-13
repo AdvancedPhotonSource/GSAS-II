@@ -9891,7 +9891,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
-                    data['Atoms'][AtLookUp[Id]][cx+3] = Mult/maxMult
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)

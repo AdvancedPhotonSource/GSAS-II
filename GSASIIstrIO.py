@@ -1379,7 +1379,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 phaseVary += [name,]
             elif RB['Orient'][1] == 'V' and i not in fixAxis:
                 phaseVary += [name,]
-                print('refine',name)
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']

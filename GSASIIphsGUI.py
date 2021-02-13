@@ -10102,7 +10102,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
-            G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
+            if rbType == 'Residue':
+                G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
+            else: #Vector
+                G2frame.bottomSizer =  VecrbSizer(rbObj)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
             G2frame.dataWindow.Refresh()

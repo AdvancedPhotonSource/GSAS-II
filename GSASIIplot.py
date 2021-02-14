@@ -8207,9 +8207,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
         rho = G2mth.getRho([Cx,Cy,Cz],mapData)
         if contours:
-            contlevels = contourSet.get_array()
-            contstr = str(contlevels).strip('[]')
-            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
+            try:
+                contlevels = contourSet.get_array()
+                contstr = str(contlevels).strip('[]')
+                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
+            except AttributeError:
+                G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
         else:
             G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
     

@@ -9886,11 +9886,16 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 RBObj['Orient'][1] = Qcheck.GetValue()
                 
             def OnOrigX(invalid,value,tc):
+                '''Called when the position info is changed (vector 
+                or azimuth)
+                '''
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
                 Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                    data['Atoms'][AtLookUp[Id]][cx+3] = 1.0
+                data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)
@@ -9910,6 +9915,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
                     for i,Id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        data['Atoms'][AtLookUp[Id]][cx+3] = 1.0
+                    data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                     data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(atomStyle)
                     G2plt.PlotStructure(G2frame,data)
@@ -9917,8 +9924,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     pass
                 
             SGData = data['General']['SGData']
-            maxMult = len(SGData['SGOps'])*len(SGData['SGCen'])
-            if SGData['SGInv']: maxMult *= 2
             rbSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.FlexGridSizer(0,6,5,5)
             if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
@@ -10354,10 +10359,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         dlg.Destroy()
                         return
                     dlg.Destroy()
-                SGData = data['General']['SGData']
-                maxMult = len(SGData['SGOps'])*len(SGData['SGCen'])
-                if SGData['SGInv']: maxMult *= 2
-                Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[1]
                 Ids = []
                 updateNeeded = False
                 for line in matchTable:
@@ -10372,6 +10373,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     else:
                         atomData[line[5]][cx:cx+3] = line[2:5]
                         Ids.append(line[11])
+                if len(Ids):
+                    AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+                    G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
                     UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
@@ -10670,48 +10674,51 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             rbObj = data['testRBObj']['rbObj']
             rbName = rbObj['RBname']
             rbId = rbObj['RBId']
-            Orien = rbObj['Orient'][0]
-            rbRef = data['testRBObj']['rbRef']
             Torsions = rbObj['Torsions']
-            #refName = []
-            #for ref in rbRef:
-            #    refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
             atNames = data['testRBObj']['atNames']
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             helpText = '''
 This window is used to insert a rigid body into a unit cell, determining 
-the initial settings for the position and orientation of the body, 
-as well as any torsion angles. The origin 
-determines where the origin of the rigid body will be placed in the
-unit cell (expressed in fractional coordinates).
-The orientation is determined by a quaternion 
-that is expressed here as vector (in fraction coordinates) and an azimuthal 
-rotation (in degrees) around that quaternion vector. For systems where symmetry 
-dictates that the rigid body needs to be oriented in a particular direction, 
-the rigid body coordinate system must be defined with the symmetry 
-direction along the Cartesian x, y, z, x+y or x+y+z and this must be 
-selected with the "Rigid body symmetry axis." This places the 
-selected Cartesian axis along the quaternion vector.
+the initial settings for the position and orientation of the body, as well as 
+any internal torsion angles. The origin determines where the origin of the rigid body 
+will be placed in the unit cell (expressed in fractional coordinates). The 
+orientation is determined by a quaternion that is expressed here as vector 
+(in fraction coordinates) and an azimuthal rotation (in degrees) around that 
+quaternion vector. For systems where the rigid body is placed on a 
+crystallographic symmetry element, the "Rigid body symmetry axis" 
+("x", "y", "z", "x+y" or "x+y+z") specifies the rotation axis that aligns with 
+an allowed rotation for this symmetry element (NB: could be perpendicular to a 
+mirror). This places the selected Cartesian axis along the quaternion vector. 
+The quaternion vector may be set by the user to force the rotation to be about 
+a particular crystallographic direction (e.g. along a rotation axis or 
+perpendicular to a mirror). The rotation action can be tested via the slider.
 
 %%If there are atoms in the unit cell that are of the appropriate type and
-are not already assigned to rigid bodies, a table shows each 
-atom in the rigid body and the closest atom unit cell atom, as well 
-as the distance between them. This pairing can be set manually using the 
-pulldown menu in the "Assign as atom" column, where a particular atom
-can be selected. One option is "create new" which means that that RB atom 
-will not be paired to a unit cell atom. "Update Assignments" recomputes distance
-between paired atoms. 
+are not already assigned to rigid bodies, a table shows each atom in the rigid 
+body and the closest crystallographic atom, and the distance between them. 
+Set this pairing by using the pulldown menu in the "Assign as atom" column by 
+selecting a particular atom. If the selection is changed, "Update Assignments" 
+recomputes distance between paired atoms. If one atom is paired manually using 
+"Assign as", the "Set Origin" button can be used to place the rigid body origin 
+to best fit the paired atom(s). Likewise, with two or more atoms assigned, the 
+"Set Orientation" button will determine the quaternion azimuth and vector. Three
+or more pairs are assignments allow use of the "Set both" button, which 
+sets the orientation and origin to best give the smallest distances between 
+the assigned atoms. NB: if apparently stuck with a poor fit, try shifting the 
+Orientation azimuth slider and try Set both again.
 Note that when a row in the table is selected, the corresponding atoms 
 are highlighted in green. The tab key or the "Crystal Highlight" pulldown
 can be used to highlight differing unit cell atoms. Alt-Tab highlights different
 RB atoms. 
-If at least one atom is paired manually using "Assign as", the 
-"Set Origin" button can be used to place the rigid body origin to best fit
-the paired atom(s). Likewise, with two or more atoms assigned, the 
-"Set Orientation" button will determine the quaternion azimuth and vector. Three
-or more pairs are assignments allow use of the "Set both" button, which 
-sets the orientation and origin to best give the smallest distances between 
-the assigned atoms. 
+
+%%If there are no unassigned atoms of the right type (existing RBs will have 
+orange sticks for bonds), then the table will show "Create new" in the 
+"Assign as atom" column. The proposed RB can be positioned via Alt mouse 
+operations and/or by entering appropriate values in the Orientation azimuth 
+and vector x,y,z boxes. Symmetry element issues should be attended to by 
+proper selections as noted above. "Add" will then add the rigid body atoms to 
+the Atom list.
+
 %%The GSAS-II graphics window shows the unit cell contents (use the 
 "Ball & Sticks" or "Sticks" buttons to change the display of this) and 
 the rigid body is shown with small balls and green sticks. At the origin of the 
@@ -10719,8 +10726,8 @@ RB the axes are indicated with red, green and blue lines (for x, y, & z).
 A white line indicates the quaternion vector direction. 
 The mouse can also be used to position the rigid body in the plot by holding 
 the Alt key down while dragging with the mouse: Alt+left button to rotates 
-the RB in the screen x & y; Alt+middle mouse to rotates around the screen z 
-(out of plane); Alt+right mouse translates the RB in the screen x-y plane.
+the RB in the screen x & y; Alt+middle mouse to rotate the RB around the viewing 
+direction; Alt+right mouse translates the RB in the screen x-y plane.
 Note that dragging the mouse without the Alt button changes the view
 of the crystal structure.
 %%Once the rigid body has been placed in the desired position, press the "Add" button.
@@ -10863,11 +10870,13 @@ of the crystal structure.
             colLabels = ['RB\ntype','Atom\n#','Atom\nlabel','delta, A','Assign as atom']
             rowLabels = [l[1] for l in matchTable]
             displayTable = []
+            Actions = True
             for i,l in enumerate(matchTable):
                 lbl = ''
                 if i in rbAssignments:
                     if rbAssignments[i] is None:
                         displayTable.append([l[0],-1,'?',-1,'Create new'])
+                        Actions = False
                     else:
                         lbl = rbAssignments[i]
                         displayTable.append([l[0],l[5],l[6],l[10],lbl]) # TODO: think about this
@@ -10880,7 +10889,7 @@ of the crystal structure.
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
             RigidBodies.atomsGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             choiceeditor = wg.GridCellChoiceEditor(
-                data['testRBObj']['availAtoms']+['Create new'], False)
+                data['testRBObj']['availAtoms'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
             # make all grid entries read only
             attr = wg.GridCellAttr()
@@ -10901,33 +10910,34 @@ of the crystal structure.
             gridSizer.Add(RigidBodies.atomsGrid)#,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
             gridSizer.Add((5,5))
 
-            btnSizer = wx.BoxSizer(wx.VERTICAL)
-            hSizer = wx.BoxSizer(wx.HORIZONTAL)
-            hSizer.Add(wx.StaticText(RigidBodies,label='Crystal Highlight: '))
-            misc['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
-                data['testRBObj']['availAtoms'],None,None,showAtom,0,showCryAtom,size=(75,-1))
-            hSizer.Add(misc['showSelect'])
-            btnSizer.Add(hSizer)
-            btnSizer.Add((-1,20))
-            btnSizer.Add(wx.StaticText(RigidBodies,label='Actions with assigned\natom(s)...'),0,wx.ALL)
-            btnSizer.Add((-1,10))
-            btn = wx.Button(RigidBodies,label='Update Assignments')
-            btn.Bind(wx.EVT_BUTTON,UpdateTable)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btnSizer.Add((-1,10))
-
-            btn = wx.Button(RigidBodies,label='Set Origin')
-            btn.Bind(wx.EVT_BUTTON,onSetOrigin)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btnSizer.Add((-1,5))
-            btn = wx.Button(RigidBodies,label='Set Orientation')
-            btn.Bind(wx.EVT_BUTTON,onFitOrientation)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            btnSizer.Add((-1,5))
-            btn = wx.Button(RigidBodies,label='Set both')
-            btn.Bind(wx.EVT_BUTTON,onFitBoth)
-            btnSizer.Add(btn,0,wx.ALIGN_CENTER)
-            gridSizer.Add(btnSizer)
+            if Actions:
+                btnSizer = wx.BoxSizer(wx.VERTICAL)
+                hSizer = wx.BoxSizer(wx.HORIZONTAL)
+                hSizer.Add(wx.StaticText(RigidBodies,label='Crystal Highlight: '))
+                misc['showSelect'] = G2G.G2ChoiceButton(RigidBodies,
+                    data['testRBObj']['availAtoms'],None,None,showAtom,0,showCryAtom,size=(75,-1))
+                hSizer.Add(misc['showSelect'])
+                btnSizer.Add(hSizer)
+                btnSizer.Add((-1,20))
+                btnSizer.Add(wx.StaticText(RigidBodies,label='Actions with assigned\natom(s)...'),0,wx.ALL)
+                btnSizer.Add((-1,10))
+                btn = wx.Button(RigidBodies,label='Update Assignments')
+                btn.Bind(wx.EVT_BUTTON,UpdateTable)
+                btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+                btnSizer.Add((-1,10))
+    
+                btn = wx.Button(RigidBodies,label='Set Origin')
+                btn.Bind(wx.EVT_BUTTON,onSetOrigin)
+                btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+                btnSizer.Add((-1,5))
+                btn = wx.Button(RigidBodies,label='Set Orientation')
+                btn.Bind(wx.EVT_BUTTON,onFitOrientation)
+                btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+                btnSizer.Add((-1,5))
+                btn = wx.Button(RigidBodies,label='Set both')
+                btn.Bind(wx.EVT_BUTTON,onFitBoth)
+                btnSizer.Add(btn,0,wx.ALIGN_CENTER)
+                gridSizer.Add(btnSizer)
             mainSizer.Add(gridSizer)
             mainSizer.Layout()
             RigidBodies.SetScrollRate(10,10)
@@ -10975,9 +10985,11 @@ of the crystal structure.
                 'No Rigid Bodies')
             return
         general = data['General']
+        SGData = general['SGData']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        cx,ct = general['AtomPtrs'][:2]
+        cx,ct,cs,cia = general['AtomPtrs']
         atomData = data['Atoms']
+        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
         Indx = {}
         data['testRBObj'] = {}
         if len(rbNames) == 1:

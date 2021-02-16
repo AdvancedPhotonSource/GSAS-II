@@ -18,7 +18,7 @@ Note that *G* is the reciprocal lattice tensor, and *g* is its inverse,
 
 The "*A* tensor" terms are defined as
 :math:`A = (\\begin{matrix} G_{11} & G_{22} & G_{33} & 2G_{12} & 2G_{13} & 2G_{23}\\end{matrix})` and *A* can be used in this fashion:
-:math:`d^* = \sqrt {A_0 h^2 + A_1 k^2 + A_2 l^2 + A_3 hk + A_4 hl + A_5 kl}`, where
+:math:`d^* = \\sqrt {A_0 h^2 + A_1 k^2 + A_2 l^2 + A_3 hk + A_4 hl + A_5 kl}`, where
 *d* is the d-spacing, and :math:`d^*` is the reciprocal lattice spacing, 
 :math:`Q = 2 \\pi d^* = 2 \\pi / d`. 
 Note that GSAS-II variables ``p::Ai`` (i = 0, 1,... 5) and ``p`` is a phase number are 
@@ -1068,6 +1068,34 @@ def CentCheck(Cent,H):
         return False
     else:
         return True
+    
+def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
+    """ Checks members of a rigid body to see if one is a symmetry equivalent of another.
+    If so the atom site frac is set to zero.
+    param: Atoms: atom array as defined in GSAS-II; modified here
+    param: ct: int location of atom type in Atoms item
+    param: cx: int location of x,y,z,frac in Atoms item
+    param: AtLookUp: dict: atom lookup by Id table
+    param: Amat: np .array: crystal-to-Cartesian transformationmatri
+    param: RBObjIds: list: atom Id belonging to rigid body being tested
+    param: SGData: Dict: GSAS-II space group info.
+    :return: Atoms with modified atom frac entries
+    
+    """
+    for i,Id in enumerate(RBObjIds):
+        XYZo = np.array(Atoms[AtLookUp[Id]][cx:cx+3])%1.
+        typo = Atoms[AtLookUp[Id]][ct]
+        for Jd in RBObjIds[i+1:]:
+            if Atoms[AtLookUp[Jd]][ct] == typo:
+                XYZt = Atoms[AtLookUp[Jd]][cx:cx+3]
+                Xeqv = list(G2spc.GenAtom(np.array(XYZt)%1.,SGData,True))
+                close = [np.allclose(np.inner(Amat,XYZo),np.inner(Amat,eqv[0]),atol=0.01) for eqv in Xeqv]
+                if True in close:
+                    Atoms[AtLookUp[Jd]][cx+3] = 0.0
+        Sytsym,Mult = G2spc.SytSym(Atoms[AtLookUp[Id]][cx:cx+3],SGData)[:2]
+        Atoms[AtLookUp[Id]][cs] = Sytsym
+        Atoms[AtLookUp[Id]][cs+1] = Mult            
+    return Atoms
                                     
 def GetBraviasNum(center,system):
     """Determine the Bravais lattice number, as used in GenHBravais

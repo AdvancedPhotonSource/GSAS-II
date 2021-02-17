@@ -170,7 +170,7 @@ def UpdateImageData(G2frame,data):
         Data['color'] = 'gray'
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
         Iy,azms,Ix = G2frame.Integrate[:3]
-        GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,masks,blkSize)*1000.
+        GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,blkSize)*1000.
         Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
         pth = os.path.split(os.path.abspath(imagefile))[0]
         outname = 'GainMap'
@@ -180,9 +180,9 @@ def UpdateImageData(G2frame,data):
             newimagefile = dlg.GetPath()
             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
             Data['formatName'] = 'GSAS-II image'
-            Data['range'] = [(800,1200),[800,1200]]
-            GainMap = np.where(GainMap > 1200,1000,GainMap)
-            GainMap = np.where(GainMap < 800,1000,GainMap)
+            Data['range'] = [(500,2000),[800,1200]]
+            GainMap = np.where(GainMap > 1200,1200,GainMap)
+            GainMap = np.where(GainMap < 800,800,GainMap)
             G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
             GMname = 'IMG '+os.path.split(newimagefile)[1]
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)

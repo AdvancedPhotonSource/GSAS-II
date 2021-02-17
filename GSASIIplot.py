@@ -2917,21 +2917,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     exclLines = []
     time0 = time.time()
     if G2frame.SinglePlot and PatternId:
-        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
-        Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
-        PlotList = [Pattern,]
-        # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-        # Pattern[0]['BackFile'] = ['',-1.0,False]
-        # if PId:
-        #     Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
-        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
-            G2frame.PatternId, 'Instrument Parameters'))
-        Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-        ParmList = [Parms,]
-        SampleList = [Sample,]
-        Title = data[0].get('histTitle')
-        if not Title: 
-            Title = Pattern[-1]
+        try:
+            Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+            Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
+            PlotList = [Pattern,]
+            # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
+            # Pattern[0]['BackFile'] = ['',-1.0,False]
+            # if PId:
+            #     Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
+            Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
+                G2frame.PatternId, 'Instrument Parameters'))
+            Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+            ParmList = [Parms,]
+            SampleList = [Sample,]
+            Title = data[0].get('histTitle')
+            if not Title: 
+                Title = Pattern[-1]
+        except AttributeError:
+            pass
     else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         if G2frame.selections is None:

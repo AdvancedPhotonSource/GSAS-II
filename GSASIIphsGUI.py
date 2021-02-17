@@ -9898,9 +9898,12 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
                 Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
+                maxFrac = 0.0
+                for Id in RBObj['Ids']:
+                    maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
-                    data['Atoms'][AtLookUp[Id]][cx+3] = 1.0
+                    data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                 data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
@@ -9919,9 +9922,12 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         raise ValueError
                     RBObj['Orient'][0] = Q
                     newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                    maxFrac = 0.0
+                    for Id in RBObj['Ids']:
+                        maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
                     for i,Id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
-                        data['Atoms'][AtLookUp[Id]][cx+3] = 1.0
+                        data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                     data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                     data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(atomStyle)

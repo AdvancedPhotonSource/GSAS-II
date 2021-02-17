@@ -1167,7 +1167,7 @@ def UpdateBackground(G2frame,data):
             PKflags = []
             for term in backDict['peaksList']:
                 PKflags.append(term[1::2])
-        FBflag = backDict['background PWDR'][2]
+        FBflag = bool(backDict['background PWDR'][2])
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
@@ -1193,7 +1193,10 @@ def UpdateBackground(G2frame,data):
             if bkDict['nPeaks'] == backDict['nPeaks']:
                 for i,term in enumerate(bkDict['peaksList']):
                     term[1::2] = copy.copy(PKflags[i])
-            backData[1]['background PWDR'] = copy.copy(FBflag)
+            try:
+                backData[1]['background PWDR'][2] = FBflag
+            except:
+                backData[1]['background PWDR'] = ['',-1.,False]
             
     def OnBackCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)

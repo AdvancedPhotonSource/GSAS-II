@@ -150,10 +150,7 @@ def GetDisplay(pos):
             return ip
     return None
 
-################################################################################
-#### class definitions used for main GUI
-################################################################################
-               
+#### class definitions used for main GUI ######################################     
 class MergeDialog(wx.Dialog):
     ''' HKL transformation & merge dialog
     
@@ -512,9 +509,7 @@ def ShowVersions():
               '\n\nFor information on packages see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html and',
               '\nhttps://gsas-ii.readthedocs.io/en/latest/GSASIIGUI.html#GSASIIdataGUI.versionDict')
 
-###############################################################################
-#### GUI creation
-###############################################################################
+#### GUI creation #############################################################
 def GSASIImain(application):
     '''Start up the GSAS-II GUI'''                        
     ShowVersions()
@@ -643,9 +638,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
 
-################################################################################
-#### Create main frame (window) for GUI
-################################################################################
+#### Create main frame (window) for GUI #######################################
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items.
 
@@ -2724,10 +2717,8 @@ class GSASII(wx.Frame):
         data = self.GPXtree.GetItemPyData(Id)
         data.append('Notebook entry @ %s: %s'%(time.ctime(),text))    
                    
-###############################################################################
-#Command logging
-###############################################################################
 
+### Command logging ###########################################################
     def OnMacroRecordStatus(self,event,setvalue=None):
         '''Called when the record macro menu item is used which toggles the
         value. Alternately a value to be set can be provided. Note that this
@@ -2953,10 +2944,7 @@ class GSASII(wx.Frame):
         # # #self.ExportLookup[item.GetId()] = 'image'
         # self.ExportLookup[item.GetId()] = 'powder'
 
-###############################################################################
-# Exporters
-###############################################################################
-                            
+# Exporters ###################################################################
     def _Add_ExportMenuItems(self,parent):
         # item = parent.Append(
         #     help='Select PWDR item to enable',id=wx.ID_ANY,
@@ -3145,9 +3133,8 @@ class GSASII(wx.Frame):
                 if GSASIIpath.GetConfigValue(var):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
                     win.Center()
-################################################################################
-#### init_vars
-################################################################################
+                    
+#### init_vars ################################################################
     def init_vars(self):
         # initialize default values for GSAS-II "global" variables (saved in main Frame)
         self.oldFocus = None
@@ -3239,7 +3226,16 @@ class GSASII(wx.Frame):
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplay = None
         self.init_vars()
-                        
+        
+        if GSASIIpath.GetConfigValue('Starting_directory'):
+            try:
+                pth = GSASIIpath.GetConfigValue('Starting_directory')
+                pth = os.path.expanduser(pth) 
+                os.chdir(pth)
+                self.LastGPXdir = pth
+            except:
+                print('Ignoring Config Starting_directory value: '+
+                      GSASIIpath.GetConfigValue('Starting_directory'))
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             try:
@@ -3262,17 +3258,9 @@ class GSASII(wx.Frame):
                 print ('Error opening or reading file'+arg[1])
                 import traceback
                 print (traceback.format_exc())
-                
-        if GSASIIpath.GetConfigValue('Starting_directory'):
-            try:
-                pth = GSASIIpath.GetConfigValue('Starting_directory')
-                pth = os.path.expanduser(pth) 
-                os.chdir(pth)
-                self.LastGPXdir = pth
-            except:
-                print('Ignoring Config Starting_directory value: '+
-                      GSASIIpath.GetConfigValue('Starting_directory'))
-
+        elif any('SPYDER' in name for name in os.environ):
+            self.OnFileReopen(None)
+            
     def GetTreeItemsList(self,item):
         return self.GPXtree._getTreeItemsList(item)
 
@@ -5433,9 +5421,7 @@ class GSASII(wx.Frame):
         '''
         G2IO.SaveMultipleImg(self)
 
-################################################################################
-# Data window side of main GUI
-################################################################################
+# Data window side of main GUI ################################################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     '''Create the data item window as well as the menu. Note that 
     the same core menu items are used in all menus, but different items may be
@@ -5729,6 +5715,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_UPDATESEQSEL')
         self.SequentialFile.Append(G2G.wxID_UPDATESEQSEL,'Update phase from selected',
             'Update phase information from selected row')
+        G2G.Define_wxId('wxID_EDITSEQSELPHASE')
+        self.SequentialFile.Append(G2G.wxID_EDITSEQSELPHASE,'Edit phase parameters in selected',
+            'Edit phase information from selected row')
         self.SequentialFile.AppendSeparator()
         self.SequentialFile.Append(G2G.wxID_PLOTSEQSEL,'Plot selected cols',
             'Plot selected sequential refinement columns')
@@ -6446,9 +6435,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
     # end of GSAS-II menu definitions
     
-################################################################################
-#####  Notebook Tree Item editor
-################################################################################                  
+#####  Notebook Tree Item editor ##############################################
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
@@ -6470,9 +6457,7 @@ def UpdateNotebook(G2frame,data):
     G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 
-################################################################################
-#####  Comments
-################################################################################       
+#####  Comments ###############################################################
 def UpdateComments(G2frame,data):
     '''Place comments into the data window
     '''
@@ -6490,9 +6475,7 @@ def UpdateComments(G2frame,data):
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 
             
-################################################################################
-#####  Controls Tree Item editor
-################################################################################           
+#####  Controls Tree Item editor ##############################################
 def UpdateControls(G2frame,data):
     '''Edit overall GSAS-II controls in main Controls data tree entry
     '''
@@ -6782,10 +6765,8 @@ def UpdateControls(G2frame,data):
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
     
-################################################################################
-#####  Display of Sequential Results
-################################################################################           
-       
+
+#####  Display of Sequential Results ##########################################
 def UpdateSeqResults(G2frame,data,prevSize=None):
     """
     Called when the Sequential Results data tree entry is selected
@@ -7740,7 +7721,53 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                                     'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
                             for iname,name in enumerate(names):
                                 AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
-    
+                                
+    def OnEditSelectPhaseVars(event): 
+        '''Select phase parameters in a selected histogram in a sequential
+        fit. This allows the user to set their value(s)
+        '''
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if len(rows) == 1:
+            sel = rows[0]
+        else:
+            dlg = G2G.G2SingleChoiceDialog(G2frame, 'Select histogram to use for update',
+                                           'Select row',histNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        parmDict = data[histNames[sel]]['parmDict']
+        # narrow down to items w/o a histogram & having float values
+        phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
+        phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool) ]
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict items to set', 
+                                      'Choose items to edit', phaseKeys)
+        if dlg.ShowModal() == wx.ID_OK:
+            select = dlg.GetSelections()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        if len(select) == 0: return
+        l = [phaseKeys[i] for i in select]
+        d = {i:parmDict[i] for i in l}
+        val = G2G.CallScrolledMultiEditor(G2frame,len(l)*[d],l,l,CopyButton=True)
+        if val:
+            for key in d: # update values shown in table
+                if parmDict[key] == d[key]: continue
+                if key in data[histNames[sel]]['varyList']:
+                    i = data[histNames[sel]]['varyList'].index(key)
+                    data[histNames[sel]]['variables'][i] = d[key]
+                    data[histNames[sel]]['sig'][i] = 0
+                if key in data[histNames[sel]].get('depParmDict',{}):
+                    data[histNames[sel]]['depParmDict'][key] = (d[key],0)
+            parmDict.update(d) # update values used in next fit
+        wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
+        return
+            
+##### UpdateSeqResults: start processing sequential results here ########## 
     # lookup table for unique cell parameters by symmetry
     cellGUIlist = [
         [['m3','m3m'],(0,)],
@@ -7755,9 +7782,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # cell labels
     cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3') # unicode a,b,c,alpha,beta,gamma
 
-    #======================================================================
-    # start processing sequential results here (UpdateSeqResults)
-    #======================================================================
     if not data:
         print ('No sequential refinement results')
         return
@@ -7838,6 +7862,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.Bind(wx.EVT_MENU, OnAveSelSeq, id=G2G.wxID_AVESEQSEL)
     #G2frame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=G2G.wxID_ORGSEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnSelectUpdate, id=G2G.wxID_UPDATESEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnEditSelectPhaseVars, id=G2G.wxID_EDITSEQSELPHASE)
     G2frame.Bind(wx.EVT_MENU, onSelectSeqVars, id=G2G.wxID_ORGSEQINC)
     G2frame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=G2G.wxID_ADDSEQVAR)
     G2frame.Bind(wx.EVT_MENU, AddNewDistPseudoVar, id=G2G.wxID_ADDSEQDIST)
@@ -7901,8 +7926,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
     #else:
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,False)
-    #-----------------------------------------------------------------------------------
-    # build up the data table by columns -----------------------------------------------
+    ######  build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
     G2frame.colList = [list(range(nRows)),nRows*[True]]
@@ -8251,10 +8275,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #G2frame.dataDisplay.Refresh() # shows colored text on mac
     G2frame.dataWindow.SetDataSize()
 
-################################################################################
-#####  Main PWDR panel
-################################################################################           
-       
+#####  Main PWDR panel ########################################################    
 def UpdatePWHKPlot(G2frame,kind,item):
     '''Called when the histogram main tree entry is called. Displays the
     histogram weight factor, refinement statistics for the histogram
@@ -8680,10 +8701,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if item != G2frame.GPXtree.GetSelection():
         wx.CallAfter(G2frame.GPXtree.SelectItem,item)
                  
-################################################################################
-#####  Data (GPX) tree routines
-################################################################################           
-       
+#####  Data (GPX) tree routines ###############################################       
 def GetGPXtreeDataNames(G2frame,dataTypes):
     '''Finds all items in tree that match a 4 character prefix
     

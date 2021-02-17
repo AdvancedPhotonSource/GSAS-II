@@ -99,9 +99,8 @@ if '2' in platform.python_version_tuple()[0]:
 else:
     GkDelta = chr(0x0394)
     Angstr = chr(0x00c5)   
-################################################################################
-#### phase class definitions
-################################################################################
+
+#### phase class definitions ################################################################################
 class SymOpDialog(wx.Dialog):
     '''Class to select a symmetry operator
     '''
@@ -9591,12 +9590,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             return
         sourceDict = copy.deepcopy(data['Histograms'][hist])
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
+            copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']
         copyDict = {}
-        for name in copyNames: 
-            copyDict[name] = sourceDict[name]        #force copy
+        for name in copyNames:
+            if name not in sourceDict: continue
+            copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
         dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
@@ -9611,11 +9612,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         sourceDict = copy.deepcopy(data['Histograms'][hist])
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
+            copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Fix FXU','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']
         babNames = ['BabA','BabU']
         for name in copyNames:
+            if name not in sourceDict: continue
             if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                     copyDict[name] = {name:[sourceDict[name][:2]]}
@@ -9639,8 +9642,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]
-            elif name == 'Fix FXU':
-                copyDict[name] = sourceDict[name]                      
+            elif name == 'Fix FXU' or name == 'FixedSeqVars':
+                copyDict[name] = copy.deepcopy(sourceDict[name])                    
         keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
         if not keyList:
@@ -9653,6 +9656,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 for sel in dlg.GetSelections():
                     item = keyList[sel]
                     for name in copyNames:
+                        if name not in sourceDict: continue
                         if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
                             if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                                 data['Histograms'][item][name][:2] = copy.deepcopy(sourceDict[name][:2])
@@ -9680,7 +9684,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         elif name == 'Babinet':
                             for bab in babNames:
                                 data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])
-                        elif name == 'Fix FXU':
+                        elif name == 'Fix FXU' or name == 'FixedSeqVars':
                             data['Histograms'][item][name] = copy.deepcopy(sourceDict[name])                      
         finally:
             dlg.Destroy()
@@ -9694,9 +9698,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
+            copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']            
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []
@@ -9708,6 +9713,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         if not selectedItems: return # nothing to copy
         copyDict = {}
         for parm in selectedItems:
+            if parm not in sourceDict: continue
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
         dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
             'Copy selected phase/hist parameters', keyList)
@@ -9754,7 +9760,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],
                             'Layer Disp':[0.0,False],                         
-                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' '}
+                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' ','FixedSeqVars':[]}
                         refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
@@ -10889,7 +10895,7 @@ of the crystal structure.
             RigidBodies.atomsGrid = G2G.GSGrid(RigidBodies)
             RigidBodies.atomsGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             choiceeditor = wg.GridCellChoiceEditor(
-                data['testRBObj']['availAtoms'], False)
+                data['testRBObj']['availAtoms']+['Create new'], False)
             RigidBodies.atomsGrid.SetTable(RigidBodies.atomsTable,True)
             # make all grid entries read only
             attr = wg.GridCellAttr()

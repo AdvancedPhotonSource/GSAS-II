@@ -504,7 +504,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
 def phaseCheck(phaseVary,Phases,histogram):
     '''
     Removes unused parameters from phase varylist if phase not in histogram
-    #TODO - implement "Fix FXU" for seq refinement here - done?
+    for seq refinement removes vars in "Fix FXU" and "FixedSeqVars" here
     '''
     NewVary = []
     for phase in Phases:
@@ -521,6 +521,8 @@ def phaseCheck(phaseVary,Phases,histogram):
                 newVary = [item for item in newVary if not 'AU' in item]
             if 'M' in FixVals:
                 newVary = [item for item in newVary if not 'AM' in item]
+            removeVars = Phases[phase]['Histograms'][histogram].get('FixedSeqVars',[])
+            newVary = [item for item in newVary if item not in removeVars]
             NewVary += newVary
     return NewVary
 
@@ -603,7 +605,6 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if histogram not in Histograms:
             G2fil.G2Print("Error: not found!")
             continue
-    #TODO - implement "Fix FXU" for seq refinement here - done?
         hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}

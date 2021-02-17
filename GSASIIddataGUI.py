@@ -29,6 +29,7 @@ import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phG
 import GSASIIctrlGUI as G2G
 import GSASIIpy3 as G2py3
+import GSASIIdataGUI as G2gd
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -37,9 +38,7 @@ BLACK = wx.Colour(0,0,0)
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 
-################################################################################
-##### DData routines
-################################################################################        
+##### DData routines ################################################################################        
 def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     '''Display the Diffraction Data associated with a phase
     (items where there is a value for each histogram and phase)
@@ -228,7 +227,33 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     def OnPORef(event):
         Obj = event.GetEventObject()
         UseList[G2frame.hist]['Pref.Ori.'][2] = Obj.GetValue()
-            
+
+    def OnAddFixed(event):
+        fixedVars = UseList[G2frame.hist].get('FixedSeqVars',[])
+        SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
+        seqData = G2frame.GPXtree.GetItemPyData(SeqId)
+        if G2frame.hist not in seqData:
+            print('Strange: '+G2frame.hist+' not found')
+            return
+        parmDict = seqData[G2frame.hist].get('parmDict',[])
+        # narrow down to items w/o a histogram & having float values
+        phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
+        phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
+        if len(phaseKeys) == 0: return
+        selected = []
+        for i,key in enumerate(phaseKeys):
+            if key in fixedVars: selected.append(i)
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase vars to fix for this histogram only', 
+                                      'Choose items to edit', phaseKeys,selected=selected)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        UseList[G2frame.hist]['FixedSeqVars'] = [phaseKeys[i] for i in sel]
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
+
     def SetPOCoef(Order,hist):
         cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
         newPOCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
@@ -867,6 +892,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         if 'Fix FXU' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Fix FXU'] = ' '
+        if 'FixedSeqVars' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['FixedSeqVars'] = []
         if 'Flack' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Flack'] = [0.0,False]
         if 'Twins' not in UseList[G2frame.hist]:
@@ -891,17 +918,30 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if UseList[G2frame.hist]['LeBail']:
                 G2frame.SetStatusText('To reset LeBail, cycle LeBail check box.',1)
         bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
-        fixBox = wx.BoxSizer(wx.HORIZONTAL)
-        parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
-        if generalData['Type'] == 'magnetic':
-            parmChoice += ['M','MX','MXU','MU','MF','MFX','MFXU','MFU']
-        fixBox.Add(wx.StaticText(DData,label=' In sequential refinement, fix these in '+generalData['Name']+' for this histogram: '),0,WACV)
-        fixVals = wx.ComboBox(DData,value=UseList[G2frame.hist]['Fix FXU'],choices=parmChoice,
-            style=wx.CB_DROPDOWN)
-        fixVals.Bind(wx.EVT_COMBOBOX,OnFixVals)
-        fixBox.Add(fixVals,0,WACV)
-        bottomSizer.Add(fixBox)
-        #TODO - put Sequential refinement fix F? fix X? fix U? CheckBox here
+        if G2frame.testSeqRefineMode():
+            bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinemment Options'))
+            parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
+            if generalData['Type'] == 'magnetic':
+                parmChoice += ['M','MX','MXU','MU','MF','MFX','MFXU','MFU']
+            fixBox = wx.BoxSizer(wx.HORIZONTAL)
+            fixBox.Add(wx.StaticText(DData,label='     Fix these var types: '),0,WACV)
+            fixVals = wx.ComboBox(DData,value=UseList[G2frame.hist]['Fix FXU'],choices=parmChoice,
+                style=wx.CB_DROPDOWN)
+            fixVals.Bind(wx.EVT_COMBOBOX,OnFixVals)
+            fixBox.Add(fixVals,0,WACV)
+            fixBox.Add(wx.StaticText(DData,label=' in phase '+generalData['Name']+' for this histogram'),0,WACV)
+            bottomSizer.Add(fixBox)
+            SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
+            if SeqId:
+                fixBox = wx.BoxSizer(wx.HORIZONTAL)
+                fixBox.Add(wx.StaticText(DData,label='     Specific phase variables to fix for this histogram: '),0,WACV)
+                addFixed = wx.Button(DData,wx.ID_ANY,label='Select Vars')
+                fixBox.Add(addFixed,0,WACV)
+                addFixed.Bind(wx.EVT_BUTTON,OnAddFixed)
+                fixedVars = UseList[G2frame.hist].get('FixedSeqVars',[])
+                if len(fixedVars): 
+                    fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
+            bottomSizer.Add(fixBox)
         
         bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
             

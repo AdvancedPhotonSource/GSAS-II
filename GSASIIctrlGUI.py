@@ -182,9 +182,7 @@ try:
 except AttributeError:
     pass
 
-################################################################################
-#### Fixed definitions for wx Ids 
-################################################################################
+#### Fixed definitions for wx Ids ################################################################################
 def Define_wxId(*args):
     '''routine to create unique global wx Id symbols in this module. 
     '''
@@ -196,9 +194,7 @@ def Define_wxId(*args):
             continue
         exec('global '+arg+';'+arg+' = wx.NewId()')
 
-################################################################################
-#### Tree Control
-################################################################################
+#### Tree Control ################################################################################
 class G2TreeCtrl(wx.TreeCtrl):
     '''Create a wrapper around the standard TreeCtrl so we can "wrap"
     various events.
@@ -414,9 +410,7 @@ class G2TreeCtrl(wx.TreeCtrl):
             if name in self.ExposedItems: self.Expand(item)
             item, cookie = self.GetNextChild(self.root, cookie)
 
-################################################################################
-#### TextCtrl that stores input as entered with optional validation
-################################################################################
+#### TextCtrl that stores input as entered with optional validation ################################################################################
 class ValidatedTxtCtrl(wx.TextCtrl):
     '''Create a TextCtrl widget that uses a validator to prevent the
     entry of inappropriate characters and changes color to highlight
@@ -1274,8 +1268,7 @@ class G2ChoiceButton(wx.Choice):
         num = self.FindString(string)
         if num >= 0: self.SetSelection(num)
 
-##############################################################
-# Custom checkbox that saves values into dict/list as used
+#### Custom checkbox that saves values into dict/list as used ##############################################################
 class G2CheckBox(wx.CheckBox):
     '''A customized version of a CheckBox that automatically initializes
     the control to a supplied list or dict entry and updates that
@@ -1307,9 +1300,7 @@ class G2CheckBox(wx.CheckBox):
         log.LogVarChange(self.loc,self.key)
         if self.OnChange: self.OnChange(event)
                     
-################################################################################
-#### Commonly used dialogs
-################################################################################
+#### Commonly used dialogs ################################################################################
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
                              CopyButton=False, ASCIIonly=False, **kw):
@@ -1323,6 +1314,7 @@ def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
     dlg = ScrolledMultiEditor(parent,dictlst,elemlst,prelbl,postlbl,
                               title,header,size,
                               CopyButton, ASCIIonly, **kw)
+    dlg.CenterOnParent()
     if dlg.ShowModal() == wx.ID_OK:
         dlg.Destroy()
         return True
@@ -1348,11 +1340,11 @@ class ScrolledMultiEditor(wx.Dialog):
 
     :param tuple dictlst: a list of dicts or lists containing values to edit
 
-    :param tuple elemlst: a list of keys for each item in a dictlst. Must have the
-      same length as dictlst.
+    :param tuple elemlst: a list of keys/indices for items in dictlst. 
+      Note that elemlst must have the same length as dictlst, where each 
+      item in elemlst will will match an entry for an entry for successive
+      dicts/lists in dictlst.
 
-    :param wx.Frame parent: name of parent window, or may be None
-    
     :param tuple prelbl: a list of labels placed before the TextCtrl for each
       item (optional)
    
@@ -1560,8 +1552,11 @@ class ScrolledMultiEditor(wx.Dialog):
 
 ###############################################  Multichoice Dialog with set all, toggle & filter options
 class G2MultiChoiceDialog(wx.Dialog):
-    '''A dialog similar to MultiChoiceDialog except that buttons are
-    added to set all choices and to toggle all choices.
+    '''A dialog similar to wx.MultiChoiceDialog except that buttons are
+    added to set all choices and to toggle all choices and a filter is 
+    available to select from available entries. Note that if multiple
+    entries are placed in the filter box separated by spaces, all 
+    of the strings must be present for an item to be shown. 
 
     :param wx.Frame ParentFrame: reference to parent frame
     :param str title: heading above list of choices
@@ -1576,6 +1571,7 @@ class G2MultiChoiceDialog(wx.Dialog):
     :param dict extraOpts: a dict containing a entries of form label_i and value_i with extra
       options to present to the user, where value_i is the default value. 
       Options are listed ordered by the value_i values.
+    :param list selected: list of indicies for items that should be 
     :param kw: optional keyword parameters for the wx.Dialog may
       be included such as size [which defaults to `(320,310)`] and
       style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
@@ -1584,7 +1580,8 @@ class G2MultiChoiceDialog(wx.Dialog):
     :returns: the name of the created dialog  
     '''
     def __init__(self,parent, title, header, ChoiceList, toggle=True,
-                 monoFont=False, filterBox=True, extraOpts={}, **kw):
+                 monoFont=False, filterBox=True, extraOpts={}, selected=[],
+                 **kw):
         # process keyword parameters, notably style
         options = {'size':(320,310), # default Frame keywords
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
@@ -1592,6 +1589,8 @@ class G2MultiChoiceDialog(wx.Dialog):
         options.update(kw)
         self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
         self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
+        for i in selected:
+            self.Selections[i] = True
         self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
         self.Stride = 1
         if options['style'] & wx.OK:
@@ -1623,6 +1622,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.settingRange = False
         self.rangeFirst = None
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, self.ChoiceList)
+        self._ShowSelections()
         self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
         if monoFont:
             font1 = wx.Font(self.clb.GetFont().GetPointSize(),
@@ -1794,15 +1794,18 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.timer.Stop()
         self.GetSelections() # record current selections
         txt = self.filterBox.GetValue()
+        txt = txt.lower()
         self.clb.Clear()
         
         self.Update()
         self.filterlist = []
         if txt:
-            txt = txt.lower()
             ChoiceList = []
             for i,item in enumerate(self.ChoiceList):
-                if item.lower().find(txt) != -1:
+                for t in txt.split():
+                    if item.lower().find(t) == -1:
+                        break
+                else:
                     ChoiceList.append(item)
                     self.filterlist.append(i)
         else:
@@ -2204,8 +2207,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
             array.update(saveArray)
         dlg.Destroy()
 
-###############################################################
-#        Single choice Dialog with filter options
+#####  Single choice Dialog with filter options ###############################################################
 class G2SingleChoiceDialog(wx.Dialog):
     '''A dialog similar to wx.SingleChoiceDialog except that a filter can be
     added.
@@ -4447,9 +4449,7 @@ class VirtualVarBox(wx.ListCtrl):
         else:
             return None
 
-################################################################################
-#####  Customized Grid Support
-################################################################################           
+#####  Customized Grid Support ################################################################################           
 class GSGrid(wg.Grid):
     '''Basic wx.Grid implementation
     '''
@@ -4772,9 +4772,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
         else:
             evt.StopPropagation()
 
-################################################################################
-#####  Get an output file or directory
-################################################################################           
+#####  Get an output file or directory ################################################################################
 def askSaveFile(G2frame,defnam,extension,longFormatName,parent=None):
     '''Ask the user to supply a file name
 
@@ -4828,9 +4826,7 @@ def askSaveDirectory(G2frame):
         dlg.Destroy()
     return filename
 
-################################################################################
-#####  Customized Notebook
-################################################################################           
+#####  Customized Notebook ################################################################################           
 class GSNoteBook(wx.aui.AuiNotebook):
     '''Notebook used in various locations; implemented with wx.aui extension
     '''
@@ -4895,9 +4891,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
     #     else:
     #         return attr
             
-################################################################################
-#### Help support routines
-################################################################################
+#### Help support routines ################################################################################
 class MyHelp(wx.Menu):
     '''
     A class that creates the contents of a help menu.
@@ -5386,9 +5380,7 @@ def StripUnicode(string,subs='.'):
             s += subs
     return s.encode('ascii','replace')
         
-######################################################################
-# wx classes for reading various types of data files
-######################################################################
+# wx classes for reading various types of data files ######################################################################
 def BlockSelector(ChoiceList, ParentFrame=None,title='Select a block',
     size=None, header='Block Selector',useCancel=True):
     ''' Provide a wx dialog to select a single block where one must 
@@ -6000,7 +5992,6 @@ class downdate(wx.Dialog):
         return self.spin.GetValue()
 
 ################################################################################
-################################################################################
 class SortableLstCtrl(wx.Panel):
     '''Creates a read-only table with sortable columns. Sorting is done by 
     clicking on a column label. A triangle facing up or down is added to 
@@ -6118,9 +6109,7 @@ except TypeError:
         pass
     print('docs build kludge for G2LstCtrl')
     
-################################################################################
-#### Display Help information
-################################################################################
+#### Display Help information ################################################################################
 # define some globals 
 htmlPanel = None
 htmlFrame = None
@@ -6220,9 +6209,7 @@ def ShowWebPage(URL,frame):
         else:
             webbrowser.open(pfx+URL, new=0, autoraise=True)
 
-################################################################################
-#### Tutorials support
-################################################################################
+#### Tutorials support ################################################################################
 G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 tutorialIndex = (
     # tutorial dir,      web page file name,      title for page,  description
@@ -6759,9 +6746,8 @@ class OpenTutorial(wx.Dialog):
             SaveConfigVars(vars)
         except KeyError:
             pass
-################################################################################
-# Autoload PWDR files
-################################################################################
+
+### Autoload PWDR files ################################################################################
 AutoLoadWindow = None
 
 def AutoLoadFiles(G2frame,FileTyp='pwd'):
@@ -7167,9 +7153,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     dlg.Show()
     AutoLoadWindow = dlg # save window reference
 
-################################################################################
-# Deal with Origin 1/2 ambiguities
-################################################################################
+# Deal with Origin 1/2 ambiguities ################################################################################
 def ChooseOrigin(G2frame,rd):    
     # make copy of Phase but shift atoms Origin 1->2
     O2Phase = copy.deepcopy(rd.Phase)

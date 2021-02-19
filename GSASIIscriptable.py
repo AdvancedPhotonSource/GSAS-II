@@ -4241,8 +4241,16 @@ class G2PwdrData(G2ObjectWrapper):
                     if var is not None:
                         peaks['peaks'][i][j] = var
 
-    def refine_peaks(self):
+    def refine_peaks(self,mode='useIP'):
         '''Causes a refinement of peak position, background and instrument parameters
+        
+        :param str mode: this determines how peak widths are determined. If 
+          the value is 'useIP' (the default) then the width parameter values (sigma, gamma, 
+          alpha,...) are computed from the histogram's instrument parameters. If the 
+          value is 'hold', then peak width parameters are not overridden. In
+          this case, it is not possible to refine the instrument parameters 
+          associated with the peak widths and an attempt to do so will result in 
+          an error.
 
         :returns: a list of dicts with refinement results. Element 0 has uncertainties 
           on refined values (also placed in self.data['Peak List']['sigDict'])
@@ -4251,6 +4259,12 @@ class G2PwdrData(G2ObjectWrapper):
           (These are generated in :meth:`GSASIIpwd.DoPeakFit`).
         '''
         import GSASIIpwd as G2pwd
+        if mode == 'useIP':
+            G2pwd.setPeakInstPrmMode(True)
+        elif mode == 'hold':
+            G2pwd.setPeakInstPrmMode(False)
+        else:
+            raise G2ScriptException('Error: invalid mode value in refine_peaks (allowed: "useIP" or "hold")')
         controls = self.proj.data.get('Controls',{})
         controls = controls.get('data',
                             {'deriv type':'analytic','min dM/M':0.001,}     #fill in defaults if needed

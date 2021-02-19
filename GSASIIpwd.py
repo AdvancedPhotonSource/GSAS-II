@@ -71,10 +71,7 @@ ateln2 = 8.0*math.log(2.0)
 sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
 
-################################################################################
-#### Powder utilities
-################################################################################
-
+#### Powder utilities ################################################################################
 def PhaseWtSum(G2frame,histo):
     '''
     Calculate sum of phase mass*phase fraction for PWDR data (exclude magnetic phases)
@@ -94,10 +91,7 @@ def PhaseWtSum(G2frame,histo):
                 wtSum += mass*phFr
     return wtSum
     
-################################################################################
-#### GSASII pwdr & pdf calculation routines
-################################################################################
-        
+#### GSASII pwdr & pdf calculation routines ################################################################################
 def Transmission(Geometry,Abs,Diam):
     '''
     Calculate sample transmission
@@ -627,10 +621,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
     BkgMax = max(xydata['IofQ'][1][1])/50.
     return EvalLowPDF,GetCurrentVals,SetFinalVals
 
-################################################################################        
-#### GSASII peak fitting routines: Finger, Cox & Jephcoat model        
-################################################################################
-
+#### GSASII peak fitting routines: Finger, Cox & Jephcoat model  ################################################################################
 def factorize(num):
     ''' Provide prime number factors for integer num
     :returns: dictionary of prime factors (keys) & power for each (data)
@@ -1278,6 +1269,29 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                         HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
     return G2lat.sortHKLd(HKLs,True,True,True)
 
+peakInstPrmMode = True
+'''Determines the mode used for peak fitting. When peakInstPrmMode=True peak 
+width parameters are computed from the instrument parameters (UVW,... or 
+alpha,... etc) unless the individual parameter is refined. This allows the 
+instrument parameters to be refined. When peakInstPrmMode=False, the instrument
+parameters are not used and cannot be refined. 
+The default is peakFitMode=True.
+'''
+
+def setPeakInstPrmMode(normal=True):
+    '''Determines the mode used for peak fitting. If normal=True (default)
+    peak width parameters are computed from the instrument parameters
+    unless the individual parameter is refined. If normal=False, 
+    peak widths are used as supplied for each peak. 
+
+    Note that normal=True unless this routine is called. Also, 
+    instrument parameters can only be refined with normal=True. 
+
+    :param bool normal: setting to apply to global variable :var:`peakInstPrmMode`
+    '''
+    global peakInstPrmMode
+    peakInstPrmMode = normal
+
 def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     'Computes the profile for a powder pattern'
     
@@ -1299,13 +1313,13 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                 else:
                     sig = G2mth.getCWsig(parmDict,tth)
                 sig = max(sig,0.001)          #avoid neg sigma^2
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                 else:
                     gam = G2mth.getCWgam(parmDict,tth)
@@ -1337,25 +1351,25 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 alpName = 'alp'+str(iPeak)
-                if alpName in varyList:
+                if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
                 else:
                     alp = G2mth.getPinkalpha(parmDict,tth)
                 alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
-                if betName in varyList:
+                if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                 else:
                     bet = G2mth.getPinkbeta(parmDict,tth)
                 bet = max(0.1,bet)
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                 else:
                     sig = G2mth.getCWsig(parmDict,tth)
                 sig = max(sig,0.001)          #avoid neg sigma^2
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                 else:
                     gam = G2mth.getCWgam(parmDict,tth)
@@ -1383,7 +1397,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
                 alpName = 'alp'+str(iPeak)
-                if alpName in varyList:
+                if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
                 else:
                     if len(Pdabc):
@@ -1392,7 +1406,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                         alp = G2mth.getTOFalpha(parmDict,dsp)
                 alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
-                if betName in varyList:
+                if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                 else:
                     if len(Pdabc):
@@ -1401,12 +1415,12 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                         bet = G2mth.getTOFbeta(parmDict,dsp)
                 bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                 else:
                     gam = G2mth.getTOFgamma(parmDict,dsp)
@@ -1466,7 +1480,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                     dsdU = dsdV = dsdW = 0
                 else:
@@ -1474,7 +1488,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
                 sig = max(sig,0.001)          #avoid neg sigma
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                     dgdX = dgdY = dgdZ = 0
                 else:
@@ -1539,7 +1553,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 alpName = 'alp'+str(iPeak)
-                if alpName in varyList:
+                if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
                     dada0 = dada1 = 0.0
                 else:
@@ -1547,7 +1561,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dada0,dada1 = G2mth.getPinkalphaDeriv(tth)
                 alp = max(0.0001,alp)
                 betName = 'bet'+str(iPeak)
-                if betName in varyList:
+                if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                     dbdb0 = dbdb1 = 0.0
                 else:
@@ -1555,7 +1569,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dbdb0,dbdb1 = G2mth.getPinkbetaDeriv(tth)
                 bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                     dsdU = dsdV = dsdW = 0
                 else:
@@ -1563,7 +1577,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
                 sig = max(sig,0.001)          #avoid neg sigma
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                     dgdX = dgdY = dgdZ = 0
                 else:
@@ -1624,7 +1638,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
                 alpName = 'alp'+str(iPeak)
-                if alpName in varyList:
+                if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
                 else:
                     if len(Pdabc):
@@ -1634,7 +1648,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                         alp = G2mth.getTOFalpha(parmDict,dsp)
                         dada0 = G2mth.getTOFalphaDeriv(dsp)
                 betName = 'bet'+str(iPeak)
-                if betName in varyList:
+                if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                 else:
                     if len(Pdabc):
@@ -1644,14 +1658,14 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                         bet = G2mth.getTOFbeta(parmDict,dsp)
                         dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
                 sigName = 'sig'+str(iPeak)
-                if sigName in varyList:
+                if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
                     dsds0 = dsds1 = dsds2 = dsds3 = 0
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
                     dsds0,dsds1,dsds2,dsds3 = G2mth.getTOFsigDeriv(dsp)
                 gamName = 'gam'+str(iPeak)
-                if gamName in varyList:
+                if gamName in varyList or not peakInstPrmMode:
                     gam = parmDict[gamName]
                     dsdX = dsdY = dsdZ = 0
                 else:
@@ -2006,14 +2020,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             try:
                 sigName = 'sig'+str(iPeak)
                 pos = parmDict['pos'+str(iPeak)]
-                if sigName not in varyList:
+                if sigName not in varyList and peakInstPrmMode:
                     if 'T' in Inst['Type'][0]:
                         dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
                     else:
                         parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                 gamName = 'gam'+str(iPeak)
-                if gamName not in varyList:
+                if gamName not in varyList and peakInstPrmMode:
                     if 'T' in Inst['Type'][0]:
                         dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
@@ -2070,7 +2084,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 dsp = pos/Inst['difC'][1]
             for j in range(len(names)):
                 parName = names[j]+str(i)
-                if parName in varyList:
+                if parName in varyList or not peakInstPrmMode:
                     peak[2*j] = parmDict[parName]
                 elif 'alp' in parName:
                     if 'T' in Inst['Type'][0]:
@@ -2174,6 +2188,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     else:
         varyList = bakVary+insVary+peakVary
     fullvaryList = varyList[:]
+    if not peakInstPrmMode:
+        for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',
+            'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
+            if v in varyList:
+                raise Exception('Instrumental profile terms cannot be varied '+
+                                    'after setPeakInstPrmMode(False) is used')
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
@@ -2294,10 +2314,7 @@ def calcIncident(Iparm,xdata):
     WYI = np.where(WYI>0.,WYI,0.)
     return YI,WYI
 
-################################################################################
-#### RMCutilities
-################################################################################
-   
+#### RMCutilities ################################################################################
 def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
     inst = PWDdata['Instrument Parameters'][0]
     Xsb = 0.
@@ -3029,10 +3046,7 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
             bondAngles.append(npacosd(np.sum(DAv*DBv)))
     return np.array(bondAngles)
     
-################################################################################
-#### Reflectometry calculations
-################################################################################
-
+#### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
     
@@ -3465,10 +3479,7 @@ def makeRefdFFT(Limits,Profile):
     return R,F
 
     
-################################################################################
-#### Stacking fault simulation codes
-################################################################################
-
+#### Stacking fault simulation codes ################################################################################
 def GetStackParms(Layers):
     
     Parms = []
@@ -3880,10 +3891,7 @@ def CalcStackingSADP(Layers,debug):
     Layers['Sadp']['Img'] = Sapd
     G2fil.G2Print (' GETSAD time = %.2fs'%(time.time()-time0))
     
-###############################################################################
-#### Maximum Entropy Method - Dysnomia
-###############################################################################
-    
+#### Maximum Entropy Method - Dysnomia ###############################################################################
 def makePRFfile(data,MEMtype):
     ''' makes Dysnomia .prf control file from Dysnomia GUI controls
     

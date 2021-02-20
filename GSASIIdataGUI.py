@@ -5116,14 +5116,29 @@ class GSASII(wx.Frame):
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
         wx.EndBusyCursor()
+        # check for limits on dependent vars
+        consVars = [i for i in reqVaryList if i not in varyList]
+        impossible = set(
+            [str(i) for i in Controls['parmMinDict'] if i in consVars] + 
+            [str(i) for i in Controls['parmMaxDict'] if i in consVars])
+        if impossible:
+            msg = ''
+            for i in sorted(impossible):
+                if msg: msg += ', '
+                msg += i
+            msg =  ' &'.join(msg.rsplit(',',1))
+            msg = ('Note: limits on variable(s) '+msg+
+            ' will be ignored because they are constrained.')
+            G2G.G2MessageBox(self,msg,'Limits ignored for constrained vars')
         # debug stuff
         #if GSASIIpath.GetConfigValue('debug'):
         #    print('reloading',G2G)
         #    import imp
         #    imp.reload(G2G)
-        # end debug stuff            
+        # end debug stuff    
         dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,
                     varyList,reqVaryList,Controls)
+        dlg.CenterOnParent()
         dlg.ShowModal()
         dlg.Destroy()
 

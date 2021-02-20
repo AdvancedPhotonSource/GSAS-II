@@ -352,9 +352,7 @@ class ConstraintDialog(wx.Dialog):
     def GetData(self):
         return self.data
         
-################################################################################
-#####  Constraints
-################################################################################           
+#####  Constraints ################################################################################           
 def UpdateConstraints(G2frame,data):
     '''Called when Constraints tree item is selected.
     Displays the constraints in the data window
@@ -654,12 +652,16 @@ def UpdateConstraints(G2frame,data):
             Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
         return constDictList,phaseDict,fixedList
             
-    def ConstraintsCheck(data,newcons=[]):
+    def ConstraintsCheck(data,newcons=[],reqVaryList=None):
         '''Load constraints & check them for errors. Since error checking
         can cause changes in constraints in case of repairable conflicts
         between equivalences, reload the constraints again after the check.
         This could probably be done more effectively, but only reloading when
         needed, but the reload should be quick.
+        
+        When reqVaryList is included (see WarnConstraintLimit) then 
+        parameters with limits are checked against constraints and a 
+        warning is shown.
         '''
         constDictList,phaseDict,fixedList = ConstraintsLoad(data,newcons)
         msg = G2mv.EvaluateMultipliers(constDictList,phaseDict)
@@ -668,6 +670,31 @@ def UpdateConstraints(G2frame,data):
         res = G2mv.CheckConstraints('',constDictList,fixedList)
         # reload constraints in case any were merged in MoveConfEquiv
         ConstraintsLoad(data,newcons)
+        impossible = []
+        if reqVaryList:
+            Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+            for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+                if key not in Controls: Controls[key] = {}
+            varyList = reqVaryList[:]
+            try:
+                G2mv.GenerateConstraints(varyList,constDictList,fixedList,phaseDict)
+                G2mv.Map2Dict(phaseDict,varyList)
+                # check for limits on dependent vars
+                consVars = [i for i in reqVaryList if i not in varyList]
+                impossible = set(
+                    [str(i) for i in Controls['parmMinDict'] if i in consVars] + 
+                    [str(i) for i in Controls['parmMaxDict'] if i in consVars])
+            except G2mv.ConstraintException:
+                pass
+        if impossible:
+            msg = ''
+            for i in sorted(impossible):
+                if msg: msg += ', '
+                msg += i
+            msg =  ' &'.join(msg.rsplit(',',1))
+            msg = ('Note: limits on variable(s) '+msg+
+            ' will be ignored because they are constrained.')
+            G2G.G2MessageBox(G2frame,msg,'Limits ignored for constrained vars')
         return res
 
     def CheckAddedConstraint(newcons):
@@ -694,6 +721,18 @@ def UpdateConstraints(G2frame,data):
         elif warnmsg:
             print ('Unexpected contraint warning:\n'+warnmsg)
         return True
+
+    def WarnConstraintLimit():
+        '''Check if constraints reference variables with limits.
+        Displays a warning message, but does nothing
+        '''
+        
+        try:
+            parmDict,reqVaryList = G2frame.MakeLSParmDict()
+            errmsg,warnmsg = ConstraintsCheck(data,[],reqVaryList)
+        except:
+            print('Error retrieving parameters')            
+
 
     def CheckChangedConstraint():
         '''Check all constraints after an edit has been made.
@@ -883,6 +922,7 @@ def UpdateConstraints(G2frame,data):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
+        WarnConstraintLimit()
         wx.CallAfter(OnPageChanged,None)
                         
     def FindNeighbors(phase,FrstName,AtNames):
@@ -982,6 +1022,7 @@ def UpdateConstraints(G2frame,data):
             if len(newcons) > 0:
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
+        WarnConstraintLimit()
         wx.CallAfter(OnPageChanged,None)
                         
     def MakeConstraintsSizer(name,pageDisplay):
@@ -1305,13 +1346,16 @@ def UpdateConstraints(G2frame,data):
 
     def SetStatusLine(text):
         G2frame.GetStatusBar().SetStatusText(text,1)
+        
+    def OnShowISODISTORT(event):
+        ShowIsoDistortCalc(G2frame)
 
-    # UpdateConstraints execution starts here
+    #### UpdateConstraints execution starts here ##############################
     if not data:
         data.update({'Hist':[],'HAP':[],'Phase':[],'Global':[]})       #empty dict - fill it
     if 'Global' not in data:                                            #patch
         data['Global'] = []
-    # DEBUG code ########################################
+    # DEBUG code #=====================================
     #import GSASIIconstrGUI
     #reload(GSASIIconstrGUI)
     #reload(G2obj)
@@ -1320,7 +1364,7 @@ def UpdateConstraints(G2frame,data):
     #reload(GSASIIstrMain)    
     #reload(G2mv)
     #reload(G2gd)
-    ###################################################
+    #===================================================
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not len(Phases) or not len(Histograms):
         dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
@@ -1334,8 +1378,7 @@ def UpdateConstraints(G2frame,data):
         if 'ISODISTORT' in Phases[p]:
             G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
             break
-    ##################################################################################
-    # patch: convert old-style (str) variables in constraints to G2VarObj objects
+    ###### patch: convert old-style (str) variables in constraints to G2VarObj objects #####
     for key,value in data.items():
         if key.startswith('_'): continue
         j = 0
@@ -1347,7 +1390,7 @@ def UpdateConstraints(G2frame,data):
                     j += 1
         if j:
             print (str(key) + ': '+str(j)+' variable(s) as strings converted to objects')
-    ##################################################################################
+    ##### end patch #############################################################################
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -1425,8 +1468,6 @@ def UpdateConstraints(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnAddHold, id=G2G.wxID_HOLDADD)
     G2frame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2G.wxID_EQUIVALANCEATOMS)
 #    G2frame.Bind(wx.EVT_MENU, OnAddRiding, id=G2G.wxID_ADDRIDING)
-    def OnShowISODISTORT(event):
-        ShowIsoDistortCalc(G2frame)
     G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
     # tab commands
     for id in (G2G.wxID_CONSPHASE,
@@ -1461,12 +1502,12 @@ def UpdateConstraints(G2frame,data):
                             parent=G2frame)
         print (errmsg)
         print (G2mv.VarRemapShow([],True))
+        return
     elif warnmsg:
         print ('Unexpected contraint warning:\n'+warnmsg)
+    WarnConstraintLimit()
         
-################################################################################
-# check scale & phase fractions, create constraint if needed
-################################################################################
+###### check scale & phase fractions, create constraint if needed #############
 def CheckAllScalePhaseFractions(G2frame):
     '''Check if scale factor and all phase fractions are refined without a constraint
     for all used histograms, if so, offer the user a chance to create a constraint
@@ -1526,10 +1567,7 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases):
     constr += [1.0,None,'c']
     Constraints['HAP'] += [constr]
         
-################################################################################
-#### Make nuclear/magnetic phase transition constraints - called by OnTransform in G2phsGUI
-################################################################################        
-        
+#### Make nuclear/magnetic phase transition constraints - called by OnTransform in G2phsGUI ##########
 def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     '''Add constraints for new magnetic phase created via transformation of old
     nuclear one
@@ -1751,9 +1789,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             DepCons = [1.0,G2obj.G2VarObj(nhapkey+name)]
             constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
         
-################################################################################
-#### Rigid bodies
-################################################################################
+#### Rigid bodies #############################################################
 resRBsel = None
 def UpdateRigidBodies(G2frame,data):
     '''Called when Rigid bodies tree item is selected.
@@ -3647,7 +3683,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     def SetStatusLine(text):
         G2frame.GetStatusBar().SetStatusText(text,1)                                      
 
-    #================== UpdateRigidBodies starts here =========
+    #### UpdateRigidBodies starts here =========
     global resList,resRBsel            
     if not data.get('RBIds') or not data:
         data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},

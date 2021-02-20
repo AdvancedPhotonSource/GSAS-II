@@ -4152,7 +4152,10 @@ class VirtualVarBox(wx.ListCtrl):
 
         self.SetItemCount(0)
 
-        self.attr1 = wx.ListItemAttr()
+        try:
+            self.attr1 = wx.ItemAttr()
+        except:
+            self.attr1 = wx.ListItemAttr() # deprecated in wx4.1
         self.attr1.SetBackgroundColour((255,255,150))
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnRowSelected)
@@ -4320,66 +4323,79 @@ class VirtualVarBox(wx.ListCtrl):
 
         # draw min value widgets
         mainSizer.Add((-1,10),0)
-        n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMinDict']) # is this a wild-card?
-        if val is None: 
-            addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Lower limit')
-            addMbtn.Bind(wx.EVT_BUTTON, AddM)
-            mainSizer.Add(addMbtn,0)
+        if name not in self.parmWin.varyList and name in self.parmWin.fullVaryList:
+            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Limits not allowed on constrained variables'),0)
+            for key in 'parmMinDict','parmMaxDict':
+                d = self.parmWin.Controls[key]
+                n,v = G2obj.prmLookup(name,d)
+                if v is not None and str(n) == name:
+                    try:  # strange hard to reproduce problem with this not working 
+                        del d[n]
+                    except:
+                        if GSASIIpath.GetConfigValue('debug'):
+                            print('debug: failed to delete ',name,'in',key)
+
         else:
-            subSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Minimum limit'),0,wx.CENTER)
-            subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMinDict'],n,nDig=(10,2,'g')),0,WACV)
-            delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-            subSizer.Add((5,-1),0,WACV)
-            subSizer.Add(delMbtn,0,WACV)
-            delMbtn.Bind(wx.EVT_BUTTON, delM)
-            if name.split(':')[1]:             # is this using a histogram?
+            n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMinDict']) # is this a wild-card?
+            if val is None: 
+                addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Lower limit')
+                addMbtn.Bind(wx.EVT_BUTTON, AddM)
+                mainSizer.Add(addMbtn,0)
+            else:
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Minimum limit'),0,wx.CENTER)
+                subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMinDict'],n,nDig=(10,2,'g')),0,WACV)
+                delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
                 subSizer.Add((5,-1),0,WACV)
-                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
-                wild.SetValue(str(n).split(':')[1] == '*')
-                wild.Bind(wx.EVT_CHECKBOX,SetWild)
-                wild.hist = True
-                subSizer.Add(wild,0,WACV)
-            elif len(name.split(':')) > 3:
+                subSizer.Add(delMbtn,0,WACV)
+                delMbtn.Bind(wx.EVT_BUTTON, delM)
+                if name.split(':')[1]:             # is this using a histogram?
+                    subSizer.Add((5,-1),0,WACV)
+                    wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
+                    wild.SetValue(str(n).split(':')[1] == '*')
+                    wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                    wild.hist = True
+                    subSizer.Add(wild,0,WACV)
+                elif len(name.split(':')) > 3:
+                    subSizer.Add((5,-1),0,WACV)
+                    wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
+                    wild.SetValue(str(n).split(':')[3] == '*')
+                    wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                    subSizer.Add(wild,0,WACV)
+                mainSizer.Add(subSizer,0)
+            # draw max value widgets
+            mainSizer.Add((-1,10),0)
+            n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMaxDict']) # is this a wild-card?
+            if val is None: 
+                addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Upper limit')
+                addMbtn.Bind(wx.EVT_BUTTON, AddM)
+                addMbtn.max = True
+                mainSizer.Add(addMbtn,0)
+            else:
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Maximum limit'),0,wx.CENTER)
+                subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMaxDict'],n,nDig=(10,2,'g')),0,WACV)
+                delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
                 subSizer.Add((5,-1),0,WACV)
-                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
-                wild.SetValue(str(n).split(':')[3] == '*')
-                wild.Bind(wx.EVT_CHECKBOX,SetWild)
-                subSizer.Add(wild,0,WACV)
-            mainSizer.Add(subSizer,0)
-        # draw max value widgets
-        mainSizer.Add((-1,10),0)
-        n,val = G2obj.prmLookup(name,self.parmWin.Controls['parmMaxDict']) # is this a wild-card?
-        if val is None: 
-            addMbtn = wx.Button(dlg, wx.ID_ANY,'Add Upper limit')
-            addMbtn.Bind(wx.EVT_BUTTON, AddM)
-            addMbtn.max = True
-            mainSizer.Add(addMbtn,0)
-        else:
-            subSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Maximum limit'),0,wx.CENTER)
-            subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMaxDict'],n,nDig=(10,2,'g')),0,WACV)
-            delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-            subSizer.Add((5,-1),0,WACV)
-            subSizer.Add(delMbtn,0,WACV)
-            delMbtn.Bind(wx.EVT_BUTTON, delM)
-            delMbtn.max = True
-            if name.split(':')[1]:             # is this using a histogram?
-                subSizer.Add((5,-1),0,WACV)
-                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
-                wild.SetValue(str(n).split(':')[1] == '*')
-                wild.Bind(wx.EVT_CHECKBOX,SetWild)
-                wild.max = True
-                wild.hist = True
-                subSizer.Add(wild,0,WACV)
-            elif len(name.split(':')) > 3:
-                subSizer.Add((5,-1),0,WACV)
-                wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
-                wild.SetValue(str(n).split(':')[3] == '*')
-                wild.Bind(wx.EVT_CHECKBOX,SetWild)
-                wild.max = True
-                subSizer.Add(wild,0,WACV)
-            mainSizer.Add(subSizer,0)
+                subSizer.Add(delMbtn,0,WACV)
+                delMbtn.Bind(wx.EVT_BUTTON, delM)
+                delMbtn.max = True
+                if name.split(':')[1]:             # is this using a histogram?
+                    subSizer.Add((5,-1),0,WACV)
+                    wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
+                    wild.SetValue(str(n).split(':')[1] == '*')
+                    wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                    wild.max = True
+                    wild.hist = True
+                    subSizer.Add(wild,0,WACV)
+                elif len(name.split(':')) > 3:
+                    subSizer.Add((5,-1),0,WACV)
+                    wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
+                    wild.SetValue(str(n).split(':')[3] == '*')
+                    wild.Bind(wx.EVT_CHECKBOX,SetWild)
+                    wild.max = True
+                    subSizer.Add(wild,0,WACV)
+                mainSizer.Add(subSizer,0)
             
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(dlg, wx.ID_OK)

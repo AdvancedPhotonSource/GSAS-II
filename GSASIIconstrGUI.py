@@ -1091,7 +1091,7 @@ def UpdateConstraints(G2frame,data):
                         else:
                             eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += "\n" + var + " ("+ varMean + ")"
+                        helptext += '\n{:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     # Add ISODISTORT help items
                     if '_Explain' in data:
                         # this ignores the phase number. TODO: refactor that in
@@ -1104,13 +1104,8 @@ def UpdateConstraints(G2frame,data):
                         if hlptxt:
                             helptext += '\n\n'
                             helptext += hlptxt
-                    # typeString = 'NEWVAR'
-                    # if item[-3]:
-                    #     eqString[-1] += ' = '+item[-3]
-                    # else:
-                    #     eqString[-1] += ' = New Variable'
                     if item[-3]:
-                        typeString = str(item[-3]) + ' = '
+                        typeString = '(NEWVAR) ' + str(item[-3]) + ' = '
                     else:
                         typeString = 'New Variable = '
                     #print 'refine',item[-2]
@@ -1133,32 +1128,32 @@ def UpdateConstraints(G2frame,data):
                         else:
                             eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += "\n" + var + " ("+ varMean + ")"
+                        helptext += '\n{:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     typeString = 'CONST'
                     eqString[-1] += ' = '+str(item[-3])
                 elif item[-1] == 'e':
-                    helptext = "The following variables are set to be equivalent, noting multipliers:"
-                    normval = item[:-3][1][0]
+                    helptext = "The following variable:"
+                    normval = item[:-3][0][0]
+                    indepterm = item[:-3][0][1]
                     for i,term in enumerate(item[:-3]):
                         var = str(term[1])
                         if term[0] == 0: term[0] = 1.0
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
-                        if i == 0: # move independent variable to end
-                            indepterm = term
+                        varMean = G2obj.fmtVarDescr(var)
+                        if i == 0: # move independent variable to end, as requested by Bob
+                            helptext += '\n{:} '.format(var) + " ("+ varMean + ")"
+                            helptext += "\n\nis equivalent to the following, noting multipliers:"
                             continue
                         elif eqString[-1] != '':
                             eqString[-1] += ' = '
-                        if normval/term[0] == 1:
+                        m = normval/term[0]
+                        if m == 1:
                             eqString[-1] += '{:}'.format(var)
                         else:
-                            eqString[-1] += '{:g}*{:} '.format(normval/term[0],var)
-                        varMean = G2obj.fmtVarDescr(var)
-                        helptext += "\n" + var + " ("+ varMean + ")"
-                    if normval/indepterm[0] == 1:
-                        eqString[-1] += ' = {:} '.format(indepterm[1])
-                    else:
-                        eqString[-1] += ' = {:g}*{:} '.format(normval/indepterm[0],str(indepterm[1]))
+                            eqString[-1] += '{:g}*{:} '.format(m,var)
+                        helptext += '\n{:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                    eqString[-1] += ' = {:} '.format(indepterm)
                     typeString = 'EQUIV'
                 else:
                     print ('Unexpected constraint'+item)
@@ -1246,7 +1241,7 @@ def UpdateConstraints(G2frame,data):
                     data[name][Id][-3] = str(result[-1][0])
                 elif data[name][Id][-1] == 'f':
                     data[name][Id][-2] = dlg.newvar[1]
-                    if type(data[name][Id][-3]) is str:
+                    if dlg.newvar[0]:
                         # process the variable name to put in global form (::var)
                         varname = str(dlg.newvar[0]).strip().replace(' ','_')
                         if varname.startswith('::'):

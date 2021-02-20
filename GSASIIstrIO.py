@@ -190,6 +190,7 @@ def ProcessConstraints(constList):
     constDict = []
     fixedList = []
     ignored = 0
+    namedVarList = []
     for item in constList:
         if item[-1] == 'h':
             # process a hold
@@ -213,10 +214,11 @@ def ProcessConstraints(constList):
                 # add extra dict terms for input variable name and vary flag
                 if varname is not None:
                     varname = str(varname) # in case this is a G2VarObj
-                    if ':' in varname:
+                    if varname.startswith(':'):
                         D['_name'] = varname
                     else:
-                        D['_name'] = '::' + varname
+                        D['_name'] = '::nv-' + varname
+                    D['_name'] = G2obj.MakeUniqueLabel(D['_name'],namedVarList)
                 D['_vary'] = varyFlag == True # force to bool
                 constDict.append(D)
             else:

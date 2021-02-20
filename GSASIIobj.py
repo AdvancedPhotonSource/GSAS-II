@@ -1931,6 +1931,7 @@ def CompileVarDesc():
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         'RBRU' : 'Residue rigid body group Uiso param.',
         'constr([0-9]*)' : 'Parameter from constraint',
+        'nv-([^_]+)_*' : 'New variable constraint parameter named \\1',
         # supersymmetry parameters  p::<var>:a:o 'Flen','Fcent'?
         'mV([0-2])$' : 'Modulation vector component \\1',
         'Fsin'  :   'Sin site fraction modulation',

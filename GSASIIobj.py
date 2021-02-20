@@ -600,6 +600,7 @@ Orig              Origin of the RB in fractional coordinates and refinement flag
 RBId              References the unique ID of a rigid body in the 
                   :ref:`Rigid Body Objects <RBData_table>`
 RBname            The name for the rigid body (str)
+AtomFrac          The atom fractions for the rigid body
 ThermalMotion     The thermal motion description for the rigid body, which includes a choice for 
                   the model and can include TLS parameters or an overall Uiso value. 
 Torsions          Defines the torsion angle and refinement flag for each torsion defined in 

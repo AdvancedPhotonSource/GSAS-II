@@ -3433,6 +3433,7 @@ def UpdatePhaseData(G2frame,Item,data):
             colType = colLabels.index('Type')
             colR = colLabels.index('refine')
             colSS = colLabels.index('site sym')
+            colF = colLabels.index('frac')
             colX = colLabels.index('x')
             colIA = colLabels.index('I/A')
             colU11 = colLabels.index('U11')
@@ -3446,7 +3447,7 @@ def UpdatePhaseData(G2frame,Item,data):
             attr = wx.grid.GridCellAttr()
             attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(G2G.GridFractionEditor(Atoms))
-            for c in range(colX,colX+3):
+            for c in range(colX,colX+4):
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(Atoms))
@@ -3500,6 +3501,8 @@ def UpdatePhaseData(G2frame,Item,data):
                                 Atoms.SetCellStyle(row,ci,WHITE,False)
                                 saveCSI = CSI[0][i]
                             Atoms.SetCellTextColour(row,ci,BLACK)
+                if 'F' in rbExcl:
+                    Atoms.SetCellStyle(row,colF,VERY_LIGHT_GREY,True)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -3510,7 +3513,7 @@ def UpdatePhaseData(G2frame,Item,data):
             Atoms.AutoSizeColumns(False)
             SetPhaseWindow(Atoms,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
 
-#### FillAtomsGrid executable code starts here
+#### onSetOrigin. 
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
@@ -3521,12 +3524,12 @@ def UpdatePhaseData(G2frame,Item,data):
         global rbAtmDict   
         rbAtmDict = {}
         for rbObj in resRBData+vecRBData:
-            exclList = ['X' for i in range(len(rbObj['Ids']))]
+            exclList = ['FX' for i in range(len(rbObj['Ids']))]
             rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
             if rbObj['ThermalMotion'][0] != 'None':
                 for id in rbObj['Ids']:
                     rbAtmDict[id] += 'U'            
-        # exclList will be 'x' or 'xu' if TLS used in RB
+        # exclList will be 'fx' or 'fxu' if TLS used in RB
         Items = [G2G.wxID_ATOMSEDITINSERT,G2G.wxID_ATOMSEDITDELETE, 
             G2G.wxID_ATOMSMODIFY,G2G.wxID_ATOMSTRANSFORM,G2G.wxID_MAKEMOLECULE,
             G2G.wxID_ATOMVIEWINSERT,G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM]
@@ -9946,13 +9949,12 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
                     typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
                 topSizer.Add(origX,0,WACV)
-            topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
             Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
             Ocheck.SetValue(RBObj['Orig'][1])
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,
-                    'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
+                'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
             Indx['Orien'] = {}
             Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
             Orien = [Orien,]
@@ -9976,7 +9978,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             return rbSizer
                          
         def ResrbSizer(RBObj,resIndx):
-            '''Displays details for selected rigid body'''
+            '''Displays details for selected residue rigid body'''
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -9991,14 +9993,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnFrac(invalid,value,tc):
+                for i,Id in enumerate(RBObj['Ids']):
+                    if data['Atoms'][AtLookUp[Id]][cx+3]:
+                        data['Atoms'][AtLookUp[Id]][cx+3] = value
+                        
+            def OnRefFrac(event):
+                RBObj['AtomFrac'][1] = not RBObj['AtomFrac'][1]
+                
             def OnDelResRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
-                RBObjs = data['RBModels']['Residue']
-                for i,rbObj in enumerate(RBObjs):
-                    if RBId == rbObj['RBId']:
-                        RBData['Residue'][RBId]['useCount'] -= 1
-                        del data['RBModels']['Residue'][i]
+                RBData['Residue'][RBId]['useCount'] -= 1
+                del data['RBModels']['Residue'][resIndx]
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
                 
@@ -10046,6 +10053,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 Indx[torCheck.GetId()] = itors
                 torSizer.Add(torCheck,0,WACV)
             resrbSizer.Add(torSizer)
+            members = 'Rigid body members: '
+            for Id in RBObj['Ids']:
+                members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '
+            resrbSizer.Add(wx.StaticText(RigidBodies,label=members[:-2]),0,WACV)
+            fracSizer = wx.BoxSizer(wx.HORIZONTAL)
+            fracSizer.Add(wx.StaticText(RigidBodies,label='Rigid Body atom site fraction: '))
+            fracTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['AtomFrac'],0,nDig=(10,3),OnLeave=OnFrac)
+            fracSizer.Add(fracTxt,0,WACV)
+            fracRef = wx.CheckBox(RigidBodies,label='Refine?')
+            fracRef.SetValue(RBObj['AtomFrac'][1])
+            fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
+            fracSizer.Add(fracRef,0,WACV)
+            resrbSizer.Add(fracSizer)
             tchoice = ['None','Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
@@ -10061,14 +10081,20 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             return resrbSizer
             
         def VecrbSizer(RBObj):
+            '''Displays details for selected vector rigid body'''
+            def OnFrac(invalid,value,tc):
+                for Id in RBObj['Ids']:
+                    if data['Atoms'][AtLookUp[Id]][cx+3]:
+                        data['Atoms'][AtLookUp[Id]][cx+3] = value
+                        
+            def OnRefFrac(event):
+                RBObj['AtomFrac'][1] = not RBObj['AtomFrac'][1]
+                
             def OnDelVecRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
                 RBData['Vector'][RBId]['useCount'] -= 1                
-                RBObjs = data['RBModels']['Vector']
-                for rbObj in RBObjs:
-                    if RBId == rbObj['RBId']:
-                       data['RBModels']['Vector'].remove(rbObj)                 
+                del data['RBModels']['Vector'][resIndx]
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
              
@@ -10084,6 +10110,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             topLine.Add(delRB,0,WACV)
             vecrbSizer.Add(topLine)
             vecrbSizer.Add(LocationSizer(RBObj,'Vector'))
+            members = 'Rigid body members: '
+            for Id in RBObj['Ids']:
+                members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '
+            vecrbSizer.Add(wx.StaticText(RigidBodies,label=members[:-2]),0,WACV)
+            fracSizer = wx.BoxSizer(wx.HORIZONTAL)
+            fracSizer.Add(wx.StaticText(RigidBodies,label='Rigid Body atom site fraction: '))
+            fracTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['AtomFrac'],0,nDig=(10,3),OnLeave=OnFrac)
+            fracSizer.Add(fracTxt,0,WACV)
+            fracRef = wx.CheckBox(RigidBodies,label='Refine?')
+            fracRef.SetValue(RBObj['AtomFrac'][1])
+            fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
+            fracSizer.Add(fracRef,0,WACV)
+            vecrbSizer.Add(fracSizer)
             tchoice = ['None','Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
@@ -10165,6 +10204,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             RBnames = []
             resVarLookup = []
             for irb,RBObj in enumerate(data['RBModels']['Residue']):
+                # patch
+                if 'AtomFrac' not in RBObj:
+                    RBObj['AtomFrac'] = [1.0,False]
+                #end patch
                 name = RBObj['RBname']+RBObj['numChain']
                 RBnames.append(name)
                 jrb = RBData['RBIds']['Residue'].index(RBObj['RBId'])
@@ -10196,6 +10239,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add((5,5),0)
             RBnames = []
             for RBObj in data['RBModels']['Vector']:
+                # patch
+                if 'AtomFrac' not in RBObj:
+                    RBObj['AtomFrac'] = [1.0,False]
+                #end patch
                 RBnames.append(RBObj['RBname'])
             if prevVecId is not None:
                 vecId = prevVecId
@@ -10247,7 +10294,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
-            for item in ['Orig','Orient','ThermalMotion']: 
+            for item in ['Orig','Orient','ThermalMotion','AtomFract']: 
                 sourceRB.update({item:RBObjs[sel][item],})
         dlg.Destroy()
         if not sourceRB:
@@ -10391,12 +10438,23 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 if updateNeeded:
                     UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
-                    
+                
                 rbType = data['testRBObj']['rbType']
-                rbObj['Ids'] = Ids
-                rbId = rbObj['RBId']
+                rbNames = []
+                for item in data['RBModels'][rbType]:
+                    rbNames.append(item['RBname'])
+                rbObj['Ids'] = Ids          #atomids
+                rbId = rbObj['RBId']        #RB obj id
+                rbObj['AtomFract'] = [1.0,False]
                 rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
-                rbObj['RBname'] += ':'+str(RBData[rbType][rbId]['useCount'])
+                i = 0
+                while True:     #find unique name
+                    rbName = '%s:%d'%(rbObj['RBname'],i)
+                    if rbName in rbNames:
+                        i += 1
+                    else:
+                        break
+                rbObj['RBname'] = rbName
                 if type(rbObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple                
                     if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
                     rbObj['Orig'][0] = list(rbObj['Orig'][0])    # patch: somehow this was getting set as a tuple
@@ -10662,6 +10720,12 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 data['testRBObj']['rbObj']['symAxis'] = axis
                 UpdateTablePlot()
                 
+            def OnOrigSet(event):
+                data['testRBObj']['rbObj']['Orig'][0] = data['Drawing']['viewPoint'][0]
+                for i,item in enumerate(Xsizers):
+                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                UpdateTablePlot()
+                
             showAtom = [None]
             def showCryAtom(*args,**kwargs):
                 '''Respond to selection of a crystal atom 
@@ -10772,7 +10836,11 @@ of the crystal structure.
                 rbObj['fixOrig'] = False
             fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
             OriSizer.Add(fixOrig,0,WACV,10)
-            mainSizer.Add(OriSizer)
+            if not rbObj['fixOrig']:
+                origSet = wx.Button(RigidBodies,label='Set to view point')
+                origSet.Bind(wx.EVT_BUTTON,OnOrigSet)
+                OriSizer.Add(origSet,0,WACV)
+                mainSizer.Add(OriSizer)
             Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             mainSizer.Add(sytsymtxt)
@@ -11129,6 +11197,7 @@ of the crystal structure.
                     QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
                     QuatC = G2mth.prodQQ(QuatB,QuatA)
                     rbObj['Orient'] = [QuatC,' ']
+                    rbObj['AtomFract'] = [1.0,False]
                     rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
                     SXYZ = []
                     TXYZ = []

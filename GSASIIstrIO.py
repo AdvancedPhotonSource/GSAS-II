@@ -1191,7 +1191,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             pFile.write(line+'\n')
             
     def PrintRBObjects(resRBData,vecRBData):
-        
+                
         def PrintRBThermals():
             tlstr = ['11','22','33','12','13','23']
             sstr = ['12','13','21','23','31','32','AA','BB']
@@ -1227,6 +1227,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
                 pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
+                pFile.write('Atom site frac: %10.3f Refine? %s\n'%(RB['AtomFrac'][0],RB['AtomFrac'][1]))
                 Torsions = RB['Torsions']
                 if len(Torsions):
                     text = 'Torsions: '
@@ -1243,6 +1244,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
                 pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
+                pFile.write('Atom site frac: %10.3f Refine? %s\n'%(RB['AtomFrac'][0],RB['AtomFrac'][1]))
                 PrintRBThermals()
                 
     def PrintAtoms(General,Atoms):
@@ -1381,6 +1383,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 phaseVary += [name,]
             elif RB['Orient'][1] == 'V' and i not in fixAxis:
                 phaseVary += [name,]
+        name = pfx+'RB'+'f:'+str(iRB)+':'+rbid
+        phaseDict[name] = RB['AtomFrac'][0]
+        if RB['AtomFrac'][1]:
+            phaseVary += [name,]
+                
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']
@@ -3645,6 +3652,13 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
             sigstr += '%12.5f'%(sigDict[name])
         else:
             sigstr += 12*' '
+    name = pfx+'RBf:'+rbsx
+    namstr += '%12s'%('Frac')
+    valstr += '%12.5f'%(parmDict[name])
+    if name in sigDict:
+        sigstr += '%12.5f'%(sigDict[name])
+    else:
+        sigstr += 12*' '
     return (namstr,valstr,sigstr)
 
 def WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):

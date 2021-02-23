@@ -7117,7 +7117,7 @@ def UpdatePDFGrid(G2frame,data):
         pack = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Pack',nDig=(10,2),xmin=0.01,
             typeHint=float,OnLeave=AfterChange)
         geoBox.Add(pack,0)
-        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
+        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample transmission: %.3f %%'%(100.*Trans)),0,WACV)    
         sampleSizer.Add(geoBox,0)
         return sampleSizer
         

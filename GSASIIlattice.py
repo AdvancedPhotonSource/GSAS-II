@@ -841,9 +841,9 @@ def permutations(items):
 def Pos2dsp(Inst,pos):
     ''' convert powder pattern position (2-theta or TOF, musec) to d-spacing
     '''
-    if 'T' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+    if 'T' in Inst['Type'][0]:
         return TOF2dsp(Inst,pos)
-    else:   #'C' or 'B'
+    else:   #'PKS', 'C' or 'B'
         wave = G2mth.getWave(Inst)
         return wave/(2.0*sind((pos-Inst.get('Zero',[0,0])[1])/2.0))
         

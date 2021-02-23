@@ -4830,8 +4830,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Xmin = np.amin(XYlist.T[0])
         Xmax = np.amax(XYlist.T[0])
         dx = 0.02*(Xmax-Xmin)
-        Ymin = np.amin(XYlist.T[1])
-        Ymax = np.amax(XYlist.T[1])
+        Ymin = np.amin(XYlist.T[1][1:])
+        Ymax = np.amax(XYlist.T[1][1:])
         dy = 0.02*(Ymax-Ymin)
         try:
             Plot.set_xlim(Xmin-dx,Xmax+dx)

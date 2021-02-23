@@ -604,7 +604,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['maxSSwave'] = maxSSwave
         if histogram not in Histograms:
             G2fil.G2Print("Error: not found!")
-            continue
+            raise G2obj.G2Exception("refining with invalid histogram {}".
+                                        format(histogram))
         hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}

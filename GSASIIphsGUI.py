@@ -9773,17 +9773,31 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
     def OnDataDelete(event):
         if G2frame.dataWindow.HistsInPhase:
             DelList = []
-            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Delete histogram', 
-                'Which histogram to delete from this phase?',G2frame.dataWindow.HistsInPhase)
+            extraOpts= {'label_0':'Remove from all phases','value_0':False}
+            h,pd = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            if len(pd) > 1:
+                opts = extraOpts
+            else:
+                opts = {}
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 
+                'Select histogram(s) to remove   \nfrom this phase:',
+                'Remove histograms', G2frame.dataWindow.HistsInPhase,
+                extraOpts=opts)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     DelList = [G2frame.dataWindow.HistsInPhase[i] for i in dlg.GetSelections()]
-                    for i in DelList:
-                        del data['Histograms'][i]
             finally:
                 dlg.Destroy()
-        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
-        
+            if extraOpts['value_0']:
+                for p in pd: 
+                    for i in DelList:
+                        if i in pd[p]['Histograms']: del pd[p]['Histograms'][i]
+            else:
+                for i in DelList:
+                    del data['Histograms'][i]
+            #wx.CallLater(100,G2ddG.UpdateDData,G2frame,DData,data) #  produces error
+            wx.CallAfter(UpdatePhaseData,G2frame,Item,data)
+            
     def OnDataApplyStrain(event):
         SGData = data['General']['SGData']        
         DijVals = data['Histograms'][G2frame.hist]['HStrain'][0][:]

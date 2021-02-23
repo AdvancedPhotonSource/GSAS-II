@@ -3984,7 +3984,7 @@ class GSASII(wx.Frame):
         while item:
             TextList.append(self.GPXtree.GetItemText(item))
             item, cookie = self.GPXtree.GetNextChild(sub, cookie)                
-        dlg = wx.MultiChoiceDialog(self, 'Which phase to delete?', 'Delete phase', TextList, wx.CHOICEDLG_STYLE)
+        dlg = wx.MultiChoiceDialog(self, 'Which phase(s) to delete?', 'Delete phase', TextList, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
@@ -4876,10 +4876,12 @@ class GSASII(wx.Frame):
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
         return phaseData
 
-    def GetPhaseInfofromTree(self):
+    def GetPhaseInfofromTree(self, Used=False):
         '''Get the phase names and their rId values,
-        also the histograms used in each phase. 
+        also the histograms referenced in each phase. 
 
+        :param bool Used: if Used is True, only histograms that are
+            referenced in the histogram are returned
         :returns: (phaseRIdList, usedHistograms) where 
 
           * phaseRIdList is a list of random Id values for each phase
@@ -4898,7 +4900,10 @@ class GSASII(wx.Frame):
                 if ranId: phaseRIdList.append(ranId)
                 data = self.GPXtree.GetItemPyData(item)
                 UseList = data['Histograms']
-                usedHistograms[phaseName] = list(UseList.keys())
+                if Used:
+                    usedHistograms[phaseName] = [h for h in UseList if UseList[h]['Use']]
+                else:
+                    usedHistograms[phaseName] = list(UseList.keys())
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
         return phaseRIdList,usedHistograms
 
@@ -5326,6 +5331,22 @@ class GSASII(wx.Frame):
         self.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         Controls['ShowCell'] = True
+        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
+            if key not in Controls: Controls[key] = {}
+        # check for deleted or unused histograms in refine list
+        phaseRIdList,histdict = self.GetPhaseInfofromTree(Used=True)
+        usedHistograms = []
+        for k in histdict:
+            usedHistograms += histdict[k]
+        usedHistograms = list(set(usedHistograms))
+        newseqList = [i for i in seqList if i in usedHistograms]
+        if len(newseqList) != len(seqList):
+            G2G.G2MessageBox(self,
+                str(len(seqList)-len(newseqList))+
+                ' histograms that are not used have been removed from the sequential list.',
+                'Histograms removed')
+            Controls['Seq Data'] = newseqList
+            seqList = newseqList
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
@@ -5358,7 +5379,7 @@ class GSASII(wx.Frame):
             histNames.reverse()
         # select it
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
-        if self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+        if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
@@ -6535,6 +6556,17 @@ def UpdateControls(G2frame,data):
         
         def OnSelectData(event):
             choices = GetGPXtreeDataNames(G2frame,['PWDR','HKLF',])
+            phaseRIdList,histdict = G2frame.GetPhaseInfofromTree(Used=True)
+            usedHistograms = []
+            for k in histdict:
+                usedHistograms += histdict[k]
+            usedHistograms = list(set(usedHistograms))
+            choices = [i for i in choices if i in usedHistograms]
+            if len(choices) == 0:
+                G2G.G2MessageBox(self,
+                                'No histograms in use found for a sequential fit.',
+                                'No Histograms')
+                return
             sel = []
             try:
                 if 'Seq Data' in data:
@@ -6543,8 +6575,8 @@ def UpdateControls(G2frame,data):
                     sel = [choices.index(item) for item in data['Seq Data']]
             except ValueError:  #data changed somehow - start fresh
                 sel = []
-            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Sequential refinement',
-                'Select dataset to include',choices)
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select datasets to include',
+                        'Sequential refinement selection',choices)
             dlg.SetSelections(sel)
             names = []
             if dlg.ShowModal() == wx.ID_OK:
@@ -7991,6 +8023,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             Albls = [pfx+'A'+str(i) for i in range(6)]
             for name in histNames:
+                if name not in Histograms: continue
                 hId = Histograms[name]['hId']
                 phfx = '%d:%d:'%(pId,hId)
                 esdLookUp = {}
@@ -8281,10 +8314,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     if histNames[0][:4] not in ['SASD','IMG ','REFD',]:
         for row,name in enumerate(histNames):
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
-            if deltaChi > 10.:
-                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,0,0))
-            elif deltaChi > 1.0:
-                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
+            try:
+                if deltaChi > 10.:
+                    G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,0,0))
+                elif deltaChi > 1.0:
+                    G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
+            except:
+                pass
     G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip,GridColLblToolTip)
     #G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
     #G2frame.dataDisplay.Refresh() # shows colored text on mac

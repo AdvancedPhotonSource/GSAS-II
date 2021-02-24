@@ -10262,7 +10262,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 vecId = prevVecId
             try:
                 rbName = RBnames[vecId]
-            except TypeError:
+            except:
                 vecId = 0
                 rbName = RBnames[vecId]
             rbObj = data['RBModels']['Vector'][vecId]

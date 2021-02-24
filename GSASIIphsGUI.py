@@ -10094,7 +10094,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
             return resrbSizer
             
-        def VecrbSizer(RBObj):
+        def VecrbSizer(RBObj,resIndx):
             '''Displays details for selected vector rigid body'''
             def OnFrac(invalid,value,tc):
                 for Id in RBObj['Ids']:
@@ -10175,7 +10175,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             if rbType == 'Residue':
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             else: #Vector
-                G2frame.bottomSizer =  VecrbSizer(rbObj)
+                G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
             G2frame.dataWindow.Refresh()
@@ -10274,7 +10274,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             select.Bind(wx.EVT_LISTBOX,OnVecSelect)
             mainSizer.Add(select,0)            
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
-            G2frame.bottomSizer.Add(VecrbSizer(rbObj))
+            G2frame.bottomSizer.Add(VecrbSizer(rbObj,vecId))
             mainSizer.Add(G2frame.bottomSizer)
             G2plt.PlotStructure(G2frame,data)
             G2plt.PlotStructure(G2frame,data) # draw twice initially for mac

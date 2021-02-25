@@ -1362,6 +1362,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             iFin = min(iBeg+10,nCoeff)
         
     def MakeRBParms(rbKey,phaseVary,phaseDict):
+        #### patch 2/24/21 BHT: new param, AtomFrac in RB
+        if 'AtomFrac' not in RB: raise Exception('out of date RB: edit in RB Models')
+        # end patch
         rbid = str(rbids.index(RB['RBId']))
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']

@@ -4554,6 +4554,7 @@ class GSASII(wx.Frame):
                     'Confirm exit/save?',
                     wx.YES|wx.NO|wx.CANCEL)
             try:
+                dlg.CenterOnParent()
                 result = dlg.ShowModal()
             finally:
                 dlg.Destroy()

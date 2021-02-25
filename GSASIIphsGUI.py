@@ -9959,6 +9959,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
                 RBObj['Orig'][0] = list(RBObj['Orig'][0])
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
+            topSizer.Add((-1,-1))
             for ix in range(3):
                 origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
                     typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
@@ -9985,7 +9986,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
-            Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
+            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
@@ -10070,7 +10071,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             members = 'Rigid body members: '
             for Id in RBObj['Ids']:
                 members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '
-            resrbSizer.Add(wx.StaticText(RigidBodies,label=members[:-2]),0,WACV)
+            resrbSizer.Add(wx.StaticText(RigidBodies,label=members[:-2]),0)
             fracSizer = wx.BoxSizer(wx.HORIZONTAL)
             fracSizer.Add(wx.StaticText(RigidBodies,label='Rigid Body atom site fraction: '))
             fracTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['AtomFrac'],0,nDig=(10,3),OnLeave=OnFrac)

@@ -156,6 +156,7 @@ def UpdateImageData(G2frame,data):
         dlg.Destroy()
         
     def OnMakeGainMap(event):
+        import scipy.ndimage.filters as sdif
         sumImg = GetImageZ(G2frame,data)
         masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
@@ -165,7 +166,6 @@ def UpdateImageData(G2frame,data):
         Data['outAzimuths'] = 1
         Data['LRazimuth'] = [0.,360.]
         Data['outChannels'] = 5000
-        Data['SampleAbs'] = [0.0,False]
         Data['binType'] = '2-theta'
         Data['color'] = 'gray'
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
@@ -181,8 +181,9 @@ def UpdateImageData(G2frame,data):
             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
             Data['formatName'] = 'GSAS-II image'
             Data['range'] = [(500,2000),[800,1200]]
-            GainMap = np.where(GainMap > 1200,1200,GainMap)
-            GainMap = np.where(GainMap < 800,800,GainMap)
+            GainMap = np.where(GainMap > 2000,2000,GainMap)
+            GainMap = np.where(GainMap < 500,500,GainMap)
+            masks['Thresholds'] = [(500.,2000.),[800.,1200.]]
             G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
             GMname = 'IMG '+os.path.split(newimagefile)[1]
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)
@@ -283,6 +284,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['linescan'] = [False,0.0]      #includes azimuth to draw line scan
     if 'det2theta' not in data:
         data['det2theta'] = 0.0
+    if 'orientation' not in data:
+        data['orientation'] = 'horizontal'
 #end patch
 
 # Menu items
@@ -645,7 +648,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         keyList = ['type','color','wavelength','calibrant','distance','center','Oblique',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-                    'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
+                    'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','orientation',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
         keyList.sort(key=lambda s: s.lower())
         keyText = [i+' = '+str(data[i]) for i in keyList]
@@ -1185,6 +1188,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                            
         def OnSamAbs(event):
             data['SampleAbs'][1] = not data['SampleAbs'][1]
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
                             
         def OnShowLines(event):
             data['showLines'] = not data['showLines']
@@ -1218,6 +1222,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             
         def OnIfPink(event):
             data['IfPink'] = not data['IfPink']
+            
+        def OnOchoice(event):
+            data['orientation'] = ochoice.GetValue()
                 
         dataSizer = wx.FlexGridSizer(0,2,5,3)
         dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Integration coefficients'),0,WACV)    
@@ -1269,13 +1276,23 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         littleSizer.Add(outChan,0,WACV)
         outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
-        dataSizer.Add(littleSizer,0,)
-        samplechoice = ['Cylinder','Fixed flat plate',]
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select sample shape'),0,WACV)
-        samShape = wx.ComboBox(G2frame.dataWindow,value=data['SampleShape'],choices=samplechoice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        samShape.Bind(wx.EVT_COMBOBOX,OnSampleShape)
-        dataSizer.Add(samShape,0,WACV)
+        dataSizer.Add(littleSizer)
+        showLines = wx.CheckBox(parent=G2frame.dataWindow,label='Show integration limits?')
+        dataSizer.Add(showLines,0,WACV)
+        showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
+        showLines.SetValue(data['showLines'])
+        fullIntegrate = wx.CheckBox(parent=G2frame.dataWindow,label='Do full integration?')
+        dataSizer.Add(fullIntegrate,0,WACV)
+        fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
+        fullIntegrate.SetValue(data['fullIntegrate'])
+        setDefault = wx.CheckBox(parent=G2frame.dataWindow,label='Use for all new images?')
+        dataSizer.Add(setDefault,0,WACV)
+        setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
+        setDefault.SetValue(data['setDefault'])
+        centerAzm = wx.CheckBox(parent=G2frame.dataWindow,label='Azimuth at bin center?')
+        dataSizer.Add(centerAzm,0,WACV)
+        centerAzm.Bind(wx.EVT_CHECKBOX, OnCenterAzm)
+        centerAzm.SetValue(data['centerAzm'])
         #SampleShape - cylinder or flat plate choice?
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         samabs = wx.CheckBox(parent=G2frame.dataWindow,label='Apply sample absorption?')
@@ -1283,15 +1300,36 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
         samabs.SetValue(data['SampleAbs'][1])
         minmax = [0.,2.]
-        if 'Cylind' in data['SampleShape']: #cylinder mu*R; flat plate transmission
-            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='mu*R (0.00-2.0) '),0,WACV)
-        elif 'Fixed' in data['SampleShape']:
-            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='transmission '),0,WACV) #for flat plate
-            minmax = [.05,1.0]
-        samabsVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['SampleAbs'],0,nDig=(10,3),
-            typeHint=float,xmin=minmax[0],xmax=minmax[1])
-        littleSizer.Add(samabsVal,0,WACV)
-        dataSizer.Add(littleSizer,0,)        
+        if data['SampleAbs'][1]:
+            samplechoice = ['Cylinder','Fixed flat plate',]
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select shape '),0,WACV)
+            samShape = wx.ComboBox(G2frame.dataWindow,value=data['SampleShape'],choices=samplechoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            samShape.Bind(wx.EVT_COMBOBOX,OnSampleShape)
+            littleSizer.Add(samShape,0,WACV)
+        dataSizer.Add(littleSizer)
+        if data['SampleAbs'][1]:
+            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            if 'Cylind' in data['SampleShape']: #cylinder mu*R; flat plate transmission
+                littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='mu*R (0.00-2.0) '),0,WACV)
+            elif 'Fixed' in data['SampleShape']:
+                littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='transmission '),0,WACV) #for flat plate
+                minmax = [.05,1.0]
+            samabsVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['SampleAbs'],0,nDig=(10,3),
+                typeHint=float,xmin=minmax[0],xmax=minmax[1])
+            littleSizer.Add(samabsVal,0,WACV)
+            dataSizer.Add(littleSizer,0,WACV)
+        if 'Cylind' in data['SampleShape'] and data['SampleAbs'][1]:
+            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select orientation '),0,WACV)
+            choice = ['horizontal','vertical']
+            ochoice = wx.ComboBox(G2frame.dataWindow,value=data['orientation'],choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            ochoice.Bind(wx.EVT_COMBOBOX,OnOchoice)
+            littleSizer.Add(ochoice,0,WACV)
+            dataSizer.Add(littleSizer)
+        if 'flat' in data['SampleShape'] and data['SampleAbs'][1]:
+            dataSizer.Add((5,5),0)
         if 'PWDR' in data['type']:
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             oblique = wx.CheckBox(parent=G2frame.dataWindow,label='Apply detector absorption?')
@@ -1313,22 +1351,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             littleSizer.Add(polaVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         
-        showLines = wx.CheckBox(parent=G2frame.dataWindow,label='Show integration limits?')
-        dataSizer.Add(showLines,0,WACV)
-        showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
-        showLines.SetValue(data['showLines'])
-        fullIntegrate = wx.CheckBox(parent=G2frame.dataWindow,label='Do full integration?')
-        dataSizer.Add(fullIntegrate,0,WACV)
-        fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
-        fullIntegrate.SetValue(data['fullIntegrate'])
-        setDefault = wx.CheckBox(parent=G2frame.dataWindow,label='Use for all new images?')
-        dataSizer.Add(setDefault,0,WACV)
-        setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
-        setDefault.SetValue(data['setDefault'])
-        centerAzm = wx.CheckBox(parent=G2frame.dataWindow,label='Azimuth at bin center?')
-        dataSizer.Add(centerAzm,0,WACV)
-        centerAzm.Bind(wx.EVT_CHECKBOX, OnCenterAzm)
-        centerAzm.SetValue(data['centerAzm'])
         return dataSizer
         
     def BackSizer():
@@ -1629,11 +1651,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     mainSizer.Add(DataSizer,0)
     mainSizer.Add((5,5),0)            
     mainSizer.Add(BackSizer(),0)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calibration controls:'),0,WACV)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calibration controls:'),0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(CalibSizer(),0,WACV)
+    mainSizer.Add(CalibSizer(),0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(GonioSizer(),0,WACV)   
+    mainSizer.Add(GonioSizer(),0)   
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################
@@ -2103,7 +2125,7 @@ def UpdateMasks(G2frame,data):
     delbtn = wx.Button(G2frame.dataWindow,label='Clear spot mask')
     delbtn.Bind(wx.EVT_BUTTON,OnDelBtn)
     spotSizer.Add(delbtn,0,WACV)
-    mainSizer.Add(spotSizer,0,WACV)
+    mainSizer.Add(spotSizer,0)
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))

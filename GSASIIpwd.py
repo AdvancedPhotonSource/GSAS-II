@@ -67,6 +67,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
+npq2T = lambda Q,wave: 2.0*npasind(0.25*Q*wave/np.pi)
 ateln2 = 8.0*math.log(2.0)
 sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
@@ -247,11 +248,18 @@ def Ruland(RulCoff,wave,Q,Compton):
     'needs a doc string'
     C = 2.9978e8
     D = 1.5e-3
-    hmc = 0.024262734687
+    hmc = 0.024262734687    #Compton wavelength in A
     sinth2 = (Q*wave/(4.0*np.pi))**2
     dlam = (wave**2)*Compton*Q/C
     dlam_c = 2.0*hmc*sinth2-D*wave**2
     return 1.0/((1.0+dlam/RulCoff)*(1.0+(np.pi*dlam_c/(dlam+RulCoff))**2))
+
+def KleinNishina(wave,Q):
+    hmc = 0.024262734687    #Compton wavelength in A
+    TTh = npq2T(Q,wave)
+    P = 1./(1.+(1.-npcosd(TTh)*(hmc/wave)))
+    KN = (P**3-(P*npsind(TTh))**2+P)/(1.+npcosd(TTh)**2)
+    return KN
     
 def LorchWeight(Q):
     'needs a doc string'
@@ -382,6 +390,7 @@ def CalcPDF(data,inst,limits,xydata):
     Q = xydata['SofQ'][1][0]
 #    auxPlot.append([Q,np.copy(CF),'CF-unCorr'])
     if 'XC' in inst['Type'][0]:
+#        CF *= KleinNishina(wave,Q)
         ruland = Ruland(data['Ruland'],wave,Q,CF)
 #        auxPlot.append([Q,ruland,'Ruland'])      
         CF *= ruland

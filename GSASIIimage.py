@@ -1261,14 +1261,16 @@ def MakeUseMask(data,masks,blkSize=128):
         useMask.append(useMaskj)
     return useMask
 
-def MakeGainMap(image,Ix,Iy,data,blkSize=128):
+def MakeGainMap(image,Ix,Iy0,data,blkSize=128):
     import scipy.ndimage.filters as sdif
+    Iy = sdif.gaussian_filter1d(Iy0,3.)
     Iy *= npcosd(Ix[:-1])**3       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:
         Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
     IyInt = scint.interp1d(Ix[:-1],Iy[0],bounds_error=False)
+    muT = data.get('SampleAbs',[0.0,''])[0]
     GainMap = np.zeros_like(image,dtype=float)
     #do interpolation on all points - fills in the empty bins; leaves others the same
     Nx,Ny = data['size']
@@ -1281,8 +1283,18 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            tabs = np.ones_like(TA[3])
+            if data.get('SampleAbs',[0.0,False])[1]:
+                if 'Cylind' in data['SampleShape']:
+                    if 'horiz' in data['orientation']:
+                        muR = muT*(1.+0.5*npsind(TA[0])*npsind(TA[1])**2)      #adjust for additional thickness off sample normal
+                    else:   #vertical
+                        muR = muT*(1.+0.5*npsind(TA[0])*npcosd(TA[1])**2)
+                    tabs = G2pwd.Absorb(data['SampleShape'],muR,TA[1])
+            elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
+                tabs = G2pwd.Absorb('Fixed',muT,TA[1])
             Ipix = IyInt(TA[0])
-            GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
+            GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(tabs*Ipix*TA[3])
     GainMap = np.nan_to_num(GainMap,1.0)
     GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
     return 1./GainMap
@@ -1349,9 +1361,12 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
-            if data.get('SampleAbs',[0.0,''])[1]:
+            if data.get('SampleAbs',[0.0,False])[1]:
                 if 'Cylind' in data['SampleShape']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
+                    if 'horiz' in data['orientation']:
+                        muR = muT*(1.+0.5*npsind(tax)*npsind(tay)**2)      #adjust for additional thickness off sample normal
+                    else:   #vertical
+                        muR = muT*(1.+0.5*npsind(tax)*npcosd(tay)**2)
                     tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
                 elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
                     tabs = G2pwd.Absorb('Fixed',muT,tay)

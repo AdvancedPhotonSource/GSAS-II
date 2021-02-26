@@ -337,19 +337,21 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 break
         # complete current cycle
         deltaChi2 = (chisq0-chisq1)/chisq0
-        if n-len(indices):
-            G2fil.G2Print(
-                'Cycle %d: %.2fs Chi2: %.5g; Obs: %d; Lam: %.3g Del: %.3g; drop=%d, SVD=%d'%
-                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,n-len(indices),Nzeros))
-        else:
-            G2fil.G2Print(
-                'Cycle %d: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g, SVD=%d'%
-                (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,Nzeros))
+        if Print:
+            if n-len(indices):
+                G2fil.G2Print(
+                    'Cycle %d: %.2fs Chi2: %.5g; Obs: %d; Lam: %.3g Del: %.3g; drop=%d, SVD=%d'%
+                    (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,n-len(indices),Nzeros))
+            else:
+                G2fil.G2Print(
+                    'Cycle %d: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g, SVD=%d'%
+                    (icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2,Nzeros))
         Histograms = args[0][0]
         if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
-            G2fil.G2Print("converged")
+            if Print: 
+                G2fil.G2Print("converged")
             break
         icycle += 1
     #----------------------- refinement complete, compute Covariance matrix w/o Levenberg-Marquardt

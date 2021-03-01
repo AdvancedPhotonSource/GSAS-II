@@ -4,6 +4,9 @@
 .. automodule:: GSASIIdataGUI
     :members: 
 
+.. automodule:: GSASIIseqGUI
+    :members: 
+       
 .. automodule:: GSASIIphsGUI
     :members: 
 

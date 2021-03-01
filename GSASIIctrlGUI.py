@@ -4546,6 +4546,62 @@ class GSGrid(wg.Grid):
             if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
             if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
 
+    def setupPopup(self,lblList,callList):
+        '''define a callback that creates a popup menu. The rows associated
+        with the items selected items are selected in the table and if 
+        an item is called from the menu, the corresponding function 
+        is called to perform an action on the 
+
+        :param list lblList: list of str items that will be placed in the 
+          popup menu
+        :param list callList: list of functions to be called when a 
+        :returns: a callback that can be used to create the menu
+
+        Sample usage::
+
+            lblList = ('Delete','Set atom style','Set atom label',
+                           'Set atom color','Set view point','Generate copy',
+                           'Generate surrounding sphere','Transform atoms',
+                           'Generate bonded')
+            callList = (DrawAtomsDelete,DrawAtomStyle, DrawAtomLabel,
+                            DrawAtomColor,SetViewPoint,AddSymEquiv,
+                            AddSphere,TransformSymEquiv,
+                            FillCoordSphere)
+            onRightClick = drawAtoms.setupPopup(lblList,callList)
+            drawAtoms.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK, onRightClick)
+            drawAtoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, onRightClick)
+
+        '''
+        def createPopup(event):
+            def OnPopup(event):
+                callback = callList[menuIndx.index(event.GetId())]
+                self.ClearSelection()
+                for r in indx:
+                    self.SelectRow(r,True)
+                callback(event)
+            # get selections
+            indx = self.GetSelectedRows()
+            indx += [row for row,col in self.GetSelectedCells()]
+            for top,bottom in zip([r for r,c in self.GetSelectionBlockTopLeft()],
+                          [r for r,c in self.GetSelectionBlockBottomRight()]):
+                indx += list(range(top,bottom+1))
+            indx = list(set(indx))
+            if len(indx) == 0: # nothing selected, get current row
+                r,_ =  event.GetRow(),event.GetCol()
+                if r < 0:
+                    return
+                indx = [r]
+            # make a pop-up menu
+            menu = wx.Menu()
+            menuIndx = []
+            for l in lblList:
+                menuIndx.append(wx.NewIdRef())
+                menu.Append(menuIndx[-1], l)
+                self.Bind(wx.EVT_MENU, OnPopup, id=menuIndx[-1])
+            self.PopupMenu(menu)
+            menu.Destroy()
+        return createPopup
+        
     def completeEdits(self):
         'complete any outstanding edits'
         if self.IsCellEditControlEnabled(): # complete any grid edits in progress

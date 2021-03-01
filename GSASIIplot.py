@@ -407,7 +407,8 @@ class G2PlotNoteBook(wx.Panel):
         self.SetSizer(sizer)
         self.status = parent.CreateStatusBar()
         self.status.SetFieldsCount(2)
-        self.status.SetStatusWidths([150,-1])
+        self.status.firstLen = 150
+        self.status.SetStatusWidths([self.status.firstLen,-1])            
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
         self.G2frame = G2frame
@@ -639,10 +640,25 @@ class G2PlotNoteBook(wx.Panel):
         self.lastRaisedPlotTab = tabLabel
         if plotDebug: 
             print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel)
-            print ('event type='+event.GetEventType())
+            print ('event type=',event.GetEventType())
         self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetStatusText('')  # clear old status message
-        self.status.SetStatusWidths([150,-1])
+        self.status.SetStatusWidths([self.status.firstLen,-1])
+
+    def SetHelpButton(self,help):
+        '''Adds a Help button to the status bar on plots.
+        
+        TODO: This has a problem with PlotPatterns where creation of the 
+        HelpButton causes the notebook tabs to be duplicated. A manual 
+        resize fixes that, but the SendSizeEvent has not worked. 
+        '''
+        hlp = G2G.HelpButton(self.status,helpIndex=help)
+        rect = self.status.GetFieldRect(1)
+        rect.x += rect.width - 20
+        rect.width = 20
+        rect.y += 1
+        hlp.SetRect(rect)
+        #wx.CallLater(100,self.TopLevelParent.SendSizeEvent)
             
     def InvokeTreeItem(self,pid):
         '''This is called to select an item from the tree using the self.allowZoomReset
@@ -865,10 +881,7 @@ def SetCursor(page):
         else:
             page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
             
-################################################################################
-##### PlotSngl
-################################################################################
-            
+##### PlotSngl ################################################################     
 def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
@@ -1099,9 +1112,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
         Page.canvas.draw()
         
-################################################################################
-##### Plot1DSngl
-################################################################################
+##### Plot1DSngl ################################################################################
 def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     '''1D Structure factor plotting package - displays reflections as sticks proportional
         to F, F**2, etc. as requested
@@ -1218,10 +1229,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
     Draw()
     
-################################################################################
-##### Plot3DSngl
-################################################################################
-
+##### Plot3DSngl ################################################################################
 def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as rings proportional
         to F, F**2, etc. as requested as 3D array
@@ -1678,7 +1686,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
     'z: zero zone toggle','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
+                         size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
@@ -1699,9 +1708,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Draw('main')
 #    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
 
-################################################################################
-##### PlotPatterns
-################################################################################
+##### PlotPatterns ################################################################################
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     '''This does the same as PlotPatterns except that it expects the information
     to be plotted (pattern name, item picked in tree + eventually the reflection list)
@@ -2712,8 +2719,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             return '_'+string
 
-    #=====================================================================================
-    # beginning PlotPatterns execution
+    #### beginning PlotPatterns execution
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
@@ -2845,6 +2851,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         pass
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
+    # TODO: figure out why the SetHelpButton creates a second tab line (BHT, Mac, wx4.1)
+    #G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     Page.tickDict = {}
     DifLine = ['']
     PickId = G2frame.PickId
@@ -4464,10 +4472,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     if legLine:
         ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelSize']})
     
-################################################################################
-##### PlotDeltSig
-################################################################################
-            
+##### PlotDeltSig #############################################################
 def PlotDeltSig(G2frame,kind,PatternName=None):
     'Produces normal probability plot for a powder or single crystal histogram'
     if PatternName:
@@ -4523,10 +4528,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
     np.seterr(invalid='warn')
     Page.canvas.draw()
        
-################################################################################
-##### PlotISFG
-################################################################################
-            
+##### PlotISFG ################################################################
 def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
@@ -4712,8 +4714,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         wx.CallAfter(G2pdG.UpdatePDFPeaks,G2frame,Peaks,data)
         wx.CallAfter(PlotISFG,G2frame,data,peaks=Peaks,newPlot=False)
 
-    # PlotISFG continues here
-    ############################################################
+    ##### PlotISFG continues here ############################################################
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'mpl')
     if not new:
@@ -4928,10 +4929,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     else:
         Page.canvas.draw()
 
-################################################################################
-##### PlotCalib
-################################################################################
-            
+##### PlotCalib ###############################################################
 def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     '''plot of CW or TOF peak calibration
     '''
@@ -5016,10 +5014,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     else:
         Page.canvas.draw()
 
-################################################################################
-##### PlotXY
-################################################################################
-            
+##### PlotXY ##################################################################
 def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     Title='',lines=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
@@ -5142,10 +5137,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     Draw()
     
         
-################################################################################
-##### PlotXYZ
-################################################################################
-            
+##### PlotXYZ ################################################################################
 def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=None,color=None,buttonHandler=None):
     '''simple contour plot of xyz data
     
@@ -5270,10 +5262,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
     else:
         Page.canvas.draw()
         
-################################################################################
-##### PlotXYZvect
-################################################################################
-        
+##### PlotXYZvect ################################################################################
 def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
     ''' To plot a quiver of quaternion vectors colored by the rotation
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -5319,10 +5308,7 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
         print('mpl error - no colorbar shown')
     Page.canvas.draw()
         
-################################################################################
-##### Plot3dXYZ
-################################################################################
-        
+##### Plot3dXYZ ################################################################################
 def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=False,Title='',Centro=False):
     
     def OnMotion(event):
@@ -5375,9 +5361,7 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
         #     pass
         Page.canvas.draw()
         
-################################################################################
-##### PlotAAProb
-################################################################################
+##### PlotAAProb ################################################################################
 def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):
     'Needs a description'
 
@@ -5437,10 +5421,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
     Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Draw()
 
-################################################################################
-##### PlotStrain
-################################################################################
-            
+##### PlotStrain ################################################################################
 def PlotStrain(G2frame,data,newPlot=False):
     '''plot of strain data, used for diagnostic purposes
     '''
@@ -5487,10 +5468,7 @@ def PlotStrain(G2frame,data,newPlot=False):
     else:
         Page.canvas.draw()
         
-################################################################################
-##### PlotBarGraph
-################################################################################
-            
+##### PlotBarGraph ################################################################################
 def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False,maxBins=None):
     'Needs a description'
     
@@ -5533,10 +5511,7 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,i
     Plot.bar(Dbins,Bins,width=wid,align='edge',facecolor='red',edgecolor='black')
     Page.canvas.draw()
 
-################################################################################
-##### PlotSASDSizeDist
-################################################################################
-            
+##### PlotSASDSizeDist ################################################################################
 def PlotSASDSizeDist(G2frame):
     'Needs a description'
     
@@ -5585,10 +5560,7 @@ def PlotSASDSizeDist(G2frame):
                 Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%NC])       #plot diameters
     Page.canvas.draw()
 
-################################################################################
-##### PlotSASDPairDist
-################################################################################
-            
+##### PlotSASDPairDist ################################################################################
 def PlotSASDPairDist(G2frame):
     'Needs a description'
     
@@ -5629,10 +5601,7 @@ def PlotSASDPairDist(G2frame):
             Plot.plot(Rbins,Dist,color='r')       #plot radii
         Page.canvas.draw()
 
-################################################################################
-##### PlotPowderLines
-################################################################################
-            
+##### PlotPowderLines ################################################################################
 def PlotPowderLines(G2frame):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
@@ -5674,10 +5643,7 @@ def PlotPowderLines(G2frame):
     Page.canvas.draw()
     Page.toolbar.push_current()
 
-################################################################################
-##### PlotPeakWidths
-################################################################################
-            
+##### PlotPeakWidths            
 def PlotPeakWidths(G2frame,PatternName=None):
     ''' Plotting of instrument broadening terms as function of 2-theta
     Seen when "Instrument Parameters" chosen from powder pattern data tree.
@@ -5762,6 +5728,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+    G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)        
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
             PlotPeakWidths,(G2frame,G2frame.GPXtree.GetItemText(G2frame.PatternId)))
@@ -5894,10 +5861,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
     else:
         Page.canvas.draw()
     
-################################################################################
-##### PlotSizeStrainPO
-################################################################################
-            
+##### PlotSizeStrainPO ################################################################################
 def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
@@ -6177,10 +6141,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         
     Page.canvas.draw()
     
-################################################################################
-##### PlotTexture
-################################################################################
-
+##### PlotTexture ################################################################################
 def PlotTexture(G2frame,data,Start=False):
     '''Pole figure, inverse pole figure plotting.
     dict generalData contains all phase info needed which is in data
@@ -6257,7 +6218,7 @@ def PlotTexture(G2frame,data,Start=False):
         Page.canvas.mpl_connect('pick_event', OnPick)
     Page.Choice = None
     G2frame.G2plotNB.status.SetStatusText('')    
-    G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+    G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)
     ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
@@ -6371,10 +6332,7 @@ def PlotTexture(G2frame,data,Start=False):
             Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
     Page.canvas.draw()
 
-################################################################################
-##### Plot Modulation
-################################################################################
-
+##### Plot Modulation ################################################################################
 def ModulationPlot(G2frame,data,atom,ax,off=0):
     'Needs a description'
     global Off,Atom,Ax,Slab,Off
@@ -6487,10 +6445,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_ylim([-0.25,0.25])
     Page.canvas.draw()
    
-################################################################################
-##### PlotCovariance
-################################################################################
-            
+##### PlotCovariance ################################################################################
 def PlotCovariance(G2frame,Data):
     '''Plots the covariance matrix. Also shows values for parameters 
     and their standard uncertainties (esd's) or the correlation between 
@@ -6578,7 +6533,7 @@ def PlotCovariance(G2frame,Data):
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.status.SetStatusText('',0)
     G2frame.G2plotNB.status.SetStatusText('',1)
-    G2frame.G2plotNB.status.SetStatusWidths([150,-1])   #need to reset field widths here    
+    G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
     Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
         vmin=-1.,vmax=1.)
@@ -6592,10 +6547,7 @@ def PlotCovariance(G2frame,Data):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
-################################################################################
-##### PlotTorsion
-################################################################################
-
+##### PlotTorsion ################################################################################
 def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
     'needs a doc string'
     
@@ -6654,10 +6606,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
     Plot.set_ylabel('Energy',fontsize=16)
     Page.canvas.draw()
     
-################################################################################
-##### PlotRama
-################################################################################
-
+##### PlotRama ################################################################################
 def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     'needs a doc string'
 
@@ -6750,9 +6699,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     Page.canvas.draw()
 
 
-################################################################################
-##### PlotSeq
-################################################################################
+##### PlotSeq ################################################################################
 def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals=None):
     '''Plot a result from a sequential refinement
 
@@ -6885,10 +6832,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         
     Draw()
                 
-################################################################################
-##### PlotExposedImage & PlotImage
-################################################################################
-            
+##### PlotExposedImage & PlotImage ################################################################################
 def PlotExposedImage(G2frame,newPlot=False,event=None):
     '''General access module for 2D image plotting
     '''
@@ -8050,10 +7994,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     finally:
         wx.EndBusyCursor()
     
-################################################################################
-##### PlotIntegration
-################################################################################
-            
+##### PlotIntegration ################################################################################
 def PlotIntegration(G2frame,newPlot=False,event=None):
     '''Plot of 2D image after image integration with 2-theta and azimuth as coordinates
     '''
@@ -8105,10 +8046,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     else:
         Page.canvas.draw()
                 
-################################################################################
-##### PlotTRImage
-################################################################################
-            
+##### PlotTRImage ################################################################################
 def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     '''a test plot routine - not normally used
     ''' 
@@ -8172,10 +8110,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     else:
         Page.canvas.draw()
         
-################################################################################
-##### PlotStructure
-################################################################################
-            
+##### PlotStructure ################################################################################
 def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
@@ -9762,9 +9697,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
-    choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2']
+    choice = [' save as/key:','jpeg','tiff','bmp','c: center on .5,.5.,5.']
     if mapData['MapType']:
-        choice += ['k: contour plot switch','s: map slice colors',]
+        choice += ['k: contour plot','s: map slice colors',]
     if mapData.get('Flip',False):
         choice += ['u: roll up','d: roll down','l: roll left','r: roll right']
     else:
@@ -9778,9 +9713,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     rho = G2mth.getRho([Tx,Ty,Tz],mapData)
     G2frame.G2plotNB.status.SetStatusText('View point: %.4f, %.4f, %.4f; density: %.4f'%(Tx,Ty,Tz,rho),1)
 
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
+                         size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
+    G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
@@ -9802,10 +9739,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     if firstCall: Draw('main') # redraw
     return Draw,['main']
 
-################################################################################
-#### Plot Bead Model
-################################################################################
-
+#### Plot Bead Model ###############################################################################
 def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     '''Bead modelplotting package. For bead models from SHAPES
     '''
@@ -10008,7 +9942,8 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     Page.name = Atoms[0]
     Page.Choice = None
     choice = [' save as:','jpeg','tiff','bmp','pdb',]
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
+                         size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
     
@@ -10028,10 +9963,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     Draw('main')
     Draw('main')    #to fill both buffers so save works
 
-################################################################################
-#### Plot Rigid Body
-################################################################################
-
+#### Plot Rigid Body ################################################################################
 def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     '''RB plotting package. Can show rigid body structures as balls & sticks
     '''
@@ -10337,7 +10269,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Page.name = rbData['RBname']
     Page.Choice = None
     choice = [' save as:','jpeg','tiff','bmp',]
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
+                         size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
     
@@ -10358,10 +10291,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Draw('main')
     Draw('main')    #to fill both buffers so save works
     if rbType == 'Vector': return UpdateDraw
-################################################################################
-#### Plot Layers
-################################################################################
-
+#### Plot Layers ################################################################################
 def PlotLayers(G2frame,Layers,laySeq,defaults):
     '''Layer plotting package. Can show layer structures as balls & sticks
     '''
@@ -10797,7 +10727,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         choice += ['F - toggle fade','X/shift-X move Dx','Y/shift-Y move Dy','Z/shift-Z move Dz']
     Page.keyPress = OnPlotKeyPress
     Font = Page.GetFont()
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
+                         size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     text = [str(Layers['Layers'][seq]['Name']) for seq in laySeq]
     G2frame.G2plotNB.status.SetStatusText(' Layers plotted: '+str(text).replace("'",'')[1:-1],1)

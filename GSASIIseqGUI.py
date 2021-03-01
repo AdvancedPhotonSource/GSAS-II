@@ -1,0 +1,1582 @@
+# -*- coding: utf-8 -*-
+#GSASIIseqGUI - Sequential Results Display routines
+########### SVN repository information ###################
+# $Date: $
+# $Author: toby $
+# $Revision: $
+# $URL: $
+# $Id: GSASIIseqGUI.py 4829 2021-02-25 23:16:59Z toby $
+########### SVN repository information ###################
+'''
+*GSASIIseqGUI: Sequential Results GUI*
+----------------------------------------
+
+Module that defines GUI routines and classes for the main GUI Frame (window)
+and the main routines that define the GSAS-II tree panel and much of the
+data editing panel. 
+'''
+from __future__ import division, print_function
+import platform
+#import time
+#import math
+#import random as ran
+import copy
+#import sys
+#import os
+#import inspect
+
+#import re
+import numpy as np
+import numpy.ma as ma
+#import scipy as sp
+import scipy.optimize as so
+try:
+    import wx
+    import wx.grid as wg
+#    import wx.lib.scrolledpanel as wxscroll
+except ImportError:
+    pass
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 4829 $")
+import GSASIImath as G2mth
+import GSASIIIO as G2IO
+#import GSASIIfiles as G2fil
+import GSASIIdataGUI as G2gd
+import GSASIIstrIO as G2stIO
+import GSASIIlattice as G2lat
+import GSASIIplot as G2plt
+#import GSASIIpwdGUI as G2pdG
+#import GSASIIimgGUI as G2imG
+#import GSASIIphsGUI as G2phG
+#import GSASIIspc as G2spc
+import GSASIImapvars as G2mv
+#import GSASIIconstrGUI as G2cnstG
+#import GSASIIrestrGUI as G2restG
+import GSASIIobj as G2obj
+import GSASIIexprGUI as G2exG
+#import GSASIIlog as log
+import GSASIIctrlGUI as G2G
+#import GSASIIElem as G2elem
+#import GSASIIpwd as G2pwd
+#import GSASIIstrMain as G2stMn
+#import defaultIparms as dI
+#import GSASIIfpaGUI as G2fpa
+
+#####  Display of Sequential Results ##########################################
+def UpdateSeqResults(G2frame,data,prevSize=None):
+    """
+    Called when the Sequential Results data tree entry is selected
+    to show results from a sequential refinement.
+    
+    :param wx.Frame G2frame: main GSAS-II data tree windows
+
+    :param dict data: a dictionary containing the following items:  
+
+            * 'histNames' - list of histogram names in order as processed by Sequential Refinement
+            * 'varyList' - list of variables - identical over all refinements in sequence
+              note that this is the original list of variables, prior to processing
+              constraints.
+            * 'variableLabels' -- a dict of labels to be applied to each parameter
+              (this is created as an empty dict if not present in data).
+            * keyed by histName - dictionaries for all data sets processed, which contains:
+
+              * 'variables'- result[0] from leastsq call
+              * 'varyList' - list of variables passed to leastsq call (not same as above)
+              * 'sig' - esds for variables
+              * 'covMatrix' - covariance matrix from individual refinement
+              * 'title' - histogram name; same as dict item name
+              * 'newAtomDict' - new atom parameters after shifts applied
+              * 'newCellDict' - refined cell parameters after shifts to A0-A5 from Dij terms applied'
+    """
+    def GetSampleParms():
+        '''Make a dictionary of the sample parameters that are not the same over the
+        refinement series. Controls here is local
+        '''
+        if 'IMG' in histNames[0]:
+            sampleParmDict = {'Sample load':[],}
+        else:
+            sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
+                'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],'Omega':[],
+                'Chi':[],'Phi':[],'Azimuth':[],}
+        Controls = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        sampleParm = {}
+        for name in histNames:
+            if 'IMG' in name:
+                if name not in data:
+                    continue
+                for item in sampleParmDict:
+                    sampleParmDict[item].append(data[name]['parmDict'].get(item,0))
+            else:
+                if 'PDF' in name:
+                    name = 'PWDR' + name[4:]
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if Id:
+                    sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
+                    for item in sampleParmDict:
+                        sampleParmDict[item].append(sampleData.get(item,0))
+        for item in sampleParmDict:
+            if sampleParmDict[item]:
+                frstValue = sampleParmDict[item][0]
+                if np.any(np.array(sampleParmDict[item])-frstValue):
+                    if item.startswith('FreePrm'):
+                        sampleParm[Controls[item]] = sampleParmDict[item]
+                    else:
+                        sampleParm[item] = sampleParmDict[item]
+        return sampleParm
+
+    def GetColumnInfo(col):
+        '''returns column label, lists of values and errors (or None) for each column in the table
+        for plotting. The column label is reformatted from Unicode to MatPlotLib encoding
+        '''
+        colName = G2frame.SeqTable.GetColLabelValue(col)
+        plotName = variableLabels.get(colName,colName)
+        plotName = plotSpCharFix(plotName)
+        return plotName,G2frame.colList[col],G2frame.colSigs[col]
+            
+    def PlotSelectedColRow(calltyp=''):
+        '''Called to plot a selected column or row by clicking or 
+        double-clicking on a row or column label. N.B. This is called 
+        after the event is processed so that the column or row has been
+        selected.
+
+        :param str calltyp: ='single'/'double', specifies if this was 
+          a single- or double-click, where a single click on row 
+          plots histogram; Double click on row plots V-C matrix; 
+          Single or double click on column: plots values in column
+        '''
+        cols = G2frame.dataDisplay.GetSelectedCols()
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if cols:
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows and calltyp == 'single':
+            name = histNames[rows[0]]       #only does 1st one selected
+            if not name.startswith('PWDR'): return 
+            pickId = G2frame.PickId
+            G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+            G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+            G2frame.PickId = pickId
+        elif rows:
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
+        else:
+            G2frame.ErrorDialog(
+                'Select row or columns',
+                'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
+                )
+        
+    def PlotSSelect(event):
+        'Called by a single click on a row or column label. '
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'single')
+        
+    def PlotSelect(event):
+        'Called by a double-click on a row or column label'
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'double')
+        
+    def OnKeyUp(event):
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'single')
+            
+    def OnPlotSelSeq(event):
+        'plot the selected columns or row from menu command'
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if cols:
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows:
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
+        else:
+            G2frame.ErrorDialog('Select columns',
+                'No columns or rows selected in table. Click on row or column labels to select fields for plotting.')
+                
+    def OnAveSelSeq(event):
+        'average the selected columns from menu command'
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        useCol =  ~np.array(G2frame.SeqTable.GetColValues(1),dtype=bool)
+        if cols:
+            for col in cols:
+                items = GetColumnInfo(col)[1]
+                noneMask = np.array([item is None for item in items])
+                info = ma.array(items,mask=useCol+noneMask)
+                ave = ma.mean(ma.compressed(info))
+                sig = ma.std(ma.compressed(info))
+                print (u' Average for '+G2frame.SeqTable.GetColLabelValue(col)+u': '+'%.6g'%(ave)+u' +/- '+u'%.6g'%(sig))
+        else:
+            G2frame.ErrorDialog('Select columns',
+                'No columns selected in table. Click on column labels to select fields for averaging.')
+            
+    def OnSelectUse(event):
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select rows to use','Select rows',histNames)
+        sellist = [i for i,item in enumerate(G2frame.colList[1]) if item]
+        dlg.SetSelections(sellist)
+        if dlg.ShowModal() == wx.ID_OK:
+            sellist = dlg.GetSelections()
+            for row in range(G2frame.SeqTable.GetNumberRows()):
+                G2frame.SeqTable.SetValue(row,1,False)
+                G2frame.colList[1][row] = False
+            for row in sellist:
+                G2frame.SeqTable.SetValue(row,1,True)
+                G2frame.colList[1][row] = True
+            G2frame.dataDisplay.ForceRefresh()
+        dlg.Destroy()
+                
+    def OnRenameSelSeq(event):
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        colNames = [G2frame.SeqTable.GetColLabelValue(c) for c in cols]
+        newNames = colNames[:]
+        for i,name in enumerate(colNames):
+            if name in variableLabels:
+                newNames[i] = variableLabels[name]
+        if not cols:
+            G2frame.ErrorDialog('Select columns',
+                'No columns selected in table. Click on column labels to select fields for rename.')
+            return
+        dlg = G2G.MultiStringDialog(G2frame.dataDisplay,'Set column names',colNames,newNames)
+        if dlg.Show():
+            newNames = dlg.GetValues()            
+            variableLabels.update(dict(zip(colNames,newNames)))
+        data['variableLabels'] = variableLabels 
+        dlg.Destroy()
+        UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+            
+    def OnSaveSelSeqCSV(event):
+        'export the selected columns to a .csv file from menu command'
+        OnSaveSelSeq(event,csv=True)
+        
+    def OnSaveSeqCSV(event):
+        'export all columns to a .csv file from menu command'
+        OnSaveSelSeq(event,csv=True,allcols=True)
+        
+    def OnSaveSelSeq(event,csv=False,allcols=False):
+        'export the selected columns to a .txt or .csv file from menu command'
+        def WriteLine(line):
+            if '2' in platform.python_version_tuple()[0]:
+                SeqFile.write(G2obj.StripUnicode(line))
+            else:
+                SeqFile.write(line)
+                
+        def WriteCSV():
+            def WriteList(headerItems):
+                line = ''
+                for lbl in headerItems:
+                    if line: line += ','
+                    line += '"'+lbl+'"'
+                return line
+            head = ['name']
+            for col in cols:
+                # Excel does not like unicode
+                item = G2obj.StripUnicode(G2frame.SeqTable.GetColLabelValue(col))
+                if col in havesig:
+                    head += [item,'esd-'+item]
+                else:
+                    head += [item]
+            WriteLine(WriteList(head)+'\n')
+            for row,name in enumerate(saveNames):
+                line = '"'+saveNames[row]+'"'
+                for col in cols:
+                    if saveData[col][row] is None:
+                        if col in havesig:
+#                            line += ',0.0,0.0'
+                            line += ',,'
+                        else:
+#                            line += ',0.0'
+                            line += ','
+                    else:
+                        if col in havesig:
+                            line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
+                        else:    
+                            line += ','+str(saveData[col][row])
+                WriteLine(line+'\n')
+        def WriteSeq():
+            lenName = len(saveNames[0])
+            line = '  %s  '%('name'.center(lenName))
+            for col in cols:
+                item = G2frame.SeqTable.GetColLabelValue(col)
+                if col in havesig:
+                    line += ' %12s %12s '%(item.center(12),'esd'.center(12))
+                else:
+                    line += ' %12s '%(item.center(12))
+            WriteLine(line+'\n')
+            for row,name in enumerate(saveNames):
+                line = " '%s' "%(saveNames[row])
+                for col in cols:
+                    if col in havesig:
+                        try:
+                            line += ' %12.6f %12.6f '%(saveData[col][row],saveSigs[col][row])
+                        except TypeError:
+                            line += '                           '
+                    else:
+                        try:
+                            line += ' %12.6f '%saveData[col][row]
+                        except TypeError:
+                            line += '              '
+                WriteLine(line+'\n')
+
+        # start of OnSaveSelSeq code
+        if allcols:
+            cols = range(G2frame.SeqTable.GetNumberCols())
+        else:
+            cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        nrows = G2frame.SeqTable.GetNumberRows()
+        if not cols:
+            choices = [G2frame.SeqTable.GetColLabelValue(r) for r in range(G2frame.SeqTable.GetNumberCols())]
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to write',
+                'select columns',choices)
+            #dlg.SetSelections()
+            if dlg.ShowModal() == wx.ID_OK:
+                cols = dlg.GetSelections()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            #G2frame.ErrorDialog('Select columns',
+            #                 'No columns selected in table. Click on column labels to select fields for output.')
+            #return
+        saveNames = [G2frame.SeqTable.GetRowLabelValue(r) for r in range(nrows)]
+        saveData = {}
+        saveSigs = {}
+        havesig = []
+        for col in cols:
+            name,vals,sigs = GetColumnInfo(col)
+            saveData[col] = vals
+            if sigs:
+                havesig.append(col)
+                saveSigs[col] = sigs
+        if csv:
+            wild = 'CSV output file (*.csv)|*.csv'
+        else:
+            wild = 'Text output file (*.txt)|*.txt'
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(
+            G2frame,
+            'Choose text output file for your selection', pth, '', 
+            wild,wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                SeqTextFile = dlg.GetPath()
+                SeqTextFile = G2IO.FileDlgFixExt(dlg,SeqTextFile) 
+                SeqFile = open(SeqTextFile,'w')
+                if csv:
+                    WriteCSV()
+                else:
+                    WriteSeq()
+                SeqFile.close()
+        finally:
+            dlg.Destroy()
+                
+    def striphist(var,insChar=''):
+        'strip a histogram number from a var name'
+        sv = var.split(':')
+        if len(sv) <= 1: return var
+        if sv[1]:
+            sv[1] = insChar
+        return ':'.join(sv)
+        
+    def plotSpCharFix(lbl):
+        'Change selected unicode characters to their matplotlib equivalent'
+        for u,p in [
+            (u'\u03B1',r'$\alpha$'),
+            (u'\u03B2',r'$\beta$'),
+            (u'\u03B3',r'$\gamma$'),
+            (u'\u0394\u03C7',r'$\Delta\chi$'),
+            ]:
+            lbl = lbl.replace(u,p)
+        return lbl
+    
+    def SelectXaxis():
+        'returns a selected column number (or None) as the X-axis selection'
+        ncols = G2frame.SeqTable.GetNumberCols()
+        colNames = [G2frame.SeqTable.GetColLabelValue(r) for r in range(ncols)]
+        dlg = G2G.G2SingleChoiceDialog(
+            G2frame.dataDisplay,
+            'Select x-axis parameter for plot or Cancel for sequence number',
+            'Select X-axis',
+            colNames)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                col = dlg.GetSelection()
+            else:
+                col = None
+        finally:
+            dlg.Destroy()
+        return col
+    
+    def EnablePseudoVarMenus():
+        'Enables or disables the PseudoVar menu items that require existing defs'
+        if data['SeqPseudoVars']:
+            val = True
+        else:
+            val = False
+        G2frame.dataWindow.SequentialPvars.Enable(G2G.wxID_DELSEQVAR,val)
+        G2frame.dataWindow.SequentialPvars.Enable(G2G.wxID_EDITSEQVAR,val)
+
+    def DelPseudoVar(event):
+        'Ask the user to select a pseudo var expression to delete'
+        choices = list(data['SeqPseudoVars'].keys())
+        selected = G2G.ItemSelector(
+            choices,G2frame,
+            multiple=True,
+            title='Select expressions to remove',
+            header='Delete expression')
+        if selected is None: return
+        for item in selected:
+            del data['SeqPseudoVars'][choices[item]]
+        if selected:
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+
+    def EditPseudoVar(event):
+        'Edit an existing pseudo var expression'
+        choices = list(data['SeqPseudoVars'].keys())
+        if len(choices) == 1:
+            selected = 0
+        else:
+            selected = G2G.ItemSelector(
+                choices,G2frame,
+                multiple=False,
+                title='Select an expression to edit',
+                header='Edit expression')
+        if selected is not None:
+            dlg = G2exG.ExpressionDialog(
+                G2frame.dataDisplay,PSvarDict,
+                data['SeqPseudoVars'][choices[selected]],
+                header="Edit the PseudoVar expression",
+                VarLabel="PseudoVar #"+str(selected+1),
+                fit=False)
+            newobj = dlg.Show(True)
+            if newobj:
+                calcobj = G2obj.ExpressionCalcObj(newobj)
+                del data['SeqPseudoVars'][choices[selected]]
+                data['SeqPseudoVars'][calcobj.eObj.expression] = newobj
+                UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        
+    def AddNewPseudoVar(event):
+        'Create a new pseudo var expression'
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,PSvarDict,
+            header='Enter an expression for a PseudoVar here',
+            VarLabel = "New PseudoVar",fit=False)
+        obj = dlg.Show(True)
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            data['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+            
+    def AddNewDistPseudoVar(event):
+        obj = None
+        dlg = G2exG.BondDialog(
+            G2frame.dataDisplay,Phases,PSvarDict,
+            header='Select a Bond here',
+            VarLabel = "New Bond")
+        if dlg.ShowModal() == wx.ID_OK:
+            pName,Oatom,Tatom = dlg.GetSelection()
+            if Tatom:
+                Phase = Phases[pName]
+                General = Phase['General']
+                cx,ct = General['AtomPtrs'][:2]
+                pId = Phase['pId']
+                SGData = General['SGData']
+                sB = Tatom.find('(')+1
+                symNo = 0
+                if sB:
+                    sF = Tatom.find(')')
+                    symNo = int(Tatom[sB:sF])
+                cellNo = [0,0,0]
+                cB = Tatom.find('[')
+                if cB>0:
+                    cF = Tatom.find(']')+1
+                    cellNo = eval(Tatom[cB:cF])
+                Atoms = Phase['Atoms']
+                aNames = [atom[ct-1] for atom in Atoms]
+                oId = aNames.index(Oatom)
+                tId = aNames.index(Tatom.split(' +')[0])
+                # create an expression object
+                obj = G2obj.ExpressionObj()
+                obj.expression = 'Dist(%s,\n%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
+                obj.distance_dict = {'pId':pId,'SGData':SGData,'symNo':symNo,'cellNo':cellNo}
+                obj.distance_atoms = [oId,tId]
+        else: 
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        if obj:
+            data['SeqPseudoVars'][obj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+
+    def AddNewAnglePseudoVar(event):
+        obj = None
+        dlg = G2exG.AngleDialog(
+            G2frame.dataDisplay,Phases,PSvarDict,
+            header='Enter an Angle here',
+            VarLabel = "New Angle")
+        if dlg.ShowModal() == wx.ID_OK:
+            pName,Oatom,Tatoms = dlg.GetSelection()
+            if Tatoms:
+                Phase = Phases[pName]
+                General = Phase['General']
+                cx,ct = General['AtomPtrs'][:2]
+                pId = Phase['pId']
+                SGData = General['SGData']
+                Atoms = Phase['Atoms']
+                aNames = [atom[ct-1] for atom in Atoms]
+                tIds = []
+                symNos = []
+                cellNos = []
+                oId = aNames.index(Oatom)
+                Tatoms = Tatoms.split(';')
+                for Tatom in Tatoms:
+                    sB = Tatom.find('(')+1
+                    symNo = 0
+                    if sB:
+                        sF = Tatom.find(')')
+                        symNo = int(Tatom[sB:sF])
+                    symNos.append(symNo)
+                    cellNo = [0,0,0]
+                    cB = Tatom.find('[')
+                    if cB>0:
+                        cF = Tatom.find(']')+1
+                        cellNo = eval(Tatom[cB:cF])
+                    cellNos.append(cellNo)
+                    tIds.append(aNames.index(Tatom.split('+')[0]))
+                # create an expression object
+                obj = G2obj.ExpressionObj()
+                obj.expression = 'Angle(%s,%s,\n%s)'%(Tatoms[0],Oatom,Tatoms[1])
+                obj.angle_dict = {'pId':pId,'SGData':SGData,'symNo':symNos,'cellNo':cellNos}
+                obj.angle_atoms = [oId,tIds]
+        else: 
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        if obj:
+            data['SeqPseudoVars'][obj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+            
+    def UpdateParmDict(parmDict):
+        '''generate the atom positions and the direct & reciprocal cell values,
+        because they might be needed to evaluate the pseudovar
+        '''
+        Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
+                         ['A'+str(i) for i in range(6)])
+                     )
+        delList = []
+        phaselist = []
+        for item in parmDict: 
+            if ':' not in item: continue
+            key = item.split(':')
+            if len(key) < 3: continue
+            # remove the dA[xyz] terms, they would only bring confusion
+            if key[0] and key[0] not in phaselist: phaselist.append(key[0])
+            if key[2].startswith('dA'):
+                delList.append(item)
+            # compute and update the corrected reciprocal cell terms using the Dij values
+            elif key[2] in Ddict:
+                akey = key[0]+'::'+Ddict[key[2]]
+                parmDict[akey] += parmDict[item]
+                delList.append(item)
+        for item in delList:
+            del parmDict[item]                
+        for i in phaselist:
+            pId = int(i)
+            # apply cell symmetry
+            A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],parmDict,zeroDict[pId])
+            # convert to direct cell & add the unique terms to the dictionary
+            for i,val in enumerate(G2lat.A2cell(A)):
+                if i in uniqCellIndx[pId]:
+                    lbl = str(pId)+'::'+cellUlbl[i]
+                    parmDict[lbl] = val
+            lbl = str(pId)+'::'+'Vol'
+            parmDict[lbl] = G2lat.calc_V(A)
+        return parmDict
+
+    def EvalPSvarDeriv(calcobj,parmDict,sampleDict,var,ESD):
+        '''Evaluate an expression derivative with respect to a
+        GSAS-II variable name.
+
+        Note this likely could be faster if the loop over calcobjs were done
+        inside after the Dict was created. 
+        '''
+        if not ESD:
+            return 0.
+        step = ESD/10
+        Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
+                         ['A'+str(i) for i in range(6)])
+                     )
+        results = []
+        phaselist = []
+        VparmDict = sampleDict.copy()
+        for incr in step,-step:
+            VparmDict.update(parmDict.copy())           
+            # as saved, the parmDict has updated 'A[xyz]' values, but 'dA[xyz]'
+            # values are not zeroed: fix that!
+            VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
+            VparmDict[var] += incr
+            G2mv.Dict2Map(VparmDict,[]) # apply constraints
+            # generate the atom positions and the direct & reciprocal cell values now, because they might
+            # needed to evaluate the pseudovar
+            for item in VparmDict:
+                if item in sampleDict:
+                    continue 
+                if ':' not in item: continue
+                key = item.split(':')
+                if len(key) < 3: continue
+                # apply any new shifts to atom positions
+                if key[2].startswith('dA'):
+                    VparmDict[''.join(item.split('d'))] += VparmDict[item]
+                    VparmDict[item] = 0.0
+                # compute and update the corrected reciprocal cell terms using the Dij values
+                if key[2] in Ddict:
+                    if key[0] not in phaselist: phaselist.append(key[0])
+                    akey = key[0]+'::'+Ddict[key[2]]
+                    VparmDict[akey] += VparmDict[item]
+            for i in phaselist:
+                pId = int(i)
+                # apply cell symmetry
+                A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],VparmDict,zeroDict[pId])
+                # convert to direct cell & add the unique terms to the dictionary
+                for i,val in enumerate(G2lat.A2cell(A)):
+                    if i in uniqCellIndx[pId]:
+                        lbl = str(pId)+'::'+cellUlbl[i]
+                        VparmDict[lbl] = val
+                lbl = str(pId)+'::'+'Vol'
+                VparmDict[lbl] = G2lat.calc_V(A)
+            # dict should be fully updated, use it & calculate
+            calcobj.SetupCalc(VparmDict)
+            results.append(calcobj.EvalExpression())
+        if None in results:
+            return None
+        return (results[0] - results[1]) / (2.*step)
+        
+    def EnableParFitEqMenus():
+        'Enables or disables the Parametric Fit menu items that require existing defs'
+        if data['SeqParFitEqList']:
+            val = True
+        else:
+            val = False
+        G2frame.dataWindow.SequentialPfit.Enable(G2G.wxID_DELPARFIT,val)
+        G2frame.dataWindow.SequentialPfit.Enable(G2G.wxID_EDITPARFIT,val)
+        G2frame.dataWindow.SequentialPfit.Enable(G2G.wxID_DOPARFIT,val)
+
+    def ParEqEval(Values,calcObjList,varyList):
+        '''Evaluate the parametric expression(s)
+        :param list Values: a list of values for each variable parameter
+        :param list calcObjList: a list of :class:`GSASIIobj.ExpressionCalcObj`
+          expression objects to evaluate
+        :param list varyList: a list of variable names for each value in Values
+        '''
+        result = []
+        for calcobj in calcObjList:
+            calcobj.UpdateVars(varyList,Values)
+            if calcobj.depSig:
+                result.append((calcobj.depVal-calcobj.EvalExpression())/calcobj.depSig)
+            else:
+                result.append(calcobj.depVal-calcobj.EvalExpression())
+        return result
+
+    def DoParEqFit(event,eqObj=None):
+        'Parametric fit minimizer'
+        varyValueDict = {} # dict of variables and their initial values
+        calcObjList = [] # expression objects, ready to go for each data point
+        if eqObj is not None:
+            eqObjList = [eqObj,]
+        else:
+            eqObjList = data['SeqParFitEqList']
+        UseFlags = G2frame.SeqTable.GetColValues(1)
+        for obj in eqObjList:
+            # assemble refined vars for this equation
+            varyValueDict.update({var:val for var,val in obj.GetVariedVarVal()})
+            # lookup dependent var position
+            depVar = obj.GetDepVar()
+            if depVar in colLabels:
+                indx = colLabels.index(depVar)
+            else:
+                raise Exception('Dependent variable '+depVar+' not found')
+            # assemble a list of the independent variables
+            indepVars = obj.GetIndependentVars()
+            # loop over each datapoint
+            for j,row in enumerate(zip(*G2frame.colList)):
+                if not UseFlags[j]: continue
+                # assemble equations to fit
+                calcobj = G2obj.ExpressionCalcObj(obj)
+                # prepare a dict of needed independent vars for this expression
+                indepVarDict = {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
+                calcobj.SetupCalc(indepVarDict)                
+                # values and sigs for current value of dependent var
+                if row[indx] is None: continue
+                calcobj.depVal = row[indx]
+                calcobj.depSig = G2frame.colSigs[indx][j]
+                calcObjList.append(calcobj)
+        # varied parameters
+        varyList = varyValueDict.keys()
+        values = varyValues = [varyValueDict[key] for key in varyList]
+        if not varyList:
+            print ('no variables to refine!')
+            return
+        try:
+            result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
+                args=(calcObjList,varyList))
+            values = result[0]
+            covar = result[1]
+            if covar is None:
+                raise Exception
+            chisq = np.sum(result[2]['fvec']**2)
+            GOF = np.sqrt(chisq/(len(calcObjList)-len(varyList)))
+            esdDict = {}
+            for i,avar in enumerate(varyList):
+                esdDict[avar] = np.sqrt(covar[i,i])
+        except:
+            print('====> Fit failed')
+            return
+        print('==== Fit Results ====')
+        print ('  chisq =  %.2f, GOF = %.2f'%(chisq,GOF))
+        for obj in eqObjList:
+            obj.UpdateVariedVars(varyList,values)
+            ind = '      '
+            print(u'  '+obj.GetDepVar()+u' = '+obj.expression)
+            for var in obj.assgnVars:
+                print(ind+var+u' = '+obj.assgnVars[var])
+            for var in obj.freeVars:
+                avar = "::"+obj.freeVars[var][0]
+                val = obj.freeVars[var][1]
+                if obj.freeVars[var][2]:
+                    print(ind+var+u' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
+                else:
+                    print(ind+var+u' = '+avar + u" =" + G2mth.ValEsd(val,0))
+        # create a plot for each parametric variable
+        for fitnum,obj in enumerate(eqObjList):
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            # lookup dependent var position
+            indx = colLabels.index(obj.GetDepVar())
+            # assemble a list of the independent variables
+            indepVars = obj.GetIndependentVars()            
+            # loop over each datapoint
+            fitvals = []
+            for j,row in enumerate(zip(*G2frame.colList)):
+                calcobj.SetupCalc({var:row[i] for i,var in enumerate(colLabels) if var in indepVars})
+                fitvals.append(calcobj.EvalExpression())
+            G2plt.PlotSelectedSequence(G2frame,[indx],GetColumnInfo,SelectXaxis,fitnum,fitvals)
+
+    def SingleParEqFit(eqObj):
+        DoParEqFit(None,eqObj)
+
+    def DelParFitEq(event):
+        'Ask the user to select function to delete'
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
+        selected = G2G.ItemSelector(
+            txtlst,G2frame,
+            multiple=True,
+            title='Select a parametric equation(s) to remove',
+            header='Delete equation')
+        if selected is None: return
+        data['SeqParFitEqList'] = [obj for i,obj in enumerate(data['SeqParFitEqList']) if i not in selected]
+        EnableParFitEqMenus()
+        if data['SeqParFitEqList']: DoParEqFit(event)
+        
+    def EditParFitEq(event):
+        'Edit an existing parametric equation'
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
+        if len(txtlst) == 1:
+            selected = 0
+        else:
+            selected = G2G.ItemSelector(
+                txtlst,G2frame,
+                multiple=False,
+                title='Select a parametric equation to edit',
+                header='Edit equation')
+        if selected is not None:
+            dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,
+                data['SeqParFitEqList'][selected],depVarDict=VarDict,
+                header="Edit the formula for this minimization function",
+                ExtraButton=['Fit',SingleParEqFit],wildCard=False)
+            newobj = dlg.Show(True)
+            if newobj:
+                data['SeqParFitEqList'][selected] = newobj
+                EnableParFitEqMenus()
+            if data['SeqParFitEqList']: DoParEqFit(event)
+
+    def AddNewParFitEq(event):
+        'Create a new parametric equation to be fit to sequential results'
+
+        # compile the variable names used in previous freevars to avoid accidental name collisions
+        usedvarlist = []
+        for obj in data['SeqParFitEqList']:
+            for var in obj.freeVars:
+                if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
+
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,depVarDict=VarDict,
+            header='Define an equation to minimize in the parametric fit',
+            ExtraButton=['Fit',SingleParEqFit],usedVars=usedvarlist,wildCard=False)
+        obj = dlg.Show(True)
+        dlg.Destroy()
+        if obj:
+            data['SeqParFitEqList'].append(obj)
+            EnableParFitEqMenus()
+            if data['SeqParFitEqList']: DoParEqFit(event)
+                
+    def CopyParFitEq(event):
+        'Copy an existing parametric equation to be fit to sequential results'
+        # compile the variable names used in previous freevars to avoid accidental name collisions
+        usedvarlist = []
+        for obj in data['SeqParFitEqList']:
+            for var in obj.freeVars:
+                if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
+        if len(txtlst) == 1:
+            selected = 0
+        else:
+            selected = G2G.ItemSelector(
+                txtlst,G2frame,
+                multiple=False,
+                title='Select a parametric equation to copy',
+                header='Copy equation')
+        if selected is not None:
+            newEqn = copy.deepcopy(data['SeqParFitEqList'][selected])
+            for var in newEqn.freeVars:
+                newEqn.freeVars[var][0] = G2obj.MakeUniqueLabel(newEqn.freeVars[var][0],usedvarlist)
+            dlg = G2exG.ExpressionDialog(
+                G2frame.dataDisplay,VarDict,newEqn,depVarDict=VarDict,
+                header="Edit the formula for this minimization function",
+                ExtraButton=['Fit',SingleParEqFit],wildCard=False)
+            newobj = dlg.Show(True)
+            if newobj:
+                data['SeqParFitEqList'].append(newobj)
+                EnableParFitEqMenus()
+            if data['SeqParFitEqList']: DoParEqFit(event)
+                                            
+    def GridSetToolTip(row,col):
+        '''Routine to show standard uncertainties for each element in table
+        as a tooltip
+        '''
+        if G2frame.colSigs[col]:
+            if G2frame.colSigs[col][row] == -0.1: return 'frozen'
+            return u'\u03c3 = '+str(G2frame.colSigs[col][row])
+        return ''
+        
+    def GridColLblToolTip(col):
+        '''Define a tooltip for a column. This will be the user-entered value
+        (from data['variableLabels']) or the default name
+        '''
+        if col < 0 or col > len(colLabels):
+            print ('Illegal column #%d'%col)
+            return
+        var = colLabels[col]
+        return variableLabels.get(var,G2obj.fmtVarDescr(var))
+        
+    def SetLabelString(event):
+        '''Define or edit the label for a column in the table, to be used
+        as a tooltip and for plotting
+        '''
+        col = event.GetCol()
+        if col < 0 or col > len(colLabels):
+            return
+        var = colLabels[col]
+        lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
+        head = u'Set a new name for variable {} (column {})'.format(var,col)
+        dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
+                                 head,lbl,size=(400,-1))
+        if dlg.Show():
+            variableLabels[var] = dlg.GetValue()
+            dlg.Destroy()
+            wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
+        else:
+            dlg.Destroy()
+
+    def DoSequentialExport(event):
+        '''Event handler for all Sequential Export menu items
+        '''
+        vals = G2frame.dataWindow.SeqExportLookup.get(event.GetId())
+        if vals is None:
+            print('Error: Id not found. This should not happen!')
+            return
+        G2IO.ExportSequential(G2frame,data,*vals)
+
+    def onSelectSeqVars(event):
+        '''Select which variables will be shown in table'''
+        hides = [saveColLabels[1:].index(item) for item in G2frame.SeqTblHideList if
+                     item in saveColLabels[1:]]
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to hide',
+                'Hide columns',saveColLabels[1:])
+        dlg.SetSelections(hides)
+        if dlg.ShowModal() == wx.ID_OK:
+            G2frame.SeqTblHideList = [saveColLabels[1:][sel] for sel in dlg.GetSelections()]
+            dlg.Destroy()
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        else:
+            dlg.Destroy()
+            
+    def OnCellChange(event):
+        r = event.GetRow()
+        val = G2frame.SeqTable.GetValue(r,0)
+#        print (r,val)
+        G2frame.SeqTable.SetValue(r,0, val)
+        
+    def OnSelectUpdate(event):
+        '''Update all phase parameters from a selected column in the Sequential Table. 
+        If no histogram is selected (or more than one), ask the user to make a selection.
+
+        Loosely based on :func:`GSASIIstrIO.SetPhaseData`
+        '''
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if len(rows) == 1:
+            sel = rows[0]
+        else:
+            dlg = G2G.G2SingleChoiceDialog(G2frame, 'Select a histogram to\nupdate phase from',
+                                           'Select row',histNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        parmDict = data[histNames[sel]]['parmDict']
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        for phase in Phases:
+            print('Updating {} from Seq. Ref. row {}'.format(phase,histNames[sel]))
+            Phase = Phases[phase]
+            General = Phase['General']
+            SGData = General['SGData']
+            Atoms = Phase['Atoms']
+            cell = General['Cell']
+            pId = Phase['pId']
+            pfx = str(pId)+'::'
+            # there should not be any changes to the cell because those terms are not refined
+            A,sigA = G2stIO.cellFill(pfx,SGData,parmDict,{})
+            cell[1:7] = G2lat.A2cell(A)
+            cell[7] = G2lat.calc_V(A)
+            textureData = General['SH Texture']    
+            if textureData['Order']:
+#                SHtextureSig = {}
+                for name in ['omega','chi','phi']:
+                    aname = pfx+'SH '+name
+                    textureData['Sample '+name][1] = parmDict[aname]
+                for name in textureData['SH Coeff'][1]:
+                    aname = pfx+name
+                    textureData['SH Coeff'][1][name] = parmDict[aname]
+            ik = 6  #for Pawley stuff below
+            if General.get('Modulated',False):
+                ik = 7
+            # how are these updated?
+            #General['SuperVec']
+            #RBModels = Phase['RBModels']
+            if Phase['General'].get('doPawley'):
+                pawleyRef = Phase['Pawley ref']
+                for i,refl in enumerate(pawleyRef):
+                    key = pfx+'PWLref:'+str(i)
+                    refl[ik] = parmDict[key]
+#                    if key in sigDict:  #TODO: error here sigDict not defined. What was intended
+#                        refl[ik+1] = sigDict[key]
+#                    else:
+#                        refl[ik+1] = 0
+                continue
+            General['Mass'] = 0.
+            cx,ct,cs,cia = General['AtomPtrs']
+            for i,at in enumerate(Atoms):
+                names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
+                    cia+1:pfx+'AUiso:'+str(i),cia+2:pfx+'AU11:'+str(i),cia+3:pfx+'AU22:'+str(i),cia+4:pfx+'AU33:'+str(i),
+                    cia+5:pfx+'AU12:'+str(i),cia+6:pfx+'AU13:'+str(i),cia+7:pfx+'AU23:'+str(i),
+                    cx+4:pfx+'AMx:'+str(i),cx+5:pfx+'AMy:'+str(i),cx+6:pfx+'AMz:'+str(i)}
+                for ind in range(cx,cx+4):
+                    at[ind] = parmDict[names[ind]]
+                if at[cia] == 'I':
+                    at[cia+1] = parmDict[names[cia+1]]
+                else:
+                    for ind in range(cia+2,cia+8):
+                        at[ind] = parmDict[names[ind]]
+                if General['Type'] == 'magnetic':
+                    for ind in range(cx+4,cx+7):
+                        at[ind] = parmDict[names[ind]]
+                ind = General['AtomTypes'].index(at[ct])
+                General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
+                if General.get('Modulated',False):
+                    AtomSS = at[-1]['SS1']
+                    waveType = AtomSS['waveType']
+                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                        Waves = AtomSS[Stype]
+                        for iw,wave in enumerate(Waves):
+                            stiw = str(i)+':'+str(iw)
+                            if Stype == 'Spos':
+                                if waveType in ['ZigZag','Block',] and not iw:
+                                    names = ['Tmin:'+stiw,'Tmax:'+stiw,'Xmax:'+stiw,'Ymax:'+stiw,'Zmax:'+stiw]
+                                else:
+                                    names = ['Xsin:'+stiw,'Ysin:'+stiw,'Zsin:'+stiw,
+                                        'Xcos:'+stiw,'Ycos:'+stiw,'Zcos:'+stiw]
+                            elif Stype == 'Sadp':
+                                names = ['U11sin:'+stiw,'U22sin:'+stiw,'U33sin:'+stiw,
+                                    'U12sin:'+stiw,'U13sin:'+stiw,'U23sin:'+stiw,
+                                    'U11cos:'+stiw,'U22cos:'+stiw,'U33cos:'+stiw,
+                                    'U12cos:'+stiw,'U13cos:'+stiw,'U23cos:'+stiw]
+                            elif Stype == 'Sfrac':
+                                if 'Crenel' in waveType and not iw:
+                                    names = ['Fzero:'+stiw,'Fwid:'+stiw]
+                                else:
+                                    names = ['Fsin:'+stiw,'Fcos:'+stiw]
+                            elif Stype == 'Smag':
+                                names = ['MXsin:'+stiw,'MYsin:'+stiw,'MZsin:'+stiw,
+                                    'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
+                            for iname,name in enumerate(names):
+                                AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
+                                
+    def OnEditSelectPhaseVars(event): 
+        '''Select phase parameters in a selected histogram in a sequential
+        fit. This allows the user to set their value(s)
+        '''
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if len(rows) >= 1:
+            selRows = rows
+        else:
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select histogram(s) to update\nphase parameters',
+                                           'Select row',histNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                selRows = dlg.GetSelections()
+            else:
+                selRows = []
+            dlg.Destroy()
+            if len(selRows) == 0: return
+        parmDict = data[histNames[selRows[0]]]['parmDict']
+        # narrow down to items w/o a histogram & having float values
+        phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
+        phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
+        if len(selRows) == 1:
+            lbl = "\nin {}      ".format(histNames[selRows[0]])
+        else:
+            lbl = "\nin {} histograms".format(len(selRows))
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl, 
+                                      'Choose items to edit', phaseKeys)
+        if dlg.ShowModal() == wx.ID_OK:
+            select = dlg.GetSelections()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        if len(select) == 0: return
+        l = [phaseKeys[i] for i in select]
+        d = {i:parmDict[i] for i in l}
+        val = G2G.CallScrolledMultiEditor(G2frame,len(l)*[d],l,l,CopyButton=True)
+        if val:
+            for sel in selRows:
+                parmDict = data[histNames[sel]]['parmDict']
+                for key in d: # update values shown in table
+                    if parmDict[key] == d[key]: continue
+                    if key in data[histNames[sel]]['varyList']:
+                        i = data[histNames[sel]]['varyList'].index(key)
+                        data[histNames[sel]]['variables'][i] = d[key]
+                        data[histNames[sel]]['sig'][i] = 0
+                    if key in data[histNames[sel]].get('depParmDict',{}):
+                        data[histNames[sel]]['depParmDict'][key] = (d[key],0)
+                parmDict.update(d) # update values used in next fit
+        wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
+        return
+            
+##### UpdateSeqResults: start processing sequential results here ########## 
+    # lookup table for unique cell parameters by symmetry
+    cellGUIlist = [
+        [['m3','m3m'],(0,)],
+        [['3R','3mR'],(0,3)],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
+        [['mmm'],(0,1,2)],
+        [['2/m'+'a'],(0,1,2,3)],
+        [['2/m'+'b'],(0,1,2,4)],
+        [['2/m'+'c'],(0,1,2,5)],
+        [['-1'],(0,1,2,3,4,5)],
+        ]
+    # cell labels
+    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3') # unicode a,b,c,alpha,beta,gamma
+
+    if not data:
+        print ('No sequential refinement results')
+        return
+    variableLabels = data.get('variableLabels',{})
+    data['variableLabels'] = variableLabels
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
+    # create a place to store Pseudo Vars & Parametric Fit functions, if not present
+    if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
+    if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
+    histNames = data['histNames']
+    foundNames = [name for name in histNames if name in data]
+    histNames = foundNames
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.GetStatusBar().SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance",1)
+    sampleParms = GetSampleParms()
+
+    # make dict of varied atom coords keyed by absolute position
+    newAtomDict = data[histNames[0]].get('newAtomDict',{}) # dict with atom positions; relative & absolute
+    # Possible error: the next might need to be data[histNames[0]]['varyList']
+    # error will arise if there constraints on coordinates?
+    atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in data['varyList']}
+    
+    # make dict of varied cell parameters equivalents
+    ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
+    Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
+    # N.B. These Dij vars are missing a histogram #
+    newCellDict = {}
+    for name in histNames:
+        if name in data and 'newCellDict' in data[name]:
+            newCellDict.update(data[name]['newCellDict'])
+    cellAlist = []
+    for item in newCellDict:
+        cellAlist.append(newCellDict[item][0])
+        if item in data.get('varyList',[]):
+            ESDlookup[newCellDict[item][0]] = item
+            Dlookup[item] = newCellDict[item][0]
+    # add coordinate equivalents to lookup table
+    for parm in atomLookup:
+        Dlookup[atomLookup[parm]] = parm
+        ESDlookup[parm] = atomLookup[parm]
+
+    # get unit cell & symmetry for all phases & initial stuff for later use
+    RecpCellTerms = {}
+    SGdata = {}
+    uniqCellIndx = {}
+    initialCell = {}
+    RcellLbls = {}
+    zeroDict = {}
+    for phase in Phases:
+        phasedict = Phases[phase]
+        pId = phasedict['pId']
+        pfx = str(pId)+'::' # prefix for A values from phase
+        RcellLbls[pId] = [pfx+'A'+str(i) for i in range(6)]
+        RecpCellTerms[pId] = G2lat.cell2A(phasedict['General']['Cell'][1:7])
+        zeroDict[pId] = dict(zip(RcellLbls[pId],6*[0.,]))
+        SGdata[pId] = phasedict['General']['SGData']
+        laue = SGdata[pId]['SGLaue']
+        if laue == '2/m':
+            laue += SGdata[pId]['SGUniq']
+        for symlist,celllist in cellGUIlist:
+            if laue in symlist:
+                uniqCellIndx[pId] = celllist
+                break
+        else: # should not happen
+            uniqCellIndx[pId] = list(range(6))
+        for i in uniqCellIndx[pId]:
+            initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[pId][i]
+
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SequentialMenu)
+    G2frame.Bind(wx.EVT_MENU, OnSelectUse, id=G2G.wxID_SELECTUSE)
+    G2frame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=G2G.wxID_RENAMESEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=G2G.wxID_SAVESEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=G2G.wxID_SAVESEQSELCSV)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_SAVESEQCSV)
+    G2frame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=G2G.wxID_PLOTSEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnAveSelSeq, id=G2G.wxID_AVESEQSEL)
+    #G2frame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=G2G.wxID_ORGSEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnSelectUpdate, id=G2G.wxID_UPDATESEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnEditSelectPhaseVars, id=G2G.wxID_EDITSEQSELPHASE)
+    G2frame.Bind(wx.EVT_MENU, onSelectSeqVars, id=G2G.wxID_ORGSEQINC)
+    G2frame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=G2G.wxID_ADDSEQVAR)
+    G2frame.Bind(wx.EVT_MENU, AddNewDistPseudoVar, id=G2G.wxID_ADDSEQDIST)
+    G2frame.Bind(wx.EVT_MENU, AddNewAnglePseudoVar, id=G2G.wxID_ADDSEQANGLE)
+    G2frame.Bind(wx.EVT_MENU, DelPseudoVar, id=G2G.wxID_DELSEQVAR)
+    G2frame.Bind(wx.EVT_MENU, EditPseudoVar, id=G2G.wxID_EDITSEQVAR)
+    G2frame.Bind(wx.EVT_MENU, AddNewParFitEq, id=G2G.wxID_ADDPARFIT)
+    G2frame.Bind(wx.EVT_MENU, CopyParFitEq, id=G2G.wxID_COPYPARFIT)
+    G2frame.Bind(wx.EVT_MENU, DelParFitEq, id=G2G.wxID_DELPARFIT)
+    G2frame.Bind(wx.EVT_MENU, EditParFitEq, id=G2G.wxID_EDITPARFIT)
+    G2frame.Bind(wx.EVT_MENU, DoParEqFit, id=G2G.wxID_DOPARFIT)
+
+    for id in G2frame.dataWindow.SeqExportLookup:        
+        G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
+
+    EnablePseudoVarMenus()
+    EnableParFitEqMenus()
+
+    # scan for locations where the variables change
+    VaryListChanges = [] # histograms where there is a change
+    combinedVaryList = []
+    firstValueDict = {}
+    vallookup = {}
+    posdict = {}
+    prevVaryList = []
+    foundNames = []
+    missing = 0
+    for i,name in enumerate(histNames):
+        if name not in data:
+            if missing < 5:
+                print(" Warning: "+name+" not found")
+            elif missing == 5:
+                print (' Warning: more are missing')
+            missing += 1
+            continue
+        foundNames.append(name)
+        maxPWL = 5
+        for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
+            svar = striphist(var,'*') # wild-carded
+            if 'PWL' in svar:
+                if int(svar.split(':')[-1]) > maxPWL:
+                    continue
+            if svar not in combinedVaryList:
+                # add variables to list as they appear
+                combinedVaryList.append(svar)
+                firstValueDict[svar] = (val,sig)
+        if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
+            prevVaryList = data[name]['varyList']
+            vallookup[name] = dict(zip(data[name]['varyList'],data[name]['variables']))
+            posdict[name] = {}
+            for var in data[name]['varyList']:
+                svar = striphist(var,'*')
+                if 'PWL' in svar:
+                    if int(svar.split(':')[-1]) > maxPWL:
+                        continue
+                posdict[name][combinedVaryList.index(svar)] = svar
+            VaryListChanges.append(name)
+    if missing:
+        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
+    #if len(VaryListChanges) > 1:
+    #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
+    #else:
+    #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,False)
+    ######  build up the data table by columns -----------------------------------------------
+    histNames = foundNames
+    nRows = len(histNames)
+    G2frame.colList = [list(range(nRows)),nRows*[True]]
+    G2frame.colSigs = [None,None,]
+    colLabels = ['No.','Use',]
+    Types = [wg.GRID_VALUE_LONG,wg.GRID_VALUE_BOOL,]
+    # start with Rwp values
+    if 'IMG ' not in histNames[0][:4]:
+        G2frame.colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
+        G2frame.colSigs += [None]
+        colLabels += ['Rwp']
+        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    # add % change in Chi^2 in last cycle
+    if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
+        G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
+        G2frame.colSigs += [None]
+        colLabels += [u'\u0394\u03C7\u00B2 (%)']
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+    deltaChiCol = len(colLabels)-1
+    # frozen variables?
+    if 'parmFrozen' in Controls:
+        f = [len(Controls['parmFrozen'].get(h,[])) for h in histNames]
+        if any(f):
+            G2frame.colList += [f]
+            G2frame.colSigs += [None]
+            colLabels += ['frozen']
+            Types += [wg.GRID_VALUE_LONG]
+    # add changing sample parameters to table
+    for key in sampleParms:
+        G2frame.colList += [sampleParms[key]]
+        G2frame.colSigs += [None]
+        colLabels += [key]
+        Types += [wg.GRID_VALUE_FLOAT,]
+    sampleDict = {}
+    for i,name in enumerate(histNames):
+        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
+    # add unique cell parameters  
+    if Controls.get('ShowCell',False) and len(newCellDict):
+        phaseLookup = {Phases[phase]['pId']:phase for phase in Phases}
+        for pId in sorted(RecpCellTerms):
+            pfx = str(pId)+'::' # prefix for A values from phase
+            cells = []
+            cellESDs = []
+            colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
+            colLabels += [pfx+'Vol']
+            Types += (len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT+':10,5',]
+            Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+            Albls = [pfx+'A'+str(i) for i in range(6)]
+            for name in histNames:
+                if name not in Histograms: continue
+                hId = Histograms[name]['hId']
+                phfx = '%d:%d:'%(pId,hId)
+                esdLookUp = {}
+                dLookup = {}
+                for item in data[name]['newCellDict']:
+                    if phfx+item.split('::')[1] in data[name]['varyList']:
+                        esdLookUp[newCellDict[item][0]] = item
+                        dLookup[item] = newCellDict[item][0]
+                covData = {'varyList': [dLookup.get(striphist(v),v) for v in data[name]['varyList']],
+                    'covMatrix': data[name]['covMatrix']}
+                A = RecpCellTerms[pId][:] # make copy of starting A values
+                # update with refined values
+                for i,j in enumerate(('D11','D22','D33','D12','D13','D23')):
+                    var = str(pId)+'::A'+str(i)
+                    Dvar = str(pId)+':'+str(hId)+':'+j
+                    # apply Dij value if non-zero
+                    if Dvar in data[name]['parmDict']:
+                        parmDict = data[name]['parmDict']
+                        if parmDict[Dvar] != 0.0:
+                            A[i] += parmDict[Dvar]
+                    # override with fit result if is Dij varied
+                    if var in cellAlist:
+                        try:
+                            A[i] = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
+                        except KeyError:
+                            pass
+                # apply symmetry
+                cellDict = dict(zip(Albls,A))
+                try:    # convert to direct cell
+                    A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
+                    c = G2lat.A2cell(A)
+                    vol = G2lat.calc_V(A)
+                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                except:
+                    c = 6*[None]
+                    cE = 6*[None]
+                    vol = None
+                # add only unique values to table
+                if name in Phases[phaseLookup[pId]]['Histograms']:
+                    cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
+                    cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
+                else:
+                    cells += [[None for i in uniqCellIndx[pId]]+[None]]
+                    cellESDs += [[None for i in uniqCellIndx[pId]]+[None]]
+            G2frame.colList += zip(*cells)
+            G2frame.colSigs += zip(*cellESDs)
+    # sort out the variables in their selected order
+    varcols = 0
+    for d in posdict.values():
+        varcols = max(varcols,max(d.keys())+1)
+    # get labels for each column
+    for i in range(varcols):
+        lbl = ''
+        for h in VaryListChanges:
+            if posdict[h].get(i):
+                if posdict[h].get(i) in lbl: continue
+                if lbl != "": lbl += '/'
+                lbl += posdict[h].get(i)
+        colLabels.append(lbl)
+    Types += varcols*[wg.GRID_VALUE_FLOAT,]
+    vals = []
+    esds = []
+    varsellist = None        # will be a list of variable names in the order they are selected to appear
+    # tabulate values for each hist, leaving None for blank columns
+    for name in histNames:
+        if name in posdict:
+            varsellist = [posdict[name].get(i) for i in range(varcols)]
+            # translate variable names to how they will be used in the headings
+            vs = [striphist(v,'*') for v in data[name]['varyList']]
+            # determine the index for each column (or None) in the data[]['variables'] and ['sig'] lists
+            sellist = [vs.index(v) if v is not None else None for v in varsellist]
+            #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
+        if not varsellist: raise Exception()
+        vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
+        esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
+    G2frame.colList += zip(*vals)
+    G2frame.colSigs += zip(*esds)
+    # tabulate constrained variables, removing histogram numbers if needed
+    # from parameter label
+    depValDict = {}
+    depSigDict = {}
+    for name in histNames:
+        for var in data[name].get('depParmDict',{}):
+            val,sig = data[name]['depParmDict'][var]
+            svar = striphist(var,'*')
+            if svar not in depValDict:
+               depValDict[svar] = [val]
+               depSigDict[svar] = [sig]
+            else:
+               depValDict[svar].append(val)
+               depSigDict[svar].append(sig)
+    
+    # add the dependent constrained variables to the table
+    for var in sorted(depValDict):
+        if len(depValDict[var]) != len(histNames): continue
+        colLabels.append(var)
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+        G2frame.colSigs += [depSigDict[var]]
+        G2frame.colList += [depValDict[var]]
+
+    # add refined atom parameters to table
+    colLabels += sorted(atomLookup.keys())
+    for parm in sorted(atomLookup):
+        G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+        if atomLookup[parm] in data[histNames[0]]['varyList']:
+            col = data[histNames[0]]['varyList'].index(atomLookup[parm])
+            G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
+        else:
+            G2frame.colSigs += [None]
+            
+    # compute and add weight fractions to table if varied
+    for phase in Phases:
+        var = str(Phases[phase]['pId'])+':*:Scale'
+        if var not in combinedVaryList+list(depValDict.keys()): continue
+        wtFrList = []
+        sigwtFrList = []
+        for i,name in enumerate(histNames):
+            if name not in Phases[phase]['Histograms']:
+                wtFrList.append(None)
+                sigwtFrList.append(0.0)
+                continue
+            elif not Phases[phase]['Histograms'][name]['Use']:
+                wtFrList.append(None)
+                sigwtFrList.append(0.0)
+                continue
+            wtFrSum = 0.
+            for phase1 in Phases:
+                if name not in Phases[phase1]['Histograms']: continue
+                if not Phases[phase1]['Histograms'][name]['Use']: continue
+                wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
+            var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
+            wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum
+            wtFrList.append(wtFr)
+            if var in data[name]['varyList']:
+                sig = data[name]['sig'][data[name]['varyList'].index(var)]*wtFr/Phases[phase]['Histograms'][name]['Scale'][0]
+            else:
+                sig = 0.0
+            sigwtFrList.append(sig)
+        colLabels.append(str(Phases[phase]['pId'])+':*:WgtFrac')
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+        G2frame.colList += [wtFrList]
+        G2frame.colSigs += [sigwtFrList]
+                
+    # evaluate Pseudovars, their ESDs and add them to grid
+    for expr in data['SeqPseudoVars']:
+        obj = data['SeqPseudoVars'][expr]
+        calcobj = G2obj.ExpressionCalcObj(obj)
+        valList = []
+        esdList = []
+        for seqnum,name in enumerate(histNames):
+            sigs = data[name]['sig']
+            G2mv.InitVars()
+            parmDict = data[name].get('parmDict')
+            constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
+            groups,parmlist,constrDict,fixedList,ihst = constraintInfo
+            varyList = data[name]['varyList']
+            parmDict = data[name]['parmDict']
+            msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
+            if msg:
+                print('Unable to interpret multiplier(s) for',name,':',msg)
+                continue
+            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            if 'Dist' in expr:
+                derivs = G2mth.CalcDistDeriv(obj.distance_dict,obj.distance_atoms, parmDict)
+                pId = obj.distance_dict['pId']
+                aId,bId = obj.distance_atoms
+                varyNames = ['%d::dA%s:%d'%(pId,ip,aId) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId) for ip in ['x','y','z']]
+                VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
+                esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
+#                GSASIIpath.IPyBreak()
+            elif 'Angle' in expr:
+                derivs = G2mth.CalcAngleDeriv(obj.angle_dict,obj.angle_atoms, parmDict)
+                pId = obj.angle_dict['pId']
+                aId,bId = obj.angle_atoms
+                varyNames = ['%d::dA%s:%d'%(pId,ip,aId) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId[0]) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId[1]) for ip in ['x','y','z']]
+                VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
+                esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
+            else:
+                derivs = np.array(
+                    [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
+                     for var,ESD in zip(varyList,sigs)])
+                if None in list(derivs):
+                    esdList.append(None)
+                else:
+                    esdList.append(np.sqrt(
+                        np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+            PSvarDict = parmDict.copy()
+            PSvarDict.update(sampleDict[name])
+            UpdateParmDict(PSvarDict)
+            calcobj.UpdateDict(PSvarDict)
+            valList.append(calcobj.EvalExpression())
+#            if calcobj.su is not None: esdList[-1] = calcobj.su
+        if not esdList:
+            esdList = None
+        G2frame.colList += [valList]
+        G2frame.colSigs += [esdList]
+        colLabels += [expr]
+        Types += [wg.GRID_VALUE_FLOAT+':10,5']
+    #---- table build done -------------------------------------------------------------
+
+    # Make dict needed for creating & editing pseudovars (PSvarDict).
+    
+    name = histNames[0]
+    parmDict = data[name].get('parmDict',{})
+    PSvarDict = parmDict.copy()
+    PSvarDict.update(sampleParms)
+    UpdateParmDict(PSvarDict)
+    # Also dicts of variables 
+    # for Parametric fitting from the data table
+    parmDict = dict(zip(colLabels,list(zip(*G2frame.colList))[0])) # scratch dict w/all values in table
+    parmDict.update({var:val for var,val in newCellDict.values()}) #  add varied reciprocal cell terms
+    del parmDict['Use']
+    name = histNames[0]
+
+    # remove selected items from table
+    saveColLabels = colLabels[:]
+    if G2frame.SeqTblHideList is None:      #set default hides
+        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item]
+        G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
+        G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
+    #******************************************************************************
+    # create a set of values for example evaluation of pseudovars and 
+    # this does not work for refinements that have differing numbers of variables.
+    VarDict = {}
+    for i,var in enumerate(colLabels):
+        if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue
+        if G2frame.colList[i][0] is None:
+            val,sig = firstValueDict.get(var,[None,None])
+        elif G2frame.colSigs[i]:
+            val,sig = G2frame.colList[i][0],G2frame.colSigs[i][0]
+        else:
+            val,sig = G2frame.colList[i][0],None
+        if striphist(var) not in Dlookup:
+            VarDict[var] = val
+    # add recip cell coeff. values
+    VarDict.update({var:val for var,val in newCellDict.values()})
+
+    # remove items to be hidden from table
+    for l in reversed(range(len(colLabels))):
+        if colLabels[l] in G2frame.SeqTblHideList:
+            del colLabels[l]
+            del G2frame.colList[l]
+            del G2frame.colSigs[l]
+
+    # make a copy of the column labels substituting alternate labels when defined
+    displayLabels = colLabels[:]
+    for i,l in enumerate(colLabels):
+        if l in variableLabels:
+            displayLabels[i] = variableLabels[l]
+            
+    G2frame.dataWindow.ClearData()
+    G2frame.dataWindow.currentGrids = []
+    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
+    G2frame.dataDisplay.SetScrollRate(10,10)
+    G2frame.dataWindow.GetSizer().Add(G2frame.dataDisplay,1,wx.ALL|wx.EXPAND)
+    if histNames[0].startswith('PWDR'):
+        #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
+        rowLabels = [l[5:] for i,l in enumerate(histNames)]
+    else:
+        rowLabels = histNames
+    G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
+        colLabels=displayLabels,rowLabels=rowLabels,types=Types)
+    G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
+    # make all Use editable all others ReadOnly
+    for c in range(len(colLabels)):
+        for r in range(nRows):
+            if c == 1:
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+            else:
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+    if 'phoenix' in wx.version():
+        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+    else:
+        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+#    G2frame.dataDisplay.Bind(wx.EVT_KEY_UP,OnKeyUp)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
+#    G2frame.dataDisplay.Bind(wg.EVT_GRID_SELECT_CELL,PlotSSelect)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
+    G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(False)
+    # highlight unconverged shifts 
+    if histNames[0][:4] not in ['SASD','IMG ','REFD',]:
+        for row,name in enumerate(histNames):
+            deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
+            try:
+                if deltaChi > 10.:
+                    G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,0,0))
+                elif deltaChi > 1.0:
+                    G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
+            except:
+                pass
+    G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip,GridColLblToolTip)
+    #G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
+    #G2frame.dataDisplay.Refresh() # shows colored text on mac
+    G2frame.dataWindow.SetDataSize()

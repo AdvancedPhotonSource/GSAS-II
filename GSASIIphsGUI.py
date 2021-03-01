@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
-########### SVN repository information ###################
+#========== SVN repository information ###################
 # $Date$
 # $Author$
 # $Revision$
 # $URL$
 # $Id$
-########### SVN repository information ###################
+#========== SVN repository information ###################
 '''
 *GSASIIphsGUI: Phase GUI*
 -------------------------
@@ -197,7 +197,7 @@ class SymOpDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
-################################################################################
+#==============================================================================
 class SphereEnclosure(wx.Dialog):
     ''' Add atoms within sphere of enclosure to drawing
     
@@ -299,7 +299,7 @@ class SphereEnclosure(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
-################################################################################
+#==============================================================================
 class TransformDialog(wx.Dialog):
     ''' Phase transformation X' = M*(X-U)+V
     
@@ -612,7 +612,7 @@ class TransformDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
-################################################################################
+#==============================================================================
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
@@ -730,7 +730,7 @@ class UseMagAtomDialog(wx.Dialog):
         self.EndModal(wx.ID_DELETE)
             
                 
-################################################################################
+#==============================================================================
 class RotationDialog(wx.Dialog):
     ''' Get Rotate & translate matrix & vector - currently not used
     needs rethinking - possible use to rotate a group of atoms about some
@@ -845,7 +845,7 @@ class RotationDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)    
         
-################################################################################
+#==============================================================================
 class DIFFaXcontrols(wx.Dialog):
     ''' Solicit items needed to prepare DIFFaX control.dif file
     '''
@@ -990,7 +990,7 @@ class DIFFaXcontrols(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
-################################################################################
+#==============================================================================
 class AddHatomDialog(wx.Dialog):
     '''H atom addition dialog. After :meth:`ShowModal` returns, the results 
     are found in dict :attr:`self.data`, which is accessed using :meth:`GetData`.
@@ -1101,9 +1101,7 @@ class AddHatomDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
-################################################################################
-#### Phase editing routines
-################################################################################
+#### Phase editing routines ################################################################################
 def DrawAtomsReplaceByID(data,loc,atom,ID):
     '''Replace all atoms in drawing array with an ID matching the specified value'''
     atomData = data['Drawing']['Atoms']
@@ -1166,7 +1164,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
     atomInfo[cs] = list(generalData['Color'][atNum])
     return atomInfo
     
-def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False):
+def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False,ask=True):
     '''get selected atoms from table or ask user if none are selected
     
         :param list AtmTbl: atom or draw atom table
@@ -1182,9 +1180,9 @@ def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False):
     indx += [row for row,col in AtmTbl.GetSelectedCells()]
     for top,bottom in zip([r for r,c in AtmTbl.GetSelectionBlockTopLeft()],
                           [r for r,c in AtmTbl.GetSelectionBlockBottomRight()]):
-            indx += list(range(top,bottom+1))
+        indx += list(range(top,bottom+1))
     indx = list(set(indx))
-    if indx: return indx
+    if indx or not ask: return indx
     choices = []
     for i in range(AtmTbl.GetNumberRows()):
         val = AtmTbl.GetCellValue(i,cn)
@@ -1608,10 +1606,7 @@ def UpdatePhaseData(G2frame,Item,data):
         except ValueError as msg:
             wx.MessageBox(msg,caption='Element symbol error')
 
-################################################################################
-##### General phase routines
-################################################################################
-
+##### General phase routines ################################################################################
     def UpdateGeneral(Scroll=0,SkipDraw=False):
         '''Draw the controls for the General phase data subpage
         '''
@@ -3083,10 +3078,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
         
-################################################################################
-#####  Atom routines
-################################################################################
-
+#####  Atom routines ################################################################################
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
         '''
@@ -3401,6 +3393,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
+            G2plt.PlotStructure(G2frame,data)
                 
         def ChangeSelection(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -3579,6 +3572,18 @@ def UpdatePhaseData(G2frame,Item,data):
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
+        
+        lblList = ('Set refine flags','Modify selected parameters',
+                       'Insert new before selected','Transform selected',
+                       'Set selected xyz to view point','Select all',
+                       'Select from list','Set view point from selected',
+                       'Delete')
+        callList = (AtomRefine,AtomModify,OnAtomInsert,AtomTransform,
+                        OnAtomMove,OnSetAll,OnSetbyList,SetAtomsViewPoint,
+                        AtomDelete)
+        onRightClick = Atoms.setupPopup(lblList,callList)
+        Atoms.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK, onRightClick)
+        Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, onRightClick)
         Atoms.SetMargins(0,0)
         
         Paint()
@@ -3836,6 +3841,20 @@ def UpdatePhaseData(G2frame,Item,data):
         cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
         indx = getAtomSelections(Atoms)
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        delList = ''
+        for i in indx:
+            if delList: delList += ', '
+            delList += data['Atoms'][i][0]
+        dlg = wx.MessageDialog(G2frame,
+            'Do you want to delete atom(s): {}?'.format(delList),
+                    'Confirm delete',
+                    wx.YES|wx.NO)
+        try:
+            dlg.CenterOnParent()
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result != wx.ID_YES: return
         HydIds = data['General']['HydIds']
         ci = colLabels.index('I/A')
         IDs = []
@@ -4178,10 +4197,36 @@ def UpdatePhaseData(G2frame,Item,data):
         G2G.G2MessageBox(G2frame,msg,'Density')
         
     def OnSetAll(event):
-        'set refinement flags for all atoms in table'
+        'set all atoms in table as selected'
         for row in range(Atoms.GetNumberRows()):
             Atoms.SelectRow(row,True)
-    
+        G2plt.PlotStructure(G2frame,data)
+
+    def OnSetbyList(event):
+        'select atoms using a filtered listbox'
+        choices = [atm[0] for atm in data['Atoms']]
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
+                    'Select atoms','Choose atoms to select',choices)
+        indx = []
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelections()
+        dlg.Destroy()
+        if len(indx) == 0: return
+        Atoms.ClearSelection()        
+        for row in indx:
+            Atoms.SelectRow(row,True)
+        G2plt.PlotStructure(G2frame,data)
+
+    def SetAtomsViewPoint(event):
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
+        indx = getAtomSelections(Atoms,ct-1)
+        if not indx: return
+        pos = np.zeros(3)
+        for i in indx:
+            pos += data['Atoms'][i][cx:cx+3]
+        data['Drawing']['viewPoint'] = [list(pos/len(indx)),[indx[0],0]]
+        G2plt.PlotStructure(G2frame,data)
+                        
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
         fp = open(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
@@ -4369,10 +4414,7 @@ def UpdatePhaseData(G2frame,Item,data):
         OnReloadDrawAtoms(event)            
         wx.CallAfter(FillAtomsGrid,Atoms)
         
-################################################################################
-#### Dysnomia (MEM) Data page
-################################################################################
-        
+#### Dysnomia (MEM) Data page ##############################################################################         
     def UpdateDysnomia():
         ''' Present the controls for running Dysnomia 
         '''
@@ -4564,10 +4606,7 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',
                 style=wx.ICON_ERROR)
 
-################################################################################
-#### RMC Data page
-################################################################################
-
+#### RMC Data page ################################################################################
     def UpdateRMC():
         ''' Present the controls for running fullrmc or RMCProfile
         '''
@@ -6323,10 +6362,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     OutFile.close()
         
             
-################################################################################
-#### Layer Data page
-################################################################################
-        
+### Layer Data page ################################################################################
     def UpdateLayerData(Scroll=0):
         '''Present the contents of the Phase/Layers tab for stacking fault simulation
         '''
@@ -7152,10 +7188,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         wx.MessageBox('Sequential simulation finished',caption='Stacking fault simulation',style=wx.ICON_EXCLAMATION)
         wx.CallAfter(UpdateLayerData)
         
-################################################################################
-#### Wave Data page
-################################################################################
-
+#### Wave Data page ################################################################################
     def UpdateWavesData(Scroll=0):
         
         generalData = data['General']
@@ -7418,9 +7451,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             dlg.Destroy()
         UpdateWavesData()
 
-################################################################################
-#### Structure drawing GUI stuff                
-################################################################################
+#### Structure drawing GUI stuff ################################################################################
     def SetupDrawingData():
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -7581,9 +7612,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         RBData['RBIds']['Residue'].append(rbId)
         G2frame.GetStatusBar().SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies',1)
 
-################################################################################
-##### Draw Atom routines
-################################################################################
+##### Draw Atom routines ################################################################################
     def UpdateDrawAtoms(atomStyle=''):
         def RefreshDrawAtomGrid(event):
             def SetChoice(name,c,n=0):
@@ -7781,6 +7810,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
+
+        lblList = ('Delete','Set atom style','Set atom label',
+                           'Set atom color','Set view point','Generate copy',
+                           'Generate surrounding sphere','Transform atoms',
+                           'Generate bonded','Select from list')
+        callList = (DrawAtomsDelete,DrawAtomStyle, DrawAtomLabel,
+                            DrawAtomColor,SetViewPoint,AddSymEquiv,
+                            AddSphere,TransformSymEquiv,
+                            FillCoordSphere,SelDrawList)
+        onRightClick = drawAtoms.setupPopup(lblList,callList)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK, onRightClick)
+        drawAtoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, onRightClick)
+        
         try:
             drawAtoms.Bind(wg.EVT_GRID_TABBING, NextAtom)
         except: # patch: for pre-2.9.5 wx
@@ -7914,8 +7956,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
         atomData = data['Drawing']['Atoms']
-        data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
-#            drawAtoms.ClearSelection()                                  #do I really want to do this?
+        pos = np.zeros(3)
+        for i in indx:
+            pos += atomData[i][cx:cx+3]
+        data['Drawing']['viewPoint'] = [list(pos/len(indx)),[indx[0],0]]
         G2plt.PlotStructure(G2frame,data)
             
     def noDuplicate(xyz,atomData):                  #be careful where this is used - it's slow
@@ -8414,6 +8458,60 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
+
+    def SelDrawList(event):
+        'select atoms using a filtered listbox'
+        choices = []
+        for i in range(drawAtoms.GetNumberRows()):
+            val = drawAtoms.GetCellValue(i,0)
+            if val in choices:
+                val += '_' + str(i)
+            choices.append(val)
+        if not choices: return
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
+                    'Select atoms','Choose atoms to select',choices)
+        indx = []
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelections()
+        dlg.Destroy()
+        if len(indx) == 0: return
+        drawAtoms.ClearSelection()        
+        for row in indx:
+            drawAtoms.SelectRow(row,True)
+        G2plt.PlotStructure(G2frame,data)
+        event.StopPropagation()
+
+    def DrawLoadSel(event):
+        '''Copy selected atoms from the atoms list into the draw atoms list, making 
+        sure not to duplicate any.
+        '''
+        choices = [atm[0] for atm in data['Atoms']]
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
+                    'Select atoms','Choose atoms to select',choices)
+        indx = []
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelections()
+        dlg.Destroy()
+        if len(indx) == 0: return
+        drawingData = data['Drawing']
+        cxD,ctD,_,_ = data['Drawing']['atomPtrs']
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        atmsXYZ = [np.array(a[cx:cx+3]) for a in data['Atoms']]
+        for i in indx:
+            found = False
+            for dA in drawingData['Atoms']:
+                if (dA[ctD] == data['Atoms'][i][ct] and 
+                    dA[ctD-1] == data['Atoms'][i][ct-1] and 
+                    dA[cxD+3] == '1' and 
+                    np.sum((atmsXYZ[i]-dA[cxD:cxD+3])**2) < 0.001):
+                    found = True
+                    break
+            if not found: 
+                DrawAtomAdd(drawingData,data['Atoms'][i])
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
+        event.StopPropagation()
         
     def OnReloadDrawAtoms(event=None):
         atomData = data['Atoms']
@@ -8577,10 +8675,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         drawingData['showVoids'] = True
         G2plt.PlotStructure(G2frame,data)
         
-################################################################################
-#### Draw Options page
-################################################################################
-
+#### Draw Options page ################################################################################
     def UpdateDrawOptions():
         import wx.lib.colourselect as wcs
         def SlopSizer():            
@@ -9051,10 +9146,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 
         SetPhaseWindow(drawOptions,mainSizer)
 
-################################################################################
-####  Texture routines
-################################################################################
-        
+####  Texture routines ################################################################################        
     def UpdateTexture():
                 
         def SetSHCoef():
@@ -9464,10 +9556,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 #        mainSizer.Add(SHPenalty(textureData['Penalty']),0,wx.LEFT,5)  for future
         SetPhaseWindow(Texture,mainSizer)
 
-################################################################################
-##### DData routines - GUI stuff in GSASIIddataGUI.py
-################################################################################
-        
+##### DData routines - GUI stuff in GSASIIddataGUI.py ################################################################################
     def OnHklfAdd(event):
         keyList = data['Histograms'].keys()
         TextList = []
@@ -9824,10 +9913,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
 
-################################################################################
-##### Rigid bodies
-################################################################################
-
+##### Rigid bodies ################################################################################
     def FillRigidBodyGrid(refresh=True,vecId=None,resId=None):
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
@@ -11084,7 +11170,7 @@ of the crystal structure.
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         cx,ct,cs,cia = general['AtomPtrs']
         atomData = data['Atoms']
-        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+        #AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
         Indx = {}
         data['testRBObj'] = {}
         if len(rbNames) == 1:
@@ -11344,10 +11430,7 @@ of the crystal structure.
                 wx.EndBusyCursor()
             FillRigidBodyGrid()
             
-################################################################################
-##### MC/SA routines
-################################################################################
-
+##### MC/SA routines ################################################################################
     def UpdateMCSA(Scroll=0):
         Indx = {}
         
@@ -11907,10 +11990,7 @@ of the crystal structure.
         data['MCSA']['Results'] = []
         UpdateMCSA()
         
-################################################################################
-##### Pawley routines
-################################################################################
-
+##### Pawley routines ################################################################################
     def FillPawleyReflectionsGrid():
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
@@ -12212,10 +12292,7 @@ of the crystal structure.
                 not G2frame.PawleyRefl.GetTable().GetValueAsBool(r,refcol))
         G2frame.PawleyRefl.ForceRefresh()
                             
-################################################################################
-##### Fourier routines
-################################################################################
-
+##### Fourier routines ################################################################################
     def FillMapPeaksGrid():
                         
         def RowSelect(event):
@@ -12714,10 +12791,7 @@ of the crystal structure.
     def OnTextureClear(event):
         print ('clear texture? - does nothing')
 
-###############################################################################
-##### Phase page routines
-###############################################################################
-        
+##### Phase page routines ###############################################################################
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
         bindings to the menu item to switch between phase tabs
@@ -12840,6 +12914,7 @@ of the crystal structure.
         # Atoms
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.AtomsMenu)
         G2frame.Bind(wx.EVT_MENU, OnSetAll, id=G2G.wxID_ATOMSSETALL)
+        G2frame.Bind(wx.EVT_MENU, OnSetbyList, id=G2G.wxID_ATOMSSETLST)
         G2frame.Bind(wx.EVT_MENU, AtomRefine, id=G2G.wxID_ATOMSSETSEL)
         G2frame.Bind(wx.EVT_MENU, AtomModify, id=G2G.wxID_ATOMSMODIFY)
         G2frame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2G.wxID_ATOMSEDITINSERT)
@@ -12847,7 +12922,8 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, AtomDelete, id=G2G.wxID_ATOMSEDITDELETE)
         G2frame.Bind(wx.EVT_MENU, AtomTransform, id=G2G.wxID_ATOMSTRANSFORM)
 #        G2frame.Bind(wx.EVT_MENU, AtomRotate, id=G2G.wxID_ATOMSROTATE)
-        
+        G2frame.Bind(wx.EVT_MENU, SetAtomsViewPoint, id=G2G.wxID_ATOMSSETVP)
+
         G2frame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2G.wxID_ATOMSEDITADD)
         G2frame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2G.wxID_ATOMSVIEWADD)
         G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
@@ -12912,6 +12988,8 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnDefineRB, id=G2G.wxID_DRAWDEFINERB)
         G2frame.Bind(wx.EVT_MENU, FillMolecule, id=G2G.wxID_DRAWADDMOLECULE)
         G2frame.Bind(wx.EVT_MENU, MapVoid, id=G2G.wxID_DRAWVOIDMAP)
+        G2frame.Bind(wx.EVT_MENU, SelDrawList, id=G2G.wxID_DRAWSETSEL)
+        G2frame.Bind(wx.EVT_MENU, DrawLoadSel, id=G2G.wxID_DRAWLOADSEL)
         
         # RB Models
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.RigidBodiesMenu)

@@ -91,7 +91,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
             for i,po in enumerate(['RBVOa:','RBVOi:','RBVOj:','RBVOk:']):
                 RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]
             RBObj['Orient'][0] = G2mth.normQ(RBObj['Orient'][0])
-            RBObj['AtomFrac'][0] = parmDict[pfx+'RBf:'+rbsx]
+            RBObj['AtomFrac'][0] = parmDict[pfx+'RBVf:'+rbsx]
             TLS = RBObj['ThermalMotion']
             if 'T' in TLS[0]:
                 for i,pt in enumerate(['RBVT11:','RBVT22:','RBVT33:','RBVT12:','RBVT13:','RBVT23:']):
@@ -126,7 +126,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
             for i,po in enumerate(['RBROa:','RBROi:','RBROj:','RBROk:']):
                 RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]                
             RBObj['Orient'][0] = G2mth.normQ(RBObj['Orient'][0])
-            RBObj['AtomFrac'][0] = parmDict[pfx+'RBf:'+rbsx]
+            RBObj['AtomFrac'][0] = parmDict[pfx+'RBRf:'+rbsx]
             TLS = RBObj['ThermalMotion']
             if 'T' in TLS[0]:
                 for i,pt in enumerate(['RBRT11:','RBRT22:','RBRT33:','RBRT12:','RBRT13:','RBRT23:']):
@@ -198,7 +198,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
             if parmDict[pfx+'Afrac:'+str(AtLookup[atId])]:
-                dFdvDict[pfx+'RBf:'+rbsx] += dFdvDict[pfx+'Afrac:'+str(atNum)]
+                dFdvDict[pfx+'RBVf:'+rbsx] += dFdvDict[pfx+'Afrac:'+str(atNum)]
             dx = 0.00001
             for iv in range(len(VModel['VectMag'])):
                 for ix in [0,1,2]:
@@ -268,7 +268,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
             if parmDict[pfx+'Afrac:'+str(AtLookup[atId])]:
-                dFdvDict[pfx+'RBf:'+rbsx] += dFdvDict[pfx+'Afrac:'+str(atNum)]
+                dFdvDict[pfx+'RBRf:'+rbsx] += dFdvDict[pfx+'Afrac:'+str(atNum)]
             dx = 0.00001
             for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]

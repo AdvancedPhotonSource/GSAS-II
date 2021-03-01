@@ -1386,7 +1386,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 phaseVary += [name,]
             elif RB['Orient'][1] == 'V' and i not in fixAxis:
                 phaseVary += [name,]
-        name = pfx+'RB'+'f:'+str(iRB)+':'+rbid
+        name = pfx+'RB'+rbKey+'f:'+str(iRB)+':'+rbid
         phaseDict[name] = RB['AtomFrac'][0]
         if RB['AtomFrac'][1]:
             phaseVary += [name,]
@@ -3655,7 +3655,7 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
             sigstr += '%12.5f'%(sigDict[name])
         else:
             sigstr += 12*' '
-    name = pfx+'RBf:'+rbsx
+    name = pfx+rbfx+'f:'+rbsx
     namstr += '%12s'%('Frac')
     valstr += '%12.5f'%(parmDict[name])
     if name in sigDict:

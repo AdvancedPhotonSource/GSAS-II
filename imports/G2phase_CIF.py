@@ -597,7 +597,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if len(atomlbllist) != len(self.Phase['Atoms']):
                 isodistort_warnings += '\nRepeated atom labels prevents ISODISTORT decode'
             for lbl in phasenamefields: # get a name for the phase
-                name = blk.get(lbl)[0]
+                try:
+                    name = blk.get(lbl)[0]
+                except TypeError:
+                    name = blk.get(lbl)
                 if name is None:
                     continue
                 name = name.strip()

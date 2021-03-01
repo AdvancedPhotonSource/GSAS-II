@@ -393,7 +393,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colNames = [G2frame.SeqTable.GetColLabelValue(r) for r in range(ncols)]
         dlg = G2G.G2SingleChoiceDialog(
             G2frame.dataDisplay,
-            'Select x-axis parameter for plot or Cancel for sequence number',
+            'Select x-axis parameter for\nplot (Cancel=sequence #)',
             'Select X-axis',
             colNames)
         try:

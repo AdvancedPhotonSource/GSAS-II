@@ -804,16 +804,17 @@ class GSASIItoolbar(Toolbar):
                                         'Key press list',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
+                dlg.Destroy()
                 event.key = choices[sel][0]
                 if event.key != ' ':
                     parent.keyPress(event)
                 else:
-                    dlg.Destroy()
                     G2G.G2MessageBox(self.TopLevelParent,
                                      'Use this command only from the keyboard',
                                      'Key not in menu')
                     return
-            dlg.Destroy()
+            else:
+                dlg.Destroy()
 
 
     # these routines are not currently in use, but there are probably good
@@ -2199,13 +2200,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:       #1st row of refl ticks
                 refOffset = event.ydata
                 refDelt = Page.plotStyle['refDelt']
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
             for pId,phase in enumerate(Page.phaseList):
                 pos = refOffset - pId*refDelt
                 coords = Page.tickDict[phase].get_data()
                 coords[1][:] = pos
                 Page.tickDict[phase].set_data(coords)
-                Page.figure.gca().draw_artist(Page.tickDict[phase])
-            Page.canvas.blit(Page.figure.gca().bbox)
+                axis.draw_artist(Page.tickDict[phase])
+            Page.canvas.blit(axis.bbox)
 
         def OnDragDiffCurve(event):
             '''Respond to dragging of the difference curve
@@ -2341,7 +2346,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Page.tickDict[phase].set_color(rgb_light)
                     Page.tickDict[phase].set_zorder(99) # put on top
                 Page.canvas.draw() # refresh with dimmed tickmarks 
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 for f,v in resetlist:  # reset colors back
                     f.set_zorder(0)
                     f.set_color(v) # reset colors back to original values
@@ -6724,18 +6733,16 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         global Title,xLabel,yLabel
         if event.key == 's':
             G2frame.seqXaxis = G2frame.seqXselect()
-            wx.CallAfter(Draw)
         elif event.key == 't':
             dlg = G2G.MultiStringDialog(G2frame,'Set titles & labels',[' Title ',' x-Label ',' y-Label '],
                 [Title,xLabel,yLabel])
             if dlg.Show():
                 Title,xLabel,yLabel = dlg.GetValues()
             dlg.Destroy()
-            Draw()
         elif event.key == 'l':
             G2frame.seqLines = not G2frame.seqLines
-            Draw()
-            
+        wx.CallAfter(Draw)
+
     def Draw():
         global Title,xLabel,yLabel
         G2frame.G2plotNB.status.SetStatusText(

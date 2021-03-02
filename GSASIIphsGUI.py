@@ -3352,7 +3352,6 @@ def UpdatePhaseData(G2frame,Item,data):
             r,c =  event.GetRow(),event.GetCol()
             if not (event.AltDown() or (event.ShiftDown() and event.ControlDown())):
                 Atoms.frm = -1
-                G2frame.GetStatusBar().SetStatusText('',1)                    
             if r < 0 and c < 0:
                 if Atoms.IsSelection():
                     Atoms.ClearSelection()
@@ -3391,6 +3390,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             UpdateDrawAtoms()
                             wx.CallAfter(Paint)
                 else:
+                    G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Atom editing options',1)                    
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
             G2plt.PlotStructure(G2frame,data)
@@ -7758,6 +7758,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     for row in range(ibeg,r+1):
                         drawAtoms.SelectRow(row,True)
                 else:
+                    G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Draw Atom editing options',1)                    
                     drawAtoms.ClearSelection()
                     drawAtoms.SelectRow(r,True)                
             drawingData['selectedAtoms'] = []

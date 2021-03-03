@@ -882,6 +882,219 @@ def SetCursor(page):
         else:
             page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
             
+def PlotFPAconvolutors(G2frame,NISTpk):
+    '''Plot the convolutions used for the current peak computed with
+    :func:`GSASIIfpaGUI.doFPAcalc`
+    '''
+    import NIST_profile as FP
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('FPA convolutors','mpl')
+    Page.SetToolTipString('')
+    cntr = NISTpk.twotheta_window_center_deg
+    Plot.set_title('Peak convolution functions @ 2theta={:.3f}'.format(cntr))
+    Plot.set_xlabel(r'$\Delta 2\theta, deg$',fontsize=14)
+    Plot.set_ylabel(r'Intensity (arbitrary)',fontsize=14)
+#    refColors=['b','r','c','g','m','k']
+    refColors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+    ttmin = ttmax = 0
+    #GSASIIpath.IPyBreak()
+    i = -1
+    for conv in NISTpk.convolvers:
+        if 'smoother' in conv: continue
+        if 'crystallite_size' in conv: continue
+        f = NISTpk.convolver_funcs[conv]()
+        if f is None: continue
+        i += 1
+        FFT = FP.best_irfft(f)
+        if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
+        FFT /= FFT.max()
+        ttArr = np.linspace(-NISTpk.twotheta_window_fullwidth_deg/2,
+                             NISTpk.twotheta_window_fullwidth_deg/2,len(FFT))
+        ttmin = min(ttmin,ttArr[np.argmax(FFT>.005)])
+        ttmax = max(ttmax,ttArr[::-1][np.argmax(FFT[::-1]>.005)])
+        color = refColors[i%len(refColors)]
+        Plot.plot(ttArr,FFT,color,label=conv[5:])
+    legend = Plot.legend(loc='best')
+    SetupLegendPick(legend,new)
+    Page.toolbar.push_current()
+    Plot.set_xlim((ttmin,ttmax))
+    Page.toolbar.push_current()
+    Page.ToolBarDraw()
+    Page.canvas.draw()
+
+def SetupLegendPick(legend,new,delay=5):
+    mplv = eval(mpl.__version__.replace('.',','))
+    legend.delay = delay*1000 # Hold time in ms for clear; 0 == forever
+    for line in legend.get_lines():
+        if mplv[0] >= 3 and mplv[1] >= 3:
+            line.set_pickradius(4)
+        else:
+            line.set_picker(4)
+        # bug: legend items with single markers don't seem to respond to a "pick"
+    #GSASIIpath.IPyBreak()
+    for txt in legend.get_texts():
+        try: # as of MPL 3.3.2 this has not changed
+            txt.set_picker(4)
+        except AttributeError:
+            txt.set_pickradius(4)
+    if new:
+        legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
+        
+def onLegendPick(event):
+    '''When a line in the legend is selected, find the matching line
+    in the plot and then highlight it by adding/enlarging markers.
+    Set up a timer to make a reset after delay selected in SetupLegendPick
+    '''
+    def clearHighlight(event):
+        if not canvas.timer: return
+        l,lm,lms,lmw = canvas.timer.lineinfo
+        l.set_marker(lm)
+        l.set_markersize(lms)
+        l.set_markeredgewidth(lmw)
+        canvas.draw()
+        canvas.timer = None
+    canvas = event.artist.get_figure().canvas
+    if not hasattr(canvas,'timer'): canvas.timer = None
+    plot = event.artist.get_figure().get_axes()[0]
+    if hasattr(plot.get_legend(),'delay'):
+        delay = plot.get_legend().delay
+    if canvas.timer: # clear previous highlight
+        if delay > 0: canvas.timer.Stop()
+        clearHighlight(None)
+        #if delay <= 0: return   # use this in place of return
+        # so that the next selected item is automatically highlighted (except when delay is 0)
+        return
+    if event.artist in plot.get_legend().get_lines():  # is this an artist item in the legend?
+        lbl = event.artist.get_label()
+    elif event.artist in plot.get_legend().get_texts():  # is this a text item in the legend?
+        lbl = event.artist.get_text()
+    else:
+        #GSASIIpath.IPyBreak()
+        return
+    
+    for l in plot.get_lines():
+        if lbl == l.get_label():
+            canvas.timer = wx.Timer()
+            canvas.timer.Bind(wx.EVT_TIMER, clearHighlight)
+            #GSASIIpath.IPyBreak()
+            canvas.timer.lineinfo = (l,l.get_marker(),l.get_markersize(),l.get_markeredgewidth())
+            # highlight the selected item
+            if l.get_marker() == 'None':
+                l.set_marker('o')
+            else:
+                l.set_markersize(2*l.get_markersize())
+                l.set_markeredgewidth(2*l.get_markeredgewidth())
+            canvas.draw()
+            if delay > 0:
+                canvas.timer.Start(delay,oneShot=True)
+            break
+    else:
+            print('Warning: artist matching ',lbl,' not found')
+    
+def changePlotSettings(G2frame,Plot):
+    '''Code in development to allow changes to plot settings
+    prior to export of plot with "floppy disk" button
+    '''
+    def RefreshPlot(*args,**kwargs):
+        '''Apply settings to the plot
+        '''
+        Plot.figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,
+                            bottom=int(plotOpt['labelSize'])/150.,
+                            right=.98,
+                            top=1.-int(plotOpt['labelSize'])/200.,
+                            hspace=0.0)
+        for P in Plot.figure.axes:
+            P.get_xaxis().get_label().set_fontsize(plotOpt['labelSize'])
+            P.get_yaxis().get_label().set_fontsize(plotOpt['labelSize'])
+            for l in P.get_xaxis().get_ticklabels():
+                l.set_fontsize(plotOpt['labelSize'])
+            for l in P.get_yaxis().get_ticklabels():
+                l.set_fontsize(plotOpt['labelSize'])
+            for l in P.lines: 
+                l.set_linewidth(plotOpt['lineWid'])
+            P.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
+            P.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
+            for l in P.spines.values():
+                l.set_linewidth(plotOpt['lineWid'])
+                
+        Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
+        for i,P in enumerate(Plot.figure.axes):
+            if not P.get_visible(): continue
+            if i == 0:
+                lbl = ''
+            else:
+                lbl = str(i)
+            P.get_xaxis().set_label_text(plotOpt['xtitle'+lbl])
+            P.get_yaxis().set_label_text(plotOpt['ytitle'+lbl])            
+        Plot.figure.canvas.draw()
+
+    txtChoices = [str(i) for i in range (8,26)]
+    lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
+    dlg = wx.Dialog(G2frame.plotFrame,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    vbox = wx.BoxSizer(wx.VERTICAL)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,'Text size'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,txtChoices,None,None,plotOpt,'labelSize',RefreshPlot,
+                                   size=(50,-1))
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Line widths'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'lineWid',RefreshPlot,
+            size=(50,-1))
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Title'),0,wx.ALL)
+    plotOpt['title'] = Plot.get_title()
+    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'title',OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+
+    for i,P in enumerate(Plot.figure.axes):
+        if not P.get_visible(): continue
+        if i == 0:
+            lbl = ''
+        else:
+            lbl = str(i)
+        vbox.Add((1,5))
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' x label '+lbl),0,wx.ALL)
+        plotOpt['xtitle'+lbl] = P.get_xaxis().get_label_text()
+        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'xtitle'+lbl,OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+        vbox.Add((1,5))
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' y label '+lbl),0,wx.ALL)
+        plotOpt['ytitle'+lbl] = P.get_yaxis().get_label_text()
+        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'ytitle'+lbl,OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+    vbox.Add((1,10),1,wx.ALL|wx.EXPAND,1)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
+    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+    hbox.Add(OKbtn)
+    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+    vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
+        
+    dlg.SetSizer(vbox)
+    vbox.Fit(dlg)
+    #dlg.Show()
+    RefreshPlot()
+    dlg.ShowModal()
 ##### PlotSngl ################################################################     
 def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Structure factor plotting package - displays zone of reflections as rings proportional
@@ -10753,216 +10966,3 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.canvas.SetCurrent(Page.context)
     wx.CallAfter(Draw,'main')
 
-def PlotFPAconvolutors(G2frame,NISTpk):
-    '''Plot the convolutions used for the current peak computed with
-    :func:`GSASIIfpaGUI.doFPAcalc`
-    '''
-    import NIST_profile as FP
-    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('FPA convolutors','mpl')
-    Page.SetToolTipString('')
-    cntr = NISTpk.twotheta_window_center_deg
-    Plot.set_title('Peak convolution functions @ 2theta={:.3f}'.format(cntr))
-    Plot.set_xlabel(r'$\Delta 2\theta, deg$',fontsize=14)
-    Plot.set_ylabel(r'Intensity (arbitrary)',fontsize=14)
-#    refColors=['b','r','c','g','m','k']
-    refColors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-    ttmin = ttmax = 0
-    #GSASIIpath.IPyBreak()
-    i = -1
-    for conv in NISTpk.convolvers:
-        if 'smoother' in conv: continue
-        if 'crystallite_size' in conv: continue
-        f = NISTpk.convolver_funcs[conv]()
-        if f is None: continue
-        i += 1
-        FFT = FP.best_irfft(f)
-        if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
-        FFT /= FFT.max()
-        ttArr = np.linspace(-NISTpk.twotheta_window_fullwidth_deg/2,
-                             NISTpk.twotheta_window_fullwidth_deg/2,len(FFT))
-        ttmin = min(ttmin,ttArr[np.argmax(FFT>.005)])
-        ttmax = max(ttmax,ttArr[::-1][np.argmax(FFT[::-1]>.005)])
-        color = refColors[i%len(refColors)]
-        Plot.plot(ttArr,FFT,color,label=conv[5:])
-    legend = Plot.legend(loc='best')
-    SetupLegendPick(legend,new)
-    Page.toolbar.push_current()
-    Plot.set_xlim((ttmin,ttmax))
-    Page.toolbar.push_current()
-    Page.ToolBarDraw()
-    Page.canvas.draw()
-
-def SetupLegendPick(legend,new,delay=5):
-    mplv = eval(mpl.__version__.replace('.',','))
-    legend.delay = delay*1000 # Hold time in ms for clear; 0 == forever
-    for line in legend.get_lines():
-        if mplv[0] >= 3 and mplv[1] >= 3:
-            line.set_pickradius(4)
-        else:
-            line.set_picker(4)
-        # bug: legend items with single markers don't seem to respond to a "pick"
-    #GSASIIpath.IPyBreak()
-    for txt in legend.get_texts():
-        try: # as of MPL 3.3.2 this has not changed
-            txt.set_picker(4)
-        except AttributeError:
-            txt.set_pickradius(4)
-    if new:
-        legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
-        
-def onLegendPick(event):
-    '''When a line in the legend is selected, find the matching line
-    in the plot and then highlight it by adding/enlarging markers.
-    Set up a timer to make a reset after delay selected in SetupLegendPick
-    '''
-    def clearHighlight(event):
-        if not canvas.timer: return
-        l,lm,lms,lmw = canvas.timer.lineinfo
-        l.set_marker(lm)
-        l.set_markersize(lms)
-        l.set_markeredgewidth(lmw)
-        canvas.draw()
-        canvas.timer = None
-    canvas = event.artist.get_figure().canvas
-    if not hasattr(canvas,'timer'): canvas.timer = None
-    plot = event.artist.get_figure().get_axes()[0]
-    if hasattr(plot.get_legend(),'delay'):
-        delay = plot.get_legend().delay
-    if canvas.timer: # clear previous highlight
-        if delay > 0: canvas.timer.Stop()
-        clearHighlight(None)
-        #if delay <= 0: return   # use this in place of return
-        # so that the next selected item is automatically highlighted (except when delay is 0)
-        return
-    if event.artist in plot.get_legend().get_lines():  # is this an artist item in the legend?
-        lbl = event.artist.get_label()
-    elif event.artist in plot.get_legend().get_texts():  # is this a text item in the legend?
-        lbl = event.artist.get_text()
-    else:
-        #GSASIIpath.IPyBreak()
-        return
-    
-    for l in plot.get_lines():
-        if lbl == l.get_label():
-            canvas.timer = wx.Timer()
-            canvas.timer.Bind(wx.EVT_TIMER, clearHighlight)
-            #GSASIIpath.IPyBreak()
-            canvas.timer.lineinfo = (l,l.get_marker(),l.get_markersize(),l.get_markeredgewidth())
-            # highlight the selected item
-            if l.get_marker() == 'None':
-                l.set_marker('o')
-            else:
-                l.set_markersize(2*l.get_markersize())
-                l.set_markeredgewidth(2*l.get_markeredgewidth())
-            canvas.draw()
-            if delay > 0:
-                canvas.timer.Start(delay,oneShot=True)
-            break
-    else:
-            print('Warning: artist matching ',lbl,' not found')
-    
-def changePlotSettings(G2frame,Plot):
-    '''Code in development to allow changes to plot settings
-    prior to export of plot with "floppy disk" button
-    '''
-    def RefreshPlot(*args,**kwargs):
-        '''Apply settings to the plot
-        '''
-        Plot.figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,
-                            bottom=int(plotOpt['labelSize'])/150.,
-                            right=.98,
-                            top=1.-int(plotOpt['labelSize'])/200.,
-                            hspace=0.0)
-        for P in Plot.figure.axes:
-            P.get_xaxis().get_label().set_fontsize(plotOpt['labelSize'])
-            P.get_yaxis().get_label().set_fontsize(plotOpt['labelSize'])
-            for l in P.get_xaxis().get_ticklabels():
-                l.set_fontsize(plotOpt['labelSize'])
-            for l in P.get_yaxis().get_ticklabels():
-                l.set_fontsize(plotOpt['labelSize'])
-            for l in P.lines: 
-                l.set_linewidth(plotOpt['lineWid'])
-            P.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
-            P.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
-            for l in P.spines.values():
-                l.set_linewidth(plotOpt['lineWid'])
-                
-        Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
-        for i,P in enumerate(Plot.figure.axes):
-            if not P.get_visible(): continue
-            if i == 0:
-                lbl = ''
-            else:
-                lbl = str(i)
-            P.get_xaxis().set_label_text(plotOpt['xtitle'+lbl])
-            P.get_yaxis().set_label_text(plotOpt['ytitle'+lbl])            
-        Plot.figure.canvas.draw()
-
-    txtChoices = [str(i) for i in range (8,26)]
-    lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
-    dlg = wx.Dialog(G2frame.plotFrame,
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-    vbox = wx.BoxSizer(wx.VERTICAL)
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,'Text size'),0,wx.ALL)
-    w = G2G.G2ChoiceButton(dlg,txtChoices,None,None,plotOpt,'labelSize',RefreshPlot,
-                                   size=(50,-1))
-    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-    
-    vbox.Add((1,5))
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Line widths'),0,wx.ALL)
-    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'lineWid',RefreshPlot,
-            size=(50,-1))
-    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-
-    vbox.Add((1,5))
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Title'),0,wx.ALL)
-    plotOpt['title'] = Plot.get_title()
-    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'title',OnLeave=RefreshPlot,
-                                 size=(200,-1),notBlank=False)
-    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-
-    for i,P in enumerate(Plot.figure.axes):
-        if not P.get_visible(): continue
-        if i == 0:
-            lbl = ''
-        else:
-            lbl = str(i)
-        vbox.Add((1,5))
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' x label '+lbl),0,wx.ALL)
-        plotOpt['xtitle'+lbl] = P.get_xaxis().get_label_text()
-        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'xtitle'+lbl,OnLeave=RefreshPlot,
-                                 size=(200,-1),notBlank=False)
-        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-    
-        vbox.Add((1,5))
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' y label '+lbl),0,wx.ALL)
-        plotOpt['ytitle'+lbl] = P.get_yaxis().get_label_text()
-        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'ytitle'+lbl,OnLeave=RefreshPlot,
-                                 size=(200,-1),notBlank=False)
-        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-    
-    vbox.Add((1,10),1,wx.ALL|wx.EXPAND,1)
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    OKbtn = wx.Button(dlg, wx.ID_OK)
-    OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
-    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
-    hbox.Add(OKbtn)
-    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
-    vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
-        
-    dlg.SetSizer(vbox)
-    vbox.Fit(dlg)
-    #dlg.Show()
-    RefreshPlot()
-    dlg.ShowModal()

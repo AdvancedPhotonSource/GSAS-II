@@ -5189,7 +5189,6 @@ class GSASII(wx.Frame):
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-#            wx.Yield()
         if OK:
             Rw = Rvals['Rwp']
             rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'])
@@ -5212,6 +5211,7 @@ class GSASII(wx.Frame):
             text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
+            dlg2.Raise()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)

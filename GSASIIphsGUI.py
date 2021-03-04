@@ -3234,7 +3234,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             else: 
                                 atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
-                            DrawAtomsReplaceByID(data,ui+6,atomData[r],ID)
+                            G2mth.DrawAtomsReplaceByID(data,ui+6,atomData[r],ID)
                     wx.CallAfter(Paint)
                     
         def ChangeAtomCell(event):
@@ -12359,9 +12359,13 @@ of the crystal structure.
             mapPeaks = np.array(data['Map Peaks'])
             peakMax = np.amax(mapPeaks.T[0])
             Ind = getAtomSelections(MapPeaks)
+            pgbar = wx.ProgressDialog('Move peaks','Map peak no. 0 processed',len(Ind)+1, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             for ind in Ind:
                 mag,x,y,z = mapPeaks[ind][:4]
                 AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
+                pgbar.Update(ind,'Map peak no. %d processed'%ind)
+            pgbar.Destroy()
             G2plt.PlotStructure(G2frame,data)
     
     def OnPeaksClear(event):
@@ -12489,23 +12493,19 @@ of the crystal structure.
                 else:
                     dlg.Destroy()
                     return
-                wx.BeginBusyCursor()
                 pgbar = wx.ProgressDialog('Unique peaks','Map peak no. 0 processed',len(Ind)+1, 
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
 
-                try:
-                    Ind = G2mth.PeaksUnique(data,Ind,sel,pgbar)
-                    print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
-                    tbl = MapPeaks.GetTable().data
-                    tbl[:] = [t for i,t in enumerate(tbl) if i in Ind] + [
-                        t for i,t in enumerate(tbl) if i not in Ind]         
-                    for r in range(MapPeaks.GetNumberRows()):
-                        if r < len(Ind):
-                            MapPeaks.SelectRow(r,addToSelected=True)
-                        else:
-                            MapPeaks.DeselectRow(r)
-                finally:
-                    wx.EndBusyCursor()
+                Ind = G2mth.PeaksUnique(data,Ind,sel,pgbar)
+                print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
+                tbl = MapPeaks.GetTable().data
+                tbl[:] = [t for i,t in enumerate(tbl) if i in Ind] + [
+                    t for i,t in enumerate(tbl) if i not in Ind]         
+                for r in range(MapPeaks.GetNumberRows()):
+                    if r < len(Ind):
+                        MapPeaks.SelectRow(r,addToSelected=True)
+                    else:
+                        MapPeaks.DeselectRow(r)
                 MapPeaks.ForceRefresh()
                 G2plt.PlotStructure(G2frame,data)
                 

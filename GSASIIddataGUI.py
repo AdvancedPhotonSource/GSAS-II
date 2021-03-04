@@ -122,7 +122,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
         scaleVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Scale'],0,
-            xmin=0.,nDig=(10,4),typeHint=float,OnLeave=onChangeFraction)
+            xmin=0.,nDig=(10,4,'g'),typeHint=float,OnLeave=onChangeFraction)
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)

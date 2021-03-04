@@ -3628,7 +3628,7 @@ def findOffset(SGData,A,Fhkl):
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
     hklShape = Fhkl.shape
-    hklHalf = np.array(hklShape)/2
+    hklHalf = np.array(hklShape)//2
     sortHKL = np.argsort(Fhkl.flatten())
     Fdict = {}
     for hkl in sortHKL:
@@ -3667,7 +3667,7 @@ def findOffset(SGData,A,Fhkl):
     G2fil.G2Print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
     Dphi = np.array(Dphi)
     steps = np.array(hklShape)
-    X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
+    X,Y,Z = np.meshgrid(np.linspace(0,1,steps[0]),np.linspace(0,1,steps[1]),np.linspace(0,1,steps[2]))
     XYZ = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten())))
     Dang = (np.dot(XYZ,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)

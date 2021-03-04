@@ -2595,7 +2595,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapDict[pfx+'LeBail']:
                         pFile.write(' Perform LeBail extraction\n')                     
                     else:
-                        pFile.write(' Phase fraction  : %10.4f Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
+                        pFile.write(' Phase fraction  : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                         pFile.write(' Extinction coeff: %10.4f Refine? %s\n'%(hapData['Extinction'][0],hapData['Extinction'][1]))
                         if hapData['Pref.Ori.'][0] == 'MD':
                             Ax = hapData['Pref.Ori.'][3]
@@ -2751,7 +2751,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if Print: 
                     pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                     pFile.write(135*'='+'\n')
-                    pFile.write(' Scale factor     : %10.4f Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
+                    pFile.write(' Scale factor     : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                     if extType != 'None':
                         pFile.write(' Extinction  Type: %15s approx: %10s\n'%(extType,extApprox))
                         text = ' Parameters       :'
@@ -3105,7 +3105,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         if pfx+'Scale' in PhFrExtPOSig:
                             wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
                             sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
-                            pFile.write(' Phase fraction  : %10.5f, sig %10.5f Weight fraction  : %8.5f, sig %10.5f\n'%
+                            pFile.write(' Phase fraction  : %10.5g, sig %10.5g Weight fraction  : %8.5f, sig %10.5f\n'%
                                 (hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr))
                         if pfx+'Extinction' in PhFrExtPOSig:
                             pFile.write(' Extinction coeff: %10.4f, sig %10.4f\n'%(hapData['Extinction'][0],PhFrExtPOSig[pfx+'Extinction']))
@@ -3134,7 +3134,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                             PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)
                     pFile.write(' HKLF histogram weight factor = %.3f\n'%(Histogram['wtFactor']))
                     if pfx+'Scale' in ScalExtSig:
-                        pFile.write(' Scale factor : %10.4f, sig %10.4f\n'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale']))
+                        pFile.write(' Scale factor : %10.4g, sig %10.4g\n'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale']))
                     if hapData['Extinction'][0] != 'None':
                         PrintExtAndSig(pfx,hapData['Extinction'],ScalExtSig)
                     if len(BabSig):

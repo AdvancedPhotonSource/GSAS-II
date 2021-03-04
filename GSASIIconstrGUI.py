@@ -259,18 +259,18 @@ class RBDataTable(wg.GridTableBase):
         if self.onChange:
             self.onChange()
 
-def MakeDrawAtom(data,atom):
-    'Convert atom to format needed to draw it'
-    generalData = data['General']
-    deftype = G2obj.validateAtomDrawType(
-        GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
-    if generalData['Type'] in ['nuclear','faulted',]:
-        atomInfo = [atom[:2]+atom[3:6]+['1']+[deftype]+
-                    ['']+[[255,255,255]]+atom[9:]+[[],[]]][0]
-    ct,cs = [1,8]         #type & color
-    atNum = generalData['AtomTypes'].index(atom[ct])
-    atomInfo[cs] = list(generalData['Color'][atNum])
-    return atomInfo
+# def MakeDrawAtom(data,atom):
+#     'Convert atom to format needed to draw it'
+#     generalData = data['General']
+#     deftype = G2obj.validateAtomDrawType(
+#         GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
+#     if generalData['Type'] in ['nuclear','faulted',]:
+#         atomInfo = [atom[:2]+atom[3:6]+['1']+[deftype]+
+#                     ['']+[[255,255,255]]+atom[9:]+[[],[]]][0]
+#     ct,cs = [1,8]         #type & color
+#     atNum = generalData['AtomTypes'].index(atom[ct])
+#     atomInfo[cs] = list(generalData['Color'][atNum])
+#     return atomInfo
 
 class ConstraintDialog(wx.Dialog):
     '''Window to edit Constraint values
@@ -2060,7 +2060,7 @@ def UpdateRigidBodies(G2frame,data):
                     #         landeg.append(2.0)
             atmData['Drawing']['Atoms'] = []
             for atom in atmData['Atoms']:
-                atmData['Drawing']['Atoms'].append(MakeDrawAtom(atmData,atom))
+                atmData['Drawing']['Atoms'].append(G2mth.MakeDrawAtom(atmData,atom))
 
         def onCancel(event,page=0):
             'complete or bail out from RB define, cleaning up'

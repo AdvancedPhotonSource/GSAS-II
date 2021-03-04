@@ -28,6 +28,7 @@ import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
+import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import numpy.fft as fft
 import scipy.optimize as so
@@ -697,6 +698,68 @@ def FillAtomLookUp(atomData,indx):
     '''
     return {atom[indx]:iatm for iatm,atom in enumerate(atomData)}
 
+def DrawAtomsReplaceByID(data,loc,atom,ID):
+    '''Replace all atoms in drawing array with an ID matching the specified value'''
+    atomData = data['Drawing']['Atoms']
+    indx = FindAtomIndexByIDs(atomData,loc,[ID,])
+    for ind in indx:
+        atomData[ind] = MakeDrawAtom(data,atom,atomData[ind])
+
+def MakeDrawAtom(data,atom,oldatom=None):
+    'needs a description'
+    AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+        'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
+    AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
+        'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    SGData = generalData['SGData']
+    deftype = G2obj.validateAtomDrawType(GSASIIpath.GetConfigValue('DrawAtoms_default'),generalData)
+    if generalData['Type'] in ['nuclear','faulted',]:
+        if oldatom:
+            opr = oldatom[5]
+            if atom[9] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[11:17])
+                atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+oldatom[17:]][0]
+        else:
+            atomInfo = [atom[:2]+atom[3:6]+['1',]+[deftype]+
+                ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
+        ct,cs = [1,8]         #type & color
+    elif  generalData['Type'] == 'magnetic':
+        if oldatom:
+            opr = oldatom[8]
+            mom = np.array(atom[7:10])
+            if generalData['Super']:
+                SSGData = generalData['SSGData']
+                Mom = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,mom)
+            else:
+                Mom = G2spc.ApplyStringOpsMom(opr,SGData,None,mom)
+            if atom[12] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
+                atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:]+oldatom[20:]][0]
+        else:
+            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+[deftype]+
+                ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+        ct,cs = [1,11]         #type & color
+    elif generalData['Type'] == 'macromolecular':
+        try:
+            oneLetter = AA3letter.index(atom[1])
+        except ValueError:
+            oneLetter = -1
+        atomInfo = [[atom[1].strip()+atom[0],]+
+            [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
+            atom[6:9]+['1',]+[deftype]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+        ct,cs = [4,11]         #type & color
+    atNum = generalData['AtomTypes'].index(atom[ct])
+    atomInfo[cs] = list(generalData['Color'][atNum])
+    return atomInfo
+    
 def GetAtomsById(atomData,atomLookUp,IdList):
     '''gets a list of atoms from Atom table that match a set of atom IDs
     
@@ -4123,7 +4186,7 @@ def PeaksEquiv(data,Ind):
             Ind.append(ind)
     return Ind
                 
-def PeaksUnique(data,Ind,Sel):
+def PeaksUnique(data,Ind,Sel,dlg):
     '''Finds the symmetry unique set of peaks from those selected. Selects
     the one closest to the center of the unit cell. 
     Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
@@ -4132,6 +4195,7 @@ def PeaksUnique(data,Ind,Sel):
     :param data: the phase data structure
     :param list Ind: list of selected peak indices
     :param int Sel: selected column to find peaks closest to
+    :param wx object dlg: progress bar dialog box
 
     :returns: the list of symmetry unique peaks from among those given in Ind
     '''        
@@ -4163,7 +4227,6 @@ def PeaksUnique(data,Ind,Sel):
                     if not noDuplicate(xyz,xyzs,Amat):
                         Indx[jnd] = False
                         dups.append(jnd)
-            # select the unique peak closest to cell center
             cntr = mapPeaks[ind][Sel]
             icntr = ind
             for jnd in dups:
@@ -4171,6 +4234,7 @@ def PeaksUnique(data,Ind,Sel):
                     cntr = mapPeaks[jnd][Sel]
                     icntr = jnd
             Unique.append(icntr)
+        dlg.Update(ind,newmsg='Map peak no. %d processed'%ind)  
     return Unique
 
 def AtomsCollect(data,Ind,Sel):

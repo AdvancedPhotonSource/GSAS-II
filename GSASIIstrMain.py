@@ -287,13 +287,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 # report on highly correlated variables
                 ReportProblems(result,Rvals,varyList)
                 # process singular variables
-                psing = result[2].get('psing',[])
                 if dlg: break # refining interactively
-                # non-interactive refinement
-                #for val in sorted(psing,reverse=True):
-                #    G2fil.G2Print ('Removing parameter: '+varyList[val])
-                #    del(varyList[val])
-                #if not psing: break    # removed variable(s), try again
             else:
                 G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
                 Ipvt = result[2]['ipvt']
@@ -303,6 +297,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         del(varyList[ipvt-1])
                         break
     if IfOK:
+        if CheckLeBail(Phases):   # only needed for LeBail extraction
+            G2stMth.errRefine(values,[Histograms,Phases,restraintDict,rigidbodyDict],
+                                parmDict,varyList,calcControls,pawleyLookup,dlg)
+
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     if chisq0 is not None:
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
@@ -482,7 +480,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         else:
             Rvals['msg'] = Msg.msg
         return False,Rvals
-
+    
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
@@ -500,6 +498,97 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     elif 'msg' in Rvals:
         G2fil.G2Print ('Reported from refinement:',mode='warn')
         G2fil.G2Print (Rvals['msg'],mode='warn')
+
+def CheckLeBail(Phases):
+    '''Check if there is a LeBail extraction in any histogram
+
+    :returns: True if there is at least one LeBail flag turned on, False otherwise
+    '''
+    for key in Phases:
+        phase = Phases[key]
+        for h in phase['Histograms']:
+            #phase['Histograms'][h]
+            if not phase['Histograms'][h]['Use']: continue
+            if phase['Histograms'][h]['LeBail']:
+                 return True
+    return False
+        
+def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):
+    '''Fit LeBail intensities without changes to any other refined parameters.
+    This is a stripped-down version of :func:`Refine` that does not perform 
+    any refinement cycles
+    '''
+    import GSASIImpsubs as G2mp
+    G2mp.InitMP()
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
+
+    #varyList = []
+    parmDict = {}
+    Controls = G2stIO.GetControls(GPXfile)
+    calcControls = {}
+    calcControls.update(Controls)
+    constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
+    restraintDict = {}
+    Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    if not Phases:
+        G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
+        return False,{'msg':'No phases'}
+    if not Histograms:
+        G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
+        return False,{'msg':'No data'}
+    if not CheckLeBail(Phases):
+        msg = 'Warning: There are no histograms with LeBail extraction enabled'
+        G2fil.G2Print ('*** '+msg+' ***')
+        return False,{'msg': msg}
+    rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,
+         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False)
+    calcControls['atomIndx'] = atomIndx
+    calcControls['Natoms'] = Natoms
+    calcControls['FFtables'] = FFtables
+    calcControls['BLtables'] = BLtables
+    calcControls['MFtables'] = MFtables
+    calcControls['maxSSwave'] = maxSSwave
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
+    calcControls.update(controlDict)
+    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+    calcControls.update(controlDict)
+    parmDict.update(rbDict)
+    parmDict.update(phaseDict)
+    parmDict.update(hapDict)
+    parmDict.update(histDict)
+    G2stIO.GetFprime(calcControls,Histograms)
+    parmFrozenList = Controls['parmFrozen']['FrozenList']
+    try:
+        for i in range(cycles):
+            M = G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,dlg)
+            G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
+            if refPlotUpdate is not None: refPlotUpdate(Histograms,i)
+        Rvals = {}
+        Rvals['chisq'] = np.sum(M**2)
+        Rvals['Nobs'] = Histograms['Nobs']
+        Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
+        Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs'])) # no variables
+
+        covData = {'variables':0,'varyList':[],'sig':[],'Rvals':Rvals,
+                       'varyListStart':[],
+                       'covMatrix':np.zeros([0,0]),'title':GPXfile,
+                       #'newAtomDict':newAtomDict,'newCellDict':newCellDict,
+                       'freshCOV':True}
+        
+        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,True)
+        G2fil.G2Print (' ***** LeBail fit completed *****')
+        return True,Rvals
+    except Exception as Msg:
+        G2fil.G2Print (' ***** LeBail fit error *****')
+        if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
+        if GSASIIpath.GetConfigValue('debug'):
+            import traceback
+            print(traceback.format_exc())        
+        return False,{'msg':Msg.msg}
 
 def phaseCheck(phaseVary,Phases,histogram):
     '''

@@ -6756,17 +6756,18 @@ def PlotCovariance(G2frame,Data):
     G2frame.G2plotNB.status.SetStatusText('',0)
     G2frame.G2plotNB.status.SetStatusText('',1)
     G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
-    acolor = mpl.cm.get_cmap(G2frame.VcovColor)
-    Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
-        vmin=-1.,vmax=1.)
-    imgAx = Img.axes
-    ytics = imgAx.get_yticks()
-    ylabs = [Page.varyList[int(i)] for i in ytics[:-1]]
-    imgAx.set_yticklabels(ylabs)
-    Page.figure.colorbar(Img)
-    Plot.set_title('V-Cov matrix'+title)
-    Plot.set_xlabel('Variable number')
-    Plot.set_ylabel('Variable name')
+    if Page.varyList:
+        acolor = mpl.cm.get_cmap(G2frame.VcovColor)
+        Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
+                          vmin=-1.,vmax=1.)
+        imgAx = Img.axes
+        ytics = imgAx.get_yticks()
+        ylabs = [Page.varyList[int(i)] for i in ytics[:-1]]
+        imgAx.set_yticklabels(ylabs)
+        Page.figure.colorbar(Img)
+        Plot.set_title('V-Cov matrix'+title)
+        Plot.set_xlabel('Variable number')
+        Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
 ##### PlotTorsion ################################################################################

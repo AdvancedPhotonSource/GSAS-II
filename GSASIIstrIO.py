@@ -1075,6 +1075,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
             (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
             
+    if Print and pFile is None: raise Exception("specify pFile or Print=False")
     rbVary = []
     rbDict = {}
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -1431,6 +1432,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             if torsion[1]:
                 phaseVary += [name,]
                     
+    if Print and pFile is None: raise Exception("specify pFile or Print=False")
     if Print:
         pFile.write('\n Phases:\n')
     phaseVary = []
@@ -2159,10 +2161,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             
     ##########################################################################
     # SetPhaseData starts here
-    pFile.write('\n Phases:\n')
+    if pFile: pFile.write('\n Phases:\n')
     for phase in Phases:
-        pFile.write(' Result for phase: %s\n'%phase)
-        pFile.write(135*'='+'\n')
+        if pFile: pFile.write(' Result for phase: %s\n'%phase)
+        if pFile: pFile.write(135*'='+'\n')
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
@@ -2177,7 +2179,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
             cellSig = getCellEsd(pfx,SGData,A,covData)  #includes sigVol
-            pFile.write(' Reciprocal metric tensor: \n')
+            if pFile: pFile.write(' Reciprocal metric tensor: \n')
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']
             namstr = '  names :'
@@ -2190,12 +2192,12 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += ptfmt%(siga)
                 else:
                     sigstr += 15*' '
-            pFile.write(namstr+'\n')
-            pFile.write(ptstr+'\n')
-            pFile.write(sigstr+'\n')
+            if pFile: pFile.write(namstr+'\n')
+            if pFile: pFile.write(ptstr+'\n')
+            if pFile: pFile.write(sigstr+'\n')
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            pFile.write(' New unit cell:\n')
+            if pFile: pFile.write(' New unit cell:\n')
             ptfmt = ["%12.6f","%12.6f","%12.6f","%12.4f","%12.4f","%12.4f","%12.3f"]
             names = ['a','b','c','alpha','beta','gamma','Volume']
             namstr = '  names :'
@@ -2208,15 +2210,15 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += fmt%(siga)
                 else:
                     sigstr += 12*' '
-            pFile.write(namstr+'\n')
-            pFile.write(ptstr+'\n')
-            pFile.write(sigstr+'\n')
+            if pFile: pFile.write(namstr+'\n')
+            if pFile: pFile.write(ptstr+'\n')
+            if pFile: pFile.write(sigstr+'\n')
         ik = 6  #for Pawley stuff below
         if General.get('Modulated',False):
             ik = 7
             Vec,vRef,maxH = General['SuperVec']
             if vRef:
-                pFile.write(' New modulation vector:\n')
+                if pFile: pFile.write(' New modulation vector:\n')
                 namstr = '  names :'
                 ptstr =  '  values:'
                 sigstr = '  esds  :'
@@ -2228,9 +2230,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += '%12.6f'%(sigDict[pfx+var])
                     else:
                         sigstr += 12*' '
-                pFile.write(namstr+'\n')
-                pFile.write(ptstr+'\n')
-                pFile.write(sigstr+'\n')
+                if pFile: pFile.write(namstr+'\n')
+                if pFile: pFile.write(ptstr+'\n')
+                if pFile: pFile.write(sigstr+'\n')
             
         General['Mass'] = 0.
         if Phase['General'].get('doPawley'):
@@ -2246,19 +2248,20 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             VRBIds = RBIds['Vector']
             RRBIds = RBIds['Residue']
             RBModels = Phase['RBModels']
-            for irb,RBObj in enumerate(RBModels.get('Vector',[])):
-                jrb = VRBIds.index(RBObj['RBId'])
-                rbsx = str(irb)+':'+str(jrb)
-                pFile.write(' Vector rigid body parameters:\n')
-                PrintRBObjPOAndSig('RBV',rbsx)
-                PrintRBObjTLSAndSig('RBV',rbsx,RBObj['ThermalMotion'][0])
-            for irb,RBObj in enumerate(RBModels.get('Residue',[])):
-                jrb = RRBIds.index(RBObj['RBId'])
-                rbsx = str(irb)+':'+str(jrb)
-                pFile.write(' Residue rigid body parameters:\n')
-                PrintRBObjPOAndSig('RBR',rbsx)
-                PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
-                PrintRBObjTorAndSig(rbsx)
+            if pFile:
+                for irb,RBObj in enumerate(RBModels.get('Vector',[])):
+                    jrb = VRBIds.index(RBObj['RBId'])
+                    rbsx = str(irb)+':'+str(jrb)
+                    pFile.write(' Vector rigid body parameters:\n')
+                    PrintRBObjPOAndSig('RBV',rbsx)
+                    PrintRBObjTLSAndSig('RBV',rbsx,RBObj['ThermalMotion'][0])
+                for irb,RBObj in enumerate(RBModels.get('Residue',[])):
+                    jrb = RRBIds.index(RBObj['RBId'])
+                    rbsx = str(irb)+':'+str(jrb)
+                    pFile.write(' Residue rigid body parameters:\n')
+                    PrintRBObjPOAndSig('RBR',rbsx)
+                    PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
+                    PrintRBObjTorAndSig(rbsx)
             atomsSig = {}
             wavesSig = {}
             cx,ct,cs,cia = General['AtomPtrs']
@@ -2324,15 +2327,15 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
-                    
-            PrintAtomsAndSig(General,Atoms,atomsSig)
-            if General['Type'] == 'magnetic':
+
+            if pFile: PrintAtomsAndSig(General,Atoms,atomsSig)
+            if pFile and General['Type'] == 'magnetic':
                 PrintMomentsAndSig(General,Atoms,atomsSig)
-            if General.get('Modulated',False):
+            if pFile and General.get('Modulated',False):
                 PrintWavesAndSig(General,Atoms,wavesSig)
                 
             density = G2mth.getDensity(General)[0]
-            pFile.write('\n Density: {:.4f} g/cm**3\n'.format(density))
+            if pFile: pFile.write('\n Density: {:.4f} g/cm**3\n'.format(density))
             
         
         textureData = General['SH Texture']    
@@ -3613,15 +3616,15 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             Sample = Histogram['Sample Parameters']
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
-            if not seq:
+            if Print and not seq:
                 pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
                 pFile.write(135*'='+'\n')
-            pFile.write(' PWDR histogram weight factor = '+'%.3f\n'%(Histogram['wtFactor']))
-            pFile.write(' Final refinement wR = %.2f%% on %d observations in this histogram\n'%
-                (Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs']))
-            pFile.write(' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%\n'%
-                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin']))
             if Print:
+                pFile.write(' PWDR histogram weight factor = '+'%.3f\n'%(Histogram['wtFactor']))
+                pFile.write(' Final refinement wR = %.2f%% on %d observations in this histogram\n'%
+                (Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs']))
+                pFile.write(' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%\n'%
+                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin']))
                 pFile.write(' Instrument type: %s\n'%Sample['Type'])
                 if calcControls != None:    #skipped in seqRefine
                     if 'X' in Inst['Type'][0]:

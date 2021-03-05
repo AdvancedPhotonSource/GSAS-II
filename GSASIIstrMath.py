@@ -495,7 +495,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
     for pName in pNames: # loop over restraints
         if 'General' == pName.split(':')[1]:
             # initialize for General restraint(s) here
-            GeneralInit = True
             parmDict0 = parmDict.copy()
             # setup steps for each parameter
             stepDict = {}
@@ -3943,7 +3942,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             First = False
         else:
             dMdV = np.concatenate((dMdV.T,np.sqrt(wtFactor)*dMdvh.T)).T
-            
+
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):

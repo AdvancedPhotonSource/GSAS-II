@@ -358,7 +358,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     #----------------------- refinement complete, compute Covariance matrix w/o Levenberg-Marquardt
     nfev += 1
     try:
-        M = func(x0,*args)
+        if icycle == 0: # no parameter changes, skip recalc
+            M = M2
+        else:
+            M = func(x0,*args)
     except Exception as Msg:
         if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
         G2fil.G2Print(Msg.msg,mode='warn')

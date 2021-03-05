@@ -752,13 +752,17 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnShowLSParms, id=item.GetId())
         
         item = parent.Append(wx.ID_ANY,'&Refine\tCTRL+R','Perform a refinement') 
-        if len(self.Refine): # extend state for new menus to match main (on mac)
+        if len(self.Refine): # extend state for new menus to match main
             state = self.Refine[0].IsEnabled()
         else:
             state = False
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&LeBail fit\tCTRL+B','Fit LeBail intensities only')
+        item.Enable(state)
+        self.Refine.append(item)
+        self.Bind(wx.EVT_MENU, self.OnLeBail, id=item.GetId())
 
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
@@ -796,20 +800,22 @@ class GSASII(wx.Frame):
         else:
             seqSetting = None
             
-        if seqSetting:
-            for item in self.Refine:
+        for item in self.Refine:
+            if 'LeBail' in item.GetItemLabel():
+                if seqSetting: item.Enable(False)
+            elif seqSetting:
                 item.SetItemLabel('Se&quential refine\tCtrl+R')    #might fail on old wx
+            else:
+                item.SetItemLabel('&Refine\tCtrl+R')    #might fail on old wx
+        if seqSetting:
             seqMode = True
         else:
-            for item in self.Refine:
-                item.SetItemLabel('&Refine\tCtrl+R')    #might fail on old wx
             seqMode = False
         for menu,Id in self.ExportSeq:
             menu.Enable(Id,seqMode)
         for menu,Id in self.ExportNonSeq:
             menu.Enable(Id,not seqMode)
         return seqSetting
-
         
     def PreviewFile(self,filename):
         'utility to confirm we have the right file'
@@ -5148,7 +5154,7 @@ class GSASII(wx.Frame):
         dlg.CenterOnParent()
         dlg.ShowModal()
         dlg.Destroy()
-
+        
     def OnRefine(self,event):
         '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
@@ -5211,7 +5217,7 @@ class GSASII(wx.Frame):
             text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
-            dlg2.Raise()
+            #dlg2.Raise()  # crashes sometimes on Mac
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
@@ -5237,6 +5243,59 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
+            
+    def OnLeBail(self,event):
+        seqList = self.testSeqRefineMode()
+        if seqList:
+            self.ErrorDialog('Not for Sequential Fits',
+                'This command is not yet implemented for sequential fitting')
+            return
+        item = GetGPXtreeItemId(self,self.root,'Covariance')
+        covData = self.GPXtree.GetItemPyData(item)
+        GOF0 = covData['Rvals']['GOF']
+        
+        dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
+        Size = dlg.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        dlg.CenterOnParent()
+        dlg.Raise()
+        self.SaveTreeSetting() # save the current tree selection
+        self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
+        if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+        else:
+            refPlotUpdate = None
+
+        try:
+            OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
+        finally:
+            dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
+            dlg.Destroy()
+        if OK:
+            text = ''
+            rtext = 'LeBail+only fit done. '
+            Rwp = Rvals.get('Rwp','?')
+            if 'GOF' in Rvals:
+                txt = 'Final Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
+                    Rvals['GOF']**2,GOF0**2)
+                text += txt
+                rtext += txt
+            text += '\nLoad new result?'
+            dlg2 = wx.MessageDialog(self,text,'LeBail fit: Rwp={:.3f}'
+                                            .format(Rwp),wx.OK|wx.CANCEL)
+            dlg2.CenterOnParent()
+            try:
+                if dlg2.ShowModal() == wx.ID_OK:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
+                    wx.CallAfter(self.reloadFromGPX,rtext)
+                else:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
+            finally:
+                dlg2.Destroy()
+        else:
+            self.ErrorDialog('LeBail error',Rvals['msg'])
             
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 

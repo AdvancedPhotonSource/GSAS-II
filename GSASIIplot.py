@@ -6955,10 +6955,11 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             dlg.Destroy()
         elif event.key == 'l':
             G2frame.seqLines = not G2frame.seqLines
-        wx.CallAfter(Draw)
+        wx.CallAfter(SeqDraw)
 
-    def Draw():
+    def SeqDraw():
         global Title,xLabel,yLabel
+        Plot=Page.figure.gca()
         G2frame.G2plotNB.status.SetStatusText(
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
@@ -7012,7 +7013,8 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
             Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%NC])
-            
+
+        #### Begin self.testSeqRefineMode() ===================== 
         Plot.legend(loc='best')
         if Title:
             Plot.set_title(Title)
@@ -7027,7 +7029,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         else:
             Plot.set_ylabel('Parameter values')
         Page.canvas.draw()
-            
+
     G2frame.seqXselect = SelectX
     try:
         G2frame.seqXaxis
@@ -7051,7 +7053,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
     Page.seqTableGet = TableGet
     Page.fitvals = fitvals
         
-    Draw()
+    SeqDraw()
                 
 ##### PlotExposedImage & PlotImage ################################################################################
 def PlotExposedImage(G2frame,newPlot=False,event=None):

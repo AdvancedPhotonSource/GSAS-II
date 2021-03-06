@@ -4354,6 +4354,7 @@ class GSASII(wx.Frame):
 
         Id = 0
         phaseId = None
+        seqId = None
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
@@ -4367,6 +4368,8 @@ class GSASII(wx.Frame):
                         Id = GetGPXtreeItemId(self,item,'Image Controls')
                     else:
                         Id = item
+            elif name.startswith("Sequential") and self.testSeqRefineMode():
+                seqId = item
             elif name == "Phases":
                 phaseId = item
             elif name == 'Controls':
@@ -4376,7 +4379,11 @@ class GSASII(wx.Frame):
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
-        if Id:
+        if seqId:
+            self.EnablePlot = True
+            SelectDataTreeItem(self,seqId)
+            self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        elif Id:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)

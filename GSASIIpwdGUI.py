@@ -1803,7 +1803,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         mainSizer.Add(LimitSizer())
         if len(data)>2:
             mainSizer.Add((0,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Excluded regions:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Excluded regions:'))
             mainSizer.Add(ExclSizer())
         G2frame.dataWindow.SetSizer(mainSizer)
         G2frame.dataWindow.SetDataSize()
@@ -3226,23 +3226,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
 
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
-    '''
-    G2frame.ifGetExclude = False
-    UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-    SPGlist = G2spc.spglist
-    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','C2/m','P2/m','P1','C1']
-    spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','P -1','C -1']
-    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
-    if 'T' in Inst['Type'][0]:
-        difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[0])
-    else:   #'C', 'B', or 'PKS'
-        wave = G2mth.getWave(Inst)
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
-    
+    '''    
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
@@ -3521,12 +3505,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             for Cell in cells:
                 if Cell[-2]:
                     break
-            cell = Cell[2:9]
+            cell = Cell[2:10]
             controls[4] = 1
             controls[5] = bravaisSymb[cell[0]]
             controls[6:13] = cell[1:8]
             controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
-            G2frame.dataWindow.RefineCell.Enable(True)
+            # G2frame.dataWindow.RefineCell.Enable(True) # set in UpdateUnitCellsGrid
         elif magcells:
             for phase in magcells:
                 if phase['Use']:
@@ -4359,7 +4343,23 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
+
+    #### UpdateIndexPeaksGrid code starts here
+    G2frame.ifGetExclude = False
+    UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    SPGlist = G2spc.spglist
+    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
+        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','C2/m','P2/m','P1','C1']
+    spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
+        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','P -1','C -1']
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
+    if 'T' in Inst['Type'][0]:
+        difC = Inst['difC'][1]
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
+    else:   #'C', 'B', or 'PKS'
+        wave = G2mth.getWave(Inst)
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.GetStatusBar().SetStatusText('')
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
@@ -4634,11 +4634,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         except:
             pass
         if mode:
-            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'),0,WACV)
+            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'))
             colLabels = ['use']
             Types = [wg.GRID_VALUE_BOOL]
         else:
-            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'),0,WACV)
+            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'))
             colLabels = ['M20','X20','use','Bravais']
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
                          wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING]
@@ -4675,7 +4675,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     gridDisplay.SetReadOnly(r,c,isReadOnly=False)
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
-        mainSizer.Add(gridDisplay,0,WACV)
+        mainSizer.Add(gridDisplay)
     if magcells and len(controls) > 16:
         itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
         phaseDict = dict(zip(itemList,magcells))
@@ -4695,7 +4695,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if ' ' not in kvec3:
             Label += ', kvec3=(%s)' % kvec3
         Label += ':'
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label),0,WACV)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label))
         rowLabels = [str(i+1) for i in range(len(baseList))]
         colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
         Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
@@ -4729,7 +4729,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     magDisplay.SetReadOnly(r,c,isReadOnly=False)
                 else:
                     magDisplay.SetReadOnly(r,c,isReadOnly=True)
-        mainSizer.Add(magDisplay,0,WACV)
+        mainSizer.Add(magDisplay)
         
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
@@ -6838,11 +6838,11 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_MODELUNDO)
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name),0,WACV)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Controls:'),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name))
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Controls:'))
     mainSizer.Add(ControlSizer())
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)   
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Global parameters:'),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Global parameters:'))
     mainSizer.Add(OverallSizer()) 
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     Nlayers = len(data['Layers'])
@@ -6859,10 +6859,10 @@ def UpdateREFDModelsGrid(G2frame,data):
         Str = ' Use sequence nos. from:'
         for ilay,layer in enumerate(data['Layers'][1:-1]):
             Str += ' %d: %s'%(ilay+1,layer['Name'])
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=Str),0,WACV)
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' NB: Repeat sequence by e.g. 6*(1 2) '),0,WACV)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=Str))
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' NB: Repeat sequence by e.g. 6*(1 2) '))
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)))
     mainSizer.Add(LayerSizer())
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
@@ -7780,9 +7780,9 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0) 
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' PDF peak fit controls:'),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' PDF peak fit controls:'))
     mainSizer.Add((5,5),0) 
-    mainSizer.Add(limitSizer(),0,WACV) 
+    mainSizer.Add(limitSizer()) 
     mainSizer.Add((5,5),0) 
     mainSizer.Add(backSizer())
     if len(peaks['Peaks']):

@@ -759,7 +759,7 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'&LeBail fit\tCTRL+B','Fit LeBail intensities only')
+        item = parent.Append(wx.ID_ANY,'&Le Bail fit\tCTRL+B','Fit Le Bail intensities only')
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnLeBail, id=item.GetId())
@@ -801,7 +801,7 @@ class GSASII(wx.Frame):
             seqSetting = None
             
         for item in self.Refine:
-            if 'LeBail' in item.GetItemLabel():
+            if 'Le Bail' in item.GetItemLabel():
                 if seqSetting: item.Enable(False)
             elif seqSetting:
                 item.SetItemLabel('Se&quential refine\tCtrl+R')    #might fail on old wx
@@ -5259,7 +5259,10 @@ class GSASII(wx.Frame):
             return
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
-        GOF0 = covData['Rvals']['GOF']
+        try:
+            rChi2initial = '{:.3f}'.format(covData['Rvals']['GOF']**2)
+        except:
+            rChi2initial = '?'
         
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
@@ -5282,15 +5285,15 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if OK:
             text = ''
-            rtext = 'LeBail+only fit done. '
+            rtext = 'Le Bail-only fit done. '
             Rwp = Rvals.get('Rwp','?')
             if 'GOF' in Rvals:
-                txt = 'Final Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
-                    Rvals['GOF']**2,GOF0**2)
+                txt = 'Final Reduced Chi^2: {:.3f} (before ref: {})\n'.format(
+                    Rvals['GOF']**2,rChi2initial)
                 text += txt
                 rtext += txt
             text += '\nLoad new result?'
-            dlg2 = wx.MessageDialog(self,text,'LeBail fit: Rwp={:.3f}'
+            dlg2 = wx.MessageDialog(self,text,'Le Bail fit: Rwp={:.3f}'
                                             .format(Rwp),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
@@ -5302,7 +5305,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg2.Destroy()
         else:
-            self.ErrorDialog('LeBail error',Rvals['msg'])
+            self.ErrorDialog('Le Bail error',Rvals['msg'])
             
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 

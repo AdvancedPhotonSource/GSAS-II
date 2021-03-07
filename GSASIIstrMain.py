@@ -298,9 +298,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         break
     if IfOK:
         if CheckLeBail(Phases):   # only needed for LeBail extraction
-            G2stMth.errRefine(values,[Histograms,Phases,restraintDict,rigidbodyDict],
-                                parmDict,varyList,calcControls,pawleyLookup,dlg)
-
+            G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],
+                                parmDict,[],calcControls,pawleyLookup,dlg)
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     if chisq0 is not None:
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
@@ -561,7 +560,6 @@ def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):
     parmDict.update(hapDict)
     parmDict.update(histDict)
     G2stIO.GetFprime(calcControls,Histograms)
-    parmFrozenList = Controls['parmFrozen']['FrozenList']
     try:
         for i in range(cycles):
             M = G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,dlg)
@@ -579,7 +577,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):
                        #'newAtomDict':newAtomDict,'newCellDict':newCellDict,
                        'freshCOV':True}
         
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,True)
+        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
         G2fil.G2Print (' ***** LeBail fit completed *****')
         return True,Rvals
     except Exception as Msg:

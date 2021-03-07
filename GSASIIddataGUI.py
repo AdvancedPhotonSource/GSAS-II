@@ -841,7 +841,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             if not UseList[G2frame.hist]['LeBail']:
                 UseList[G2frame.hist]['newLeBail'] = True
-                Obj.SetLabel('Do new LeBail extraction?')
+                Obj.SetLabel('Do new Le Bail extraction?')
             UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
 
         def OnResetSize(event):
@@ -908,15 +908,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
-            lbLabel = 'Redo LeBail extraction?   '
+            lbLabel = 'Redo Le Bail extraction?   '
             if UseList[G2frame.hist]['newLeBail']:
-                lbLabel = 'Do new LeBail extraction?'
+                lbLabel = 'Do new Le Bail extraction?'
             lebail = wx.CheckBox(DData,wx.ID_ANY,label=lbLabel)
             lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
             lebail.SetValue(UseList[G2frame.hist]['LeBail'])
             useBox.Add(lebail,0,WACV)
             if UseList[G2frame.hist]['LeBail']:
-                G2frame.SetStatusText('To reset LeBail, cycle LeBail check box.',1)
+                G2frame.SetStatusText('To reset Le Bail, cycle Le Bail check box.',1)
         bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
         if G2frame.testSeqRefineMode():
             bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinemment Options'))

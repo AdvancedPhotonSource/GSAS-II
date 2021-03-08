@@ -842,8 +842,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if not UseList[G2frame.hist]['LeBail']:
                 UseList[G2frame.hist]['newLeBail'] = True
                 Obj.SetLabel('Do new Le Bail extraction?')
-            UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
-
+            UseList[G2frame.hist]['LeBail'] = not UseList[G2frame.hist]['LeBail']
         def OnResetSize(event):
             Obj = event.GetEventObject()
             item,name = Indx[Obj.GetId()]

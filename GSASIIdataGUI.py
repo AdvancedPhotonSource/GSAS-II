@@ -5257,6 +5257,7 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Not for Sequential Fits',
                 'This command is not yet implemented for sequential fitting')
             return
+        self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
         try:

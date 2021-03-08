@@ -90,6 +90,7 @@ if __name__ == '__main__':
     tutorialcount = 0
     videolist = '<UL>'
     for l in tutorialIndex:
+        print('.', end='', flush=True)
         if len(l) == 1:
             print("</UL><h4>{}</H4><UL>".format(l[0]),file=out)
         else:
@@ -147,7 +148,7 @@ if __name__ == '__main__':
     print("<P>The video tutorials are also <A href=https://pan.baidu.com/s/1C1jq1amfuVmcY2n91cQcsg> mirrored in China</A></P>",
                   file=out)
     out.close()
-    print("Tutorials without videos",novideo)
+    print("\nTutorials without videos",novideo)
 
     print("\nStatistics: {} total tutorials, {} with videos"
               .format(tutorialcount,videocount))

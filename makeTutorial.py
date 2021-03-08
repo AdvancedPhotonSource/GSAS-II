@@ -85,12 +85,15 @@ if __name__ == '__main__':
     for most file open commands. Most tutorials have also been recorded as videos of the computer screen
     along with naration. Links are provided below where videos are available. 
     </p>''',file=out)
-
+    novideo = ''
+    videocount = 0
+    tutorialcount = 0
     videolist = '<UL>'
     for l in tutorialIndex:
         if len(l) == 1:
             print("</UL><h4>{}</H4><UL>".format(l[0]),file=out)
         else:
+            tutorialcount += 1
             pageURL = tutURL+'/'+l[0]+'/'+l[1]
             dataURL = tutURL+'/'+l[0]+'/data'
             suffix = ''
@@ -107,13 +110,14 @@ if __name__ == '__main__':
             vname = 'https://anl.box.com/v/{}'.format(videoName)
             #if requests.get(vname).status_code == 200:
             if vname in onlineVideos:
+                videocount += 1
                 video = '<A href="{}">video</A>'.format(vname)
                 #print(' [link: <A href="{}">video</A>]'.format(vname),file=out)
                 #print('Found video',vname)
                 videolist += '<LI><A href="{}">{}</A></LI>\n'.format(vname,l[2].strip())
             else:
                 video =''
-                print('No video for {:45s}{}'.format(videoName,l[2]))
+                novideo += '\n{:45s}{}'.format(videoName,l[2])
             # check for data
             if GSASIIpath.svnList(dataURL,False):
                 exampledata = '<A href="{}">Exercise files</A>'.format(dataURL)
@@ -143,3 +147,7 @@ if __name__ == '__main__':
     print("<P>The video tutorials are also <A href=https://pan.baidu.com/s/1C1jq1amfuVmcY2n91cQcsg> mirrored in China</A></P>",
                   file=out)
     out.close()
+    print("Tutorials without videos",novideo)
+
+    print("\nStatistics: {} total tutorials, {} with videos"
+              .format(tutorialcount,videocount))

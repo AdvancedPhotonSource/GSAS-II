@@ -3321,6 +3321,8 @@ class MultiColumnSelection(wx.Dialog):
         for i,(lbl,wid) in enumerate(zip(colLabels, colWidths)):
             self.list.InsertColumn(i+inc, lbl, width=wid, format=colPosition)
         for i,item in enumerate(choices):
+            if item[0].startswith('   '):
+                item[0] = '--- '+item[0].strip()
             if checkLbl:
                 def OnCheck(event,row=i):
                     self.Selections[row] = event.EventObject.GetValue()
@@ -3335,6 +3337,7 @@ class MultiColumnSelection(wx.Dialog):
                 self.list.InsertStringItem(i, item[0])
             for j,item in enumerate(item[1:len(colLabels)]):
                 item = wordwrap(StripIndents(item,True), colWidths[j+1], wx.ClientDC(self))
+                item += "\n==========================================="
                 self.list.SetStringItem(i,1+j+inc, item)
         # make buttons
         mainSizer.Add(self.list, 1, wx.EXPAND|wx.ALL, 1)
@@ -6311,6 +6314,12 @@ tutorialIndex = (
      '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
      before beginning Rietveld refinement.'''],
      
+    ['LeBail', 'LeBailSucrose.htm', 'Le Bail Intensity Extraction in GSAS-II - Sucrose',
+     '''Shows the process of setting up a Le Bail fit, where reflection 
+     intensities are treated as arbitrary, and how to converge the Le Bail
+     intensities before a combined Le Bail/Least-Squares fit that 
+     optimizes lattice, peak shape and background parameters.'''],
+     
     ['RietPlot', 'PublicationPlot.htm', 'Create a Publication-Ready Rietveld Plot',
      '''Shows how to create a customized version of a plot from a fit, 
      with enlarged letters, different colors or symbols which can be written 
@@ -6526,7 +6535,7 @@ class OpenTutorial(wx.Dialog):
         sizer1.Add((-1,-1),1, wx.EXPAND, 0)
         sizer1.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 0)
         sizer1.Add((-1,-1),1, wx.EXPAND, 0)
-        sizer1.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
+        sizer1.Add(hlp)
         sizer.Add(sizer1,0,wx.EXPAND|wx.ALL,0)
         sizer.Add((10,10))
         sizer0 = wx.BoxSizer(wx.HORIZONTAL)        
@@ -6698,7 +6707,7 @@ class OpenTutorial(wx.Dialog):
     def ChooseTutorial2(self,choices):
         '''Select tutorials from a two-column table, when possible
         '''
-        lbls = ('tutorial name','description')
+        lbls = ('tutorial name (indent indicates previous is required)','description')
         colWidths=[400,400]
         dlg = MultiColumnSelection(self,'select tutorial',lbls,choices,colWidths)
         selection = dlg.Selection

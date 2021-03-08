@@ -2510,7 +2510,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
     MakeParameterWindow()
-        
+    G2frame.dataWindow.SendSizeEvent()        
     
 ################################################################################
 #####  Sample parameters

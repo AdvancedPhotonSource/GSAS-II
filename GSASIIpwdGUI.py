@@ -4744,6 +4744,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     dMin = 0.05
+    if not isinstance(G2frame.Hide, bool):
+        G2frame.Hide = False
     if 'UsrReject' in Controls:
         dMin = Controls['UsrReject'].get('MinD',0.05)
 
@@ -4852,7 +4854,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                         return
         rowLabels = []
         if HKLF:
-            refList = data[1]['RefList']
+            if G2frame.Hide:
+                refList = np.array([refl for refl in data[1]['RefList'] if refl[3]])
+            else:
+                refList = data[1]['RefList']
             refs = refList
         else:
             muStrData = histData['Mustrain']
@@ -4954,7 +4959,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].AutoSizeColumns(False)
             setBackgroundColors(im,itof)
         if HKLF:
-            refList = np.array([refl[:6+im] for refl in data[1]['RefList']])
+            if G2frame.Hide:
+                refList = np.array([refl[:6+im] for refl in data[1]['RefList'] if refl[3]])
+            else:
+                refList = np.array([refl[:6+im] for refl in data[1]['RefList']])
         else:
             refList = np.array([refl[:6+im] for refl in data[phaseName]['RefList']])
         G2frame.HKL = np.vstack((refList.T)).T    #build for plots
@@ -4969,7 +4977,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             raise Exception("how did we not find a phase name?")
         
     def OnToggleExt(event):
-        print('TBD')
+        G2frame.Hide = not G2frame.Hide
+        UpdateReflectionGrid(G2frame,data,HKLF=True,Name=Name)
                   
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This

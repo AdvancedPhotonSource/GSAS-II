@@ -362,6 +362,13 @@ class G2PlotOgl(_tabPlotWin):
         sizer.Add(self.canvas,1,wx.EXPAND)
         self.SetSizer(sizer)
         
+    def SetToolTipString(self,text):
+        if 'phoenix' in wx.version():
+            self.canvas.SetToolTip(wx.ToolTip(text))
+        else:
+            self.canvas.SetToolTipString(text)
+            
+        
 class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -1098,7 +1105,7 @@ def changePlotSettings(G2frame,Plot):
 ##### PlotSngl ################################################################     
 def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Structure factor plotting package - displays zone of reflections as rings proportional
-        to F, F**2, etc. as requested
+        to F, F**2, etc. as requested via matpltlib; plots are not geometrically correct
     '''
     from matplotlib.patches import Circle
     global HKL,HKLF,HKLref
@@ -1445,8 +1452,8 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     
 ##### Plot3DSngl ################################################################################
 def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
-    '''3D Structure factor plotting package - displays reflections as rings proportional
-        to F, F**2, etc. as requested as 3D array
+    '''3D Structure factor plotting package - displays reflections as spots proportional
+        to F, F**2, etc. as requested as 3D array via pyOpenGl
     '''
     global ifBox
     ifBox = False
@@ -1537,10 +1544,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             Data['Scale'] /= 1.25
         elif key == 'P':
             vec = viewChoice[Data['viewKey']][0]
-            drawingData['viewPoint'][0] -= vec
-        elif key == 'N':
-            vec = viewChoice[Data['viewKey']][0]
             drawingData['viewPoint'][0] += vec
+        elif key == 'M':
+            vec = viewChoice[Data['viewKey']][0]
+            drawingData['viewPoint'][0] -= vec
         elif key == '0':
             drawingData['viewPoint'][0] = np.array([0,0,0])
             Data['Scale'] = 1.0
@@ -1847,7 +1854,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/20.
         if Data['Zone']:
-            Zclip = 0.01
+            Zclip = 0.002
         Q = drawingData['Quaternion']
         Tx,Ty,Tz = drawingData['viewPoint'][0][:3]
         G,g = G2lat.cell2Gmat(cell)
@@ -1857,8 +1864,13 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
         
         HKL,RC,RF,RF2 = FillHKLRC()
-        G2frame.G2plotNB.status.SetStatusText   \
-            ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%%'%(Data['Type'],Name,RF,super2,RF2),1)
+        if Data['Zone']:
+            G2frame.G2plotNB.status.SetStatusText   \
+                ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%% layer %s'%    \
+                (Data['Type'],Name,RF,super2,RF2,str(list(drawingData['viewPoint'][0]))),1)            
+        else:
+            G2frame.G2plotNB.status.SetStatusText   \
+                ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%%'%(Data['Type'],Name,RF,super2,RF2),1)
         
         SetBackground()
         GL.glInitNames()
@@ -1898,7 +1910,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Font = Page.GetFont()
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
-    'z: zero zone toggle','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
+    'z: zero zone toggle','p: increment layer','m: decrement layer','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
                          size=(G2frame.G2plotNB.status.firstLen,-1))

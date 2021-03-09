@@ -5594,7 +5594,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     '''
 
     def __init__(self,parent):
-#        wxscroll.ScrolledPanel.__init__(self,parent,wx.ID_ANY,size=parent.GetSize())
         wx.ScrolledWindow.__init__(self,parent,wx.ID_ANY,size=parent.GetSize())
         self.parent = parent
         self._initMenus()
@@ -6080,7 +6079,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MakeNewPhase.Enable(False)
         
         # PDR / Reflection Lists
-        G2G.Define_wxId('wxID_SELECTPHASE', ) #some wxIDs defined above in PWDR & SASD
+        G2G.Define_wxId('wxID_SELECTPHASE','wxID_SHOWHIDEEXTINCT' ) #some wxIDs defined above in PWDR & SASD
         self.ReflMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ReflMenu)
         self.ReflEdit = wx.Menu(title='')
@@ -6089,6 +6088,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ReflEdit.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs in 1D')
         self.ReflEdit.Append(G2G.wxID_PWDHKLPLOT,'Plot HKLs','Plot HKLs in 2D')
         self.ReflEdit.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs in 3D')
+        self.HideShow = self.ReflEdit.Append(G2G.wxID_SHOWHIDEEXTINCT,'Show/hide extinct reflections')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters
@@ -6998,6 +6998,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
+    def OnToggleExt(event):
+        print('TBD')
                   
     def OnMergeHKL(event):
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -7207,8 +7210,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
         if kind == 'PWDR':
-            mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                ' Durbin-Watson statistic: %.3f'%(data[0].get('Durbin-Watson',0.))))
+            DBW = ma.getdata(data[0]['Durbin-Watson'])
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Durbin-Watson statistic: %.3f'%DBW))
         for value in data[0]:
             if 'Nref' in value:
                 pfx = value.split('Nref')[0]
@@ -7715,6 +7718,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         else:
             G2plt.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection Lists':   #powder reflections
+        G2frame.dataWindow.HideShow.Enable(False)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         G2frame.RefList = ''
@@ -7723,6 +7727,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateReflectionGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections
+        G2frame.dataWindow.HideShow.Enable(True)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)

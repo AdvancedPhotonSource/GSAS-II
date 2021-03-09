@@ -3284,7 +3284,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     else:
                         value = atomData[r][c+1]
                         CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
-                        atomData[r][c+1] =  0.0
                         Atoms.SetCellStyle(r,c+1,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(r,c+1,VERY_LIGHT_GREY)
                         for i in range(6):
@@ -3294,6 +3293,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             Atoms.SetCellTextColour(r,ci,BLACK)
                             if CSI[2][i]:
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
+                        atomData[r][c+1] =  0.0
                 elif Atoms.GetColLabelValue(c) in ['U11','U22','U33','U12','U13','U23']:
                     value = atomData[r][c]
                     CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
@@ -3975,8 +3975,13 @@ def UpdatePhaseData(G2frame,Item,data):
                 sel = dlg.GetSelection()
                 parm = choices[sel][0]
                 for r in indx:                        
-                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
-                        atomData[r][cid] = parm
+                    if Atoms.IsReadOnly(r,0):   #not if in RB!
+                        continue
+                    atomData[r][cid] = parm
+                    if parm == 'A' and not any(atomData[r][cid+2:cid+8]):
+                        sytsym = atomData[r][cs]
+                        CSI = G2spc.GetCSuinel(sytsym)
+                        atomData[r][ci+2:ci+8] = atomData[r][ci+1]*np.array(CSI[3])
                 FillAtomsGrid(Atoms)
             dlg.Destroy()
         elif parm in ['frac','Uiso']:

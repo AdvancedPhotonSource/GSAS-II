@@ -149,10 +149,8 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
         for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
-            h,k,l = S[:4],S[4:8],S[8:12]
-#            h,k,l = S[:12].split()
-            Fo,sigFo = S[12:].split()[:2]
-#                h,k,l,Fo,sigFo = S[:4],S[4:8],S[8:12],S[12:20],S[20:28]
+#           h,k,l,Fo,sigFo = S[:4],S[4:8],S[8:12],S[12:20],S[20:28]
+            h,k,l,Fo,sigFo = S.split()
             h,k,l = [int(h),int(k),int(l)]
             if not any([h,k,l]):
                 break

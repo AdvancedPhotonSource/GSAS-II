@@ -4968,6 +4968,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             print (phases)
             raise Exception("how did we not find a phase name?")
         
+    def OnToggleExt(event):
+        print('TBD')
+                  
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This
         routine is needed because the reflection table may not have been created yet.
@@ -5007,6 +5010,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnToggleExt, id=G2G.wxID_SHOWHIDEEXTINCT)
         G2frame.dataWindow.SelectPhase.Enable(False)
     else:
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2G.wxID_SELECTPHASE)

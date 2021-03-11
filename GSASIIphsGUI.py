@@ -10548,7 +10548,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 
                 rbType = data['testRBObj']['rbType']
                 rbNames = []
-                for item in data['RBModels'][rbType]:
+                for item in data['RBModels'].get(rbType,[]):
                     rbNames.append(item['RBname'])
                 rbObj['Ids'] = Ids          #atomids
                 rbId = rbObj['RBId']        #RB obj id

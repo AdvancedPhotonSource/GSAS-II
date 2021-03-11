@@ -1135,7 +1135,8 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
 ################################################################################
 ##### Phase data
 ################################################################################                    
-def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRef=False):
+def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
+                 seqRef=False,symHold=None):
     '''Setup the phase information for a structural refinement, used for 
     regular and sequential refinements, optionally printing information 
     to the .lst file (if Print is True)
@@ -1370,11 +1371,25 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
+        Sytsym = G2spc.SytSym(RB['Orig'][0],SGData)[0]
+        xId,xCoef = G2spc.GetCSxinel(Sytsym) # gen origin site sym 
+        equivs = [[],[],[]]
         for i in range(3):
             name = pfxRB+pstr[i]+':'+str(iRB)+':'+rbid
             phaseDict[name] = RB['Orig'][0][i]
             if RB['Orig'][1]:
-                phaseVary += [name,]
+                if xId[i] > 0:                               
+                    phaseVary += [name,]
+                    equivs[xId[i]-1].append([name,xCoef[i]])
+                elif symHold is not None: #variable is held due to symmetry
+                    symHold.append(name)
+        for equiv in equivs:
+            if len(equiv) > 1:
+                name = equiv[0][0]
+                coef = equiv[0][1]
+                for eqv in equiv[1:]:
+                    eqv[1] /= coef
+                    G2mv.StoreEquivalence(name,(eqv,))
         pfxRB = pfx+'RB'+rbKey+'O'
         A,V = G2mth.Q2AV(RB['Orig'][0])
         fixAxis = [0, np.abs(V).argmax()+1]
@@ -1531,6 +1546,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         if xId[j] > 0:                               
                             phaseVary.append(names[j])
                             equivs[xId[j]-1].append([names[j],xCoef[j]])
+                        elif symHold is not None: #variable is held due to symmetry
+                            symHold.append(names[j])
                     for equiv in equivs:
                         if len(equiv) > 1:
                             name = equiv[0][0]

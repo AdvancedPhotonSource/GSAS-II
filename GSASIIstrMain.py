@@ -508,7 +508,7 @@ def CheckLeBail(Phases):
         for h in phase['Histograms']:
             #phase['Histograms'][h]
             if not phase['Histograms'][h]['Use']: continue
-            if phase['Histograms'][h]['LeBail']:
+            if phase['Histograms'][h].get('LeBail',False):
                  return True
     return False
         

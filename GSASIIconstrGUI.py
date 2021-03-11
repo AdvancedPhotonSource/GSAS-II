@@ -648,8 +648,9 @@ def UpdateConstraints(G2frame,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
-            Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,
+             BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
+                 Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
         return constDictList,phaseDict,fixedList
             
     def ConstraintsCheck(data,newcons=[],reqVaryList=None):
@@ -1036,13 +1037,34 @@ def UpdateConstraints(G2frame,data):
         '''
         if name == 'Sym-Generated':         #show symmetry generated constraints
             Sizer1 =  wx.BoxSizer(wx.VERTICAL)
+            if symHolds:
+                Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
+                    'Position variables fixed by space group symmetry'))
+                Sizer1.Add((-1,5))
+                Sizer = wx.FlexGridSizer(0,2,0,0)
+                Sizer1.Add(Sizer)
+                for var in symHolds:
+                    Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,'  FIXED'),
+                              0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+                    Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,var))
+                    Sizer.Add((-1,-1))
+                    Sizer.Add((-1,2))
+            else:
+                Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
+                    'No holds generated'))
+            Sizer1.Add((-1,10))
+            symGen = G2mv.GetSymEquiv()
+            if len(symGen) == 0:
+                Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
+                    'No equvalences generated'))
+                return Sizer1
             Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
                 'Equivalences generated based on cell/space group input'))
             Sizer1.Add((-1,5))
             Sizer = wx.FlexGridSizer(0,2,0,0)
             Sizer1.Add(Sizer)
-            for sym in G2mv.GetSymEquiv():
-                Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,'EQUIV'),
+            for sym in symGen:
+                Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,'  EQUIV'),
                     0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
                 Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,sym))
                 Sizer.Add((-1,-1))
@@ -1401,7 +1423,10 @@ def UpdateConstraints(G2frame,data):
         return
 
     # create a list of the phase variables
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,MFtable,maxSSwave = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
+    symHolds = []
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,
+         MFtable,maxSSwave) = G2stIO.GetPhaseData(
+             Phases,rbIds=rbIds,Print=False,symHold=symHolds)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in badPhaseParms:

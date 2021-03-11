@@ -7210,7 +7210,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
         if kind == 'PWDR':
-            DBW = ma.getdata(data[0]['Durbin-Watson'])
+            try:    #old gpx file
+                DBW = ma.getdata(data[0]['Durbin-Watson'])
+            except KeyError:
+                DBW = 1.0
             mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Durbin-Watson statistic: %.3f'%DBW))
         for value in data[0]:
             if 'Nref' in value:

@@ -508,8 +508,11 @@ def CheckLeBail(Phases):
         for h in phase['Histograms']:
             #phase['Histograms'][h]
             if not phase['Histograms'][h]['Use']: continue
-            if phase['Histograms'][h].get('LeBail',False):
-                 return True
+            try:
+                if phase['Histograms'][h]['LeBail']:
+                     return True
+            except KeyError:    #HKLF & old gpx files
+                pass
     return False
         
 def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):

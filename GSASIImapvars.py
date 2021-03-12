@@ -698,7 +698,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
             notvaried = ''
             for var in constrDict[rel]:
                 if var.startswith('_'): continue
-                if not re.match('[0-9]*:[0-9\*]*:',var):
+                if not re.match('[0-9]*:[0-9\\*]*:',var):
                     warnmsg += "\nParameter "+str(var)+" does not begin with a ':'"
                 if var in varyList:
                     varied += 1
@@ -1579,7 +1579,6 @@ def GetSymEquiv():
         for i,mv in enumerate(mapvars):
             if not symFlag: continue
             if multarr is None:
-                #s1 = str(mv) + ' = '
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0

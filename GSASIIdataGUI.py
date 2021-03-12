@@ -5514,6 +5514,7 @@ class GSASII(wx.Frame):
         result = None
         if parent is None:
             dlg = wx.MessageDialog(self, message, title,  wtype)
+            dlg.Raise()
         else:
             dlg = wx.MessageDialog(parent, message, title,  wtype)
             dlg.CenterOnParent() # not working on Mac

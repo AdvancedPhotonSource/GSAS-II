@@ -748,7 +748,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])      #### ops[0].T
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
@@ -874,7 +874,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])    #### ops[0].T?
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
@@ -3456,7 +3456,7 @@ def getPowderProfileDervMP(args):
     depDerivDict = {}
     for j in dependentVars:
         depDerivDict[j] = np.zeros(shape=(len(x)))
-#    print 'dependent vars',dependentVars
+#    print ('dependent vars',dependentVars)
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']

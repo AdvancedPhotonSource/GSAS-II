@@ -4103,7 +4103,7 @@ class ShowLSParms(wx.Dialog):
         parmSizer.Add(selectionsSizer,0)
         refChoices = ['All','Refined']
         txt = ('"R" indicates a refined variable\n'+
-               '"C" indicates generated from a constraint')
+               '"C" indicates generated from a user entered constraint')
         if fcount:
             refChoices += ['Frozen']
             txt += '\n"F" indicates a variable that is Frozen due to exceeding min/max'

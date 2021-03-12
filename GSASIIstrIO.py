@@ -174,6 +174,7 @@ def ProcessConstraints(constList):
     done (if a phase has been deleted, etc.), the variable is ignored.
     If the constraint cannot be used due to too many dropped variables,
     it is counted as ignored.
+    NB: this processing does not include symmetry imposed constraints
     
     :param list constList: a list of lists where each item in the outer list
       specifies a constraint of some form, as described in the :mod:`GSASIIobj`

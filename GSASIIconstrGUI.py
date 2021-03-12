@@ -1153,10 +1153,23 @@ def UpdateConstraints(G2frame,data):
                         helptext += '\n{:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     typeString = 'CONST'
                     eqString[-1] += ' = '+str(item[-3])
+                elif item[-1] == 'e' and len(item[:-3]) == 2:
+                    if item[0][0] == 0: item[0][0] = 1.0
+                    if item[1][0] == 0: item[1][0] = 1.0
+                    var = str(item[0][1])
+                    helptext = 'Variable {:} '.format(var) + " ("+ G2obj.fmtVarDescr(var) + ")"
+                    helptext += "\n\nis equivalent to "
+                    m = item[0][0]/item[1][0]
+                    var1 = str(item[1][1])
+                    helptext += '\n{:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                    eqString[-1] += '{:} = {:}'.format(var1,var)
+                    if m != 1:
+                        eqString[-1] += ' / ' + str(m)
+                    typeString = 'EQUIV'
                 elif item[-1] == 'e':
                     helptext = "The following variable:"
-                    normval = item[:-3][0][0]
-                    indepterm = item[:-3][0][1]
+                    normval = item[0][0]
+                    indepterm = item[0][1]
                     for i,term in enumerate(item[:-3]):
                         var = str(term[1])
                         if term[0] == 0: term[0] = 1.0

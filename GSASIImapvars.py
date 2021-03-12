@@ -1583,6 +1583,15 @@ def GetSymEquiv():
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0
+                if len(varlist) == 1:
+                    # format the way Bob prefers
+                    if invmultarr[0][0] == 1: 
+                        s1 = str(varlist[0]) + ' = ' + str(mv)
+                    else:
+                        s1 = str(varlist[0]) + ' = ' + str(
+                            invmultarr[0][0]) + ' * '+ str(mv)
+                    symout.append(s1)
+                    continue
                 for v,m in zip(varlist,invmultarr):
                     if debug: print ('v,m[0]: ',v,m[0])
                     if len(s1.split('\n')[-1]) > 75: s1 += '\n        '

@@ -1568,16 +1568,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                         names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
                             pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
-                        equivs = [[],[],[],[],[],[]]
+                        equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
                         for j in range(6):
                             if uId[j] > 0:                               
                                 phaseVary.append(names[j])
-                                equivs[uId[j]-1].append([names[j],uCoef[j]])
+                                equivs[uId[j]].append([names[j],uCoef[j]])
                         for equiv in equivs:
-                            if len(equiv) > 1:
-                                name = equiv[0][0]
-                                coef = equiv[0][1]
-                                for eqv in equiv[1:]:
+                            if len(equivs[equiv]) > 1:
+                                name = equivs[equiv][0][0]
+                                coef = equivs[equiv][0][1]
+                                for eqv in equivs[equiv][1:]:
                                     eqv[1] /= coef
                                     G2mv.StoreEquivalence(name,(eqv,))
                 if 'M' in at[ct+1]:

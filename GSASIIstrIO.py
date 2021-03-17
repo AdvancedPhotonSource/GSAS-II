@@ -1542,18 +1542,18 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         at[cs] = Sytsym
                         xId,xCoef = G2spc.GetCSxinel(at[cs])
                     names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
-                    equivs = [[],[],[]]
+                    equivs = {1:[],2:[],3:[]}
                     for j in range(3):
                         if xId[j] > 0:                               
                             phaseVary.append(names[j])
-                            equivs[xId[j]-1].append([names[j],xCoef[j]])
+                            equivs[xId[j]].append([names[j],xCoef[j]])
                         elif symHold is not None: #variable is held due to symmetry
                             symHold.append(names[j])
                     for equiv in equivs:
-                        if len(equiv) > 1:
-                            name = equiv[0][0]
-                            coef = equiv[0][1]
-                            for eqv in equiv[1:]:
+                        if len(equivs[equiv]) > 1:
+                            name = equivs[equiv][0][0]
+                            coef = equivs[equiv][0][1]
+                            for eqv in equivs[equiv][1:]:
                                 eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,(eqv,))
                 if 'U' in at[ct+1]:
@@ -1584,16 +1584,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(at[cx:cx+3],SGData)
                     mId,mCoef = G2spc.GetCSpqinel(SpnFlp,dupDir)
                     names = [pfx+'AMx:'+str(i),pfx+'AMy:'+str(i),pfx+'AMz:'+str(i)]
-                    equivs = [[],[],[]]
+                    equivs = {1:[],2:[],3:[]}
                     for j in range(3):
                         if mId[j] > 0:
                             phaseVary.append(names[j])
-                            equivs[mId[j]-1].append([names[j],mCoef[j]])
+                            equivs[mId[j]].append([names[j],mCoef[j]])
                     for equiv in equivs:
-                        if len(equiv) > 1:
-                            name = equiv[0][0]
-                            coef = equiv[0][1]
-                            for eqv in equiv[1:]:
+                        if len(equivs[equiv]) > 1:
+                            name = equivs[equiv][0][0]
+                            coef = equivs[equiv][0][1]
+                            for eqv in equivs[equiv][1:]:
                                 eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,(eqv,))
                 if General.get('Modulated',False):
@@ -1618,25 +1618,25 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Block',] and not iw:
                                     names = [pfx+'Tmin:'+stiw,pfx+'Tmax:'+stiw,pfx+'Xmax:'+stiw,pfx+'Ymax:'+stiw,pfx+'Zmax:'+stiw]
-                                    equivs = [[],[], [],[],[]]
+                                    equivs = {1:[],2:[], 3:[],4:[],5:[]}
                                 else:
                                     names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
                                         pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
-                                    equivs = [[],[],[], [],[],[]]
+                                    equivs = {1:[],2:[],3:[], 4:[],5:[],6:[]}
                             elif Stype == 'Sadp':
                                 names = [pfx+'U11sin:'+stiw,pfx+'U22sin:'+stiw,pfx+'U33sin:'+stiw,
                                     pfx+'U12sin:'+stiw,pfx+'U13sin:'+stiw,pfx+'U23sin:'+stiw,
                                     pfx+'U11cos:'+stiw,pfx+'U22cos:'+stiw,pfx+'U33cos:'+stiw,
                                     pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
-                                equivs = [[],[],[],[],[],[], [],[],[],[],[],[]]
+                                equivs = {1:[],2:[],3:[],4:[],5:[],6:[], 7:[],8:[],9:[],10:[],11:[],12:[]}
                             elif Stype == 'Sfrac':
-                                equivs = [[],[]]
+                                equivs = {1:[],2:[]}
                                 if 'Crenel' in waveType and not iw:
                                     names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
                                 else:
                                     names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
                             elif Stype == 'Smag':
-                                equivs = [[],[],[], [],[],[]]
+                                equivs = {1:[],2:[],3:[], 4:[],5:[],6:[]}
                                 names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
                                     pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
                             phaseDict.update(dict(zip(names,wave[0])))
@@ -1644,12 +1644,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                 for j in range(len(equivs)):
                                     if uId[j][0] > 0:                               
                                         phaseVary.append(names[j])
-                                        equivs[uId[j][0]-1].append([names[j],uCoef[j][0]])
+                                        equivs[uId[j][0]].append([names[j],uCoef[j][0]])
                                 for equiv in equivs:
-                                    if len(equiv) > 1:
-                                        name = equiv[0][0]
-                                        coef = equiv[0][1]
-                                        for eqv in equiv[1:]:
+                                    if len(equivs[equiv]) > 1:
+                                        name = equivs[equiv][0][0]
+                                        coef = equivs[equiv][0][1]
+                                        for eqv in equivs[equiv][1:]:
                                             eqv[1] /= coef
                                             G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)

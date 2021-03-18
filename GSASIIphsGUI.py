@@ -3921,7 +3921,7 @@ def UpdatePhaseData(G2frame,Item,data):
         ifMag = False
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         ci = colLabels.index('I/A')
-        choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
+        choices = ['Type','Name','x','y','z','frac','I/A','Uiso','Uij']
         if generalData['Type'] == 'magnetic':
             choices += ['Mx','My','Mz',]
             ifMag = True
@@ -3930,7 +3930,9 @@ def UpdatePhaseData(G2frame,Item,data):
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             parm = choices[sel]
-            cid = colLabels.index(parm)
+            cid = -1
+            if parm != 'Uij':
+                cid = colLabels.index(parm)
         dlg.Destroy()
         if parm in ['Type']:
             dlg = G2elemGUI.PickElement(G2frame,ifMag=ifMag)
@@ -3999,6 +4001,25 @@ def UpdatePhaseData(G2frame,Item,data):
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
             dlg.Destroy()
+        elif parm == 'Uij':
+            limits = [0.,0.25]
+            val = 0.01
+            dlg = G2G.SingleFloatDialog(G2frame,'Convert Uiso to Uij','Enter default for Uiso'+parm,val,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in indx:                        
+                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
+                        atomData[r][ci] = 'A'
+                        sytsym = atomData[r][cs]
+                        CSI = G2spc.GetCSuinel(sytsym)
+                        if atomData[r][ci+1] > 0.:
+                            atomData[r][ci+2:ci+8] = atomData[r][ci+1]*np.array(CSI[3])
+                        else:
+                            atomData[r][ci+2:ci+8] = parm*np.array(CSI[3])                            
+                SetupGeneral()
+                FillAtomsGrid(Atoms)
+            dlg.Destroy()
+            
         elif parm in ['x','y','z']:
             limits = [-1.,1.]
             val = 0.

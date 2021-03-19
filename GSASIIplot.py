@@ -6811,7 +6811,6 @@ def PlotCovariance(G2frame,Data):
                           vmin=-1.,vmax=1.)
         imgAx = Img.axes
         ytics = imgAx.get_yticks()
-        imgAx.set_yticks(ytics[:-1])
         ylabs = [Page.varyList[int(i)] for i in ytics[:-1]]
         imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Img)

@@ -1976,9 +1976,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.CenterOnParent()
             dlg.ShowModal()
 
-#=================================================================================
-#===== end of function definitions for _Exporter =================================
-#=================================================================================
+#==============================================================================
+####  _Exporter code starts here         ======================================
+#==============================================================================
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         if not self.CIFname: # Get a name for the CIF. If not defined, use the GPX name (save, if that is needed).
@@ -2074,6 +2074,12 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
+        # is there anything to export?
+        if len(self.Phases) == len(self.powderDict) == len(self.xtalDict) == 0:
+           self.G2frame.ErrorDialog(
+               'Empty project',
+               'Project does not contain any data or phases. Are they interconnected?')
+           return
         if self.ExportSelect('ask'): return
         if not self.filename:
             print('No name supplied')
@@ -2087,12 +2093,6 @@ class ExportCIF(G2IO.ExportBaseclass):
         #    for j in self.OverallParms['Constraints'][i]:
         #        print j
 
-        # is there anything to export?
-        if len(self.Phases) == len(self.powderDict) == len(self.xtalDict) == 0:
-           self.G2frame.ErrorDialog(
-               'Empty project',
-               'Project does not contain any data or phases. Are they interconnected?')
-           return
         self.quickmode = False # full CIF
         phasenam = None # include all phases
         # Will this require a multiblock CIF?
@@ -2170,6 +2170,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 'Check T and P values',
                 wx.OK|wx.CANCEL)
             ret = dlg.ShowModal()
+            dlg.CenterOnParent()
             dlg.Destroy()
             if ret != wx.ID_OK: return
         if oneblock:
@@ -2193,8 +2194,9 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.cifdefs = wx.Dialog(
             self.G2frame,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-        EditCIFDefaults()
+        self.cifdefs.G2frame = self.G2frame
         self.cifdefs.CenterOnParent()
+        EditCIFDefaults()
         if self.cifdefs.ShowModal() != wx.ID_OK:
             self.cifdefs.Destroy()
             return
@@ -2617,7 +2619,7 @@ def PickleCIFdict(fil):
                 cifdic[item][j] = dictobj[item][j]
     try:
         fil = os.path.splitext(fil)[0]+'.cpickle'
-        fp = open(fil,'w')
+        fp = open(fil,'wb')
         pickle.dump(cifdic,fp)
         fp.close()
         if DEBUG: print('wrote '+fil)
@@ -2640,7 +2642,7 @@ def LoadCIFdic():
         for loc in sys.path:
             fil = os.path.join(loc,ftyp+".cpickle")
             if not os.path.exists(fil): continue
-            fp = open(fil,'r')
+            fp = open(fil,'rb')
             try:
                 cifdic.update(pickle.load(fp))
                 if DEBUG: print('reloaded '+fil)
@@ -2699,7 +2701,10 @@ def CIF2dict(cf):
       which items are in which loops.
     '''
     blk = cf.keys()[0] # assume templates are a single CIF block, use the 1st
-    loopstructure = cf[blk].loopnames()[:] # copy over the list of loop contents
+    try:
+        loopstructure = cf[blk].loopnames()[:] # copy over the list of loop contents
+    except AttributeError:
+        loopstructure = [j[:] for j in cf[blk].loops.values()] # method replaced?
     dblk = {}
     for item in cf[blk].keys(): # make a copy of all the items in the block
         dblk[item] = cf[blk][item]
@@ -2783,6 +2788,7 @@ class EditCIFtemplate(wx.Dialog):
         self.loopstructure = loopstructure
         self.newfile = None
         self.defaultname = defaultname
+        self.G2frame = parent.G2frame
         global CIFdic  # once this is loaded, keep it around
         if CIFdic is None:
             CIFdic = LoadCIFdic()
@@ -2875,6 +2881,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.LayoutCalled = False
         self.parentOKbuttons = OKbuttons
         self.ValidatedControlsList = []
+        self.G2frame = parent.G2frame
         self._fill()
     def _fill(self):
         'Fill the scrolled panel with widgets for each CIF item'
@@ -2927,7 +2934,10 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 if self.cifdic.get(item):
                     df = self.cifdic[item].get('_definition')
                     if df:
-                        txt.SetToolTipString(G2IO.trim(df))
+                        try:
+                            txt.SetToolTip(G2IO.trim(df))
+                        except:
+                            txt.SetToolTipString(G2IO.trim(df))
                         but = CIFdefHelp(self,
                                          "Definition for "+item+":\n\n"+G2IO.trim(df),
                                          self.parent,
@@ -2952,7 +2962,10 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 if self.cifdic.get(item):
                     df = self.cifdic[item].get('_definition')
                     if df:
-                        txt.SetToolTipString(G2IO.trim(df))
+                        try:
+                            txt.SetToolTip(G2IO.trim(df))
+                        except:
+                            txt.SetToolTipString(G2IO.trim(df))
                         but = CIFdefHelp(self,
                                          "Definition for "+item+":\n\n"+G2IO.trim(df),
                                          self.parent,
@@ -3040,7 +3053,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     if rng[0]: mn = hint(rng[0])
                     if rng[1]: mx = hint(rng[1])
                     ent = G2G.ValidatedTxtCtrl(
-                        self,dct,item,typeHint=hint,min=mn,max=mx,
+                        self,dct,item,typeHint=hint,xmin=mn,xmax=mx,
                         CIFinput=True,ASCIIonly=True,
                         OKcontrol=self.ControlOKButton)
                     self.ValidatedControlsList.append(ent)
@@ -3076,6 +3089,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         self.cifdefs = frame
         self.dict = G2dict
         self.repaint = repaint
+        self.G2frame = frame.G2frame
         templateDefName = 'template_'+tmplate+'.cif'
         self.CIF = G2dict.get("CIF_template")
         if defaultname:
@@ -3145,7 +3159,7 @@ class CIFtemplateSelect(wx.BoxSizer):
             defaultDir=pth,
             defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
-            style=wx.OPEN)
+            style=wx.FD_OPEN)
         ret = dlg.ShowModal()
         fil = dlg.GetPath()
         dlg.Destroy()

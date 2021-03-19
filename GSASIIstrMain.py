@@ -81,7 +81,7 @@ def ReportProblems(result,Rvals,varyList):
                 else:
                     msg += ', {}'.format(varyList[val])
         if m: G2fil.G2Print(m, mode='warn')
-    SVD0 = result[2].get('SVD0')
+    SVD0 = result[2].get('SVD0',0)
     if SVD0 == 1: 
         msg += 'Warning: Soft (SVD) singularity in the Hessian'
     elif SVD0 > 0: 
@@ -252,15 +252,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
-            Lastshft = result[2].get('Xvec',None)
-            if Lastshft is None:
-                Rvals['Max shft/sig'] = None
-            else:
-                Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
+            Lastshft = result[0]-values
+            Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
-#            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
-#            for item in table: print item,table[item]               #useful debug - are things shifting?
             # report on refinement issues. Result in Rvals['msg']
             ReportProblems(result,Rvals,varyList)
             break                   #refinement succeeded - finish up!
@@ -303,7 +298,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     if chisq0 is not None:
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
-    return IfOK,Rvals,result,covMatrix,sig
+    return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
 def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     '''Global refinement -- refines to minimize against all histograms. 
@@ -397,7 +392,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     Rvals = {}
     try:
         covData = {}
-        IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
+        IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histograms,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
             refPlotUpdate=refPlotUpdate)
         if IfOK:
@@ -405,7 +400,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
             newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
             covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                       'varyListStart':varyListStart,
+                       'varyListStart':varyListStart,'Lastshft':Lastshft,
                        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
                        'newCellDict':newCellDict,'freshCOV':True}
             # add the uncertainties into the esd dictionary (sigDict)
@@ -817,7 +812,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                ' The following refined variables have previously been frozen due to exceeding limits:\n\t{}\n'
                .format(s))
         try:
-            IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
+            IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
             try:
@@ -859,7 +854,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             histRefData = {
                 'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                'varyListStart':varyListStart,
+                'varyListStart':varyListStart,'Lastshft':Lastshft,
                 'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
                 'newCellDict':newCellDict,'depParmDict':depParmDict,
                 'constraintInfo':constraintInfo,

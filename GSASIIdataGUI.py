@@ -7366,6 +7366,16 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
+    def OnShowShift(event):
+        if 'Lastshft' not in data:
+            return
+        if data['Lastshft'] is None:
+            return
+        shftesd = data['Lastshft']/data['sig']
+        
+        G2plt.PlotNamedFloatHBarGraph(G2frame,shftesd,data['varyList'],Xlabel='Last shift/esd',
+            Ylabel='Variables',Title='Last shift/esd',PlotName='Shift/esd')
+    
     if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
         if GSASIIpath.GetConfigValue('debug'): print('Skipping SelectDataTreeItem as G2frame.PickIdText unchanged')
         return
@@ -7446,7 +7456,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     # clear out the old panel contents
     if G2frame.dataWindow:
         G2frame.dataWindow.ClearData() 
-#    G2frame.dataWindow.ClearData()
     # process first-level entries in tree
     if G2frame.GPXtree.GetItemParent(item) == G2frame.root:
         G2frame.PatternId = 0
@@ -7490,11 +7499,13 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+                if 'Lastshft' in data and not data['Lastshft'] is None:
+                    showShift = wx.Button(G2frame.dataWindow,label='Show shift/esd plot')
+                    showShift.Bind(wx.EVT_BUTTON,OnShowShift)
+                    subSizer.Add(showShift)
             mainSizer.Add(subSizer)
             mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
-            #mainSizer.Add((-1,-1),1,wx.EXPAND)
             G2frame.dataWindow.GetSizer().Add(mainSizer)
-#            G2frame.dataWindow.GetSizer().Add((-1,-1),1,wx.EXPAND,1)
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)

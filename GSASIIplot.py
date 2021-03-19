@@ -5704,7 +5704,8 @@ def PlotStrain(G2frame,data,newPlot=False):
         
 ##### PlotBarGraph ################################################################################
 def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False,maxBins=None):
-    'Needs a description'
+    ''' does a vertical bar graph
+    '''
     
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
@@ -5745,6 +5746,42 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,i
     Plot.bar(Dbins,Bins,width=wid,align='edge',facecolor='red',edgecolor='black')
     Page.canvas.draw()
 
+##### PlotNamedFloatBarGraph ################################################################################
+def PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel='Value',Ylabel='',Title='',PlotName=None):
+    ''' does a horizintal bar graph
+    '''
+    
+    def OnPageChanged(event):
+        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+        if PlotText == PlotName:
+            PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel,Ylabel,Title,PlotText)
+    
+    def OnMotion(event):
+        if event.ydata is None:
+            return
+        ypos = int(event.ydata+.5)
+        if ypos and ypos < len(Ynames):                                        #avoid out of frame mouse position
+            SetCursor(Page)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('X =%s %s = %9.3g'%(Ynames[ypos],Xlabel,Xvals[ypos]),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select %s first'%PlotName,1)
+
+    if PlotName is None or not len(Ynames):
+        return
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'mpl')
+    if new:
+        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Yvals = np.arange(len(Ynames))
+    colors = ['blue' if x >= 0. else 'red' for x in Xvals]
+    Page.Choice = None
+    Plot.set_title(Title)
+    Plot.set_xlabel(Xlabel,fontsize=14)
+    Plot.set_ylabel(Ylabel,fontsize=14)
+    Plot.barh(Yvals,Xvals,height=0.8,align='center',color=colors,edgecolor='black',tick_label=Ynames)
+    Page.canvas.draw()
+    
 ##### PlotSASDSizeDist ################################################################################
 def PlotSASDSizeDist(G2frame):
     'Needs a description'
@@ -6774,6 +6811,7 @@ def PlotCovariance(G2frame,Data):
                           vmin=-1.,vmax=1.)
         imgAx = Img.axes
         ytics = imgAx.get_yticks()
+        imgAx.set_yticks(ytics[:-1])
         ylabs = [Page.varyList[int(i)] for i in ytics[:-1]]
         imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Img)

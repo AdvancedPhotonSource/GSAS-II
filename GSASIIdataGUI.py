@@ -7373,8 +7373,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             return
         shftesd = data['Lastshft']/data['sig']
         
-        G2plt.PlotNamedFloatHBarGraph(G2frame,shftesd,data['varyList'],Xlabel='Last shift/esd',
-            Ylabel='Variables',Title='Last shift/esd',PlotName='Shift/esd')
+        G2plt.PlotNamedFloatHBarGraph(G2frame,shftesd,data['varyList'],Xlabel='Total shift/esd',
+            Ylabel='Variables',Title='Total shift/esd',PlotName='Shift/esd')
     
     if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
         if GSASIIpath.GetConfigValue('debug'): print('Skipping SelectDataTreeItem as G2frame.PickIdText unchanged')

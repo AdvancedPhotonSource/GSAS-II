@@ -252,7 +252,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
-            Lastshft = result[0]-values
+            Lastshft = result[0]-values     #NOT last shift since values is starting set before current refinement
             Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')

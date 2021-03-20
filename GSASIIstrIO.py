@@ -1374,21 +1374,21 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         ostr = ['a','i','j','k']
         Sytsym = G2spc.SytSym(RB['Orig'][0],SGData)[0]
         xId,xCoef = G2spc.GetCSxinel(Sytsym) # gen origin site sym 
-        equivs = [[],[],[]]
+        equivs = {1:[],2:[],3:[]}
         for i in range(3):
             name = pfxRB+pstr[i]+':'+str(iRB)+':'+rbid
             phaseDict[name] = RB['Orig'][0][i]
             if RB['Orig'][1]:
                 if xId[i] > 0:                               
                     phaseVary += [name,]
-                    equivs[xId[i]-1].append([name,xCoef[i]])
+                    equivs[xId[i]].append([name,xCoef[i]])
                 elif symHold is not None: #variable is held due to symmetry
                     symHold.append(name)
         for equiv in equivs:
             if len(equiv) > 1:
-                name = equiv[0][0]
-                coef = equiv[0][1]
-                for eqv in equiv[1:]:
+                name = equivs[equiv][0][0]
+                coef = equivs[equiv][0][1]
+                for eqv in equivs[equiv][1:]:
                     eqv[1] /= coef
                     G2mv.StoreEquivalence(name,(eqv,))
         pfxRB = pfx+'RB'+rbKey+'O'

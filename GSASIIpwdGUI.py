@@ -3239,7 +3239,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 controls[11] = 120.
         elif controls[5] in ['Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
             controls[9] = controls[10] = controls[11] = 90.
-        elif controls[5] in ['C2/m','P2/m','I2/m']:
+        elif controls[5] in ['A2/m','C2/m','P2/m','I2/m']:
             controls[9] = controls[11] = 90.  # b unique
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         return ibrav
@@ -3384,7 +3384,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[6+ObjId] = value
             Obj.SetValue(controls[6+ObjId])
             controls[9] = controls[10] = controls[11] = 90.0
-        elif controls[5] in ['I2/m','C2/m','P2/m']:
+        elif controls[5] in ['I2/m','A2/m','C2/m','P2/m']:
             controls[9] = controls[11] = 90.0
             if ObjId != 3:
                 controls[6+ObjId] = value
@@ -3643,7 +3643,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 print (" %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol))
             elif ibrav in ['P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
                 print (" %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol))
-            elif ibrav in ['C2/m','P2/m']:
+            elif ibrav in ['I2/m','A2/m','C2/m','P2/m']:
                 print (" %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol))
             else:
                 print (" %s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2]))
@@ -4349,9 +4349,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','C2/m','P2/m','P1','C1']
+        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','A2/m','C2/m','P2/m','P1','C1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','P -1','C -1']
+        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','A 2/m','C 2/m','P 2/m','P -1','C -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
@@ -4383,21 +4383,21 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
     if len(controls) < 15:
         controls.append(list(range(1,len(magcells)+1)))
-    while len(bravais) < 17:
+    while len(bravais) < 18:
         bravais += [0,]
     SGData = ssopt.get('SGData',G2spc.SpcGroup(controls[13])[1])
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
         'Orthorhombic-B','Orthorhombic-C','Orthorhombic-P',
-        'Monoclinic-I','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic',]
+        'Monoclinic-I','Monoclinic-A','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic',]
     cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
     [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
     [[7,8,9,10,11,12],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
-    [[13,14,15],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
+    [[13,14,15,16],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[16,17],8,zip([" Unit cell: a = "," b = "," c = "," alpha = "," beta = "," gamma = "," Vol = "],
+    [[17,18],8,zip([" Unit cell: a = "," b = "," c = "," alpha = "," beta = "," gamma = "," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
         [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
     

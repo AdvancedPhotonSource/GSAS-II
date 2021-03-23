@@ -867,7 +867,7 @@ def TOF2dsp(Inst,Pos):
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
-    if 'T' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+    if 'T' in Inst['Type'][0]:
         pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
     else:   #'C' or 'B'
         wave = G2mth.getWave(Inst)
@@ -1184,9 +1184,10 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
             * 11 C orthorhombic
             * 12 P orthorhombic
             * 13 I monoclinic
-            * 14 C monoclinic
-            * 15 P monoclinic
-            * 16 P triclinic
+            = 14 A monoclinic
+            * 15 C monoclinic
+            * 16 P monoclinic
+            * 17 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :param dict cctbx_args: items defined in CCTBX: 
@@ -1202,11 +1203,11 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
         return _GenHBravais_cctbx(dmin, Bravais, A,
                     cctbx_args['sg_type'], cctbx_args['uctbx_unit_cell'], cctbx_args['miller_index_generator'])
     
-    if Bravais in [9,]:
+    if Bravais in [9,14]:
         Cent = 'A'
     elif Bravais in [10,]:
         Cent = 'B'
-    elif Bravais in [11,14]:
+    elif Bravais in [11,15]:
         Cent = 'C'
     elif Bravais in [1,5,8,13]:
         Cent = 'I'
@@ -1219,7 +1220,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
     Hmax = MaxIndex(dmin,A)
     dminsq = 1./(dmin**2)
     HKL = []
-    if Bravais == 16:                       #triclinic
+    if Bravais == 17:                       #triclinic
         for l in range(-Hmax[2],Hmax[2]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
                 hmin = 0
@@ -1230,7 +1231,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
                     rdsq = calc_rDsq(H,A)
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [13,14,15]:                #monoclinic - b unique
+    elif Bravais in [13,14,15,16]:                #monoclinic - b unique
         Hmax = SwapIndx(2,Hmax)
         for h in range(Hmax[0]+1):
             for k in range(-Hmax[1],Hmax[1]+1):

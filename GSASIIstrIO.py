@@ -796,9 +796,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     :param dict parmFrozen: dict with frozen parameters for all phases
       and histograms (specified as str values)
     '''
-                        
-    import distutils.file_util as dfu
-    
+                           
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
     data = cPickleLoad(fp) # first block in file should be Phases
@@ -1384,12 +1382,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     equivs[xId[i]].append([name,xCoef[i]])
                 elif symHold is not None: #variable is held due to symmetry
                     symHold.append(name)
-        for k in equivs:
-            equiv = equivs[k]
-            if len(equiv) > 1:
-                name = equiv[0][0]
-                coef = equiv[0][1]
-                for eqv in equiv[1:]:
+        for equiv in equivs:
+            if len(equivs[equiv]) > 1:
+                name = equivs[equiv][0][0]
+                coef = equivs[equiv][0][1]
+                for eqv in equivs[equiv][1:]:
                     eqv[1] /= coef
                     G2mv.StoreEquivalence(name,(eqv,))
         pfxRB = pfx+'RB'+rbKey+'O'

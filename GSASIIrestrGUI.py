@@ -275,7 +275,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 dlg.Update(Norig)
                 for Tid,Ttype,Tcoord in targAtoms:
                     if 'macro' in General['Type']:
-                        result = [[Tcoord,1,[0,0,0]],]
+                        result = [[Tcoord,1,[0,0,0]],[]]
                     else:
                         result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
                     for Txyz,Top,Tunit,Spn in result:
@@ -2107,6 +2107,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         Ids = []
         Coords = []
         Types = []
+        iBeg = 0
     else:    
         Names = ['all '+ name for name in General['AtomTypes']]
         iBeg = len(Names)

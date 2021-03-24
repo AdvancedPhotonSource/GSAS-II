@@ -241,7 +241,7 @@ def UpdateRestraints(G2frame,data,phaseName):
     def AddBondRestraint(bondRestData):
         Lists = {'origin':[],'target':[]}
         for listName in ['origin','target']:
-            dlg = wx.MultiChoiceDialog(G2frame,'Bond restraint '+listName+' for '+General['Name'],
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Bond restraint '+listName+' for '+General['Name'],
                     'Select bond restraint '+listName+' atoms',Names)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -275,7 +275,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 dlg.Update(Norig)
                 for Tid,Ttype,Tcoord in targAtoms:
                     if 'macro' in General['Type']:
-                        result = [Tcoord,1,[0,0,0],[]]
+                        result = [[Tcoord,1,[0,0,0],[]],]
                     else:
                         result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
                     for Txyz,Top,Tunit,Spn in result:
@@ -368,7 +368,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
         Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}
         for listName in ['A-atom','B-atom']:
-            dlg = wx.MultiChoiceDialog(G2frame,'Select '+listName+' for angle A-B-C for '+General['Name']                                                                           ,
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select '+listName+' for angle A-B-C for '+General['Name']                                                                           ,
                     'Select angle restraint '+listName,Names)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -520,7 +520,7 @@ def UpdateRestraints(G2frame,data,phaseName):
 
     def AddPlaneRestraint(restrData):
         ids = []
-        dlg = wx.MultiChoiceDialog(G2frame,'Select 4 or more atoms for plane in '+General['Name'],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select 4 or more atoms for plane in '+General['Name'],
                 'Select 4+ atoms',Names[iBeg:])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -811,7 +811,7 @@ def UpdateRestraints(G2frame,data,phaseName):
     def AddChemCompRestraint(chemcompRestData):
         ids = []
         factors = []
-        dlg = wx.MultiChoiceDialog(G2frame,'Select atoms for chemical restraint in '+General['Name'],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select atoms for chemical restraint in '+General['Name'],
                 'Select atoms',Names)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()

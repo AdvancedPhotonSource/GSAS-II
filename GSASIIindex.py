@@ -872,7 +872,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
             Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
-            if ibrav in [9,10,11]:                          #C-centered orthorhombic
+            if ibrav in [9,10,11]:                          #A,B,or C-centered orthorhombic
                 for i in range(2):
                     Abeg = rotOrthoA(Abeg[:])
                     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
@@ -899,17 +899,20 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
 def monoCellReduce(ibrav,A):
     'needs a doc string'
     a,b,c,alp,bet,gam = G2lat.A2cell(A)
+    print(a,b,c,alp,bet,gam)
+    if bet < 90.: 
+        bet = 180.-bet     #always want obtuse beta
+        A = G2lat.cell2A([a,b,c,90.,bet,90.])
     G,g = G2lat.A2Gmat(A)
-    if ibrav in [13,]:    #I-monoclinic
-        pass
-        # u = [-1,0,0]
-        # v = [1,0,1]
-        # cnew = math.sqrt(np.dot(np.dot(v,g),v))
-        # if cnew < c:
-        #     cang = np.dot(np.dot(u,g),v)/(a*cnew)
-        #     beta = acosd(-abs(cang))
-        #     if beta < 90.: beta = 180.-beta
-        #     A = G2lat.cell2A([a,b,cnew,90,beta,90])
+    if ibrav in [13,]:    #I-monoclinic - checked OK
+        u = [-1,0,0]
+        v = [2,0,1]
+        cnew = math.sqrt(np.dot(np.dot(v,g),v))
+        if cnew < c:
+            cang = np.dot(np.dot(u,g),v)/(a*cnew)
+            beta = acosd(-abs(cang))
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
+            A = G2lat.cell2A([a,b,cnew,90,beta,90])
     elif ibrav in [14,]:      #A-monoclinic - OK?
         u = [0,0,-1]
         v = [1,0,2]
@@ -917,7 +920,7 @@ def monoCellReduce(ibrav,A):
         if anew < a:
             cang = np.dot(np.dot(u,g),v)/(anew*c)
             beta = acosd(-abs(cang))
-            if beta < 90.: beta = 180.-beta
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
             A = G2lat.cell2A([anew,b,c,90,beta,90])
     elif ibrav in [15,]:    #C-monoclinic - OK?
         u = [-1,0,0]
@@ -926,7 +929,7 @@ def monoCellReduce(ibrav,A):
         if cnew < c:
             cang = np.dot(np.dot(u,g),v)/(a*cnew)
             beta = acosd(-abs(cang))
-            if beta < 90.: beta = 180.-beta
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 

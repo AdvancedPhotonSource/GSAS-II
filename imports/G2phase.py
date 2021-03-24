@@ -75,7 +75,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         '''
         EightPiSq = 8.*math.pi**2
         self.errors = 'Error opening file'
-        file = open(filename, 'Ur')
+        file = open(filename, 'r')
         Phase = {}
         Title = os.path.basename(filename)
         RES = Title[:3]
@@ -448,7 +448,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         '''Read a phase from a JANA2006 m50 & m40 files.
         '''
         self.errors = 'Error opening file'
-        fp = open(filename, 'Ur') #contains only cell & spcgroup
+        fp = open(filename, 'r') #contains only cell & spcgroup
         Phase = {}
         Title = os.path.basename(filename)
         Type = 'nuclear'
@@ -522,7 +522,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             SGData = G2obj.P1SGData # P 1
         waveTypes = ['Fourier','Sawtooth','ZigZag',]
         filename2 = os.path.splitext(filename)[0]+'.m40'
-        file2 = open(filename2,'Ur')
+        file2 = open(filename2,'r')
         S = file2.readline()
         line = 1
         self.errors = 'Error reading at line '+str(line)

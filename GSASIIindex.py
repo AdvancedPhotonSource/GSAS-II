@@ -899,21 +899,11 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
 def monoCellReduce(ibrav,A):
     'needs a doc string'
     a,b,c,alp,bet,gam = G2lat.A2cell(A)
-    print(a,b,c,alp,bet,gam)
     if bet < 90.: 
         bet = 180.-bet     #always want obtuse beta
         A = G2lat.cell2A([a,b,c,90.,bet,90.])
     G,g = G2lat.A2Gmat(A)
-    if ibrav in [13,]:    #I-monoclinic - checked OK
-        u = [-1,0,0]
-        v = [2,0,1]
-        cnew = math.sqrt(np.dot(np.dot(v,g),v))
-        if cnew < c:
-            cang = np.dot(np.dot(u,g),v)/(a*cnew)
-            beta = acosd(-abs(cang))
-            if beta < 90.: beta = 180.-beta     #always want obtuse beta
-            A = G2lat.cell2A([a,b,cnew,90,beta,90])
-    elif ibrav in [14,]:      #A-monoclinic - OK?
+    if ibrav in [14,]:      #A-monoclinic - OK?
         u = [0,0,-1]
         v = [1,0,2]
         anew = math.sqrt(np.dot(np.dot(v,g),v))
@@ -928,6 +918,40 @@ def monoCellReduce(ibrav,A):
         cnew = math.sqrt(np.dot(np.dot(v,g),v))
         if cnew < c:
             cang = np.dot(np.dot(u,g),v)/(a*cnew)
+            beta = acosd(-abs(cang))
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
+            A = G2lat.cell2A([a,b,cnew,90,beta,90])
+    elif ibrav in [13,]:    #I-monoclinic - checked OK
+        uc = [0,0,-1]
+        vc = [1,0,2]
+        ua = [-1,0,0]
+        va = [2,0,1]
+        anew = math.sqrt(np.dot(np.dot(va,g),va))
+        cnew = math.sqrt(np.dot(np.dot(vc,g),vc))
+        if cnew < c:
+            cang = np.dot(np.dot(uc,g),v)/(a*cnew)
+            beta = acosd(-abs(cang))
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
+            A = G2lat.cell2A([a,b,cnew,90,beta,90])
+        if anew < a:
+            cang = np.dot(np.dot(ua,g),v)/(c*anew)
+            beta = acosd(-abs(cang))
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
+            A = G2lat.cell2A([anew,b,c,90,beta,90])
+    else:   #P
+        ua = [0,0,-1]
+        uc = [-1,0,0]
+        va = [1,0,1]
+        vc = [1,0,1]
+        anew = math.sqrt(np.dot(np.dot(va,g),va))
+        cnew = math.sqrt(np.dot(np.dot(vc,g),vc))
+        if anew < a:
+            cang = np.dot(np.dot(ua,g),va)/(anew*c)
+            beta = acosd(-abs(cang))
+            if beta < 90.: beta = 180.-beta     #always want obtuse beta
+            A = G2lat.cell2A([anew,b,c,90,beta,90])
+        if cnew < c:
+            cang = np.dot(np.dot(uc,g),vc)/(a*cnew)
             beta = acosd(-abs(cang))
             if beta < 90.: beta = 180.-beta     #always want obtuse beta
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
@@ -1006,7 +1030,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                                 if 1.e6 > M20 > 1.0:    #exclude nonsense
                                     bestM20 = max(bestM20,M20)
                                     A = halfCell(ibrav,A[:],peaks)
-                                    if ibrav in [13,14,15]:
+                                    if ibrav in [13,14,15,16]:
                                         A = monoCellReduce(ibrav,A[:])
                                     HKL = G2lat.GenHBravais(dmin,ibrav,A)
                                     peaks = IndexPeaks(peaks,HKL)[1]

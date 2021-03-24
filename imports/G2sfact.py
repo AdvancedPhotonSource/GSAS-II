@@ -212,17 +212,11 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
         for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if self.Super == 0:
-                SH = S[:12]
-                SF = S[12:32]
-                h,k,l = SH.split()
-                Fo,sigFo,Tw = SF.split()
+                h,k,l,Fo,sigFo,Tw = S.split()
 #                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
                 h,k,l = [int(h),int(k),int(l)]
             elif self.Super == 1:
-                SH = S[:16]
-                SF = S[16:36]
-                h,k,l,m1 = SH.split()
-                Fo,sigFo,Tw = SF.split()
+                h,k,l,m1,Fo,sigFo,Tw = SF.split()
 #                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
                 h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
             Tw = Tw.strip()

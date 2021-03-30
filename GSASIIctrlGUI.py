@@ -182,6 +182,11 @@ try:
 except AttributeError:
     pass
 
+if 'phoenix' in wx.version():
+    wxValidator = wx.Validator
+else:
+    wxValidator = wx.pyValidator
+
 #### Fixed definitions for wx Ids ################################################################################
 def Define_wxId(*args):
     '''routine to create unique global wx Id symbols in this module. 
@@ -541,7 +546,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.evaluated = False # set to True when the validator recognizes an expression
         val = loc[key]
         if 'style' in kw: # add a "Process Enter" to style
-            kw['style'] += kw['style'] | wx.TE_PROCESS_ENTER
+            kw['style'] |= wx.TE_PROCESS_ENTER
         else:
             kw['style'] = wx.TE_PROCESS_ENTER
         if typeHint is not None:
@@ -645,7 +650,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if self.ASCIIonly:
                 s = ''
                 for c in val:
-                    if ord(c) < 128: s += c
+                    if ord(c) < 128:
+                        s += c
+                    else:
+                        s += '!'
                 if val != s:
                     val = s
                     show = True
@@ -714,7 +722,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         elif self.OKcontrol and previousInvalid:
             self.OKcontrol(True)
         # always store the result
-        if self.CIFinput: # for CIF make results ASCII
+        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # CIF/Py2 make results ASCII
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
@@ -729,7 +737,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def _SaveStringValue(self):
         val = self.GetValue().strip()
         # always store the result
-        if self.CIFinput: # for CIF make results ASCII
+        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # Py2/CIF make results ASCII
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
@@ -776,7 +784,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             except:
                 pass
 ################################################################################
-class NumberValidator(wx.PyValidator):
+class NumberValidator(wxValidator):
     '''A validator to be used with a TextCtrl to prevent
     entering characters other than digits, signs, and for float
     input, a period and exponents.
@@ -815,10 +823,7 @@ class NumberValidator(wx.PyValidator):
     def __init__(self, typ, positiveonly=False, xmin=None, xmax=None,exclLim=[False,False],
         result=None, key=None, OKcontrol=None, CIFinput=False):
         'Create the validator'
-        if 'phoenix' in wx.version():
-            wx.Validator.__init__(self)
-        else:
-            wx.PyValidator.__init__(self)
+        wxValidator.__init__(self)
         # save passed parameters
         self.typ = typ
         self.positiveonly = positiveonly
@@ -977,7 +982,7 @@ class NumberValidator(wx.PyValidator):
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################
-class ASCIIValidator(wx.PyValidator):
+class ASCIIValidator(wxValidator):
     '''A validator to be used with a TextCtrl to prevent
     entering characters other than ASCII characters.
     
@@ -993,7 +998,7 @@ class ASCIIValidator(wx.PyValidator):
     def __init__(self, result=None, key=None):
         'Create the validator'
         import string
-        wx.PyValidator.__init__(self)
+        wxValidator.__init__(self)
         # save passed parameters
         self.result = result
         self.key = key
@@ -1019,7 +1024,10 @@ class ASCIIValidator(wx.PyValidator):
         :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
           is associated with.
         '''
-        self.result[self.key] = tc.GetValue().encode('ascii','replace')
+        if '2' in platform.python_version_tuple()[0]:
+            self.result[self.key] = tc.GetValue().encode('ascii','replace')
+        else:
+            self.result[self.key] = tc.GetValue()
         log.LogVarChange(self.result,self.key)
 
     def OnChar(self, event):

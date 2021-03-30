@@ -3550,7 +3550,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                     else:
                         ptstr += 12*' '
                 pFile.write(ptstr+'\n')
-        if 'background PWDR' in DebyePeaks and DebyePeaks['background PWDR'][2]:
+        if ('background PWDR' in DebyePeaks and
+                len(DebyePeaks['background PWDR']) >= 3 and
+                DebyePeaks['background PWDR'][2]):
             pFile.write(' Fixed background scale: %.3f(%d)\n'%(DebyePeaks['background PWDR'][1],int(1000*backSig[-1])))
         sumBk = np.array(Histogram['sumBk'])
         pFile.write(' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g\n'%

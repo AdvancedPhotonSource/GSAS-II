@@ -2677,17 +2677,18 @@ class CIFdefHelp(wx.Button):
         self.Bind(wx.EVT_BUTTON,self._onPress)
         self.msg=msg
         self.parent = parent
-        #self.helpwin = self.parent.helpwin
         self.helpwin = helpwin
         self.helptxt = helptxt
     def _onPress(self,event):
         'Respond to a button press by displaying the requested text'
         try:
-            #helptxt = self.helptxt
+            ww,wh = self.helpwin.GetSize()
             ow,oh = self.helptxt.GetSize()
             self.helptxt.SetLabel(self.msg)
+            self.helptxt.Wrap(ww-10)
             w,h = self.helptxt.GetSize()
-            if h > oh:
+            if h > oh: # resize the help area if needed, but avoid changing width
+                self.helptxt.SetMinSize((ww,h))
                 self.helpwin.GetSizer().Fit(self.helpwin)
         except: # error posting help, ignore
             return
@@ -2800,6 +2801,7 @@ class EditCIFtemplate(wx.Dialog):
         OKbuttons.append(savebtn)
         savebtn.Bind(wx.EVT_BUTTON,self._onSave)
         OKbtn = wx.Button(self, wx.ID_OK, "Use")
+        OKbtn.Bind(wx.EVT_BUTTON, lambda x: self.EndModal(wx.ID_OK))
         OKbtn.SetDefault()
         OKbuttons.append(OKbtn)
 
@@ -2832,7 +2834,7 @@ class EditCIFtemplate(wx.Dialog):
             defaultDir=pth,
             defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
-            style=wx.SAVE)
+            style=wx.FD_SAVE)
         val = (dlg.ShowModal() == wx.ID_OK)
         fil = dlg.GetPath()
         dlg.Destroy()
@@ -2918,15 +2920,6 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
             for i,item in enumerate(lp):
                 txt = wx.StaticText(self,wx.ID_ANY,item+"  ")
                 fbox.Add(txt,(0,i+1))
-                # if self.cifdic.get(item):
-                #     df = self.cifdic[item].get('_definition')
-                #     if df:
-                #         txt.SetToolTipString(G2IO.trim(df))
-                #         but = CIFdefHelp(self,
-                #                          "Definition for "+item+":\n\n"+G2IO.trim(df),
-                #                          self.parent,
-                #                          self.parent.helptxt)
-                #         fbox.Add(but,(1,i+1),flag=wx.ALIGN_CENTER)
                 for j,val in enumerate(self.cifblk[item]):
                     ent = self.CIFEntryWidget(self.cifblk[item],j,item)
                     #fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
@@ -2946,7 +2939,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 rows = max(rows,len(self.cifblk[item]))
             for i in range(rows):
                 txt = wx.StaticText(self,wx.ID_ANY,str(i+1))
-                fbox.Add(txt,(i+2,0))
+                fbox.Add(txt,(i+1,0))
             line = wx.StaticLine(self,wx.ID_ANY, size=(-1,3), style=wx.LI_HORIZONTAL)
             vbox.Add(line, 0, wx.EXPAND|wx.ALL, 10)
 

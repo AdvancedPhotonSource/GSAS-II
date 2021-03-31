@@ -4026,7 +4026,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                         raise G2obj.G2RefineCancel('Cancel pressed')
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
-                dlg.Raise()
+                #dlg.Raise()
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
                 dMdvh *= Wt*Dy
@@ -4054,7 +4054,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                         raise G2obj.G2RefineCancel('Cancel pressed')
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
-                dlg.Raise()
+                #dlg.Raise()
             if len(Hess):
                 Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
                 Hess += wtFactor*np.inner(dMdvh,dMdvh)
@@ -4140,7 +4140,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         raise G2obj.G2RefineCancel('Cancel pressed')
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
-                dlg.Raise()
+                #dlg.Raise()
             M = np.concatenate((M,wdy))
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
@@ -4289,7 +4289,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         raise G2obj.G2RefineCancel('Cancel pressed')
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
-                dlg.Raise()
+                #dlg.Raise()
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
 #    GetFobsSq(Histograms,Phases,parmDict,calcControls)
@@ -4307,7 +4307,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         elif not GoOn:
             parmDict['saved values'] = values
             raise G2obj.G2RefineCancel('Cancel pressed')
-        dlg.Raise()
+        #dlg.Raise()
     pDict,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if len(pVals):
         pSum = np.sum(pWt*pVals**2)

@@ -279,12 +279,12 @@ class MergeDialog(wx.Dialog):
 
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)
 
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
 def GUIpatches():
@@ -3511,12 +3511,12 @@ class GSASII(wx.Frame):
             
         def OnOk(self,event):
             parent = self.GetParent()
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_OK)              
             
         def OnCancel(self,event):
             parent = self.GetParent()
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
             
         def GetData(self):
@@ -3738,12 +3738,12 @@ class GSASII(wx.Frame):
             if self.dataType == 'PWDR':
                 if not self.OnTest(event): return
             parent = self.GetParent()
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_OK)              
             
         def OnCancel(self,event):
             parent = self.GetParent()
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
             
     def OnPwdrSum(self,event):
@@ -5189,7 +5189,7 @@ class GSASII(wx.Frame):
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
-        dlg.Raise()
+        #dlg.Raise()  # dangerous, crashes on some platforms
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
@@ -5271,7 +5271,7 @@ class GSASII(wx.Frame):
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
-        dlg.Raise()
+        #dlg.Raise() # dangerous
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
@@ -5514,7 +5514,6 @@ class GSASII(wx.Frame):
         result = None
         if parent is None:
             dlg = wx.MessageDialog(self, message, title,  wtype)
-            dlg.Raise()
         else:
             dlg = wx.MessageDialog(parent, message, title,  wtype)
             dlg.CenterOnParent() # not working on Mac

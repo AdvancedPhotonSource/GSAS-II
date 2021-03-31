@@ -1696,12 +1696,12 @@ class G2MultiChoiceDialog(wx.Dialog):
         
     def onOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def onCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
     def OnStride(self,event):
@@ -2389,12 +2389,12 @@ class FlagSetDialog(wx.Dialog):
 
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
@@ -2466,12 +2466,12 @@ class PickTwoDialog(wx.Dialog):
 
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
@@ -2552,12 +2552,12 @@ class SingleFloatDialog(wx.Dialog):
         
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
 class SingleIntDialog(SingleFloatDialog):
@@ -2684,12 +2684,12 @@ class MultiDataDialog(wx.Dialog):
         
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
@@ -2896,7 +2896,7 @@ class G2ColumnIDDialog(wx.Dialog):
             if not OK:
                 parent.ErrorDialog('Duplicate',item+' selected more than once')
                 return
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_OK)
             
         def OnModify(event):
@@ -3031,7 +3031,7 @@ class G2HistoDataDialog(wx.Dialog):
                  monoFont=False, **kw):
 
         def OnOk(sevent):
-            parent.Raise()
+            if parent is not None: parent.Raise()
             self.EndModal(wx.ID_OK)
             
         def OnModify(event):
@@ -3249,12 +3249,12 @@ class MultiIntegerDialog(wx.Dialog):
         
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnCancel(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
@@ -3662,7 +3662,7 @@ class SGMessageBox(wx.Dialog):
 
     def OnOk(self,event):
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)
 
 ################################################################################
@@ -3875,7 +3875,7 @@ class DisAglDialog(wx.Dialog):
     def OnOk(self,event):
         'Called when the OK button is pressed'
         parent = self.GetParent()
-        parent.Raise()
+        if parent is not None: parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnReset(self,event):

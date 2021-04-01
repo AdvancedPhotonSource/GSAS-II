@@ -2190,6 +2190,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key in ['+','=']:
             G2frame.plusPlot = not G2frame.plusPlot
+        elif event.key == '/':
+            Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -2980,6 +2982,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
             'refDelt':0.1*Ymax,})
 #end patch
+    if 'Normalize' not in Page.plotStyle:
+        Page.plotStyle['Normalize'] = False
     # reset plot when changing between different data types
     try:
         G2frame.lastPlotType
@@ -3129,8 +3133,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
-                     'o: reset offset','f: select data',]
-            
+                     'o: reset offset','f: select data',
+                     '/: normalize']
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
@@ -3170,8 +3174,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 G2frame.PatternId, 'Instrument Parameters'))
             Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+            Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
             ParmList = [Parms,]
             SampleList = [Sample,]
+            LimitsList = [Limits,]
             Title = data[0].get('histTitle')
             if not Title: 
                 Title = Pattern[-1]
@@ -3186,6 +3192,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         PlotList = []
         ParmList = []
         SampleList = []
+        LimitsList = []
         Temps = []
         # loop through tree looking for matching histograms to plot
         Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
@@ -3209,11 +3216,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 pid,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 pid, 'Sample Parameters')))
+            LimitsList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
+                pid, 'Limits')))
             Temps.append('%.1fK'%SampleList[-1]['Temperature'])
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
             SampleList.reverse()
+            LimitsList.reverse()
     if timeDebug:
         print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))
     lenX = 0
@@ -3260,7 +3270,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
-    if 'T' in ParmList[0]['Type'][0]:
+    if 'T' in ParmList[0]['Type'][0] or (Page.plotStyle['Normalize'] and not G2frame.SinglePlot):
         if Page.plotStyle['sqrtPlot']:
             Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
         else:
@@ -3295,16 +3305,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         Sample = SampleList[N]
+        limits = np.array(LimitsList[N])
         ifpicked = False
-        LimitId = 0
         NoffY = offsetY*(Nmax-N)
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
         xye0 = Pattern[1][0]  # keeps mask
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
-            LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits')
-            limits = G2frame.GPXtree.GetItemPyData(LimitId)
             # recompute mask from excluded regions, in case they have changed
             excls = limits[2:]
             for excl in excls:
@@ -3398,8 +3406,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Page.plotStyle['exclude']:
             Y = ma.array(Y,mask=ma.getmask(X))
                 
-        if LimitId and ifpicked:
-            limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
+        #if LimitId and ifpicked:
+        #    limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
+        if ifpicked:
             lims = limits[1]
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
@@ -3559,29 +3568,32 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'))     #const. background
                         Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                 else:  # not logPlot
+                    ymax = 1.
+                    if Page.plotStyle['Normalize'] and Y.max() != 0 and not G2frame.SinglePlot:
+                        ymax = Y.max()
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,color=colors[0],marker=pP,
+                            ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,
                                 picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label=incCptn('calc-bkg'))               #Ic-Ib
+                                CalcLine = Plot.plot(X,(Z-W)/ymax,colors[1],picker=False,label=incCptn('calc-bkg'))               #Ic-Ib
                         else:
                             Plot.plot(X,YB,color=colors[0],marker=pP,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,color=colors[0],marker=pP,
+                            ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
-                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))                 #Ic
+                            CalcLine = Plot.plot(X,Z/ymax,colors[1],picker=False,label=incCptn('calc'))                 #Ic
                         else:
                             Plot.plot(X,YB,color=colors[0],marler=pP,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))                 #Ib
+                        BackLine = Plot.plot(X,W/ymax,colors[2],picker=False,label=incCptn('bkg'))                 #Ib
                         if not G2frame.Weight and np.any(Z):
-                            DifLine = Plot.plot(X,D,colors[3],
+                            DifLine = Plot.plot(X,D/ymax,colors[3],
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
@@ -3616,6 +3628,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))
                         
             else:   #not picked
+                ymax = 1.
+                if Page.plotStyle['Normalize'] and Y.max() != 0:
+                    ymax = Y.max()
                 icolor = 256*N//len(PlotList)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
@@ -3634,7 +3649,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                             picker=False,nonposy='mask')
                 else:
                     if 'PWDR' in plottype:
-                        Plot.plot(X,Y,color=mcolors.cmap(icolor),picker=False)
+                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False)
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),

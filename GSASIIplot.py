@@ -2192,6 +2192,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.plusPlot = not G2frame.plusPlot
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
+            newPlot=True
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -3406,8 +3407,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Page.plotStyle['exclude']:
             Y = ma.array(Y,mask=ma.getmask(X))
                 
-        #if LimitId and ifpicked:
-        #    limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
         if ifpicked:
             lims = limits[1]
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:

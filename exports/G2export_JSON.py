@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2export_JSON: ASCII .gpx Export*
@@ -29,7 +29,7 @@ import json
 import wx
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 
 class JsonEncoder(json.JSONEncoder):

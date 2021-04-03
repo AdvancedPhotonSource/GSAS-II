@@ -466,11 +466,11 @@ def LoadExportRoutines(parent, traceback=False):
                     continue
                 exporterlist.append(exporter)
         except AttributeError:
-            G2Print ('Export Attribute Error ' + filename)
+            G2Print ('Export Attribute Error ' + import_files[pkg])
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            G2Print ('\nExport init: Error importing file ' + filename)
+            G2Print ('\nExport init: Error importing file ' + import_files[pkg])
             G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIseqGUI - Sequential Results Display routines
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: GSASIIseqGUI.py 4829 2021-02-25 23:16:59Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIseqGUI: Sequential Results GUI*
@@ -37,7 +37,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 4829 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 #import GSASIIfiles as G2fil

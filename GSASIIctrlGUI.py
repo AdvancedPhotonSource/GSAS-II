@@ -6328,12 +6328,19 @@ tutorialIndex = (
      intensities before a combined Le Bail/Least-Squares fit that 
      optimizes lattice, peak shape and background parameters.'''],
      
+    ['CIFtutorial', 'CIFtutorial.html', 'Create a CIF for Publication',
+     '''Shows how to create a full CIF for a project that includes the structure(s),
+     bond distances/angles/ the observed and computed data, etc as well as documentary 
+     information about the sample(s), instrument(s) and the project in a way that allows
+     for updating the CIF without having to reenter any of that information. The tutorial 
+     also explains how creation of template file can allow for reuse of that information.'''],
+
     ['RietPlot', 'PublicationPlot.htm', 'Create a Publication-Ready Rietveld Plot',
      '''Shows how to create a customized version of a plot from a fit, 
      with enlarged letters, different colors or symbols which can be written 
      as a bitmap file, a pdf file or be exported to the Grace or Igor Pro 
      plotting programs.'''],
-     
+
     ['ParameterLimits', 'ParameterLimitsUse.html', 'Use of Parameter Limits',
      '''Shows how to set lower and upper limits on selected parameters to keep refinements from refining unreasonably.'''],
      

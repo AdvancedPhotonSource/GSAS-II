@@ -5204,7 +5204,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if OK:
             Rw = Rvals['Rwp']
-            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'])
+            rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Nvar = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'],Rvals['Nvars'])
             lamMax = Rvals.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'

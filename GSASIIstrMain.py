@@ -224,6 +224,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         G2stMth.Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
         Rvals['Nobs'] = Histograms['Nobs']
+        Rvals['Nvars'] = len(varyList)
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']-len(varyList)))
         printFile.write(' Number of function calls: %d No. of observations: %d No. of parameters: %d User rejected: %d Sp. gp. extinct: %d\n'%  \

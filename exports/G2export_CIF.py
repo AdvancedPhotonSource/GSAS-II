@@ -1082,9 +1082,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                     if sig == 0: sig = -0.00009
                     line += PutInCol(G2mth.ValEsd(D[3],sig,True),10)
                     line += "  1_555 "
-                    line += " {:3d}_".format(G2opcodes.index(D[2])+1)
-                    for d in D[1]:
-                        line += "{:1d}".format(d+5)
+                    symopNum = G2opcodes.index(D[2])
+                    line += " {:3d}_".format(symopNum+1)
+                    for d,o in zip(D[1],offsetList[symopNum]):
+                        line += "{:1d}".format(d-o+5)
                     if DisAngSel.get((i,tuple(D[0:3]))):
                         line += " no"
                     else:

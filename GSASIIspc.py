@@ -464,11 +464,13 @@ def AllOps(SGData):
       * symOpList: a list of tuples with the normalized symmetry
         operations as (M,T) values
         (see ``SGOps`` in the :ref:`Space Group object<SGData_table>`)
-      * G2oprList: The GSAS-II operations for each symmetry operation as
+      * G2oprList: a list with the GSAS-II operations for each symmetry operation as
         a tuple with (center,mult,opnum,opcode), where center is (0,0,0), (0.5,0,0),
         (0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry
         where opnum is the number for the symmetry operation, in ``SGOps``
         (starting with 0) and opcode is mult*(100*icen+j+1).
+      * G2opcodes: a list with the name that GSAS-II uses for each symmetry 
+        operation (same as opcode, above)
     '''
     SGTextList = []
     offsetList = []

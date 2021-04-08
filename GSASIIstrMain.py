@@ -990,7 +990,6 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
 
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
-
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
     if len(DisAglData.get('covData',{})):
@@ -1028,10 +1027,9 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
                 OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
-            result = G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
             AsumR = (Radii[Oatom[2]][1]+Radii[Tatom[2]][1])*Factor[1]
-            for [Txyz,Top,Tunit,Spn] in result:
+            for [Txyz,Top,Tunit,Spn] in G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False):
                 Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
                 dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)

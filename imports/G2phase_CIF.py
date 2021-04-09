@@ -601,6 +601,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     name = blk.get(lbl)[0]
                 except TypeError:
                     name = blk.get(lbl)
+                except:
+                    continue
                 if name is None:
                     continue
                 name = name.strip()

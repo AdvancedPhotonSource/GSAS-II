@@ -115,6 +115,7 @@ method                                                Use
 :meth:`G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
 :meth:`G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables
 :meth:`G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
+:meth:`G2Project.add_EqnConstr`                   Adds an equation-type constraint on two or more variables
 
 ==================================================    ===============================================================================================================
 
@@ -3064,7 +3065,7 @@ class G2Project(G2ObjectWrapper):
         constr += [None, None, 'e']
         self.add_constraint_raw(typ, constr)
 
-    def add_EquivEquation(self,total,varlist,multlist=[],reloadIdx=True):
+    def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True):
         '''Set a constraint equation on a list of variables. 
 
         Note that this will cause the project to be saved if not 
@@ -3088,7 +3089,7 @@ class G2Project(G2ObjectWrapper):
 
         Example::
         
-            gpx.add_EquivEquation(1.0,('0::Ax:0','0::Ax:1'),[1,1])
+            gpx.add_EqnConstr(1.0,('0::Ax:0','0::Ax:1'),[1,1])
 
         '''
         if reloadIdx:
@@ -3096,11 +3097,11 @@ class G2Project(G2ObjectWrapper):
         elif G2obj.TestIndexAll():
             self.index_ids()
         if len(varlist) < 2:
-            raise Exception('add_EquivEquation Error: varlist must have at least 2 variables')
+            raise Exception('add_EqnConstr Error: varlist must have at least 2 variables')
         try:
             float(total)
         except:
-            raise Exception('add_EquivEquation Error: total be a valid float')
+            raise Exception('add_EqnConstr Error: total be a valid float')
         constr = []
         typ_prev = None
         for i,var in enumerate(varlist):
@@ -3127,7 +3128,8 @@ class G2Project(G2ObjectWrapper):
             var_prev = var    
         constr += [float(total), None, 'c']
         self.add_constraint_raw(typ, constr)
-            
+
+        
     def add_constraint_raw(self, cons_scope, constr):
         """Adds a constraint to the project.
 

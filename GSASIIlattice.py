@@ -1184,7 +1184,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
             * 11 C orthorhombic
             * 12 P orthorhombic
             * 13 I monoclinic
-            = 14 A monoclinic
+            * 14 A monoclinic
             * 15 C monoclinic
             * 16 P monoclinic
             * 17 P triclinic

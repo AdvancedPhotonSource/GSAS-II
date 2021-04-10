@@ -41,5 +41,3 @@ and pages referenced there.
     G2tools.rst
     indices.rst
 
-
----------

@@ -1296,7 +1296,8 @@ def setPeakInstPrmMode(normal=True):
     Note that normal=True unless this routine is called. Also, 
     instrument parameters can only be refined with normal=True. 
 
-    :param bool normal: setting to apply to global variable :var:`peakInstPrmMode`
+    :param bool normal: setting to apply to global variable 
+      :data:`peakInstPrmMode`
     '''
     global peakInstPrmMode
     peakInstPrmMode = normal

@@ -115,8 +115,8 @@ method                                                Use
 :meth:`G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
 :meth:`G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables
 :meth:`G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
-:meth:`G2Project.add_EqnConstr`                   Adds an equation-type constraint on two or more variables
-
+:meth:`G2Project.add_EqnConstr`                       Adds an equation-type constraint on two or more variables
+:meth:`G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
 ==================================================    ===============================================================================================================
 
 ---------------------------------
@@ -3073,8 +3073,7 @@ class G2Project(G2ObjectWrapper):
         creating a constraint if reloadIdx is True.
 
         :param float total: A value that the constraint must equal
-        :param list varlist: A list of variables to make equivalent to the 
-          first item in the list. 
+        :param list varlist: A list of variables to use in the equation. 
           Each value in the list may be one of the following three items: 
           (A) a :class:`GSASIIobj.G2VarObj` object, 
           (B) a variable name (str), or 
@@ -3129,6 +3128,77 @@ class G2Project(G2ObjectWrapper):
         constr += [float(total), None, 'c']
         self.add_constraint_raw(typ, constr)
 
+    def add_NewVarConstr(self,varlist,multlist=[],name=None,vary=False,reloadIdx=True):
+        '''Set a new-variable constraint from a list of variables to 
+        create a new parameter from two or more predefined parameters. 
+
+        Note that this will cause the project to be saved, if not 
+        already done so. It will always save the .gpx file before
+        creating a constraint if reloadIdx is True.
+
+        :param list varlist: A list of variables to use in the expression. 
+          Each value in the list may be one of the following three items: 
+          (A) a :class:`GSASIIobj.G2VarObj` object, 
+          (B) a variable name (str), or 
+          (C) a list/tuple of arguments for :meth:`make_var_obj`.
+        :param list multlist: a list of multipliers for each variable in
+          varlist. If there are fewer values than supplied for varlist
+          then missing values will be set to 1. The default is [] which
+          means that all multipliers are 1.
+        :param str name: An optional string to be supplied as a name for this 
+          new parameter. 
+        :param bool vary: Determines if the new variable should be flagged to
+          be refined.          
+        :param bool reloadIdx: If True (default) the .gpx file will be 
+          saved and indexed prior to use. This is essential if atoms, phases
+          or histograms have been added to the project.
+
+        Examples::
+        
+            gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[0.5,0.5],'avg',True)
+            gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[1,-1],'diff',False,False)
+
+        The example above is a way to treat two variables that are closely correlated. 
+        The first variable, labeled as avg, allows the two variables to refine in tandem 
+        while the second variable (diff) tracks their difference. In the initial stages of 
+        refinement only avg would be refined, but in the final stages, it might be possible
+        to refine diff. The second False value in the second example prevents the 
+        .gpx file from being saved.
+        '''
+        if reloadIdx:
+            self.index_ids()
+        elif G2obj.TestIndexAll():
+            self.index_ids()
+        if len(varlist) < 2:
+            raise Exception('add_EquivEquation Error: varlist must have at least 2 variables')
+        constr = []
+        if name is not None:
+            name = str(name)
+        typ_prev = None
+        for i,var in enumerate(varlist):
+            m = 1.
+            try:
+                m = float(multlist[i])
+            except IndexError:
+                pass
+            # make var object
+            if isinstance(var, str):
+                var = self.make_var_obj(var,reloadIdx=False)
+            elif not isinstance(var, G2obj.G2VarObj):
+                var = self.make_var_obj(*var,reloadIdx=False)
+            # make constraint
+            constr.append([m,var])
+            typ = _constr_type(var)
+            if typ_prev is None:
+                typ_prev = typ
+                var_prev = var
+            if typ_prev != typ:
+                msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
+                raise Exception('add_EquivConstr Error: '+msg)
+            typ_prev = typ
+            var_prev = var    
+        constr += [name, bool(vary), 'f']
+        self.add_constraint_raw(typ, constr)
         
     def add_constraint_raw(self, cons_scope, constr):
         """Adds a constraint to the project.

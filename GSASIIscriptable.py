@@ -112,6 +112,10 @@ method                                                Use
 :meth:`G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
                                                       fit. (Also see :meth:`G2Project.get_Controls` to read values.)
 :meth:`G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
+:meth:`G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
+:meth:`G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables
+:meth:`G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
+
 ==================================================    ===============================================================================================================
 
 ---------------------------------
@@ -1888,6 +1892,19 @@ def patchControls(Controls):
     if conv: print("Applying patch to Controls['parmFrozen']")
     # end patch
 
+def _constr_type(var):
+    '''returns the constraint type based on phase/histogram use 
+    in a variable
+    '''
+    if var.histogram and var.phase:
+        return 'HAP'
+    elif var.phase:
+        return 'Phase'
+    elif var.histogram:
+        return 'Hist'
+    else:
+        return 'Global'
+    
 class G2ObjectWrapper(object):
     """Base class for all GSAS-II object wrappers.
 
@@ -2937,33 +2954,216 @@ class G2Project(G2ObjectWrapper):
         self.save()
         return G2strIO.GetUsedHistogramsAndPhases(self.filename)
 
-    def add_constraint_raw(self, cons_scope, constr):
-        """Adds a constraint of type consType to the project.
-        cons_scope should be one of "Hist", "Phase", "HAP", or "Global".
+    def get_Constraints(self,ctype):
+        '''Returns a list of constraints of the type selected.
 
-        WARNING it does not check the constraint is well-constructed"""
+        :param str ctype: one of the following keywords: 'Hist', 'HAP', 'Phase', 'Global'
+        :returns: a list of constraints, see the 
+          :ref:`constraint definition descriptions <Constraint_definitions_table>`. Note that
+          if this list is changed (for example by deleting elements or by changing them)
+          the constraints in the project are changed.
+        '''
+        if ctype in ('Hist', 'HAP', 'Phase', 'Global'):
+            return self.data['Constraints']['data'][ctype]
+        else:
+            raise Exception(("get_Constraints error: value of ctype ({})"
+                    +" must be 'Hist', 'HAP', 'Phase', or 'Global'.")
+                                .format(ctype))
+        
+    def add_HoldConstr(self,varlist,reloadIdx=True):
+        '''Set a hold constraint on a list of variables. 
+
+        Note that this will cause the project to be saved if not 
+        already done so. It will always save the .gpx file before
+        creating constraint(s) if reloadIdx is True.
+
+        :param list varlist: A list of variables to hold. 
+          Each value in the list may be one of the following three items: 
+          (A) a :class:`GSASIIobj.G2VarObj` object, 
+          (B) a variable name (str), or 
+          (C) a list/tuple of arguments for :meth:`make_var_obj`.
+        :param bool reloadIdx: If True (default) the .gpx file will be 
+          saved and indexed prior to use. This is essential if atoms, phases
+          or histograms have been added to the project.
+        
+        Example::
+        
+            gpx.add_HoldConstr(('0::A4','0:1:D12',':0:Lam'))
+
+        '''
+        if reloadIdx:
+            self.index_ids()
+        elif G2obj.TestIndexAll():
+            self.index_ids()
+        for var in varlist:
+            # make var object
+            if isinstance(var, str):
+                var = self.make_var_obj(var,reloadIdx=False)
+            elif not isinstance(var, G2obj.G2VarObj):
+                var = self.make_var_obj(*var,reloadIdx=False)
+            # make constraint
+            self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, 'h'])
+                
+    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True):
+        '''Set a equivalence on a list of variables. 
+
+        Note that this will cause the project to be saved if not 
+        already done so. It will always save the .gpx file before
+        creating a constraint if reloadIdx is True.
+
+        :param list varlist: A list of variables to make equivalent to the 
+          first item in the list. 
+          Each value in the list may be one of the following three items: 
+          (A) a :class:`GSASIIobj.G2VarObj` object, 
+          (B) a variable name (str), or 
+          (C) a list/tuple of arguments for :meth:`make_var_obj`.
+        :param list multlist: a list of multipliers for each variable in
+          varlist. If there are fewer values than supplied for varlist
+          then missing values will be set to 1. The default is [] which
+          means that all multipliers are 1.          
+        :param bool reloadIdx: If True (default) the .gpx file will be 
+          saved and indexed prior to use. This is essential if atoms, phases
+          or histograms have been added to the project.
+
+        Examples::
+        
+            gpx.add_EquivConstr(('0::AUiso:0','0::AUiso:1','0::AUiso:2'))
+            gpx.add_EquivConstr(('0::dAx:0','0::dAx:1'),[1,-1])
+
+        '''
+        if reloadIdx:
+            self.index_ids()
+        elif G2obj.TestIndexAll():
+            self.index_ids()
+        if len(varlist) < 2:
+            raise Exception('add_EquivConstr Error: varlist must have at least 2 variables')
+        constr = []
+        typ_prev = None
+        for i,var in enumerate(varlist):
+            m = 1.
+            try:
+                m = float(multlist[i])
+            except IndexError:
+                pass
+            # make var object
+            if isinstance(var, str):
+                var = self.make_var_obj(var,reloadIdx=False)
+            elif not isinstance(var, G2obj.G2VarObj):
+                var = self.make_var_obj(*var,reloadIdx=False)
+            # make constraint
+            constr.append([m,var])
+            typ = _constr_type(var)
+            if typ_prev is None:
+                typ_prev = typ
+                var_prev = var
+            if typ_prev != typ:
+                msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
+                raise Exception('add_EquivConstr Error: '+msg)
+            typ_prev = typ
+            var_prev = var    
+        constr += [None, None, 'e']
+        self.add_constraint_raw(typ, constr)
+
+    def add_EquivEquation(self,total,varlist,multlist=[],reloadIdx=True):
+        '''Set a constraint equation on a list of variables. 
+
+        Note that this will cause the project to be saved if not 
+        already done so. It will always save the .gpx file before
+        creating a constraint if reloadIdx is True.
+
+        :param float total: A value that the constraint must equal
+        :param list varlist: A list of variables to make equivalent to the 
+          first item in the list. 
+          Each value in the list may be one of the following three items: 
+          (A) a :class:`GSASIIobj.G2VarObj` object, 
+          (B) a variable name (str), or 
+          (C) a list/tuple of arguments for :meth:`make_var_obj`.
+        :param list multlist: a list of multipliers for each variable in
+          varlist. If there are fewer values than supplied for varlist
+          then missing values will be set to 1. The default is [] which
+          means that all multipliers are 1.          
+        :param bool reloadIdx: If True (default) the .gpx file will be 
+          saved and indexed prior to use. This is essential if atoms, phases
+          or histograms have been added to the project.
+
+        Example::
+        
+            gpx.add_EquivEquation(1.0,('0::Ax:0','0::Ax:1'),[1,1])
+
+        '''
+        if reloadIdx:
+            self.index_ids()
+        elif G2obj.TestIndexAll():
+            self.index_ids()
+        if len(varlist) < 2:
+            raise Exception('add_EquivEquation Error: varlist must have at least 2 variables')
+        try:
+            float(total)
+        except:
+            raise Exception('add_EquivEquation Error: total be a valid float')
+        constr = []
+        typ_prev = None
+        for i,var in enumerate(varlist):
+            m = 1.
+            try:
+                m = float(multlist[i])
+            except IndexError:
+                pass
+            # make var object
+            if isinstance(var, str):
+                var = self.make_var_obj(var,reloadIdx=False)
+            elif not isinstance(var, G2obj.G2VarObj):
+                var = self.make_var_obj(*var,reloadIdx=False)
+            # make constraint
+            constr.append([m,var])
+            typ = _constr_type(var)
+            if typ_prev is None:
+                typ_prev = typ
+                var_prev = var
+            if typ_prev != typ:
+                msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
+                raise Exception('add_EquivConstr Error: '+msg)
+            typ_prev = typ
+            var_prev = var    
+        constr += [float(total), None, 'c']
+        self.add_constraint_raw(typ, constr)
+            
+    def add_constraint_raw(self, cons_scope, constr):
+        """Adds a constraint to the project.
+
+        :param str cons_scope: should be one of "Hist", "Phase", "HAP", or "Global".
+        :param list constr: a constraint coded with  :class:`GSASIIobj.G2VarObj` 
+          objects as described in the 
+          :ref:`constraint definition descriptions <Constraint_definitions_table>`.
+
+        WARNING this function does not check the constraint is well-constructed.
+        Please use :meth:`G2Project.add_HoldConstr` or 
+        :meth:`G2Project.add_EquivConstr` (etc.) instead, unless you are really 
+        certain you know what you are doing. 
+        """
         constrs = self.data['Constraints']['data']
         if 'Global' not in constrs:
             constrs['Global'] = []
         constrs[cons_scope].append(constr)
 
-    def hold_many(self, vars, type):
+    def hold_many(self, vars, ctype):
         """Apply holds for all the variables in vars, for constraint of a given type.
+        This routine has been superceeded by :meth:`add_Hold`
 
-        type is passed directly to add_constraint_raw as consType
-
-        :param list vars: A list of variables to hold. Either :class:`GSASIIobj.G2VarObj` objects,
-            string variable specifiers, or arguments for :meth:`make_var_obj`
-        :param str type: A string constraint type specifier. See
-            :class:`G2Project.add_constraint_raw`
-
+        :param list vars: A list of variables to hold. Each may be a 
+          :class:`GSASIIobj.G2VarObj` object, a variable name (str), or a
+          list/tuple of arguments for :meth:`make_var_obj`.
+        :param str ctype: A string constraint type specifier, passed directly to 
+          :meth:`add_constraint_raw` as consType. Should be one of "Hist", "Phase", 
+          or "HAP" ("Global" not implemented).
         """
+        print('G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()')
         for var in vars:
             if isinstance(var, str):
                 var = self.make_var_obj(var)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var)
-            self.add_constraint_raw(type, [[1.0, var], None, None, 'h'])
+            self.add_constraint_raw(ctype, [[1.0, var], None, None, 'h'])
 
     def make_var_obj(self, phase=None, hist=None, varname=None, atomId=None,
                      reloadIdx=True):

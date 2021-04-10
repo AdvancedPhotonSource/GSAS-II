@@ -2148,7 +2148,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                     dlg.Destroy()
                     return
                 dlg.Destroy()
-
+            # scan over histograms used in this phase for 
+            pId = self.Phases[phasenam]['pId']
+            for h in phasedict['Histograms']:
+                if not phasedict['Histograms'][h]['Use']: continue
+                hId = self.Histograms[h]['hId']
+                T = self.Histograms[h]['Sample Parameters']['Temperature']
+                
         # check if temperature values & pressure are defaulted
         default = 0
         for hist in self.Histograms:

@@ -2245,7 +2245,7 @@ class G2VarObj(object):
                 elif len(lst) == 3:
                     pass
                 else:
-                    raise Exception("Too many colons in var name "+str(args[0]))
+                    raise Exception("Incorrect number of colons in var name "+str(args[0]))
             self.name = lst[2]
         elif len(args) == 4:
             if args[0] == '*':

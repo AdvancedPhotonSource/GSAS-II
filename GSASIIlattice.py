@@ -723,11 +723,17 @@ def cell2GS(cell):
     return GS    
     
 def Uij2Ueqv(Uij,GS,Amat):
-    ''' returns 1/3 trace of diagonalized U matrix'''
+    ''' returns 1/3 trace of diagonalized U matrix
+    :param Uij: numpy array [Uij]
+    :param GS: Uij too betaij conversion matrix
+    :param Amat: crystal to Cartesian transformation matrix
+    :returns: 1/3 trace of diagonalized U matrix
+    :returns: True if nonpositive-definate; False otherwise
+    '''
     U = np.multiply(U6toUij(Uij),GS)
     U = np.inner(Amat,np.inner(U,Amat).T)
     E,R = nl.eigh(U)
-    return np.sum(E)/3.
+    return np.sum(E)/3.,E[0] < 0.
         
 def CosAngle(U,V,G):
     """ calculate cos of angle between U & V in generalized coordinates 

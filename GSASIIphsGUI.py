@@ -78,6 +78,7 @@ except AttributeError:
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
+RED = wx.Colour(255,0,0)
 WACV = wx.ALIGN_CENTER_VERTICAL
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
@@ -3469,12 +3470,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     for i in range(6):
                         cj = colU11+i
                         Atoms.SetCellTextColour(row,cj,BLACK)
+                        if G2lat.Uij2Ueqv(atomData[row][colU11:colU11+6],GS,Amat)[1]:
+                            Atoms.SetCellTextColour(row,cj,RED)
                         Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
                         if CSI[2][i] and 'U' not in rbExcl:
                             Atoms.SetCellStyle(row,cj,WHITE,False)
                 else:
                     Atoms.SetCellStyle(row,colUiso,WHITE,False)
                     Atoms.SetCellTextColour(row,colUiso,BLACK)
+                    if atomData[row][colUiso] < 0.:
+                        Atoms.SetCellTextColour(row,colUiso,RED)
                     if 'U' in rbExcl:
                         Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                 if colM:
@@ -3510,6 +3515,9 @@ def UpdatePhaseData(G2frame,Item,data):
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
+        cell = generalData['Cell'][1:7]
+        Amat = G2lat.cell2AB(cell)[0]
+        GS = G2lat.cell2GS(cell)
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
         atomData = data['Atoms']
         resRBData = data['RBModels'].get('Residue',[])

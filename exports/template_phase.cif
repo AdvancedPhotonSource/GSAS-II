@@ -22,8 +22,6 @@ _exptl_crystal_F_000               ?
 _exptl_crystal_density_meas        ?
 _exptl_crystal_density_method      ?
 
-_cell_measurement_temperature     ?        
-
 _cell_special_details
 ; ?
 ;

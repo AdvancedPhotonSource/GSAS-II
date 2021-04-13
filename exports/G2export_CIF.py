@@ -581,7 +581,6 @@ def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None
     WriteCIFitem(fp,  '_chemical_formula_weight',
                   G2mth.ValEsd(cellmass/Z,-0.09,True))
 
-
 class ExportCIF(G2IO.ExportBaseclass):
     '''Base class for CIF exports
     '''
@@ -603,6 +602,97 @@ class ExportCIF(G2IO.ExportBaseclass):
                              'Error: CIFs can contain only ASCII characters. Please change item(s) below:\n\n'+msg,
                              'Unicode not valid for CIF')
             return True
+
+    def _CellSelectNeeded(self,phasenam):
+        '''Determines if selection is needed for a T value in a multiblock CIF
+
+        :returns: True if the choice of T is ambiguous and a human should
+          be asked. 
+        '''
+        phasedict = self.Phases[phasenam] # pointer to current phase info
+        Tlist = {}  # histname & T values used for cell w/o Hstrain
+        DijTlist = {} # hId & T values used for cell w/Hstrain
+        # scan over histograms used in this phase to determine the best
+        # data collection T value
+        for h in phasedict['Histograms']:
+            if not phasedict['Histograms'][h]['Use']: continue
+            T = self.Histograms[h]['Sample Parameters']['Temperature']
+            if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
+                DijTlist[h] = T
+            else:
+                Tlist[h] = T
+        if len(Tlist) > 0:
+            T = sum(Tlist.values())/len(Tlist)
+            if max(Tlist.values()) - T > 1:
+                return True # temperatures span more than 1 degree, user needs to pick one
+            return False
+        elif len(DijTlist) == 1:
+            return False
+        elif len(DijTlist) > 1:
+                # each histogram has different cell lengths, user needs to pick one
+            return True
+        
+    def _CellSelectHist(self,phasenam):
+        '''Select T value for a phase in a multiblock CIF
+
+        :returns: T,h_ranId where T is a temperature (float) or '?' and
+          h_ranId is the random Id (ranId) for a histogram in the 
+          current phase. This is stored in OverallParms['Controls']['CellHistSelection']
+        '''
+        phasedict = self.Phases[phasenam] # pointer to current phase info
+        Tlist = {}  # histname & T values used for cell w/o Hstrain
+        DijTlist = {} # hId & T values used for cell w/Hstrain
+        # scan over histograms used in this phase to determine the best
+        # data collection T value
+        for h in phasedict['Histograms']:
+            if not phasedict['Histograms'][h]['Use']: continue
+            T = self.Histograms[h]['Sample Parameters']['Temperature']
+            if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
+                DijTlist[h] = T
+            else:
+                Tlist[h] = T
+        if len(Tlist) > 0:
+            T = sum(Tlist.values())/len(Tlist)
+            if max(Tlist.values()) - T > 1:
+                # temperatures span more than 1 degree, user needs to pick one
+                choices = ["{} (unweighted average)".format(T)]
+                Ti = [T]
+                for h in Tlist:
+                    choices += ["{} (hist {})".format(Tlist[h],h)]
+                    Ti += [Tlist[h]]                            
+                msg = 'The cell parameters for phase {} are from\nhistograms with different temperatures.\n\nSelect a T value below'.format(phasenam)
+                dlg = wx.SingleChoiceDialog(self.G2frame,msg,'Select T',choices)
+                if dlg.ShowModal() == wx.ID_OK:
+                    T = Ti[dlg.GetSelection()]
+                else:
+                    T = '?'
+                dlg.Destroy()
+            return (T,None)
+        elif len(DijTlist) == 1:
+            h = list(DijTlist.keys())[0]
+            h_ranId = self.Histograms[h]['ranId']
+            return (DijTlist[h],h_ranId)
+        elif len(DijTlist) > 1:
+            # each histogram has different cell lengths, user needs to pick one
+            choices = []
+            hi = []
+            for h in DijTlist:
+                choices += ["{} (hist {})".format(DijTlist[h],h)]
+                hi += [h]
+            msg = 'There are {} sets of cell parameters for phase {}\n due to refined Hstrain values.\n\nSelect the histogram to use with the phase form list below'.format(len(DijTlist),phasenam)
+            dlg = wx.SingleChoiceDialog(self.G2frame,msg,'Select cell',choices)
+            if dlg.ShowModal() == wx.ID_OK:
+                h = hi[dlg.GetSelection()] 
+                h_ranId = self.Histograms[h]['ranId']
+                T = DijTlist[h]
+            else:
+                T = '?'
+                h_ranId = None
+            dlg.Destroy()
+            return (T,h_ranId)
+        else:
+            print('Unexpected option in _CellSelectHist for',phasenam)
+            return ('?',None)
 
     def _Exporter(self,event=None,phaseOnly=None,histOnly=None,IncludeOnlyHist=None):
         '''Basic code to export a CIF. Export can be full or simple, as set by
@@ -1137,12 +1227,36 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n   _geom_angle_publ_flag')
                     WriteCIFitem(self.fp, line)
 
-        def WritePhaseInfo(phasenam):
+        def WritePhaseInfo(phasenam,quick=True,oneblock=True):
             'Write out the phase information for the selected phase'
             WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info
             WriteCIFitem(self.fp, '_pd_phase_name', phasenam)
             cellList,cellSig = self.GetCell(phasenam)
+            if quick:  # leave temperature as unknown
+                WriteCIFitem(self.fp,"_cell_measurement_temperature","?")
+            elif oneblock:
+                pass # temperature should be written when the histogram saved later
+            else: # get T set in _SelectPhaseT_CellSelectHist and possibly get new cell params
+                T,hRanId = self.CellHistSelection.get(phasedict['ranId'],
+                                                          ('?',None))
+                try:
+                    T = G2mth.ValEsd(T,-1.0)
+                except:
+                    pass
+                WriteCIFitem(self.fp,"_cell_measurement_temperature",T)
+                for h in phasedict['Histograms']:
+                    if self.Histograms[h]['ranId'] == hRanId:
+                        pId = phasedict['pId']
+                        hId = self.Histograms[h]['hId']
+                        cellList,cellSig = G2strIO.getCellSU(pId,hId,
+                                        phasedict['General']['SGData'],
+                                        self.parmDict,
+                                        self.OverallParms['Covariance'])
+                        break
+                else:
+                    T = '?'
+
             defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
             names = ['length_a','length_b','length_c',
                      'angle_alpha','angle_beta ','angle_gamma',
@@ -1716,7 +1830,15 @@ class ExportCIF(G2IO.ExportBaseclass):
             if dlg.ShowModal() == wx.ID_OK:
                 phasedict['General']['DisAglCtls'] = dlg.GetData()
             dlg.Destroy()
-
+            
+        def SetCellT(event):
+            '''Set the temperature value by selection of a histogram
+            '''
+            but = event.GetEventObject()
+            phasenam = but.phase
+            rId =  self.Phases[phasenam]['ranId']
+            self.CellHistSelection[rId] = self._CellSelectHist(phasenam)
+            
         def EditCIFDefaults():
             '''Fills the CIF Defaults window with controls for editing various CIF export
             parameters (mostly related to templates).
@@ -1763,6 +1885,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                     but.phase = phasenam  # set a pointer to current phase info
                     but.Bind(wx.EVT_BUTTON,SelectDisAglFlags)     # phase bond/angle ranges
                     cbox.Add(but,0,wx.ALIGN_LEFT,0)
+                if self._CellSelectNeeded(phasenam):
+                    but = wx.Button(cpnl, wx.ID_ANY,'Select cell temperature')
+                    cbox.Add(but,0,wx.ALIGN_LEFT,0)
+                    cbox.Add((-1,2))
+                    but.phase = phasenam  # set a pointer to current phase info
+                    but.Bind(wx.EVT_BUTTON,SetCellT)
                 cbox.Add((-1,2))
             for i in sorted(self.powderDict.keys()):
                 G2G.HorizontalLine(cbox,cpnl)
@@ -1998,11 +2126,16 @@ class ExportCIF(G2IO.ExportBaseclass):
             else:
                 s += '.'
         self.CIFname = s
+        
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
         # load saved CIF author name
-        try:
-            self.author = self.OverallParms['Controls'].get("Author",'?').strip()
-        except KeyError:
-            pass
+        self.author = self.OverallParms['Controls'].get("Author",'?').strip()
+        # initialize dict for Selection of Hist for unit cell reporting
+        self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
+            'Controls'].get('CellHistSelection',{})
+        self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
         #=================================================================
         # write quick CIFs
         #=================================================================
@@ -2032,47 +2165,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.Write(70*'#')
             #phasenam = self.Phases.keys()[0]
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
-            #print 'phasenam',phasenam
-            #phaseblk = self.Phases[phasenam] # pointer to current phase info
-            #instnam = instnam.replace(' ','')
-            #WriteCIFitem(self.fp, '_pd_block_id',
-            #             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-            #             str(self.shortauthorname) + "|" + instnam + '|' + histname)
-            #WriteAudit()
-            #writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
-            #WriteOverall()
-            #writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-            # report the phase info
-            #WritePhaseInfo(phasenam,hist)
-            # preferred orientation
-            #SH = FormatSH(phasenam)
-            #MD = FormatHAPpo(phasenam)
-            #if SH and MD:
-            #    WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
-            #elif SH or MD:
-            #    WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', SH + MD)
-            #else:
-            #    WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', 'none')
-            # report profile, since one-block: include both histogram and phase info
-            #WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
-            #    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
-            #        +'\n'+FormatPhaseProfile(phasenam))
             if hist.startswith("PWDR"):
                 WritePowderData(hist)
             elif hist.startswith("HKLF"):
                 WriteSingleXtalData(hist)
-            #writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
-            #self.CloseFile()
             return
-        #elif IncludeOnlyHist is not None: # truncate histogram list to only selected (for sequential export)
-        #    self.Histograms = {IncludeOnlyHist:self.Histograms[IncludeOnlyHist]}
-
         #===============================================================================
         # the export process for a full CIF starts here
         #===============================================================================
-        self.InitExport(event)
-        # load all of the tree into a set of dicts
-        self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
         # is there anything to export?
@@ -2148,13 +2248,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     dlg.Destroy()
                     return
                 dlg.Destroy()
-            # scan over histograms used in this phase for 
-            #pId = self.Phases[phasenam]['pId']
-            #for h in phasedict['Histograms']:
-            #    if not phasedict['Histograms'][h]['Use']: continue
-            #    hId = self.Histograms[h]['hId']
-            #    T = self.Histograms[h]['Sample Parameters']['Temperature']
-                
+                    
         # check if temperature values & pressure are defaulted
         default = 0
         for hist in self.Histograms:
@@ -2194,10 +2288,10 @@ class ExportCIF(G2IO.ExportBaseclass):
         # give the user a window to edit CIF contents
         if not self.author:
             self.author = self.OverallParms['Controls'].get("Author",'?').strip()
-            self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
         if not self.author:
             if not EditAuthor(): return
         self.ValidateAscii([('Author name',self.author),]) # check for ASCII strings where needed, warn on problems
+        self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
         self.cifdefs = wx.Dialog(
             self.G2frame,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
@@ -2245,7 +2339,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteOverall()
             writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
-            WritePhaseInfo(phasenam)
+            WritePhaseInfo(phasenam,False)
             if hist.startswith("PWDR"):  # this is invoked for single-block CIFs
                 # preferred orientation
                 SH = FormatSH(phasenam)
@@ -2270,11 +2364,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteSingleXtalData(hist)
         else:
             #=== multiblock: multiple phases and/or histograms ====================
+            for phasenam in sorted(self.Phases.keys()):
+                rId = phasedict['ranId']
+                if rId in self.CellHistSelection: continue
+                self.CellHistSelection[rId] = self._CellSelectHist(phasenam)
             nsteps = 1 + len(self.Phases) + len(self.powderDict) + len(self.xtalDict)
             dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
-#                Size = dlg.GetSize()
-#                Size = (int(Size[0]*3),Size[1]) # increase size along x
-#                dlg.SetSize(Size)
             dlg.CenterOnParent()
 
             # publication info
@@ -2343,7 +2438,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[phasenam])
                 # report the phase
                 writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-                WritePhaseInfo(phasenam)
+                WritePhaseInfo(phasenam,False,False)
                 # preferred orientation
                 if self.ifPWDR:
                     SH = FormatSH(phasenam)

@@ -1898,7 +1898,13 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
         
 def getCellEsd(pfx,SGData,A,covData):
-    'needs a doc string'
+    '''Compute the standard uncertainty on cell parameters
+    
+    :param str pfx: prefix of form p::
+    :param SGdata: space group information
+    :param list A: Reciprocal cell Ai terms
+    :param dict covData: covariance tree item 
+    '''
     rVsq = G2lat.calc_rVsq(A)
     G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
     RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
@@ -1952,7 +1958,78 @@ def getCellEsd(pfx,SGData,A,covData):
     if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
         CS[3:6] = 0.0
     return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
+
+def getCellSU(pId,hId,SGData,parmDict,covData):
+    '''Compute the unit cell parameters and standard uncertainties
+    where lattice parameters and Hstrain (Dij) may be refined
     
+    :param pId: phase index
+    :param hId: histogram index
+    :param SGdata: space group information
+    :param dict parmDict: parameter dict, must have all non-zero Dij and Ai terms
+    :param dict covData: covariance tree item 
+    '''
+
+    Dnames = ['{}:{}:D{}'.format(pId,hId,i) for i in ['11','22','33','12','13','23']]
+    Anames = ['{}::A{}'.format(pId,i) for i in range(6)]
+    Ai = [parmDict[i] for i in Anames]
+    Dij = [parmDict.get(i,0.) for i in Dnames]   
+    A = np.array(Ai) + np.array(Dij)
+    cell = list(G2lat.A2cell(A)) + [G2lat.calc_V(A)]
+    rVsq = G2lat.calc_rVsq(A)
+    G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
+    varyList = covData['varyList']
+    covMatrix = covData['covMatrix']
+    if len(covMatrix):
+        vcov = G2mth.getVCov(Anames+Dnames,varyList,covMatrix)
+        for i in [0,6]:
+            for j in [0,6]:
+                if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
+                    vcov[1+i,1+j] = vcov[3+i,3+j] = vcov[i,1+j] = vcov[1+i,j] = vcov[i,j]
+                    vcov[1+i,3+j] = vcov[3+i,1+j] = vcov[i,3+j] = vcov[3+i,j] = vcov[i,j]
+                    vcov[1+i,2+j] = vcov[2+i,1+j] = vcov[2+i,3+j] = vcov[3+i,2+j] = vcov[i,2+j]
+                elif SGData['SGLaue'] in ['m3','m3m']:
+                    vcov[i:3+i,j:3+j] = vcov[i,j]
+                elif SGData['SGLaue'] in ['4/m', '4/mmm']:
+                    vcov[i:2+i,j:2+j] = vcov[i,j]
+                    vcov[1+i,2+j] = vcov[2+i,1+j] = vcov[i,2+j]
+                elif SGData['SGLaue'] in ['3R','3mR']:
+                    vcov[i:3+j,i:3+j] = vcov[i,j]
+                    #        vcov[4,4] = vcov[5,5] = vcov[3,3]
+                    vcov[3+i:6+i,3+j:6+j] = vcov[3,3+j]
+                    vcov[i:3+i,3+j:6+j] = vcov[i,3+j]
+                    vcov[3+i:6+i,j:3+j] = vcov[3+i,j]
+    else:
+        vcov = np.eye(12)
+    delt = 1.e-9
+    drVdA = np.zeros(12)
+    for i in range(12):
+        A[i%6] += delt
+        drVdA[i] = G2lat.calc_rVsq(A)
+        A[i%6] -= 2*delt
+        drVdA[i] -= G2lat.calc_rVsq(A)
+        A[i%6] += delt
+    drVdA /= 2.*delt
+    srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
+    Vol = 1/np.sqrt(rVsq)
+    sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
+    
+    dcdA = np.zeros((12,12))
+    for i in range(12):
+        pdcdA =np.zeros(12)
+        A[i%6] += delt
+        pdcdA += G2lat.A2cell(A)+G2lat.A2cell(A)
+        A[i%6] -= 2*delt
+        pdcdA -= G2lat.A2cell(A)+G2lat.A2cell(A)
+        A[i%6] += delt
+        dcdA[i] = pdcdA/(2.*delt)
+    sigMat = np.inner(dcdA,np.inner(dcdA,vcov))
+    var = np.diag(sigMat)
+    CS = np.where(var>0.,np.sqrt(var),0.)
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
+        CS[3:6] = 0.0
+    return cell,[CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
+
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
     '''Called after a refinement to transfer parameters from the parameter dict to
     the phase(s) information read from a GPX file. Also prints values to the .lst file

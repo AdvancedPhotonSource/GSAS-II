@@ -4,17 +4,17 @@
 GSAS-II Developer's Documentation
 =================================
 
-The following documentation is intended for those wishing to code
-withing the GSAS-II framework, those planning to understand how
+The documentation here is intended for those wishing to extend the
+capabilities within the GSAS-II framework, for scientists/students
+working to understand how 
 GSAS-II works, or for people wishing to develop scripting applications
-using the API (:mod:`GSASIIscriptable`). Note that many data structures
-used in GSAS-II are defined in module :mod:`GSASIIobj`.
+using the GSAS-II Python API (module :mod:`GSASIIscriptable`). Note that many
+data structures used in GSAS-II are defined in module :mod:`GSASIIobj`.
 
-For information on obtaining or learning to use GSAS-II, please see
-the information on the GSAS-II home page:
-https://subversion.xray.aps.anl.gov/trac/pyGSAS
-and pages referenced there. 
-
+For information on downloading/installing GSAS-II, please see
+the GSAS-II home page:
+https://subversion.xray.aps.anl.gov/trac/pyGSAS. To learn how to
+use GSAS-II, please see the tutorials referenced in the home page. 
 
 .. toctree::
     :maxdepth: 2

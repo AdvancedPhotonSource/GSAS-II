@@ -11,8 +11,8 @@ Note that *G* is the reciprocal lattice tensor, and *g* is its inverse,
   .. math::
 
    g = \\left( \\begin{matrix}
-   a^2 & a b\\cos\gamma & a c\\cos\\beta \\\\
-   a b\\cos\\gamma & b^2 & b c \cos\\alpha \\\\
+   a^2 & a b\\cos\\gamma & a c\\cos\\beta \\\\
+   a b\\cos\\gamma & b^2 & b c \\cos\\alpha \\\\
    a c\\cos\\beta &  b c \\cos\\alpha & c^2
    \\end{matrix}\\right)
 

@@ -721,12 +721,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.OKcontrol(False)
         elif self.OKcontrol and previousInvalid:
             self.OKcontrol(True)
-        # always store the result
-        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # CIF/Py2 make results ASCII
-            self.result[self.key] = val.encode('ascii','replace') 
-        else:
-            self.result[self.key] = val
-        log.LogVarChange(self.result,self.key)
+        self._SaveStringValue()         # always store the result
 
     def _GetStringValue(self,event):
         '''Get string input and store.

@@ -1440,7 +1440,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 out = out.rstrip('0')  # strip zeros to right of decimal
                 return out.rstrip('.')  # and decimal place when not needed
             except TypeError:
+                print(val)
                 return '.'
+            
         def WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,nRefSets=1):
             'Write reflection statistics'
             WriteCIFitem(self.fp, '_reflns_number_total', str(refcount))
@@ -1718,11 +1720,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             if DEBUG:
                 print('DEBUG: skipping profile list')
             else:
-                for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0],
-                                                histblk['Data'][1],
-                                                histblk['Data'][2],
-                                                histblk['Data'][3],
-                                                histblk['Data'][4]):
+                for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0].data,        #get the data from these masked arrays
+                                                histblk['Data'][1].data,
+                                                histblk['Data'][2].data,
+                                                histblk['Data'][3].data,
+                                                histblk['Data'][4].data):
                     if lowlim <= x <= highlim:
                         pass
                     else:
@@ -1731,9 +1733,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                     if fixedstep:
                         s = ""
                     elif zero:
-                        s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
+                        s = PutInCol(G2mth.ValEsd(x.data-zero,-0.00009),10)
                     else:
-                        s = PutInCol(G2mth.ValEsd(x,-0.00009),10)
+                        s = PutInCol(G2mth.ValEsd(x.data,-0.00009),10)
                     s += PutInCol(Yfmt(ndec,yobs),12)
                     s += PutInCol(Yfmt(ndec,ycalc),12)
                     s += PutInCol(Yfmt(ndec,ybkg),11)

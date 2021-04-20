@@ -5876,9 +5876,43 @@ class SelectConfigSetting(wx.Dialog):
             self.strEd.SetValue(self.vars[var][1])
             self.OnChange()
         dlg.Destroy()
+
+    def onSelExec(self,event):
+        'Select an executable file from a menu'
+        var = self.choice[0]
+        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+        defD = defF = ''
+        if self.vars[var][1] is not None and os.path.exists(self.vars[var][1]):
+            defD,defF=os.path.split(self.vars[var][1])
+        repeat = True
+        while repeat:
+            repeat = False
+            if sys.platform == "win32":
+                dlg = wx.FileDialog(self, "Choose a .exe file:",
+                                defaultDir=defD,defaultFile=defF,
+                                style=wx.FD_DEFAULT_STYLE|wx.FD_FILE_MUST_EXIST,
+                                wildcard="Executable files|*.exe")
+            else:
+                dlg = wx.FileDialog(self, "Choose an executable image:",
+                                defaultDir=defD,defaultFile=defF,
+                                style=wx.FD_DEFAULT_STYLE|wx.FD_FILE_MUST_EXIST)
+            if dlg.ShowModal() == wx.ID_OK:
+                val = dlg.GetPath()
+                if os.path.exists(val) and is_exe(val):
+                    self.vars[var][1] = val
+                    self.strEd.SetValue(self.vars[var][1])
+                    self.OnChange()
+                else:
+                    dlg.Destroy()
+                    G2MessageBox(self,'File not found or not executable',
+                                     'Invalid file')
+                    repeat = True
+                    continue
+        dlg.Destroy()
+
         
     def OnSelection(self):
-        'show a selected variable'
+        'show a selected variable and allow it to be changed'
         def OnNewColorBar(event):
             self.vars['Contour_color'][1] = self.colSel.GetValue()
             self.OnChange(event)
@@ -5926,6 +5960,11 @@ class SelectConfigSetting(wx.Dialog):
         else:
             if var.endswith('_directory') or var.endswith('_location'):
                 btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn.Bind(wx.EVT_BUTTON,self.onSelDir)
+                sz = (400,-1)
+            elif var.endswith('_exec'):
+                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn.Bind(wx.EVT_BUTTON,self.onSelExec)
                 sz = (400,-1)
             else:
                 btn = None
@@ -5950,10 +5989,11 @@ class SelectConfigSetting(wx.Dialog):
                     OKcontrol=self.OnChange,size=sz)
                 if self.vars[var][1] is not None:
                     self.strEd.SetValue(self.vars[var][1])
-                self.varsizer.Add(self.strEd, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-            if btn:
-                btn.Bind(wx.EVT_BUTTON,self.onSelDir)
-                self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5) 
+                if btn:
+                    self.varsizer.Add(self.strEd, 0, wx.ALL|wx.EXPAND, 5)
+                    self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+                else:
+                    self.varsizer.Add(self.strEd, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         # button for reset to default value
         lbl = "Reset to Default"
         if showdef: # spell out default when needed
@@ -7246,6 +7286,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
 
 # Deal with Origin 1/2 ambiguities ################################################################################
 def ChooseOrigin(G2frame,rd):    
+    G2elem.SetupGeneral(rd.Phase,G2frame.dirname)
     # make copy of Phase but shift atoms Origin 1->2
     O2Phase = copy.deepcopy(rd.Phase)
     # make copy of atoms, shift to alternate origin
@@ -7283,7 +7324,6 @@ def ChooseOrigin(G2frame,rd):
         for i,k in enumerate(cellContents):
             if i: txt += ', '
             txt += '{}*{}'.format(cellContents[k],k)
-        G2elem.SetupGeneral(phObj,G2frame.dirname)
         den,_ = G2mth.getDensity(phObj['General'])
         txt += "\n   Density {:.2f} g/cc\n".format(den)
                     

@@ -1011,6 +1011,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("*"*75)
 
 BinaryPathLoaded = False
+binaryPath = ''
 def SetBinaryPath(printInfo=False, loadBinary=True):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
@@ -1019,7 +1020,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
     GSAS-II imports are done.
     '''
     # do this only once no matter how many times it is called
-    global BinaryPathLoaded
+    global BinaryPathLoaded,binaryPath
     if BinaryPathLoaded: return
     try:
         inpver = intver(np.__version__)
@@ -1056,6 +1057,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
         if binpath: break
     if binpath:                                            # were GSAS-II binaries found
         sys.path.insert(0,binpath)
+        binaryPath = binpath
         if printInfo:
             print('GSAS-II binary directory: {}'.format(binpath))
         BinaryPathLoaded = True
@@ -1073,6 +1075,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
             if printInfo:
                 print('GSAS-II binary directory: {}'.format(binpath))
             sys.path.insert(0,binpath)
+            binaryPath = binpath
             BinaryPathLoaded = True
         # this must be imported before anything that imports any .pyd/.so file for GSASII
         else:
@@ -1106,6 +1109,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
                 binpath = fpth
                 if TestSPG(fpth):
                     sys.path.insert(0,binpath)
+                    binaryPath = binpath
                     if printInfo:
                         print('\n'+75*'*')
                         print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')

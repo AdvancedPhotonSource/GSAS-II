@@ -77,7 +77,6 @@ import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
 import GSASIIobj as G2obj
-#import GSASIIexprGUI as G2exG
 import GSASIIlog as log
 import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem

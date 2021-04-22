@@ -55,6 +55,7 @@ except ImportError:
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
+import GSASIIlattice as G2lat
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2strIO        
 import GSASIImapvars as G2mv
@@ -104,6 +105,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     General = phasedict['General']
     cx,ct,cs,cia = General['AtomPtrs']
+    GS = G2lat.cell2GS(General['Cell'][1:7])
+    Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
     Atoms = phasedict['Atoms']
     cfrac = cx+3
     fpfx = str(phasedict['pId'])+'::Afrac:'
@@ -151,20 +154,16 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
         else:
             adp = 'Uani '
             naniso += 1
-            # compute Uequiv crudely
-            # correct: Defined as "1/3 trace of diagonalized U matrix".
-            # SEE cell2GS & Uij2Ueqv to GSASIIlattice. Former is needed to make the GS matrix used by the latter.
-            t = 0.0
+            t = G2lat.Uij2Ueqv(at[cia+2:cia+8],GS,Amat)[0]
             for j in (2,3,4):
                 var = pfx+varnames[cia+j]+":"+str(i)
-                t += parmDict.get(var,at[cia+j])
         for j in (cx,cx+1,cx+2,cx+3,cia,cia+1):
             if j in (cx,cx+1,cx+2):
                 dig = 11
                 sigdig = -0.00009
             else:
                 dig = 10
-                sigdig = -0.009
+                sigdig = -0.0009
             if j == cia:
                 s += adp
             else:
@@ -173,8 +172,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                 if dvar not in sigDict:
                     dvar = var
                 if j == cia+1 and adp == 'Uani ':
-                    val = t/3.
                     sig = sigdig
+                    val = t
                 else:
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
@@ -622,6 +621,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
+            if 'Flack' in phasedict['Histograms'][h].keys():       #single crystal data
+                return False
             T = self.Histograms[h]['Sample Parameters']['Temperature']
             if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
                 DijTlist[h] = T
@@ -652,6 +653,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
+            if 'Flack' in phasedict['Histograms'][h].keys():       #single crystal data
+                return (300,None)
             T = self.Histograms[h]['Sample Parameters']['Temperature']
             if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
                 DijTlist[h] = T

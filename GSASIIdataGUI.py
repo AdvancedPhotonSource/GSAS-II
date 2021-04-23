@@ -1779,7 +1779,8 @@ class GSASII(wx.Frame):
         #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
-            pth = G2G.GetImportPath(self)
+            pth = os.path.dirname(filename)     #look in same place data was found
+#            pth = G2G.GetImportPath(self)
             if not pth: pth = '.'
             extOrd = [0,1]
             if GSASIIpath.GetConfigValue('Instprm_default',False):

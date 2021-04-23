@@ -1138,9 +1138,12 @@ class GSASII(wx.Frame):
             # make new phase names unique
             rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName,phaseNameList)
             if rd.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
-                choice = G2G.ChooseOrigin(self,rd)
-                if choice is None: return # dialog cancelled
-                rd.Phase = choice
+                try:
+                    choice = G2G.ChooseOrigin(self,rd)
+                    if choice is None: return # dialog cancelled
+                    rd.Phase = choice
+                except:
+                    print('ChooseOrigin failed. Check your atom types')
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
             print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))
@@ -3905,7 +3908,7 @@ class GSASII(wx.Frame):
                             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),Comments)
                         del(newImage)
                         if self.imageDefault:
-                            Data = copy.copy(self.imageDefault)
+                            Data.update(copy.deepcopy(self.imageDefault))
                         Data['formatName'] = 'GSAS-II image'
                         Data['showLines'] = True
                         Data['ring'] = []

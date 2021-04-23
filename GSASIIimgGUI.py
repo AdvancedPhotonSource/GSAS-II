@@ -1210,7 +1210,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 G2frame.imageDefault = {}
                 data['setDefault'] = False
             else:
-                G2frame.imageDefault = copy.copy(data)
+                G2frame.imageDefault = copy.deepcopy(data)
+                G2frame.imageDefault['setDefault'] = False
+                if 'formatName' in G2frame.imageDefault: del G2frame.imageDefault['formatName']
                 data['setDefault'] = True
                 
         def OnCenterAzm(event):

@@ -130,7 +130,23 @@ def SetMonoWave():
             if 0 in parmDict[key]: del parmDict[key][0]
     if (not IBmono) and len(parmDict['wave']) == 4:
         SetCu5Wave()
+
+def writeNIST(filename):
+    '''Write the NIST FPA terms into a JSON-like file that can be reloaded
+    in _onReadFPA
+    ''' 
+    if not filename: return
     
+    fp = open(filename,'w')
+    fp.write('# parameters to be used in the NIST XRD Fundamental Parameters program\n')
+    fp.write('{\n')
+    for key in sorted(NISTparms):
+        fp.write("   '"+key+"' : "+str(NISTparms[key])+",")
+        if not key: fp.write('  # global parameters')
+        fp.write('\n')
+    fp.write('}\n')
+    fp.close()
+        
 #SetCu2Wave() # use these as default
 SetCu5Wave() # use these as default
 SetMonoWave()
@@ -265,6 +281,10 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
                      labelX=r'$2\theta, deg$',
                      labelY=r'Intensity (arbitrary)',
                      Title='FPA peak', newPlot=True, lines=True)
+    def _onSaveFPA(event):
+        filename = G2G.askSaveFile(G2frame,'','.NISTfpa',
+                                       'dict of NIST FPA values',FPdlg)
+        writeNIST(filename)
 
     if FPdlg.GetSizer(): FPdlg.GetSizer().Clear(True)
     MainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -344,7 +364,10 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     if 'plotpos' not in simParms: simParms['plotpos'] =  simParms['minTT']
     ctrl = G2G.ValidatedTxtCtrl(FPdlg,simParms,'plotpos',size=(70,-1))
     btnsizer.Add(ctrl)
-    btnsizer.Add(wx.StaticText(FPdlg,wx.ID_ANY,' deg.'))    
+    btnsizer.Add(wx.StaticText(FPdlg,wx.ID_ANY,' deg.  '))    
+    saveBtn = wx.Button(FPdlg, wx.ID_ANY,'Save FPA dict')
+    btnsizer.Add(saveBtn)
+    saveBtn.Bind(wx.EVT_BUTTON,_onSaveFPA)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,4))
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -687,16 +710,8 @@ def MakeSimSizer(G2frame, dlg):
     def _onSaveFPA(event):
         filename = G2G.askSaveFile(G2frame,'','.NISTfpa',
                                        'dict of NIST FPA values',dlg)
-        if not filename: return
-        fp = open(filename,'w')
-        fp.write('# parameters to be used in the NIST XRD Fundamental Parameters program\n')
-        fp.write('{\n')
-        for key in sorted(NISTparms):
-            fp.write("   '"+key+"' : "+str(NISTparms[key])+",")
-            if not key: fp.write('  # global parameters')
-            fp.write('\n')
-        fp.write('}\n')
-        fp.close()
+        writeNIST(filename)
+        
     def _onReadFPA(event):
         filename = G2G.GetImportFile(G2frame,
                 message='Read file with dict of values for NIST Fundamental Parameters',

@@ -313,7 +313,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
     Imax = np.amax(Image)
     if G2frame.imageDefault:
-        Data = copy.copy(G2frame.imageDefault)
+        Data.update(copy.deepcopy(G2frame.imageDefault))
         Data['showLines'] = True
         Data['ring'] = []
         Data['rings'] = []
@@ -761,7 +761,9 @@ def ProjFileOpen(G2frame,showProvenance=True):
             if datum [0].startswith('IMG'):                   #retrieve image default flag & data if set
                 Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
-                    G2frame.imageDefault = Data                
+                    G2frame.imageDefault = Data
+                    G2frame.imageDefault['setDefault'] = False
+                    if 'formatName' in G2frame.imageDefault: del G2frame.imageDefault['formatName']
         if LastSavedUsing:
             print('GPX load successful. Last saved with GSAS-II revision '+LastSavedUsing)
         else:

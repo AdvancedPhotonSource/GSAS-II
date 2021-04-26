@@ -157,6 +157,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         ifPrint = False
     Rvals = {}
     chisq0 = None
+    Lastshft = None
     while True:
         G2mv.Map2Dict(parmDict,varyList)
         begin = time.time()

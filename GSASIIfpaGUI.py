@@ -117,9 +117,10 @@ def SetCu5Wave():
     '''Set the parameters to the five-line (4 for incident beam mono) 
     Cu K alpha spectrum
     '''
-    parmDict['wave'] = {i:v for i,v in enumerate((1.534753,1.540596,1.541058,1.54441,1.544721))}
-    parmDict['int'] = {i:v for i,v in enumerate((0.0159, 0.5791, 0.0762, 0.2417, 0.0871))}
-    parmDict['lwidth'] = {i:v for i,v in enumerate((3.6854, 0.437, 0.6, 0.52, 0.62))}
+    # values from Marcus Mendenhall from atan_windowed_FP_profile.py
+    parmDict['wave'] = {i:v for i,v in enumerate((1.53471, 1.5405925, 1.5410769, 1.5443873, 1.5446782))}
+    parmDict['int'] = {i:v for i,v in enumerate([0.0043303 , 0.58384351, 0.07077796, 0.2284605 , 0.11258773])}
+    parmDict['lwidth'] = {i:v for i,v in enumerate((2.93 , 0.436, 0.558, 0.487, 0.63))}
 
 def SetMonoWave():
     '''Eliminates the short-wavelength line from the five-line Cu K 
@@ -282,6 +283,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
                      labelY=r'Intensity (arbitrary)',
                      Title='FPA peak', newPlot=True, lines=True)
     def _onSaveFPA(event):
+        XferFPAsettings(parmDict)
         filename = G2G.askSaveFile(G2frame,'','.NISTfpa',
                                        'dict of NIST FPA values',FPdlg)
         writeNIST(filename)
@@ -301,7 +303,10 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
         if prm not in parmDict: parmDict[prm] = {}
         for i in parmDict['wave'].keys():
             if i not in parmDict[prm]: parmDict[prm][i] = defVal
-            ctrl = G2G.ValidatedTxtCtrl(FPdlg,parmDict[prm],i,size=(90,-1))
+            if prm == 'wave':
+                ctrl = G2G.ValidatedTxtCtrl(FPdlg,parmDict[prm],i,size=(90,-1),nDig=(10,6))
+            else:
+                ctrl = G2G.ValidatedTxtCtrl(FPdlg,parmDict[prm],i,size=(90,-1),nDig=(10,3))
             waveSizer.Add(ctrl,1,WACV,1)
     MainSizer.Add(waveSizer)
     MainSizer.Add((-1,5))

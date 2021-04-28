@@ -12470,7 +12470,7 @@ of the crystal structure.
             dlg = G2G.MultiDataDialog(G2frame,title='Roll map shifts',
                 prompts=['delt-X (-1. to 1.)','delt-Y (-1. to 1.)',
                          'delt-Z (-1. to 1.)'],values=[0.,0.,0.,],
-                    limits=[[-1.,1.],[-1.,1.],[-1.,1.]],formats=['%.4f','%.4f','%.4f'])
+                    limits=[[-1.,1.],[-1.,1.],[-1.,1.]],formats=['%.6f','%.6f','%.6f'])
             
             if dlg.ShowModal() == wx.ID_OK:
                 rollsteps = dlg.GetValues()

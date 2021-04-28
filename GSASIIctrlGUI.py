@@ -2598,67 +2598,74 @@ class MultiDataDialog(wx.Dialog):
         def OnValItem(event):
             if event: event.Skip()
             Obj = event.GetEventObject()
-            format = Indx[Obj][-1]
-            if type(format) is list:
-                id,idl,limits = Indx[Obj][:3]
-                self.values[id][idl] = Obj.GetValue()
-            elif 'bool' in format:
+            fmt = Indx[Obj][-1]
+            if type(fmt) is list:
+                tid,idl,limits = Indx[Obj][:3]
+                self.values[tid][idl] = Obj.GetValue()
+            elif 'bool' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
-            elif 'str' in format:
-                id,limits = Indx[Obj][:2]
+            elif 'str' in fmt:
+                tid,limits = Indx[Obj][:2]
                 try:
                     val = Obj.GetValue()
                     if val not in limits:
                         raise ValueError
                 except ValueError:
-                    val = self.values[id]
-                self.values[id] = val
+                    val = self.values[tid]
+                self.values[tid] = val
                 Obj.SetValue('%s'%(val))
-            elif 'choice' in format:
+            elif 'choice' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
-            else:
-                id,limits = Indx[Obj][:2]
-                try:
-                    val = float(Obj.GetValue())
-                    if val < limits[0] or val > limits[1]:
-                        raise ValueError
-                except ValueError:
-                    val = self.values[id]
-                self.values[id] = val
-                Obj.SetValue(format%(val))
+            # else:
+            #     tid,limits = Indx[Obj][:2]
+            #     try:
+            #         val = float(Obj.GetValue())
+            #         if val < limits[0] or val > limits[1]:
+            #             raise ValueError
+            #     except ValueError:
+            #         val = self.values[tid]
+            #     self.values[tid] = val
+            #     Obj.SetValue(fmt%(val))
             
         Indx = {}
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         lineSizer = wx.FlexGridSizer(0,2,5,5)
-        for id,[prompt,value,limits,format] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
+        for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            if type(format) is list:  #let's assume these are 'choice' for now
+            if type(fmt) is list:  #let's assume these are 'choice' for now
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
-                for idl,item in enumerate(format):
+                for idl,item in enumerate(fmt):
                     listItem = wx.ComboBox(self.panel,value=limits[idl][0],choices=limits[idl],style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
                     valItem.Add(listItem,0,WACV)
-                    Indx[listItem] = [id,idl,limits,format]
-            elif 'bool' in format:
+                    Indx[listItem] = [tid,idl,limits,fmt]
+            elif 'bool' in fmt:
                 valItem = wx.CheckBox(self.panel,label='')
                 valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
                 valItem.SetValue(value)
-            elif 'str' in format:
+            elif 'str' in fmt:
                 valItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
                 valItem.SetValue('%s'%value)
-            elif 'choice' in format:
+            elif 'choice' in fmt:
                 valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
             else:
-                valItem = ValidatedTxtCtrl(self.panel,self.values,id,nDig=(10,4))
-                # valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
+                if '%' in fmt:
+                    if 'd' in fmt:
+                        nDig = None
+                    else:
+                        sfmt = fmt[1:].split('.')
+                        if not sfmt[0]: sfmt[0] = '10'
+                        nDig = (int(sfmt[0]),int(sfmt[1][:-1]),sfmt[1][-1])
+                valItem = ValidatedTxtCtrl(self.panel,self.values,tid,nDig=nDig,xmin=limits[0],xmax=limits[1])
+                # valItem = wx.TextCtrl(self.panel,value=fmt%(value),style=wx.TE_PROCESS_ENTER)
                 # valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 # valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
-            Indx[valItem] = [id,limits,format]
+            Indx[valItem] = [tid,limits,fmt]
             lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
         mainSizer.Add(lineSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")

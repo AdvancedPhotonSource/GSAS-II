@@ -2654,9 +2654,10 @@ class MultiDataDialog(wx.Dialog):
                 valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
             else:
-                valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
-                valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
-                valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+                valItem = ValidatedTxtCtrl(self.panel,self.values,id,nDig=(10,4))
+                # valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
+                # valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                # valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
             Indx[valItem] = [id,limits,format]
             lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
         mainSizer.Add(lineSizer)

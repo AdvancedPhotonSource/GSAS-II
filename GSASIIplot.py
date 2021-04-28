@@ -1985,13 +1985,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Page.plotStyle['logPlot']:
             if msg: msg += '\n'
             msg += " * only when the intensity scale is linear/sqrt (not log)"
-        if G2frame.Weight:
-            if msg: msg += '\n'
-            msg += " * only when weight plot is set to no weight plot"
         if msg:
             msg = 'Publication export is only available under limited plot settings\n'+msg
             G2G.G2MessageBox(G2frame,msg,'Wrong plot settings')
             print(msg)
+        elif G2frame.Weight:
+            G2frame.Weight = False
+            PlotPatterns(G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
+            PublishRietveldPlot(G2frame,Pattern,Plot,Page)
+            G2frame.Weight = True
+            PlotPatterns(G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
+            return
         else:
             PublishRietveldPlot(G2frame,Pattern,Plot,Page)
 
@@ -2255,13 +2259,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                 q = xpos
                 if q <= 0:
-                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
+                    G2frame.G2plotNB.status.SetStatusText('Q = %9.5f'%q)
                     return
                 try:
                     dsp = 2.*np.pi/q
                     xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/q)
                 except ValueError:      #avoid bad value in asin beyond upper limit
-                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
+                    G2frame.G2plotNB.status.SetStatusText('Q = %9.5f'%q)
                     return
                 if 'T' in Parms['Type'][0]: # TOF
                     dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
@@ -2271,7 +2275,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif plottype in ['SASD','REFD']:
                 q = xpos
                 if q <= 0:
-                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
+                    G2frame.G2plotNB.status.SetStatusText('Q = %9.5f'%q)
                     return
                 dsp = 2.*np.pi/q
             elif Page.plotStyle['dPlot']:
@@ -2295,21 +2299,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 q = 2.*np.pi/dsp
             if G2frame.Contour: #PWDR only
                 if 'T' in Parms['Type'][0]:
-                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                 else:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
             else:
                 if 'T' in Parms['Type'][0]:
                     if Page.plotStyle['sqrtPlot']:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                        G2frame.G2plotNB.status.SetStatusText('TOF = %9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 else:
                     if 'PWDR' in plottype:
                         if Page.plotStyle['sqrtPlot']:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                         else:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                     elif plottype == 'SASD':
                         G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                     elif plottype == 'REFD':
@@ -5943,7 +5947,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            G2frame.G2plotNB.status.SetStatusText('q =%.3f%s %sq/q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
+            G2frame.G2plotNB.status.SetStatusText('Q =%.3f%s %sQ/Q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
             
     def OnKeyPress(event):
         if event.key == 'g':

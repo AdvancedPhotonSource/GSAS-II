@@ -109,28 +109,29 @@ DetMode = 'BBpoint'
 def SetCu2Wave():
     '''Set the parameters to the two-line Cu K alpha 1+2 spectrum
     '''
-    parmDict['wave'] = {i:v for i,v in enumerate((1.540596,1.544493))}
+    parmDict['wave'] = {i:v for i,v in enumerate((1.5405925, 1.5443873))}
     parmDict['int'] = {i:v for i,v in enumerate((0.653817, 0.346183))}
     parmDict['lwidth'] = {i:v for i,v in enumerate((0.501844,0.626579))}
 
-def SetCu5Wave():
-    '''Set the parameters to the five-line (4 for incident beam mono) 
+def SetCu6wave():
+    '''Set the parameters to the NIST six-line (4 for incident beam mono) 
     Cu K alpha spectrum
     '''
     # values from Marcus Mendenhall from atan_windowed_FP_profile.py
-    parmDict['wave'] = {i:v for i,v in enumerate((1.53471, 1.5405925, 1.5410769, 1.5443873, 1.5446782))}
-    parmDict['int'] = {i:v for i,v in enumerate([0.0043303 , 0.58384351, 0.07077796, 0.2284605 , 0.11258773])}
-    parmDict['lwidth'] = {i:v for i,v in enumerate((2.93 , 0.436, 0.558, 0.487, 0.63))}
+    parmDict['wave'] = {i:v for i,v in enumerate((1.5405925, 1.5443873, 1.5446782, 1.5410769, 1.53471, 1.53382, ))}
+    parmDict['int'] = {i:v for i,v in enumerate((0.58384351, 0.2284605 , 0.11258773, 0.07077796, 0.0043303, 0.00208613, ))}
+    parmDict['lwidth'] = {i:v for i,v in enumerate((0.436, 0.487, 0.63, 0.558, 2.93, 2.93,))}
 
 def SetMonoWave():
-    '''Eliminates the short-wavelength line from the five-line Cu K 
-    alpha spectrum when incident beam mono; resets it to 5 if no mono
+    '''Eliminates the short-wavelength line from the six-line Cu K 
+    alpha spectrum when incident beam mono; resets it to 6 if no mono
     '''
-    if IBmono and len(parmDict['wave']) == 5:
+    if IBmono and len(parmDict['wave']) == 6:
         for key in 'wave','int','lwidth':
-            if 0 in parmDict[key]: del parmDict[key][0]
+            if 5 in parmDict[key]: del parmDict[key][5]
+            if 4 in parmDict[key]: del parmDict[key][4]
     if (not IBmono) and len(parmDict['wave']) == 4:
-        SetCu5Wave()
+        SetCu6wave()
 
 def writeNIST(filename):
     '''Write the NIST FPA terms into a JSON-like file that can be reloaded
@@ -149,7 +150,7 @@ def writeNIST(filename):
     fp.close()
         
 #SetCu2Wave() # use these as default
-SetCu5Wave() # use these as default
+SetCu6wave() # use these as default
 SetMonoWave()
 
 def FillParmSizer():
@@ -226,8 +227,8 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
             if lastkey in parmDict[key]:
                 del parmDict[key][lastkey]
         wx.CallAfter(MakeTopasFPASizer,G2frame,FPdlg,SetButtonStatus)
-    def _onSetCu5Wave(event):
-        SetCu5Wave()
+    def _onSetCu6wave(event):
+        SetCu6wave()
         SetMonoWave()
         wx.CallAfter(MakeTopasFPASizer,G2frame,FPdlg,SetButtonStatus)
     def _onSetCu2Wave(event):
@@ -320,9 +321,9 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     btn = wx.Button(FPdlg, wx.ID_ANY,'CuKa1+2')
     btnsizer.Add(btn)
     btn.Bind(wx.EVT_BUTTON,_onSetCu2Wave)
-    btn = wx.Button(FPdlg, wx.ID_ANY,'CuKa-5wave')
+    btn = wx.Button(FPdlg, wx.ID_ANY,'NIST CuKa')
     btnsizer.Add(btn)
-    btn.Bind(wx.EVT_BUTTON,_onSetCu5Wave)
+    btn.Bind(wx.EVT_BUTTON,_onSetCu6wave)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,5))
     
@@ -392,6 +393,8 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     # control window size
     px,py = prmSizer.GetSize()
     dx,dy = FPdlg.GetSize()
+    FPdlg.SetMinSize((-1,-1))
+    FPdlg.SetMaxSize((-1,-1)) 
     FPdlg.SetMinSize((dx,dy+200)) # leave a min of 200 points for scroll panel
     FPdlg.SetMaxSize((max(dx,700),850)) 
     FPdlg.SetSize((max(dx,px+20),min(750,dy+py+30))) # 20 for scroll bar, 30 for a bit of room at bottom

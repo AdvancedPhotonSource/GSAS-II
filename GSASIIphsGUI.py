@@ -174,7 +174,6 @@ class SymOpDialog(wx.Dialog):
         self.Fit()
 
     def OnOpSelect(self,event):
-#        if self.SGData['SGInv']:
         self.OpSelected[0] = self.inv.GetSelection()
         if self.SGData['SGLatt'] != 'P':
             self.OpSelected[1] = self.latt.GetSelection()
@@ -1726,7 +1725,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 # try a lookup on the user-supplied name
                 SpcGp = GetSpGrpfromUser(General,SpGrp)
                 if SpcGp == SpGrp:
-                    return      #unchanged - do nothing
+                    text,table = G2spc.SGPrint(generalData['SGData'])
+                    SGTxt.SetLabel(generalData['SGData']['SpGrp'])
+                    msg = 'Space Group Information'
+                    G2G.SGMessageBox(General,msg,text,table).Show()
+                    return      #unchanged - do nothing but show info
                 SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
                 if SpGrpNorm:
                     SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)

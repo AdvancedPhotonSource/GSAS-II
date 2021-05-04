@@ -1271,6 +1271,7 @@ import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIfiles as G2fil
 import GSASIIimage as G2img
+import GSASIIlattice as G2lat
 
 # Delay imports to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
@@ -1547,7 +1548,6 @@ def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
     [1, -1, 0, 3.8411063979868794]
     """
 
-    import GSASIIlattice as G2lat
     if len(cell) != 6:
         raise G2ScriptException("GenerateReflections: Invalid unit cell:" + str(cell))
     opts = (Qmax is not None) + (dmin is not None) + (TTmax is not None)
@@ -1709,6 +1709,34 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     except ValueError:
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
         G2fil.G2Print('Instrument parameters read:',reader.instmsg)
+
+    if 'T' in Iparm1['Type'][0]:
+        if not reader.clockWd and reader.GSAS:
+            reader.powderdata[0] *= 100.        #put back the CW centideg correction
+        cw = np.diff(reader.powderdata[0])
+        reader.powderdata[0] = reader.powderdata[0][:-1]+cw/2.
+        if reader.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
+            npts = min(len(reader.powderdata[0]),len(reader.powderdata[1]),len(cw))
+            reader.powderdata[1] = reader.powderdata[1][:npts]/cw[:npts]
+            reader.powderdata[2] = reader.powderdata[2][:npts]*cw[:npts]**2  #1/var=w at this point
+        else:       #NB: from topas/fullprof type files
+            reader.powderdata[1] = reader.powderdata[1][:-1]
+            reader.powderdata[2] = reader.powderdata[2][:-1]
+        if 'Itype' in Iparm2:
+            Ibeg = np.searchsorted(reader.powderdata[0],Iparm2['Tminmax'][0])
+            Ifin = np.searchsorted(reader.powderdata[0],Iparm2['Tminmax'][1])
+            reader.powderdata[0] = reader.powderdata[0][Ibeg:Ifin]
+            YI,WYI = G2pwd.calcIncident(Iparm2,reader.powderdata[0])
+            reader.powderdata[1] = reader.powderdata[1][Ibeg:Ifin]/YI
+            var = 1./reader.powderdata[2][Ibeg:Ifin]
+            var += WYI*reader.powderdata[1]**2
+            var /= YI**2
+            reader.powderdata[2] = 1./var
+        reader.powderdata[1] = np.where(np.isinf(reader.powderdata[1]),0.,reader.powderdata[1])
+        reader.powderdata[3] = np.zeros_like(reader.powderdata[0])
+        reader.powderdata[4] = np.zeros_like(reader.powderdata[0])
+        reader.powderdata[5] = np.zeros_like(reader.powderdata[0])
+
     Ymin = np.min(reader.powderdata[1])
     Ymax = np.max(reader.powderdata[1])
     valuesdict = {'wtFactor': 1.0,
@@ -1717,10 +1745,21 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
                   'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
                   'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
                   'Yminmax': [Ymin, Ymax]}
+    # apply user-supplied corrections to powder data
+    if 'CorrectionCode' in Iparm1:
+        print('Applying corrections from instprm file')
+        corr = Iparm1['CorrectionCode'][0]
+        try:
+            exec(corr)
+            print('done')
+        except Exception as err:
+            print(u'error: {}'.format(err))
+            print('with commands -------------------')
+            print(corr)
+            print('---------------------------------')
+        finally:
+            del Iparm1['CorrectionCode']
     reader.Sample['ranId'] = valuesdict['ranId']
-    if 'T' in Iparm1['Type'][0]:
-        if not reader.clockWd and reader.GSAS:
-            reader.powderdata[0] *= 100.        #put back the CW centideg correction
 
     # Ending keys:
     # [u'Reflection Lists',
@@ -1735,13 +1774,16 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     #  u'Instrument Parameters']
     Tmin = np.min(reader.powderdata[0])
     Tmax = np.max(reader.powderdata[0])
+    Tmin1 = Tmin
+    if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:                
+        Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
 
     default_background = [['chebyschev-1', False, 3, 1.0, 0.0, 0.0],
         {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 
         'peaksList': [],'background PWDR':['',1.0,False]}]
 
     output_dict = {u'Reflection Lists': {},
-                   u'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin, Tmax]]),
+                   u'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin1, Tmax]]),
                    u'data': [valuesdict, reader.powderdata, HistName],
                    u'Index Peak List': [[], []],
                    u'Comments': reader.comments,
@@ -4456,7 +4498,6 @@ class G2PwdrData(G2ObjectWrapper):
         Note: only one of the parameters: dspace, Q or ttheta may be specified.
         See :ref:`PeakRefine` for an example.
         '''
-        import GSASIIlattice as G2lat
         import GSASIImath as G2mth
         if (not dspace) + (not Q) + (not ttheta) != 2:
             G2fil.G2Print('add_peak error: too many or no peak position(s) specified')
@@ -4586,7 +4627,6 @@ class G2PwdrData(G2ObjectWrapper):
             includes an extension
         :returns: name of file that was written
         '''
-        import GSASIIlattice as G2lat
         import math
         nptand = lambda x: np.tan(x*math.pi/180.)
         fil = os.path.abspath(filename)
@@ -4952,7 +4992,6 @@ class G2Phase(G2ObjectWrapper):
 
         """
         # translated from GSASIIstrIO.ExportBaseclass.GetCell
-        import GSASIIlattice as G2lat
         import GSASIImapvars as G2mv
         try:
             pfx = str(self.id) + '::'
@@ -5778,7 +5817,6 @@ class G2SeqRefRes(G2ObjectWrapper):
             if sv[1]:
                 sv[1] = insChar
             return ':'.join(sv)
-        import GSASIIlattice as G2lat
         import GSASIIstrIO as G2stIO
         
         uniqCellLookup = [

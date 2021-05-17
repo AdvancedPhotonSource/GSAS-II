@@ -3590,7 +3590,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
                             CalcLine = Plot.plot(X,Z/ymax,colors[1],picker=False,label=incCptn('calc'))                 #Ic
                         else:
-                            Plot.plot(X,YB,color=colors[0],marler=pP,
+                            Plot.plot(X,YB,color=colors[0],marker=pP,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
@@ -7334,7 +7334,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Int = 0
                 if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
-                tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
+                tth,azm,D,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 if G2frame.StrainKey:
                     G2frame.G2plotNB.status.SetStatusText('d-zero pick active',0)
@@ -7433,7 +7433,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if not (event.xdata and event.ydata): return
                 xpos = event.xdata
                 ypos = event.ydata
-                tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
+                tth,azm,D,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
                 G2frame.calibDmin.SetValue(dsp)
             elif event.key in ['x',]:
                 Data['invert_x'] = not Data['invert_x']
@@ -7478,7 +7478,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 # mouse is outside window. Could abort the movement,
                 # for now ignore the movement until it moves back in
                 return
-            tth,azm,D,dsp = G2img.GetTthAzmDsp(event.xdata,event.ydata,Data)
+            tth,azm,D,dsp = G2img.GetTthAzmDsp2(event.xdata,event.ydata,Data)
             itemPicked = str(G2frame.itemPicked)
             if 'Itth' in itemPicked:
                 Data['IOtth'][0] = max(tth,0.001)
@@ -7612,7 +7612,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 wave = Data['wavelength']
                 itemNum = G2frame.itemPicked.itemNumber
                 tth,azm,thick = Masks['Arcs'][itemNum]
-                tthN,azmN,D,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)
+                tthN,azmN,D,dsp = G2img.GetTthAzmDsp2(Xpos,Ypos,Data)
                 if event.button == 1:
                     if pickType == 'ArcInner':
                         angO = angI = tthN
@@ -7921,7 +7921,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
                 return
-            tth,azm,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)[:3]
+            tth,azm,dsp = G2img.GetTthAzmDsp2(Xpos,Ypos,Data)[:3]
             itemPicked = str(G2frame.itemPicked)
             try:
                 pickType = G2frame.itemPicked.itemType

@@ -262,6 +262,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             lamMax = max(lamMax,lam)
             Amatlam = Amat*(1.+np.eye(Amat.shape[0])*lam)
             try:
+                Nzeros = 1
                 Ainv,Nzeros = pinv(Amatlam,xtol)    # Moore-Penrose SVD inversion
             except nl.LinAlgError:
                 loops += 1
@@ -411,6 +412,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         G2fil.G2Print('ouch #5 linear algebra error in making final v-cov matrix', mode='error')
         psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
         if not len(psing): # make sure at least the worst term is flagged
+            d = np.abs(np.diag(nl.qr(Amat)[1]))        
             psing = [np.argmin(d)]
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':-1,'Xvec':None, 'chisq0':chisqf}

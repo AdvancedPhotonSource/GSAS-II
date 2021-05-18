@@ -2278,86 +2278,30 @@ unselected atoms appear much darker than selected atoms.
                 UpdateDraw()
 
             def onSetPlane(event): 
-                '''Compute least-squares plane for selected atoms; 
-                move atoms so that LS plane aligned with x-y plane, 
-                with minimum required change to x
+                '''Finds eigen vector/matrix for best "ellipsoid" about atoms; 
+                rotate atoms so that smallest axis is along choice. 
                 '''
                 grid.completeEdits()
                 selList = [i==1 for i in rd.Phase['RBselection']]
                 XYZ = rd.Phase['RBcoords'][selList]
-                if len(XYZ) < 3: 
-                    G2G.G2MessageBox(G2frame,'A plane requires three or more atoms',
-                                     'Need more atoms')
+                Natoms = len(XYZ)
+                if Natoms < 3: 
+                    G2G.G2MessageBox(G2frame,'A plane requires three or more atoms','Need more atoms')
                     return
-                # fit 3 ways (in case of singularity) and take result with lowest residual
-                X,Y,Z = [XYZ[:,i] for i in (0,1,2)]
-                XZ = copy.copy(XYZ)
-                XZ[:,1] = 1
-                (a,d,b), resd, rank, sing = nl.lstsq(XZ, -Y,rcond=-1)
-                resid_min = resd
-                normal = a,1,b
-                YZ = copy.copy(XYZ)
-                YZ[:,0] = 1
-                (d,a,b), resd, rank, sing = nl.lstsq(YZ, -X,rcond=-1)
-                if resid_min > resd:
-                    resid_min = resd
-                    normal = 1,a,b
-                XY = copy.copy(XYZ)
-                XY[:,2] = 1
-                (a,b,d), resd, rank, sing = nl.lstsq(XY, -Z,rcond=-1)
-                if resid_min > resd:
-                    resid_min = resd
-                    normal = a,b,1
-                # solve for  ax + bx + z + c = 0 or equivalently ax + bx + c = -z
-                # try:
-                # except: 
-                #     G2G.G2MessageBox(G2frame,
-                #             'Error computing plane; are atoms in a line?',
-                #             'Computation error')
-                #     return
-                if bntOpts['plane'] == 'xy':
-                    # new coordinate system is
-                    #   ZP, z' normal to plane
-                    #   YP, y' = z' cross x (= [0,1,-b])
-                    #   XP, x' = (z' cross x) cross z'
-                    # this puts XP as close as possible to X with XP & YP in plane
-                    ZP = np.array(normal)
-                    ZP /= np.sqrt(np.sum(ZP**2))
-                    YP = np.cross(ZP,[1,0,0])
-                    if sum(YP*YP) < .1: # pathological condition: z' along x
-                        YP = np.cross(ZP,[0,1,0])
-                    YP /= np.sqrt(np.sum(YP**2))
-                    XP = np.cross(YP,ZP)
-                elif bntOpts['plane'] == 'yz':
-                    # new coordinate system is
-                    #   XP, x' normal to plane
-                    #   ZP, z' = x' cross y
-                    #   YP, y' = (x' cross y) cross x' 
-                    # this puts y' as close as possible to y with z' & y' in plane
-                    XP = np.array(normal)
-                    XP /= np.sqrt(np.sum(XP**2))
-                    ZP = np.cross(XP,[0,1,0])
-                    if sum(ZP*ZP) < .1: # pathological condition: x' along y
-                        ZP = np.cross(XP,(0,0,1))
-                    ZP /= np.sqrt(np.sum(ZP**2))
-                    YP = np.cross(ZP,XP)
-                elif bntOpts['plane'] == 'xz':
-                    # new coordinate system is
-                    #   YP, y' normal to plane
-                    #   ZP, z' = x cross y'
-                    #   XP, y' = (x cross y') cross z' 
-                    # this puts XP as close as possible to X with XP & YP in plane
-                    YP = np.array(normal)
-                    YP /= np.sqrt(np.sum(YP**2))
-                    ZP = np.cross([1,0,0],YP)
-                    if sum(ZP*ZP) < .1: # pathological condition: y' along x
-                        ZP = np.cross([0,1,0],YP)
-                    ZP /= np.sqrt(np.sum(ZP**2))
-                    XP = np.cross(YP,ZP)
+                Zmat = np.zeros((3,3))
+                for xyz in XYZ:
+                    Zmat += np.outer(xyz.T,xyz)
+                Evec,Emat = nl.eig(Zmat)
+                Order = np.argsort(np.nan_to_num(Evec))     #short-long order
+                if bntOpts['plane'] == 'xy':        #short along z
+                    trans = np.array([Emat[Order[2]],Emat[Order[1]],Emat[Order[0]]])
+                elif bntOpts['plane'] == 'yz':      #short along x
+                    trans = np.array([Emat[Order[0]],Emat[Order[2]],Emat[Order[1]]])
+                elif bntOpts['plane'] == 'xz':      #short along y
+                    trans = np.array([Emat[Order[1]],Emat[Order[0]],Emat[Order[2]]])
                 else:
                     print('unexpected plane',bntOpts['plane'])
                     return
-                trans = np.array((XP,YP,ZP))
                 # update atoms in place
                 rd.Phase['RBcoords'][:] = np.inner(trans,rd.Phase['RBcoords']).T
                 grid.ForceRefresh()

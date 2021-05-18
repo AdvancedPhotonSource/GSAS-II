@@ -2907,6 +2907,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 return           
         xye = np.array(ma.getdata(Histograms[plotItem]['Data'])) # strips mask
         xye0 = Histograms[plotItem]['Data'][0]
+        limits = Histograms[plotItem]['Limits']
 #        if Page.plotStyle['qPlot']:
 #            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
 #            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
@@ -2919,6 +2920,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         X = copy.deepcopy(xye0)
         Ibeg = np.searchsorted(X,limits[1][0])
         Ifin = np.searchsorted(X,limits[1][1])
+        if Ibeg == Ifin: # if no points are within limits bad things happen 
+            Ibeg,Ifin = 0,None
         if Page.plotStyle['sqrtPlot']:
             olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
             Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
@@ -3042,6 +3045,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.plusPlot = True
         G2frame.SubBack = False
         Page.plotStyle['logPlot'] = False
+        # is the selected histogram in the refinement? if not pick the 1st to show
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if plottingItem not in Histograms:
+            histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
+            if len(histoList) != 0:
+                plottingItem = histoList[0]
+                Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
+                G2frame.GPXtree.SelectItem(Id)
+                wx.CallAfter(PlotPatterns,G2frame,newPlot,plotType,None,
+                     extraKeys,refineMode)
+                return
     #=====================================================================================
     if not new:
         G2frame.xylim = copy.copy(limits)

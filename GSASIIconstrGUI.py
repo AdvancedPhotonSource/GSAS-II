@@ -1077,6 +1077,7 @@ def UpdateConstraints(G2frame,data):
             helptext = ""
             eqString = ['',]
             problemItem = False
+            badVar = False
             for term in item[:-3]:
                 if str(term[1]) in G2mv.problemVars:
                     problemItem = True
@@ -1084,6 +1085,7 @@ def UpdateConstraints(G2frame,data):
                 constSizer.Add((-1,-1),0)              # blank space for edit button
                 typeString = 'FIXED'
                 var = str(item[0][1])
+                if '?' in var: badVar = True
                 varMean = G2obj.fmtVarDescr(var)
                 eqString[-1] =  var +'   '
                 helptext = "Prevents variable:\n"+ var + " ("+ varMean + ")\nfrom being changed"
@@ -1099,6 +1101,7 @@ def UpdateConstraints(G2frame,data):
                     helptext += " is created from a linear combination of the following variables:\n"
                     for term in item[:-3]:
                         var = str(term[1])
+                        if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         m = term[0]
@@ -1136,6 +1139,7 @@ def UpdateConstraints(G2frame,data):
                     helptext = "The following variables constrained to equal a constant:"
                     for term in item[:-3]:
                         var = str(term[1])
+                        if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         m = term[0]
@@ -1157,6 +1161,7 @@ def UpdateConstraints(G2frame,data):
                     if item[0][0] == 0: item[0][0] = 1.0
                     if item[1][0] == 0: item[1][0] = 1.0
                     var = str(item[0][1])
+                    if '?' in var: badVar = True
                     helptext = 'Variable {:} '.format(var) + " ("+ G2obj.fmtVarDescr(var) + ")"
                     helptext += "\n\nis equivalent to "
                     m = item[0][0]/item[1][0]
@@ -1172,6 +1177,7 @@ def UpdateConstraints(G2frame,data):
                     indepterm = item[0][1]
                     for i,term in enumerate(item[:-3]):
                         var = str(term[1])
+                        if '?' in var: badVar = True
                         if term[0] == 0: term[0] = 1.0
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
@@ -1213,6 +1219,7 @@ def UpdateConstraints(G2frame,data):
                 constSizer.Add((-1,-1))                
             constSizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,typeString),
                            0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            if badVar: eqString[-1] += ' -- Error: variable removed'
             if problemItem: eqString[-1] += ' -- Conflict: see console'
             if len(eqString) > 1:
                 Eq = wx.BoxSizer(wx.VERTICAL)
@@ -1223,7 +1230,7 @@ def UpdateConstraints(G2frame,data):
                 Eq.Add((-1,4))
             else:
                 Eq = wx.StaticText(pageDisplay,wx.ID_ANY,eqString[0])
-                if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
+                if problemItem or badVar: Eq.SetBackgroundColour(wx.YELLOW)
             constSizer.Add(Eq,1,WACV)
         return constSizer
                 

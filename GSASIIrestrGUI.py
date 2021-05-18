@@ -1898,10 +1898,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         def OnDelGenRestraint(event):              #does this work??
             '''Delete a restraint expression'''
             n = event.GetEventObject().index
-            G2frame.GetStatusBar().SetStatusText('',1)
-            if not n:
-                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
-                return
+            del restrData['General']['General'][n]
             wx.CallAfter(UpdateGeneralRestr,restrData['General'])
             
         if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)

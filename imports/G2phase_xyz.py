@@ -51,7 +51,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read a PDF file using :meth:`ReadPDBPhase`'
         self.errors = 'Error opening file'
-        fp = open(filename, 'Ur')
+        fp = open(filename, 'r')
         self.Phase = {}
         natom = int(fp.readline().strip())
         Title = os.path.basename(filename)

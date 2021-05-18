@@ -92,6 +92,8 @@ class G2BoolEditor(wg.GridCellBoolEditor):
         Saves the info needed to make updates in self.saveVals.
         Sets the focus.
         '''
+        if grid.GetTable().GetValue(row,col) not in [True,False]:
+            return
         self.startValue = int(grid.GetTable().GetValue(row, col))
         self.saveVals = row, col, grid
         # invert state and set in editor
@@ -2291,18 +2293,18 @@ unselected atoms appear much darker than selected atoms.
                 X,Y,Z = [XYZ[:,i] for i in (0,1,2)]
                 XZ = copy.copy(XYZ)
                 XZ[:,1] = 1
-                (a,d,b), resd, rank, sing = nl.lstsq(XZ, -Y)
+                (a,d,b), resd, rank, sing = nl.lstsq(XZ, -Y,rcond=-1)
                 resid_min = resd
                 normal = a,1,b
                 YZ = copy.copy(XYZ)
                 YZ[:,0] = 1
-                (d,a,b), resd, rank, sing = nl.lstsq(YZ, -X)
+                (d,a,b), resd, rank, sing = nl.lstsq(YZ, -X,rcond=-1)
                 if resid_min > resd:
                     resid_min = resd
                     normal = 1,a,b
                 XY = copy.copy(XYZ)
                 XY[:,2] = 1
-                (a,b,d), resd, rank, sing = nl.lstsq(XY, -Z)
+                (a,b,d), resd, rank, sing = nl.lstsq(XY, -Z,rcond=-1)
                 if resid_min > resd:
                     resid_min = resd
                     normal = a,b,1

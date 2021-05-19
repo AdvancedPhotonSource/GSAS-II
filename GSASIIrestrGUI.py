@@ -42,28 +42,41 @@ except AttributeError:
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
+VERY_RED = wx.Colour(255,0,0)
 TabSelectionIdDict = {}
 
 ################################################################################
 #####  Restraints
 ################################################################################           
-def GetSelectedRows(widget):
+def GetSelectedRows(widget,lbl='edit',G2frame=None):
     '''Returns a list of selected rows. Rows can be selected, blocks of cells
     or individual cells can be selected. The column for selected cells is ignored.
     '''
     try:
         rows = widget.GetSelectedRows()
-    except:
-        return
-    if not rows:
+        if rows: return rows
+            
         top = widget.GetSelectionBlockTopLeft()
         bot = widget.GetSelectionBlockBottomRight()
         if top and bot:
             rows = range(top[0][0],bot[0][0]+1)
-    if not rows:
+            if rows: return rows
+
         rows = sorted(list(set([cell[0] for cell in widget.GetSelectedCells()])))
-    return rows
-       
+        if rows: return rows
+
+        choices = ["{}: {}".format(widget.GetRowLabelValue(i),widget.GetCellValue(i,0)) 
+                       for i in range(widget.GetNumberRows())]
+        try:
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Restraints to '+lbl,
+                                                  'Select restraints',choices)
+            if dlg.ShowModal() != wx.ID_OK: return
+            return dlg.GetSelections()
+        finally:
+            dlg.Destroy()
+    except:
+        return
+    
 def UpdateRestraints(G2frame,data,phaseName):
     '''Respond to selection of the Restraints item on the
     data tree
@@ -945,7 +958,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             UpdateBondRestr(bondRestData)                
                                 
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Bonds)
+            rows = GetSelectedRows(Bonds,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -962,6 +975,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(BondRestr,bondRestData),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         bondList = bondRestData['Bonds']
         if len(bondList) and len(bondList[0]) == 6:   #patch
             bondList = bondRestData['Bonds'] = []
@@ -1019,6 +1034,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Bonds.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+                    G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
@@ -1077,7 +1094,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             UpdateAngleRestr(angleRestData)                
                                             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Angles)
+            rows = GetSelectedRows(Angles,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -1094,6 +1111,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(AngleRestr,angleRestData),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         angleList = angleRestData['Angles']
         if len(angleList):
             table = []
@@ -1151,6 +1170,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Angles.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+                    G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
@@ -1199,7 +1220,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             UpdatePlaneRestr(planeRestData)                
                                             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Planes)
+            rows = GetSelectedRows(Planes,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -1216,6 +1237,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(PlaneRestr,planeRestData),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         planeList = planeRestData['Planes']
         if len(planeList):
             table = []
@@ -1279,6 +1302,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Planes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
+                    G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
@@ -1308,7 +1333,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             wx.CallAfter(UpdateChiralRestr,chiralRestData)                
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Volumes)
+            rows = GetSelectedRows(Volumes,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -1352,6 +1377,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         volumeList = chiralRestData['Volumes']
         if len(volumeList):
             table = []
@@ -1409,6 +1436,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Volumes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                for i in (G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+                    G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
@@ -1438,11 +1467,11 @@ def UpdateRestraints(G2frame,data,phaseName):
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(TorsionRestr.Torsions)
+            rows = GetSelectedRows(TorsionRestr.Torsions,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
-                return
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
+                return
             rows.sort()
             rows.reverse()
             for row in rows:
@@ -1495,6 +1524,8 @@ def UpdateRestraints(G2frame,data,phaseName):
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0)
             mainSizer.Add(coeffSizer(),1,wx.EXPAND,1)        
         
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         if len(torsionList):
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion restraints:'),0)
             table = []
@@ -1536,6 +1567,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                 TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
             else:
                 TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
+                G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,
@@ -1564,7 +1597,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             wx.CallAfter(UpdateRamaRestr,ramaRestData)                
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(RamaRestr.Ramas)
+            rows = GetSelectedRows(RamaRestr.Ramas,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -1648,6 +1681,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del ramaList[ibad]
+            for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+                G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
             if len(ramaList):
                 ramaTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
                 RamaRestr.Ramas = G2G.GSGrid(RamaRestr)
@@ -1662,6 +1697,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
+                    G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
@@ -1697,38 +1734,44 @@ def UpdateRestraints(G2frame,data,phaseName):
             wx.CallAfter(UpdateChemcompRestr,chemcompRestData)                
             
         def OnDeleteRestraint(event):
-            #rows = GetSelectedRows()
-            rows = ChemComps.GetSelectedRows()
+            rows = GetSelectedRows(ChemComps,'delete',G2frame)
+            #rows = ChemComps.GetSelectedRows()
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
-            rowLabl = ChemComps.GetRowLabelValue(r)
-            row = int(rowLabl.split(':')[1])
-            if 'Restr' in rowLabl:
-                del chemcompList[row]
-            else:
-                term = int(rowLabl.split(':')[2])
+            terms = []
+            restrs = []
+            for r in sorted(rows,reverse=True):
+                rowLabl = ChemComps.GetRowLabelValue(r)                
+                if 'Restr' in rowLabl:
+                    restrs.append(int(rowLabl.split(':')[1]))
+                else:
+                    terms.append([int(i) for i in rowLabl.split(':')[1:]])
+            # delete terms first in case someone deletes a term in a restraint to be deleted
+            for row,term in terms:            
                 del chemcompList[row][0][term]
                 del chemcompList[row][1][term]
+            for row in restrs:
+                del chemcompList[row]
             UpdateChemcompRestr(chemcompRestData)                
             
-        def OnChangeValue(event):
-            rows = GetSelectedRows(ChemComps)
-            if not rows:
-                return
-            ChemComps.ClearSelection()
-            dlg = G2G.SingleFloatDialog(G2frame,'New value',
-                'Enter new value for restraint multiplier',1.0,[-1.e6,1.e6],'%.2f')
-            if dlg.ShowModal() == wx.ID_OK:
-                parm = dlg.GetValue()
-                for r in rows:
-                    rowLabl = ChemComps.GetRowLabelValue(r)
-                    if 'term' in rowLabl:
-                        items = rowLabl.split(':')
-                        chemcompRestData['Sites'][int(items[1])][1][int(items[2])] = parm
-            dlg.Destroy()
-            UpdateChemcompRestr(chemcompRestData)                
+        # def OnChangeValue(event):
+        #     rows = GetSelectedRows(ChemComps)
+        #     if not rows:
+        #         return
+        #     ChemComps.ClearSelection()
+        #     dlg = G2G.SingleFloatDialog(G2frame,'New value',
+        #         'Enter new value for restraint multiplier',1.0,[-1.e6,1.e6],'%.2f')
+        #     if dlg.ShowModal() == wx.ID_OK:
+        #         parm = dlg.GetValue()
+        #         for r in rows:
+        #             rowLabl = ChemComps.GetRowLabelValue(r)
+        #             if 'term' in rowLabl:
+        #                 items = rowLabl.split(':')
+        #                 chemcompRestData['Sites'][int(items[1])][1][int(items[2])] = parm
+        #     dlg.Destroy()
+        #     UpdateChemcompRestr(chemcompRestData)                
 
         if ChemCompRestr.GetSizer(): ChemCompRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1738,6 +1781,8 @@ def UpdateRestraints(G2frame,data,phaseName):
             'NB: The chemical restraint sum is over the unit cell contents'),0)
         mainSizer.Add((5,5),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         chemcompList = chemcompRestData['Sites']
         if len(chemcompList):
             table = []
@@ -1776,11 +1821,13 @@ def UpdateRestraints(G2frame,data,phaseName):
                         ChemComps.SetReadOnly(r,c,True)
                         ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                     if 'Restr' in ChemComps.GetRowLabelValue(r):
+                        ChemComps.SetCellTextColour(r,0,VERY_LIGHT_GREY)
+                        ChemComps.SetCellTextColour(r,1,VERY_RED) # make spurious #'s disappear
+                        ChemComps.SetCellTextColour(r,2,VERY_RED)
+                        ChemComps.SetCellTextColour(r,3,VERY_LIGHT_GREY)
                         for c in range(4):
                             ChemComps.SetReadOnly(r,c,True)
-                            ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                        for c in [1,2]:
-                            ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
+                            ChemComps.SetCellStyle(r,c,VERY_RED,True)
                     else:
                         for c in [3,4,5]:
                             ChemComps.SetReadOnly(r,c,True)
@@ -1793,12 +1840,13 @@ def UpdateRestraints(G2frame,data,phaseName):
                     ChemComps.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
-                G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
+                #G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
                     'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(chemcompList))),0,WACV)
-                mainSizer.Add(ChemComps,0,)
+                    %(chisq,chisq/len(chemcompList))))
+                mainSizer.Add(ChemComps)
             else:
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
         else:
@@ -1809,7 +1857,7 @@ def UpdateRestraints(G2frame,data,phaseName):
     def UpdateTextureRestr(textureRestData):
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Textures)
+            rows = GetSelectedRows(Textures,'delete',G2frame)
             G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
@@ -1847,6 +1895,8 @@ def UpdateRestraints(G2frame,data,phaseName):
             '    "unit esd" gives a bias toward a flatter polefigure'),0)
         mainSizer.Add((5,5),0)
 
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         textureList = textureRestData['HKLs']
         if len(textureList):
             table = []
@@ -1873,6 +1923,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 Textures.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
             else:
                 Textures.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             mainSizer.Add(Textures,0,)
         else:
@@ -1916,6 +1967,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         hSizer.Add(btn,0,wx.EXPAND|wx.ALL)
         mainSizer.Add(hSizer,0)
         mainSizer.Add((5,5),0)
+        for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+            G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         if generalRestData['General']:
             parmDict = SetupParmDict(G2frame)
             GridSiz = wx.FlexGridSizer(0,7,10,2)

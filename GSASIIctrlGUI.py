@@ -636,6 +636,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if show and not self.invalid: wx.TextCtrl.SetValue(self,str(val))
         elif self.type is float:
             try:
+                if type(val) is str: val = val.replace(',','.')
                 val = float(val) # convert strings, if needed
             except:
                 if self.CIFinput and (val == '?' or val == '.'):
@@ -838,7 +839,7 @@ class NumberValidator(wxValidator):
         elif self.typ == float:
             # allow for above and sind, cosd, sqrt, tand, pi, and abbreviations
             # also addition, subtraction, division, multiplication, exponentiation
-            self.validchars = '0123456789.-+eE/cosindcqrtap()*'
+            self.validchars = '0123456789.-+eE/cosindcqrtap()*,'
         else:
             self.validchars = None
             return
@@ -881,7 +882,7 @@ class NumberValidator(wxValidator):
             val = self.typ(tc.GetValue())
         except (ValueError, SyntaxError):
             if self.typ is float: # for float values, see if an expression can be evaluated
-                val = G2py3.FormulaEval(tc.GetValue())
+                val = G2py3.FormulaEval(tc.GetValue().replace(',','.'))
                 if val is None:
                     tc.invalid = True
                     return
@@ -2495,58 +2496,43 @@ class SingleFloatDialog(wx.Dialog):
             dlg.Destroy()    
 
     '''
-    # TODO: better to generalize this for int & float, use validated text control, OK as default.
-    # then make SingleFloatDialog & SingleIntDialog as wrappers. Would be good to remove the %-style
-    # format, too. 
-    def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
+    def __init__(self,parent,title,prompt,value,limits=[0.,1.],fmt='%.5g'):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.panel = None
-        self.limits = limits
-        self.value = value
-        self.prompt = prompt
-        self.format = format
-        self.Draw()
-        
-    def Draw(self):
-        
-        def OnValItem(event):
-            if event: event.Skip()
-            try:
-                val = float(valItem.GetValue())
-                if self.limits[0] is not None and val < self.limits[0]:
-                    raise ValueError
-                if self.limits[1] is not None and val > self.limits[1]:
-                    raise ValueError
-            except ValueError:
-                val = self.value
-            self.value = val
-            valItem.SetValue(self.format%(self.value))
-            
-        if self.panel: self.panel.Destroy()
-        self.panel = wx.Panel(self)
+        self.CenterOnParent()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
-        valItem = wx.TextCtrl(self.panel,-1,value=self.format%(self.value),style=wx.TE_PROCESS_ENTER)
+        mainSizer.Add(wx.StaticText(self,-1,prompt),0,wx.ALIGN_CENTER)
+        #valItem = wx.TextCtrl(self,-1,value=self.format%(self.value),style=wx.TE_PROCESS_ENTER)
+        self.buffer = {0:float(fmt%(value))}
+        a,b = fmt[1:].split('.')
+        f = b[-1]
+        try:
+            d = int(b[:-1])
+        except:
+            d = 5
+        try:
+            w = int(a)
+        except:
+            w = 3+d
+        self.OKbtn = wx.Button(self,wx.ID_OK)
+        CancelBtn = wx.Button(self,wx.ID_CANCEL)
+        valItem = ValidatedTxtCtrl(self,self.buffer,0,nDig=(w,d,f),
+                                       xmin=limits[0],xmax=limits[1],
+                                       OKcontrol=self.ControlOKButton)
         mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
-        valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
-        valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
-        OkBtn = wx.Button(self.panel,-1,"Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        self.OKbtn.Bind(wx.EVT_BUTTON, self.OnOk)
         CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
+        btnSizer.Add(self.OKbtn)
         btnSizer.Add(CancelBtn)
         btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        self.panel.SetSizer(mainSizer)
-        self.panel.Fit()
+        self.SetSizer(mainSizer)
         self.Fit()
 
     def GetValue(self):
-        return self.value
+        return self.buffer[0]
         
     def OnOk(self,event):
         parent = self.GetParent()
@@ -2557,6 +2543,19 @@ class SingleFloatDialog(wx.Dialog):
         parent = self.GetParent()
         if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+
+    def ControlOKButton(self,setvalue):
+        '''Enable or Disable the OK button for the dialog. Note that this is
+        passed into the ValidatedTxtCtrl for use by validators.
+
+        :param bool setvalue: if True, all entries in the dialog are
+          checked for validity. if False then the OK button is disabled.
+
+        '''
+        if setvalue: # turn button on, do only if all controls show as valid
+            self.OKbtn.Enable()
+        else:
+            self.OKbtn.Disable()
 
 class SingleIntDialog(SingleFloatDialog):
     '''Dialog to obtain a single int value from user

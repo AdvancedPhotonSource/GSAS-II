@@ -4281,12 +4281,44 @@ def AtomsCollect(data,Ind,Sel):
                 Atoms[ind][ci+2:ci+8] = Uijs[cind]
     return Atoms
 
-################################################################################
-##### Dysnomia setup & return stuff
-################################################################################
-    
+def DoWilsonStat(refList,Super,normEle,Inst):
+    ns = 0
+    if Super: 
+        ns=1
+    Eldata = G2el.GetElInfo(normEle,Inst)
+    RefList = np.array(refList).T
+    dsp = RefList[4+ns]
+    if  'P' in Inst['Type'][0]:
+        Fosq = RefList[8+ns]
+    else:
+        Fosq = RefList[5+ns]
+    SQ = 1./(2.*dsp)
+    if 'X' in Inst['Type'][0]:
+        Esq = Fosq/G2el.ScatFac(Eldata,SQ)**2
+    else:
+        Esq = Fosq
+    SQ2 = SQ**2
+    SQ2min = np.min(SQ2)
+    SQ2max = np.max(SQ2)
+    SQbins = np.linspace(SQ2min,SQ2max,50,True)
+    step = SQbins[1]-SQbins[0]
+    SQbins += step/2.
+    E2bins = np.zeros_like(SQbins)
+    nE2bins = np.zeros_like(SQbins)
+    for sq,e in zip(list(SQ2),list(Esq)):
+        i = np.searchsorted(SQbins,sq)
+        E2bins[i] += e
+        nE2bins[i] += 1
+    E2bins /= nE2bins
+    E2bins = np.nan_to_num(E2bins)
+    A = np.vstack([SQbins,np.ones_like(SQbins)]).T
+    result = nl.lstsq(A,np.log(E2bins),rcond=None)
+    twoB,lnscale = result[0]    #twoB = -2B
+    scale = np.exp(lnscale)
+    E2calc = lnscale+twoB*SQbins
+    normE = np.sqrt(np.where(Esq>0.,Esq,0.)/scale)*np.exp(-0.5*twoB*SQ2)
+    return [np.mean(normE),np.mean(normE**2),np.mean(np.abs(-1.+normE**2))],[SQbins,np.log(E2bins),E2calc]
 
-    
 ################################################################################
 ##### single peak fitting profile fxn stuff
 ################################################################################

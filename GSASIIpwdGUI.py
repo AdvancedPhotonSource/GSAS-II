@@ -57,6 +57,9 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 if '2' in platform.python_version_tuple()[0]:
     GkDelta = unichr(0x0394)
+    GkSigma = unichr(0x03a3)
+    GkTheta = unichr(0x03f4)
+    Gklambda = unichr(0x03bb)
     Pwr10 = unichr(0x0b9)+unichr(0x2070)
     Pwr20 = unichr(0x0b2)+unichr(0x2070)
     Pwrm1 = unichr(0x207b)+unichr(0x0b9)
@@ -67,13 +70,16 @@ if '2' in platform.python_version_tuple()[0]:
     superMinusOne = unichr(0xaf)+unichr(0xb9)
 else:
     GkDelta = chr(0x0394)
+    GkSigma = chr(0x03a3)
+    GkTheta = chr(0x03f4)
+    Gklambda = chr(0x03bb)
     Pwr10 = chr(0x0b9)+chr(0x2070)
     Pwr20 = chr(0x0b2)+chr(0x2070)
     Pwrm1 = chr(0x207b)+chr(0x0b9)
     Pwrm2 = chr(0x207b)+chr(0x0b2)
     Pwrm6 = chr(0x207b)+chr(0x2076)
     Pwrm4 = chr(0x207b)+chr(0x2074)
-    Angstr = chr(0x00c5)   
+    Angstr = chr(0x00c5)
     superMinusOne = chr(0xaf)+chr(0xb9)
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -4828,6 +4834,39 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
+    def OnWilsonStat(event):
+        ''' Show Wilson plot for PWDR and HKLF & return Wilson statistics <<E>, <E^2> & <E^2-1> to console
+        '''
+        phaseName = G2frame.RefList
+        if phaseName not in ['Unknown',]:
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
+            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+        else:
+            Super = 0
+        if 'list' in str(type(data)):   #single crystal data is 2 dict in list
+            refList = data[1]['RefList']
+        else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
+            if 'RefList' in data[phaseName]:
+                refList = np.array(data[phaseName]['RefList'])
+            else:
+                wx.MessageBox('No reflection list - do Refine first',caption='Reflection plotting')
+                return
+        
+        PE = G2elemGUI.PickElement(G2frame,ifNone=False)
+        if PE.ShowModal() == wx.ID_OK:
+            normEle = PE.Elem.strip()
+        PE.Destroy()
+        Estat,Ehist = G2mth.DoWilsonStat(refList,Super,normEle,Inst)
+        print(' Wilson statistics   : <|E|>: %.3f, <|E^2|>: %.3f, <|E^2-1|>: %.3f'%(Estat[0]/Estat[1],1.,Estat[2]/Estat[1]))
+        print(' Expected: random P-1: <|E|>: 0.798, <|E^2|>: 1.000, <|E^2-1|>: 0.968')
+        print('           random P1 : <|E|>: 0.886, <|E^2|>: 1.000, <|E^2-1|>: 0.736')
+        XY = [[Ehist[0],Ehist[1]],[Ehist[0],Ehist[2]]]
+        G2plt.PlotXY(G2frame,XY,labelX='sin$^2$%s/%s$^2$'%(GkTheta,Gklambda),
+            labelY=r'ln(<|F$_o$|$^2$>/%sf$^2$)'%GkSigma,newPlot=True,Title='Wilson plot')
+        
+        
     def MakeReflectionTable(phaseName):
         '''Returns a wx.grid table (G2G.Table) containing a list of all reflections
         for a phase.        
@@ -5019,6 +5058,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnWilsonStat, id=G2G.wxID_WILSONSTAT)
         G2frame.Bind(wx.EVT_MENU, OnToggleExt, id=G2G.wxID_SHOWHIDEEXTINCT)
         G2frame.dataWindow.SelectPhase.Enable(False)
     else:
@@ -5026,6 +5066,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnWilsonStat, id=G2G.wxID_WILSONSTAT)
         G2frame.dataWindow.SelectPhase.Enable(False)
             
     G2frame.dataWindow.ClearData()

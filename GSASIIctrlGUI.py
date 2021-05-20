@@ -4808,6 +4808,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
         self.nextval = self.startValue
         val = self._tc.GetValue().lower().strip()
+        val = val.replace(',','.') # allow , for decimal 
         if val != str(self.startValue):
             changed = True
             neg = False
@@ -4854,9 +4855,9 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
     def OnChar(self, evt):
         key = evt.GetKeyCode()
-        if key < 32 or key >= 127:
+        if key < 32 or key >= 127: # outside printable ascii range; needed for backspace etc.
             evt.Skip()
-        elif chr(key).lower() in '.+-*/0123456789cosind()':
+        elif chr(key).lower() in '.+-*/0123456789cosind(),':
             evt.Skip()
         else:
             evt.StopPropagation()

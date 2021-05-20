@@ -3415,7 +3415,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Atoms.SelectCol(c,True)
                     
         def Paint(Scroll=0):
-            
+            'Place atom info into the table'
             table = []
             rowLabels = []
             for i,atom in enumerate(atomData):
@@ -3441,22 +3441,23 @@ def UpdatePhaseData(G2frame,Item,data):
 #                atTypes = generalData['AtomTypes']
 #                Lande = generalData['Lande g']
 #                AtInfo = dict(zip(atTypes,Lande))
-            attr = wx.grid.GridCellAttr()
-            attr.IncRef()               #fix from Jim Hester
-            attr.SetEditor(G2G.GridFractionEditor(Atoms))
-            for c in range(colX,colX+4):
+            # next 3 lines do not seem to do anything. Removed 5/20/21 BHT
+            # attr = wx.grid.GridCellAttr()
+            # attr.IncRef()               #fix from Jim Hester
+            # attr.SetEditor(G2G.GridFractionEditor(Atoms))
+            #
+            # loop over all cols in table, set cell editor for numerical items
+            for c,t in enumerate(Types):
+                if not t.startswith(wg.GRID_VALUE_FLOAT): continue
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(Atoms))
+                if c in range(colU11-1,colU11+6):
+                    Atoms.SetColSize(c,50)            
+                    attr.SetBackgroundColour(VERY_LIGHT_GREY)
+                    attr.SetTextColour(VERY_LIGHT_GREY)
+                    attr.SetReadOnly(True)
                 Atoms.SetColAttr(c, attr)
-            for i in range(colU11-1,colU11+6):
-                Atoms.SetColSize(i,50)            
-                attr = wx.grid.GridCellAttr()
-                attr.IncRef()               #fix from Jim Hester
-                attr.SetBackgroundColour(VERY_LIGHT_GREY)
-                attr.SetTextColour(VERY_LIGHT_GREY)
-                attr.SetReadOnly(True)
-                Atoms.SetColAttr(i, attr)
             for row in range(Atoms.GetNumberRows()):    #this is slow for large numbers of atoms
                 atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
@@ -4771,6 +4772,7 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnFileSel(event):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
+                G2frame.OnFileSave(event)
                 dlg = wx.FileDialog(G2frame.FRMC, 'Choose '+fil,G2G.GetImportPath(G2frame),
                     style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
                 if dlg.ShowModal() == wx.ID_OK:
@@ -4942,7 +4944,8 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4955,21 +4958,24 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add(RMCsel,0)
         mainSizer.Add((5,5),0)
         if G2frame.RMCchoice == 'fullrmc':
-            try:
-                import fullrmc
-            except ModuleNotFoundError:
-                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
-           Install it in your python according to the instructions in
-           https://bachiraoun.github.io/fullrmc/index.html. ''',
-                     caption='fullrmc not installed',style=wx.ICON_INFORMATION)
+            if G2pwd.findfullrmc() is None:
+                dlg = wx.MessageDialog(G2frame,
+                    'The fullrmc code is not installed or could not be'
+                    ' located. Do you want help information on fullrmc?',
+                    'Install info',
+                    wx.YES|wx.NO)
+                try:
+                    dlg.CenterOnParent()
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result == wx.ID_YES:
+                    G2G.ShowHelp('fullrmc',G2frame)
                 return
-            if int(fullrmc.__version__.split('.')[0]) < 5:
-                wx.MessageBox('This module requires fullrmc >= 5.0. You have {}.'.format(fullrmc.__version__) + 
-                        ' Revert to GSAS-II version <=4517 to use older versions of fullrmc. ',
-                     caption='fullrmc to old',style=wx.ICON_INFORMATION)
-                return
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence",     
- B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
+''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with 
+Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 
+(2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
@@ -5189,18 +5195,30 @@ def UpdatePhaseData(G2frame,Item,data):
                 molecSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'maxRecursion',xmin=1000,xmax=1000000,size=[60,25]),0,WACV)
                 mainSizer.Add(molecSizer,0)
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run file preparation:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run file preparation:'))
             resLine = wx.BoxSizer(wx.HORIZONTAL)
-            restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
+            resLine.Add(wx.StaticText(G2frame.FRMC,label=' Run '),0,WACV)
+            resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',xmin=1,size=[60,25]))
+            resLine.Add(wx.StaticText(G2frame.FRMC,
+                        label=' Computation cycles of '),0,WACV)
+            RMCPdict['Steps/cycle'] = RMCPdict.get('Steps/cycle',5000)
+            resLine.Add(G2G.EnumSelector(G2frame.FRMC,RMCPdict,'Steps/cycle',
+                        ['1K','5K','10K','50K'],[1000,5000,10000,50000]),0,WACV)
+            resLine.Add(wx.StaticText(G2frame.FRMC,
+                        label=' steps per cycle'),0,WACV)
+            mainSizer.Add(resLine,0)
+            resLine = wx.BoxSizer(wx.HORIZONTAL)
+            resLine.Add(wx.StaticText(G2frame.FRMC,
+                        label=' Restart fullrmc Engine? '),0,WACV)
+            restart = wx.CheckBox(G2frame.FRMC,label='(will clear old result!) ')
+            resLine.Add(restart,0,WACV)
+
             restart.SetValue(RMCPdict['ReStart'][0])
             restart.Bind(wx.EVT_CHECKBOX,OnReStart)
-            resLine.Add(restart,0,WACV)
-            resLine.Add(wx.StaticText(G2frame.FRMC,label=' 10,000X Computation cycles: '),0,WACV)
-            resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',xmin=1,size=[60,25]),0,WACV)
             mainSizer.Add(resLine,0)
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(GetAtmChoice(RMCPdict),0)
+            mainSizer.Add(GetAtmChoice(G2frame.FRMC,RMCPdict),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             swapBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5220,7 +5238,7 @@ def UpdatePhaseData(G2frame,Item,data):
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
             distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',xmin=0.,xmax=4.,size=(50,25)),0,WACV)            
             mainSizer.Add(distBox,0)
-            mainSizer.Add(GetPairSizer(RMCPdict),0)
+            mainSizer.Add(GetPairSizer(G2frame.FRMC,RMCPdict),0)
 
             mainSizer.Add((-1,10))
             angBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5694,10 +5712,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
             # debug stuff
-            #if GSASIIpath.GetConfigValue('debug'):
-            #    print('reloading',G2pwd)
-            #    import imp
-            #    imp.reload(G2pwd)
+            # if GSASIIpath.GetConfigValue('debug'):
+            #     print('reloading',G2pwd)
+            #     import imp
+            #     imp.reload(G2pwd)
             # end debug stuff            
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
@@ -5770,13 +5788,15 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             #     # TODO: could do this for the user with:
             #     #import shutil
             #     #shutil.rmtree(rmcname)
-            G2G.G2MessageBox(G2frame,'''For use of fullrmc, please cite:
-
+            G2G.G2MessageBox(G2frame,
+'''For use of fullrmc, please cite:
       "Fullrmc, a Rigid Body Reverse Monte Carlo 
       Modeling Package Enabled with Machine Learning 
       and Artificial Intelligence",
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
-      DOI: https://doi.org/10.1002/jcc.24304''','Please cite fullrmc')
+      DOI: https://doi.org/10.1002/jcc.24304
+''',
+                                 'Please cite fullrmc')
             ilog = 0
             while True:
                 logname = '%s_%d.log'%(pName,ilog)
@@ -5867,21 +5887,22 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             sb.Popen('runrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
             
     def OnStopRMC(event):
-        if G2frame.RMCchoice == 'fullrmc':
-            generalData = data['General']
-            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
-            pName = pName.replace(' ','_')
-            engineFilePath = pName+'.rmc'
-            if not os.path.exists(engineFilePath):
-                print('fullrmc repository {} not found'.format(engineFilePath))
-                return
-            try:
-                from fullrmc import InterceptHook
-                hook = InterceptHook(path=engineFilePath)
-                hook.stop_engine()
-                print('hook.stop_engine() sent to {}'.format(engineFilePath))
-            except Exception as msg:
-                print('failed, msg=',msg)
+        pass
+    #     if G2frame.RMCchoice == 'fullrmc':
+    #         generalData = data['General']
+    #         pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+    #         pName = pName.replace(' ','_')
+    #         engineFilePath = pName+'.rmc'
+    #         if not os.path.exists(engineFilePath):
+    #             print('fullrmc repository {} not found'.format(engineFilePath))
+    #             return
+    #         try:
+    #             from fullrmc import InterceptHook
+    #             hook = InterceptHook(path=engineFilePath)
+    #             hook.stop_engine()
+    #             print('hook.stop_engine() sent to {}'.format(engineFilePath))
+    #         except Exception as msg:
+    #             print('failed, msg=',msg)
       
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
@@ -6677,7 +6698,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             atomGrid = G2G.GSGrid(layerData)
             atomGrid.SetTable(atomTable,True)
 #            atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
-            for c in range(2,5):
+            # loop over all cols in table, set cell editor for numerical items
+            for c,t in enumerate(colTypes):
+                if not t.startswith(wg.GRID_VALUE_FLOAT): continue
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(atomGrid))
@@ -6764,7 +6787,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 transGrid.SetTable(transTable,True)
 #                transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
                 Indx[transGrid.GetId()] = Yi
-                for c in range(0,4):
+                for c,t in enumerate(transTypes):
+                    if not t.startswith(wg.GRID_VALUE_FLOAT): continue
                     attr = wx.grid.GridCellAttr()
                     attr.IncRef()               #fix from Jim Hester
                     attr.SetEditor(G2G.GridFractionEditor(transGrid))

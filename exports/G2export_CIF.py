@@ -1311,7 +1311,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 except:
                     pass
                 WriteCIFitem(self.fp,"_cell_measurement_temperature",T)
-                for h in phasedict['Histograms']:
+                for h in self.Histograms:
                     if self.Histograms[h]['ranId'] == hRanId:
                         pId = phasedict['pId']
                         hId = self.Histograms[h]['hId']
@@ -1736,9 +1736,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                     if fixedstep:
                         s = ""
                     elif zero:
-                        s = PutInCol(G2mth.ValEsd(x.data-zero,-0.00009),10)
+                        s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
                     else:
-                        s = PutInCol(G2mth.ValEsd(x.data,-0.00009),10)
+                        s = PutInCol(G2mth.ValEsd(x,-0.00009),10)
                     s += PutInCol(Yfmt(ndec,yobs),12)
                     s += PutInCol(Yfmt(ndec,ycalc),12)
                     s += PutInCol(Yfmt(ndec,ybkg),11)
@@ -2192,15 +2192,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 s += '.'
         self.CIFname = s
         
-        self.InitExport(event)
-        # load all of the tree into a set of dicts
-        self.loadTree()
-        # load saved CIF author name
-        self.author = self.OverallParms['Controls'].get("Author",'?').strip()
-        # initialize dict for Selection of Hist for unit cell reporting
-        self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
-            'Controls'].get('CellHistSelection',{})
-        self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
         #=================================================================
         # write quick CIFs
         #=================================================================
@@ -2235,6 +2226,12 @@ class ExportCIF(G2IO.ExportBaseclass):
         #===============================================================================
         # the export process for a full CIF starts here
         #===============================================================================
+        # load saved CIF author name
+        self.author = self.OverallParms['Controls'].get("Author",'?').strip()
+        # initialize dict for Selection of Hist for unit cell reporting
+        self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
+            'Controls'].get('CellHistSelection',{})
+        self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
         # is there anything to export?
@@ -2606,6 +2603,9 @@ class ExportProjectCIF(ExportCIF):
         self.exporttype = ['project']
 
     def Exporter(self,event=None):
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
         self._Exporter(event=event)
         self.CloseFile()
 

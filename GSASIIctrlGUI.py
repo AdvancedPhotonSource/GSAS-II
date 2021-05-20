@@ -1461,16 +1461,19 @@ class ScrolledMultiEditor(wx.Dialog):
             if i < len(sizevals):
                 if sizevals[i]: kargs['size']=sizevals[i]
             if CopyButton:
-                import wx.lib.colourselect as wscs  # is there a way to test? 
-                but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
-                    parent=panel,colour=(255,255,200),size=wx.Size(30,23),
-                    style=wx.RAISED_BORDER)
-                but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
-                if 'phoenix' in wx.version():
-                    but.SetToolTip('Press to copy adjacent value to all rows below')
+                if i+1 == len(dictlst):
+                    but = (-1,-1)
                 else:
-                    but.SetToolTipString('Press to copy adjacent value to all rows below')
-                self.ButtonIndex[but] = i
+                    import wx.lib.colourselect as wscs  # is there a way to test? 
+                    but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
+                                            parent=panel,colour=(255,255,200),size=wx.Size(30,23),
+                                            style=wx.RAISED_BORDER)
+                    but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
+                    if 'phoenix' in wx.version():
+                        but.SetToolTip('Press to copy adjacent value to all rows below')
+                    else:
+                        but.SetToolTipString('Press to copy adjacent value to all rows below')
+                    self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
             ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton,ASCIIonly=ASCIIonly,

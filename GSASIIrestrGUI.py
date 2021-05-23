@@ -42,7 +42,7 @@ except AttributeError:
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
-VERY_RED = wx.Colour(255,0,0)
+VERY_YELLOW = wx.Colour(255,255,0)
 TabSelectionIdDict = {}
 
 ################################################################################
@@ -969,8 +969,11 @@ def UpdateRestraints(G2frame,data,phaseName):
             for row in rows:
                 bondList.remove(bondList[row])
             UpdateBondRestr(bondRestData)                
-            
-        if BondRestr.GetSizer(): BondRestr.GetSizer().Clear(True)
+
+        try:
+            if BondRestr.GetSizer(): BondRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(BondRestr,bondRestData),0)
@@ -1025,10 +1028,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 Bonds = G2G.GSGrid(BondRestr)
                 Bonds.SetTable(bondTable, True)
                 Bonds.AutoSizeColumns(False)
-                for r in range(len(bondList)):
-                    for c in [0,1,4]:
-                        Bonds.SetReadOnly(r,c,True)
-                        Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                for c in [0,1,4]: # format read-only rows
+                    attr = wx.grid.GridCellAttr()
+                    attr.IncRef()
+                    attr.SetBackgroundColour(VERY_LIGHT_GREY)
+                    attr.SetReadOnly(True)
+                    Bonds.SetColAttr(c, attr)
                 Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
                 if 'phoenix' in wx.version():
                     Bonds.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
@@ -1105,8 +1110,11 @@ def UpdateRestraints(G2frame,data,phaseName):
                 angleList.remove(angleList[row])
             UpdateAngleRestr(angleRestData)                
             
-        if AngleRestr.GetSizer():
-            AngleRestr.GetSizer().Clear(True)
+        try:
+            if AngleRestr.GetSizer():
+                AngleRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(AngleRestr,angleRestData),0)
@@ -1161,10 +1169,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 Angles = G2G.GSGrid(AngleRestr)
                 Angles.SetTable(angleTable, True)
                 Angles.AutoSizeColumns(False)
-                for r in range(len(angleList)):
-                    for c in [0,1,4]:
-                        Angles.SetReadOnly(r,c,True)
-                        Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                for c in [0,1,4]: # format readonly columns
+                    attr = wx.grid.GridCellAttr()
+                    attr.IncRef()
+                    attr.SetBackgroundColour(VERY_LIGHT_GREY)
+                    attr.SetReadOnly(True)
+                    Angles.SetColAttr(c, attr)
                 Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
                 if 'phoenix' in wx.version():
                     Angles.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
@@ -1231,8 +1241,11 @@ def UpdateRestraints(G2frame,data,phaseName):
                 planeList.remove(planeList[row])
             UpdatePlaneRestr(planeRestData)                
             
-        if PlaneRestr.GetSizer():
-            PlaneRestr.GetSizer().Clear(True)
+        try:
+            if PlaneRestr.GetSizer():
+                PlaneRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(PlaneRestr,planeRestData),0)
@@ -1371,8 +1384,11 @@ def UpdateRestraints(G2frame,data,phaseName):
                     chiralRestData['Volumes'][r][3] = parm
             dlg.Destroy()
             UpdateChiralRestr(chiralRestData)                
-                                            
-        if ChiralRestr.GetSizer(): ChiralRestr.GetSizer().Clear(True)
+
+        try:
+            if ChiralRestr.GetSizer(): ChiralRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0)
@@ -1512,7 +1528,10 @@ def UpdateRestraints(G2frame,data,phaseName):
             Coeff.SetMaxSize((-1,200))
             return Coeff
                                             
-        if TorsionRestr.GetSizer(): TorsionRestr.GetSizer().Clear(True)
+        try:
+            if TorsionRestr.GetSizer(): TorsionRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0)
@@ -1643,7 +1662,10 @@ def UpdateRestraints(G2frame,data,phaseName):
             Coeff.SetMaxSize((-1,200))
             return Coeff
                                                     
-        if RamaRestr.GetSizer(): RamaRestr.GetSizer().Clear(True)
+        try:
+            if RamaRestr.GetSizer(): RamaRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(RamaRestr,ramaRestData),0)
@@ -1773,7 +1795,10 @@ def UpdateRestraints(G2frame,data,phaseName):
         #     dlg.Destroy()
         #     UpdateChemcompRestr(chemcompRestData)                
 
-        if ChemCompRestr.GetSizer(): ChemCompRestr.GetSizer().Clear(True)
+        try:
+            if ChemCompRestr.GetSizer(): ChemCompRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0)
@@ -1802,7 +1827,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
                         table.append([atom,mf,fr,clc,'',''])
                         rowLabels.append('term:'+str(i)+':'+str(iatm))
-                    table.append(['Sum','','',np.sum(calcs),obs,esd])
+                    table.append(['(Sum)','','',np.sum(calcs),obs,esd])
                     rowLabels.append('Restr:'+str(i))
                 except KeyError:
                     print ('**** WARNING - missing atom - restraint deleted ****')
@@ -1821,13 +1846,11 @@ def UpdateRestraints(G2frame,data,phaseName):
                         ChemComps.SetReadOnly(r,c,True)
                         ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                     if 'Restr' in ChemComps.GetRowLabelValue(r):
-                        ChemComps.SetCellTextColour(r,0,VERY_LIGHT_GREY)
-                        ChemComps.SetCellTextColour(r,1,VERY_RED) # make spurious #'s disappear
-                        ChemComps.SetCellTextColour(r,2,VERY_RED)
-                        ChemComps.SetCellTextColour(r,3,VERY_LIGHT_GREY)
                         for c in range(4):
                             ChemComps.SetReadOnly(r,c,True)
-                            ChemComps.SetCellStyle(r,c,VERY_RED,True)
+                            ChemComps.SetCellStyle(r,c,VERY_YELLOW,True)
+                        ChemComps.SetCellTextColour(r,1,VERY_YELLOW) # make spurious #'s disappear
+                        ChemComps.SetCellTextColour(r,2,VERY_YELLOW)
                     else:
                         for c in [3,4,5]:
                             ChemComps.SetReadOnly(r,c,True)
@@ -1886,7 +1909,10 @@ def UpdateRestraints(G2frame,data,phaseName):
                 pass            
             wx.CallAfter(UpdateTextureRestr,textureRestData)                
 
-        if TextureRestr.GetSizer(): TextureRestr.GetSizer().Clear(True)
+        try:
+            if TextureRestr.GetSizer(): TextureRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(TextureRestr,textureRestData),0)
@@ -1951,8 +1977,11 @@ def UpdateRestraints(G2frame,data,phaseName):
             n = event.GetEventObject().index
             del restrData['General']['General'][n]
             wx.CallAfter(UpdateGeneralRestr,restrData['General'])
-            
-        if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)
+
+        try:
+            if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         hSizer = wx.BoxSizer(wx.HORIZONTAL)

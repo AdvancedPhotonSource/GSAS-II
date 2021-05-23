@@ -4500,7 +4500,23 @@ class GSGrid(wg.Grid):
     def SetCellStyle(self,r,c,color="white",readonly=True):
         self.SetCellBackgroundColour(r,c,color)
         self.SetReadOnly(r,c,isReadOnly=readonly)
-        
+
+    def SetTable(self, table, *args, **kwargs):
+        '''Overrides the standard SetTable method with one that uses
+        GridFractionEditor for all numeric columns (unless useFracEdit
+        is false)
+        '''
+        setFracEdit = kwargs.get('useFracEdit',True)
+        if 'useFracEdit' in kwargs: del kwargs['useFracEdit']
+        wg.Grid.SetTable(self, table, *args, **kwargs)
+        if setFracEdit:
+            for i,t in enumerate(table.dataTypes):
+                if not t.startswith(wg.GRID_VALUE_FLOAT): continue
+                attr = wx.grid.GridCellAttr()
+                attr.IncRef()
+                attr.SetEditor(GridFractionEditor(self))
+                self.SetColAttr(i, attr)
+
     def GetSelection(self):
         #this is to satisfy structure drawing stuff in G2plt when focus changes
         return None
@@ -4770,7 +4786,11 @@ class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix bu
 ################################################################################
 class GridFractionEditor(wg.PyGridCellEditor):
     '''A grid cell editor class that allows entry of values as fractions as well
-    as sine and cosine values [as s() and c()]
+    as sine and cosine values [as s() and c(), sin() or sind(), etc]. Any valid 
+    Python expression will be evaluated. 
+
+    The current value can be incremented, multiplied or divided by prefixing 
+    an expression by +, * or / respectively. 
     '''
     def __init__(self,grid):
         if 'phoenix' in wx.version():
@@ -4811,6 +4831,18 @@ class GridFractionEditor(wg.PyGridCellEditor):
         if val != str(self.startValue):
             changed = True
             neg = False
+            mult = False
+            divide = False
+            add = False
+            if val.startswith('*'):
+                mult = True
+                val = val[1:]
+            elif val.startswith('/'):
+                divide = True
+                val = val[1:]
+            elif val.startswith('+'):
+                add = True
+                val = val[1:]
             if val.startswith('-'):
                 neg = True
                 val = val[1:]
@@ -4823,7 +4855,14 @@ class GridFractionEditor(wg.PyGridCellEditor):
                 val = '-' + val
             val = G2py3.FormulaEval(val)
             if val is not None:
-                self.nextval = val
+                if mult:
+                    self.nextval *= val
+                elif divide:
+                    if val != 0: self.nextval /= val
+                elif add:
+                    self.nextval += val
+                else:
+                    self.nextval = val
             else:
                 return None
             if oldVal is None: # this arg appears in 2.9+; before, we should go ahead & change the table

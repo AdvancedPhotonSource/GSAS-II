@@ -2000,8 +2000,14 @@ def UpdateRestraints(G2frame,data,phaseName):
             G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=False)
         if generalRestData['General']:
             parmDict = SetupParmDict(G2frame)
-            GridSiz = wx.FlexGridSizer(0,7,10,2)
-            for lbl in ('expression =','target\nvalue','current\nvalue','esd'):
+            GridSiz = wx.FlexGridSizer(0,9,10,2)
+            GridSiz.Add((-1,-1))
+            GridSiz.Add(
+                    wx.StaticText(GeneralRestr,wx.ID_ANY,'Expression'),
+                    0,wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
+            GridSiz.Add((-1,-1))
+#            for lbl in ('expression',' ','target\nvalue','current\nvalue','esd'):
+            for lbl in ('target\nvalue','current\nvalue','esd'):
                 GridSiz.Add(
                     wx.StaticText(GeneralRestr,wx.ID_ANY,lbl,style=wx.CENTER),
                     0,wx.ALIGN_CENTER)
@@ -2012,10 +2018,14 @@ def UpdateRestraints(G2frame,data,phaseName):
                     0,wx.ALIGN_CENTER)
             for i,rest in enumerate(generalRestData['General']):
                 eq = rest[0]
-                txt = eq.expression+' ='
+                txt = '{}: '.format(i+1)
+                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
+                txt = eq.expression
                 if len(txt) > 50:
                     txt = txt[:47]+'... '
-                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
+                txtC = wx.StaticText(GeneralRestr,wx.ID_ANY,txt)
+                GridSiz.Add(txtC)
+                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,' = '))
                 GridSiz.Add(
                     G2G.ValidatedTxtCtrl(GeneralRestr,rest,1,nDig=(10,3,'g'),typeHint=float)
                     )
@@ -2026,6 +2036,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     txt = ' {:f} '.format(calcobj.EvalExpression())
                 except:
                     txt = ' (error) '
+                    txtC.SetForegroundColour("red")
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
                 GridSiz.Add(
                     G2G.ValidatedTxtCtrl(GeneralRestr,rest,2,nDig=(10,3,'g'),typeHint=float)

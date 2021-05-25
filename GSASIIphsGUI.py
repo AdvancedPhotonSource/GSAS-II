@@ -3423,7 +3423,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 rowLabels.append(str(i))
             atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             try:
-                Atoms.SetTable(atomTable, True)    # Paint may be called after the Grid has been deleted
+                Atoms.SetTable(atomTable, True, useFracEdit=False)    # Paint may be called after the Grid has been deleted
             except:
                 return
             Atoms.frm = -1            
@@ -6696,7 +6696,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 rowLabels.append(str(i))
             atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=colTypes)
             atomGrid = G2G.GSGrid(layerData)
-            atomGrid.SetTable(atomTable,True)
+            atomGrid.SetTable(atomTable,True,useFracEdit=False)
 #            atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
             # loop over all cols in table, set cell editor for numerical items
             for c,t in enumerate(colTypes):
@@ -6784,7 +6784,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         Layers['allowedTrans'].append([str(Yi+1),str(Xi+1)])
                 transTable = G2G.Table(table,rowLabels=rowLabels,colLabels=transLabels,types=transTypes)
                 transGrid = G2G.GSGrid(layerData)
-                transGrid.SetTable(transTable,True)
+                transGrid.SetTable(transTable,True,useFracEdit=False)
 #                transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
                 Indx[transGrid.GetId()] = Yi
                 for c,t in enumerate(transTypes):

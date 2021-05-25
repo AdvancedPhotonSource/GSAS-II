@@ -4880,7 +4880,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
         grid.GetTable().SetValue(row, col, self.nextval) # update the table
 
     def Reset(self):
-        self._tc.SetValue(self.startValue)
+        self._tc.SetValue(str(self.startValue))
         self._tc.SetInsertionPointEnd()
 
     def Clone(self,grid):

@@ -421,15 +421,17 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                 pWnum[name] += 1
                 elif name == 'General':
                     for i,(eq,obs,esd) in enumerate(itemRest[rest]):
-                        pNames.append(str(pId)+':'+name+':'+str(i))
                         calcobj = G2obj.ExpressionCalcObj(eq)
                         calcobj.SetupCalc(parmDict)
                         calc = calcobj.EvalExpression()
-                        pVals.append(obs-calc)
-                        pWt.append(wt/esd**2)                    
-                        pWsum[name] += wt*((obs-calc)/esd)**2
-                        pWnum[name] += 1
-        
+                        try:
+                            pVals.append(obs-calc)
+                            pWt.append(wt/esd**2)                    
+                            pWsum[name] += wt*((obs-calc)/esd)**2
+                            pWnum[name] += 1
+                            pNames.append(str(pId)+':'+name+':'+str(i))
+                        except:
+                            print('Error computing General restraint #{}'.format(i+1))
     for phase in Phases:
         name = 'SH-Pref.Ori.'
         pId = Phases[phase]['pId']

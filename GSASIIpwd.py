@@ -1125,13 +1125,12 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
         dydfb = fixback
     return dydb,dyddb,dydpk,dydfb
 
-#use old fortran routine
+#### Using old gsas fortran routines for powder peak shapes & derivatives
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
     '''Compute the Finger-Cox-Jepcoat modified Pseudo-Voigt function for a
     CW powder peak in external Fortran routine
     '''
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
-#    Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     Df /= np.sum(Df)
     return Df
 
@@ -1140,35 +1139,46 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     function for a CW powder peak
     '''
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
-#    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     return Df,dFdp,dFds,dFdg,dFdsh
 
 def getPsVoigt(pos,sig,gam,xdata):
-    'needs a doc string'
+    '''Compute the simple Pseudo-Voigt function for a
+    small angle Bragg peak in external Fortran routine
+    '''
     
     Df = pyd.pypsvoigt(len(xdata),xdata-pos,sig,gam)
     Df /= np.sum(Df)
     return Df
 
 def getdPsVoigt(pos,sig,gam,xdata):
-    'needs a doc string'
+    '''Compute the simple Pseudo-Voigt function derivatives for a
+    small angle Bragg peak peak in external Fortran routine
+    '''
     
     Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
     return Df,dFdp,dFds,dFdg
 
 def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
-    'needs a doc string'
+    '''Compute the double exponential Pseudo-Voigt convolution function for a
+    neutron TOF & CW pink peak in external Fortran routine
+    '''
+    
     Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
     Df /= np.sum(Df)
     return Df  
     
 def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
-    'needs a doc string'
+    '''Compute the double exponential Pseudo-Voigt convolution function derivatives for a
+    neutron TOF & CW pink peak in external Fortran routine
+    '''
+    
     Df,dFdp,dFda,dFdb,dFds,dFdg = pyd.pydepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
     return Df,dFdp,dFda,dFdb,dFds,dFdg   
 
 def ellipseSize(H,Sij,GB):
-    'Implements r=1/sqrt(sum((1/S)*(q.v)^2) per note from Alexander Brady'
+    '''Implements r=1/sqrt(sum((1/S)*(q.v)^2) per note from Alexander Brady
+    '''
+    
     HX = np.inner(H.T,GB)
     lenHX = np.sqrt(np.sum(HX**2))
     Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))            
@@ -1177,7 +1187,9 @@ def ellipseSize(H,Sij,GB):
     return lenR
 
 def ellipseSizeDerv(H,Sij,GB):
-    'needs a doc string'
+    '''Implements r=1/sqrt(sum((1/S)*(q.v)^2) derivative per note from Alexander Brady
+    '''
+    
     lenR = ellipseSize(H,Sij,GB)
     delt = 0.001
     dRdS = np.zeros(6)

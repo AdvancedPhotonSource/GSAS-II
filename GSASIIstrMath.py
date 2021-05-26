@@ -3060,7 +3060,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         if useMP: 
                             profArgs[iref%G2mp.ncores].append((refl,iref))
                         else:
-                            icod= G2mp.ComputeFobsSqCW(refl,iref)
+                            icod = G2mp.ComputeFobsSqCW(refl,iref)
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
@@ -3086,7 +3086,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         if useMP: 
                             profArgs[iref%G2mp.ncores].append((refl,iref))
                         else:
-                            icod= G2mp.ComputeFobsSqTOF(refl,iref)
+                            icod = G2mp.ComputeFobsSqTOF(refl,iref)
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
@@ -3112,7 +3112,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         if useMP: 
                             profArgs[iref%G2mp.ncores].append((refl,iref))
                         else:
-                            icod= G2mp.ComputeFobsSqPink(refl,iref)
+                            icod = G2mp.ComputeFobsSqPink(refl,iref)
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
@@ -3140,7 +3140,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 sumdFsq = 0.0
                 for iref,refl in enumerate(refDict['RefList']):
                     Fo = np.sqrt(np.abs(refl[8+im]))
-                    Fc = np.sqrt(np.abs(refl[9]+im))
+                    Fc = np.sqrt(np.abs(refl[9+im]))
                     sumFo += Fo
                     sumFosq += refl[8+im]**2
                     sumdF += np.abs(Fo-Fc)
@@ -3421,10 +3421,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         print ('getPowderProfile t=%.3f'%(time.time()-starttime))
     return yc,yb
     
-def getPowderProfileDervMP(args):
+def getPowderProfileDerv(args):
     '''Computes the derivatives of the computed powder pattern with respect to all
     refined parameters.
-    Multiprocessing version.
+    Used for single processor & Multiprocessor versions
     '''
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics for each processor
@@ -3926,7 +3926,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             x,y,w,yc,yb,yd = Histogram['Data']
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            dMdv,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
+            dMdv,depDerivDict = getPowderProfileDerv([parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
             dMdvh = np.sqrt(w[xB:xF])*dMdv
@@ -3998,12 +3998,12 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 #                profArgs = [
 #                    (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
 #                     i,ncores,histogram) for i in range(ncores)]
-#                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
+#                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDerv,profArgs):
                 # better, use a generator so arg is created as used
                 profGenArgs = (
                     (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
                      i,ncores,histogram) for i in range(ncores))
-                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profGenArgs):
+                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDerv,profGenArgs):
                     if dMdvh is None:
                        dMdvh = dmdv
                        depDerivDict = depDerivs
@@ -4012,7 +4012,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                        for key in depDerivs.keys(): depDerivDict[key] += depDerivs[key]                        
                 MPpool.terminate()
             else:
-                dMdvh,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
+                dMdvh,depDerivDict = getPowderProfileDerv([parmDict,x[xB:xF],
                     varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,0,1,histogram])
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)

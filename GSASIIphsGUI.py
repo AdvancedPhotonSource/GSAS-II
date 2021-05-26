@@ -12422,10 +12422,10 @@ of the crystal structure.
             Ind = getAtomSelections(MapPeaks)
             pgbar = wx.ProgressDialog('Move peaks','Map peak no. 0 processed',len(Ind)+1, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-            for ind in Ind:
+            for i,ind in enumerate(Ind):
                 mag,x,y,z = mapPeaks[ind][:4]
                 AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
-                pgbar.Update(ind,'Map peak no. %d processed'%ind)
+                pgbar.Update(i+1,'Map peak no. %d processed'%ind)
             pgbar.Destroy()
             G2plt.PlotStructure(G2frame,data)
     

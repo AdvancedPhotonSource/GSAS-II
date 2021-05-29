@@ -1900,7 +1900,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
 def getCellEsd(pfx,SGData,A,covData):
     '''Compute the standard uncertainty on cell parameters
     
-    :param str pfx: prefix of form p::
+    :param str pfx: prefix of form p\:\:
     :param SGdata: space group information
     :param list A: Reciprocal cell Ai terms
     :param dict covData: covariance tree item 

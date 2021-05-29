@@ -12,6 +12,9 @@
 
 Routine to read an image in Tagged-image file (TIF) format as well as a variety
 of slightly incorrect pseudo-TIF formats used at instruments around the world.
+This uses a custom reader that attempts to determine the instrument and detector
+parameters from various aspects of the file. 
+
 Note that the name ``G2img_1TIF`` is used so that this file will
 sort to the top of the image formats and thus show up first in the menu.
 (It is the most common, alas).
@@ -30,58 +33,33 @@ GSASIIpath.SetVersionNumber("$Revision$")
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
     for files that can be identified from known instruments and will
-    correct for slightly incorrect TIF usage. If that routine fails,
-    it will be read with a standard TIF reader, which can handle compression
-    and other things less commonly used at beamlines. 
+    correct for slightly incorrect TIF usage. 
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.tif','.tiff'),
             strictExtension=False,
-            formatName = 'TIF image',
-            longFormatName = 'Various .tif and pseudo-TIF formats'
+            formatName = 'GSAS-II known TIF image',
+            longFormatName = 'Various .tif and pseudo-TIF formats using GSAS-II reader'
             )
         self.scriptable = True
 
     def ContentsValidator(self, filename):
         '''Does the header match the required TIF header?
         '''
-        fp = open(filename,'rb')
-        tag = fp.read(2)
-        if 'bytes' in str(type(tag)):
-            tag = tag.decode('latin-1')
-        if tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42: #little endian
-            pass
-        elif tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42: #big endian
-            pass
-        else:
-            return False # header not found; not valid TIF
-            fp.close()
-        fp.close()
-        return True
+        return TIFValidator(filename)
     
     def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read the TIF file using :func:`GetTifData`. If that fails,
-        use :func:`scipy.misc.imread` and give the user a chance to
-        edit the likely wrong default image parameters. 
+        '''Read the TIF file using :func:`GetTifData` which attempts to 
+        recognize the detector type and set various parameters
         '''
+        self.Npix = 0
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
-        if self.Npix == 0:
-            G2fil.G2Print("GetTifData failed to read "+str(filename)+" Trying PIL")
-            import PIL.Image as PI
-            self.Image = PI.open(filename,mode='r')
-            self.Npix = self.Image.size
-            if ParentFrame:
-                self.SciPy = True
-                self.Comments = ['no metadata']
-                self.Data = {'wavelength': 0.1, 'pixelSize': [200., 200.], 'distance': 100.0}
-                self.Data['size'] = list(self.Image.size)
-                self.Data['center'] = [int(i/2) for i in self.Image.size]
         if self.Npix == 0:
             return False
         self.LoadImage(ParentFrame,filename)
         return True
-
+    
 def GetTifData(filename):
     '''Read an image in a pseudo-tif format,
     as produced by a wide variety of software, almost always
@@ -378,3 +356,20 @@ def GetTifData(filename):
             'setdist':distance,'PolaVal':[polarization,False],'samplechangerpos':samplechangerpos}
     File.close()    
     return head,data,Npix,image
+
+def TIFValidator(filename):
+    '''Does the header match the required TIF header?
+    '''
+    fp = open(filename,'rb')
+    tag = fp.read(2)
+    if 'bytes' in str(type(tag)):
+        tag = tag.decode('latin-1')
+    if tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42: #little endian
+        pass
+    elif tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42: #big endian
+        pass
+    else:
+        return False # header not found; not valid TIF
+        fp.close()
+    fp.close()
+    return True

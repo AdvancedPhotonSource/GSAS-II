@@ -338,6 +338,9 @@ The distributed routines are:
 .. automodule:: G2img_1TIF
     :members: 
 
+.. automodule:: G2img_PILTIF
+    :members: 
+
 .. automodule:: G2img_CheMin
     :members: 
 

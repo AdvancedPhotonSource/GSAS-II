@@ -3205,8 +3205,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     fixback = Histogram['Background'][1].get('fixback',None)
     yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixback)
     yc = np.zeros_like(yb)
-    cw = np.diff(ma.getdata(x))
-    cw = np.append(cw,cw[-1])
+    # cw = np.diff(ma.getdata(x))
+    # cw = np.append(cw,cw[-1])
         
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -3310,7 +3310,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if useMP:
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
                 else:
-                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
+                    fp = G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
+                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp   #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5+im]+lamRatio*tand(refl[5+im]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
@@ -3325,7 +3326,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     if useMP:
                         profArgs[iref%ncores].append((pos2,refl,iBeg,iFin,kRatio))
                     else:
-                        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))        #and here
+                        fp2 = G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
+                        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
         elif 'B' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3363,7 +3365,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if useMP:
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
                 else:
-                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))
+                    fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))[0]
+                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp          #*cw[iBeg:iFin]
         elif 'T' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3401,7 +3404,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if useMP:
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin))
                 else:
-                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))/cw[iBeg:iFin]
+                    fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))[0]
+                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
         if useMP and 'C' in calcControls[hfx+'histType']:
             for y in MPpool.imap_unordered(G2mp.ComputePwdrProfCW,profArgs):
@@ -3433,6 +3437,7 @@ def getPowderProfileDerv(args):
     if len(args) >= 10: prc=args[9]
     if len(args) >= 11: tprc=args[10]
     if len(args) >= 12: histogram=args[11]
+    
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
@@ -3487,8 +3492,8 @@ def getPowderProfileDerv(args):
                 dMdv[varylist.index(name)] += dMdpk[4*Id+ip]
     if hfx+'BF mult' in varylist:
         dMdv[varylist.index(hfx+'BF mult')] += dMdfb
-    cw = np.diff(ma.getdata(x))
-    cw = np.append(cw,cw[-1])
+    # cw = np.diff(ma.getdata(x))
+    # cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -3586,7 +3591,7 @@ def getPowderProfileDerv(args):
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))
                 for i in range(5):
-                    dMdpk[i] += 100.*cw[iBeg:iFin]*refl[11+im]*refl[9+im]*dMdipk[i]
+                    dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':np.zeros_like(dMdpk[0])}
                 if Ka2:
                     pos2 = refl[5+im]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
@@ -3597,8 +3602,8 @@ def getPowderProfileDerv(args):
                         dMdpk2 = np.zeros(shape=(6,lenBF2))
                         dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))
                         for i in range(5):
-                            dMdpk2[i] = 100.*cw[iBeg2:iFin2]*refl[11+im]*refl[9+im]*kRatio*dMdipk2[i]
-                        dMdpk2[5] = 100.*cw[iBeg2:iFin2]*refl[11+im]*dMdipk2[0]
+                            dMdpk2[i] = refl[11+im]*refl[9+im]*kRatio*dMdipk2[i]
+                        dMdpk2[5] = refl[11+im]*dMdipk2[0]
                         dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
             elif 'T' in calcControls[hfx+'histType']:
                 lenBF = iFin-iBeg
@@ -3618,7 +3623,7 @@ def getPowderProfileDerv(args):
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
-                    dMdpk[i] = cw[iBeg:iFin]*refl[11+im]*refl[9+im]*dMdipk[i]
+                    dMdpk[i] = refl[11+im]*refl[9+im]*dMdipk[i]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}            
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))

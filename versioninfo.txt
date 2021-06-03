@@ -10,3 +10,13 @@
 
 # 1234: This is text for version 1234. The second colon here (:) is ignored. 
 
+4918: With this version of GSAS-II, the profile functions have been changed to account for possible variation in the powder 
+pattern step size across the scan. This will likely change the histogram scale factor (see Sample Parameters), peak
+intensities (see Peak List) and background peak intensities (see Background). For Constant Wavelength data, they will change 
+by a factor related to the pattern step size, e.g. for 11BM data with a step size of 0.001 deg 2-theta the new scale factor will be 
+~0.1 times the old one. If you choose to repeat the refinement for this project, you may need to be sure that parameters affecting 
+peak shape are turned off for the initial refinement. It should converge quickly to the new scale factor.
+%%For TOF data there may be similar changes to the scale factor && peak intensities as noted above. Significant improvement in profile 
+residuals have been observed in some cases with these new functions.
+This change is of no consequence for single crystal, small angle or reflectometry data in GSAS-II.
+

@@ -74,8 +74,10 @@ def InitFobsSqGlobals(x1,ratio1,shl1,xB1,xF1,im1,lamRatio1,kRatio1,xMask1,Ka21):
     '''Initialize for the computation of Fobs Squared for powder histograms.
     Puts lots of junk into the global namespace in this module.
     '''
-    global x,ratio,shl,xB,xF,im,lamRatio,kRatio,xMask,Ka2
+    global x,ratio,shl,xB,xF,im,lamRatio,kRatio,xMask,Ka2,cw
     x = ma.getdata(x1)
+    cw = np.diff(x)
+    cw = np.append(cw,cw[-1])
     ratio = ratio1
     shl = shl1
     xB = xB1
@@ -143,17 +145,17 @@ def ComputeFobsSqCW(refl,iref):
     elif not iBeg-iFin:     #peak above high limit - done
         return -2
     elif iBeg < iFin:
-        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getFCJVoigt3(
-            refl[5+im],refl[6+im],refl[7+im],shl,x[iBeg:iFin])
+        fp,sumfp = G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,x[iBeg:iFin])
+        yp[iBeg:iFin] = 100.*refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
         sInt = refl[11+im]*refl[9+im]
         if Ka2:
             pos2 = refl[5+im]+lamRatio*tand(refl[5+im]/2.0)       # + 360/pi * Dlam/lam * tan(th)
             Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
             iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
             iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
-            if iFin2 > iBeg2: 
-                yp[iBeg2:iFin2] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(
-                    pos2,refl[6+im],refl[7+im],shl,x[iBeg2:iFin2])
+            if iFin2 > iBeg2:
+                fp2,sumfp2 = G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,x[iBeg2:iFin2])
+                yp[iBeg2:iFin2] += 100.*refl[11+im]*refl[9+im]*kRatio*fp2*cw[iBeg2:iFin2]/sumfp2
                 sInt *= 1.+kRatio
     refl8im = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11+im]*(1.+kRatio)),0.0))
     return refl8im,sInt
@@ -171,8 +173,8 @@ def ComputeFobsSqTOF(refl,iref):
     elif not iBeg-iFin:     #peak above high limit - done
         return -2
     if iBeg < iFin:
-        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
-            refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])
+        fp,sumfp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])
+        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
     refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
     return refl8im,refl[11+im]*refl[9+im]
 
@@ -189,8 +191,8 @@ def ComputeFobsSqPink(refl,iref):
     elif not iBeg-iFin:     #peak above high limit - done
         return -2
     if iBeg < iFin:
-        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
-            refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])
+        fp,sumfp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])
+        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
     refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
     return refl8im,refl[11+im]*refl[9+im]
 
@@ -201,35 +203,31 @@ def InitPwdrProfGlobals(im1,shl1,x1):
     '''Initialize for the computation of Fobs Squared for powder histograms.
     Puts lots of junk into the global namespace in this module.
     '''
-    global im,shl,x
+    global im,shl,x,cw,yc
     im = im1
     shl = shl1
     x = ma.getdata(x1)
-    global cw
     cw = np.diff(x)
     cw = np.append(cw,cw[-1])
     # create local copies of ycalc array
-    global yc
     yc = np.zeros_like(x)
-
 
 def ComputePwdrProfCW(profList):
     'Compute the peaks profile for a set of CW peaks and add into the yc array'
     for pos,refl,iBeg,iFin,kRatio in profList:
-        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(
-            pos,refl[6+im],refl[7+im],shl,x[iBeg:iFin])
+        fp = G2pwd.getFCJVoigt3(pos,refl[6+im],refl[7+im],shl,x[iBeg:iFin])[0]
+        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp/cw[iBeg:iFin]
     return yc
 
 def ComputePwdrProfTOF(profList):
     'Compute the peaks profile for a set of TOF peaks and add into the yc array'
     for pos,refl,iBeg,iFin in profList:
-        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
-            pos,refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])/cw[iBeg:iFin]
-    return yc
+        fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])[0]
+        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]
     
 def ComputePwdrProfPink(profList):
     'Compute the peaks profile for a set of TOF peaks and add into the yc array'
     for pos,refl,iBeg,iFin in profList:
-        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(
-            pos,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])/cw[iBeg:iFin]
+        fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])[0]
+        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
     return yc

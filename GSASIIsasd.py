@@ -1334,7 +1334,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 Ic += Gmat[0]*parmDict[cid+'Volume']*SFfxn(Q,args=SFargs)
             elif 'Bragg' in Type:
                 Ic += parmDict[cid+'PkInt']*G2pwd.getPsVoigt(parmDict[cid+'PkPos'],
-                    parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)
+                    parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)[0]
         Ic += parmDict['Back']  #/parmDict['Scale']
         slitLen = Sample['SlitLen']
         if slitLen:

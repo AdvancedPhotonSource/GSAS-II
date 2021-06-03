@@ -717,9 +717,6 @@ cauchy.pdf(x) = 1/(pi*(1+x**2))
 This is the t distribution with one degree of freedom.
 """)
     
-    
-#GSASII peak fitting routine: Finger, Cox & Jephcoat model        
-
 
 class fcjde_gen(st.rv_continuous):
     """
@@ -740,7 +737,8 @@ class fcjde_gen(st.rv_continuous):
 
         fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)| 
 
-     * if x >= 0: fcj.pdf = 0    
+     * if x >= 0: fcj.pdf = 0   
+     
     """
     def _pdf(self,x,t,s,dx):
         T = dx*x+t
@@ -758,11 +756,46 @@ class fcjde_gen(st.rv_continuous):
         
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
+def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
+    '''Compute the Finger-Cox-Jepcoat modified Voigt function for a
+    CW powder peak by direct convolution. This version is not used.
+    '''
+    DX = xdata[1]-xdata[0]
+    widths,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+    x = np.linspace(pos-fmin,pos+fmin,256)
+    dx = x[1]-x[0]
+    Norm = norm.pdf(x,loc=pos,scale=widths[0])
+    Cauchy = cauchy.pdf(x,loc=pos,scale=widths[1])
+    arg = [pos,shl/57.2958,dx,]
+    FCJ = fcjde.pdf(x,*arg,loc=pos)
+    if len(np.nonzero(FCJ)[0])>5:
+        z = np.column_stack([Norm,Cauchy,FCJ]).T
+        Z = fft.fft(z)
+        Df = fft.ifft(Z.prod(axis=0)).real
+    else:
+        z = np.column_stack([Norm,Cauchy]).T
+        Z = fft.fft(z)
+        Df = fft.fftshift(fft.ifft(Z.prod(axis=0))).real
+    Df /= np.sum(Df)
+    Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
+    return intens*Df(xdata)*DX/dx
+    
+#### GSASII peak fitting routine: Finger, Cox & Jephcoat model        
+
 def getWidthsCW(pos,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
     for constant wavelength data. On low-angle side, 50 FWHM are used, 
-    on high-angle side 75 are used, low angle side extended for axial divergence
+    on high-angle side 75 are used, high angle side extended for axial divergence
     (for peaks above 90 deg, these are reversed.)
+    
+    param pos: peak position; 2-theta in degrees
+    param sig: Gaussian peak variance in centideg^2
+    param gam: Lorentzian peak width in centidegrees
+    param shl: axial divergence parameter (S+H)/
+    
+    returns: widths; [Gaussian sigma, Lornetzian gamma] in degrees
+    returns: low angle, high angle ends of peak; 20FWHM & 50 FWHM from position
+        reverset for 2-theta > 90 deg.
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+widths[1]
@@ -776,6 +809,14 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
     for constant wavelength data. 50 FWHM are used on both sides each 
     extended by exponential coeff.
+    
+    param pos: peak position; TOF in musec
+    param alp,bet: TOF peak exponential rise & decay parameters
+    param sig: Gaussian peak variance in musec^2
+    param gam: Lorentzian peak width in musec
+    
+    returns: widths; [Gaussian sigma, Lornetzian gamma] in musec
+    returns: low TOF, high TOF ends of peak; 50FWHM from position
     '''
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
@@ -831,30 +872,6 @@ def getgamFW(g,s):
     gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     return gamFW(2.35482*s,g)   #sqrt(8ln2)*sig = FWHM(G)
                 
-def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
-    '''Compute the Finger-Cox-Jepcoat modified Voigt function for a
-    CW powder peak by direct convolution. This version is not used.
-    '''
-    DX = xdata[1]-xdata[0]
-    widths,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
-    x = np.linspace(pos-fmin,pos+fmin,256)
-    dx = x[1]-x[0]
-    Norm = norm.pdf(x,loc=pos,scale=widths[0])
-    Cauchy = cauchy.pdf(x,loc=pos,scale=widths[1])
-    arg = [pos,shl/57.2958,dx,]
-    FCJ = fcjde.pdf(x,*arg,loc=pos)
-    if len(np.nonzero(FCJ)[0])>5:
-        z = np.column_stack([Norm,Cauchy,FCJ]).T
-        Z = fft.fft(z)
-        Df = fft.ifft(Z.prod(axis=0)).real
-    else:
-        z = np.column_stack([Norm,Cauchy]).T
-        Z = fft.fft(z)
-        Df = fft.fftshift(fft.ifft(Z.prod(axis=0))).real
-    Df /= np.sum(Df)
-    Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
-    return intens*Df(xdata)*DX/dx
-
 def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
     '''Computes the background from vars pulled from gpx file or tree.
     '''
@@ -969,13 +986,13 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])
-                yb[iBeg:iFin] += ybi
+                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
+                yb[iBeg:iFin] += ybi/cw[iBeg:iFin]
             elif 'T' in dataType:
-                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
+                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])[0]
                 yb[iBeg:iFin] += ybi
             elif 'B' in dataType:
-                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])
+                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])[0]
                 yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1       
@@ -1129,14 +1146,35 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
     '''Compute the Finger-Cox-Jepcoat modified Pseudo-Voigt function for a
     CW powder peak in external Fortran routine
+    
+    param pos: peak position in degrees
+    param sig: Gaussian variance in centideg^2
+    param gam: Lorentzian width in centideg
+    param shl: axial divergence parameter (S+H)/L
+    param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
+    
+    returns: array: calculated peak function at each xdata
+    returns: integral of peak; nominally = 1.0
     '''
-    Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
-    Df /= np.sum(Df)
-    return Df
+    if len(xdata):
+        cw = np.diff(xdata)
+        cw = np.append(cw,cw[-1])
+        Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+        return Df,np.sum(100.*Df*cw)
+    else:
+        return 0.,1.
 
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     '''Compute analytic derivatives the Finger-Cox-Jepcoat modified Pseudo-Voigt
     function for a CW powder peak
+    
+    param pos: peak position in degrees
+    param sig: Gaussian variance in centideg^2
+    param gam: Lorentzian width in centideg
+    param shl: axial divergence parameter (S+H)/L
+    param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
+    
+    returns: arrays: function and derivatives of pos, sig, gam, & shl
     '''
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
     return Df,dFdp,dFds,dFdg,dFdsh
@@ -1144,15 +1182,29 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
 def getPsVoigt(pos,sig,gam,xdata):
     '''Compute the simple Pseudo-Voigt function for a
     small angle Bragg peak in external Fortran routine
+    
+    param pos: peak position in degrees
+    param sig: Gaussian variance in centideg^2
+    param gam: Lorentzian width in centideg
+    
+    returns: array: calculated peak function at each xdata
+    returns: integral of peak; nominally = 1.0
     '''
     
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
     Df = pyd.pypsvoigt(len(xdata),xdata-pos,sig,gam)
-    Df /= np.sum(Df)
-    return Df
+    return Df,np.sum(100.*Df*cw)
 
 def getdPsVoigt(pos,sig,gam,xdata):
     '''Compute the simple Pseudo-Voigt function derivatives for a
     small angle Bragg peak peak in external Fortran routine
+    
+    param pos: peak position in degrees
+    param sig: Gaussian variance in centideg^2
+    param gam: Lorentzian width in centideg
+
+    returns: arrays: function and derivatives of pos, sig, gam, & shl
     '''
     
     Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
@@ -1163,9 +1215,10 @@ def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
     neutron TOF & CW pink peak in external Fortran routine
     '''
     
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
     Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
-    Df /= np.sum(Df)
-    return Df  
+    return Df,np.sum(Df*cw)  
     
 def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
     '''Compute the double exponential Pseudo-Voigt convolution function derivatives for a
@@ -1315,12 +1368,14 @@ def setPeakInstPrmMode(normal=True):
     peakInstPrmMode = normal
 
 def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
-    'Computes the profile for a powder pattern'
+    '''Computes the profile for a powder pattern for single peak fitting
+    NB: not used for Rietveld refinement
+    '''
     
     yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
     yc = np.zeros_like(yb)
-    cw = np.diff(xdata)
-    cw = np.append(cw,cw[-1])
+    # cw = np.diff(xdata)
+    # cw = np.append(cw,cw[-1])
     if 'C' in dataType:
         shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
@@ -1354,13 +1409,15 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
-                yc[iBeg:iFin] += intens*getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
+                fp = getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])[0]
+                yc[iBeg:iFin] += intens*fp
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     iBeg = np.searchsorted(xdata,pos2-fmin)
                     iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
-                        yc[iBeg:iFin] += intens*kRatio*getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
+                        fp2 = getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])[0]
+                        yc[iBeg:iFin] += intens*kRatio*fp2
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
@@ -1404,7 +1461,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
-                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc        
@@ -1462,14 +1519,18 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
-                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
+                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])[0]
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
             
 def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
-    'needs a doc string'
-# needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
+    '''Computes the profile derivatives for a powder pattern for single peak fitting
+    
+    return: np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
+    
+    NB: not used for Rietveld refinement
+    '''
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
     dMdb,dMddb,dMdpk,dMdfb = getBackgroundDerv('',parmDict,bakType,dataType,xdata,fixback)
     if 'Back;0' in varyList:            #background derivs are in front if present
@@ -1528,8 +1589,8 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 dMdpk = np.zeros(shape=(6,len(xdata)))
                 dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
                 for i in range(1,5):
-                    dMdpk[i][iBeg:iFin] += 100.*cw[iBeg:iFin]*intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += 100.*cw[iBeg:iFin]*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
@@ -1538,9 +1599,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     if iBeg-iFin:
                         dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
                         for i in range(1,5):
-                            dMdpk[i][iBeg:iFin] += 100.*cw[iBeg:iFin]*intens*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg:iFin] += 100.*cw[iBeg:iFin]*kRatio*dMdipk2[0]
-                        dMdpk[5][iBeg:iFin] += 100.*cw[iBeg:iFin]*dMdipk2[0]
+                            dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
+                        dMdpk[5][iBeg:iFin] += dMdipk2[0]
                         dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
                 for parmName in ['pos','int','sig','gam']:
                     try:
@@ -2193,7 +2254,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     yc *= 0.                            #set calcd ones to zero
     yb *= 0.
     yd *= 0.
-    cw = x[1:]-x[:-1]
     xBeg = np.searchsorted(x,Limits[0])
     xFin = np.searchsorted(x,Limits[1])+1
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
@@ -2265,7 +2325,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     for peak in Peaks:
         FWHM = getFWHM(peak[0],Inst)
         try:
-            binsperFWHM.append(FWHM/cw[x.searchsorted(peak[0])])
+            xpk = x.searchsorted(peak[0])
+            cw = x[xpk]-x[xpk-1]
+            binsperFWHM.append(FWHM/cw)
         except IndexError:
             binsperFWHM.append(0.)
     if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
@@ -4243,9 +4305,9 @@ def test3(name,delt):
     dx = xdata[1]-xdata[0]
     hplot = plotter.add('derivatives test for '+name).gca()
     hplot.plot(xdata,100.*dx*getdFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)[idx+1])
-    y0 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)
+    y0 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)[0]
     myDict[name] += delt
-    y1 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)
+    y1 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)[0]
     hplot.plot(xdata,(y1-y0)/delt,'r+')
 
 if __name__ == '__main__':

@@ -1,0 +1,12 @@
+# information to be shown to users about new GSAS-II versions (also
+# update GSASIIctrlGUI.updateNoticeDict). Lines starting with "#" are
+# comments.
+# Each version is tagged with a version number and a colon. All subsequent text
+# is the notice for that version with one or more blank lines between.
+
+# 5000: This is text for version 5000. It spans several lines. 
+#   Note that indents are ignored, but 2 percent signs create a newline. %%%%This
+#  starts on a new line with a blank after the previous.
+
+# 1234: This is text for version 1234. The second colon here (:) is ignored. 
+

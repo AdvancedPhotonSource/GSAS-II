@@ -26,6 +26,12 @@ The contents of that file are a series of lines of form::
 Note that capitalization of keywords is ignored. Defined keywords are in table below. Any line 
 without one of these keywords will be ignored. 
 
+.. Next command allows \\AA to be used in HTML
+
+.. only:: html
+
+   :math:`\\require{mediawiki-texvc}`
+
 .. tabularcolumns:: |l|p{4.5in}|
 
 ==============================  ====================================================

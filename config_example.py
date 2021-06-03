@@ -18,12 +18,15 @@ None if the variable is not set. Note that a config.py file need not
 be present, but if in use it will typically be found with the GSAS-II source
 directory (GSASIIpath.Path2GSAS2) or a directory for local GSAS-II
 modifications (~/.G2local/ or /Documents and Settings/<User>/.G2local/).  
+Note that the contents of config.py is usually changed 
+using GSASIIctrlGUI.SelectConfigSetting.
 
 When defining new config variables for GSAS-II, define them here with a
 default value: use None or a string for strings, or use integers or real
 values. Include a doc string after each variable is defined to explain
 what it does. Use names ending in _location or _directory for items
-that will contain directory names.
+that will contain directory names. Use names ending in _exec for executable
+files (.exe on windows).
 
 For example::
 
@@ -236,4 +239,17 @@ in Draw Atoms. The only valid values are:
 show_gpxSize = False
 '''When True, the sizes of the sections of the GPX file are listed
 when the GPX file is opened. Default is False.
+'''
+
+fullrmc_exec = None
+'''Defines the full path to a Python executable that has been configured 
+with the fullrmc package. If None (the default), GSAS-II will see if fullrmc
+can be imported into the current Python and if not a executable named fullrmc* 
+(or fullrmc*.exe on Windows) can be found in the GSAS-II binary directory 
+or in the system path.
+'''
+
+lastUpdateNotice = 0
+'''Defines the version number for the last update notice that has been 
+shown. This should not need to be changed manually.
 '''

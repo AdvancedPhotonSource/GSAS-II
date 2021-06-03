@@ -5404,6 +5404,128 @@ class HelpButton(wx.Button):
         self.dlg.ShowModal()
         self.dlg.Destroy()
 ################################################################################
+updateNoticeDict = {}  # example: {1234:True, 5000:False}
+'''A dict with versions that should be noted. The value associated with the
+tag is if all older projects should show the warning, or only the first 
+to be opened. Version info is found in file versioninfo.txt. 
+'''
+def updateNotifier(G2frame,fileVersion):
+    '''Posts an update notice when a a specially tagged GSAS-II version 
+    is seen for the first time. Versions to be tagged are set in global
+    updateNoticeDict; version info is found in file versioninfo.txt. 
+
+    :param wx.Frame G2frame: GSAS-II main window
+    :param int fileVersion: version of GSAS-II used to create the current
+      .gpx file
+    '''
+    def tblLine():
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,3))
+        txtbox.SetBackgroundColour(wx.Colour(0,0,0))
+        tblSizer.Add(txtbox,0,wx.EXPAND)
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,3))
+        txtbox.SetBackgroundColour(wx.Colour(0,0,0))
+        tblSizer.Add(txtbox,0,wx.EXPAND)
+
+    rev = GSASIIpath.svnGetRev()
+    if rev is None: rev = GSASIIpath.GetVersionNumber()
+    if rev is None: return
+    lastNotice = max(GSASIIpath.GetConfigValue('lastUpdateNotice',0),fileVersion)
+    show = None               # first version number to show
+    allProjects = False       # if True notice is shown for all projects, otherwise only once
+    for key in updateNoticeDict:
+        if updateNoticeDict[key]:
+            if key >= fileVersion:
+                if show is None:
+                    show = fileVersion
+                else:
+                    show = min(show,fileVersion)
+                allProjects = True
+        else:
+            if key >= lastNotice:
+                if show is None:
+                    show = lastNotice
+                else:
+                    show = min(show,lastNotice)
+    if show is None: return
+
+    fp = open(os.path.join(GSASIIpath.path2GSAS2,'versioninfo.txt'),'r')
+    vers = None
+    noticeDict = {}
+    for line in fp: 
+        if line.strip().startswith('#'): continue
+        if vers is not None:
+            if len(line.strip()) == 0:
+                vers = None
+                continue
+            else:
+                noticeDict[vers] += ' '
+                noticeDict[vers] += line.strip().replace('%%','\n')
+        elif ':' in line:
+            vers,tag = line.strip().split(':',1)
+            try:
+                vers = int(vers)
+            except:
+                continue
+            noticeDict[vers] = tag.strip().replace('%%','\n')
+    fp.close()
+    for key in list(noticeDict.keys()):
+        if key <= show: del noticeDict[key]
+    if len(noticeDict) == 0: return
+
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'Update notices',
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    txtbox = wx.StaticText(dlg,wx.ID_ANY,
+            'Please read the notices below about GSAS-II updates since'
+            ' this project was last saved')
+    txtbox.Wrap(490)
+    sizer.Add(txtbox,0)
+    sizer.Add((10,10))
+    tblSizer = wx.FlexGridSizer(0,2,5,10)
+    tblLine()
+    txtbox = wx.StaticText(dlg,wx.ID_ANY,'version')
+    tblSizer.Add(txtbox,0,wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL)
+    txtbox = wx.StaticText(dlg,wx.ID_ANY,'notice')
+    tblSizer.Add(txtbox,0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    tblLine()
+    sizer.Add(tblSizer)
+    sizer.Add((10,10))
+    btnsizer = wx.StdDialogButtonSizer()
+    if allProjects: # will be shown again
+        OKbtn = wx.Button(dlg, wx.ID_OK)
+    else:
+        OKbtn = wx.Button(dlg, wx.ID_OK,label='Record as seen')
+        btn = wx.Button(dlg, wx.ID_CANCEL,label='Show again')
+        btnsizer.AddButton(btn)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    sizer.Add((-1,5))
+    sizer.Add(btnsizer,0,wx.ALIGN_CENTER,50)
+    for key in reversed(sorted(list(noticeDict.keys()))):
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,str(key))
+        txtbox.SetBackgroundColour(wx.Colour(250,250,250))
+        tblSizer.Add(txtbox,0,wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL)
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,noticeDict[key])
+        txtbox.Wrap(420)
+        txtbox.SetBackgroundColour(wx.Colour(250,250,250))
+        tblSizer.Add(txtbox)
+    tblLine()
+    
+    dlg.SetSizer(sizer)
+    sizer.Fit(dlg)
+    dlg.CenterOnParent()
+    if dlg.ShowModal() == wx.ID_OK:
+        if not allProjects:
+            vars = GetConfigValsDocs()
+            vars['lastUpdateNotice'][1] = rev
+            GSASIIpath.SetConfigValue(vars)
+            SaveConfigVars(vars)
+        dlg.Destroy()
+        return
+    dlg.Destroy()
+                  
+################################################################################
 class MyHtmlPanel(wx.Panel):
     '''Defines a panel to display HTML help information, as an alternative to
     displaying help information in a web browser.
@@ -6846,7 +6968,7 @@ class OpenTutorial(wx.Dialog):
         
         pnl.SetSizer(sizer)
         sizer.Fit(dlg)
-        self.CenterOnParent()
+        dlg.CenterOnParent()
         if dlg.ShowModal() != wx.ID_OK:
             dlg.Destroy()
             return

@@ -800,6 +800,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
         except:
             print('Warning: unable to delete {}'.format(GPXhist))
     G2frame.SetTitleByGPX()
+    if LastSavedUsing:
+        try:
+            G2G.updateNotifier(G2frame,int(LastSavedUsing))
+        except:
+            pass
     
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'

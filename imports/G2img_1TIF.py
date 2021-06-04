@@ -111,7 +111,6 @@ def GetTifData(filename):
         byteOrd = '>'
         IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])        
     else:
-#        print (tag)
         lines = ['not a detector tiff file',]
         return lines,0,0,0
     File.seek(IFD)                                                  #get number of directory entries
@@ -214,7 +213,14 @@ def GetTifData(filename):
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])
-        if b'ImageJ' in S:
+        if b'Pilatus3' in S:
+            tifType = 'Pilatus3'
+            dataType = 0
+            pixy = [172.,172.]
+            File.seek(IFD[273][2][0])
+            G2fil.G2Print ('Read Pilatus3 tiff file: '+filename)
+            image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
+        elif b'ImageJ' in S:
             tifType = 'ImageJ'
             dataType = 0
             pixy = [200.,200.]*IFD[277][2][0]

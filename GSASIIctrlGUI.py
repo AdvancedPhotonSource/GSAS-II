@@ -5404,7 +5404,7 @@ class HelpButton(wx.Button):
         self.dlg.ShowModal()
         self.dlg.Destroy()
 ################################################################################
-updateNoticeDict = {4918:True}  # example: {1234:True, 5000:False}
+updateNoticeDict = {4919:True}  # example: {1234:True, 5000:False}
 '''A dict with versions that should be noted. The value associated with the
 tag is if all older projects should show the warning, or only the first 
 to be opened. Version info is found in file versioninfo.txt. 

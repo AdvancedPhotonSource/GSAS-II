@@ -10,7 +10,7 @@
 
 # 1234: This is text for version 1234. The second colon here (:) is ignored. 
 
-4918: With this version of GSAS-II, the profile functions have been changed to account for possible variation in the powder 
+4919: With this version of GSAS-II, the profile functions have been changed to account for possible variation in the powder 
 pattern step size across the scan. This will likely change the histogram scale factor (see Sample Parameters), peak
 intensities (see Peak List) and background peak intensities (see Background). For Constant Wavelength data, they will change 
 by a factor related to the pattern step size, e.g. for 11BM data with a step size of 0.001 deg 2-theta the new scale factor will be 

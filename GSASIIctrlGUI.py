@@ -5418,14 +5418,15 @@ def updateNotifier(G2frame,fileVersion):
     :param int fileVersion: version of GSAS-II used to create the current
       .gpx file
     '''
-    def tblLine():
-        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,3))
+    def tblLine(dlg,pixels=3):
+        'place line in table'
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,pixels))
         txtbox.SetBackgroundColour(wx.Colour(0,0,0))
         tblSizer.Add(txtbox,0,wx.EXPAND)
-        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,3))
+        txtbox = wx.StaticText(dlg,wx.ID_ANY,'',size=(-1,pixels))
         txtbox.SetBackgroundColour(wx.Colour(0,0,0))
         tblSizer.Add(txtbox,0,wx.EXPAND)
-
+    size = (700,500)
     rev = GSASIIpath.svnGetRev()
     if rev is None: rev = GSASIIpath.GetVersionNumber()
     if rev is None: return
@@ -5476,19 +5477,20 @@ def updateNotifier(G2frame,fileVersion):
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     sizer = wx.BoxSizer(wx.VERTICAL)
     txtbox = wx.StaticText(dlg,wx.ID_ANY,
-            'Please read the notices below about GSAS-II updates since'
+            'Please read the notices below about major GSAS-II updates since'
             ' this project was last saved')
-    txtbox.Wrap(490)
     sizer.Add(txtbox,0)
+    txtbox.Wrap(size[0]-10)
     sizer.Add((10,10))
+    panel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(size[0]-20, size[1]))
+    sizer.Add(panel,1,wx.EXPAND,1)
     tblSizer = wx.FlexGridSizer(0,2,5,10)
-    tblLine()
-    txtbox = wx.StaticText(dlg,wx.ID_ANY,'version')
+    tblLine(panel)
+    txtbox = wx.StaticText(panel,wx.ID_ANY,'Version')
     tblSizer.Add(txtbox,0,wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL)
-    txtbox = wx.StaticText(dlg,wx.ID_ANY,'notice')
+    txtbox = wx.StaticText(panel,wx.ID_ANY,'Notice')
     tblSizer.Add(txtbox,0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    tblLine()
-    sizer.Add(tblSizer)
+    tblLine(panel)
     sizer.Add((10,10))
     btnsizer = wx.StdDialogButtonSizer()
     if allProjects: # will be shown again
@@ -5502,16 +5504,19 @@ def updateNotifier(G2frame,fileVersion):
     btnsizer.Realize()
     sizer.Add((-1,5))
     sizer.Add(btnsizer,0,wx.ALIGN_CENTER,50)
-    for key in reversed(sorted(list(noticeDict.keys()))):
-        txtbox = wx.StaticText(dlg,wx.ID_ANY,str(key))
+    for i,key in enumerate(sorted(noticeDict,reverse=True)):
+        if i != 0: tblLine(panel,1)
+        txtbox = wx.StaticText(panel,wx.ID_ANY,str(key))
         txtbox.SetBackgroundColour(wx.Colour(250,250,250))
         tblSizer.Add(txtbox,0,wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL)
-        txtbox = wx.StaticText(dlg,wx.ID_ANY,noticeDict[key])
-        txtbox.Wrap(420)
+        txtbox = wx.StaticText(panel,wx.ID_ANY,noticeDict[key])
+        txtbox.Wrap(size[0]-110)
         txtbox.SetBackgroundColour(wx.Colour(250,250,250))
         tblSizer.Add(txtbox)
-    tblLine()
-    
+    tblLine(panel)
+    panel.SetSizer(tblSizer)
+    panel.SetAutoLayout(1)
+    panel.SetupScrolling()
     dlg.SetSizer(sizer)
     sizer.Fit(dlg)
     dlg.CenterOnParent()

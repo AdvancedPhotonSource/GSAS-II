@@ -1121,15 +1121,15 @@ should not be used if the preferred orientations corrections are used.
 
 The coordinate system used for texture characterization is defined where 
 the sample coordinates (Psi, gamma) are defined with an instrument coordinate
-system (I, J, K) such that I is normal to the diffraction plane and J is coincident with the
-direction of the incident radiation beam pointing away from the source. We further define
+system (I, J, K) such that K is normal to the diffraction plane and J is coincident with the
+direction of the incident radiation beam toward the source. We further define
 a standard set of right-handed goniometer eulerian angles (Omega, Chi, Phi) so that Omega and Phi are
-rotations about I and Chi is a rotation about J when Omega, Chi, Phi = 0. Finally, as the sample
+rotations about K and Chi is a rotation about J when Omega = 0. Finally, as the sample
 may be mounted so that the sample coordinate system (Is, Js, Ks) does not coincide with
 the instrument coordinate system (I, J, K), we define three eulerian sample rotation angles
-(Omega-s, Chi-s, Phi-s) that describe the rotation from (I, J, K) to (Is, Js, Ks). The sample rotation
+(Omega-s, Chi-s, Phi-s) that describe the rotation from (Is, Js, Ks) to (I, J, K). The sample rotation
 angles are defined so that with the goniometer angles at zero Omega-s and Phi-s are rotations
-about I and Chi-s is a rotation about J.
+about K and Chi-s is a rotation about J.
 
 ISODISTORT implementation
 ------------------------------

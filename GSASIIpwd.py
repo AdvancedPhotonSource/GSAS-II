@@ -3016,6 +3016,7 @@ pdbFile = os.path.join(dirName, project + '_restart.pdb')
 # check Engine exists if so (and not FRESH_START) load it
 # otherwise build it 
 ENGINE = Engine(path=None)
+Ebc = ENGINE.boundaryConditions
 if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ## create structure
     ENGINE = Engine(path=engineFileName, freshStart=True)
@@ -3023,14 +3024,14 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                                  atoms      = atomList,
                                  unitcellBC = cell,
                                  supercell  = supercell)
-    rmax = min( [ENGINE.boundaryConditions.get_a(), ENGINE.boundaryConditions.get_b(), ENGINE.boundaryConditions.get_c()] ) /2.
+    rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 '''    
     import atmdata
-    rundata += '# conversion factors (may be needed)\n'
-    rundata += '    sumCiBi2 = 0.\n'
-    for elem in Phase['General']['AtomTypes']:
-        rundata += '    Ci = ENGINE.numberOfAtomsPerElement["{}"]/len(ENGINE.allElements)\n'.format(elem)
-        rundata += '    sumCiBi2 += (Ci*{})**2\n'.format(atmdata.AtmBlens[elem+'_']['SL'][0])
+    # rundata += '    # conversion factors (may be needed)\n'
+    # rundata += '    sumCiBi2 = 0.\n'
+    # for elem in Phase['General']['AtomTypes']:
+    #     rundata += '    Ci = ENGINE.numberOfAtomsPerElement["{}"]/len(ENGINE.allElements)\n'.format(elem)
+    #     rundata += '    sumCiBi2 += (Ci*{})**2\n'.format(atmdata.AtmBlens[elem+'_']['SL'][0])
     rundata += '    rho0 = len(ENGINE.allNames)/ENGINE.volume\n'
     # settings that require a new Engine
     for File in Files:
@@ -3042,10 +3043,12 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         if 'G(r)' in File:
             rundata += '    GR = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:
-                rundata += '''    # read and xform G(r) as defined in RMCProfile
+                #rundata += '''    # read and xform G(r) as defined in RMCProfile
     # see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
-                rundata += '    GR[1] *= 4 * np.pi * GR[0] * rho0 / sumCiBi2\n'
-                rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
+                #rundata += '    GR[1] *= 4 * np.pi * GR[0] * rho0 / sumCiBi2\n'
+                #rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
+                rundata += '    # G(r) as defined in RMCProfile\n'
+                rundata += '    GofR = fullrmc.Constraints.RadialDistributionConstraints.RadialDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
                 rundata += '    # This is G(r) as defined in PDFFIT\n'
                 rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
@@ -3059,14 +3062,19 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         elif '(Q)' in File:
             rundata += '    SOQ = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:
-                rundata += '    # Read & xform F(Q) as defined in RMCProfile to S(Q)-1\n'
-                rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
+                rundata += '    # F(Q) as defined in RMCProfile\n'
+                #rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
+                if filDat[4]:
+                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
+                rundata += '    SofQ = fullrmc.Constraints.StructureFactorConstraints.NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
-                rundata += '    # This is S(Q) as defined in PDFFIT\n'
+                rundata += '    # S(Q) as defined in PDFFIT\n'
                 rundata += '    SOQ[1] -= 1\n'
-            if filDat[4]:
-                rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
-            rundata += '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
+                if filDat[4]:
+                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
+                rundata += '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
+            else:
+                raise ValueError('Invalid S(Q) type: '+str(filDat[3]))
             rundata += '    ENGINE.add_constraints([SofQ])\n'
         else:
             print('What is this?')
@@ -3095,7 +3103,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)
-    rmax = min( [ENGINE.boundaryConditions.get_a(), ENGINE.boundaryConditions.get_b(), ENGINE.boundaryConditions.get_c()] ) /2.
+    rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 
 ENGINE.set_log_file(os.path.join(dirName,prefix))
 '''

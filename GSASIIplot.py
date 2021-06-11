@@ -6405,7 +6405,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             x,y = np.sin(Beta/2.)*np.cos(Phi)/sq2,np.sin(Beta/2.)*np.sin(Phi)/sq2        
         else:
             x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
-        npts = 201
+        npts = 101
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
         R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
         P=np.where(P<0.,P+360.,P)
@@ -6556,7 +6556,7 @@ def PlotTexture(G2frame,data,Start=False):
             Z = G2lat.invpolfcal(IODFln,SGData,R,P)
             Z = np.reshape(Z,(npts,npts))
             try:
-                CS = Plot.contour(Y,X,Z,aspect='equal')
+                CS = Plot.contour(Y,X,Z)
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass

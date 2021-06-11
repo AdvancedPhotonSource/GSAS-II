@@ -575,7 +575,7 @@ def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
             G2fil.G2Print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
         else:
-            G2fil.G2Print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
+            G2fil.G2Print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} RMS:{:.4f}) *** {} ***\n'.format(
                 data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
     return res
 
@@ -2879,8 +2879,49 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 #             break
 #     dspaces = [0.5/np.sqrt(G2lat.calc_rDsq2(H,G)) for H in np.eye(3)]
 #     return min(dspaces)
+
+def findfullrmc():
+    '''Find where fullrmc is installed. Tries the following:
     
+         1. Returns the Config var 'fullrmc_exec', if defined. No check 
+            is done that the interpreter has fullrmc
+         2. The current Python interpreter if fullrmc can be imported 
+            and fullrmc is version 5+
+         3. The path is checked for a fullrmc image as named by Bachir
+
+    :returns: the full path to a python executable that is assumed to 
+      have fullrmc installed or None, if it was not found.
+    '''
+    is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    if GSASIIpath.GetConfigValue('fullrmc_exec') is not None and is_exe(
+            GSASIIpath.GetConfigValue('fullrmc_exec')):
+        return GSASIIpath.GetConfigValue('fullrmc_exec')
+    try:
+        import fullrmc
+        if int(fullrmc.__version__.split('.')[0]) >= 5:
+            return sys.executable
+    except:
+        pass
+    pathlist = os.environ["PATH"].split(os.pathsep)
+    for p in (GSASIIpath.path2GSAS2,GSASIIpath.binaryPath,os.getcwd(),
+                  os.path.split(sys.executable)[0]):
+        if p not in pathlist: pathlist.insert(0,p)
+    import glob
+    for p in pathlist:
+        if sys.platform == "darwin":
+            lookfor = "fullrmc*macOS*i386-64bit"
+        elif sys.platform == "win32":
+            lookfor = "fullrmc*.exe"
+        else:
+            lookfor = "fullrmc*"
+        fl = glob.glob(lookfor)
+        if len(fl) > 0:
+            return os.path.abspath(sorted(fl)[0])
+        
 def MakefullrmcRun(pName,Phase,RMCPdict):
+    '''Creates a script to run fullrmc. Returns the name of the file that was 
+    created. 
+    '''
     BondList = {}
     for k in RMCPdict['Pairs']:
         if RMCPdict['Pairs'][k][1]+RMCPdict['Pairs'][k][2]>0:
@@ -2892,7 +2933,7 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
         for i in (0,1,2):
             angle[i] = angle[i].strip()
         AngleList.append(angle)
-    rmin = RMCPdict['min Contact']
+    # rmin = RMCPdict['min Contact']
     cell = Phase['General']['Cell'][1:7]
     SymOpList = G2spc.AllOps(Phase['General']['SGData'])[0]
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
@@ -2900,18 +2941,19 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     for atom in Phase['Atoms']:
         el = ''.join([i for i in atom[ct] if i.isalpha()])
         atomsList.append([el] + atom[cx:cx+4])
-    rname = pName+'-fullrmc.py'
+    projDir,projName = os.path.split(pName)
+    scrname = pName+'-fullrmc.py'
     restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
     rundata = ''
-    rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%rname
+    rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%scrname
     rundata += '# created in '+__file__+" v"+filversion.split()[1]
     rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
 # fullrmc imports (all that are potentially useful)
 import os,glob
 import time
-#import matplotlib.pyplot as plt
+import pickle
 import numpy as np
 from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
@@ -2922,11 +2964,42 @@ from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
 from fullrmc.Generators.Swaps import SwapPositionsGenerator
-
-### When True, erases an existing enging to provide a fresh start
-FRESH_START = {}
+def writeHeader(ENGINE,statFP):
+    statFP.write('generated-steps, total-error, ')
+    for c in ENGINE.constraints:
+        statFP.write(c.constraintName)
+        statFP.write(', ')
+    statFP.write('\\n')
+    statFP.flush()
+    
+def writeCurrentStatus(ENGINE,statFP,plotF):
+    statFP.write(str(ENGINE.generated))
+    statFP.write(', ')
+    statFP.write(str(ENGINE.totalStandardError))
+    statFP.write(', ')
+    for c in ENGINE.constraints:
+        statFP.write(str(c.standardError))
+        statFP.write(', ')
+    statFP.write('\\n')
+    statFP.flush()
+    mpl.use('agg')
+    fp = open(plotF,'wb')
+    for c in ENGINE.constraints:
+        p = c.plot(show=False)
+        p[0].canvas.draw()
+        image = p[0].canvas.buffer_rgba()
+        pickle.dump(c.constraintName,fp)
+        pickle.dump(np.array(image),fp)
+    fp.close()
+'''
+    rundata += '''
+### When True, erases an existing engine to provide a fresh start
+FRESH_START = {:}
+dirName = "{:}"
+prefix = "{:}"
+project = prefix + "-fullrmc"
 time0 = time.time()
-'''.format(RMCPdict['ReStart'][0])
+'''.format(RMCPdict['ReStart'][0],projDir,projName)
     
     rundata += '# setup structure\n'
     rundata += 'cell = ' + str(cell) + '\n'
@@ -2935,9 +3008,12 @@ time0 = time.time()
     rundata += 'supercell = ' + str(RMCPdict['SuperCell']) + '\n'
 
     rundata += '\n# initialize engine\n'
-    rundata += 'engineFileName = "%s.rmc"\n'%pName
-
-    rundata += '''\n# check Engine exists if so (and not FRESH_START) load it
+    rundata += '''
+engineFileName = os.path.join(dirName, project + '.rmc')
+projectStats = os.path.join(dirName, project + '.stats')
+projectPlots = os.path.join(dirName, project + '.plots')
+pdbFile = os.path.join(dirName, project + '_restart.pdb')
+# check Engine exists if so (and not FRESH_START) load it
 # otherwise build it 
 ENGINE = Engine(path=None)
 if not ENGINE.is_engine(engineFileName) or FRESH_START:
@@ -2964,7 +3040,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         if 'Xray' in File:
             sfwt = 'atomicNumber'
         if 'G(r)' in File:
-            rundata += '    GR = np.loadtxt("%s").T\n'%filDat[0]
+            rundata += '    GR = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:
                 rundata += '''    # read and xform G(r) as defined in RMCProfile
     # see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
@@ -2981,7 +3057,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             rundata += '    ENGINE.add_constraints([GofR])\n'
             rundata += '    GofR.set_limits((None, rmax))\n'
         elif '(Q)' in File:
-            rundata += '    SOQ = np.loadtxt("%s").T\n'%filDat[0]
+            rundata += '    SOQ = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:
                 rundata += '    # Read & xform F(Q) as defined in RMCProfile to S(Q)-1\n'
                 rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
@@ -3014,13 +3090,15 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             rundata += ('            '+
                '("element","{1}","{0}","{2}",{5},{6},{5},{6},{3},{4}),\n'.format(*item))
         rundata += '             ])\n'
-    rundata += '    for f in glob.glob("{}_*.log"): os.remove(f)\n'.format(pName)
     rundata += '''
+    for f in glob.glob(os.path.join(dirName,prefix+"_*.log")): os.remove(f)
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)
+    rmax = min( [ENGINE.boundaryConditions.get_a(), ENGINE.boundaryConditions.get_b(), ENGINE.boundaryConditions.get_c()] ) /2.
+
+ENGINE.set_log_file(os.path.join(dirName,prefix))
 '''
-    rundata += 'ENGINE.set_log_file("{}")\n'.format(pName)
     if RMCPdict['Swaps']:
         rundata += '\n#set up for site swaps\n'
         rundata += 'aN = ENGINE.allNames\n'
@@ -3054,13 +3132,13 @@ else:
         rundata += 'wtDict["{}-{}"] = {}\n'.format(typ,sfwt,filDat[1])
     rundata += 'for c in ENGINE.constraints:  # loop over predefined constraints\n'
     rundata += '    if type(c) is fPDF.PairDistributionConstraint:\n'
-    rundata += '        c.set_variance_squared(1./wtDict["Pair-"+c.weighting])\n'
+    # rundata += '        c.set_variance_squared(1./wtDict["Pair-"+c.weighting])\n'
     rundata += '        c.set_limits((None,rmax))\n'
     if RMCPdict['FitScale']:
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
-    rundata += '    elif type(c) is ReducedStructureFactorConstraint:\n'
-    rundata += '        c.set_variance_squared(1./wtDict["Struct-"+c.weighting])\n'
+    # rundata += '        c.set_variance_squared(1./wtDict["Struct-"+c.weighting])\n'
     if RMCPdict['FitScale']:
+        rundata += '    elif type(c) is ReducedStructureFactorConstraint:\n'
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
     # torsions difficult to implement, must be internal to cell & named with
     # fullrmc atom names
@@ -3072,20 +3150,32 @@ else:
     #     for torsion in RMCPdict['Torsions']:
     #         rundata += '    %s\n'%str(tuple(torsion))
     #     rundata += '        ]})\n'            
-    rundata += '\n# setup runs for fullrmc\n'
+    rundata += '''
+if FRESH_START:
+    # initialize engine with one step to get starting config energetics
+    ENGINE.run(restartPdb=pdbFile,numberOfSteps=1, saveFrequency=1)
+    statFP = open(projectStats,'w')
+    writeHeader(ENGINE,statFP)
+    writeCurrentStatus(ENGINE,statFP,projectPlots)
+else:
+    statFP = open(projectStats,'a')
 
-    rundata += 'steps = 10000\n'
+# setup runs for fullrmc
+'''
+    rundata += 'steps = {}\n'.format(RMCPdict['Steps/cycle'])
     rundata += 'for _ in range({}):\n'.format(RMCPdict['Cycles'])
     rundata += '    ENGINE.set_groups_as_atoms()\n'
     rundata += '    expected = ENGINE.generated+steps\n'
     
-    rundata += '    ENGINE.run(restartPdb="%s",numberOfSteps=steps, saveFrequency=1000)\n'%restart
+    rundata += '    ENGINE.run(restartPdb=pdbFile,numberOfSteps=steps, saveFrequency=steps)\n'
+    rundata += '    writeCurrentStatus(ENGINE,statFP,projectPlots)\n'
     rundata += '    if ENGINE.generated != expected: break # run was stopped\n'
+    rundata += 'statFP.close()\n'
     rundata += 'print("ENGINE run time %.2f s"%(time.time()-time0))\n'
-    rfile = open(rname,'w')
+    rfile = open(scrname,'w')
     rfile.writelines(rundata)
     rfile.close()
-    return rname
+    return scrname
     
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     bondDist = []
@@ -4323,3 +4413,6 @@ if __name__ == '__main__':
         test3(name,shft)
     G2fil.G2Print ("OK")
     plotter.StartEventLoop()
+    
+#    GSASIIpath.SetBinaryPath(True,False)
+#    print('found',findfullrmc())

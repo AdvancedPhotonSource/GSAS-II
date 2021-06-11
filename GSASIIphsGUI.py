@@ -4645,6 +4645,13 @@ def UpdatePhaseData(G2frame,Item,data):
                 style=wx.ICON_ERROR)
 
 #### RMC Data page ################################################################################
+# fullrmc stuff TODO:
+#  1) need to implement swapping in scripts
+#  2) need fullrmc installation instructions
+#  3) when GSASIIpwd.findfullrmc fails, should trigger message with link to above
+#  4) fullrmc tutorials
+#  5) better plotting when fullrmc in main Python image?
+
     def UpdateRMC():
         ''' Present the controls for running fullrmc or RMCProfile
         '''
@@ -5711,11 +5718,16 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             pName = pName.replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
+            if RMCPdict['Swaps']:
+                wx.MessageDialog(G2frame, G2G.StripIndents(
+                        '''GSAS-II does not yet fully support use of swapping in fullrmc. 
+                        Edit the script by hand before using.''',True),
+                        'No swaps yet',wx.OK).ShowModal()
             # debug stuff
-            # if GSASIIpath.GetConfigValue('debug'):
-            #     print('reloading',G2pwd)
-            #     import imp
-            #     imp.reload(G2pwd)
+            #if GSASIIpath.GetConfigValue('debug'):
+            #    print('reloading',G2pwd)
+            #    import imp
+            #    imp.reload(G2pwd)
             # end debug stuff            
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
@@ -5768,6 +5780,10 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         '''
         generalData = data['General']
         if G2frame.RMCchoice == 'fullrmc':
+            fullrmc_exec = G2pwd.findfullrmc()
+            if fullrmc_exec is None:
+                G2G.G2MessageBox(G2frame,'fullrmc Python not found. How did we get here?')
+                return
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
             rname = pName+'-fullrmc.py'
@@ -5777,17 +5793,27 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     'Not setup')
                 OnSetupRMC(event)
             RMCPdict = data['RMC']['fullrmc']
-            #rmcname = pName+'.rmc'
-            # if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
-            #     G2G.G2MessageBox(G2frame,
-            #         '''You have asked to restart fullrmc but have an existing 
-            #         run as {}. You must manually delete this directory if 
-            #         you wish to restart or change the restart checkbox to 
-            #         continue from the previous results. 
-            #         '''.format(rmcname),'Restart or Continue?')
-            #     # TODO: could do this for the user with:
-            #     #import shutil
-            #     #shutil.rmtree(rmcname)
+            rmcname = pName+'-fullrmc.rmc'
+            if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
+                msg = '''You have asked to start a new fullrmc run rather than 
+                     continue the existing {} run. 
+                     %%Press "Yes" to continue, deleting this 
+                     previous run or "No" to change the restart checkbox to 
+                     continue from the previous results.'''.format(rmcname)
+
+                dlg = wx.MessageDialog(G2frame,G2G.StripIndents(msg,True),
+                                           'Restart or continue',
+                    wx.YES|wx.NO)
+                try:
+                    dlg.CenterOnParent()
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result == wx.ID_YES:
+                    import shutil
+                    shutil.rmtree(rmcname)
+                else:
+                    return
             G2G.G2MessageBox(G2frame,
 '''For use of fullrmc, please cite:
       "Fullrmc, a Rigid Body Reverse Monte Carlo 
@@ -5801,6 +5827,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             while True:
                 logname = '%s_%d.log'%(pName,ilog)
                 if os.path.isfile(logname):
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('removing',logname)
                     os.remove(logname)
                 else:
                     break
@@ -5808,22 +5836,23 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             import subprocess as sb
             if sys.platform.lower().startswith('win'):
                 batch = open('fullrmc.bat','w')
-                batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
-                batch.write(sys.exec_prefix+'\\python.exe '+rname+'\n')
+                #batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
+                batch.write(fullrmc_exec+' '+rname+'\n')
                 batch.write('pause')
                 batch.close()
                 sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
             else:
                 batch = open('fullrmc.sh','w')
                 batch.write('#!/bin/bash\n')
-                activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
+                #activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
                 batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
-                if os.path.exists(activate):
-                    batch.write('source ' + activate + ' ' +
-                                os.environ['CONDA_DEFAULT_ENV'] +'\n')
-                    batch.write('python ' + rname + '\n')
-                else:
-                    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
+                #if os.path.exists(activate):
+                #    batch.write('source ' + activate + ' ' +
+                #                os.environ['CONDA_DEFAULT_ENV'] +'\n')
+                #    batch.write('python ' + rname + '\n')
+                #else:
+                #    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
+                batch.write(fullrmc_exec + ' ' + rname + '\n')
                 batch.close()
                 if sys.platform == "darwin":
                     GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
@@ -5906,15 +5935,12 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
       
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
-                
             RMCPdict = data['RMC']['fullrmc']
             generalData = data['General']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
-            engineFilePath = pName+'.rmc'
+            engineFilePath = pName+'-fullrmc.rmc'
             if not os.path.exists(engineFilePath):
-                #dlg = wx.DirDialog (None, "Choose fullrmc directory", "",
-                #        wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
                 dlg = wx.FileDialog(G2frame, 'Open fullrmc directory',
                                         defaultFile='*.rmc',
                                         wildcard='*.rmc')
@@ -5927,237 +5953,78 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     dlg.Destroy()
                 engineFilePath = os.path.splitext(engineFilePath)[0] + '.rmc'
                 if not os.path.exists(engineFilePath): return
-            from fullrmc import Engine
-            # try to load a few times w/short delay before giving up
-            for i in range(10):
-                try:
-                    ENGINE = Engine().load(engineFilePath)
-                    break
-                except:
-                    time.sleep(0.1)
-            else:
+            choices = []
+            statFilePath = os.path.splitext(engineFilePath)[0] + '.stats'
+            plotFilePath = os.path.splitext(engineFilePath)[0] + '.plots'
+            imgDict = {}
+            if os.path.exists(statFilePath):
+                fp = open(statFilePath,'r')
+                vals = []
+                for i,line in enumerate(fp):
+                    v = line.strip().split(',')[:-1] # ends with comma, remove last empty element
+                    if i == 0:
+                        lbls = [i.strip() for i in v[1:]]
+                        continue
+                    try:
+                        vals.append([float(i) for i in v])
+                    except:
+                        print('Error reading line ',i,'in',statFilePath)
+                fp.close()
+                steps = np.array(vals)[:,0]
+                yvals = np.array(vals)[:,1:].T
+                choices = ['Constraints vs. Steps']
+            if os.path.exists(plotFilePath):
+                import pickle
+                fp = open(plotFilePath,'rb')
+                while True:
+                    try:
+                        title = pickle.load(fp)
+                        imgDict[title] = fp.tell()
+                        im = pickle.load(fp)
+                        choices += [title]
+                    except:
+                        break
+                fp.close()
+            if not choices:
                 G2G.G2MessageBox(G2frame,
-                    'The fullrmc project exists but could not be loaded.',
-                    'Not loaded')
+                    'Nothing to plot. '+                 
+                    'No results in '+statFilePath+' or '+plotFilePath,
+                    'Nothing to plot')
                 return
-
-            # make a list of possible plots
-            plotList = []
-            found = False
-            try:
-                frame = ENGINE.usedFrame
-                for item in ENGINE.constraints:
-                    sitem = str(type(item))
-                    if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
-                        if 'neutron' in item.weighting:
-                            nameId = 'Neutron'
-                        else:
-                            nameId = 'Xray'
-                        if 'StructureFactor' in sitem:
-                            title = 'S(Q)-{} for {}'.format(nameId,pName)
-                        else:
-                            title = 'g(r)-{} for {}'.format(nameId,pName)
-                            
-                        plotList.append(title)
-                        plotList.append('All partials of '+title)
-                        plotList.append('Total partials of '+title)
-                        found = True
-                    elif 'BondConstraint' in sitem:
-                        try:
-                            bonds = item.get_constraint_value()['bondsLength']
-                        except Exception as msg:
-                            print("Error reading BondConstraint bondsLength\n  ",msg)
-                            continue
-                        atoms = ENGINE.allElements  
-                        bondList = item.bondsList[:2]
-                        bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
-                        for Bname in set(bondNames):
-                            title = '{} Bond lengths for {}'.format(Bname,pName)
-                            plotList.append(title)
-                        found = True
-                    elif 'BondsAngleConstraint' in sitem:
-                        angles = 180.*item.get_constraint_value()['angles']/np.pi
-                        angleList = item.anglesList[:3]
-                        atoms = ENGINE.get_original_data("allElements",frame)
-                        angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
-                        for Aname in set(angleNames):
-                            title = '{} Bond angles for {}'.format(Aname,pName)
-                            plotList.append(title)
-                        found = True
-                    elif 'DihedralAngleConstraint' in sitem:
-                        impangles = 180.*item.get_constraint_value()['angles']/np.pi
-                        impangleList = item.anglesList[:4]
-                        atoms = ENGINE.get_original_data("allElements",frame)
-                        impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
-                                    atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
-                        for Aname in set(impangleNames):
-                            title = '{} Dihedral angles for {}'.format(Aname,pName)
-                            plotList.append(title)
-                        found = True
-                    elif hasattr(item,'plot'):
-                        plotList.append(item.__class__.__name__+' pyplot')
-                        found = True
-            except Exception as msg:
-                 print("Unexpected error reading from fullrmc engine\n  ",msg)
-                 return
-            plotList.append('fullrmc residuals for '+pName)
-            if not found or len(plotList) == 0:
-                G2G.G2MessageBox(G2frame,'No saved information yet, wait until fullrmc does a Save',
-                                         'No info')
-                return
-             
-            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select plots to see displayed. N.B. pyplots are in a separate window.',
-                                              'Select plots',plotList)
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select plots to see displayed.',
+                                              'Select plots',choices)
             try:
                 result = dlg.ShowModal()
                 if result == wx.ID_OK:
-                    selectedPlots = [plotList[i] for i in dlg.GetSelections()]
+                    selectedPlots = [choices[i] for i in dlg.GetSelections()]
                 else:
                     return
             finally:
                 dlg.Destroy()
 
-            eNames = ['Total',]
-            nObs = [0,]
-            frame = ENGINE.usedFrame
-            for item in ENGINE.constraints:
-                sitem = str(type(item))
-                if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
-                    if 'neutron' in item.weighting:
-                        nameId = 'Neutron'
-                    else:
-                        nameId = 'Xray'
-                    if 'StructureFactor' in sitem:
-                        eNames.append('S(Q)-'+nameId)
-                        Xlab = r'$\mathsf{Q,\AA^{-1}}$'
-                        Ylab = 'S(Q)'
-                        title = 'S(Q)-{} for {}'.format(nameId,pName)
-                    else:
-                        eNames.append('g(r)-'+nameId)
-                        Xlab = r'$\mathsf{r,\AA}$'
-                        Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
-                        title = 'g(r)-{} for {}'.format(nameId,pName)
-                    dataDict= item.get_constraints_properties(frame)
-                    X = dataDict['frames-experimental_x'][0]
-                    Y = dataDict['frames-experimental_y'][0]
-                    nObs.append(X.shape[0])
-                    rdfDict = item.get_constraint_value()
-                    if 'total' not in rdfDict:
-                        print('No data yet - wait for a save')
-                        return
-                    Z = rdfDict['total']
-                    XY = [[X,Z],[X,Y]]
-                    Names = ['Calc','Obs']
-                    if title in selectedPlots:
-                        G2plt.PlotXY(G2frame,XY,labelX=Xlab,
-                            labelY=Ylab,newPlot=True,Title=title,lines=True,names=Names)
-                    PXY = []
-                    PXYT = []
-                    Names = []
-                    NamesT = []
-
-                    for item in rdfDict:
-                        if 'va' in item:
-                            continue
-                        if 'rdf' not in item and 'g(r)' in title:
-                            Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                            PXYT.append([X,1.+rdfDict[item]/X])
-                        else:
-                            PXYT.append([X,rdfDict[item]])
-                        NamesT.append(item)
-                        if 'total' in item:
-                            if 'rdf' not in item and 'g(r)' in title:
-                                Ylab = r'$\mathsf{G(r),\AA^{-1}}$'
-                                PXY.append([X,1.+rdfDict[item]/X])
-                            else:
-                                PXY.append([X,rdfDict[item]])
-                            Names.append(item)
-                    if 'All partials of '+title in selectedPlots:
-                        G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,labelY=Ylab,
-                                         newPlot=True,Title='All partials of '+title,
-                                         lines=True,names=NamesT)
-                    if 'Total partials of '+title in selectedPlots:
-                        G2plt.PlotXY(G2frame,PXY,labelX=Xlab,labelY=Ylab,
-                                         newPlot=True,Title='Total partials of '+title,
-                                         lines=True,names=Names)
-
-                elif 'BondConstraint' in sitem:
-                    try:
-                        bonds = item.get_constraint_value()['bondsLength']
-                    except Exception as msg:
-                        print("Error reading BondConstraint bondsLength\n  ",msg)
-                        continue
-                    atoms = ENGINE.allElements  
-                    bondList = item.bondsList[:2]
-                    bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
-                    Bonds = list(zip(bondNames,bonds))
-                    for Bname in set(bondNames):
-                        bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
-                        title = '{} Bond lengths for {}'.format(Bname,pName)
-                        if title in selectedPlots:
-                            G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title=title,
-                                                        PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
-                        #print(' %d %s bonds found'%(len(bondLens),Bname))
-                elif 'BondsAngleConstraint' in sitem:
-                    # code not tested
-                    angles = 180.*item.get_constraint_value()['angles']/np.pi
-                    angleList = item.anglesList[:3]
-                    atoms = ENGINE.get_original_data("allElements",frame)
-                    angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
-                    Angles = list(zip(angleNames,angles))
-                    for Aname in set(angleNames):
-                        bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
-                        title = '{} Bond angles for {}'.format(Aname,pName)
-                        if title in selectedPlots:
-                            G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title=title,
-                                    PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
-                        print(' %d %s angles found'%(len(bondAngs),Aname))
-                elif 'DihedralAngleConstraint' in sitem:
-                    # code not tested
-                    impangles = 180.*item.get_constraint_value()['angles']/np.pi
-                    impangleList = item.anglesList[:4]
-                    print(' Dihedral angle chi^2 =  %2f'%item.standardError)
-                    atoms = ENGINE.get_original_data("allElements",frame)
-                    impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
-                                atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
-                    impAngles = list(zip(impangleNames,impangles))
-                    for Aname in set(impangleNames):
-                        impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
-                        title = '{} Dihedral angles for {}'.format(Aname,pName)
-                        if title in selectedPlots:
-                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Dihedral Angle, deg$'%Aname,Title=title,
-                                    PlotName='%s Dihedral Angles for %s'%(Aname,pName),maxBins=20)
-                #elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
-                #    print(sitem+' not plotted')
-                elif hasattr(item,'plot'):
-                    #print('skipping constraint ',sitem)
-                    if item.__class__.__name__+' pyplot' in selectedPlots:
-                        item.plot(show=True)
-                        
-            # read log files to get std err vs steps
-            ilog = 0
-            Gen = []
-            Err = []
-            while True:
-                fname = '{}_{}.log'.format(pName,ilog)
-                try:
-                    logfile = open(fname,'r')
-                    for line in logfile.readlines():
-                        if "fullrmc <STEP>" not in line: continue
-                        Gen.append(float(int(line.split('Gen:')[1].split()[0])))
-                        Err.append(float(line.split('Err:')[1].strip()))
-                    logfile.close()
-                except FileNotFoundError:
-                    break
-                ilog += 1
-            title = 'fullrmc residuals for '+pName
-            #GSASIIpath.IPyBreak()
-            if len(Gen) > 0 and title in selectedPlots:
-                Gen = np.array(Gen)
-                Err = np.log10(Err)
-                G2plt.PlotXY(G2frame,[[Gen,Err]],labelX='generated steps',
-                               labelY=r'$log_{10}$ ($\mathsf{\chi^2})$',newPlot=True,Title=title,
-                               lines=True,names=eNames)
+            for plt in selectedPlots:
+                if plt in imgDict:
+                    fp = open(plotFilePath,'rb')
+                    fp.seek(imgDict[plt])
+                    im = pickle.load(fp)
+                    G2plt.PlotRawImage(G2frame,im,plt)
+                    fp.close()
+                else:
+                    plotLbls = []
+                    plotVals = []
+                    for lbl,row in zip(lbls,yvals): # deal with <=0 costs
+                        if sum(row**2) == 0: continue # drop if all zeros
+                        if min(row) <= 0:
+                            row = np.where(row>0,row,min(row[np.where(row>0)])/10.)
+                        plotLbls.append(lbl)
+                        plotVals.append([steps,np.log10(row)])
+                    title = 'fullrmc residuals for '+pName
+                    G2plt.PlotXY(G2frame,plotVals,
+                                labelX='generated steps',
+                                labelY=r'$log_{10}$ ($\mathsf{\chi^2})$',
+                                newPlot=True,Title=title,
+                                lines=True,names=plotLbls)
+            return
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']

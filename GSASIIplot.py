@@ -8350,6 +8350,17 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     else:
         Page.canvas.draw()
                 
+##### PlotRawImage ################################################################################
+def PlotRawImage(G2frame,image,label,newPlot=False):
+    '''Plot an image without axes etc. 
+    '''
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl')
+    Plot.remove() # delete original axes
+    Plot = Page.figure.add_axes([0.0, 0.0, 1., 1.]) # fill page & don't show
+    Plot.axis('off')
+    Plot.imshow(image)
+    Page.canvas.draw()
+    
 ##### PlotTRImage ################################################################################
 def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     '''a test plot routine - not normally used

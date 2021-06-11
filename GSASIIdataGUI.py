@@ -3409,6 +3409,10 @@ class GSASII(wx.Frame):
                 
     def OnPowderFPA(self,event):
         'Perform FPA simulation/peak fitting'
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('Debug: reloading G2fpa')
+        #     import imp
+        #     imp.reload(G2fpa)
         G2fpa.GetFPAInput(self)
         
     def OnReadPowderPeaks(self,event):

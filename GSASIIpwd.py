@@ -3016,7 +3016,6 @@ pdbFile = os.path.join(dirName, project + '_restart.pdb')
 # check Engine exists if so (and not FRESH_START) load it
 # otherwise build it 
 ENGINE = Engine(path=None)
-Ebc = ENGINE.boundaryConditions
 if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ## create structure
     ENGINE = Engine(path=engineFileName, freshStart=True)
@@ -3024,6 +3023,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                                  atoms      = atomList,
                                  unitcellBC = cell,
                                  supercell  = supercell)
+    Ebc = ENGINE.boundaryConditions
     rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 '''    
     import atmdata
@@ -3103,6 +3103,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)
+    Ebc = ENGINE.boundaryConditions
     rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 
 ENGINE.set_log_file(os.path.join(dirName,prefix))

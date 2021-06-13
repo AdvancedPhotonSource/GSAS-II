@@ -2941,7 +2941,7 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     for atom in Phase['Atoms']:
         el = ''.join([i for i in atom[ct] if i.isalpha()])
         atomsList.append([el] + atom[cx:cx+4])
-    projDir,projName = os.path.split(pName)
+    projDir,projName = os.path.split(os.path.abspath(pName))
     scrname = pName+'-fullrmc.py'
     restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
@@ -2964,7 +2964,9 @@ from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
 from fullrmc.Generators.Swaps import SwapPositionsGenerator
+# utility routines
 def writeHeader(ENGINE,statFP):
+    'header for stats file'
     statFP.write('generated-steps, total-error, ')
     for c in ENGINE.constraints:
         statFP.write(c.constraintName)
@@ -2973,6 +2975,7 @@ def writeHeader(ENGINE,statFP):
     statFP.flush()
     
 def writeCurrentStatus(ENGINE,statFP,plotF):
+    'line in stats file & current constraint plots'
     statFP.write(str(ENGINE.generated))
     statFP.write(', ')
     statFP.write(str(ENGINE.totalStandardError))
@@ -2991,6 +2994,18 @@ def writeCurrentStatus(ENGINE,statFP,plotF):
         pickle.dump(c.constraintName,fp)
         pickle.dump(np.array(image),fp)
     fp.close()
+
+def calcRmax(ENGINE):
+    'from Bachir, works for non-othorhombic'
+    a,b,c = ENGINE.basisVectors
+    lens = []
+    ts    = np.linalg.norm(np.cross(a,b))/2
+    lens.extend( [ts/np.linalg.norm(a), ts/np.linalg.norm(b)] )
+    ts = np.linalg.norm(np.cross(b,c))/2
+    lens.extend( [ts/np.linalg.norm(b), ts/np.linalg.norm(c)] )
+    ts = np.linalg.norm(np.cross(a,c))/2
+    lens.extend( [ts/np.linalg.norm(a), ts/np.linalg.norm(c)] )
+    return min(lens)
 '''
     rundata += '''
 ### When True, erases an existing engine to provide a fresh start
@@ -3023,8 +3038,6 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                                  atoms      = atomList,
                                  unitcellBC = cell,
                                  supercell  = supercell)
-    Ebc = ENGINE.boundaryConditions
-    rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 '''    
     import atmdata
     # rundata += '    # conversion factors (may be needed)\n'
@@ -3058,20 +3071,20 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             else:
                 raise ValueError('Invalid G(r) type: '+str(filDat[3]))
             rundata += '    ENGINE.add_constraints([GofR])\n'
-            rundata += '    GofR.set_limits((None, rmax))\n'
+            rundata += '    GofR.set_limits((None, calcRmax(ENGINE)))\n'
         elif '(Q)' in File:
             rundata += '    SOQ = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:
                 rundata += '    # F(Q) as defined in RMCProfile\n'
                 #rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
                 if filDat[4]:
-                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
+                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=calcRmax(ENGINE))\n'
                 rundata += '    SofQ = fullrmc.Constraints.StructureFactorConstraints.NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
                 rundata += '    # S(Q) as defined in PDFFIT\n'
                 rundata += '    SOQ[1] -= 1\n'
                 if filDat[4]:
-                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=rmax)\n'
+                    rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=calcRmax(ENGINE))\n'
                 rundata += '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
             else:
                 raise ValueError('Invalid S(Q) type: '+str(filDat[3]))
@@ -3103,8 +3116,6 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ENGINE.save()
 else:
     ENGINE = ENGINE.load(path=engineFileName)
-    Ebc = ENGINE.boundaryConditions
-    rmax = min( [Ebc.get_a(), Ebc.get_b(), Ebc.get_c()] ) /2.
 
 ENGINE.set_log_file(os.path.join(dirName,prefix))
 '''
@@ -3126,23 +3137,23 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
         rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
         rundata += '            sProb = SwapGen[swaps][2]\n'
     rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
-    rundata += 'wtDict = {}\n'
-    for File in Files:
-        filDat = RMCPdict['files'][File]
-        if not os.path.exists(filDat[0]): continue
-        if 'Xray' in File:
-            sfwt = 'atomicNumber'
-        else:
-            sfwt = 'neutronCohb'
-        if 'G(r)' in File:
-            typ = 'Pair'
-        elif '(Q)' in File:
-            typ = 'Struct'
-        rundata += 'wtDict["{}-{}"] = {}\n'.format(typ,sfwt,filDat[1])
+    # rundata += 'wtDict = {}\n'
+    # for File in Files:
+    #     filDat = RMCPdict['files'][File]
+    #     if not os.path.exists(filDat[0]): continue
+    #     if 'Xray' in File:
+    #         sfwt = 'atomicNumber'
+    #     else:
+    #         sfwt = 'neutronCohb'
+    #     if 'G(r)' in File:
+    #         typ = 'Pair'
+    #     elif '(Q)' in File:
+    #         typ = 'Struct'
+    #     rundata += 'wtDict["{}-{}"] = {}\n'.format(typ,sfwt,filDat[1])
     rundata += 'for c in ENGINE.constraints:  # loop over predefined constraints\n'
     rundata += '    if type(c) is fPDF.PairDistributionConstraint:\n'
     # rundata += '        c.set_variance_squared(1./wtDict["Pair-"+c.weighting])\n'
-    rundata += '        c.set_limits((None,rmax))\n'
+    rundata += '        c.set_limits((None,calcRmax(ENGINE)))\n'
     if RMCPdict['FitScale']:
         rundata += '        c.set_adjust_scale_factor((10, 0.01, 100.))\n'
     # rundata += '        c.set_variance_squared(1./wtDict["Struct-"+c.weighting])\n'

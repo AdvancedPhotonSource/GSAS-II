@@ -4834,8 +4834,9 @@ def UpdatePhaseData(G2frame,Item,data):
             Indx = {}
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Select data for processing: '),0)
             if G2frame.RMCchoice == 'fullrmc':
-                Heads = ['Name','File','Weight','type','Plot','Delete']
-                fileSizer = wx.FlexGridSizer(6,5,5)
+                #Heads = ['Name','File','Weight','type','Plot','Delete']
+                Heads = ['Name','File','type','Plot','Delete']
+                fileSizer = wx.FlexGridSizer(5,5,5)
                 Formats = ['RMC','GUDRUN','STOG']
                 for head in Heads:
                     fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
@@ -4847,7 +4848,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Indx[filSel.GetId()] = fil
                     fileSizer.Add(filSel,0,WACV)
                     if Rfile and os.path.exists(Rfile): # in case .gpx file is moved away from G(R), F(Q), etc. files
-                        fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1,size=(50,25)),0,WACV)
+                        #fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1,size=(50,25)),0,WACV)
                         #patch
                         if len(RMCPdict['files'][fil]) < 4:
                             RMCPdict['files'][fil].append(0)
@@ -4880,13 +4881,13 @@ def UpdatePhaseData(G2frame,Item,data):
                             Indx[corrChk.GetId()] = fil
                             corrChk.Bind(wx.EVT_CHECKBOX,OnCorrChk)
                             fileSizer.Add(corrChk,0,WACV)
-                            fileSizer.Add((-1,-1),0)
+                            #fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
                     else:
                         RMCPdict['files'][fil][0] = 'Select file' # set filSel?
-                        fileSizer.Add((-1,-1),0)
+                        #fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)

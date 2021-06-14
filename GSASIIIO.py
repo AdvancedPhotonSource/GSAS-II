@@ -408,7 +408,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
         elif flag:
             if not FormatName:
                 primaryReaders.append(rd)
-            elif FormatName == rd.formatName:
+            elif FormatName in rd.formatName:       #This is a kluge because the rd.formatName was changed!
                 primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
         print('Error: No matching format for file '+imagefile)

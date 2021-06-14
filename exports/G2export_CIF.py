@@ -3048,6 +3048,8 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.parentOKbuttons = OKbuttons
         self.ValidatedControlsList = []
         self.G2frame = parent.G2frame
+        self.height = G2G.getTextSize('?')[1]
+        #print('height is ',self.height)
         self._fill()
     def _fill(self):
         'Fill the scrolled panel with widgets for each CIF item'
@@ -3217,7 +3219,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     return ent
         rw1 = rw.ResizeWidget(self)
         ent = G2G.ValidatedTxtCtrl(
-            rw1,dct,item,size=(100, 20),
+            rw1,dct,item,size=(100, self.height+5),
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER,
             CIFinput=True,ASCIIonly=True,
             OKcontrol=self.ControlOKButton)

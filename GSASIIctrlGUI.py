@@ -5634,7 +5634,12 @@ def StripUnicode(string,subs='.'):
         else:
             s += subs
     return s.encode('ascii','replace')
-        
+
+def getTextSize(txt):
+    'Get the size of the text string txt in points, returns (x,y)'
+    dc = wx.ScreenDC()
+    return tuple(dc.GetTextExtent(txt))
+    
 # wx classes for reading various types of data files ######################################################################
 def BlockSelector(ChoiceList, ParentFrame=None,title='Select a block',
     size=None, header='Block Selector',useCancel=True):

@@ -2598,6 +2598,7 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     
 def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'    #need powder extinction!
+    parmDict[phfx+'Scale'] = max(1.e-4,parmDict[hfx+'Scale'])                        #put floor on phase fraction scale
     parmDict[hfx+'Scale'] = max(1.e-4,parmDict[hfx+'Scale'])                        #put floor on phase fraction scale
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3+im]               #scale*multiplicity
     if 'X' in parmDict[hfx+'Type']:

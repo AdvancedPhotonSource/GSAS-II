@@ -6365,7 +6365,6 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         RefData = G2frame.GPXtree.GetItemPyData(rId)[phase]
         if 'Type' not in RefData or 'RefList' not in RefData:
             generalData['Data plot type'] = 'None'
-#            G2G.G2MessageBox(G2frame,'Reflection list not ready','RefData error')
             return
         Type = RefData['Type']
         Refs = RefData['RefList'].T
@@ -6437,7 +6436,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         except ValueError:
             pass
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
+        Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
         Plot.plot(y,x,'+',picker=True,pickradius=3)
         Page.figure.colorbar(Img)
         Plot.axis('off')
@@ -6545,7 +6544,7 @@ def PlotTexture(G2frame,data,Start=False):
         Plot.set_ylabel('MRD',fontsize=14)
         
     else:       
-        npts = 201
+        npts = 101
         if 'Inverse' in SHData['PlotType']:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
@@ -6562,7 +6561,7 @@ def PlotTexture(G2frame,data,Start=False):
             except ValueError:
                 pass
             acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
             Page.figure.colorbar(Img)
             x,y,z = SHData['PFxyz']
             Plot.axis('off')
@@ -6617,7 +6616,7 @@ def PlotTexture(G2frame,data,Start=False):
             except ValueError:
                 pass
             acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
             Page.figure.colorbar(Img)
             if 'det Angles' in textureData and textureData['ShoDet']:
                 Rdet = np.array([item[1] for item in textureData['det Angles']])

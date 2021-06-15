@@ -1083,9 +1083,9 @@ The other is for texture characterization.
 
 For reducing the effect of texture in a structural refinement
 there are entries labeled preferred orientation in each phase's
-data tab. Two different 
-approaches can be used for this, the March-Dollase model and 
-spherical harmonics.
+data tab. Two different approaches can be used for this, the March-Dollase 
+model and spherical harmonics.
+
 For the March-Dollase model, one axis in reciprocal space is designated as 
 unique (defaulting to the 001 axis) and reflections are corrected 
 according to the angle they make with this axis depending on 
@@ -1098,24 +1098,23 @@ term needs to be refined. If the number is close to 1, then the correction
 is not needed. 
 
 The second method for reducing the effect of texture in a structural 
-refinement is to create a probability surface as an expansion in 
-terms spherical harmonic functions. Only functions consistent with 
+refinement is to create a crystallite orientation probability surface as an 
+expansion in terms spherical harmonic functions. Only functions consistent with 
 cylindrical diffraction suymmetry and having texture symmetry 
 consistent with the Laue class of phase are used and are allowed, 
-so the higher the symmetry 
-the fewer terms that are available for a given spherical harmonics order. 
-For use of this correction, select the lowest order that provides 
+so the higher the symmetry the fewer terms that are available for a given spherical harmonics order. 
+To use this correction, select the lowest order that provides 
 refinable terms and perform a refinement. If the texture index remains close to 
 one, then the correction is not needed. If a significant improvement is 
 noted in the profile Rwp, one may wish to see if a higher order expansion
 gives an even larger improvement. 
 
-To characterize texture in a material, one needs data collected with the 
+To characterize texture in a material, generally one needs data collected with the 
 sample at multiple orientations or, for TOF, with detectors at multiple 
 locations around the sample. In this case the detector orientation is given in 
 each histogram's Sample Parameters and the sample's orientation is described 
 with the Euler angles specifed on the phase's Texture tab, which is also 
-where the texture type (cylindrical, rolling,...) and the sherical 
+where the texture type (cylindrical, rolling,...) and the spherical 
 harmonic order is selected. This should not be used with a single dataset and 
 should not be used if the preferred orientations corrections are used. 
 
@@ -1131,6 +1130,12 @@ the instrument coordinate system (I, J, K), we define three eulerian sample rota
 angles are defined so that with the goniometer angles at zero Omega-s and Phi-s are rotations
 about K and Chi-s is a rotation about J.
 
+Three typical examples:
+    1) Bragg-Brentano laboratory diffractometer: Chi=0
+    2) Debye-Scherrer counter detector; sample capillary axis perpendicular to diffraction plane: Chi=90
+    3) Debye-Scherrer 2D area detector positioned directly behind sample; sample capillary axis horizontal; Chi=0
+            NB: The area detector azimuthal angle = 0 in horizontal plane to right as viewed from x-ray source & 90 at vertical "up" direction
+            
 ISODISTORT implementation
 ------------------------------
 

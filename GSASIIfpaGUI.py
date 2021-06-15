@@ -89,13 +89,15 @@ IBmonoParms = [
     ('passband_mistune',-0.145,'Offset from the tuning of the IBM to the center of the reference line of the spectrum, in units of its bandwidth'),
     ('mono_src_proj_mn',51,'Projection width of line-focus xray source on the monochromator along beam direction (microns), sets bandwidth'),
     ('passband_shoulder',.087,'Width of transition region from flat top to tails, in units of the bandwidth'),
-    ('two_theta_mono',27.27,'The full diffraction angle of the IBM crystal, e.g. double 2theta-Bragg for the mono (deg)')]
+    ('two_theta_mono',27.27,'The full diffraction angle of the IBM crystal, e.g. double 2theta-Bragg for the mono (deg)'),
+    ('mono_slit_attenuation',0.03,'Attenuation of Cu K alpha2 lines due to focal slit'),
+    ]
 '''Additional FPA dict entries used in :func:`FillParmSizer`, needed for Incident Beam Monochromator
 '''
    
-Citation = '''MH Mendenhall, K Mullen && JP Cline, 2015, J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014
+Citation = '''MH Mendenhall, K Mullen && JP Cline (2015), J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014
 
-Incident Beam Mono: MH Mendenhall, D. Black && JP Cline, J. Appl. Cryst., 2019, 52, p1087. DOI: 10.1107/S1600576719010951
+For Incident Beam Mono model, also cite: MH Mendenhall, D. Black && JP Cline, J. Appl. Cryst. (2019), 52, p1087. DOI: 10.1107/S1600576719010951
 '''
 
 IBmono = False
@@ -114,8 +116,7 @@ def SetCu2Wave():
     parmDict['lwidth'] = {i:v for i,v in enumerate((0.501844,0.626579))}
 
 def SetCu6wave():
-    '''Set the parameters to the NIST six-line (4 for incident beam mono) 
-    Cu K alpha spectrum
+    '''Set the emission parameters to the NIST six-line Cu K alpha spectrum
     '''
     # values from Marcus Mendenhall from atan_windowed_FP_profile.py
     parmDict['wave'] = {i:v for i,v in enumerate((1.5405925, 1.5443873, 1.5446782, 1.5410769, 1.53471, 1.53382, ))}
@@ -415,7 +416,14 @@ def XferFPAsettings(InpParms):
     keys = list(InpParms['wave'].keys())
     source_wavelengths_m = 1.e-10 * np.array([InpParms['wave'][i] for i in keys])
     la = [InpParms['int'][i] for i in keys]
-    source_intensities = np.array(la)/max(la)
+ 
+    if IBmono:  # kludge: apply mono_slit_attenuation since it is not part of NIST FPA code
+        norm = [InpParms['mono_slit_attenuation'] if
+                    (1.5443 < InpParms['wave'][i] < 1.5447) else 1.
+                for i in keys]
+        source_intensities = norm * np.array(la)/max(la)
+    else:
+        source_intensities = np.array(la)/max(la)
     source_lor_widths_m = 1.e-10 * 1.e-3 * np.array([InpParms['lwidth'][i] for i in keys])
     source_gauss_widths_m = 1.e-10 * 1.e-3 * np.array([0.001 for i in keys])
     
@@ -613,11 +621,11 @@ def MakeSimSizer(G2frame, dlg):
         # pick out one or two most intense wavelengths
         ints = list(NISTparms['emission']['emiss_intensities'])
         Lam1 = NISTparms['emission']['emiss_wavelengths'][np.argmax(ints)]*1e10
-        if len(ints) > 1: 
+        if 'two_theta_mono' in NISTparms['emission']: # is there an IBM?
+            Lam2 = None   # Yes, ~monochromatic
+        else:  # get lambda 2
             ints[np.argmax(ints)] = -1
             Lam2 = NISTparms['emission']['emiss_wavelengths'][np.argmax(ints)]*1e10
-        else:
-            Lam2 = None
         histId = G2frame.AddSimulatedPowder(ttArr,intArr,
                                        'NIST Fundamental Parameters simulation',
                                        Lam1,Lam2)
@@ -705,7 +713,7 @@ def MakeSimSizer(G2frame, dlg):
         dlg.Destroy()
     def SetButtonStatus(done=False):
         OKbtn.Enable(bool(NISTparms))
-        saveBtn.Enable(bool(NISTparms))
+        #saveBtn.Enable(bool(NISTparms))
         if done: _onOK(None)
     def _onSetFPA(event):
         # Create a non-modal dialog for Topas-style FP input.
@@ -771,9 +779,9 @@ def MakeSimSizer(G2frame, dlg):
     btn = wx.Button(dlg, wx.ID_ANY,'Input FP vals')
     btnsizer.Add(btn)
     btn.Bind(wx.EVT_BUTTON,_onSetFPA)
-    saveBtn = wx.Button(dlg, wx.ID_ANY,'Save FPA dict')
-    btnsizer.Add(saveBtn)
-    saveBtn.Bind(wx.EVT_BUTTON,_onSaveFPA)
+    #saveBtn = wx.Button(dlg, wx.ID_ANY,'Save FPA dict')
+    #btnsizer.Add(saveBtn)
+    #saveBtn.Bind(wx.EVT_BUTTON,_onSaveFPA)
     readBtn = wx.Button(dlg, wx.ID_ANY,'Read FPA dict')
     btnsizer.Add(readBtn)
     readBtn.Bind(wx.EVT_BUTTON,_onReadFPA)

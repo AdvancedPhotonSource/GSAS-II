@@ -12765,7 +12765,7 @@ of the crystal structure.
             p.ClearGrid()
         text = G2frame.phaseDisplay.GetPageText(page)
         G2frame.lastSelectedPhaseTab = text
-        G2frame.dataWindow.helpKey = text # use name of Phase tab for help lookup
+        G2frame.dataWindow.helpKey = 'Phase-'+text # use name of Phase tab for help lookup
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
             UpdateGeneral()

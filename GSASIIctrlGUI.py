@@ -5343,7 +5343,7 @@ For DIFFaX use cite:
 class HelpButton(wx.Button):
     '''Create a help button that displays help information.
     The text can be displayed in a modal message window or it can be 
-    a reference to a location in the gsasII.html help web page, in which 
+    a reference to a location in the gsasII.html (etc.) help web page, in which 
     case that page is opened in a web browser. 
 
     TODO: it might be nice if it were non-modal: e.g. it stays around until
@@ -6420,9 +6420,14 @@ def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse,htmlPanel,htmlFrame
     # no defined link to use, create a default based on key
-    helplink = 'gsasII.html'
-    if helpType:
-        helplink += '#'+helpType.replace(')','').replace('(','_').replace(' ','_')
+    if helpType.lower().startswith('pwdr'):
+        helplink = 'gsasII-pwdr.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
+    elif helpType.lower().startswith('phase'):
+        helplink = 'gsasII-phase.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
+    elif helpType:
+        helplink = 'gsasII.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
+    else: 
+        helplink = 'gsasII.html'
     # determine if a web browser or the internal viewer should be used for help info
     if GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')

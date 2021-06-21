@@ -253,3 +253,11 @@ lastUpdateNotice = 0
 '''Defines the version number for the last update notice that has been 
 shown. This should not need to be changed manually.
 '''
+
+SeparateHistPhaseTreeItem = False
+'''When this is set to True, the parameters for each histogram in each phase
+are placed in a separate 1st-level tree item rather than in the Data tab 
+for each phase. Requires GSAS-II be restarted to take effect. Default is False.
+
+This option is under development and is not fully tested. 
+'''

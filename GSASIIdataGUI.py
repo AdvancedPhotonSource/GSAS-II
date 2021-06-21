@@ -85,6 +85,7 @@ import GSASIIstrMain as G2stMn
 import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 import GSASIIseqGUI as G2seq
+import GSASIIddataGUI as G2ddG
 
 try:
     wx.NewIdRef
@@ -1147,10 +1148,7 @@ class GSASII(wx.Frame):
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
             print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))
-            if not GetGPXtreeItemId(self,self.root,'Phases'):
-                sub = self.GPXtree.AppendItem(parent=self.root,text='Phases')
-            else:
-                sub = GetGPXtreeItemId(self,self.root,'Phases')
+            sub = FindPhaseItem(self)
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
             wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
@@ -3939,17 +3937,17 @@ class GSASII(wx.Frame):
                       
     def OnAddPhase(self,event):
         'Add a new, empty phase to the tree. Called by Data/Add Phase menu'
-        self.CheckNotebook()
-        if not GetGPXtreeItemId(self,self.root,'Phases'):
-            sub = self.GPXtree.AppendItem(parent=self.root,text='Phases')
-        else:
-            sub = GetGPXtreeItemId(self,self.root,'Phases')
         PhaseName = ''
         dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
             style=wx.OK)
         if dlg.ShowModal() == wx.ID_OK:
             PhaseName = dlg.GetValue()
-        dlg.Destroy()
+            self.CheckNotebook()
+            sub = FindPhaseItem(self)
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
         if not GetGPXtreeItemId(self,self.root,'Restraints'):
             subr = self.GPXtree.AppendItem(parent=self.root,text='Restraints')
             self.GPXtree.SetItemPyData(subr,{PhaseName:{}})
@@ -7574,6 +7572,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #end patch            
             G2frame.dataWindow.GetSizer().Add(
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
+        elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase '):
+            #import imp
+            #imp.reload(G2ddG)
+            G2ddG.MakeHistPhaseWin(G2frame)
+        elif GSASIIpath.GetConfigValue('debug'):
+            print('Unknown tree item',G2frame.GPXtree.GetItemText(item))
     ############################################################################
     # process second-level entries in tree            
     elif G2frame.GPXtree.GetItemText(item) == 'PDF Peaks':
@@ -7785,6 +7789,19 @@ def SetDataMenuBar(G2frame,menu=None):
         G2frame.SetMenuBar(G2frame.GSASIIMenu)
     else:
         G2frame.SetMenuBar(menu)
-
+        
+def FindPhaseItem(G2frame):
+    '''Finds the Phase item in the tree. If not present it adds one
+    also adding 'Hist/Phase Params' if config var SeparateHistPhaseTreeItem
+    is set as True.
+    '''
+    if not GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
+        sub = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Phases')
+        if GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
+            G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Hist/Phase Params')
+    else:
+        sub = GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+    return sub
+        
 if __name__ == '__main__':
     ShowVersions()

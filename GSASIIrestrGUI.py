@@ -2157,7 +2157,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         else:
             print ("Warning: tab "+tabname+" was not found")
 
-    # UpdateRestraints execution starts here
+    #### UpdateRestraints execution starts here
     try:
         phasedata = G2frame.GetPhaseData()[phaseName]
     except KeyError:        #delete unknown or previously deleted phases from Restraints

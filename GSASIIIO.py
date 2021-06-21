@@ -697,6 +697,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 #    print(datum[0])
                 #    GSASIIpath.IPyBreak()
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
+            if datum[0] == 'Phases' and GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
+                G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Hist/Phase Params')
             if updateFromSeq and datum[0] == 'Phases':
                 for pdata in data[1:]:
                     if pdata[0] in Phases:
@@ -827,6 +829,9 @@ def ProjFileSave(G2frame):
             while item:
                 data = []
                 name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith('Hist/Phase '):  # skip over this
+                    item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
+                    continue
                 data.append([name,G2frame.GPXtree.GetItemPyData(item)])
                 item2, cookie2 = G2frame.GPXtree.GetFirstChild(item)
                 while item2:

@@ -1034,7 +1034,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return bottomSizer
 
     ######################################################################
-    ### Beginning of UpdateDData execution here
+    #### Beginning of UpdateDData execution here
     ######################################################################
     G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
@@ -1078,7 +1078,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,wx.LEFT,5)
+    topSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for Phase '+PhaseName+':'),0,wx.LEFT,5)
     # add help button to bring up help web page - at right sede of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(DData,helpIndex=G2frame.dataWindow.helpKey))
@@ -1106,3 +1106,80 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),0,wx.TOP,10)
         
     G2phG.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)
+
+def MakeHistPhaseWin(G2frame):
+    '''Display Phase/Data info from Hist/Phase tree item
+    '''
+    TabSelectionIdDict = {}
+    def OnSelectPage(event):
+        'Called when an item is selected from the Select page menu'
+        tabname = TabSelectionIdDict.get(event.GetId()) # lookup phase 
+        if not tabname:
+            print ('Warning: menu item not in dict! id= %d'%event.GetId())
+            return
+        # find the tab matching the phase
+        for i,page in enumerate(phaseList):
+            if tabname == phaseList[i]:
+                HAPBook.SetSelection(i)
+                FillDDataWindow(i) # may result in a double paint on some OSs
+                return
+        else:
+            print ("Warning: tab "+tabname+" was not found")
+            
+    def OnPageChanged(event):
+        'respond to a notebook tab'
+        page = event.GetSelection()
+        FillDDataWindow(page)
+        
+    def FillDDataWindow(page):
+        'display the DData info'
+        G2frame.HistPhaseLastSel = phaseList[page]
+        data = G2frame.GPXtree.GetItemPyData(phaseIds[page])
+        G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
+        UpdateDData(G2frame,DData[page],data)
+
+    #### start of MakeHistPhaseWin
+    G2frame.dataWindow.ClearData()
+    HAPBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
+    phaseList = []
+    phaseIds = []
+    DData = []
+    sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+    item, cookie = G2frame.GPXtree.GetFirstChild(sub)
+    while item: # loop over phases
+        phaseName = G2frame.GPXtree.GetItemText(item)
+        phaseIds.append(item)
+        phaseList.append(phaseName)
+        item, cookie = G2frame.GPXtree.GetNextChild(sub, cookie)
+        HAPtab = wx.ScrolledWindow(HAPBook)
+        HAPBook.AddPage(HAPtab,phaseName)
+        DData.append(HAPtab)
+    HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    # set up "Select tab" menu contents
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
+    mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')
+    menu = G2frame.dataWindow.DataMenu.GetMenu(mid)
+    items = menu.GetMenuItems()
+    for item in items:
+         menu.Remove(item)
+    if len(phaseList) == 0: return
+    for i,page in enumerate(phaseList):
+        Id = wx.NewId()
+        if menu.FindItem(page) >= 0: continue # is tab already in menu?
+        menu.Append(Id,page,'')
+        TabSelectionIdDict[Id] = page
+        G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
+    # display the last-selected phase or the 1st
+    try:
+        G2frame.HistPhaseLastSel
+    except:
+        G2frame.HistPhaseLastSel = phaseList[0]
+    if G2frame.HistPhaseLastSel in phaseList:
+        page = phaseList.index(G2frame.HistPhaseLastSel)
+    else:
+        page = 0
+    # TODO: commands in G2frame.dataWindow.DataMenu/"Edit Phase" need to be reimplemented
+    HAPBook.SetSelection(page)
+    FillDDataWindow(page)
+   

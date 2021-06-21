@@ -12769,7 +12769,7 @@ of the crystal structure.
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
             UpdateGeneral()
-        elif text == 'Data':
+        elif text == 'Data': # only when conf 'SeparateHistPhaseTreeItem' is False
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
             G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
             G2ddG.UpdateDData(G2frame,DData,data)
@@ -13055,9 +13055,10 @@ of the crystal structure.
     General = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(General,'General')
     Pages.append('General')
-    DData = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(DData,'Data')
-    Pages.append('Data')
+    if not GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
+        DData = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(DData,'Data')
+        Pages.append('Data')
     Atoms = G2G.GSGrid(G2frame.phaseDisplay)
 #    Atoms.SetScrollRate(0,0)
     G2frame.phaseDisplay.gridList.append(Atoms)

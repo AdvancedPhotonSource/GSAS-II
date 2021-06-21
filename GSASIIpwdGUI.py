@@ -3989,10 +3989,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def MakeNewPhase(event):
-        if not G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
-            sub = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Phases')
-        else:
-            sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
         PhaseName = ''
         dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
             style=wx.OK)
@@ -4004,6 +4000,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     if Cell[-2]:
                         break
                 cell = Cell[2:10]        
+                sub = G2gd.FindPhaseItem(G2frame)
                 sub = G2frame.GPXtree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(controls[13])
                 G2frame.GPXtree.SetItemPyData(sub, \

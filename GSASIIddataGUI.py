@@ -17,6 +17,7 @@ information that is shown in the data display window
 
 '''
 from __future__ import division, print_function
+import copy
 import wx
 import numpy as np
 import numpy.linalg as nl
@@ -38,10 +39,10 @@ BLACK = wx.Colour(0,0,0)
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 
-##### DData routines ################################################################################        
 def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     '''Display the Diffraction Data associated with a phase
     (items where there is a value for each histogram and phase)
+    Used in the Phase/Data tab or the Hist/Phase tree entry
 
     :param wx.frame G2frame: the main GSAS-II frame object
     :param wx.ScrolledWindow DData: notebook page to be used for the display
@@ -1108,7 +1109,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     G2phG.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)
 
 def MakeHistPhaseWin(G2frame):
-    '''Display Phase/Data info from Hist/Phase tree item
+    '''Display Phase/Data info from Hist/Phase tree item (not used with Phase/Data tab)
     '''
     TabSelectionIdDict = {}
     def OnSelectPage(event):
@@ -1121,7 +1122,7 @@ def MakeHistPhaseWin(G2frame):
         for i,page in enumerate(phaseList):
             if tabname == phaseList[i]:
                 HAPBook.SetSelection(i)
-                FillDDataWindow(i) # may result in a double paint on some OSs
+                wx.CallAfter(FillDDataWindow,i) # may result in a double paint on some OSs
                 return
         else:
             print ("Warning: tab "+tabname+" was not found")
@@ -1129,7 +1130,16 @@ def MakeHistPhaseWin(G2frame):
     def OnPageChanged(event):
         'respond to a notebook tab'
         page = event.GetSelection()
-        FillDDataWindow(page)
+        wx.CallAfter(FillDDataWindow,page)
+
+    def getDDataWindow():
+        'Get the current scrollwindow for selected phase'
+        return DData[HAPBook.GetSelection()]
+    
+    def getDDataPhaseinfo():
+        'Get the data tree entry for the currently selected phase'
+        page = HAPBook.GetSelection()
+        return G2frame.GPXtree.GetItemPyData(phaseIds[page])
         
     def FillDDataWindow(page):
         'display the DData info'
@@ -1137,7 +1147,352 @@ def MakeHistPhaseWin(G2frame):
         data = G2frame.GPXtree.GetItemPyData(phaseIds[page])
         G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
         UpdateDData(G2frame,DData[page],data)
+        
+    #### G2frame.dataWindow.DataMenu/"Edit Phase" menu routines (note similar routines in GSASIIphsGUI.py)
+    def OnHklfAdd(event):
+        data = getDDataPhaseinfo()
+        keyList = data['Histograms'].keys()
+        TextList = []
+        if not G2frame.GPXtree.GetCount():
+            return
+        
+        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.GPXtree.GetItemText(item)
+            if name not in keyList and 'HKLF' in name:
+                TextList.append(name)
+            item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                        
+            if not TextList: 
+                G2G.G2MessageBox(G2frame,'No reflections')
+                return
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+            'Use data',TextList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+            else:
+                return
+        finally:
+            dlg.Destroy()
 
+        # get the histograms used in other phases
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        usedHKLFhists = [] # used single-crystal histograms
+        for p in usedHistograms:
+            for h in usedHistograms[p]:
+                if h.startswith('HKLF ') and h not in usedHKLFhists:
+                    usedHKLFhists.append(h)
+        # check that selected single crystal histograms are not already in use!
+        for i in result:
+            used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
+            if used:
+                msg = 'The following single crystal histogram(s) are already in use'
+                for i in used:
+                    msg += '\n  '+str(i)
+                msg += '\nAre you sure you want to add them to this phase? '
+                msg += 'Associating a single crystal dataset to >1 histogram is usually an error, '
+                msg += 'so No is suggested here.'
+                if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES: return
+
+        wx.BeginBusyCursor()
+        for i in result:
+            histoName = TextList[i]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+            refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
+            data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                'Extinction':['Lorentzian','None',
+                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
+                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
+            if 'TwMax' in reflData:     #nonmerohedral twins present
+                data['Histograms'][histoName]['Twins'] = []
+                for iT in range(reflData['TwMax'][0]+1):
+                    if iT in reflData['TwMax'][1]:
+                        data['Histograms'][histoName]['Twins'].append([False,0.0])
+                    else:
+                        data['Histograms'][histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
+            else:   #no nonmerohedral twins
+                data['Histograms'][histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
+            UpdateHKLFdata(histoName)
+        wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
+        wx.EndBusyCursor()
+        
+    def OnDataUse(event):
+        data = getDDataPhaseinfo()
+#        hist = G2frame.hist
+        if data['Histograms']:
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Use histograms', 
+                'Use which histograms?',G2frame.dataWindow.HistsInPhase)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelections()
+                    for Id,item in enumerate(G2frame.dataWindow.HistsInPhase):
+                        if Id in sel:
+                            data['Histograms'][item]['Use'] = True
+                        else:
+                            data['Histograms'][item]['Use'] = False                        
+            finally:
+                dlg.Destroy()
+        wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
+
+    def UpdateHKLFdata(histoName):
+        data = getDDataPhaseinfo()
+        generalData = data['General']
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
+        SGData = generalData['SGData']
+        Cell = generalData['Cell'][1:7]
+        G,g = G2lat.cell2Gmat(Cell)
+        for iref,ref in enumerate(reflData['RefList']):
+            H = list(ref[:3])
+            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+        
+    def OnDataCopy(event):
+        data = getDDataPhaseinfo()
+        hist = G2frame.hist
+        keyList = G2frame.dataWindow.HistsInPhase[:]
+        if hist in keyList: keyList.remove(hist)
+        if not keyList:
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
+            return
+        sourceDict = copy.deepcopy(data['Histograms'][hist])
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Extinction','Babinet','Flack','Twins']
+        else:  #PWDR  
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']
+        copyDict = {}
+        for name in copyNames:
+            if name not in sourceDict: continue
+            copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+                'Copy phase/hist parameters', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()
+        
+    def OnDataCopyFlags(event):
+        data = getDDataPhaseinfo()
+        hist = G2frame.hist
+        sourceDict = copy.deepcopy(data['Histograms'][hist])
+        copyDict = {}
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Extinction','Babinet','Flack','Twins']
+        else:  #PWDR  
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']
+        babNames = ['BabA','BabU']
+        for name in copyNames:
+            if name not in sourceDict: continue
+            if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
+                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                    copyDict[name] = {name:[sourceDict[name][:2]]}
+                    for item in ['Eg','Es','Ep']:
+                        copyDict[name][item] = sourceDict[name][2][item][1]
+                elif name == 'Twins':
+                    copyDict[name] = sourceDict[name][0][1][1]
+                else:
+                    copyDict[name] = sourceDict[name][1]
+            elif name in ['Size','Mustrain']:
+                copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][5]]
+            elif name == 'Pref.Ori.':
+                copyDict[name] = [sourceDict[name][0],sourceDict[name][2]]
+                if sourceDict[name][0] == 'SH':
+                    SHterms = sourceDict[name][5]
+                    SHflags = {}
+                    for item in SHterms:
+                        SHflags[item] = SHterms[item]
+                    copyDict[name].append(SHflags)
+            elif name == 'Babinet':
+                copyDict[name] = {}
+                for bab in babNames:
+                    copyDict[name][bab] = sourceDict[name][bab][1]
+            elif name == 'Fix FXU' or name == 'FixedSeqVars':
+                copyDict[name] = copy.deepcopy(sourceDict[name])                    
+        keyList = G2frame.dataWindow.HistsInPhase[:]
+        if hist in keyList: keyList.remove(hist)
+        if not keyList:
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+                'Copy phase/hist flags', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    item = keyList[sel]
+                    for name in copyNames:
+                        if name not in sourceDict: continue
+                        if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
+                            if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                                data['Histograms'][item][name][:2] = copy.deepcopy(sourceDict[name][:2])
+                                for itm in ['Eg','Es','Ep']:
+                                    data['Histograms'][item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
+                            elif name == 'Twins':
+                                data['Histograms'][item]['Twins'][0][1][1] = copy.deepcopy(copyDict['Twins'])
+                            else:
+                                try:
+                                    data['Histograms'][item][name][1] = copy.deepcopy(copyDict[name])
+                                except KeyError:
+                                    continue
+                        elif name in ['Size','Mustrain']:
+                            data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
+                            data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])
+                            data['Histograms'][item][name][5] = copy.deepcopy(copyDict[name][2])
+                        elif name == 'Pref.Ori.':
+                            data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
+                            data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])
+                            if sourceDict[name][0] == 'SH':
+                               SHflags = copy.deepcopy(copyDict[name][2])
+                               SHterms = copy.deepcopy(sourceDict[name][5])
+                               data['Histograms'][item][name][6] = copy.deepcopy(sourceDict[name][6])
+                               data['Histograms'][item][name][7] = copy.deepcopy(sourceDict[name][7])
+                        elif name == 'Babinet':
+                            for bab in babNames:
+                                data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])
+                        elif name == 'Fix FXU' or name == 'FixedSeqVars':
+                            data['Histograms'][item][name] = copy.deepcopy(sourceDict[name])                      
+        finally:
+            dlg.Destroy()
+        
+    def OnSelDataCopy(event):
+        data = getDDataPhaseinfo()
+        hist = G2frame.hist
+        sourceDict = data['Histograms'][hist]
+        keyList = G2frame.dataWindow.HistsInPhase[:]
+        if hist in keyList: keyList.remove(hist)
+        if not keyList:
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
+            return
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Extinction','Babinet','Flack','Twins']
+        else:  #PWDR  
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']            
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
+            'Select phase data parameters', copyNames)
+        selectedItems = []
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedItems = [copyNames[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedItems: return # nothing to copy
+        copyDict = {}
+        for parm in selectedItems:
+            if parm not in sourceDict: continue
+            copyDict[parm] = copy.deepcopy(sourceDict[parm])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+            'Copy selected phase/hist parameters', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()            
+        
+    def OnPwdrAdd(event):
+        data = getDDataPhaseinfo()
+        generalData = data['General']
+        SGData = generalData['SGData']
+        newList = []
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        keyList = data['Histograms'].keys()
+        TextList = []
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name not in keyList and 'PWDR' in name:
+                    TextList.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+            if not TextList: 
+                G2G.G2MessageBox(G2frame,'No histograms')
+                return
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select powder histograms to use',
+                'Use data',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetSelections()
+                    for i in result: newList.append(TextList[i])
+                    if 'All PWDR' in newList:
+                        newList = TextList[1:]
+                    for histoName in newList:
+                        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
+                            'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
+                            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
+                                [1.,1.,1.,0.,0.,0.],6*[False,]],
+                            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
+                                NShkl*[0.01,],NShkl*[False,]],
+                            'HStrain':[NDij*[0.0,],NDij*[False,]],
+                            'Layer Disp':[0.0,False],                         
+                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' ','FixedSeqVars':[]}
+                        refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
+                        refList[generalData['Name']] = {}                       
+                    wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
+            finally:
+                dlg.Destroy()
+                
+    def OnDataDelete(event):
+        data = getDDataPhaseinfo()
+        if G2frame.dataWindow.HistsInPhase:
+            DelList = []
+            extraOpts= {'label_0':'Remove from all phases','value_0':False}
+            h,pd = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            if len(pd) > 1:
+                opts = extraOpts
+            else:
+                opts = {}
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 
+                'Select histogram(s) to remove   \nfrom this phase:',
+                'Remove histograms', G2frame.dataWindow.HistsInPhase,
+                extraOpts=opts)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    DelList = [G2frame.dataWindow.HistsInPhase[i] for i in dlg.GetSelections()]
+            finally:
+                dlg.Destroy()
+            if extraOpts['value_0']:
+                for p in pd: 
+                    for i in DelList:
+                        if i in pd[p]['Histograms']: del pd[p]['Histograms'][i]
+            else:
+                for i in DelList:
+                    del data['Histograms'][i]
+            wx.CallLater(100,UpdateDData,G2frame,getDDataWindow(),data)
+            
+    def OnDataApplyStrain(event):
+        data = getDDataPhaseinfo()
+        SGData = data['General']['SGData']        
+        DijVals = data['Histograms'][G2frame.hist]['HStrain'][0][:]
+        # apply the Dij values to the reciprocal cell
+        newA = []
+        Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+        for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
+                            ['D11','D22','D33','D12','D13','D23']):
+            newA.append(Aij + Dijdict.get(lbl,0.0))
+        # convert back to direct cell
+        data['General']['Cell'][1:7] = G2lat.A2cell(newA)
+        data['General']['Cell'][7] = G2lat.calc_V(newA)
+        # subtract the selected histograms Dij values from all for this phase
+        for hist in data['Histograms']:
+            for i,val in enumerate(DijVals):
+                data['Histograms'][hist]['HStrain'][0][i] -= val
+        # for hist in sorted(data['Histograms']): # list effective lattice constants applying Dij values
+        #     DijVals = data['Histograms'][hist]['HStrain'][0]
+        #     newA = []
+        #     Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+        #     for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
+        #                     ['D11','D22','D33','D12','D13','D23']):
+        #         newA.append(Aij + Dijdict.get(lbl,0.0))
+        #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
+        wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
+        
     #### start of MakeHistPhaseWin
     G2frame.dataWindow.ClearData()
     HAPBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
@@ -1170,6 +1525,15 @@ def MakeHistPhaseWin(G2frame):
         menu.Append(Id,page,'')
         TabSelectionIdDict[Id] = page
         G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
+    # define commands in G2frame.dataWindow.DataMenu/"Edit Phase" menu
+    G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)
+    G2frame.Bind(wx.EVT_MENU, OnDataCopy, id=G2G.wxID_DATACOPY)
+    G2frame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2G.wxID_DATACOPYFLAGS)
+    G2frame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2G.wxID_DATASELCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
+    G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
+    G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)
+    G2frame.Bind(wx.EVT_MENU, OnDataApplyStrain, id=G2G.wxID_DATADIJ)
     # display the last-selected phase or the 1st
     try:
         G2frame.HistPhaseLastSel
@@ -1179,7 +1543,5 @@ def MakeHistPhaseWin(G2frame):
         page = phaseList.index(G2frame.HistPhaseLastSel)
     else:
         page = 0
-    # TODO: commands in G2frame.dataWindow.DataMenu/"Edit Phase" need to be reimplemented
     HAPBook.SetSelection(page)
-    FillDDataWindow(page)
-   
+    wx.CallAfter(FillDDataWindow,page)

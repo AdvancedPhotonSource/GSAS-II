@@ -9486,7 +9486,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 #        mainSizer.Add(SHPenalty(textureData['Penalty']),0,wx.LEFT,5)  for future
         SetPhaseWindow(Texture,mainSizer)
 
-##### DData routines - GUI stuff in GSASIIddataGUI.py ################################################################################
+##### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
     def OnHklfAdd(event):
         keyList = data['Histograms'].keys()
         TextList = []
@@ -12836,16 +12836,17 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
-        # Data
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
-        G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)
-        G2frame.Bind(wx.EVT_MENU, OnDataCopy, id=G2G.wxID_DATACOPY)
-        G2frame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2G.wxID_DATACOPYFLAGS)
-        G2frame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2G.wxID_DATASELCOPY)
-        G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
-        G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
-        G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)
-        G2frame.Bind(wx.EVT_MENU, OnDataApplyStrain, id=G2G.wxID_DATADIJ)
+        # Data (unless Hist/Phase tree entry shown)
+        if not GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
+            G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)
+            G2frame.Bind(wx.EVT_MENU, OnDataCopy, id=G2G.wxID_DATACOPY)
+            G2frame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2G.wxID_DATACOPYFLAGS)
+            G2frame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2G.wxID_DATASELCOPY)
+            G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
+            G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
+            G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)
+            G2frame.Bind(wx.EVT_MENU, OnDataApplyStrain, id=G2G.wxID_DATADIJ)
         # Atoms
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.AtomsMenu)
         G2frame.Bind(wx.EVT_MENU, OnSetAll, id=G2G.wxID_ATOMSSETALL)

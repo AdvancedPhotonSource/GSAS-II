@@ -6285,7 +6285,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         
-        # Phase / Data tab
+        # Phase / Data tab or Hist/Phase menu (used in one place or other)
         G2G.Define_wxId('wxID_DATACOPY', 'wxID_DATACOPYFLAGS', 'wxID_DATASELCOPY', 'wxID_DATAUSE',
             'wxID_PWDRADD', 'wxID_HKLFADD','wxID_DATADELETE', )
         self.DataMenu = wx.MenuBar()
@@ -7571,7 +7571,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #end patch            
             G2frame.dataWindow.GetSizer().Add(
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
-        elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase '):
+        elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase'):
             #import imp
             #imp.reload(G2ddG)
             G2ddG.MakeHistPhaseWin(G2frame)
@@ -7791,13 +7791,13 @@ def SetDataMenuBar(G2frame,menu=None):
         
 def FindPhaseItem(G2frame):
     '''Finds the Phase item in the tree. If not present it adds one
-    also adding 'Hist/Phase Params' if config var SeparateHistPhaseTreeItem
+    also adding 'Hist/Phase' if config var SeparateHistPhaseTreeItem
     is set as True.
     '''
     if not GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
         sub = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Phases')
         if GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
-            G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Hist/Phase Params')
+            G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Hist/Phase')
     else:
         sub = GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
     return sub

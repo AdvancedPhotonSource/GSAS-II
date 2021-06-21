@@ -12202,18 +12202,20 @@ of the crystal structure.
         finally:
             wx.EndBusyCursor()
         wx.CallAfter(FillPawleyReflectionsGrid)
+        
     def OnPawleySelAll(event):
         refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
         for r in range(G2frame.PawleyRefl.GetNumberRows()):
             G2frame.PawleyRefl.GetTable().SetValue(r,refcol,True)
+            
         G2frame.PawleyRefl.ForceRefresh()
     def OnPawleySelNone(event):
         refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
         for r in range(G2frame.PawleyRefl.GetNumberRows()):
             G2frame.PawleyRefl.GetTable().SetValue(r,refcol,False)
         G2frame.PawleyRefl.ForceRefresh()
+        
     def OnPawleyToggle(event):
-        raise Exception        
 
         refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
         for r in range(G2frame.PawleyRefl.GetNumberRows()):

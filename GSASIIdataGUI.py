@@ -6324,7 +6324,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.AtomEdit.AppendSubMenu(submenu,'On selected atoms...','Set/Act on selected atoms')
         submenu.Append(G2G.wxID_ATOMSSETSEL,'Refine selected','Set refinement flags for selected atoms')
         submenu.Append(G2G.wxID_ATOMSMODIFY,'Modify parameters','Modify parameters values for all selected atoms')
+        submenu.Append(G2G.wxID_ATOMSSETVP,'Set viewpoint','Set the viewpoint to be position of 1st selected atom')
+        submenu.Append(G2G.wxID_ATOMMOVE,'Move atom to view point','Move a single atom to viewpoint in plot')
         submenu.Append(G2G.wxID_ATOMSEDITINSERT,'Insert atom','Inserts an H atom before all selected atoms')
+        submenu.Append(G2G.wxID_ATOMVIEWINSERT,'Insert viewpoint','Select atom row to insert before; inserted as an H atom')
         submenu.Append(G2G.wxID_ADDHATOM,'Calc H atoms','Insert H atoms in expected bonding positions for selected atoms')
         submenu.Append(G2G.wxID_ATOMSEDITDELETE,'Delete atom','Delete selected atoms')
         submenu.Append(G2G.wxID_ATOMSTRANSFORM,'Transform atoms','Symmetry transform selected atoms')
@@ -6333,11 +6336,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         self.AtomEdit.Append(G2G.wxID_ATOMSEDITADD,'Append atom','Appended as an H atom')
         self.AtomEdit.Append(G2G.wxID_ATOMSVIEWADD,'Append view point','Appended as an H atom')
-        self.AtomEdit.Append(G2G.wxID_ATOMVIEWINSERT,'Insert view point','Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(G2G.wxID_UPDATEHATOM,'Update H atoms','Update H atoms in standard positions')
-        self.AtomEdit.Append(G2G.wxID_ATOMMOVE,'Move selected atom to view point','Select a single atom to be moved to view point in plot')
-        self.AtomEdit.Append(G2G.wxID_ATOMSSETVP,'Set view point','Set the view point from positions of selected atom(s)')
-
         self.AtomEdit.Append(G2G.wxID_MAKEMOLECULE,'Assemble molecule','Select a single atom to assemble as a molecule from scattered atom positions')
         self.AtomEdit.Append(G2G.wxID_COLLECTATOMS,'Collect atoms','Collect selected atoms to specified unit cell location')
         self.AtomEdit.Append(G2G.wxID_RELOADDRAWATOMS,'Update draw atoms','Update atom drawing list')

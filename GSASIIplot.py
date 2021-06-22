@@ -5633,7 +5633,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
 
     def OnMotion(event):
         xpos,ypos = event.xdata,event.ydata
-        if xpos > 1.:
+        if xpos and xpos > 1.:
             if 0 <= xpos < len(resNames):
                 resName = resNames[int(xpos+.5)-1]
             else:
@@ -5665,8 +5665,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
         Plot1.set_xlabel(r'Residue',fontsize=14)
         colors = list(np.where(np.array(Probs1)>thresh[0][1],'r','b'))
         resNums = np.arange(len(resNames))
-        Plot1.bar(resNums,Probs1,color=colors,linewidth=0,
-                                picker=True,pickradius=1)
+        Plot1.bar(resNums,Probs1,color=colors,linewidth=0,picker=True)
         if thresh is not None:
             for item in thresh[0]:
                 Plot1.axhline(item,dashes=(5,5),picker=False)
@@ -5674,8 +5673,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
         Plot2.set_ylabel(r'Error score 2',fontsize=14)
         Plot2.set_xlabel(r'Residue',fontsize=14)        
         colors = list(np.where(np.array(Probs2)>thresh[1][1],'r','b'))
-        Plot2.bar(resNums,Probs2,color=colors,linewidth=0,
-                                picker=True,pickradius=1)
+        Plot2.bar(resNums,Probs2,color=colors,linewidth=0,picker=True)
         if thresh is not None:
             for item in thresh[1]:
                 Plot2.axhline(item,dashes=(5,5),picker=False)

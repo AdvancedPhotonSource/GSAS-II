@@ -3074,7 +3074,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             if hId not in wtFrSum:
                 wtFrSum[hId] = 0.
             if 'PWDR' in histogram:
-                parmDict[pfx+'Scale'] = max(1.e-4,parmDict[pfx+'Scale'])
+                parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])
                 for item in ['Scale','Extinction']:
                     hapData[item][0] = parmDict[pfx+item]
                     if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
@@ -3710,7 +3710,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             instSig = SetInstParms(pfx,Inst,parmDict,sigDict)
         
             Sample = Histogram['Sample Parameters']
-            parmDict[pfx+'Scale'] = max(1.e-4,parmDict[pfx+'Scale'])                        #put floor on phase fraction scale
+            parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])                        #put floor on phase fraction scale
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
             if Print and not seq:

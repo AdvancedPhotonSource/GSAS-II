@@ -6424,8 +6424,8 @@ def ShowHelp(helpType,frame):
         helplink = 'gsasII-pwdr.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
     elif helpType.lower().startswith('phase'):
         helplink = 'gsasII-phase.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
-    if helpType.lower().startswith('hist/phase'):
-        helplink = 'gsasII-histphase.html'
+    elif helpType.lower().startswith('hist/phase'):
+        helplink = 'gsasII-phase.html#Phase-Data'
     elif helpType:
         helplink = 'gsasII.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
     else: 

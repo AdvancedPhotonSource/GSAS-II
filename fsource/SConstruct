@@ -40,7 +40,9 @@ def GetBinaryDir():
     else:
         print(u'Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
-    if platform.architecture()[0] == '64bit':
+    if 'arm' in platform.machine():
+        bits = 'arm'
+    elif platform.architecture()[0] == '64bit':
         bits = '64'
     else:
         bits = '32'
@@ -50,7 +52,8 @@ def GetBinaryDir():
 #==========================================================================================
 # misc initializations
 # need command-line options for fortran command and fortran options
-F2PYflags = '' # compiler options for f2py command
+#F2PYflags = '' # compiler options for f2py command
+F2PYflags = '-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include' # compiler options for f2py command
 F2PYpath = ARGUMENTS.get('F2PYpath', '')
 # find a default f2py relative to the scons location. Should be in the same place as f2py
 spath = os.path.normpath(os.path.split(sys.executable)[0])
@@ -94,6 +97,7 @@ G77path = which_path('g77')     # path to compiler
 FORTpath = ""
 FORTflags = ""
 LDFLAGS = ''
+SDKROOT = ''
 tmpdir = None
 #==========================================================================================
 # configure platform dependent options here: 
@@ -108,6 +112,7 @@ if sys.platform == "win32":
       sys.exit()
 elif sys.platform == "darwin":
     LDFLAGS = '-undefined dynamic_lookup -bundle'
+    SDKROOT = os.environ['SDKROOT']
     F2PYsuffix = '.so'
 elif sys.platform.startswith("linux"):
     #LDFLAGS = '-Wall -shared -static-libgfortran -static-libgcc' # does not work with gfortran 4.4.4 20100726 (Red Hat 4.4.4-13)
@@ -231,6 +236,8 @@ else:
 versions = platform.python_version_tuple()
 version = str(int(versions[0])) + '.' + str(int(versions[1]))
 PlatformBits = '64bits'
+if 'arm' in platform.machine():
+   PlatformBits = 'arm'
 if '32' in platform.architecture()[0]:
    PlatformBits = '32bits'
 #PlatformBits = versions[2][:-1]
@@ -247,15 +254,19 @@ if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
     if sys.platform.startswith("linux") and "64" in PlatformBits:
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
-        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'# --arch="-arch x86_64"'
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"' # --arch="-arch x86_64"'
     elif sys.platform.startswith("linux"):
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m32'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
     elif sys.platform == "darwin": # now 64 bit only
-        #if "64" in PlatformBits:
-        LDFLAGS += " -arch x86_64 -m64"
-        if FORTflags == "": FORTflags = ' -w -O2 -m64'
-        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'
+        if 'arm' in PlatformBits:
+            #LDFLAGS += " -arch x86_64 -m64"
+            if FORTflags == "": FORTflags = ' -w -O2'
+            if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+        else:
+            LDFLAGS += " -arch x86_64 -m64"
+            if FORTflags == "": FORTflags = ' -w -O2 -m64'
+            if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'
     elif sys.platform == "win32" and "64" in PlatformBits:
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "":
@@ -327,10 +338,10 @@ if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
 if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
 #   add other needed environment variables
-var = 'LDFLAGS'
-if eval(var) != "":
-    env['ENV'][var] = eval(var)
-    print("Setting environment variable {} to {}".format(var,eval(var)))
+for var in ('LDFLAGS','SDKROOT'):
+    if eval(var) != "":
+       env['ENV'][var] = eval(var)
+       print("Setting environment variable {} to {}".format(var,eval(var)))
 if 'WINDIR' in os.environ: env['ENV']['WINDIR'] = os.environ['WINDIR']
 
 #==========================================================================================
@@ -354,7 +365,7 @@ for sub in glob.glob('*subs'):
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
-    target = os.path.splitext(src)[0] + F2PYsuffix
+    target = os.path.splitext(src)[0] + F2PYsuffix # xxx.pyd or xxx.so
     out = env.f2py(target,src)
     Clean(out, Glob(os.path.splitext(src)[0] + "*" + F2PYsuffix)) # this picks up old- & new-style .pyd/.so names
     Depends(target, liblist) # make sure libraries are rebuilt if old

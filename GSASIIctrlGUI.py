@@ -182,9 +182,9 @@ try:
 except AttributeError:
     pass
 
-if 'phoenix' in wx.version():
+try:    #phoenix
     wxValidator = wx.Validator
-else:
+except AttributeError:  #classic - i.e. old
     wxValidator = wx.pyValidator
 
 #### Fixed definitions for wx Ids ################################################################################

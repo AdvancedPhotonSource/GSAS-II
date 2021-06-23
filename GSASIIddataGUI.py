@@ -494,7 +494,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         poVal = G2G.ValidatedTxtCtrl(DData,POData,1,nDig=(10,3),typeHint=float,xmin=0.)
         poSizer.Add(poVal,0,WACV)
         poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Unique axis, H K L: '),0,WACV)
-        h,k,l =POData[3]
+        h,k,l = POData[3]
         poAxis = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
         poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
         poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
@@ -844,6 +844,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 UseList[G2frame.hist]['newLeBail'] = True
                 Obj.SetLabel('Do new Le Bail extraction?')
             UseList[G2frame.hist]['LeBail'] = not UseList[G2frame.hist]['LeBail']
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
+            
         def OnResetSize(event):
             Obj = event.GetEventObject()
             item,name = Indx[Obj.GetId()]
@@ -918,7 +920,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if UseList[G2frame.hist]['LeBail']:
                 G2frame.SetStatusText('To reset Le Bail, cycle Le Bail check box.',1)
         bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
-        if G2frame.testSeqRefineMode():
+        if G2frame.testSeqRefineMode() and not UseList[G2frame.hist]['LeBail']:
             bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinemment Options'))
             parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
             if generalData['Type'] == 'magnetic':
@@ -943,7 +945,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
             bottomSizer.Add(fixBox)
         
-        bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
+        if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
+            bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
             
         if G2frame.hist[:4] == 'PWDR':
             if UseList[G2frame.hist]['Size'][0] == 'isotropic':
@@ -1002,30 +1005,39 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             bottomSizer.Add(HstrainSizer())
             bottomSizer.Add(DispSizer())
                 
-            poSizer = wx.BoxSizer(wx.VERTICAL)
-            POData = UseList[G2frame.hist]['Pref.Ori.']
+            if not UseList[G2frame.hist]['LeBail']:
+                poSizer = wx.BoxSizer(wx.VERTICAL)
+                POData = UseList[G2frame.hist]['Pref.Ori.']
 # patch - add penalty items
-            if len(POData) < 7:
-                POData.append(['',])
-                POData.append(0.1)
-            if not POData[6]:
-                POData[6] = ['',]
+                if len(POData) < 7:
+                    POData.append(['',])
+                    POData.append(0.1)
+                if not POData[6]:
+                    POData[6] = ['',]
 # end patch
-            poSizer.Add(PoTopSizer(POData))
-            if POData[0] == 'MD':
-                poSizer.Add(MDDataSizer(POData))
-            else:           #'SH'
-                if POData[4]:       #SH order > 0
-                    textJ = G2lat.textureIndex(POData[5])
-                    poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
-                        ,0,wx.TOP|wx.BOTTOM,5)
-                    poSizer.Add(SHDataSizer(POData),0,wx.TOP|wx.BOTTOM,5)
-                    poSizer.Add(SHPenalty(POData),0,wx.TOP|wx.BOTTOM,5)
-                    
-            bottomSizer.Add(poSizer,0,wx.TOP|wx.BOTTOM,5)
-            bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
-            if generalData['Type'] != 'magnetic': 
-                bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
+                poSizer.Add(PoTopSizer(POData))
+                if POData[0] == 'MD':
+                    poSizer.Add(MDDataSizer(POData))
+                else:           #'SH'
+                    if POData[4]:       #SH order > 0
+                        textJ = G2lat.textureIndex(POData[5])
+                        poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
+                            ,0,wx.TOP|wx.BOTTOM,5)
+                        poSizer.Add(SHDataSizer(POData),0,wx.TOP|wx.BOTTOM,5)
+                        poSizer.Add(SHPenalty(POData),0,wx.TOP|wx.BOTTOM,5)
+                        
+                bottomSizer.Add(poSizer,0,wx.TOP|wx.BOTTOM,5)
+                bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
+                if generalData['Type'] != 'magnetic': 
+                    bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
+            else:   #turn off PWDR intensity related paramters for LeBail refinement
+                UseList[G2frame.hist]['Scale'][1] = False
+                UseList[G2frame.hist]['Pref.Ori.'][2] = False
+                UseList[G2frame.hist]['Extinction'][1] = False
+                for item in UseList[G2frame.hist]['Babinet']:
+                    UseList[G2frame.hist]['Babinet'][item][1] = False
+                G2G.G2MessageBox(G2frame,'Refinement flags for Phase fraction, Preferred orientation, Extinction & Babinet are now off',
+                    title='LeBail refinement flag notice')
         elif G2frame.hist[:4] == 'HKLF':
             bottomSizer.Add(ExtSizer('HKLF'),0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)

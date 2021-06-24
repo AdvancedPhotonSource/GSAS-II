@@ -533,7 +533,7 @@ def GetHistograms(GPXfile,hNames):
 #end patch
             datum[1][1]['FF'] = {}
             HKLFdata['Data'] = datum[1][1]
-            HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
+            HKLFdata['Instrument Parameters'] = dict(data)['Instrument Parameters']
             HKLFdata['Reflection Lists'] = None
             HKLFdata['Residuals'] = {}
             Histograms[hist] = HKLFdata           

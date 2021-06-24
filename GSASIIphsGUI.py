@@ -9488,7 +9488,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 
 ##### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
     def OnHklfAdd(event):
-        keyList = data['Histograms'].keys()
+        keyList = list(data['Histograms'].keys())
         TextList = []
         if not G2frame.GPXtree.GetCount():
             return
@@ -9499,9 +9499,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             if name not in keyList and 'HKLF' in name:
                 TextList.append(name)
             item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                        
-            if not TextList: 
-                G2G.G2MessageBox(G2frame,'No reflections')
-                return
+        if not TextList: 
+            G2G.G2MessageBox(G2frame,'No reflections')
+            return
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
             'Use data',TextList)
         try:

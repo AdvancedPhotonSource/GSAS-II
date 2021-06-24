@@ -226,13 +226,13 @@ class MergeDialog(wx.Dialog):
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
-        laueClass = ['triclinic','monoclinic','orthorhombic','trigonal(H)','tetragonal','hexagonal','cubic']
+        laueClass = ['triclinic','monoclinic','orthorhombic','trigonal(H)','trigonal(R)','tetragonal','hexagonal','cubic']
         centroLaue = {'triclinic':['-1',],'monoclinic':['2/m','1 1 2/m','2/m 1 1',],
-            'orthorhombic':['m m m',],'trigonal(H)':['-3','-3 m 1','-3 1 m',],    \
+            'orthorhombic':['m m m',],'trigonal(H)':['-3','-3 m 1','-3 1 m',],'trigonal(R)':['-3','-3 m'],\
             'tetragonal':['4/m','4/m m m',],'hexagonal':['6/m','6/m m m',],'cubic':['m 3','m 3 m']}
         noncentroLaue = {'triclinic':['1',],'monoclinic':['2','2 1 1','1 1 2','m','m 1 1','1 1 m',],
             'orthorhombic':['2 2 2','m m 2','m 2 m','2 m m',],
-            'trigonal(H)':['3','3 1 2','3 2 1','3 m 1','3 1 m',],
+            'trigonal(H)':['3','3 1 2','3 2 1','3 m 1','3 1 m',],'trigonal(R)':['3','3 m'],
             'tetragonal':['4','-4','4 2 2','4 m m','-4 2 m','-4 m 2',], \
             'hexagonal':['6','-6','6 2 2','6 m m','-6 m 2','-6 2 m',],'cubic':['2 3','4 3 2','-4 3 m']}
         centChoice = ['noncentrosymmetric','centrosymmetric']
@@ -7095,13 +7095,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         newData[0]['ranId'] = ran.randint(0,sys.maxsize)
         newData[1]['RefList'] = mergeRef
         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=newName)
-        G2frame.GPXtree.SetItemPyData(
-            G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
         G2frame.GPXtree.SetItemPyData(Id,newData)
-        G2frame.GPXtree.SetItemPyData(
-            G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
-        G2frame.GPXtree.SetItemPyData(
-            G2frame.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
                    
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)

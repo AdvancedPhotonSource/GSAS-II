@@ -1182,7 +1182,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         HKLtext = pick.get_gid()
         Page.SetToolTipString(HKLtext)
         G2frame.G2plotNB.status.SetStatusText('H = '+HKLtext,0)
-                                 
+    
+    if not G2frame.PatternId:
+        return                             
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     if not Title:
         Title = Name

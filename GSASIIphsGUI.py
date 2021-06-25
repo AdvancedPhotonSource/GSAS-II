@@ -9602,6 +9602,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             H = list(ref[:3])
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+            if iabsnt:
+                ref[3] = 0
         
     def OnDataCopy(event):
         hist = G2frame.hist

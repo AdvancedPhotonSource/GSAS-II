@@ -4232,7 +4232,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if DelList:
             SelectDataTreeItem(self,selItem)
-            wx.CallAfter(self.GPXtree.SelectItem,selItem)
+#            wx.CallAfter(self.GPXtree.SelectItem,selItem)
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the
@@ -7094,6 +7094,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
         newData = copy.deepcopy(data)
         newData[0]['ranId'] = ran.randint(0,sys.maxsize)
         newData[1]['RefList'] = mergeRef
+        newData[0]['Nobs'] = mergeRef.shape[0]
+        newData[0]['wR'] = 0.0
+        keys = list(newData[0].keys())
+        for item in keys:
+            if ':' in item:
+                del newData[0][item]
         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=newName)
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)

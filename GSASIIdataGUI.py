@@ -4232,7 +4232,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if DelList:
             SelectDataTreeItem(self,selItem)
-#            wx.CallAfter(self.GPXtree.SelectItem,selItem)
+            self.GPXtree.UpdateSelection()
+            # self.GPXtree.SelectItem(self.root)
+            # self.GPXtree.SelectItem(selItem)
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the

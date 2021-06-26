@@ -598,7 +598,7 @@ be included for the files beginning with "B" only.
         finally:
             filep.close()
             wx.EndBusyCursor()
-
+            
     def OnDataTreeSelChanged(self,event):
         def ClearData(self):
             '''Initializes the contents of the dataWindow panel

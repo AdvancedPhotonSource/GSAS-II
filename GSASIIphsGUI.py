@@ -8754,7 +8754,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             def OnShowUnitCell(event):
                 drawingData['unitCellBox'] = unitCellBox.GetValue()
                 G2plt.PlotStructure(G2frame,data)
-                wx.CallAfter(UpdateDrawOptions)
+                G2frame.GPXtree.UpdateSelection()
+#                wx.CallAfter(UpdateDrawOptions)
     
             def OnShowHyd(event):
                 drawingData['showHydrogen'] = showHydrogen.GetValue()
@@ -9116,14 +9117,16 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             else:
                 textureData['Order'] = 0
             textureData['SH Coeff'][1] = SetSHCoef()
-            wx.CallLater(100,UpdateTexture)
+            G2frame.GPXtree.UpdateSelection()
+#            wx.CallLater(100,UpdateTexture)
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
-            wx.CallLater(100,UpdateTexture)
+            G2frame.GPXtree.UpdateSelection()
+#            wx.CallLater(100,UpdateTexture)
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnSHRefine(event):
@@ -9133,7 +9136,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         def OnSHShow(event):
             Obj = event.GetEventObject()
             textureData['SHShow'] = Obj.GetValue()
-            wx.CallLater(100,UpdateTexture)
+            G2frame.GPXtree.UpdateSelection()
+#            wx.CallLater(100,UpdateTexture)
             
         def OnProjSel(event):
             Obj = event.GetEventObject()
@@ -9160,7 +9164,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
-            wx.CallLater(100,UpdateTexture)
+            G2frame.GPXtree.UpdateSelection()
+#            wx.CallLater(100,UpdateTexture)
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPFValue(event):
@@ -9305,7 +9310,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         return
                 finally:
                     dlg.Destroy()
-                wx.CallLater(100,UpdateTexture)
+                G2frame.GPXtree.UpdateSelection()
+#                wx.CallLater(100,UpdateTexture)
                 
             A = G2lat.cell2A(generalData['Cell'][1:7])
             hkls = G2lat.GenPfHKLs(10,SGData,A)    
@@ -9817,7 +9823,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 for i in DelList:
                     del data['Histograms'][i]
             #wx.CallLater(100,G2ddG.UpdateDData,G2frame,DData,data) #  produces error
-            wx.CallAfter(UpdatePhaseData,G2frame,Item,data)
+            G2frame.GPXtree.UpdateSelection()
+            # TId = G2frame.GPXtree.GetFocusedItem()
+            # G2frame.GPXtree.SelectItem(G2frame.root)
+            # G2frame.GPXtree.SelectItem(TId)
+#            UpdatePhaseData(G2frame,Item,data)
             
     def OnDataApplyStrain(event):
         SGData = data['General']['SGData']        

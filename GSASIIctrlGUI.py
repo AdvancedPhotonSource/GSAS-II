@@ -248,6 +248,11 @@ class G2TreeCtrl(wx.TreeCtrl):
         else:
             return wx.TreeCtrl.SetItemPyData(self,treeId,data)
 
+    def UpdateSelection(self):
+        TId = self.GetFocusedItem()
+        self.SelectItem(self.root)
+        self.SelectItem(TId)
+
     # def onSelectionChanged(self,event):
     #     '''Log each press on a tree item here. 
     #     '''

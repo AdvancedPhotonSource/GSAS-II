@@ -334,9 +334,12 @@ class ConstraintDialog(wx.Dialog):
         
     def DisableOK(self,setting):
         for id in range(len(self.data)):  # coefficient cannot be zero
-            if abs(self.data[id][0]) < 1.e-20:
-                setting  = False
-                break    
+            try:
+                if abs(self.data[id][0]) < 1.e-20:
+                    setting  = False
+                    break
+            except:
+                pass
         if setting:
             self.OkBtn.Enable()
         else:

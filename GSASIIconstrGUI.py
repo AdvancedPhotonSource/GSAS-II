@@ -333,6 +333,10 @@ class ConstraintDialog(wx.Dialog):
         self.CenterOnParent()
         
     def DisableOK(self,setting):
+        for id in range(len(self.data)):  # coefficient cannot be zero
+            if abs(self.data[id][0]) < 1.e-20:
+                setting  = False
+                break    
         if setting:
             self.OkBtn.Enable()
         else:
@@ -1190,7 +1194,8 @@ def UpdateConstraints(G2frame,data):
                             continue
                         elif eqString[-1] != '':
                             eqString[-1] += ' = '
-                        m = normval/term[0]
+                        #m = normval/term[0]
+                        m = term[0]/normval
                         if m == 1:
                             eqString[-1] += '{:}'.format(var)
                         else:
@@ -1270,7 +1275,7 @@ def UpdateConstraints(G2frame,data):
             items = data[name][Id][:-3]
             constType = 'Equivalence'
             lbl = 'The following terms are set to be equal:'
-            dlg = ConstraintDialog(G2frame,constType,lbl,items,'/')
+            dlg = ConstraintDialog(G2frame,constType,lbl,items,'*')
         else:
             return
         try:

@@ -550,7 +550,7 @@ Atoms                 Dictionary of atoms and refinement flags.
                       'O3', 'Mn5', and each value should be
                       a string defining what values to refine.
                       Values can be any combination of 'F'
-                      for fractional occupancy, 'X' for position,
+                      for site fraction, 'X' for position,
                       and 'U' for Debye-Waller factor
 LeBail                Enables LeBail intensity extraction.
 ======= ==========================================================
@@ -3972,7 +3972,7 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def occupancy(self):
-        '''Get or set the associated atom's occupancy fraction
+        '''Get or set the associated atom's site fraction
         '''
         return self.data[self.cx+3]
     

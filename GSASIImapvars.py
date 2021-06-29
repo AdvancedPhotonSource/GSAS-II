@@ -681,7 +681,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
         errmsg,warnmsg,fixVlist,dropVarList,translateTable = CheckEquivalences(
             constrDict,varyList)
         #print('debug: using MoveConfEquiv to address =',errmsg)
-        if problemVars: parmsChanged = MoveConfEquiv(constrDict,fixedList)
+        if problemVars: parmsChanged,mvMsg = MoveConfEquiv(constrDict,fixedList)
 #    GSASIIpath.IPyBreak()
 
     groups,parmlist = GroupConstraints(constrDict)
@@ -823,7 +823,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
     msg = ''
     shortmsg = ''
     changed = False
-    
+
     # Process the equivalences
     #    If there are conflicting parameters, move them into constraints. This
     #    may create new conflicts, requiring movement of other parameters, so
@@ -834,7 +834,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
         errmsg,warnmsg,fixVlist,dropVarList,translateTable = CheckEquivalences(
             constrDict,varyList,parmDict,SeqHist)
         if problemVars:
-            parmsChanged = MoveConfEquiv(constrDict,fixedList)
+            parmsChanged,mvMsg = MoveConfEquiv(constrDict,fixedList)
             changed = True
     if errmsg:
         msg = errmsg
@@ -942,7 +942,9 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
             constrArr = _FillArray(group,constrDict,varlist,FillDiagonals=True)
             GramSchmidtOrtho(constrArr,len(group))
         except:
-            msg = 'Singular relationships'
+            msg = 'Singular relationships found while processing constraints group:'
+            for rel in group:
+                msg += '\n  ' + _FormatConstraint(constrDict[rel],fixedList[rel])
             break
         mapvar = []
         group = group[:]
@@ -1005,6 +1007,8 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
     if changed:
         print(60*'=')
         print('Constraints were reclassified to avoid conflicts, as below:')
+        print(mvMsg)
+        print('New constraints are:')
         print (VarRemapShow(varyList,True))
         print(60*'=')
     return groups,parmlist # saved for sequential fits
@@ -1260,6 +1264,12 @@ def MoveConfEquiv(constrDict,fixedList):
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     global problemVars
     parmsChanged = 0
+    msg = ''
+    if problemVars:
+        msg = 'Conflict: variable(s) used in both equivalences and constraints: '
+        for i1,v1 in enumerate(problemVars):
+            if i1 > 0: msg += ', '
+            msg += v1
     for i,(varlist,mapvars) in enumerate(zip(dependentParmList,indParmList)):
         conf = False
         for mv in mapvars:
@@ -1273,16 +1283,19 @@ def MoveConfEquiv(constrDict,fixedList):
         if conf:
             parmsChanged += 1
             indvar = indParmList[i][0]
+            msg += '\n  Removing equivalence:\n    ' + _showEquiv(
+                dependentParmList[i],indParmList[i],invarrayList[i])
+            msg += '\n  Creating new constraint(s):'
             for dep,mult in zip(dependentParmList[i],invarrayList[i]):
-                #print('debug replacing equiv with constraint equation 0=',{indvar:-1.,dep:mult[0]})
                 constrDict += [{indvar:-1.,dep:mult[0]}]
                 fixedList += ['0.0']
+                msg += '\n    ' + _FormatConstraint(constrDict[-1],fixedList[-1])
             dependentParmList[i] = None
     if parmsChanged:
         for i in range(len(dependentParmList)-1,-1,-1):
             if dependentParmList[i] is None:
                 del dependentParmList[i],indParmList[i],arrayList[i],invarrayList[i]
-    return parmsChanged
+    return parmsChanged,msg
 
 def StoreEquivalence(independentVar,dependentList,symGen=True):
     '''Takes a list of dependent parameter(s) and stores their
@@ -1500,6 +1513,29 @@ def _FormatConstraint(RelDict,RelVal):
     for s2 in s:
         if s1 != '': s1 += '\n\t'
         s1 += s2
+    return s1
+
+def _showEquiv(varlist,mapvars,invmultarr):
+    '''Format an equivalence relationship
+    note that 
+    varlist,           mapvars,     invmultarr 
+    are elements of
+    dependentParmList, indParmList, invarrayList
+    '''
+    for i,mv in enumerate(mapvars):
+        if len(varlist) == 1:
+            s1 = str(mv) + ' is equivalent to '
+        else:
+            s1 = str(mv) + ' is equivalent to parameters: '
+        j = 0
+        for v,m in zip(varlist,invmultarr):
+            if debug: print ('v,m[0]: ',v,m[0])
+            if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
+            if j > 0: s1 += ' & '
+            j += 1
+            s1 += str(v)
+            if m != 1:
+                s1 += " / " + str(m[0])
     return s1
 
 def VarRemapShow(varyList,inputOnly=False):

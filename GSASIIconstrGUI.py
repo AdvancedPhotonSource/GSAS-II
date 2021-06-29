@@ -679,7 +679,7 @@ def UpdateConstraints(G2frame,data):
             return 'Unable to interpret multiplier(s): '+msg,''
         res = G2mv.CheckConstraints('',constDictList,fixedList)
         # reload constraints in case any were merged in MoveConfEquiv
-        ConstraintsLoad(data,newcons)
+        constDictList,phaseDict,fixedList = ConstraintsLoad(data,newcons)
         impossible = []
         if reqVaryList:
             Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))

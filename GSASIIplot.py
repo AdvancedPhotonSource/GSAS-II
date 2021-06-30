@@ -2119,8 +2119,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.canvas.draw() 
                 Page.savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 y1, y2= Page.figure.axes[0].get_ylim()
-                Page.vLine = Plot.axvline(Page.startExclReg,color='b',
-                                               dashes=(2,3))
+                Page.vLine = Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
                 Page.canvas.draw()
             else:
                 Page.savedplot = None
@@ -3428,16 +3427,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Y = ma.array(Y,mask=ma.getmask(X))
                 
         if ifpicked:
-            lims = limits[1]
+            lims = limits[1:]
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
             elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
-            Lines.append(Plot.axvline(lims[0],color='g',dashes=(5,5),
+            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),
                                     picker=True,pickradius=3.))    
-            Lines.append(Plot.axvline(lims[1],color='r',dashes=(5,5),
-                                    picker=True,pickradius=3.))    
-            for i,item in enumerate(limits[2:]):
+            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),
+                                    picker=True,pickradius=3.)) 
+            for i,item in enumerate(lims[1:]):
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),
                                     picker=True,pickradius=3.))    
                 Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),

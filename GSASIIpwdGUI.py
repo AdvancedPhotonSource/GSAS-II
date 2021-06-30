@@ -53,6 +53,7 @@ import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
 import G2shapes
+import SUBGROUPS as kSUB
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 if '2' in platform.python_version_tuple()[0]:

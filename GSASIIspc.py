@@ -1069,7 +1069,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                 elif SpnFlp[1:3] == [-1,-1]:
                     magSym[j] += "'"
                     Ptsym[j-1] += "'"
-                elif SpnFlp[2] == [-1,1]:
+                elif SpnFlp[2:4] == [-1,1]:
                     magSym[i] += "'"
                     Ptsym[i-1] += "'"
                     magSym[j] += "'"
@@ -1292,15 +1292,21 @@ def GetSGSpin(SGData,MSgSym):
             else:
                 Spn.append(1)
     else:                   #the rest; 3 generators. NB:  any ' before / in 1st field ignored
-        for fld in Flds[1:]:
-            iF = mSgSym[iB:].index(fld[0])+iB
-            jF = mSgSym[iF:].index(fld[-1])+iF
-            if "'" == mSgSym[jF+1]:
+        if '3' in Flds[1]:
+            if "'" in mSgSym:   #could be 1 or 2 '; doesn't matter. 
                 Spn.append(-1)
-                iB = jF+2
             else:
                 Spn.append(1)
-                iB = jF+1
+        else:
+            for fld in Flds[1:]:
+                iF = mSgSym[iB:].index(fld[0])+iB
+                jF = mSgSym[iF:].index(fld[-1])+iF
+                if "'" == mSgSym[jF+1]:
+                    Spn.append(-1)
+                    iB = jF+2
+                else:
+                    Spn.append(1)
+                    iB = jF+1
     Spn.append(1)
     return Spn
             

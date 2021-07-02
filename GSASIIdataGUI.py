@@ -2359,8 +2359,15 @@ class GSASII(wx.Frame):
 %t%          --config-option servers:global:http-proxy-host=*host*
 %t%          --config-option servers:global:http-proxy-port=*port*
 %%
+        where *host* will be a network name (proxy.subnet.org) or
+        IP address (102.3.123.23) and *port* will be a port number 
+        (integer such as 80, 8080, etc) or will be blank. 
+%%
         Additional subversion command line options can be supplied here
-        by pressing the '+' button. As examples of options that might be of 
+        by pressing the '+' button. Two lines are needed for each option 
+        where the first svn option name (starting with two dashes) and 
+        the second line will be the value. 
+        As examples of options that might be of 
         value, use two extra lines to add:
 %t%          --config-dir
 %t%          DIR
@@ -2373,11 +2380,10 @@ class GSASII(wx.Frame):
 %t%          --config-option
 %t%          servers:global:http-proxy-password=*password*
 %%
-        to specify a proxy user name and password.
+        to specify a proxy user name (*account*) and password (*password*). 
+        Note that this information will be stored in a plain-text file. 
 %%
-        Note that strings marked *value* are items that will be configured 
-        by the user. See http://svnbook.red-bean.com for more information on
-        subversion. 
+        See http://svnbook.red-bean.com for more information on subversion. 
         '''
         dlg = G2G.MultiStringDialog(self,'Enter proxy values',
                             labels,values,size=300,addRows=True,hlp=msg)

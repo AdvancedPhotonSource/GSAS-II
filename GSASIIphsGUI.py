@@ -8608,16 +8608,30 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 #### Draw Options page ################################################################################
     def UpdateDrawOptions():
         import wx.lib.colourselect as wcs
-        def SlopSizer():            
+        def SlopSizer(): 
+            
+            def OnCameraPosTxt(invalid,value,tc):
+                cameraPos.SetValue(drawingData['cameraPos'])
+                drawingData['Zclip'] = min(100.*Zval.result[0]/drawingData['cameraPos'],99.)
+                Zclip.SetValue(drawingData['Zclip'])
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnCameraPos(event):
                 drawingData['cameraPos'] = cameraPos.GetValue()
-                cameraPosTxt.SetLabel(' Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
-                ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                cameraPosTxt.SetValue(drawingData['cameraPos'])
+                drawingData['Zclip'] = min(100.*Zval.result[0]/drawingData['cameraPos'],99.)
+                Zclip.SetValue(drawingData['Zclip'])
                 G2plt.PlotStructure(G2frame,data)
 
             def OnZclip(event):
                 drawingData['Zclip'] = Zclip.GetValue()
-                ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                Zclip.SetValue(drawingData['Zclip'])
+                Zval.SetValue(drawingData['Zclip']*drawingData['cameraPos']/100.)
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnZclipVal(invalid,value,tc):
+                drawingData['Zclip'] = value*100./drawingData['cameraPos']
+                Zclip.SetValue(drawingData['Zclip'])
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnMoveZ(event):
@@ -8634,29 +8648,49 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))                
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnVdWScaleTxt(invalid,value,tc):
+                vdwScale.SetValue(100.*value)
+                G2plt.PlotStructure(G2frame,data)                
+                
             def OnVdWScale(event):
                 drawingData['vdwScale'] = vdwScale.GetValue()/100.
-                vdwScaleTxt.SetLabel(' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
+                vdwScaleTxt.SetValue(drawingData['vdwScale'])
                 G2plt.PlotStructure(G2frame,data)
+                
+            def OnEllipseProbTxt(invalid,value,tc):
+                ellipseProb.SetValue(100.*value)
+                G2plt.PlotStructure(G2frame,data)                
     
             def OnEllipseProb(event):
                 drawingData['ellipseProb'] = ellipseProb.GetValue()
-                ellipseProbTxt.SetLabel(' Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
+                ellipseProbTxt.SetValue(drawingData['ellipseProb'])
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnBallScaleTxt(invalid,value,tc):
+                ballScale.SetValue(100.*value)
                 G2plt.PlotStructure(G2frame,data)
     
             def OnBallScale(event):
                 drawingData['ballScale'] = ballScale.GetValue()/100.
-                ballScaleTxt.SetLabel(' Ball scale: '+'%.2f'%(drawingData['ballScale']))
+                ballScaleTxt.SetValue(drawingData['ballScale'])
                 G2plt.PlotStructure(G2frame,data)
-
+                
+            def OnBondRadiusTxt(invalid,value,tc):
+                bondRadius.SetValue(100.*value)
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnBondRadius(event):
                 drawingData['bondRadius'] = bondRadius.GetValue()/100.
-                bondRadiusTxt.SetLabel(' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
+                bondRadiusTxt.SetValue(drawingData['bondRadius'])
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnMagMultTxt(invalid,value,tc):
+                magMult.SetValue(100.*value)
                 G2plt.PlotStructure(G2frame,data)
 
             def OnMagMult(event):
                 drawingData['magMult'] = magMult.GetValue()/100.
-                magMultTxt.SetLabel(' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
+                magMultTxt.SetValue(drawingData['magMult'])
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnRadFactor(invalid,value,tc):
@@ -8664,11 +8698,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 G2plt.PlotStructure(G2frame,data)
             
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-            slideSizer = wx.FlexGridSizer(0,2,0,0)
-            slideSizer.AddGrowableCol(1,1)
+            slideSizer = wx.FlexGridSizer(0,3,0,0)
+            slideSizer.AddGrowableCol(2,1)
+            valSize = (50,25)
     
-            cameraPosTxt = wx.StaticText(drawOptions,-1,
-                ' Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
+            slideSizer.Add(wx.StaticText(drawOptions,label=' Camera Distance, '+Angstr+': '),0,WACV)
+            cameraPosTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'cameraPos',nDig=(10,2),xmin=10.,
+                    xmax=500.,OnLeave=OnCameraPos,size=valSize)
             G2frame.phaseDisplay.cameraPosTxt = cameraPosTxt
             slideSizer.Add(cameraPosTxt,0,WACV)
             cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
@@ -8677,18 +8713,21 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             G2frame.phaseDisplay.cameraSlider = cameraPos
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
             
-            ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+            ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping, '+Angstr+': ')
             slideSizer.Add(ZclipTxt,0,WACV)
+            Zval = G2G.ValidatedTxtCtrl(drawOptions,ZclipVal,0,nDig=(10,2),xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
+                    xmax=.99*drawingData['cameraPos'],size=valSize,OnLeave=OnZclipVal)
+            G2frame.phaseDisplay.Zval = Zval
+            slideSizer.Add(Zval)
             Zclip = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'])
+            G2frame.phaseDisplay.Zclip = Zclip
             Zclip.SetRange(1,99)
             Zclip.Bind(wx.EVT_SLIDER, OnZclip)
             slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
             
-            ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
-            ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
-            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
-            ZstepSizer.Add(Zstep,0,WACV)
-            slideSizer.Add(ZstepSizer)
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' Z step, '+Angstr+': '),0,WACV)
+            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0,size=valSize)
+            slideSizer.Add(Zstep,0,WACV)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
             MoveSizer.Add(wx.StaticText(drawOptions,-1,'   Press to step:'),0,WACV)
             MoveZ = wx.SpinButton(drawOptions,style=wx.SP_HORIZONTAL,size=wx.Size(100,20))
@@ -8698,26 +8737,30 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             MoveSizer.Add(MoveZ)
             slideSizer.Add(MoveSizer,1,wx.EXPAND|wx.RIGHT)
             
-            vdwScaleTxt = wx.StaticText(drawOptions,-1,' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' van der Waals scale: '),0,WACV)
+            vdwScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=1.0,size=valSize,OnLeave=OnVdWScaleTxt)
             slideSizer.Add(vdwScaleTxt,0,WACV)
             vdwScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
             vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
             slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
     
-            ellipseProbTxt = wx.StaticText(drawOptions,-1,' Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' Ellipsoid probability, %: '),0,WACV)
+            ellipseProbTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ellipseProb',nDig=(10,2),xmin=1,xmax=99,size=valSize,OnLeave=OnEllipseProbTxt)
             slideSizer.Add(ellipseProbTxt,0,WACV)
             ellipseProb = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
             ellipseProb.SetRange(1,99)
             ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
             slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
     
-            ballScaleTxt = wx.StaticText(drawOptions,-1,' Ball scale: '+'%.2f'%(drawingData['ballScale']))
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' Ball scale: '),0,WACV)
+            ballScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ballScale',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBallScaleTxt)
             slideSizer.Add(ballScaleTxt,0,WACV)
             ballScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
             ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
             slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
-    
-            bondRadiusTxt = wx.StaticText(drawOptions,-1,' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
+            
+            slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond radius, A: '),0,WACV)
+            bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ballScale',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
             slideSizer.Add(bondRadiusTxt,0,WACV)
             bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
             bondRadius.SetRange(1,25)
@@ -8725,7 +8768,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
             
             if generalData['Type'] == 'magnetic':
-                magMultTxt = wx.StaticText(drawOptions,-1,' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
+                slideSizer.Add(wx.StaticText(drawOptions,-1,' Mag. mom. mult.: '),0,WACV)
+                magMultTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'magMult',nDig=(10,2),xmin=0.1,xmax=5.,size=valSize,OnLeave=OnMagMultTxt)
                 slideSizer.Add(magMultTxt,0,WACV)
                 magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']))
                 magMult.SetRange(10,500)
@@ -8734,7 +8778,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         
             slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor: '),0,WACV)
             slideSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',
-                nDig=(10,2),xmin=0.1,xmax=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor),0,WACV)
+                nDig=(10,2),xmin=0.1,xmax=1.2,size=valSize,OnLeave=OnRadFactor),0,WACV)
 
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
@@ -9054,6 +9098,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
+        ZclipVal = [drawingData['Zclip']*drawingData['cameraPos']/100.,]
         SetDrawingDefaults(drawingData)        
 
         G2frame.GetStatusBar().SetStatusText('Add h or v to View Dir to set vector horizontal or vertical',1)

@@ -8825,8 +8825,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
-                G2frame.phaseDisplay.cameraPosTxt.SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
+                G2frame.phaseDisplay.cameraPosTxt.SetValue(drawingData['cameraPos'])
                 G2frame.phaseDisplay.cameraSlider.SetValue(drawingData['cameraPos'])
+                Zval = G2frame.phaseDisplay.Zval.result[0]
+                drawingData['Zval'] = Zval
+                G2frame.phaseDisplay.Zclip.SetValue(100.*Zval/drawingData['cameraPos'])
+                
         Draw('wheel')
         
     def getSelection():

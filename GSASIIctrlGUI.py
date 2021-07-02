@@ -2796,7 +2796,7 @@ class MultiStringDialog(wx.Dialog):
         self.prompts = list(prompts)
         self.addRows = addRows
         self.size = size
-        self.hlp = StripIndents(hlp,True)
+        self.hlp = hlp
         self.lbl = lbl
         self.CenterOnParent()
         self.Paint()
@@ -5600,9 +5600,12 @@ def StripIndents(msg,singleLine=False):
     '''Strip unintended indentation from multiline strings. 
     When singleLine is True, all newline are removed, but inserting "%%"
     into the string will cause a blank line to be inserted at that point
+    and %t% will generate a new line and tab (to indent a line)
 
     :param str msg: a string containing one or more lines of text. 
       spaces or tabs following a newline are removed.
+    :param bool singleLine: removes all newlines from the msg so that 
+      the text may be wrapped. 
     :returns: the string but reformatted
     '''
     msg1 = msg.replace('\n ','\n')
@@ -5621,6 +5624,7 @@ def StripIndents(msg,singleLine=False):
             msg = msg1
             msg1 = msg1.replace('  ',' ')
         msg = msg.replace('%%','\n\n')
+        msg = msg.replace('%t%','\n\t')
     return msg
 
 def StripUnicode(string,subs='.'):

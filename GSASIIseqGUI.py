@@ -1179,6 +1179,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     for id in G2frame.dataWindow.SeqExportLookup:        
         G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_XPORTSEQCSV)
 
     EnablePseudoVarMenus()
     EnableParFitEqMenus()

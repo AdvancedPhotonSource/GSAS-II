@@ -2356,28 +2356,25 @@ class GSASII(wx.Frame):
         msg = '''This dialog allows customization of the subversion (svn) 
         command. If a proxy server is needed, the address/host and port 
         can be added supplied here. This will generate command-line options 
-
-        --config-option servers:global:http-proxy-host=*host* 
-        --config-option servers:global:http-proxy-port=*port*
-
+%t%          --config-option servers:global:http-proxy-host=*host*
+%t%          --config-option servers:global:http-proxy-port=*port*
+%%
         Additional subversion command line options can be supplied here
         by pressing the '+' button. As examples of options that might be of 
         value, use two extra lines to add:
-
-        --config-dir
-        DIR
-
+%t%          --config-dir
+%t%          DIR
+%%
         to specify an alternate configuration location. 
-
+%%
         Or, use four extra lines to add
-
-        --config-option
-        servers:global:http-proxy-username=*account*
-        --config-option
-        servers:global:http-proxy-password=*password*
-
+%t%          --config-option
+%t%          servers:global:http-proxy-username=*account*
+%t%          --config-option
+%t%          servers:global:http-proxy-password=*password*
+%%
         to specify a proxy user name and password.
-
+%%
         Note that strings marked *value* are items that will be configured 
         by the user. See http://svnbook.red-bean.com for more information on
         subversion. 
@@ -5898,7 +5895,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                     item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                     self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
                     # Bind is in UpdateSeqResults
-        
+        G2G.Define_wxId('wxID_XPORTSEQCSV')      
+        self.SequentialEx.Append(G2G.wxID_XPORTSEQCSV,'Save table as CSV',
+            'Save all sequential refinement results as a CSV spreadsheet file')
         self.PostfillDataMenu()
             
         # PWDR & SASD

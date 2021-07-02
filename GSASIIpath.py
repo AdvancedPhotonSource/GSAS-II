@@ -177,29 +177,46 @@ def MakeByte2str(arg):
     return arg
                 
 def getsvnProxy():
-    '''Loads a proxy for subversion from the file created by bootstrap.py
+    '''Loads a proxy for subversion from the proxyinfo.txt file created 
+    by bootstrap.py or File => Edit Proxy...; If not found, then the 
+    standard http_proxy and https_proxy environment variables are scanned
+    (see https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies) 
+    with case ignored and that is used. 
     '''
     global proxycmds
     proxycmds = []
     proxyinfo = os.path.join(os.path.expanduser('~/.G2local/'),"proxyinfo.txt")
     if not os.path.exists(proxyinfo):
         proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
-    if not os.path.exists(proxyinfo):
-        return '','',''
-    fp = open(proxyinfo,'r')
-    host = fp.readline().strip()
-    # allow file to begin with comments
-    while host.startswith('#'):
+    if os.path.exists(proxyinfo):
+        fp = open(proxyinfo,'r')
         host = fp.readline().strip()
-    port = fp.readline().strip()
-    etc = []
-    line = fp.readline()
-    while line:
-        etc.append(line.strip())
+        # allow file to begin with comments
+        while host.startswith('#'):
+            host = fp.readline().strip()
+        port = fp.readline().strip()
+        etc = []
         line = fp.readline()
-    fp.close()
-    setsvnProxy(host,port,etc)
-    return host,port,etc
+        while line:
+            etc.append(line.strip())
+            line = fp.readline()
+        fp.close()
+        setsvnProxy(host,port,etc)
+        return host,port,etc
+    import urllib.request
+    proxdict = urllib.request.getproxies()
+    varlist = ("https","http")
+    for var in proxdict:
+        if var.lower() in varlist:
+            proxy = proxdict[var]
+            pl = proxy.split(':')
+            if len(pl) < 2: continue
+            host = ':'.join(pl[0:2])
+            port = ''
+            if len(pl) == 3:
+                port = pl[2].strip('/').strip()
+            return host,port,''
+    return '','',''
 
 def setsvnProxy(host,port,etc=[]):
     '''Sets the svn commands needed to use a proxy

@@ -8700,7 +8700,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer = wx.FlexGridSizer(0,3,0,0)
             slideSizer.AddGrowableCol(2,1)
-            valSize = (50,25)
+            valSize = (50,20)
     
             slideSizer.Add(wx.StaticText(drawOptions,label=' Camera Distance, '+Angstr+': '),0,WACV)
             cameraPosTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'cameraPos',nDig=(10,2),xmin=10.,
@@ -8730,7 +8730,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             slideSizer.Add(Zstep,0,WACV)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
             MoveSizer.Add(wx.StaticText(drawOptions,-1,'   Press to step:'),0,WACV)
-            MoveZ = wx.SpinButton(drawOptions,style=wx.SP_HORIZONTAL,size=wx.Size(100,20))
+            MoveZ = wx.SpinButton(drawOptions,style=wx.SP_HORIZONTAL,size=valSize)
             MoveZ.SetValue(0)
             MoveZ.SetRange(-1,1)
             MoveZ.Bind(wx.EVT_SPIN, OnMoveZ)
@@ -9044,7 +9044,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
             H = drawingData['Plane'][0]
             plane = wx.TextCtrl(drawOptions,value='%5.3f %5.3f %5.3f'%(H[0],H[1],H[2]),
-                style=wx.TE_PROCESS_ENTER)
+                style=wx.TE_PROCESS_ENTER,size=(140,20))
             plane.Bind(wx.EVT_TEXT_ENTER,OnPlane)
             plane.Bind(wx.EVT_KILL_FOCUS,OnPlane)
             planeSizer1.Add(plane,0,WACV)

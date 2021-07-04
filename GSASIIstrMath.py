@@ -3422,7 +3422,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 yc += y
             MPpool.terminate()
     if badPeak:
-        print ('ouch #4 bad profile coefficients yield negative peak width; some reflections skipped')
+        print ('ouch #7 bad profile coefficients yield negative peak width; some reflections skipped')
     if GSASIIpath.GetConfigValue('Show_timing',False):
         print ('getPowderProfile t=%.3f'%(time.time()-starttime))
     return yc,yb

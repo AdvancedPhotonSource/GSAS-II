@@ -317,6 +317,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 if lam > 10.:
                     G2fil.G2Print('ouch #4 stuck: chisq-new %.4g > chisq0 %.4g with lambda %.1g'%
                         (chisq1,chisq0,lam), mode='warn')
+                    if GSASIIpath.GetConfigValue('debug'): 
+                        print('Cycle %d: %.2fs' % (icycle,time.time()-time0))
                     try:         # report highly correlated parameters from full Hessian, if we can
                         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,
                             'Converged':False, 'DelChi2':deltaChi2, 'Xvec':XvecAll,
@@ -409,7 +411,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Bmat,Nzeros = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
         Bmat = Bmat/Anorm
     except nl.LinAlgError: # this is unexpected. How did we get this far with a singular matrix?
-        G2fil.G2Print('ouch #5 linear algebra error in making final v-cov matrix', mode='error')
+        G2fil.G2Print('ouch #6 linear algebra error in making final v-cov matrix', mode='error')
         psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
         if not len(psing): # make sure at least the worst term is flagged
             d = np.abs(np.diag(nl.qr(Amat)[1]))        

@@ -4557,7 +4557,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     Info = {}
     littleSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT))
+        # above changed from 
+        # littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+        # which can't be valid, but not tested (BHT)
         if ifEdit:          #a,b,c,etc.
             cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange)
             Info[cellVal.GetId()] = Id
@@ -6155,7 +6158,7 @@ def UpdateModelsGrid(G2frame,data):
             for parm in parmOrder:
                 if parm in Parms:
                     if parm == 'MinSize':
-                        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Dist '+parm),0,wx.ALIGN_CENTER)
+                        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Dist '+parm,style=wx.ALIGN_CENTER))
                     else:
                         parmVar = wx.CheckBox(G2frame.dataWindow,label='Refine? Dist '+parm) 
                         parmVar.SetValue(Parms[parm][1])
@@ -7246,7 +7249,7 @@ def UpdatePDFGrid(G2frame,data):
         sqBox.Add((1,1),1,wx.EXPAND,1)
         optB = wx.Button(G2frame.dataWindow,label='Optimize PDF',style=wx.BU_EXACTFIT)
         optB.Bind(wx.EVT_BUTTON, OnOptimizePDF)
-        sqBox.Add(optB,0,WACV|wx.ALIGN_RIGHT)
+        sqBox.Add(optB,0,WACV)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
         
         sfgSizer.Add((5,5),0)
@@ -7272,10 +7275,10 @@ def UpdatePDFGrid(G2frame,data):
         flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
         sqBox.Add(flatSpin,0,WACV)
         sqBox.Add((1,1),1,wx.EXPAND,1)
-        sqBox.Add(wx.StaticText(G2frame.dataWindow,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label='Rmin: '),0,WACV)
         rmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Rmin',nDig=(5,1),
                 typeHint=float,size=wx.Size(50,20))
-        sqBox.Add(rmin,0,WACV|wx.ALIGN_RIGHT)
+        sqBox.Add(rmin,0,WACV)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
             
         bkBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -7635,13 +7638,13 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     if powId:
         ElList = data['ElList']
-        mainSizer.Add(PDFFileSizer(),0,WACV)
+        mainSizer.Add(PDFFileSizer())
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-        mainSizer.Add(SampleSizer(),0,WACV)
+        mainSizer.Add(SampleSizer())
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-        mainSizer.Add(SFGctrlSizer(),0,WACV)
+        mainSizer.Add(SFGctrlSizer())
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-        mainSizer.Add(DiffSizer(),0,WACV)
+        mainSizer.Add(DiffSizer())
     else:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
                                      powName+' not in Tree'))

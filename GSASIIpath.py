@@ -211,7 +211,7 @@ def getsvnProxy():
             proxy = proxdict[var]
             pl = proxy.split(':')
             if len(pl) < 2: continue
-            host = pl[1]
+            host = pl[1].strip('/')
             port = ''
             if len(pl) == 3:
                 port = pl[2].strip('/').strip()

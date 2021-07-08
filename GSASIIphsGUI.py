@@ -3999,10 +3999,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 FillAtomsGrid(Atoms)
             dlg.Destroy()
         elif parm in ['frac','Uiso']:
-            limits = [0.,1.]
+            limits = [-1.,1.]
             val = 1.0
             if  parm in ['Uiso']:
-                limits = [0.,0.25]
+                limits = [-0.25,0.25]
                 val = 0.01
             dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
             if dlg.ShowModal() == wx.ID_OK:
@@ -6843,8 +6843,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             layerNames = [layer['Name'] for layer in Layers['Layers']]
         G2frame.GetStatusBar().SetStatusText('',1)
         layerData = G2frame.layerData
-        if layerData.GetSizer():
-            layerData.GetSizer().Clear(True)
+        # if layerData.GetSizer():
+        #     layerData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.VERTICAL)   
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
@@ -8760,7 +8760,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
             
             slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond radius, A: '),0,WACV)
-            bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ballScale',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
+            bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'bondRadius',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
             slideSizer.Add(bondRadiusTxt,0,WACV)
             bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
             bondRadius.SetRange(1,25)

@@ -9579,6 +9579,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 
     def Draw(caller='',Fade=[],NPkey=False):
         vdWRadii = generalData['vdWRadii']
+        BondRadii = generalData['BondRadii']
         mapData = generalData['Map']
         D4mapData = generalData.get('4DmapData',{})
         pageName = ''

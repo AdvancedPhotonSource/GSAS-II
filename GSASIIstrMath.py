@@ -1612,7 +1612,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(uAmat,HP.T)                    #put into cartesian space X||H,Z||H*L; uAmat better than uBmat
+            HM = np.inner(Bmat,HP.T)                    #put into cartesian space X||H,Z||H*L; 
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T    # normalize  HP  Nref,hkl=Unit vectors || Q
 
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
@@ -1633,8 +1633,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
 #put into cartesian space
-            facm = np.inner(fasm,uBmat.T)
-            fbcm = np.inner(fbsm,uBmat.T)
+            facm = np.inner(fasm,uAmat)
+            fbcm = np.inner(fbsm,uAmat)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)

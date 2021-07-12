@@ -1039,6 +1039,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
     uAmat = G2lat.Gmat2AB(GS)[0]
+    Bmat = G2lat.Gmat2AB(G)[1]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -1047,7 +1048,6 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not SGData['SGFixed']:
         Nops *= (1+SGData['SGInv'])
     MFtables = calcControls['MFtables']
-    Bmat = G2lat.Gmat2AB(G)[1]
     TwinLaw = np.ones(1)
 #    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
 #    TwDict = refDict.get('TwDict',{})           
@@ -1501,6 +1501,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
     uAmat,uBmat = G2lat.Gmat2AB(GS)
+    Amat,Bmat = G2lat.Gmat2AB(G)
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -1513,7 +1514,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
-    Amat,Bmat = G2lat.Gmat2AB(G)
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
@@ -1596,7 +1596,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,Uniq.shape[1],axis=0)
         phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))-Phi[:,:,nxs])
-#        phase = np.hstack([phase for cen in SSCen])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         biso = -SQfactor*Uisodata[:,nxs]
@@ -1612,8 +1611,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(Bmat,HP.T)                    #put into cartesian space X||H,Z||H*L; 
-            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T    # normalize  HP  Nref,hkl=Unit vectors || Q
+            HM = np.inner(Bmat,HP.T)                    #put into cartesian space X||H,Z||H*L;
+            Hlen = np.sqrt(np.sum(HM**2,axis=0))
+            eM = (HM/Hlen).T    # normalize  HP  Nref,hkl=Unit vectors || Q
 
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
@@ -1625,16 +1625,16 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    
                 H[3,i]*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
 
-            if not SGData['SGGray']:            
+            if not SGData['SGGray']:
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
                                 
 #sum ops & atms                                
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
-#put into cartesian space
-            facm = np.inner(fasm,uAmat)
-            fbcm = np.inner(fbsm,uAmat)
+# #put into cartesian space
+            facm = np.inner(fasm,uAmat.T)
+            fbcm = np.inner(fbsm,uAmat.T)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)

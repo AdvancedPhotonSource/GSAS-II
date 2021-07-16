@@ -1750,11 +1750,15 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    MmodA = Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #cos term
-    MmodB = Bm[nxs,nxs,:,:]*psin[:,:,:,nxs]    #sin term
-    MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
-    MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['SpnFlp'][nxs,:,nxs,nxs]
-    return MmodA,MmodB    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
+    MmodAR = Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #cos term
+    MmodBR = Bm[nxs,nxs,:,:]*psin[:,:,:,nxs]    #sin term
+    MmodAR = np.sum(SGMT[nxs,:,nxs,:,:]*MmodAR[:,:,:,nxs,:],axis=-1)
+    MmodBR = np.sum(SGMT[nxs,:,nxs,:,:]*MmodBR[:,:,:,nxs,:],axis=-1)
+    MmodAI = Am[nxs,nxs,:,:]*psin[:,:,:,nxs]    #cos term
+    MmodBI = Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #sin term
+    MmodAI = np.sum(SGMT[nxs,:,nxs,:,:]*MmodAI[:,:,:,nxs,:],axis=-1)
+    MmodBI = np.sum(SGMT[nxs,:,nxs,:,:]*MmodBI[:,:,:,nxs,:],axis=-1)
+    return MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

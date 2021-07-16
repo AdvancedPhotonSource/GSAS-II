@@ -142,6 +142,7 @@ except ImportError:
 import time
 import glob
 import copy
+import ast
 import random as ran
 import webbrowser     # could postpone this for quicker startup
 import numpy as np
@@ -161,6 +162,7 @@ import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
 import GSASIIstrMain as G2stMn
+import config_example
 if sys.version_info[0] >= 3:
     unicode = str
     basestring = str

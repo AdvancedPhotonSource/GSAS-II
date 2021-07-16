@@ -9339,6 +9339,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()
         
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
+        if not len(Bonds):
+            return
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
@@ -9575,7 +9577,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         bondR = drawingData['bondRadius']
         for i,xyz in enumerate(Atoms):
             ax,ay,az = xyz
-            RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
+            if len(bondData[i]):
+                RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
                 
     def Draw(caller='',Fade=[],NPkey=False):
         vdWRadii = generalData['vdWRadii']

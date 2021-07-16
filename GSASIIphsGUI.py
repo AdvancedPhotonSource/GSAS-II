@@ -8366,7 +8366,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
                         atom[cx:cx+3] = Opp[key]
                         atom[cs-1] = cell
-                        atomData.append(atom[:cuij+9])  #not SS stuff
+                        atomData.append(atom[:cuij+7]+atom[-2:])  #not SS stuff
             data['Drawing']['Atoms'] = atomData
             GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
             if not GoOn[0]:

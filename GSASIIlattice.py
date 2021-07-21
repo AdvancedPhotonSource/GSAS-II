@@ -281,7 +281,210 @@ def TransformCell(cell,Trans):
     newCell[:6] = Gmat2cell(newg)
     newCell[6] = calc_V(cell2A(newCell[:6]))
     return newCell
-    
+
+# code to generate lattice constraint relationships between two phases
+# (chemical & magnetic) related by a transformation matrix.
+
+def symInner(M1,M2):
+    '''Compute inner product of two square matrices with symbolic processing
+    Use dot product because sympy does not define an inner product primitive
+
+    This requires that M1 & M2 be two sympy objects, as created in 
+    GenerateCellConstraints(). 
+
+    Note that this is only used to do the symbolic math needed to generate 
+    cell relationships. It is not used normally in GSAS-II.
+    '''
+    import sympy as sym
+    prodOuter = []
+    for i in range(3):
+        prod = []
+        for j in range(3):
+            prod.append(M1[i,:].dot(M2[j,:]))
+        prodOuter.append(prod)
+    return sym.Matrix(prodOuter)
+
+def GenerateCellConstraints():
+    '''Generate unit cell constraints for transforming one set of A tensor
+    values to another using symbolic math (requires the sympy package)
+
+    Note that this is only used to do the symbolic math needed to generate 
+    cell relationships. It is not used normally in GSAS-II.
+    '''
+    import sympy as sym
+    # define A tensor for starting cell
+    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
+    G = sym.Matrix([ [A0,    A3/2.,  A4/2.],
+                     [A3/2.,  A1,    A5/2.],
+                     [A4/2.,  A5/2.,   A2 ]] )
+    # define transformation matrix
+    T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols(
+        'T00, T10, T20, T01, T11, T21, T02, T12, T22') 
+    Tr = sym.Matrix([ [T00, T10, T20], [T01, T11, T21], [T02, T12, T22],])
+    # apply transform 
+    newG = symInner(symInner(Tr,G),Tr).expand()
+    # define A tensor for converted cell
+    return [newG[0,0],newG[1,1],newG[2,2],2.*newG[0,1],2.*newG[0,2],2.*newG[1,2]]
+
+def subVals(expr,A,T):
+    '''Evaluate the symbolic expressions by substituting for A0-A5 & Tij
+
+    This can be used on the cell relationships created in 
+    :func:`GenerateCellConstraints` like this::
+
+       Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
+       T = np.linalg.inv(Trans).T
+       print([subVals(i,Aold,T) for i in GenerateCellConstraints()])
+
+    :param list expr: a list of sympy expressions.
+    :param list A: This is the A* tensor as defined above. 
+    :param np.array T: a 3x3 transformation matrix where,
+       Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
+       (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
+       then T = np.linalg.inv(Trans).T
+
+    Note that this is only used to do the symbolic math needed to generate 
+    cell relationships. It is not used normally in GSAS-II.
+    '''
+    import sympy as sym
+    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
+    # transformation matrix
+    T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols(
+        'T00, T10, T20, T01, T11, T21, T02, T12, T22') 
+    vals = dict(zip([T00, T10, T20, T01, T11, T21, T02, T12, T22],T.ravel()))
+    vals.update(dict(zip([A0, A1, A2, A3, A4, A5],A)))
+    return float(expr.subs(vals))
+
+# some sample test code using the routines above follows::
+# Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
+# Mat = np.linalg.inv(Trans).T
+# Aold = [0.05259986634758891, 0.05259986634758891, 0.005290771904550856, 0.052599866347588925, 0, 0]
+# Anew = [0.018440738491448085, 0.03944989976069168, 0.034313054205100654, 0, -0.00513684555559103, 0]
+# cellConstr = G2lat.GenerateCellConstraints()
+# calcA = [G2lat.subVals(i,Aold,Mat) for i in cellConstr]
+# print('original   xform A',Anew)
+# print('calculated xfrom A',calcA)
+# print('input')
+# print('  old cell',G2lat.A2cell(Aold))
+# print('  new cell',G2lat.A2cell(Anew))
+# print('derived results')
+# print('  from eq.',G2lat.A2cell(calcA))
+# print('  diffs   ',np.array(G2lat.A2cell(calcA)) - G2lat.A2cell(Anew))
+
+def fmtCellConstraints(cellConstr):
+    '''Format the cell relationships created in :func:`GenerateCellConstraints`
+    in a format that can be used to generate constraints. 
+
+    Use::
+
+      cXforms = G2lat.fmtCellConstraints(G2lat.GenerateCellConstraints())
+
+    Note that this is only used to do the symbolic math needed to generate 
+    cell relationships. It is not used normally in GSAS-II.
+    '''
+    import re
+    import sympy as sym
+    A3, A4, A5 = sym.symbols('A3, A4, A5')
+    consDict = {}
+    for num,cons in enumerate(cellConstr):
+        cons = str(cons.factor(A3,A4,A5,deep=True).simplify())
+        cons = re.sub('T([0-2]?)([0-2]?)',r'T[\2,\1]',cons) # Tij to T[j,i]
+        l = []
+        for i in str(cons).split('+'):
+            if ')' in i:
+                l[-1] += ' + ' + i.strip()
+            else:
+                l.append(i.strip())
+        print("\nA'{} = ".format(num),str(cons))
+        consDict[num] = l
+    return consDict
+
+cellXformRelations = {0: ['1.0*A0*T[0,0]**2',
+                              '1.0*A1*T[0,1]**2',
+                              '1.0*A2*T[0,2]**2',
+                              '1.0*A3*T[0,0]*T[0,1]',
+                              '1.0*A4*T[0,0]*T[0,2]',
+                              '1.0*A5*T[0,1]*T[0,2]'],
+                    1: ['1.0*A0*T[1,0]**2',
+                            '1.0*A1*T[1,1]**2',
+                            '1.0*A2*T[1,2]**2',
+                            '1.0*A3*T[1,0]*T[1,1]',
+                            '1.0*A4*T[1,0]*T[1,2]',
+                            '1.0*A5*T[1,1]*T[1,2]'],
+                    2: ['1.0*A0*T[2,0]**2',
+                            '1.0*A1*T[2,1]**2',
+                            '1.0*A2*T[2,2]**2',
+                            '1.0*A3*T[2,0]*T[2,1]',
+                            '1.0*A4*T[2,0]*T[2,2]',
+                            '1.0*A5*T[2,1]*T[2,2]'],
+                    3: ['2.0*A0*T[0,0]*T[1,0]',
+                            '2.0*A1*T[0,1]*T[1,1]',
+                            '2.0*A2*T[0,2]*T[1,2]',
+                            '1.0*A3*(T[0,0]*T[1,1] + T[1,0]*T[0,1])',
+                            '1.0*A4*(T[0,0]*T[1,2] + T[1,0]*T[0,2])',
+                            '1.0*A5*(T[0,1]*T[1,2] + T[1,1]*T[0,2])'],
+                    4: ['2.0*A0*T[0,0]*T[2,0]',
+                            '2.0*A1*T[0,1]*T[2,1]',
+                            '2.0*A2*T[0,2]*T[2,2]',
+                            '1.0*A3*(T[0,0]*T[2,1] + T[2,0]*T[0,1])',
+                            '1.0*A4*(T[0,0]*T[2,2] + T[2,0]*T[0,2])',
+                            '1.0*A5*(T[0,1]*T[2,2] + T[2,1]*T[0,2])'],
+                    5: ['2.0*A0*T[1,0]*T[2,0]',
+                            '2.0*A1*T[1,1]*T[2,1]',
+                            '2.0*A2*T[1,2]*T[2,2]',
+                            '1.0*A3*(T[1,0]*T[2,1] + T[2,0]*T[1,1])',
+                            '1.0*A4*(T[1,0]*T[2,2] + T[2,0]*T[1,2])',
+                            '1.0*A5*(T[1,1]*T[2,2] + T[2,1]*T[1,2])']}
+
+'''cellXformRelations provide the constraints on newA[i] values for a new 
+cell generated from oldA[i] values.
+'''
+# cellXformRelations values were generated using::
+#   from GSASIIlattice import fmtCellConstraints,GenerateCellConstraints
+#   cellXformRelations = fmtCellConstraints(GenerateCellConstraints())
+
+def GenCellConstraints(Trans,origPhase,newPhase,origA,debug=False):
+    '''Generate the constraints between two unit cells constants for a phase transformed 
+    by matrix Trans. 
+
+    :param np.array Trans: a 3x3 direct cell transformation matrix where,
+       Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
+       (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
+    :param int origPhase: phase id (pId) for original phase
+    :param int newPhase: phase id for the transformed phase to be constrained from 
+      original phase
+    :param list origA: reciprocal cell ("A*") tensor 
+    :param bool debug: If true, the constraint input is used to compute and print A* 
+      and from that the direct cell for the transformed phase.
+    '''
+    import GSASIIobj as G2obj
+    T = Mat = np.linalg.inv(Trans).T
+    Anew = []
+    constrList = []
+    for i in range(6):
+        constr = [[-1.0,G2obj.G2VarObj('{}::A{}'.format(newPhase,i))]]
+        mult = []
+        for j,item in enumerate(cellXformRelations[i]):
+            const, aTerm, tTerm = item.split('*',2)
+            const = float(const) * eval(tTerm)
+            # ignore terms where either the Transform contribution is zero.
+            #if abs(const * origA[j]) > 1e-8:
+            # If A term is zero this may indicate a symmetry constraint or an
+            # accidentally zero. If required as zero then it will not be refined
+            # and we do not want to include it, but if accidentally zero we do, 
+            # so include them for now and remove later. 
+            if abs(const) > 1e-8:
+                constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
+                mult.append(const)
+            else:
+                mult.append(0)
+        constrList.append(constr + [0.0,None,'c'])
+        if debug: Anew.append(np.dot(origA,mult))           
+    if debug:
+        print('xformed A*  ',Anew)
+        print('xformed cell',A2cell(Anew))
+    return constrList
+
 def TransformXYZ(XYZ,Trans,Vec):
     return np.inner(XYZ,Trans)+Vec
     

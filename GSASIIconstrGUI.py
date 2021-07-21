@@ -1706,20 +1706,20 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         if Nop < 0:         #inversion
             Opr *= -1
         XOpr = np.inner(Opr,Trans)
+        invOpr = nl.inv(XOpr)
         for i,ix in enumerate(list(CSX[0])):
             if not ix:
                 continue
             name = xnames[i]
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = []
-            for iop,opval in enumerate(XOpr[i]):
-                if opval:
+            for iop,opval in enumerate(invOpr[i]):
+                if abs(opval) > 1e-6:
                     DepCons.append([opval,G2obj.G2VarObj('%d::%s:%s'%(opId,xnames[iop],iat))])
             if len(DepCons) == 1:
                 constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
             elif len(DepCons) > 1:
-                for Dep in DepCons:
-                    Dep[0] *= -1
+                IndpCon[0] = -1.
                 constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
         for name in ['Afrac','AUiso']:
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
@@ -1760,73 +1760,16 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         #how do I do Uij's for most Trans?
 
     # constraints on lattice parameters between phases
-#    T = nl.inv(Trans).T
-    # T = Trans.T
-    # conMat = [
-    #     [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
-    #     [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
-    #     [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
-    #     [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
-    #     [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
-    #     [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]
-    #     ]
-    # Gnew = conMat * A: 
-#         T00**2*a0  T01**2*a1 T02**2*a2 T00*T01*a3    T00*T02*a4    T01*T02*a5 
-#         T10**2*a0  T11**2*a1 T12**2*a2 T10*T11*a3    T10*T12*a4    T11*T12*a5 
-#         T20**2*a0  T21**2*a1 T22**2*a2 T20*T21*a3    T20*T22*a4    T21*T22*a5 
-#         2*T00*T10*a0      2*T01*T11*a1     2*T02*T12*a2     (T00*T11 + T01*T10)*a3      (T00*T12 + T02*T10)*a4      (T01*T12 + T02*T11)*a5 
-#         2*T00*T20*a0      2*T01*T21*a1     2*T02*T22*a2     (T00*T21 + T01*T20)*a3      (T00*T22 + T02*T20)*a4      (T01*T22 + T02*T21)*a5 
-#         2*T10*T20*a0      2*T11*T21*a1     2*T12*T22*a2     (T10*T21 + T11*T20)*a3      (T10*T22 + T12*T20)*a4      (T11*T22 + T12*T21)*a5 
-    # Generated as symbolic code using:
-    # import sym
-    # A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
-    # G = sym.Matrix([ [A0,    A3/2.,  A4/2.], [A3/2.,  A1,    A5/2.], [A4/2., A5/2.,    A2]])
-    # transformation matrix
-    # T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols('T00, T10, T20, T01, T11, T21, T02, T12, T22') 
-    # Tr = sym.Matrix([ [T00, T10, T20], [T01, T11, T21], [T02, T12, T22],]) 
-    # Gnew = (Tr.T*G)*Tr
-    
-    #print('old A',G2lat.cell2A(oldPhase['General']['Cell'][1:7]))
-    #print('new A',G2lat.cell2A(newPhase['General']['Cell'][1:7]))
-    
-#this is still incorrect for hex/trig/ortho/tetragonal --> monoclinic
-    
-#    for iAnew,Asi in enumerate(['A0','A1','A2','A3','A4','A5']): # loop through A[i] for new cell
-#        Nparm = str(npId) + '::' + Asi
-#        if Nparm != SetUniqAj(npId,iAnew,nSGData):
-#            continue # skip: Ai constrained from Aj or must be zero
-#        multDict = {}
-#        for iAorg in range(6):
-#            cA = conMat[iAnew][iAorg] # coeff for A[i] in constraint matrix
-#            if abs(cA) < 1.e-8: continue
-#            parm = SetUniqAj(opId,iAorg,oSGData) # translate to unique A[i] in original cell
-#            if not parm: continue # must be zero
-#            # sum coeff
-#            if parm in multDict:
-#                multDict[parm] += cA
-#            else:
-#                multDict[parm] = cA
-#        # any non-zero multipliers?
-#        maxMult = 0
-#        for i in multDict:
-#            maxMult = max(maxMult,abs(multDict[i]))
-#        if maxMult <= 0:  # Nparm computes as zero; Fix this parameter
-#            constraints['Phase'] += [[
-#                [0.0,G2obj.G2VarObj(Nparm)],
-#                None,None,'h']]
-#        elif len(multDict) == 1:        # create equivalence
-#            key = list(multDict.keys())[0]
-#            constraints['Phase'] += [[
-#                [1.0,G2obj.G2VarObj(key)],
-#                [multDict[key],G2obj.G2VarObj(Nparm)],
-#                None,None,'e']]
-#        else:                           # create constraint
-#            constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
-#            for key in multDict:
-#                constr += [[multDict[key],G2obj.G2VarObj(key)]]
-#            constr += [0.0,None,'c']
-#            constraints['Phase'] += [constr]
-    
+    Aold = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
+    if True: # debug
+        constraints['Phase'] += G2lat.GenCellConstraints(Trans,opId,npId,Aold,True)
+        print('old A*',G2lat.cell2A(oldPhase['General']['Cell'][1:7]))
+        print('new A*',G2lat.cell2A(newPhase['General']['Cell'][1:7]))
+        print('old cell',oldPhase['General']['Cell'][1:7])
+        print('new cell',newPhase['General']['Cell'][1:7])
+    else:
+        constraints['Phase'] += G2lat.GenCellConstraints(Trans,opId,npId,Aold)
+
     # constraints on HAP Scale, etc.
     for hId,hist in enumerate(UseList):    #HAP - seems OK
         ohapkey = '%d:%d:'%(opId,hId)

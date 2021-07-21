@@ -3012,9 +3012,9 @@ def UpdatePhaseData(G2frame,Item,data):
             magchoice = magKeep[sel]
             magId = magIds[sel]
             if ifMag:
-                phaseName = '%s mag_%d'%(data['General']['Name'],magchoice['No.'])
+                phaseName = '%s-mag_%d'%(data['General']['Name'],magchoice['No.'])
             else:
-                phaseName = '%s sub_%d'%(data['General']['Name'],magchoice['No.'])
+                phaseName = '%s-sub_%d'%(data['General']['Name'],magchoice['No.'])
             newPhase = copy.deepcopy(data)
             newPhase['ranId'] = ran.randint(0,sys.maxsize),
             del newPhase['magPhases']
@@ -4762,7 +4762,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Hard min: '),0,WACV)
                 for pair in RMCPdict['Pairs']:
                     pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
-            pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Search from: '),0,WACV)
+                pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Search from: '),0,WACV)
+            else:
+                pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Distance min: '),0,WACV)
             for pair in RMCPdict['Pairs']:
                 pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],
                     1,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
@@ -4885,6 +4887,12 @@ def UpdatePhaseData(G2frame,Item,data):
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
+                    elif Rfile != 'Select file': # file specified, but must not exist
+                        RMCPdict['files'][fil][0] = 'Select file' # set filSel?
+                        fileSizer.Add(wx.StaticText(G2frame.FRMC,
+                                label='Warning: file not found.\nWill be removed'),0)
+                        fileSizer.Add((-1,-1),0)
+                        fileSizer.Add((-1,-1),0)
                     else:
                         RMCPdict['files'][fil][0] = 'Select file' # set filSel?
                         #fileSizer.Add((-1,-1),0)
@@ -5208,7 +5216,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             resLine.Add(wx.StaticText(G2frame.FRMC,label=' Run '),0,WACV)
             resLine.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Cycles',xmin=1,size=[60,25]))
             resLine.Add(wx.StaticText(G2frame.FRMC,
-                        label=' Computation cycles of '),0,WACV)
+                        label=' computation cycles of '),0,WACV)
             RMCPdict['Steps/cycle'] = RMCPdict.get('Steps/cycle',5000)
             resLine.Add(G2G.EnumSelector(G2frame.FRMC,RMCPdict,'Steps/cycle',
                         ['1K','5K','10K','50K'],[1000,5000,10000,50000]),0,WACV)
@@ -5853,7 +5861,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 #    batch.write('python ' + rname + '\n')
                 #else:
                 #    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
-                batch.write(fullrmc_exec + ' ' + rname + '\n')
+                batch.write(fullrmc_exec + ' ' + os.path.abspath(rname) + '\n')
                 batch.close()
                 if sys.platform == "darwin":
                     GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
@@ -6007,8 +6015,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 if plt in imgDict:
                     fp = open(plotFilePath,'rb')
                     fp.seek(imgDict[plt])
-                    im = pickle.load(fp)
-                    G2plt.PlotRawImage(G2frame,im,plt)
+                    try:
+                        im = pickle.load(fp)
+                        G2plt.PlotRawImage(G2frame,im,plt)
+                    except:
+                        pass
                     fp.close()
                 else:
                     plotLbls = []

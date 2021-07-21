@@ -3099,8 +3099,15 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
 '''
         for pair in BondList:
             e1,e2 = pair.split('-')
-            rundata += '            ("element","{}","{}",{},{}),\n'.format(
-                                        e1.strip(),e2.strip(),*BondList[pair])
+            d1,d2 = BondList[pair]
+            if d1 == 0: continue
+            if d2 == 0:
+                print('Ignoring min distance without maximum')
+                #rundata += '            ("element","{}","{}",{}),\n'.format(
+                #                        e1.strip(),e2.strip(),d1)
+            else:
+                rundata += '            ("element","{}","{}",{},{}),\n'.format(
+                                        e1.strip(),e2.strip(),d1,d2)
         rundata += '             ])\n'
     if AngleList:
         rundata += '''    A_CONSTRAINT   = BondsAngleConstraint()

@@ -1714,7 +1714,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         Umod = 1.0
     if nWaves[3]:
         tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*mglTau  #Mwaves x ngl
-        MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X ngl
+        MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X tau
         MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
         Mmod = np.sum(MmodA+MmodB,axis=1)
         Mmod = np.swapaxes(Mmod,1,2)    #Mxyz,Ntau,Natm
@@ -1743,11 +1743,11 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
         SGMT = np.vstack((SGMT,SGMT))
         Sinv = np.vstack((Sinv,Sinv))
         SGT = np.vstack((SGT,SGT+np.array([0.,0.,0.,.5])))%1.
-    mst = Sinv[:,3,:3]
     epsinv = Sinv[:,3,3]
+    mst = np.inner(Sinv[:,:3,:3],modQ)-epsinv[:,nxs]*modQ   #van Smaalen Eq. 3.3
     phi = np.inner(XYZ,modQ).T
     TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
+    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]+phi[nxs,:,:])+SGT[:,3][nxs,:,nxs]
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
     MmodAR = Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #cos term
@@ -1758,7 +1758,7 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     MmodBI = Bm[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #sin term
     MmodAI = np.sum(SGMT[nxs,:,nxs,:,:]*MmodAI[:,:,:,nxs,:],axis=-1)
     MmodBI = np.sum(SGMT[nxs,:,nxs,:,:]*MmodBI[:,:,:,nxs,:],axis=-1)
-    return MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; cos & sin parts; sum matches drawn atom moments
+    return MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; cos & sin parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

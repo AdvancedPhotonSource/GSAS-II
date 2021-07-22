@@ -1509,6 +1509,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if SGData['SGGray']:
         Nops *= 2
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    GamI = np.array([ops[0][3,3] for ops in SSGData['SSGOps']])
+    if SGData['SGInv']:
+        GamI = np.hstack((GamI,-GamI))
+    GamI = np.hstack([GamI for cen in SGData['SGCen']])
+    if SGData['SGGray']:
+        GamI = np.hstack((GamI,GamI))
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     SSCen = SSGData['SSGCen']
     FFtables = calcControls['FFtables']
@@ -1532,6 +1538,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             mXYZ = np.hstack((mXYZ,mXYZ))
 
         MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
+        MmodA = MmodAR+MmodBR
+        MmodB = MmodAI+MmodBI
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
@@ -1618,14 +1626,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
 #  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
-            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(
+            fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+    
-                (-MmodAI+H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs])*SGData['SpnFlp'][nxs,:,nxs,nxs],
+                GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
-            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(
+            fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (MmodAR+H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+    
-                (-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs])*SGData['SpnFlp'][nxs,:,nxs,nxs],
+                GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:

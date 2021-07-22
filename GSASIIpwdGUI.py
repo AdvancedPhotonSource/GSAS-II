@@ -4624,12 +4624,13 @@ def UpdateUnitCellsGrid(G2frame, data):
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
-        findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
-        findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
-        ssSizer.Add(findMV,0,WACV)
-        findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
-        findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
-        ssSizer.Add(findallMV,0,WACV)
+        if len(peaks[0]):
+            findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
+            findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
+            ssSizer.Add(findMV,0,WACV)
+            findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
+            findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
+            ssSizer.Add(findallMV,0,WACV)
         mainSizer.Add(ssSizer,0)
 
     G2frame.dataWindow.currentGrids = []

@@ -113,8 +113,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                 if Id:
                     sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
-                    for item in sampleParmDict:
-                        sampleParmDict[item].append(sampleData.get(item,0))
+                else:  # item missing from tree! stick in NaN's!
+                    sampleData = {}
+                for item in sampleParmDict:
+                    sampleParmDict[item].append(sampleData.get(item,np.NaN))
         for item in sampleParmDict:
             if sampleParmDict[item]:
                 frstValue = sampleParmDict[item][0]

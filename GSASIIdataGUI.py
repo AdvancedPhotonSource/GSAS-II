@@ -4158,44 +4158,49 @@ class GSASII(wx.Frame):
             return            
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         used = False
+        seqUse = False
         while item:
             name = self.GPXtree.GetItemText(item)
-            if name not in ['Notebook','Controls','Covariance','Constraints',
-                'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
-                if 'PWDR' in name[:4]:
-                    nItems['PWDR'] += 1
-                    if name in Histograms:
-                        used = True
-                        item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-                        continue
-                if 'SASD' in name[:4]: nItems['SASD'] += 1
-                if 'REFD' in name[:4]: nItems['REFD'] += 1
-                if 'IMG' in name[:3]:  nItems['IMG'] += 1
-                if 'HKLF' in name[:4]:
-                    nItems['HKLF'] += 1
-                    if name in Histograms:
-                        used = True
-                        item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-                        continue
-                if 'PDF' in name[:3]:
-                    PDFnames.append(name)
-                    nItems['PDF'] += 1
-                TextList.append(name)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+            if name in ['Notebook','Controls','Covariance','Constraints',
+                'Restraints','Phases','Rigid bodies','Hist/Phase']:
+                continue
+            if 'Sequential' in name:
+                continue
+            if name in self.testSeqRefineMode():
+                seqUse = True
+                continue
+            if 'PWDR' in name[:4]:
+                nItems['PWDR'] += 1
+                if name in Histograms:
+                    used = True
+                    continue
+            if 'SASD' in name[:4]: nItems['SASD'] += 1
+            if 'REFD' in name[:4]: nItems['REFD'] += 1
+            if 'IMG' in name[:3]:  nItems['IMG'] += 1
+            if 'HKLF' in name[:4]:
+                nItems['HKLF'] += 1
+                if name in Histograms:
+                    used = True
+                    continue
+            if 'PDF' in name[:3]:
+                PDFnames.append(name)
+                nItems['PDF'] += 1
+            TextList.append(name)
         for pdfName in PDFnames:
             try:
                 TextList.remove('PWDR'+pdfName[4:])
             except ValueError:
                 print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
-        if len(TextList) == 0 and used:
-            G2G.G2MessageBox(self,'All histograms are used. You must remove them from phases before they can be deleted',
-                                 'Nothing to delete')
+        if len(TextList) == 0:
+            if used:
+                msg = 'All histograms are associated with at least one phase. You must unset a histogram "use" flag in all phase(s) where it is referenced before it can be deleted'
+            elif seqUse:
+                msg = 'All histograms are in used in the sequential list. You must remove it from the list (in Controls) before it can be deleted'
+            else:
+                msg = 'No data items found in tree to delete'
+            G2G.G2MessageBox(self,msg,'Nothing to delete')
             return
-        elif len(TextList) == 0:
-            G2G.G2MessageBox(self,'None of the tree items are allowed to be deleted',
-                                 'Nothing to delete')
-            return
-        
         dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:

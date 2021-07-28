@@ -821,13 +821,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 return
             G2frame.bottomSizer.DeleteWindows()
         Indx.clear()
-        G2frame.bottomSizer = ShowHistogramInfo()
+        G2frame.bottomSizer,LeBailMsg = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
         mainSizer.Layout()
         G2frame.dataWindow.Refresh()
         DData.SetVirtualSize(mainSizer.GetMinSize())
         DData.Scroll(0,Scroll)
         G2frame.dataWindow.SendSizeEvent()
+        if LeBailMsg:
+            G2G.G2MessageBox(G2frame,LeBailMsg,
+                                 title='LeBail refinement changes')
         
     def ShowHistogramInfo():
         '''This creates a sizer with all the information pulled out from the Phase/data dict
@@ -903,6 +906,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if 'Layer Disp' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Layer Disp'] = [0.0,False]
 #end patch
+        offMsg = ''
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
         useBox = wx.BoxSizer(wx.HORIZONTAL)
         useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+G2frame.hist+' ?')
@@ -1031,20 +1035,51 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 if generalData['Type'] != 'magnetic': 
                     bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
             else:   #turn off PWDR intensity related paramters for LeBail refinement
-                UseList[G2frame.hist]['Scale'][1] = False
-                UseList[G2frame.hist]['Pref.Ori.'][2] = False
-                UseList[G2frame.hist]['Extinction'][1] = False
+                if UseList[G2frame.hist]['Scale'][1]:
+                    offMsg = "Phase fraction"
+                    UseList[G2frame.hist]['Scale'][1] = False
+                if UseList[G2frame.hist]['Pref.Ori.'][2]:
+                    UseList[G2frame.hist]['Pref.Ori.'][2] = False
+                    if offMsg: offMsg += ', '
+                    offMsg += 'Preferred orientation'
+                if UseList[G2frame.hist]['Extinction'][1]:
+                    UseList[G2frame.hist]['Extinction'][1] = False
+                    if offMsg: offMsg += ', '
+                    offMsg += 'Extinction'
+                flag = False
                 for item in UseList[G2frame.hist]['Babinet']:
-                    UseList[G2frame.hist]['Babinet'][item][1] = False
-                G2G.G2MessageBox(G2frame,'Refinement flags for Phase fraction, Preferred orientation, Extinction & Babinet are now off',
-                    title='LeBail refinement flag notice')
+                    if UseList[G2frame.hist]['Babinet'][item][1]:
+                        UseList[G2frame.hist]['Babinet'][item][1] = False
+                        flag = True
+                if flag:
+                    if offMsg: offMsg += ', '
+                    offMsg += 'Babinet'
+                # make sure that the at least one phase uses the histogram...
+                allLeBail = True
+                hists,phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+                for key in phases:
+                    d = phases[key]
+                    if G2frame.hist not in d['Histograms']: continue
+                    if not d['Histograms'][G2frame.hist]['Use']: continue
+                    if not d['Histograms'][G2frame.hist]['LeBail']:
+                        #print('Phase',key,'is used as non-LeBail')
+                        allLeBail = False
+                        break
+                # ...or turn off scale
+                if allLeBail:
+                    if hists[G2frame.hist]['Sample Parameters']['Scale'][1]:
+                        hists[G2frame.hist]['Sample Parameters']['Scale'][1] = False
+                        if offMsg: offMsg += ', '
+                        offMsg += 'Histogram scale factor'
+                if offMsg:
+                    offMsg = "Refinement flags turned for: " + offMsg
         elif G2frame.hist[:4] == 'HKLF':
             bottomSizer.Add(ExtSizer('HKLF'),0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
             if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:
                 bottomSizer.Add(FlackSizer(),0,wx.BOTTOM,5)
             bottomSizer.Add(twinSizer(),0,wx.BOTTOM,5)
-        return bottomSizer
+        return bottomSizer,offMsg
 
     ######################################################################
     #### Beginning of UpdateDData execution here
@@ -1052,7 +1087,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
     UseList = data['Histograms']
-    # look for histgrams that are no longer in the project (should not happen!)
+    # look for histgrams that are no longer in the project (can happen when histogram deleted from tree)
     broken = [i for i in UseList if i not in keyList]
     if broken:
         msg = 'Removing histogram(s) referenced in this phase that are no longer in project:\n\n'
@@ -1060,7 +1095,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if i > 0: msg += ', '
             msg += j
             del data['Histograms'][j]
-        G2G.G2MessageBox(G2frame,msg,'Removing bad histograms')
+        G2G.G2MessageBox(G2frame,msg,'Dereferencing Removed histograms')
     if UseList:
         G2frame.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,True)
         for item in G2frame.Refine: item.Enable(True)
@@ -1096,6 +1131,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(DData,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
+    LeBailMsg = None
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
         DData.select = wx.ListBox(DData,choices=G2frame.dataWindow.HistsInPhase,
@@ -1107,7 +1143,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if any(['PWDR' in item for item in keyList]):
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       
-        G2frame.bottomSizer = ShowHistogramInfo()
+        G2frame.bottomSizer,LeBailMsg = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
     elif not keyList:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,
@@ -1119,6 +1155,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),0,wx.TOP,10)
         
     G2phG.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)
+    if LeBailMsg:
+        G2G.G2MessageBox(G2frame,LeBailMsg,
+                                 title='LeBail refinement changes')
 
 def MakeHistPhaseWin(G2frame):
     '''Display Phase/Data info from Hist/Phase tree item (not used with Phase/Data tab)

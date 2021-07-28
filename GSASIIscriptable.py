@@ -41,15 +41,16 @@ Overview of Classes
 ===============================    ===============================================================================================================
 class                              Encapsulates 
 ===============================    ===============================================================================================================
-:class:`G2Project`                  a GSAS-II project file, provides references to objects below,
+:class:`G2Project`                  A GSAS-II project file, provides references to objects below,
                                     each corresponding to a tree item 
-                                    (excepting :class:`G2AtomRecord`)
-:class:`G2Phase`                    a phase
-:class:`G2PwdrData`                 a powder histogram
-:class:`G2Image`                    an image
-:class:`G2PDF`                      a PDF histogram
-:class:`G2SeqRefRes`                the sequential results table
-:class:`G2AtomRecord`               an atom within a phase
+                                    (exception is :class:`G2AtomRecord`)
+:class:`G2Phase`                    Provides phase information access 
+                                    (also provides access to atom info via :class:`G2AtomRecord`)
+:class:`G2AtomRecord`               Access to an atom within a phase
+:class:`G2PwdrData`                 Access to powder histogram info
+:class:`G2Image`                    Access to image info
+:class:`G2PDF`                      PDF histogram info
+:class:`G2SeqRefRes`                The sequential results table
 ===============================    ===============================================================================================================
 
 ---------------------

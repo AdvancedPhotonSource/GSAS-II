@@ -4516,6 +4516,7 @@ class GSASII(wx.Frame):
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
                 config = G2G.GetConfigValsDocs()
                 GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
+                G2G.SaveConfigVars(config)
                 return True
             else:
                 return False

@@ -1747,7 +1747,7 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     mst = np.inner(Sinv[:,:3,:3],modQ)-epsinv[:,nxs]*modQ   #van Smaalen Eq. 3.3
     phi = np.inner((XYZ-SGT[:,:3][nxs,:,:]),modQ).T
     TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs])+phi[nxs,:,:]-SGT[:,3][nxs,:,nxs]   #+,+,+ best for DyMnGe
+    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs])-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:]   #+,+,+ best for DyMnGe
     psin = np.sin(twopi*phase)      #tau,ops,atms
     pcos = np.cos(twopi*phase)
     MmodAR = Am[nxs,nxs,:,:]*pcos[:,:,:,nxs]    #Re cos term; tau,ops,atms, Mxyz

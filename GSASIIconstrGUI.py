@@ -389,6 +389,9 @@ def UpdateConstraints(G2frame,data):
             namelist = ['MXcos','MYcos','MZcos','MXsin','MYsin','MZsin']
         elif 'mV' in name:
             namelist = ['mV0','mV1','mV2']
+        elif 'Debye' in name or 'BkPk' in name:   #special cases for Background fxns
+            dbname = name.split(';')[0].split(':')[2]
+            return [item for item in nameList if dbname in item]
         elif 'RB' in name:
             rbfx = 'RB'+items[2][2]
             if 'T' in name and 'Tr' not in name:
@@ -859,7 +862,7 @@ def UpdateConstraints(G2frame,data):
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'equivalence')
         
     def OnAddRiding(event):
-        ''' Add riding equivalences between all parameters on atoms '''
+        ''' Add riding equivalences between all parameters on atoms  - not currently used'''
         page = G2frame.Page
         vartype,varList,constrDictEnt = PageSelection(page)
         if vartype is None: return

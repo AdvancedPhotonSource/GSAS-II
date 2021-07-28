@@ -788,14 +788,14 @@ def getWidthsCW(pos,sig,gam,shl):
     on high-angle side 75 are used, high angle side extended for axial divergence
     (for peaks above 90 deg, these are reversed.)
     
-    param pos: peak position; 2-theta in degrees
-    param sig: Gaussian peak variance in centideg^2
-    param gam: Lorentzian peak width in centidegrees
-    param shl: axial divergence parameter (S+H)/
+    :param pos: peak position; 2-theta in degrees
+    :param sig: Gaussian peak variance in centideg^2
+    :param gam: Lorentzian peak width in centidegrees
+    :param shl: axial divergence parameter (S+H)/L
     
-    returns: widths; [Gaussian sigma, Lornetzian gamma] in degrees
-    returns: low angle, high angle ends of peak; 20FWHM & 50 FWHM from position
-        reverset for 2-theta > 90 deg.
+    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and 
+        low angle, high angle ends of peak; 20 FWHM & 50 FWHM from position
+        reversed for 2-theta > 90 deg.
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+widths[1]

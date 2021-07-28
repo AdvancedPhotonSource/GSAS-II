@@ -251,6 +251,9 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         G2fil.G2Print('Bad parameter: '+varyList[ipvt-1],mode='warn')
             break
         IfOK = True
+        if not len(varyList):
+            covMatrix = []
+            break
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
@@ -264,9 +267,6 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         except TypeError:
             # if we get here, no result[1] (covar matrix) was returned or other calc error: refinement failed
             IfOK = False
-            if not len(varyList):
-                covMatrix = []
-                break
             if 'Hessian' in Controls['deriv type']:
                 SVD0 = result[2].get('SVD0')
                 if SVD0 == -1:

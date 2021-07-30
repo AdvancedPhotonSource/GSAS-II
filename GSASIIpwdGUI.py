@@ -7190,6 +7190,7 @@ def UpdatePDFGrid(G2frame,data):
             G2frame.GetStatusBar().SetStatusText('',1)
             wx.BeginBusyCursor()
             try:
+                data['Ruland'] = 0.01       #always set small to start
                 OptimizePDF(G2frame,data)
             finally:
                 wx.EndBusyCursor()
@@ -7198,6 +7199,8 @@ def UpdatePDFGrid(G2frame,data):
                         
         def AfterChangeNoRefresh(invalid,value,tc):
             if invalid: return
+            if tc.GetId() in Indx:
+                Indx[tc.GetId()][0].SetValue(int(value*Indx[tc.GetId()][1]))
             wx.CallAfter(OnComputePDF,None)
         
         def OnDetType(event):
@@ -7218,9 +7221,15 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(OnComputePDF,None)
         
         def OnRulSlider(event):
-            value = int(rulandSldr.GetValue())/1000.
+            value = int(rulandSldr.GetValue())/100.
             data['Ruland'] = max(0.001,value)
             rulandWdt.SetValue(data['Ruland'])
+            wx.CallAfter(OnComputePDF,None)
+            
+        def OnGRscaleSlider(event):
+            value = int(gscaleSldr.GetValue())/50.
+            data['GR Scale'] = max(0.1,min(2.,value))
+            gscale.SetValue(data['GR Scale'])
             wx.CallAfter(OnComputePDF,None)
         
         def NewQmax(invalid,value,tc):
@@ -7243,7 +7252,8 @@ def UpdatePDFGrid(G2frame,data):
         def OnNoRing(event):
             data['noRing'] = not data['noRing']
             wx.CallAfter(OnComputePDF,None)
-
+          
+        Indx = {}
         sfgSizer = wx.BoxSizer(wx.VERTICAL)         
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
@@ -7290,6 +7300,7 @@ def UpdatePDFGrid(G2frame,data):
         backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
         backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'BackRatio',nDig=(10,3),xmin=0.0,xmax=1.0,
             typeHint=float,OnLeave=AfterChangeNoRefresh)
+        Indx[backVal.GetId()] = [backSldr,100]
         bkBox.Add(backVal,0,WACV)    
         sfgSizer.Add(bkBox,0,wx.EXPAND)
 
@@ -7297,14 +7308,27 @@ def UpdatePDFGrid(G2frame,data):
             sqBox = wx.BoxSizer(wx.HORIZONTAL)
             sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Ruland width: '),0,WACV)    
             rulandSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
-                value=int(1000*data['Ruland']))
+                value=int(100*data['Ruland']))
             sqBox.Add(rulandSldr,1,wx.EXPAND)
             rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
             rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Ruland',nDig=(10,3),xmin=0.001,xmax=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
+            Indx[rulandWdt.GetId()] = [rulandSldr,100]
             sqBox.Add(rulandWdt,0,WACV)    
             sfgSizer.Add(sqBox,0,wx.EXPAND)
-        
+            
+        gscaleBox = wx.BoxSizer(wx.HORIZONTAL)
+        gscaleBox.Add(wx.StaticText(G2frame.dataWindow,label=' G(R) scale: '),0,WACV)    
+        gscaleSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
+            value=int(50*data['GR Scale']))
+        gscaleBox.Add(gscaleSldr,1,wx.EXPAND)
+        gscaleSldr.Bind(wx.EVT_SLIDER, OnGRscaleSlider)
+        gscale = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'GR Scale',nDig=(10,3),xmin=0.1,xmax=2.,
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
+        Indx[gscale.GetId()] = [gscaleSldr,50]
+        gscaleBox.Add(gscale,0,WACV)    
+        sfgSizer.Add(gscaleBox,0,wx.EXPAND)
+       
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Scaling Q-range: '),0,WACV)
         SQmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['QScaleLim'],0,nDig=(10,3),
@@ -7503,8 +7527,8 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='I(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
-            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
         else:
             G2plt.PlotISFG(G2frame,data,newPlot=False)
         
@@ -7622,6 +7646,8 @@ def UpdatePDFGrid(G2frame,data):
             data['diffGRname'] = ''
         if 'diffMult' not in data:
             data['diffMult'] = 1.0
+        if 'GR Scale' not in data:
+            data['GR Scale'] = 1.0
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     if powId:
         G2frame.dataWindow.PDFMenu.EnableTop(0,enable=True)

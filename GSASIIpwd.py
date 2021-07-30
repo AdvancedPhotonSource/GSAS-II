@@ -240,7 +240,8 @@ def Polarization(Pola,Tth,Azm=0.0):
 def Oblique(ObCoeff,Tth):
     'currently assumes detector is normal to beam'
     if ObCoeff:
-        return (1.-ObCoeff)/(1.0-np.exp(np.log(ObCoeff)/npcosd(Tth)))
+        K = (1.-ObCoeff)/(1.0-np.exp(np.log(ObCoeff)/npcosd(Tth)))
+        return K
     else:
         return 1.0
                 
@@ -328,7 +329,7 @@ def CalcPDF(data,inst,limits,xydata):
         MuR = Abs*data['Diam']/20.0
         IofQ[1][1] /= Absorb(data['Geometry'],MuR,Tth)
         IofQ[1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
-        if data['DetType'] == 'Image plate':
+        if data['DetType'] == 'Area detector':
             IofQ[1][1] *= Oblique(data['ObliqCoeff'],Tth)
     elif 'T' in inst['Type'][0]:    #neutron TOF normalized data - needs wavelength dependent absorption
         wave = 2.*G2lat.TOF2dsp(inst,IofQ[1][0])*npsind(inst['2-theta'][1]/2.)
@@ -415,7 +416,7 @@ def CalcPDF(data,inst,limits,xydata):
     R = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
     xydata['GofR'][1][0] = R
     xydata['gofr'][1][0] = R
-    GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
+    GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])*data.get('GR Scale',1.0)
     xydata['GofR'][1][1] = GR
     gr = GR/(np.pi*R)
     xydata['gofr'][1][1] = gr
@@ -560,10 +561,10 @@ def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
             G2fil.G2Print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
                 data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
     if data['Sample Bkg.'].get('Refine',False):
-        res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
+        res = opt.minimize(Min,xstart,bounds=([0.01,1.],[1.2*bakMul,0.8*bakMul]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     else:
-        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1.]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     Done(res['x'])
     if showFit:
@@ -595,7 +596,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
             F,B,R = arg
             Data['Flat Bkg'] = F*BkgMax
             Data['BackRatio'] = B
-        Data['Ruland'] = R/10.
+        Data['Ruland'] = R
         CalcPDF(Data,inst,limits,xydata)
         # test low r computation
         g = xydata['GofR'][1][1]
@@ -607,12 +608,12 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
         '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
         '''
         if data['Sample Bkg.'].get('Refine',False):
-                return [max(10*data['Ruland'],.05),data['Sample']['Mult']]
+                return [max(data['Ruland'],.05),data['Sample']['Mult']]
         try:
             F = data['Flat Bkg']/BkgMax
         except:
             F = 0
-        return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
+        return [F,data['BackRatio'],max(data['Ruland'],.05)]
     def SetFinalVals(arg):
         '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
         scaled, refined values and plot corrected region of G(r) 
@@ -624,7 +625,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
             F,B,R = arg
             data['Flat Bkg'] = F*BkgMax
             data['BackRatio'] = B
-        data['Ruland'] = R/10.
+        data['Ruland'] = R
         CalcPDF(data,inst,limits,xydata)
     EvalLowPDF(GetCurrentVals())
     BkgMax = max(xydata['IofQ'][1][1])/50.
@@ -1121,10 +1122,14 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
                 Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,.002,xdata[iBeg:iFin])
-                dydpk[4*iD][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdp
-                dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
-                dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
-                dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
+                # dydpk[4*iD][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdp
+                # dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
+                # dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
+                # dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
+                dydpk[4*iD][iBeg:iFin] += 1000.*pkI*dFdp
+                dydpk[4*iD+1][iBeg:iFin] += 1000.*Df
+                dydpk[4*iD+2][iBeg:iFin] += 1000.*pkI*dFds
+                dydpk[4*iD+3][iBeg:iFin] += 1000.*pkI*dFdg
             else:   #'T'OF
                 Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
                 dydpk[4*iD][iBeg:iFin] += pkI*dFdp

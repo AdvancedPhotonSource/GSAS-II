@@ -40,7 +40,7 @@ def GetBinaryDir():
     else:
         print(u'Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
-    if 'arm' in platform.machine():
+    if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
     elif platform.architecture()[0] == '64bit':
         bits = '64'
@@ -52,9 +52,8 @@ def GetBinaryDir():
 #==========================================================================================
 # misc initializations
 # need command-line options for fortran command and fortran options
-#F2PYflags = '' # compiler options for f2py command
-F2PYflags = '-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include' # compiler options for f2py command
-if 'arm' in platform.machine():
+F2PYflags = '' # compiler options for f2py command
+if 'arm' in platform.machine() and sys.platform == "darwin":
     F2PYflags = '-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include' # compiler options for f2py command
 F2PYpath = ARGUMENTS.get('F2PYpath', '')
 # find a default f2py relative to the scons location. Should be in the same place as f2py
@@ -238,7 +237,7 @@ else:
 versions = platform.python_version_tuple()
 version = str(int(versions[0])) + '.' + str(int(versions[1]))
 PlatformBits = '64bits'
-if 'arm' in platform.machine():
+if 'arm' in platform.machine() and sys.platform == "darwin":
    PlatformBits = 'arm'
 if '32' in platform.architecture()[0]:
    PlatformBits = '32bits'

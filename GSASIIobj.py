@@ -2790,7 +2790,7 @@ class ImportImage(ImportBaseclass):
     def InitParameters(self):
         'initialize the instrument parameters structure'
         self.Comments = ['No comments']
-        self.Data = {}
+        self.Data = {'samplechangerpos':0.0,'det2theta':0.0,'Gain map':''}
         self.Npix = 0
         self.Image = None
         self.repeat = False

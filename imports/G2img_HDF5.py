@@ -132,7 +132,7 @@ class HDF5_Reader(G2obj.ImportImage):
         sizexy = list(image.shape) 
         Npix = sizexy[0]*sizexy[1]
         data = {'pixelSize':[74.8,74.8],'wavelength':0.15,'distance':1000.,
-                'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy}
+                'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy,'det2theta':0.0}
         for item in self.Comments:
             name,val = item.split(':',1)
             if 'wavelength' in name and 'spread' not in name:

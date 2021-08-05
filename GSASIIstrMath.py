@@ -1617,7 +1617,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(Bmat,HP.T)                #put into cartesian space X||H,Z||H*L;
+            HM = np.inner(Bmat.T,HP.T)                #put into cartesian space X||H,Z||H*L;
             eM = (HM*refl.T[5]).T                   # normalize HP by d*    Nref,hkl=Unit vectors || Q
 
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
@@ -1626,12 +1626,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
             fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+    
-                GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
+                GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (MmodAR+H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+    
-                GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
+                GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:
@@ -1639,11 +1639,11 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbms += fbm0[:,nxs,:,:,:]
                                 
 #sum ops & atms                                
-            fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Mxyz; sum ops & atoms
+            fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
 # #put into cartesian space
-            facm = np.inner(fasm,uBmat)       #uBmat best fit for DyMnGe
-            fbcm = np.inner(fbsm,uBmat)
+            facm = np.inner(fasm,uAmat)       #uBmat best fit for DyMnGe
+            fbcm = np.inner(fbsm,uAmat)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)

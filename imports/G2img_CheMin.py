@@ -50,7 +50,7 @@ class png_ReaderClass(G2obj.ImportImage):
             self.Comments = ['no metadata']
             pixy = list(self.Image.shape)
             sizexy = [40.,40.]
-            self.Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
+            self.Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy,'det2theta':0.0}
             self.Data['center'] = [pixy[0]*sizexy[0]/1000.,pixy[1]*sizexy[1]/2000.]
         self.LoadImage(ParentFrame,filename)
         return True

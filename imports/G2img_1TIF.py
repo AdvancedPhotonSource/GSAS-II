@@ -359,7 +359,7 @@ def GetTifData(filename):
     polarization = (not polarization) and 0.99 or polarization
     samplechangerpos = (not samplechangerpos) and 0.0 or samplechangerpos
     data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy,
-            'setdist':distance,'PolaVal':[polarization,False],'samplechangerpos':samplechangerpos}
+            'setdist':distance,'PolaVal':[polarization,False],'samplechangerpos':samplechangerpos,'det2theta':0.0}
     File.close()    
     return head,data,Npix,image
 

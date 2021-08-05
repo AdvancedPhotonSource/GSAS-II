@@ -194,7 +194,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             self.formatName = 'GSAS-II image'
             sum = False
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
+    data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy,'det2theta':0.0}
     File.close()
     if GSASIIpath.GetConfigValue('debug'):
         print ('Image read time %.2fs'%(time.time()-time0))

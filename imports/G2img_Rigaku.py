@@ -68,7 +68,7 @@ def GetRigaku(filename,imageOnly=False):
         sizexy = [6000,6000]
         pixSize = [50.,50.] 
     image = np.reshape(image,(sizexy[1],sizexy[0]))        
-    data = {'pixelSize':pixSize,'wavelength':1.5428,'distance':250.0,'center':[150.,150.],'size':sizexy}  
+    data = {'pixelSize':pixSize,'wavelength':1.5428,'distance':250.0,'center':[150.,150.],'size':sizexy,'det2theta':0.0}  
     File.close()    
     if imageOnly:
         return image

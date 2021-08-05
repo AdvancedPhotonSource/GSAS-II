@@ -70,7 +70,7 @@ def GetImgData(filename,imageOnly=False):
             elif 'CENTER_Y' in line:
                 center[1] = float(line.split('=')[1])
             head.append(line)
-    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'size':[size,size]}
+    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'size':[size,size],'det2theta':0.0}
     image = []
     pos = 512
     File.seek(pos)

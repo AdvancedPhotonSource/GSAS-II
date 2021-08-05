@@ -71,7 +71,7 @@ def GetMAR345Data(filename,imageOnly=False):
             center = [float(values[2])/10.,float(values[4])/10.]    #make in mm from pixels
         if line: 
             head.append(line)
-    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center}
+    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'det2theta':0.0}
     for line in head:
         if 'FORMAT' in line[0:6]:
             items = line.split()

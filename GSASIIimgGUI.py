@@ -146,7 +146,7 @@ def UpdateImageData(G2frame,data):
         dlg = G2G.SingleFloatDialog(G2frame,'Polarization test arc mask',
 ''' Do not use if pattern has uneven absorption
  Set 2-theta max in image controls to be fully inside image 
- Enter 2-theta position for arc mask (32-%.1f) '''%IOtth[1],IOtth[1],IOtth,format='%.2f')
+ Enter 2-theta position for arc mask (32-%.1f) '''%IOtth[1],IOtth[1],IOtth,fmt='%.2f')
         if dlg.ShowModal() == wx.ID_OK:
             arcTth = dlg.GetValue()
             G2fil.G2SetPrintLevel('none')

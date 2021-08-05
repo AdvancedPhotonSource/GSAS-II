@@ -698,7 +698,7 @@ def GetTthAzmG(x,y,data):
         dzp = peneCorr(tth0,data['DetDepth'],dist)
         dxyz0[:,:,2] += dzp
 #non zero detector 2-theta:
-    if data['det2theta']:        
+    if data.get('det2theta',0):        
         tthMat = makeMat(data['det2theta'],1)
         dxyz = np.inner(dxyz0,tthMat.T)
     else:

@@ -1019,7 +1019,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfile.close()
         G2Print (' G(R) saved to: '+grfilename)
         
-    if PDFsaves[5]: #RMCProfile files for F(Q) & g(r) overwrites any above
+    if len(PDFsaves) > 5 and PDFsaves[5]: #RMCProfile files for F(Q) & g(r) overwrites any above
         
         fqfilename = fileroot+'.fq'
         fqdata = PDFControls['F(Q)'][1]

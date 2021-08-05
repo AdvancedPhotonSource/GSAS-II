@@ -5039,7 +5039,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             Pid = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             Id = G2gd.GetGPXtreeItemId(G2frame,Pid,'PDF Controls')
             Pattern = G2frame.GPXtree.GetItemPyData(Id)
-            if Pattern:
+            if Pattern and plotType in Pattern:
                 PlotList.append(Pattern[plotType])
         name = plotType
     if plotType in ['G(R)','g(r)']:

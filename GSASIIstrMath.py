@@ -1642,8 +1642,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
 # #put into cartesian space
-            facm = np.inner(fasm,uAmat)       #uBmat best fit for DyMnGe
-            fbcm = np.inner(fbsm,uAmat)
+            facm = np.inner(fasm,uBmat)       #uBmat best fit for DyMnGe; +,- & -,+ fams, fbms
+            fbcm = np.inner(fbsm,uBmat)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)

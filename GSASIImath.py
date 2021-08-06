@@ -1729,7 +1729,7 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     '''
     Am = np.array(MSSdata[3:]).T[:,0,:]   #atoms x cos mag mods; only 1 wave used
     Bm = np.array(MSSdata[:3]).T[:,0,:]   #...sin mag mods
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])        #not .T!!
+    SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
     Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     if SGData['SGInv']:
@@ -1749,7 +1749,7 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     mst = np.inner(Sinv[:,:3,:3],modQ)-epsinv[:,nxs]*modQ   #van Smaalen Eq. 3.3
     phi = np.inner((XYZ-SGT[:,:3][nxs,:,:]),modQ).T
     TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]+phi[nxs,:,:])-SGT[:,3][nxs,:,nxs]
+    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs])+SGT[:,3][nxs,:,nxs]-phi[nxs,:,:]
     psin = np.sin(twopi*phase)      #tau,ops,atms
     pcos = np.cos(twopi*phase)
     MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz

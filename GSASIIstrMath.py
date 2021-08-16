@@ -1617,7 +1617,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops)     #Nref,Natm
-            HM = np.inner(Bmat.T,HP.T)                #put into cartesian space X||H,Z||H*L;
+            HM = np.inner(Bmat,HP.T)                #put into cartesian space X||H,Z||H*L; Bmat.T correct Cart coordinates
             eM = (HM*refl.T[5]).T                   # normalize HP by d*    Nref,hkl=Unit vectors || Q
 
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              

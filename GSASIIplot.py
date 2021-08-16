@@ -2628,8 +2628,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
         if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
-            if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, invalid pos:',event.xdata,event.ydata)
-            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+#            if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, invalid pos:',event.xdata,event.ydata)
+#            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if not G2frame.PickId:
             if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, G2frame.PickId is not set')

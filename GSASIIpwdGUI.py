@@ -1650,7 +1650,7 @@ def UpdateBackground(G2frame,data):
             data[1]['background PWDR'][2] = not data[1]['background PWDR'][2]            
 
         fileSizer = wx.BoxSizer(wx.VERTICAL)
-        fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0)
+        fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background histogram (for point-by-point subraction):'),0)
         if 'background PWDR' not in data[1]:
             data[1]['background PWDR'] = ['',-1.,False]
         backSizer = wx.BoxSizer(wx.HORIZONTAL)

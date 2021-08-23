@@ -1664,7 +1664,6 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     '''
     ngl = 36                    #selected for integer steps for 1/6,1/4,1/3...
     glTau,glWt = pwd.pygauleg(0.,1.,ngl)         #get Gauss-Legendre intervals & weights
-    mglTau = np.arange(0.,1.,1./ngl)
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
@@ -1713,7 +1712,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     else:
         Umod = 1.0
     if nWaves[3]:
-        tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*mglTau  #Mwaves x ngl
+        tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
         MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X tau
         MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
         Mmod = np.sum(MmodA+MmodB,axis=1)

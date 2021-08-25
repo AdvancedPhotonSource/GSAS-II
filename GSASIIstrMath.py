@@ -2610,7 +2610,7 @@ def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
     parmDict[phfx+'Scale'] = max(1.e-12,parmDict[phfx+'Scale'])                      #put floor on phase fraction scale
     parmDict[hfx+'Scale'] = max(1.e-12,parmDict[hfx+'Scale'])                        #put floor on histogram scale
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3+im]               #scale*multiplicity
-    if 'X' in parmDict[hfx+'Type']:
+    if 'XC' in parmDict[hfx+'Type']:
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])[0]
     POcorr = 1.0
     if pfx+'SHorder' in parmDict:                 #generalized spherical harmonics texture - takes precidence
@@ -2631,7 +2631,7 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
     'Needs a doc string'    #need powder extinction derivs!
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
-    if 'X' in parmDict[hfx+'Type']:
+    if 'XC' in parmDict[hfx+'Type']:
         pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])
         dIdPola /= pola
     else:       #'N'
@@ -3216,8 +3216,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     fixback = Histogram['Background'][1].get('fixback',None)
     yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixback)
     yc = np.zeros_like(yb)
-    # cw = np.diff(ma.getdata(x))
-    # cw = np.append(cw,cw[-1])
+    cw = np.diff(ma.getdata(x))
+    cw = np.append(cw,cw[-1])
         
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -3250,7 +3250,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         if Phase['General'].get('Modulated',False):
             SSGData = Phase['General']['SSGData']
             im = 1  #offset in SS reflection list
-            #??
         Dij = GetDij(phfx,SGData,parmDict)
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0. 
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
@@ -3377,7 +3376,11 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
                 else:
                     fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))[0]
-                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp          #*cw[iBeg:iFin]
+                    # if 'NB' in calcControls[hfx+'histType']:
+                    #     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp*.001/cw[iBeg:iFin]
+                    # else:
+                    #     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+                    yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
         elif 'T' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3503,8 +3506,8 @@ def getPowderProfileDerv(args):
                 dMdv[varylist.index(name)] += dMdpk[4*Id+ip]
     if hfx+'BF mult' in varylist:
         dMdv[varylist.index(hfx+'BF mult')] += dMdfb
-    # cw = np.diff(ma.getdata(x))
-    # cw = np.append(cw,cw[-1])
+    cw = np.diff(ma.getdata(x))
+    cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -3672,13 +3675,13 @@ def getPowderProfileDerv(args):
                     hfx+'beta-q':[1./refl[4+im]**2,'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4+im]**2,'sig'],
                     hfx+'sig-2':[refl[4+im]**4,'sig'],hfx+'sig-q':[refl[4+im],'sig'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
-            elif 'B' in calcControls[hfx+'histType']:   #'T'OF
-                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
+            elif 'B' in calcControls[hfx+'histType']:
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],hfx+'Polariz.':[dIdpola,'int'],
                     hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
-                    hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
+                    hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
             for name in names:
                 item = names[name]
                 if name in varylist:

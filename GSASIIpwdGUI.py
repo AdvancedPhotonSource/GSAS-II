@@ -334,7 +334,7 @@ def SetupSampleLabels(histName,dataType,histType):
     '''
     parms = []
     parms.append(['Scale','Histogram scale factor: ',[10,7]])
-    if 'C' in histType:
+    if 'C' in histType or 'B' in histType:
         parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
@@ -2977,7 +2977,7 @@ def UpdateSampleGrid(G2frame,data):
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
         nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),
                     0,WACV)
-        if 'T' in Inst['Type'][0]:
+        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]

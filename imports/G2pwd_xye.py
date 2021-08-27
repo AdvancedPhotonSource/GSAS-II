@@ -27,10 +27,10 @@ class xye_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye/.chi file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xye','.chi','.qchi',),
+            extensionlist=('.xye','.qye','.chi','.qchi',),
             strictExtension=False,
             formatName = 'Topas xye or 2th Fit2D chi',
-            longFormatName = 'Topas .xye or 2th Fit2D .chi/.qchi powder data file'
+            longFormatName = 'Topas .xye/.qye or 2th Fit2D .chi/.qchi powder data file'
             )
         self.scriptable = True
 
@@ -86,6 +86,13 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         gotCcomment = True
                         continue   
                     if S[0] in ["'",'#','!']:
+                        if 'q' in S and not self.Wave:
+                            wave = S.split()[-1]
+                            if wave: 
+                                try:
+                                    self.Wave = float(wave[0])
+                                except:
+                                    self.Wave = 0.965   #special for POWGEN "pink" CW data
                         continue       #ignore comments, if any
                     elif S.startswith('TITLE'):
                         continue
@@ -127,7 +134,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             # or (GSAS style) each line can begin with '#'
             # or WinPLOTR style, a '!'
             if begin:
-                if self.Chi or self.Wave:
+                if self.Chi:
                     if i < 4:
                         continue
                     else:

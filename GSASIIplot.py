@@ -2766,7 +2766,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Id:     
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
-                    data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
                     if pick in Page.phaseList:
                         num = Page.phaseList.index(pick)
                         if num:
@@ -3250,6 +3249,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Ymax = None
     for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
+        xye = np.nan_to_num(xye)
         if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))

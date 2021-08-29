@@ -31,6 +31,7 @@ import scipy.interpolate as si
 import scipy.stats as st
 import scipy.optimize as so
 import scipy.special as sp
+import scipy.signal as signal
 
 import GSASIIpath
 filversion = "$Revision$"
@@ -505,9 +506,8 @@ def PDFPeakFit(peaks,data):
     return newpeaks,result[0],varyList,sigList,parmDict,Rvals    
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):
-    import scipy.signal as signal
     auxPlot = []
-    if 'C' in inst['Type'][0]:
+    if 'C' in inst['Type'][0] or 'B' in inst['Type'][0]:
         Tth = pwddata[0]
         wave = G2mth.getWave(inst)
         minQ = npT2q(Tth[0],wave)
@@ -529,7 +529,6 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
         Qdata = si.griddata(powQ,pwddata[3]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
     Qdata *= np.sin((Qpoints-minQ)*piDQ)/piDQ
     Qdata *= 0.5*np.sqrt(Qpoints)       #Qbin normalization
-#    GSASIIpath.IPyBreak()
     dq = Qpoints[1]-Qpoints[0]
     nR = len(Qdata)
     R = 0.5*np.pi*np.linspace(0,nR,nR)/(4.*maxQ)

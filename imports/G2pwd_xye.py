@@ -165,16 +165,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                 print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
                 continue
             try:
-                if self.Wave:
-                    try:
-                        val = min(0.995,self.Wave/(4.*np.pi/float(vals[0])))  #set max at 168deg
-                        x.append(2.0*asind(val))
-                    except:
-                        msg = 'Error converting '+str(vals[0]
-                        ) + 'with wavelength ' + str(self.Wave) 
-                        break
-                else:
-                    x.append(float(vals[0]))
+                x.append(float(vals[0]))
                 f = float(vals[1])
                 if f <= 0.0:
                     y.append(0.0)
@@ -198,10 +189,19 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     print (S.strip())
                 break
         N = len(x)
+        x = np.array(x)
+        y = np.nan_to_num(np.array(y))
+        w = np.nan_to_num(np.array(w))
+        if self.Wave:       #for q data
+            val = self.Wave/(4.*np.pi/x)
+            x = 2.0*asind(val)
+            y *= 100.
+            w /= 100**2
+        
         self.powderdata = [
-            np.array(x), # x-axis values
-            np.array(y), # powder pattern intensities
-            np.array(w), # 1/sig(intensity)^2 values (weights)
+            x, # x-axis values
+            y, # powder pattern intensities
+            w, # 1/sig(intensity)^2 values (weights)
             np.zeros(N), # calc. intensities (zero)
             np.zeros(N), # calc. background (zero)
             np.zeros(N), # obs-calc profiles

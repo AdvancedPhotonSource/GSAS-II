@@ -831,7 +831,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True,cctbx_args=None):
     M20,X20 = calc_M20(peaks,HKL,ifX20)
     return len(HKL),M20,X20,A
         
-def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
+def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True,cctbx_args=None):
     'needs a doc string'
 # dlg & ncMax are used for wx progress bar 
 # A != 0 find the best A near input A,
@@ -870,18 +870,18 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
                     break
         
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
-            Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
+            Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
             Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
             if ibrav in [9,10,11]:                          #A,B,or C-centered orthorhombic
                 for i in range(2):
                     Abeg = rotOrthoA(Abeg[:])
-                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
+                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                     peaks = IndexPeaks(peaks,HKL)[1]
                     Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
             # elif ibrav == 15:                      #C-centered monoclinic
             #     Abeg = swapMonoA(Abeg[:])
-            #     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
+            #     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
             #     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
             #     peaks = IndexPeaks(peaks,HKL)[1]
             #     Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
@@ -891,7 +891,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         tries += 1
     X = sortM20(Asave)
     if X:
-        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1],ifX20)
+        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1],ifX20,cctbx_args=cctbx_args)
         return GoOn,Skip,Lhkl,M20,X20,A        
     else:
         return GoOn,Skip,0,0,0,0
@@ -958,7 +958,8 @@ def monoCellReduce(ibrav,A):
     return A
 
 def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
-            timeout=None,M20_min=2.0,X20_max=None,return_Nc=False):
+            timeout=None,M20_min=2.0,X20_max=None,return_Nc=False,
+            cctbx_args=None):
     'needs a doc string'
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
@@ -1009,13 +1010,13 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                             if ibrav > 2:
                                 if not N2:
                                     A = []
-                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
+                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20,cctbx_args=cctbx_args)
                                     if Skip:
                                         break
                                 if A:
-                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0,ifX20)
+                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0,ifX20,cctbx_args=cctbx_args)
                             else:
-                                GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
+                                GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20,cctbx_args=cctbx_args)
                             if Skip:
                                 break
                             elif Nc >= ncMax:

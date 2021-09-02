@@ -50,7 +50,6 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   and can be installed directly into your system's configuration. It is used by
   GSAS-II to download updates to our code.
 
-
 Scripting  Requirements
 -----------------------
 
@@ -64,3 +63,52 @@ Note that some sections of the code may require matplotlib (http://matplotlib.or
 (https://pillow.readthedocs.org) (or PIL,
 http://www.pythonware.com/products/pil/), or h5py + hdf5 to function
 but scripts will load and run without these. 
+
+
+External and Supplied Programs
+--------------------------------
+
+GSAS-II provides interfaces to use a number of programs developed by
+others. Some are included with GSAS-II and others must be installed
+separately. When these programs are accessed, citation
+information is provided. 
+
+GSAS-II includes copies of these programs:
+
+  **DIFFaX**
+    Simulate layered structures with faulting
+    
+  **CifFile**
+    A software library used to read data and structures from CIF
+    
+  **Shapes**
+    Model small angle scattering with shaped particles
+    
+  **NIST FPA**
+    Use Fundamental Parameters to determine GSAS-II profile function 
+
+No additional steps beyond a standard installation
+are needed to access their functionality.
+
+**Bilboa Crystallographic Server**: GSAS-II directly access the
+Bilboa Crystallographic Server (provided
+the computer has internet access). This allows automated use of the
+k-SUBGROUPSMAG, k-SUBGROUPS and PseudoLattice web utilities for
+computation of space group subgroups, color (magnetic) subgroups &
+lattice search.
+
+At the request of the program authors, these programs are not included
+with GSAS-II and must be installed separately:
+
+  **RMCProfile**
+    Large-box PDF & S(Q) fitting. We have heard from users that V6.7.7
+    of RMCProfile is compatible with the input created by GSAS-II,
+    but not V6.7.9.
+
+  **fullrmc**
+    A modern software toolkit for large-box PDF & S(Q) fitting. Use
+    version 5.0 or later. 
+
+  **Dysnomia**
+    Computes enhanced Fourier maps with Maximum Entropy estimated
+    extension of reflection sphere

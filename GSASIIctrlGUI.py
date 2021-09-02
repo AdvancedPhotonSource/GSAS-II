@@ -81,6 +81,7 @@ Class or function name             Description
                                    defined as the menus are created in one place and then can be 
                                    used in Bind elsewhere in the code.
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
+:func:`ShowScrolledInfo`           Displays longer text where scrolling is possibly needed
 :func:`GetItemOrder`               Creates a dialog for ordering items into columns
 :func:`GetImportFile`              Gets one ore more file from the appropriate import
                                    directory, which can be overridden. Arguments follow those
@@ -2411,7 +2412,43 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.CentreOnParent()
     dlg.ShowModal()
     dlg.Destroy()
+
+def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info'):
+    '''Simple code to display possibly extensive error or warning text
+    in a scrolled window.
+
+    :param wx.Frame parent: parent window for 
+    :param str txt: text to be displayed
+    :param int width: lateral of window in pixels (defaults to 600)
+    :param int height: vertical dimension of window in pixels (defaults to 400)
+    :param str header: width of window in pixels (defaults to 600)
+    '''
     
+    dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width-20, height))
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
+
+    txtSizer = wx.BoxSizer(wx.VERTICAL)
+    txt = wx.StaticText(spanel,wx.ID_ANY,txt)
+    txt.Wrap(600)
+    txt.SetBackgroundColour(wx.WHITE)
+    txtSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
+    spanel.SetSizer(txtSizer)
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CLOSE) 
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    spanel.SetAutoLayout(1)
+    spanel.SetupScrolling()
+    #dlg.SetMaxSize((-1,400)) 
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+    dlg.Destroy()
+
 ################################################################################
 class PickTwoDialog(wx.Dialog):
     '''This does not seem to be in use

@@ -4813,14 +4813,14 @@ class GSASII(wx.Frame):
                                 Formula = zip(elems,nums)
                                 sumnum = 0.
                                 for [elem,num] in Formula:
-                                    ElData = G2elem.GetElInfo(elem,Parms)
+                                    ElData = copy.deepcopy(G2elem.GetElInfo(elem,Parms))
                                     ElData['FormulaNo'] = float(num)
                                     sumnum += float(num)
                                     ElList[elem] = ElData
                                 
                             except ValueError:
                                 G2G.G2MessageBox(self,'Carbon-based (and wrong) PDF will be generated','Missing chemical formula')
-                                ElData = G2elem.GetElInfo('C',Parms)
+                                ElData = copy.deepcopy(G2elem.GetElInfo('C',Parms))
                                 sumnum = 1.0
                                 ElData['FormulaNo'] = 1.0
                                 ElList['C'] = ElData

@@ -3313,7 +3313,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
     return Id
-#%%
+
 class ShowTiming(object):
     '''An object to use for timing repeated sections of code.
 
@@ -3362,7 +3362,6 @@ class ShowTiming(object):
         print('Timing results (total={:.2f} sec)'.format(sumT))
         for i,(lbl,val) in enumerate(zip(self.label,self.timeSum)):
             print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
-#%%
 
 def validateAtomDrawType(typ,generalData={}):
     '''Confirm that the selected Atom drawing type is valid for the current 

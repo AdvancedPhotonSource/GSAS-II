@@ -346,10 +346,12 @@ def CalcPDF(data,inst,limits,xydata):
             SA *= ElList[El]['FormulaNo']/data['Form Vol']
             Abs += SA
         MuR = Abs*data['Diam']/2.
-        IofQ[1][1] /= Absorb(data['Geometry'],MuR,inst['2-theta'][1]*np.ones(len(wave)))        
+        IofQ[1][1] /= Absorb(data['Geometry'],MuR,inst['2-theta'][1]*np.ones(len(wave))) 
+    # improves look of F(Q) but no impact on G(R)
+    # bBut,aBut = signal.butter(8,.5,"lowpass")
+    # IofQ[1][1] = signal.filtfilt(bBut,aBut,IofQ[1][1])
     XY = IofQ[1]    
     #convert to Q
-#    nQpoints = len(XY[0])     #points for Q interpolation
     nQpoints = 5000
     if 'C' in inst['Type'][0]:
         wave = G2mth.getWave(inst)
@@ -538,12 +540,11 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
 #    auxPlot.append([Qpoints,Qdata,'interpolate:'+RDFcontrols['Smooth']])
 #    auxPlot.append([Qpoints,Qsmooth,'interpolate:'+RDFcontrols['Smooth']])
     DofR = dq*np.imag(fft.fft(Qsmooth,16*nR)[:nR])
-#    DofR = dq*np.imag(ft.fft(Qsmooth,16*nR)[:nR])
     auxPlot.append([R[:iFin],DofR[:iFin],'D(R) for '+RDFcontrols['UseObsCalc']])    
     return auxPlot
 
 # PDF optimization =============================================================
-def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
+def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=25):
     import scipy.optimize as opt
     numbDen = GetNumDensity(data['ElList'],data['Form Vol'])
     Min,Init,Done = SetupPDFEval(data,xydata,limits,inst,numbDen)
@@ -563,7 +564,7 @@ def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
         res = opt.minimize(Min,xstart,bounds=([0.01,1.],[1.2*bakMul,0.8*bakMul]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     else:
-        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1.]),
+        res = opt.minimize(Min,xstart,bounds=([0.,None],[0,1],[0.01,1.]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     Done(res['x'])
     if showFit:
@@ -593,7 +594,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
             Data['Sample Bkg.']['Mult'] = S
         else:
             F,B,R = arg
-            Data['Flat Bkg'] = F*BkgMax
+            Data['Flat Bkg'] = BkgMax*(2.*F-1.)
             Data['BackRatio'] = B
         Data['Ruland'] = R
         CalcPDF(Data,inst,limits,xydata)
@@ -609,7 +610,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
         if data['Sample Bkg.'].get('Refine',False):
                 return [max(data['Ruland'],.05),data['Sample']['Mult']]
         try:
-            F = data['Flat Bkg']/BkgMax
+            F = 0.5+0.5*data['Flat Bkg']/BkgMax
         except:
             F = 0
         return [F,data['BackRatio'],max(data['Ruland'],.05)]
@@ -622,7 +623,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
             data['Sample Bkg.']['Mult'] = S
         else:
             F,B,R = arg
-            data['Flat Bkg'] = F*BkgMax
+            data['Flat Bkg'] = BkgMax*(2.*F-1.)
             data['BackRatio'] = B
         data['Ruland'] = R
         CalcPDF(data,inst,limits,xydata)

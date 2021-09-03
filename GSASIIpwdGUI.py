@@ -2887,12 +2887,6 @@ def UpdateSampleGrid(G2frame,data):
             Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)
         
-        
-    ######## DEBUG #######################################################
-    #import GSASIIpwdGUI
-    #reload(GSASIIpwdGUI)
-    #reload(G2gd)
-    ######################################################################
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -7103,7 +7097,7 @@ def UpdatePDFGrid(G2frame,data):
     
         def FillElemSizer(elemSizer,ElData):
             
-            def AfterChange(invalid,value,tc):
+            def OnElemNum(invalid,value,tc):
                 if invalid: return
                 data['Form Vol'] = max(10.0,SumElementVolumes())
                 wx.CallAfter(UpdatePDFGrid,G2frame,data)
@@ -7112,7 +7106,7 @@ def UpdatePDFGrid(G2frame,data):
             elemSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
                 label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
             num = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ElData,'FormulaNo',nDig=(10,3),xmin=0.0,
-                typeHint=float,OnLeave=AfterChange)
+                typeHint=float,OnLeave=OnElemNum)
             elemSizer.Add(num,0,WACV)
             elemSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
                 label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
@@ -7277,7 +7271,7 @@ def UpdatePDFGrid(G2frame,data):
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
-        G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),xmin=0,
+        G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(G2frame.flatBkg,0)
         flatSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
@@ -7411,7 +7405,6 @@ def UpdatePDFGrid(G2frame,data):
         wx.CallAfter(OnComputePDF,None)
         
     def OnCopyPDFControls(event):
-        import copy
         TextList = GetFileList(G2frame,'PDF')
         Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
@@ -7493,7 +7486,7 @@ def UpdatePDFGrid(G2frame,data):
             for El in PE.Elem:
                 if El not in ElList:
                     try:
-                        data['ElList'][El] = G2elem.GetElInfo(El,inst)
+                        data['ElList'][El] = copy.deepcopy(G2elem.GetElInfo(El,inst))
                         data['ElList'][El]['FormulaNo'] = 1.0
                     except IndexError: # happens with element Q
                         pass
@@ -7766,7 +7759,6 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         return peakBox
         
     def OnCopyPDFPeaks(event):
-        import copy
         TextList = GetFileList(G2frame,'PDF')
         Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:

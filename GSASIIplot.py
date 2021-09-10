@@ -3841,6 +3841,8 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         plotOpt['fmtChoices'].append('Data file with plot elements, csv')
         plotOpt['fmtChoices'].append('Grace input file, agr')
         plotOpt['fmtChoices'].append('Igor Pro input file, itx')
+        if sys.platform == "win32":
+            plotOpt['fmtChoices'].append('OriginPro file, opju')
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
@@ -4158,6 +4160,227 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         fp.close()
         print('file',filename,'written')
 
+    def CopyRietveld2Origin(Pattern,Plot,Page,plotOpt,G2frame):
+        # Exports plot to Origin. This function was written by Conrad Gillard (conrad.gillard@gmail.com).
+
+        def origin_shutdown_exception_hook(exctype, value, tracebk):
+            '''Ensures Origin gets shut down if an uncaught exception'''
+            try: 
+                op.exit()
+            except:
+                pass
+            print('\n****OriginPro error****')
+            import traceback
+            traceback.print_exception(exctype, value, tracebk)
+            G2G.G2MessageBox(G2frame,
+                'Failed to connect to OriginPro. Is it installed?\nSee console window for more info.')
+            #sys.__excepthook__(exctype, value, tracebk)
+
+        # Function to increase line width, for later use
+        def increase_line_width(plot):
+            layr = op.GLayer(plot.layer)
+            pindex = plot.index()
+            pname = layr.obj.GetStrProp(f'plot{pindex + 1}.name')
+            layr.lt_exec(f'set {pname} -w 1000')
+        
+        import itertools # delay this since not commonly called or needed
+
+        try:
+            import originpro as op
+        except:
+            note1,note2 = '',''
+            # get pip location
+            pyPath = os.path.split(os.path.realpath(sys.executable))[0]
+            import shutil
+            if shutil.which('pip'):
+                pip = shutil.which('pip')
+            elif os.path.exists(os.path.join(pyPath,'pip.exe')):
+                pip = os.path.join(pyPath,'pip.exe')
+            elif os.path.exists(os.path.join(pyPath,'Scripts','pip.exe')):
+                pip = os.path.join(pyPath,'Scripts','pip.exe')
+            else:
+                note1 = "\nNote pip not found, you may need to install that too\n"
+                pip = 'pip'
+            try:
+                import win32clipboard
+                win32clipboard.OpenClipboard()
+                win32clipboard.EmptyClipboard()
+                win32clipboard.SetClipboardText('{} install originpro'.format(pip))
+                win32clipboard.CloseClipboard()
+                note2 = "\nNote: command copied to clipboard (use control-C to paste in cmd.exe window)"
+            except:
+                pass
+            msg = """Use of the OriginPro exporter requires that OriginPro be
+installed on your computer as well as a communication 
+module (originpro) via pip. 
+{}
+Use command
+
+\t{} install originpro
+
+in a cmd.exe window to do this.
+{}""".format(note1,pip,note2)
+            G2G.G2MessageBox(G2frame,msg)
+            return
+        
+        lblList = []
+        valueList = []
+
+        lblList.append('Axis-limits')
+        valueList.append(list(Plot.get_xlim())+list(Plot.get_ylim()))
+
+        tickpos = {}
+
+        for i,l in enumerate(Plot.lines):
+            if l.get_label() in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()
+            elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()[1:]
+            else:
+                lbl = l.get_label()
+            if 'magline' in lbl:
+                pass
+            elif lbl in ('obs','calc','bkg','zero','diff'):
+                if lbl == 'obs':
+                    lblList.append('x')
+                    valueList.append(l.get_xdata())
+                c = plotOpt['colors'].get(lbl,l.get_color())
+                if sum(c) == 4.0: continue
+                lblList.append(lbl)
+                valueList.append(l.get_ydata())
+            elif l in Page.tickDict.values():
+                c = plotOpt['colors'].get(lbl,l.get_color())
+                if sum(c) == 4.0: continue
+                tickpos[lbl] = l.get_ydata()[0]
+                lblList.append(lbl)
+                valueList.append(l.get_xdata())
+        if tickpos:
+            lblList.append('tick-pos')
+            valueList.append([])
+            for i in tickpos:
+                valueList[-1].append(i)
+                valueList[-1].append(tickpos[i])
+        # add (obs-calc)/sigma [=(obs-calc)*sqrt(weight)]
+        lblList.append('diff/sigma')
+        valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
+        if sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
+            lblList.append('excluded')
+            valueList.append(1*Pattern[1][0].mask)
+        # magnifcation values
+        for l in Plot.texts:
+            lbl = l.get_label()
+            if 'magline' not in lbl: continue
+            if l.xycoords == 'axes fraction':
+                lbl = 'initial-mag'
+                lblList.append(lbl)
+                valueList.append([l.get_text()])
+            else:
+                lbl = 'mag'
+                lblList.append(lbl)
+                valueList.append([l.get_text(),l.get_position()[0]])
+        # invert lists into columns, use iterator for all values
+        if hasattr(itertools,'zip_longest'): #Python 3+
+            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
+        else:
+            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
+
+        # Start Origin instance
+        if op and op.oext:
+            sys.excepthook = origin_shutdown_exception_hook
+
+        # Set Origin instance visibility
+        if op.oext:
+            op.set_show(True)
+        op.new()
+
+        # Create folder to hold data and graph
+        refinementName = G2frame.Label
+        refinementName = refinementName[17:-4]
+        fldr = op.po.RootFolder.Folders.Add(refinementName)
+        fldr.Activate()
+
+        # Create worksheet to hold refinement data
+        dest_wks = op.new_sheet('w', lname='Refinement Data')
+        dest_wks.cols = 5
+
+        # Import refinement data
+        colNamesList =["x", "Observed", 'Calculated','Background','(Obs-Calc)']
+        for i in range(1, 6):
+            dest_wks.from_list(col=i-1, data=valueList[i].tolist(), lname=colNamesList[i-1])
+
+        # Create graph object, to which data will be added
+        graph = op.new_graph(template=os.path.join(GSASIIpath.path2GSAS2,'OriginTemplate2.otpu'))
+        graph.lname = refinementName + "_G"
+        gl = graph[0]
+
+        # Plot observed as scatter
+        plot = gl.add_plot(dest_wks, coly=1, colx=0, type='scatter')
+        plot.symbol_size = 10
+        plot.symbol_kind = 7
+        plot.colormap = 'Classic'
+        plot.color = 1
+
+        # Plot calculated, background and difference as line
+        for i in range(2, 5):
+            plot = gl.add_plot(dest_wks, coly=i, colx=0, type='line')
+            plot.colormap = 'Classic'
+            plot.color = i
+            increase_line_width(plot)
+
+        # Import reflection data for each phase
+        tickPosIdx = lblList.index("tick-pos")
+        # Initialise counters for colour index and number of phases
+        j = 1
+        k = 1
+        refLegendText = ""
+        for i in range(7, tickPosIdx):
+            # Create worksheet to hold reflections data
+            dest_wks = op.new_sheet('w', lname=lblList[i] + " Reflections")
+            dest_wks.cols = 2
+            # Generate lists of tick positions
+            tickPosList = valueList[i].tolist()
+            # Generate lists of tick intensities
+            refIntens = valueList[tickPosIdx][(i - 6) * 2 - 1]
+            refIntens = float(refIntens)
+            refIntensList = [refIntens] * len(tickPosList)
+            # Import tick positions and intensities to worksheet
+            dest_wks.from_list(col=0, data=tickPosList, lname="Tick Position")
+            dest_wks.from_list(col=1, data=refIntensList, lname="Tick Intensity")
+            # Add reflections to plot
+            plot = gl.add_plot(dest_wks, coly=1, colx=0, type='scatter')
+            plot.symbol_size = 10
+            plot.symbol_kind = 10
+            plot.color = 4 + j
+            refLegendText = refLegendText + "\l(" + str(4 + k) + ") " + lblList[i] + " "
+            # Increment phase counter
+            k += 1
+            # increment colour index, skipping yellow because it cannot be seen
+            if j == 2:
+                j += 2
+            else:
+                j += 1
+
+        #   # Set axis limits
+        xmin = Plot.get_xlim()[0]
+        if Plot.dataLim.x0 > xmin:
+            xmin = Plot.dataLim.x0 + 0.1
+        xmax = Plot.get_xlim()[1]
+        if Plot.dataLim.x1 < xmax:
+            xmax = Plot.dataLim.x1 + 0.1
+        gl.set_xlim(xmin, xmax)
+
+        ymin = Plot.get_ylim()[0]
+        ymax = Plot.get_ylim()[1]
+        gl.set_ylim(ymin, ymax)
+
+        # Change graph titles
+        gl.axis(ax="x").title = "2θ (°)"
+        gl.axis(ax="y").title = "Intensity (Arbitrary units)"
+
+        # Set up legend
+        label = gl.label('Legend')
+        label.text = '\l(1) %(1)\l(2) %(2)\l(3) %(3)\l(4) %(4) %(CRLF)' + refLegendText
+
     def CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,filename,G2frame):
         '''Copy the contents of the Rietveld graph from the plot window to
         a Igor Pro input file (tested with v7.05). Uses values from Pattern 
@@ -4452,7 +4675,10 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
         longFormatName,typ = plotOpt['format'].split(',')
         fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
-        if 'csv' in typ and fil:
+        if 'opju' in typ and fil:
+            CopyRietveld2Origin(Pattern,Plot,Page,plotOpt,G2frame)
+            dlg.EndModal(wx.ID_OK)
+        elif 'csv' in typ and fil:
             CopyRietveld2csv(Pattern,Plot,Page,fil)
             dlg.EndModal(wx.ID_OK)
         elif 'agr' in typ and fil:

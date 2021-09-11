@@ -3842,7 +3842,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         plotOpt['fmtChoices'].append('Grace input file, agr')
         plotOpt['fmtChoices'].append('Igor Pro input file, itx')
         if sys.platform == "win32":
-            plotOpt['fmtChoices'].append('OriginPro file, opju')
+            plotOpt['fmtChoices'].append('OriginPro connection')
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
@@ -4207,7 +4207,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 win32clipboard.EmptyClipboard()
                 win32clipboard.SetClipboardText('{} install originpro'.format(pip))
                 win32clipboard.CloseClipboard()
-                note2 = "\nNote: command copied to clipboard (use control-C to paste in cmd.exe window)"
+                note2 = "\nNote: command copied to clipboard (use control-V to paste in cmd.exe window)"
             except:
                 pass
             msg = """Use of the OriginPro exporter requires that OriginPro be
@@ -4673,26 +4673,24 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         '''
         hcfigure = mpl.figure.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
-        longFormatName,typ = plotOpt['format'].split(',')
-        fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
-        if 'opju' in typ and fil:
+        if 'OriginPro' in plotOpt['format']:
             CopyRietveld2Origin(Pattern,Plot,Page,plotOpt,G2frame)
             dlg.EndModal(wx.ID_OK)
-        elif 'csv' in typ and fil:
+            return
+        longFormatName,typ = plotOpt['format'].split(',')
+        fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
+        if 'csv' in typ and fil:
             CopyRietveld2csv(Pattern,Plot,Page,fil)
-            dlg.EndModal(wx.ID_OK)
         elif 'agr' in typ and fil:
             CopyRietveld2Grace(Pattern,Plot,Page,plotOpt,fil)
-            dlg.EndModal(wx.ID_OK)
         elif 'itx' in typ and fil:
             CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,fil,G2frame)
-            dlg.EndModal(wx.ID_OK)
         elif fil:
             if hcfigure.canvas is None:
                 if GSASIIpath.GetConfigValue('debug'): print('creating canvas')
                 hcCanvas(hcfigure)
             hcfigure.savefig(fil,format=typ.strip())
-            dlg.EndModal(wx.ID_OK)
+        dlg.EndModal(wx.ID_OK)
             
     def OnSelectColour(event):
         '''Respond to a change in color
@@ -4779,7 +4777,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     for lbl in plotOpt['phaseList']:
         if lbl not in plotOpt['phaseLabels']: plotOpt['phaseLabels'][lbl] = lbl
         val = G2G.ValidatedTxtCtrl(dlg,plotOpt['phaseLabels'],lbl,size=(110,-1),
-                                   style=wx.ALIGN_CENTER,OnLeave=RefreshPlot)
+                                   style=wx.TE_CENTRE,OnLeave=RefreshPlot)
         gsizer.Add(val,0,wx.ALL)
     gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Show'),0,wx.ALL)
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):

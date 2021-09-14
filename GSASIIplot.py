@@ -1538,12 +1538,22 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             drawingData['viewPoint'][0] = [0,0,0]
         elif key in 'Z':
             Data['Zone'] = not Data['Zone']
+            if Data['Zone']:
+                Data['Shell'] = [.0,False]
         elif key in 'B':
             ifBox = not ifBox
+        elif key in 'R':
+            Data['Shell'][1] = not Data['Shell'][1]
         elif key in ['+','=']:
-            Data['Scale'] *= 1.25
+            if Data['Shell'][1]:
+                Data['Shell'][0] += 0.1
+            else:
+                Data['Scale'] *= 1.25
         elif key == '-':
-            Data['Scale'] /= 1.25
+            if Data['Shell'][1]:
+                Data['Shell'][0] = max(Data['Shell'][0]-0.1,0.0)
+            else:
+                Data['Scale'] /= 1.25
         elif key == 'P':
             vec = viewChoice[Data['viewKey']][0]
             drawingData['viewPoint'][0] += vec
@@ -1553,6 +1563,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         elif key == '0':
             drawingData['viewPoint'][0] = np.array([0,0,0])
             Data['Scale'] = 1.0
+            Data['Shell'][0] = 0.0
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
         elif key in Choice:
@@ -1573,6 +1584,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     SuperVec = []
     if Super:
         SuperVec = np.array(Data['SuperVec'][0])
+    if 'Shell' not in Data:
+        Data['Shell'] = [0.0,False]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
@@ -1597,6 +1610,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         C = []
         HKL = []
         for i,refl in enumerate(hklRef):
+            if Data['Shell'][1]:
+                if not (Data['Shell'][0] <= 0.5/refl[4+Super] <= Data['Shell'][0]+.1):
+                    continue
             H = refl[:3]
             if 'HKLF' in Name:
                 Fosq,sig,Fcsq = refl[5+Super:8+Super]
@@ -1868,11 +1884,16 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         HKL,RC,RF,RF2 = FillHKLRC()
         if Data['Zone']:
             G2frame.G2plotNB.status.SetStatusText   \
-                ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%% layer %s'%    \
-                (Data['Type'],Name,RF,super2,RF2,str(list(drawingData['viewPoint'][0]))),1)            
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% layer %s'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,str(list(drawingData['viewPoint'][0]))),1)
+        elif Data['Shell'][1]:
+            G2frame.G2plotNB.status.SetStatusText   \
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% shell %.1f'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,Data['Shell'][0]),1)
         else:
             G2frame.G2plotNB.status.SetStatusText   \
-                ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%%'%(Data['Type'],Name,RF,super2,RF2),1)
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%%'%     \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2),1)
         
         SetBackground()
         GL.glInitNames()
@@ -1911,7 +1932,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
-    choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
+    choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l','r: plot radial shell',
     'z: zero zone toggle','p: increment layer','m: decrement layer','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
@@ -4351,7 +4372,7 @@ in a cmd.exe window to do this.
             plot.symbol_size = 10
             plot.symbol_kind = 10
             plot.color = 4 + j
-            refLegendText = refLegendText + "\l(" + str(4 + k) + ") " + lblList[i] + " "
+            refLegendText = refLegendText + "\\l(" + str(4 + k) + ") " + lblList[i] + " "
             # Increment phase counter
             k += 1
             # increment colour index, skipping yellow because it cannot be seen
@@ -4379,7 +4400,7 @@ in a cmd.exe window to do this.
 
         # Set up legend
         label = gl.label('Legend')
-        label.text = '\l(1) %(1)\l(2) %(2)\l(3) %(3)\l(4) %(4) %(CRLF)' + refLegendText
+        label.text = '\\l(1) %(1)\\l(2) %(2)\\l(3) %(3\\l(4) %(4) %(CRLF)' + refLegendText
 
     def CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,filename,G2frame):
         '''Copy the contents of the Rietveld graph from the plot window to

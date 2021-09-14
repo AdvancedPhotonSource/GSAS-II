@@ -312,7 +312,6 @@ Histograms      \\               (dict of dicts) The key for the outer dict is
                                 4. (list) Ellipsoidal size parameters - list of 6 floats
                                 5. (list) Ellipsoidal refinement flags - list of bools, corresponding to the parameters of (4)
 \\           Use                 (bool) True if this histogram is to be used in refinement
-\\           newLeBail           (bool) Whether to perform a new LeBail extraction
 MCSA            \\               (dict) Monte-Carlo simulated annealing parameters 
 ==========  ===============     =====================================================================================================
 
@@ -1341,7 +1340,7 @@ DefaultControls = {
     'min dM/M':0.001,'shift factor':1.,'max cyc':3,'F**2':False,'SVDtol':1.e-6,
     'UsrReject':{'minF/sig':0.,'MinExt':0.01,'MaxDF/F':100.,'MaxD':500.,'MinD':0.05},
     'Copy2Next':False,'Reverse Seq':False,'HatomFix':False,
-    'Author':'no name',
+    'Author':'no name','newLeBail':False,
     'FreePrm1':'Sample humidity (%)',
     'FreePrm2':'Sample voltage (V)',
     'FreePrm3':'Applied load (MN)',
@@ -1915,6 +1914,7 @@ def CompileVarDesc():
         'Layer Disp'  : 'Layer displacement along beam',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
+        'LayerDisp'  : 'Bragg-Brentano Layer displacement',
         'Displace([XY])' : ('Debye-Scherrer sample displacement \\1',0.1),
         'Lam' : ('Wavelength',1e-6),
         'I\\(L2\\)\\/I\\(L1\\)' : ('Ka2/Ka1 intensity ratio',0.001),
@@ -2005,7 +2005,7 @@ def CompileVarDesc():
         'FreePrm([123])': 'User defined measurement parameter \\1',
         'Gonio. radius': 'Distance from sample to detector, mm',
         }.items():
-        # Needs documentation: HAP: LayerDisp, LeBail, newLeBail
+        # Needs documentation: HAP: LeBail, newLeBail
         # hist: Azimuth, Chi, Omega, Phi, Bank, nDebye, nPeaks
         
         if len(value) == 2:

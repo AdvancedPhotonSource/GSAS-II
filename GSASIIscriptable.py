@@ -1934,6 +1934,8 @@ def patchControls(Controls):
                 Controls['parmFrozen'][k] = [G2obj.G2VarObj(i) for i in Controls['parmFrozen'][k]]
                 break
     if conv: print("Applying patch to Controls['parmFrozen']")
+    if 'newLeBail' not in Controls:
+        Controls['newLeBail'] = False
     # end patch
 
 def _constr_type(var):
@@ -2446,7 +2448,6 @@ class G2Project(G2ObjectWrapper):
             UseList[hist.name] = SetDefaultDData('PWDR', hist.name, NShkl=NShkl, NDij=NDij)
             UseList[hist.name]['hId'] = hist.id
             for key, val in [('Use', True), ('LeBail', False),
-                             ('newLeBail', True),
                              ('Babinet', {'BabA': [0.0, False],
                                           'BabU': [0.0, False]})]:
                 if key not in UseList[hist.name]:
@@ -5132,8 +5133,6 @@ class G2Phase(G2ObjectWrapper):
             elif key == "LeBail":
                 hists = self.data['Histograms']
                 for hname, hoptions in hists.items():
-                    if 'LeBail' not in hoptions:
-                        hoptions['newLeBail'] = bool(True)
                     hoptions['LeBail'] = bool(value)
             else:
                 raise ValueError("Unknown key:", key)
@@ -5157,8 +5156,6 @@ class G2Phase(G2ObjectWrapper):
             elif key == "LeBail":
                 hists = self.data['Histograms']
                 for hname, hoptions in hists.items():
-                    if 'LeBail' not in hoptions:
-                        hoptions['newLeBail'] = True
                     hoptions['LeBail'] = False
             else:
                 raise ValueError("Unknown key:", key)

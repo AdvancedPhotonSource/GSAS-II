@@ -759,10 +759,10 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'&Le Bail fit\tCTRL+B','Fit Le Bail intensities only')
-        item.Enable(state)
-        self.Refine.append(item)
-        self.Bind(wx.EVT_MENU, self.OnLeBail, id=item.GetId())
+        # item = parent.Append(wx.ID_ANY,'&Le Bail fit\tCTRL+B','Fit Le Bail intensities only')
+        # item.Enable(state)
+        # self.Refine.append(item)
+        # self.Bind(wx.EVT_MENU, self.OnLeBail, id=item.GetId())
 
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
@@ -5172,8 +5172,7 @@ class GSASII(wx.Frame):
         #    import imp
         #    imp.reload(G2G)
         # end debug stuff    
-        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,
-                    varyList,reqVaryList,Controls)
+        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList,Controls)
         dlg.CenterOnParent()
         dlg.ShowModal()
         dlg.Destroy()
@@ -5182,9 +5181,13 @@ class GSASII(wx.Frame):
         '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return
+        if Controls.get('newLeBail',False):
+            G2G.G2MessageBox(self,'Doing a zero cycle Le Bail refinement first','Le Bail Refinement')            
+            self.OnLeBail(event)
         G2cnstG.CheckAllScalePhaseFractions(self) # can be slow for sequential fits, skip
         self.OnFileSave(event)
         # check that constraints are OK here
@@ -5205,7 +5208,6 @@ class GSASII(wx.Frame):
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
-        #dlg.Raise()  # dangerous, crashes on some platforms
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
@@ -5257,8 +5259,7 @@ class GSASII(wx.Frame):
             else:
                 msg = ''
             try:
-                dlg = wx.MessageDialog(self, msg,'Note singularities', 
-                    wx.OK)
+                dlg = wx.MessageDialog(self, msg,'Note singularities',wx.OK)
                 dlg.CenterOnParent()
                 dlg.SetSize((700,300)) # does not resize on Mac
                 dlg.ShowModal()
@@ -5268,11 +5269,12 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Refinement error',Rvals['msg'])
             
     def OnLeBail(self,event):
-        seqList = self.testSeqRefineMode()
-        if seqList:
-            self.ErrorDialog('Not for Sequential Fits',
-                'This command is not yet implemented for sequential fitting')
-            return
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        # seqList = self.testSeqRefineMode()
+        # if seqList:
+        #     self.ErrorDialog('Not for Sequential Fits',
+        #         'This command is not yet implemented for sequential fitting')
+        #     return
         self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
@@ -5310,11 +5312,11 @@ class GSASII(wx.Frame):
                 text += txt
                 rtext += txt
             text += '\nLoad new result?'
-            dlg2 = wx.MessageDialog(self,text,'Le Bail fit: Rwp={:.3f}'
-                                            .format(Rwp),wx.OK|wx.CANCEL)
+            dlg2 = wx.MessageDialog(self,text,'Le Bail fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
+                    Controls['newLeBail'] = False
                     if refPlotUpdate: refPlotUpdate({},restore=True)
                     wx.CallAfter(self.reloadFromGPX,rtext)
                 else:
@@ -5406,17 +5408,17 @@ class GSASII(wx.Frame):
         '''Perform a sequential refinement.
         Called from self.OnRefine (Which is called from the Calculate/Refine menu)
         '''
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         seqList = self.testSeqRefineMode()
-        if not seqList:
-            self.OnRefine(event)
-            return
+        # if not seqList:
+        #     self.OnRefine(event)
+        #     return
         #plotHist = self.GPXtree.GetItemText(self.PatternId)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
             self.GPXtree.SetItemPyData(Id,{})            
         self.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         Controls['ShowCell'] = True
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
@@ -5445,8 +5447,8 @@ class GSASII(wx.Frame):
             print(u'Conflict between refinment flag settings and constraints:\n'+
                   warnmsg+u'\nRefinement not possible')
             self.ErrorDialog('Refinement Flag Error',
-                             u'Conflict between refinment flag settings and constraints:\n'+
-                             warnmsg+u'\nRefinement not possible')
+                 u'Conflict between refinment flag settings and constraints:\n'+
+                 warnmsg+u'\nRefinement not possible')
             return
         self.GPXtree.SaveExposedItems()        
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
@@ -5475,7 +5477,6 @@ class GSASII(wx.Frame):
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-            wx.Yield()
         if OK:
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'
@@ -6646,6 +6647,8 @@ def UpdateControls(G2frame,data):
         data['HatomFix'] = False
     if 'Marquardt' not in data:
         data['Marquardt'] = -3
+    if 'newLeBail' not in data:
+        data['newLeBail'] = False
     
     #end patch
 

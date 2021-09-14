@@ -37,6 +37,7 @@ import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
+import GSASIIscriptable as G2sc
 import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -147,7 +148,6 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-    import GSASIIscriptable as G2sc
     G2sc.patchControls(Controls)
     # end patch
 #    print 'current',varyList
@@ -344,7 +344,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     calcControls['BLtables'] = BLtables
     calcControls['MFtables'] = MFtables
     calcControls['maxSSwave'] = maxSSwave
-    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Controls=calcControls,pFile=printFile)
     TwConstr,TwFixed = G2stIO.makeTwinFrConstr(Phases,Histograms,hapVary)
     constrDict += TwConstr
     fixedList += TwFixed
@@ -512,7 +512,7 @@ def CheckLeBail(Phases):
                 pass
     return False
         
-def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):
+def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
     '''Fit LeBail intensities without changes to any other refined parameters.
     This is a stripped-down version of :func:`Refine` that does not perform 
     any refinement cycles
@@ -551,7 +551,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=3,refPlotUpdate=None):
     calcControls['BLtables'] = BLtables
     calcControls['MFtables'] = MFtables
     calcControls['maxSSwave'] = maxSSwave
-    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Controls=calcControls,Print=False)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     calcControls.update(controlDict)
@@ -696,7 +696,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}
-        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
+        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Controls=calcControls,Print=False)
         calcControls.update(controlDict)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)

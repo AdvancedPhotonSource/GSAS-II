@@ -705,10 +705,8 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             Controls = data[0][1]
             if 'parmFrozen' not in Controls:
                 Controls['parmFrozen'] = {}
-            Controls['parmFrozen']['FrozenList'] = [
-                    i if type(i) is G2obj.G2VarObj
-                    else G2obj.G2VarObj(i)
-                    for i in parmFrozenList]
+            Controls['parmFrozen']['FrozenList'] = [i if type(i) is G2obj.G2VarObj
+                else G2obj.G2VarObj(i) for i in parmFrozenList]
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
@@ -2453,7 +2451,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
 ##### Histogram & Phase data
 ################################################################################        
                     
-def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=True):
+def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,resetRefList=True):
     '''Loads the HAP histogram/phase information into dicts
 
     :param dict Phases: phase information
@@ -2601,7 +2599,6 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 pfx = str(pId)+':'+str(hId)+':'
                 if Phases[phase]['General']['doPawley']:
                     hapDict[pfx+'LeBail'] = False           #Pawley supercedes LeBail
-                    hapDict[pfx+'newLeBail'] = True
                     Tmin = G2lat.Dsp2pos(inst,dmin)
                     if 'T' in inst['Type'][1]:
                         limits[0] = max(limits[0],Tmin)
@@ -2609,12 +2606,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         limits[1] = min(limits[1],Tmin)
                 else:
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
-                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
                 if Phases[phase]['General']['Type'] == 'magnetic':
                     dmin = max(dmin,Phases[phase]['General'].get('MagDmin',0.))
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]
-                    if hapData[item][1] and not hapDict[pfx+'LeBail']:
+                    # if hapData[item][1] and not hapDict[pfx+'LeBail']:
+                    if hapData[item][1]:
                         hapVary.append(pfx+item)
                 names = G2spc.HStrainNames(SGData)
                 HSvals = []
@@ -2633,7 +2630,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
                     controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                    if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
+                    if hapData['Pref.Ori.'][2]:     # and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+'MD')
                 else:                           #'SH' spherical harmonics
                     controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
@@ -2649,7 +2646,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         pass
                     for item in hapData['Pref.Ori.'][5]:
                         hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                        if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
+                        if hapData['Pref.Ori.'][2]:         # and not hapDict[pfx+'LeBail']:
                             hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
@@ -2682,7 +2679,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for bab in ['BabA','BabU']:
                         hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                        if hapData['Babinet'][bab][1] and not hapDict[pfx+'LeBail']:
+                        if hapData['Babinet'][bab][1]:      # and not hapDict[pfx+'LeBail']:
                             hapVary.append(pfx+bab)
                                 
                 if Print: 
@@ -2708,14 +2705,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if Phases[phase]['General']['Type'] != 'magnetic':
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
-                if phase in Histogram['Reflection Lists'] and 'RefList' not in Histogram['Reflection Lists'][phase] and hapData.get('LeBail',False):
-                    hapData['newLeBail'] = True
-                if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData.get('LeBail',False) and hapData['newLeBail'])):
-                    if hapData.get('LeBail',True):         #stop regeneating reflections for LeBail
-                        hapData['newLeBail'] = False
+                if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
+                    Scale = Histogram['Sample Parameters']['Scale'][0]      #for initializing reflection structure factors.
+                    StartI = hapData['Scale'][0]*Scale
                     refList = []
-#                    Uniq = []
-#                    Phi = []
                     useExt = 'magnetic' in Phases[phase]['General']['Type'] and 'N' in inst['Type'][0]
                     if Phases[phase]['General'].get('Modulated',False):
                         ifSuper = True
@@ -2728,23 +2721,19 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 if 'C' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,1.0,1.0,1.0])
                                         #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
-#                                        Uniq.append(uniq)
-#                                        Phi.append(phi)
                                 elif 'T' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
                                         wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                         #TODO - if tabulated put alp & bet in here
-#                                        Uniq.append(uniq)
-#                                        Phi.append(phi)
                                 elif 'B' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     else:
                         ifSuper = False
@@ -2760,22 +2749,18 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,1.0,1.0,1.0])
                                     #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
-#                                    Uniq.append(uniq)
-#                                    Phi.append(phi)
                             elif 'T' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
                                     wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
-#                                    Uniq.append(uniq)
-#                                    Phi.append(phi)
                             elif 'B' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:

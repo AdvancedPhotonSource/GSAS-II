@@ -339,7 +339,7 @@ def SetupSampleLabels(histName,dataType,histType):
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
             if 'T' in histType:
-                parms += [['Absorption',u'Sample absorption (\xb5\xb7r/l): ',[10,4]],]
+                parms += [['Absorption',u'Sample absorption (\xb5r/'+Gklambda+'): ',[10,4]],]
             else:
                 parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
                     ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],

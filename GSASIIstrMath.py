@@ -3075,7 +3075,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: refl[9+im] = refl[8+im]
+                                if parmDict[phfx+'LeBail']: 
+                                    refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
                                 nExcl += 1
@@ -3101,7 +3102,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: refl[9+im] = refl[8+im]
+                                if parmDict[phfx+'LeBail']: 
+                                    refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
                                 nExcl += 1
@@ -3127,7 +3129,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: refl[9+im] = refl[8+im]
+                                if parmDict[phfx+'LeBail']: 
+                                    refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
                                 nExcl += 1

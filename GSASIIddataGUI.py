@@ -829,8 +829,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         DData.Scroll(0,Scroll)
         G2frame.dataWindow.SendSizeEvent()
         if LeBailMsg:
-            G2G.G2MessageBox(G2frame,LeBailMsg,
-                                 title='LeBail refinement changes')
+            G2G.G2MessageBox(G2frame,LeBailMsg,title='LeBail refinement changes')
         
     def ShowHistogramInfo():
         '''This creates a sizer with all the information pulled out from the Phase/data dict
@@ -844,8 +843,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnLeBail(event):
             Obj = event.GetEventObject()
             if not UseList[G2frame.hist]['LeBail']:
-                UseList[G2frame.hist]['newLeBail'] = True
-                Obj.SetLabel('Do new Le Bail extraction?')
+                Controls['newLeBail'] = True
+            else:
+                Controls['newLeBail'] = False
             UseList[G2frame.hist]['LeBail'] = not UseList[G2frame.hist]['LeBail']
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
@@ -891,8 +891,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Use'] = True
         if 'LeBail' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['LeBail'] = False
-        if 'newLeBail' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['newLeBail'] = True
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         if 'Fix FXU' not in UseList[G2frame.hist]:
@@ -914,15 +912,13 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
-            lbLabel = 'Redo Le Bail extraction?   '
-            if UseList[G2frame.hist]['newLeBail']:
-                lbLabel = 'Do new Le Bail extraction?'
-            lebail = wx.CheckBox(DData,wx.ID_ANY,label=lbLabel)
-            lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
-            lebail.SetValue(UseList[G2frame.hist]['LeBail'])
-            useBox.Add(lebail,0,WACV)
+            lbLabel = 'Start Le Bail extraction?   '
             if UseList[G2frame.hist]['LeBail']:
-                G2frame.SetStatusText('To reset Le Bail, cycle Le Bail check box.',1)
+                lbLabel = 'Stop Le Bail extraction?'
+                G2frame.SetStatusText('To reset Le Bail extracted intensities, cycle Le Bail button.',1)
+            lebail = wx.Button(DData,wx.ID_ANY,label=lbLabel)
+            lebail.Bind(wx.EVT_BUTTON, OnLeBail)
+            useBox.Add(lebail,0,WACV)
         bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
         if G2frame.testSeqRefineMode() and not UseList[G2frame.hist]['LeBail']:
             bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinemment Options'))
@@ -1034,45 +1030,45 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic': 
                     bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
-            else:   #turn off PWDR intensity related paramters for LeBail refinement
-                if UseList[G2frame.hist]['Scale'][1]:
-                    offMsg = "Phase fraction"
-                    UseList[G2frame.hist]['Scale'][1] = False
-                if UseList[G2frame.hist]['Pref.Ori.'][2]:
-                    UseList[G2frame.hist]['Pref.Ori.'][2] = False
-                    if offMsg: offMsg += ', '
-                    offMsg += 'Preferred orientation'
-                if UseList[G2frame.hist]['Extinction'][1]:
-                    UseList[G2frame.hist]['Extinction'][1] = False
-                    if offMsg: offMsg += ', '
-                    offMsg += 'Extinction'
-                flag = False
-                for item in UseList[G2frame.hist]['Babinet']:
-                    if UseList[G2frame.hist]['Babinet'][item][1]:
-                        UseList[G2frame.hist]['Babinet'][item][1] = False
-                        flag = True
-                if flag:
-                    if offMsg: offMsg += ', '
-                    offMsg += 'Babinet'
-                # make sure that the at least one phase uses the histogram...
-                allLeBail = True
-                hists,phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-                for key in phases:
-                    d = phases[key]
-                    if G2frame.hist not in d['Histograms']: continue
-                    if not d['Histograms'][G2frame.hist]['Use']: continue
-                    if not d['Histograms'][G2frame.hist]['LeBail']:
-                        #print('Phase',key,'is used as non-LeBail')
-                        allLeBail = False
-                        break
-                # ...or turn off scale
-                if allLeBail:
-                    if hists[G2frame.hist]['Sample Parameters']['Scale'][1]:
-                        hists[G2frame.hist]['Sample Parameters']['Scale'][1] = False
-                        if offMsg: offMsg += ', '
-                        offMsg += 'Histogram scale factor'
-                if offMsg:
-                    offMsg = "Refinement flags turned for: " + offMsg
+            # else:   #turn off PWDR intensity related paramters for LeBail refinement
+            #     if UseList[G2frame.hist]['Scale'][1]:
+            #         offMsg = "Phase fraction"
+            #         UseList[G2frame.hist]['Scale'][1] = False
+            #     if UseList[G2frame.hist]['Pref.Ori.'][2]:
+            #         UseList[G2frame.hist]['Pref.Ori.'][2] = False
+            #         if offMsg: offMsg += ', '
+            #         offMsg += 'Preferred orientation'
+            #     if UseList[G2frame.hist]['Extinction'][1]:
+            #         UseList[G2frame.hist]['Extinction'][1] = False
+            #         if offMsg: offMsg += ', '
+            #         offMsg += 'Extinction'
+            #     flag = False
+            #     for item in UseList[G2frame.hist]['Babinet']:
+            #         if UseList[G2frame.hist]['Babinet'][item][1]:
+            #             UseList[G2frame.hist]['Babinet'][item][1] = False
+            #             flag = True
+            #     if flag:
+            #         if offMsg: offMsg += ', '
+            #         offMsg += 'Babinet'
+            #     # make sure that the at least one phase uses the histogram...
+            #     allLeBail = True
+            #     hists,phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            #     for key in phases:
+            #         d = phases[key]
+            #         if G2frame.hist not in d['Histograms']: continue
+            #         if not d['Histograms'][G2frame.hist]['Use']: continue
+            #         if not d['Histograms'][G2frame.hist]['LeBail']:
+            #             #print('Phase',key,'is used as non-LeBail')
+            #             allLeBail = False
+            #             break
+            #     # ...or turn off scale
+            #     if allLeBail:
+            #         if hists[G2frame.hist]['Sample Parameters']['Scale'][1]:
+            #             hists[G2frame.hist]['Sample Parameters']['Scale'][1] = False
+            #             if offMsg: offMsg += ', '
+            #             offMsg += 'Histogram scale factor'
+            #     if offMsg:
+            #         offMsg = "Refinement flags turned for: " + offMsg
         elif G2frame.hist[:4] == 'HKLF':
             bottomSizer.Add(ExtSizer('HKLF'),0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
@@ -1084,6 +1080,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     ######################################################################
     #### Beginning of UpdateDData execution here
     ######################################################################
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.GPXtree.root, 'Controls'))
     G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
     UseList = data['Histograms']
@@ -1311,7 +1308,7 @@ def MakeHistPhaseWin(G2frame):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Layer Disp']
         copyNames += ['Scale','Fix FXU','FixedSeqVars']
         copyDict = {}
         for name in copyNames:
@@ -1362,7 +1359,7 @@ def MakeHistPhaseWin(G2frame):
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]
-            elif name == 'Fix FXU' or name == 'FixedSeqVars':
+            elif name in ['Fix FXU','FixedSeqVars']:
                 copyDict[name] = copy.deepcopy(sourceDict[name])                    
         keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
@@ -1404,7 +1401,7 @@ def MakeHistPhaseWin(G2frame):
                         elif name == 'Babinet':
                             for bab in babNames:
                                 data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])
-                        elif name == 'Fix FXU' or name == 'FixedSeqVars':
+                        elif name in ['Fix FXU','FixedSeqVars']:
                             data['Histograms'][item][name] = copy.deepcopy(sourceDict[name])                      
         finally:
             dlg.Destroy()
@@ -1421,7 +1418,7 @@ def MakeHistPhaseWin(G2frame):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Layer Disp']
         copyNames += ['Scale','Fix FXU','FixedSeqVars']            
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
@@ -1474,7 +1471,7 @@ def MakeHistPhaseWin(G2frame):
                         newList = TextList[1:]
                     for histoName in newList:
                         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
+                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],

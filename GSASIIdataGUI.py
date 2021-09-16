@@ -5316,9 +5316,10 @@ class GSASII(wx.Frame):
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
-                    Controls['newLeBail'] = False
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    wx.CallAfter(self.reloadFromGPX,rtext)
+                    self.reloadFromGPX(rtext)
+                    Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+                    Controls['newLeBail'] = False
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:

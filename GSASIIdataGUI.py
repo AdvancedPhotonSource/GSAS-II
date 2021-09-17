@@ -5242,11 +5242,10 @@ class GSASII(wx.Frame):
             text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
-            #dlg2.Raise()  # crashes sometimes on Mac
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    wx.CallAfter(self.reloadFromGPX,rtext)
+                    self.reloadFromGPX(rtext)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
@@ -5305,13 +5304,13 @@ class GSASII(wx.Frame):
         if OK:
             text = ''
             rtext = 'Le Bail-only fit done. '
-            Rwp = Rvals.get('Rwp','?')
+            Rwp = Rvals.get('Rwp')
             if 'GOF' in Rvals:
-                txt = 'Final Reduced Chi^2: {:.3f} (before ref: {})\n'.format(
+                txt = 'Final Reduced Chi^2: {:.3f}\n'.format(
                     Rvals['GOF']**2,rChi2initial)
                 text += txt
                 rtext += txt
-            text += '\nLoad new result?'
+            text += '\nLoad new result & continue refinement?'
             dlg2 = wx.MessageDialog(self,text,'Le Bail fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:

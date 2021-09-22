@@ -2429,6 +2429,7 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
         fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Ysb,inst[prms[13]][1]+Xsb,0.0,0.0))
+        fl.write('\n\n\n')
         fl.close()
     else:
         if useSamBrd[0]:

@@ -956,7 +956,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 isoSizer.Add(LGmixSizer('Size',[0.,1.],OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,WACV)
                 bottomSizer.Add(isoSizer)
-                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size',(10,4),[0.,4.],OnSizeRef),0,wx.BOTTOM,5)
+                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size',(10,4),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 uniSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
@@ -965,7 +965,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,WACV)
                 bottomSizer.Add(UniSizer('Size',OnSizeAxis),0)
                 bottomSizer.Add(uniSizer)
-                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size',(10,3),[0.,4.],OnSizeRef),0,wx.BOTTOM,5)
+                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size',(10,3),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                 ellSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],

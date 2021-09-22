@@ -5842,14 +5842,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 else:
                     break
                 ilog += 1
-            import subprocess as sb
             if sys.platform.lower().startswith('win'):
                 batch = open('fullrmc.bat','w')
                 #batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
                 batch.write(fullrmc_exec+' '+rname+'\n')
                 batch.write('pause')
                 batch.close()
-                sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+                subp.Popen('fullrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
             else:
                 batch = open('fullrmc.sh','w')
                 batch.write('#!/bin/bash\n')
@@ -5867,7 +5866,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
                 else:
                     # TODO: better to create this in a new terminal on Linux
-                    sb.Popen(['/bin/bash','fullrmc.sh'])
+                    subp.Popen(['/bin/bash','fullrmc.sh'])
         else:
             pName = generalData['Name'].replace(' ','_')
             RMCPdict = data['RMC']['RMCProfile']
@@ -5914,15 +5913,15 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 
             G2frame.OnFileSave(event)
             print (' GSAS-II project saved')
-            import subprocess as sb
             generalData = data['General']
             pName = generalData['Name'].replace(' ','_')
+            exstr = rmcexe+'\\rmcprofile.exe '+pName
             batch = open('runrmc.bat','w')
             batch.write('Title RMCProfile\n')
-            batch.write(rmcexe+'\\rmcprofile.exe '+pName+'\n')
+            batch.write(exstr+'\n')
             batch.write('pause\n')
             batch.close()
-            sb.Popen('runrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
             
     def OnStopRMC(event):
         pass

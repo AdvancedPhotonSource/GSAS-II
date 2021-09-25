@@ -5322,13 +5322,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,'FitScale':False,
                     'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,'Swaps':[],
                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
-                    'Stretch search':10.,'Pot. Temp.':300.,
-                    }}
+                    'Stretch search':10.,'Pot. Temp.':300.,'useGPU':False,}}
                 
             RMCPdict = data['RMC']['RMCProfile']
 #patches
             if 'FitScale' not in RMCPdict:
                 RMCPdict['FitScale'] = False
+            if 'useGPU' not in RMCPdict:
+                RMCPdict['useGPU'] = False
                 
 #end patches
                 
@@ -5377,11 +5378,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 return metaSizer
             
             def GetTimeSizer():
+                
+                def OnUseGPU(event):
+                    RMCPdict['useGPU'] = not RMCPdict['useGPU']
+                    
                 timeSizer = wx.BoxSizer(wx.HORIZONTAL)
                 timeSizer.Add(wx.StaticText(G2frame.FRMC,label=' Total running time (min): '),0,WACV)
-                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],0,xmin=0.),0,WACV)
+                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],0,xmin=0.,size=(70,25)),0,WACV)
                 timeSizer.Add(wx.StaticText(G2frame.FRMC,label=' Save interval time (min): '),0,WACV)
-                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],1,xmin=0.1,xmax=20.),0,WACV)
+                timeSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['runTimes'],1,xmin=0.1,xmax=20.,size=(50,25)),0,WACV)
+                usegpu = wx.CheckBox(G2frame.FRMC,label=' use GPU?')
+                usegpu.SetValue(RMCPdict['useGPU'])
+                usegpu.Bind(wx.EVT_CHECKBOX,OnUseGPU)
+                timeSizer.Add(usegpu,0,WACV)
                 return timeSizer
                 
             def GetSuperSizer():
@@ -5587,18 +5596,25 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers; if changed will force reset of atom positions:'),0)
             mainSizer.Add(GetSuperSizer(),0)
             
-            aPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-                style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            
+            # aPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+            #     style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            # mSizer = wx.BoxSizer(wx.VERTICAL)
+            # mSizer.Add(wx.StaticText(aPanel,label='Enter atom settings'),0)
+            # mSizer.Add(GetAtmChoice(aPanel,RMCPdict),0)
+            # mSizer.Add(wx.StaticText(aPanel,label=' N.B.: be sure to set cations first && anions last in atom ordering'))
+            # mSizer.Layout()
+            # aPanel.SetSizer(mSizer)
+            # aPanel.SetMinSize((300,mSizer.GetMinSize()[1]))
+            # aPanel.SetAutoLayout(1)
+            # aPanel.SetupScrolling()
+            # mainSizer.Add(aPanel,1,wx.EXPAND)
             mSizer = wx.BoxSizer(wx.VERTICAL)
-            mSizer.Add(wx.StaticText(aPanel,label='Enter atom settings'),0)
-            mSizer.Add(GetAtmChoice(aPanel,RMCPdict),0)
-            mSizer.Add(wx.StaticText(aPanel,label=' N.B.: be sure to set cations first && anions last in atom ordering'))
-            mSizer.Layout()
-            aPanel.SetSizer(mSizer)
-            aPanel.SetMinSize((300,mSizer.GetMinSize()[1]))
-            aPanel.SetAutoLayout(1)
-            aPanel.SetupScrolling()
-            mainSizer.Add(aPanel,1,wx.EXPAND)
+            mSizer.Add(wx.StaticText(G2frame.FRMC,label='Enter atom settings'),0)
+            mSizer.Add(GetAtmChoice(G2frame.FRMC,RMCPdict),0)
+            mSizer.Add(wx.StaticText(G2frame.FRMC,label=' N.B.: be sure to set cations first && anions last in atom ordering'))
+            mainSizer.Add(mSizer)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             swapBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5612,17 +5628,22 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
 
-            sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-                style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            # sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+            #     style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+            # mSizer = wx.BoxSizer(wx.VERTICAL)
+            # mSizer.Add(wx.StaticText(sPanel,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
+            # mSizer.Add(GetPairSizer(sPanel,RMCPdict),0)
+            # sPanel.SetSizer(mSizer)
+            # mSizer.Layout()
+            # sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
+            # sPanel.SetAutoLayout(1)
+            # sPanel.SetupScrolling()
+            # mainSizer.Add(sPanel,1,wx.EXPAND)
+            
             mSizer = wx.BoxSizer(wx.VERTICAL)
-            mSizer.Add(wx.StaticText(sPanel,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
-            mSizer.Add(GetPairSizer(sPanel,RMCPdict),0)
-            sPanel.SetSizer(mSizer)
-            mSizer.Layout()
-            sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
-            sPanel.SetAutoLayout(1)
-            sPanel.SetupScrolling()
-            mainSizer.Add(sPanel,1,wx.EXPAND)
+            mSizer.Add(wx.StaticText(G2frame.FRMC,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
+            mSizer.Add(GetPairSizer(G2frame.FRMC,RMCPdict),0)
+            mainSizer.Add(mSizer)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             useBVS = wx.CheckBox(G2frame.FRMC,label=' Use bond valence sum restraints for (set to 0 for non-bonded ones):')
@@ -5630,16 +5651,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             useBVS.Bind(wx.EVT_CHECKBOX,OnUseBVS)
             mainSizer.Add(useBVS,0)
             if RMCPdict.get('useBVS',False):
-                sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-                    style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+                # sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
+                #     style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+                # mSizer = wx.BoxSizer(wx.VERTICAL)
+                # mSizer.Add(GetBvsSizer(sPanel),0)
+                # sPanel.SetSizer(mSizer)
+                # mSizer.Layout()
+                # sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
+                # sPanel.SetAutoLayout(1)
+                # sPanel.SetupScrolling()
+                # mainSizer.Add(sPanel,1,wx.EXPAND)
                 mSizer = wx.BoxSizer(wx.VERTICAL)
-                mSizer.Add(GetBvsSizer(sPanel),0)
-                sPanel.SetSizer(mSizer)
-                mSizer.Layout()
-                sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
-                sPanel.SetAutoLayout(1)
-                sPanel.SetupScrolling()
-                mainSizer.Add(sPanel,1,wx.EXPAND)
+                mSizer.Add(GetBvsSizer(G2frame.FRMC),0)
+                mainSizer.Add(mSizer)
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             fxcnBox = wx.BoxSizer(wx.HORIZONTAL)

@@ -2652,6 +2652,8 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('PHASE :: '+Meta['phase']+'\n')
     fl.write('TEMPERATURE :: '+str(Meta['temperature'])+'\n')
     fl.write('INVESTIGATOR :: '+Meta['owner']+'\n')
+    if RMCPdict.get('useGPU',False):
+        fl.write('GPU_ACCELERATOR :: 0\n')
     minHD = ' '.join(['%6.3f'%dist[0] for dist in pairMin])
     minD = ' '.join(['%6.3f'%dist[1] for dist in pairMin])
     maxD = ' '.join(['%6.3f'%dist[2] for dist in pairMin])

@@ -1452,6 +1452,9 @@ class ExportBaseclass(object):
         This could be made faster for sequential fits by reducing the histogram list to only
         the active histogram being exported.
         '''
+        # TODO: this does not expand wild-card constraints properly for sequential fits.
+        # this needs revisiting for sequential exports if constraints need to be generated correctly.
+        
         self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {}
@@ -1494,9 +1497,9 @@ class ExportBaseclass(object):
             constList += consDict[item]
         # now process the constraints
         G2mv.InitVars()
-        constDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
+        constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
         varyList = covDict.get('varyListStart')
-        if varyList is None and len(constDict) == 0:
+        if varyList is None and len(constrDict) == 0:
             # no constraints can use varyList
             varyList = covDict.get('varyList')
         elif varyList is None:
@@ -1509,25 +1512,22 @@ class ExportBaseclass(object):
         rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Rigid bodies'))
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+        rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
-        msg = G2mv.EvaluateMultipliers(constDict,phaseDict)
+        msg = G2mv.EvaluateMultipliers(constrDict,phaseDict)
         if msg:
             print('Unable to interpret multiplier(s): '+msg)
             raise Exception(' *** CIF creation aborted ***')
-        try:
-            G2mv.GenerateConstraints(varyList,constDict,fixedList,self.parmDict)
-            #print(G2mv.VarRemapShow(varyList))
-        except:
+        errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
+        if errmsg:
             # this really should not happen
             print (' *** ERROR - constraints are internally inconsistent ***')
-            errmsg, warnmsg = G2mv.CheckConstraints(varyList,constDict,fixedList)
-            print ('Errors'+errmsg)
+            print ('Errors: ',errmsg)
             if warnmsg: print ('Warnings'+warnmsg)
             raise Exception(' *** CIF creation aborted ***')
-        # add the constrained values to the parameter dictionary
-        G2mv.Dict2Map(self.parmDict,varyList)
+        G2mv.Map2Dict(self.parmDict,varyList)   # changes varyList
+        G2mv.Dict2Map(self.parmDict)   # add the constrained values to the parameter dictionary
         # and add their uncertainties into the esd dictionary (sigDict)
         if covDict.get('covMatrix') is not None:
             self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],self.parmDict))

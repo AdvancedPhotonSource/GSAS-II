@@ -39,7 +39,7 @@ number is omitted.
 Note that the contents of each dict item is a List where each element in the
 list is a :ref:`constraint definition objects <Constraint_definitions_table>`.
 The constraints in this form are converted in
-:func:`GSASIIstrIO.ProcessConstraints` to the form used in :mod:`GSASIImapvars`
+:func:`GSASIImapvars.ProcessConstraints` to the form used in :mod:`GSASIImapvars`
 
 The keys in the Constraints dict are:
 
@@ -1867,7 +1867,7 @@ def CompileVarDesc():
 
     'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
 
-    will match ``AU11``, ``AU23``,.. and `U11`, `U23` etc will be displayed
+    will match ``AU11``, ``AU23``,... and `U11`, `U23` etc will be displayed
     in the value when used.
 
     '''
@@ -2167,13 +2167,13 @@ def SortVariables(varlist):
     def cvnnums(var):
         v = []
         for i in var.split(':'):
-            if i == '':
-                v.append(-1)
-                continue
+#            if i == '' or i == '*':
+#                v.append(-1)
+#                continue
             try:
                 v.append(int(i))
             except:
-                v.append(i)
+                v.append(-1)
         return v
     return sorted(varlist,key=cvnnums)
 
@@ -2279,10 +2279,12 @@ class G2VarObj(object):
         'Allow G2VarObj to be a dict key by implementing hashing'
         return hash(self.varname())
 
-    def varname(self):
+    def varname(self,hist=None):
         '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable
         string (p:h:<var>:a) or (p:h:<var>)
 
+        :param str/int hist: if specified, overrides the histogram number
+          with the specified value
         :returns: the variable name as a str
         '''
         a = ""
@@ -2301,7 +2303,9 @@ class G2VarObj(object):
                     a = ":" + AtomRanIdLookup[ph].get(self.atom,'?')
                 else:
                     a = ":?"
-        if self.histogram == "*":
+        if hist is not None and self.histogram:
+            hist = str(hist)
+        elif self.histogram == "*":
             hist = "*"
         else:
             hist = _lookup(HistRanIdLookup,self.histogram)
@@ -2358,6 +2362,44 @@ class G2VarObj(object):
         if self.name != other.name:
             return False
         return True
+    
+    def fmtVarByMode(self, seqmode, note, warnmsg):
+        '''Format a parameter object for display. Note that these changes 
+        are only temporary and are only shown only when the Constraints 
+        data tree is selected.
+
+        * In a non-sequential refinement or where the mode is 'use-all', the 
+          name is converted unchanged to a str
+        * In a sequential refinement when the mode is 'wildcards-only' the 
+          name is converted unchanged to a str but a warning is added 
+          for non-wildcarded HAP or Histogram parameters
+        * In a sequential refinement or where the mode is 'auto-wildcard', 
+          a histogram number is converted to a wildcard (*) and then 
+          converted to str
+
+        :param str mode: the sequential mode (see above)
+        :param str note: value displayed on the line of the constraint/equiv.
+        :param str warnmsg: a message saying the constraint is not used
+
+        :returns: varname, explain, note, warnmsg (all str values) where:
+          * varname is the parameter expressed as a string,
+          * explain is blank unless there is a warning explanation about 
+            the parameter or blank
+          * note is the previous value unless overridden 
+          * warnmsg is the previous value unless overridden 
+        '''
+        explain = ''
+        s = self.varname()
+        if seqmode == 'auto-wildcard':
+            if self.histogram: s = self.varname('*')
+        elif seqmode == 'wildcards-only' and self.histogram:
+            if self.histogram != '*':
+                warnmsg = 'Ignored due to use of a non-wildcarded histogram number'
+                note = 'Ignored'
+                explain = '\nIgnoring: '+self.varname()+' does not contain a wildcard.\n'
+        elif seqmode != 'use-all' and seqmode != 'wildcards-only':
+            print('Unexpected mode',seqmode,' in fmtVarByMode')
+        return s,explain,note,warnmsg
 
     def _show(self):
         'For testing, shows the current lookup table'

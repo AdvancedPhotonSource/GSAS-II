@@ -615,7 +615,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # values are not zeroed: fix that!
             VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
             VparmDict[var] += incr
-            G2mv.Dict2Map(VparmDict,[]) # apply constraints
+            G2mv.Dict2Map(VparmDict) # apply constraints
             # generate the atom positions and the direct & reciprocal cell values now, because they might
             # needed to evaluate the pseudovar
             for item in VparmDict:

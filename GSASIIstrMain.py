@@ -223,7 +223,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['DelChi2'] = result[2].get('DelChi2',-1.)
         Rvals['chisq'] = np.sum(result[2]['fvec']**2)
         G2stMth.Values2Dict(parmDict, varyList, result[0])
-        G2mv.Dict2Map(parmDict,varyList)
+        G2mv.Dict2Map(parmDict)
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Nvars'] = len(varyList)
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
@@ -306,7 +306,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     '''Global refinement -- refines to minimize against all histograms. 
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
-    :meth:`GSASIIscriptable.G2Project.refine` or from :func:`main`, where dlg will be None.
+    :meth:`GSASIIscriptable.G2Project.refine` or from :func:`do_refine`, where dlg will be None.
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
@@ -322,7 +322,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)
-    constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
+    constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -363,17 +363,11 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     if msg:
         return False,{'msg':'Unable to interpret multiplier(s): '+msg}
     try:
-        G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
-        #print(G2mv.VarRemapShow(varyList))
-        #print('DependentVars',G2mv.GetDependentVars())
-        #print('IndependentVars',G2mv.GetIndependentVars())
+        errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+        G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     except G2mv.ConstraintException:
         G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
-        #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
-        #print 'Errors',errmsg
-        #if warnmsg: print 'Warnings',warnmsg
         return False,{'msg':' Constraint error'}
-#    print G2mv.VarRemapShow(varyList)
 
     # remove frozen vars from refinement
     if 'parmFrozen' not in Controls:
@@ -527,7 +521,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
     Controls = G2stIO.GetControls(GPXfile)
     calcControls = {}
     calcControls.update(Controls)
-    constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
+    constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
     restraintDict = {}
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -731,27 +725,22 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                     parmDict[parm] = NewparmDict[parm]
             
         G2stIO.GetFprime(calcControls,Histo)
-        # do constraint processing
-        #reload(G2mv) # debug
-        constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
+        # do constraint processing (again, if called from GSASIIdataGUI.GSASII.OnSeqRefine)
+        constrDict,fixedList = G2stIO.ReadConstraints(GPXfile,seqHist=hId)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
-        msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
+
+        msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
         if msg:
             return False,'Unable to interpret multiplier(s): '+msg
+      
         try:
-            groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
-#            if GSASIIpath.GetConfigValue('debug'): print("DBG_"+
-#                G2mv.VarRemapShow(varyList,True))
-#            print('DependentVars',G2mv.GetDependentVars())
-#            print('IndependentVars',G2mv.GetIndependentVars())
+            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                                                                          SeqHist=hId)
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
+            G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:
-            G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
-            #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
-            #print 'Errors',errmsg
-            #if warnmsg: print 'Warnings',warnmsg
+            G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent for histogram {}***'.format(hId))
             return False,' Constraint error'
-        #print G2mv.VarRemapShow(varyList)
         if not ihst:
             # first histogram to refine against
             firstVaryList = []
@@ -1258,22 +1247,32 @@ def BestPlane(PlaneData):
         G2fil.G2Print (' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2]))
     G2fil.G2Print ('\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]]))
 
-def main():
+def do_refine(*args):
     'Called to run a refinement when this module is executed '
     starttime = time.time()
     arg = sys.argv
-    if len(arg) > 1:
-        GPXfile = arg[1]
-        if not ospath.exists(GPXfile):
-            G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist!")
-            exit()
+    if len(args) >= 1:
+        files = args
+    elif len(sys.argv) > 1:
+        files = sys.argv[1:]
     else:
-        G2fil.G2Print ('ERROR - missing filename')
+        G2fil.G2Print ('ERROR GSASIIstrMain.do_refine error - missing filename')
+        G2fil.G2Print ('Use "python GSASIIstrMain.py f1.gpx [f2.gpx f3.gpx...]" to run')
+        G2fil.G2Print ('or call GSASIIstrMain.do_refine directly')
         exit()
-    # TODO: figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
-    Refine(GPXfile,None)
-    G2fil.G2Print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
+    for GPXfile in files:
+        if not ospath.exists(GPXfile):
+            G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist! Skipping.")
+            continue
+        # TODO: test below
+        # figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
+        #Controls = G2stIO.GetControls(GPXfile)
+        #if Controls.get('Seq Data',[]): 
+            Refine(GPXfile,None)
+        #else:
+        #    SeqRefine(GPXfile,None)
+        G2fil.G2Print("Done with {}.\nExecution time {:.2f} sec.".format(GPXfile,time.time()-starttime))
 
 if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
-    main()
+    do_refine()

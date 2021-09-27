@@ -3464,7 +3464,8 @@ class GSASII(wx.Frame):
         if not GetGPXtreeItemId(self,self.root,'Constraints'):
             new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Constraints')
-            self.GPXtree.SetItemPyData(sub,{'Hist':[],'HAP':[],'Phase':[]})
+            self.GPXtree.SetItemPyData(sub,{'Hist':[],'HAP':[],'Phase':[],
+                        'Global':[],'_seqmode':'auto-wildcard', '_seqhist':0})
         if not GetGPXtreeItemId(self,self.root,'Restraints'):
             new = True
             sub = self.GPXtree.AppendItem(parent=self.root,text='Restraints')
@@ -4932,7 +4933,7 @@ class GSASII(wx.Frame):
                 data = self.GPXtree.GetItemPyData(item)
                 UseList = data['Histograms']
                 if Used:
-                    usedHistograms[phaseName] = [h for h in UseList if UseList[h]['Use']]
+                    usedHistograms[phaseName] = [h for h in UseList if UseList[h].get('Use',True)]
                 else:
                     usedHistograms[phaseName] = list(UseList.keys())
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
@@ -5118,7 +5119,7 @@ class GSASII(wx.Frame):
         This could potentially be sped up by loading only the histogram that is needed
         for a sequential fit. 
         '''
-        G2cnstG.CheckAllScalePhaseFractions(self)
+        if G2cnstG.CheckAllScalePhaseFractions(self): return
         try:
             parmDict,varyList = self.MakeLSParmDict()
         except:
@@ -5128,44 +5129,39 @@ class GSASII(wx.Frame):
         for i in parmDict:
             parmValDict[i] = parmDict[i][0]
             
-        reqVaryList = tuple(varyList) # save requested variables
+        reqVaryList = copy.copy(varyList) # save requested variables
         wx.BeginBusyCursor()
-        try:
+        try:            
             # process constraints
+            Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+            if not len(Phases) or not len(Histograms):
+                print('No constraints processing without phases and histograms defined')
+                raise G2mv.ConstraintException                
+            G2obj.IndexAllIds(Histograms,Phases)
             sub = GetGPXtreeItemId(self,self.root,'Constraints') 
             Constraints = self.GPXtree.GetItemPyData(sub)
-            constList = []
-            for item in Constraints:
-                if item.startswith('_'): continue
-                constList += Constraints[item]
-            G2mv.InitVars()
-            constrDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
-            msg = G2mv.EvaluateMultipliers(constrDict,parmValDict)
-            if msg:
-                print('Unable to interpret multiplier(s):',msg)
-            else:
-                G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmValDict)
-                G2mv.Map2Dict(parmValDict,varyList)
+            errmsg,warnmsg = G2cnstG.CheckConstraints(self,Phases,Histograms,Constraints,[],reqVaryList)
         except G2mv.ConstraintException:
+            print('Error in Constraint Processing')
             pass
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
         wx.EndBusyCursor()
-        # check for limits on dependent vars
-        consVars = [i for i in reqVaryList if i not in varyList]
-        impossible = set(
-            [str(i) for i in Controls['parmMinDict'] if i in consVars] + 
-            [str(i) for i in Controls['parmMaxDict'] if i in consVars])
-        if impossible:
-            msg = ''
-            for i in sorted(impossible):
-                if msg: msg += ', '
-                msg += i
-            msg =  ' &'.join(msg.rsplit(',',1))
-            msg = ('Note: limits on variable(s) '+msg+
-            ' will be ignored because they are constrained.')
-            G2G.G2MessageBox(self,msg,'Limits ignored for constrained vars')
+        # # check for limits on dependent vars
+        # consVars = [i for i in reqVaryList if i not in varyList]
+        # impossible = set(
+        #     [str(i) for i in Controls['parmMinDict'] if i in consVars] + 
+        #     [str(i) for i in Controls['parmMaxDict'] if i in consVars])
+        # if impossible:
+        #     msg = ''
+        #     for i in sorted(impossible):
+        #         if msg: msg += ', '
+        #         msg += i
+        #     msg =  ' &'.join(msg.rsplit(',',1))
+        #     msg = ('Note: limits on variable(s) '+msg+
+        #     ' will be ignored because they are constrained.')
+        #     G2G.G2MessageBox(self,msg,'Limits ignored for constrained vars')
         # debug stuff
         #if GSASIIpath.GetConfigValue('debug'):
         #    print('reloading',G2G)
@@ -5188,20 +5184,18 @@ class GSASII(wx.Frame):
         if Controls.get('newLeBail',False):
             G2G.G2MessageBox(self,'Doing a zero cycle Le Bail refinement first','Le Bail Refinement')            
             self.OnLeBail(event)
-        G2cnstG.CheckAllScalePhaseFractions(self) # can be slow for sequential fits, skip
+        if G2cnstG.CheckAllScalePhaseFractions(self):
+            return # can be slow for sequential fits, skip
         self.OnFileSave(event)
-        # check that constraints are OK here
-        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
-        if errmsg:
-            self.ErrorDialog('Refinement error',errmsg+'\nCheck console output for more information')
-            return
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile) # check constraints are OK
         if warnmsg:
-            print('Conflict between refinement flag settings and constraints:\n'+
-                warnmsg+'\nRefinement not possible')
-            self.ErrorDialog('Refinement Flag Error',
-                'Conflict between refinement flag settings and constraints:\n'+
-                warnmsg+'\nRefinement not possible')
+            print ('\nNote these constraint warning(s):\n'+warnmsg)
+            print ('Generated constraints\n',G2mv.VarRemapShow([],True))
+        if errmsg:
+            print ('\nError message(s):\n',errmsg)
+            self.ErrorDialog('Error in constraints',errmsg)
             return
+        
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
         Size = dlg.GetSize()
@@ -5434,22 +5428,46 @@ class GSASII(wx.Frame):
                 str(len(seqList)-len(newseqList))+
                 ' histograms that are not used have been removed from the sequential list.',
                 'Histograms removed')
-            Controls['Seq Data'] = newseqList
-            seqList = newseqList
+            seqList = Controls['Seq Data'] = newseqList
         self.OnFileSave(event)
-        # check that constraints are OK here
-        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
-        #errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,seqList[0]) # this would be faster, but at present it might not catch all errors
-        if errmsg:
-            self.ErrorDialog('Refinement error',errmsg)
+        allerrors = {}
+        allwarnings = {}
+        for h in seqList: # check constraints are OK for each histogram to be processed
+            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,h)
+            if warnmsg or errmsg:
+                print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
+            if warnmsg:
+                allwarnings[h] = warnmsg
+                print ('warning:',warnmsg)
+            if errmsg:
+                allerrors[h] = errmsg
+                print ('Error message: ',errmsg)
+        if allerrors:
+            if len(allerrors) == len(seqList):
+                l = 'all histograms'
+            elif len(allerrors) == 1:
+                l = 'one histogram'
+            else:
+                l = str(len(allerrors)) + ' histograms'
+            self.ErrorDialog('Error in Constraints',
+                             'There were constraint errors in {}. Refinement is not possible. See console output or visit Constraints data tree item for more details.'.format(l))
             return
-        if warnmsg:
-            print(u'Conflict between refinment flag settings and constraints:\n'+
-                  warnmsg+u'\nRefinement not possible')
-            self.ErrorDialog('Refinement Flag Error',
-                 u'Conflict between refinment flag settings and constraints:\n'+
-                 warnmsg+u'\nRefinement not possible')
-            return
+        elif allwarnings:
+            if len(allwarnings) == len(seqList):
+                l = 'all histograms'
+            elif len(allwarnings) == 1:
+                l = 'one histogram'
+            else:
+                l = str(len(allwarnings)) + ' histograms'
+            msg = 'There were changes to constraints needed in {}. See console output or visit Constraints data tree item for more details. Continue with refinement?'.format(l)
+            dlg = wx.MessageDialog(self,msg,caption='Constraint changes',style=wx.YES_NO)
+            dlg.CenterOnParent()
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO: return
         self.GPXtree.SaveExposedItems()        
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
@@ -6675,7 +6693,8 @@ def UpdateControls(G2frame,data):
                     sel = [choices.index(item) for item in data['Seq Data']]
             except ValueError:  #data changed somehow - start fresh
                 sel = []
-            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select datasets to include',
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                        'Select datasets to include. Select no datasets to end sequential refinements.',
                         'Sequential refinement selection',choices)
             dlg.SetSelections(sel)
             names = []
@@ -6685,6 +6704,11 @@ def UpdateControls(G2frame,data):
                 data['Seq Data'] = names                
             dlg.Destroy()
             G2frame.SetTitleByGPX()
+            if names:    # probably not needed (should be set previously)
+                item = GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
+                constraints = G2frame.GPXtree.GetItemPyData(item)
+                constraints['_seqmode'] = constraints.get('_seqmode','auto-wildcard')
+            
             wx.CallAfter(UpdateControls,G2frame,data)
             
         def OnReverse(event):

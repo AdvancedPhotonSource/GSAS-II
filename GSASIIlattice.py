@@ -27,7 +27,7 @@ unit cell parameters; :func:`cell2Gmat` :func:`Gmat2cell` for G and cell paramet
 
 When the hydrostatic/elastic strain coefficients (*Dij*, :math:`D_{ij}`) are used, they are added to the 
 *A* tensor terms (Ai, :math:`A_{i}`) so that A is redefined 
-:math:`A = (\\begin{matrix} A_{0} + D_{11} & A_{1} + D_{22} & A_{2} + D_{33} & A_{3} + 2D_{12} & A_{4} + 2D_{13} & A_{5} + 2D_{23}\\end{matrix})`. See :func:`cellDijFill`. 
+:math:`A = (\\begin{matrix} A_{0} + D_{11} & A_{1} + D_{22} & A_{2} + D_{33} & A_{3} + D_{12} & A_{4} + D_{13} & A_{5} + D_{23}\\end{matrix})`. See :func:`cellDijFill`. 
 Note that GSAS-II variables ``p:h:Dij`` (i,j = 1, 2, 3) and ``p`` is a phase number 
 and ``h`` a histogram number are used for the *Dij* values.
 '''
@@ -443,7 +443,7 @@ cell generated from oldA[i] values.
 #   from GSASIIlattice import fmtCellConstraints,GenerateCellConstraints
 #   cellXformRelations = fmtCellConstraints(GenerateCellConstraints())
 
-def GenCellConstraints(Trans,origPhase,newPhase,origA,debug=False):
+def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=False):
     '''Generate the constraints between two unit cells constants for a phase transformed 
     by matrix Trans. 
 
@@ -453,7 +453,9 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,debug=False):
     :param int origPhase: phase id (pId) for original phase
     :param int newPhase: phase id for the transformed phase to be constrained from 
       original phase
-    :param list origA: reciprocal cell ("A*") tensor 
+    :param list origA: reciprocal cell ("A*") tensor (used for debug only)
+    :param dict oSGLaue: space group info for original phase
+    :param dict nSGLaue: space group info for transformed phase
     :param bool debug: If true, the constraint input is used to compute and print A* 
       and from that the direct cell for the transformed phase.
     '''
@@ -461,29 +463,85 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,debug=False):
     T = Mat = np.linalg.inv(Trans).T
     Anew = []
     constrList = []
+    uniqueAnew = cellUnique(nSGLaue)
+    zeroAorig = cellZeros(oSGLaue)
     for i in range(6):
         constr = [[-1.0,G2obj.G2VarObj('{}::A{}'.format(newPhase,i))]]
         mult = []
         for j,item in enumerate(cellXformRelations[i]):
             const, aTerm, tTerm = item.split('*',2)
             const = float(const) * eval(tTerm)
-            # ignore terms where either the Transform contribution is zero.
-            #if abs(const * origA[j]) > 1e-8:
-            # If A term is zero this may indicate a symmetry constraint or an
-            # accidentally zero. If required as zero then it will not be refined
-            # and we do not want to include it, but if accidentally zero we do, 
-            # so include them for now and remove later. 
-            if abs(const) > 1e-8:
-                constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
-                mult.append(const)
-            else:
-                mult.append(0)
-        constrList.append(constr + [0.0,None,'c'])
+            mult.append(const)
+            # skip over A terms that are required to be zero
+            if zeroAorig[int(aTerm[1])]: continue   # only add non-zero terms
+            # ignore terms where either the Transform contribution is zero [= abs() < 1e-8]
+            # If the multiplier term is zero I don't think this accidental
+            # but since it will not change there is no reason to include that
+            # term in any case
+            if abs(const) < 1e-8: continue
+            constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
+        if i in uniqueAnew:
+            constrList.append(constr + [0.0,None,'c'])
         if debug: Anew.append(np.dot(origA,mult))           
     if debug:
         print('xformed A*  ',Anew)
         print('xformed cell',A2cell(Anew))
     return constrList
+
+def cellUnique(SGData):
+    '''Returns the indices for the unique A tensor terms 
+    based on the Laue class.
+    Any terms that are determined from others or are zero are not included.
+
+    :param dict SGdata: a symmetry object
+    :returns: a list of 0 to 6 terms with indices of the unique A terms
+    '''
+    if SGData['SGLaue'] in ['-1',]:
+        return [0,1,2,3,4,5]
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            return [0,1,2,5]
+        elif SGData['SGUniq'] == 'b':
+            return [0,1,2,4]
+        else:
+            return [0,1,2,3]
+    elif SGData['SGLaue'] in ['mmm',]:
+        return [0,1,2]
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        return [0,2]
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        return [0,2]
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        return [0,3]
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        return [0,]
+
+def cellZeros(SGData): 
+    '''Returns a list with the A terms required to be zero based on Laue symmetry
+
+    :param dict SGdata: a symmetry object
+    :returns: A list of six terms where the values are True if the 
+      A term must be zero, False otherwise.
+    '''
+    if SGData['SGLaue'] in ['-1',]:
+        return 6*[False]
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            return [False,False,False,True,True,False]
+        elif SGData['SGUniq'] == 'b':
+            return [False,False,False,True,False,True]
+        else:
+            return [False,False,False,False,True,True]
+    elif SGData['SGLaue'] in ['mmm',]:
+        return [False,False,False,True,True,True]
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        return [False,False,False,True,True,True]
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        return [False,False,False,False,True,True]
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        return 6*[False]
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        return [False,False,False,True,True,True]
 
 def TransformXYZ(XYZ,Trans,Vec):
     return np.inner(XYZ,Trans)+Vec

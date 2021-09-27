@@ -609,7 +609,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                                 parmDict[var] += s
                                 # extend shift if needed to other parameters
                                 if var in G2mv.independentVars:
-                                    G2mv.Dict2Map(parmDict,[])
+                                    G2mv.Dict2Map(parmDict)
                                     oneparm = False
                                 elif var in G2mv.dependentVars:
                                     G2mv.Map2Dict(parmDict,[])
@@ -3932,7 +3932,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     :returns: Jacobian numpy.array dMdv for all histograms concatinated
     '''
     parmDict.update(zip(varylist,values))
-    G2mv.Dict2Map(parmDict,varylist)
+    G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
     histoList = list(Histograms.keys())
@@ -3989,7 +3989,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     :returns: Vec,Hess where Vec is the least-squares vector and Hess is the Hessian
     '''
     parmDict.update(zip(varylist,values))
-    G2mv.Dict2Map(parmDict,varylist)
+    G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
     #fixup H atom positions here?
@@ -4102,7 +4102,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     :returns: an np array of differences between observed and computed diffraction values.
     '''
     Values2Dict(parmDict, varylist, values)
-    G2mv.Dict2Map(parmDict,varylist)
+    G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)
     SumwYo = 0

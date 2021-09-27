@@ -144,7 +144,7 @@ def GetControls(GPXfile):
     Controls.update(datum[1])
     return Controls
 
-def GetConstraints(GPXfile):
+def ReadConstraints(GPXfile, seqHist=None):
     '''Read the constraints from the GPX file and interpret them
 
     called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
@@ -156,114 +156,27 @@ def GetConstraints(GPXfile):
     if pos is None:
         raise Exception("No constraints in GPX file")
     fl.seek(pos)
-    datum = cPickleLoad(fl)[0]
+    ConstraintsItem = cPickleLoad(fl)[0]
+    seqmode = 'use-all'
+    if seqHist is not None:
+        seqmode = ConstraintsItem[1].get('_seqmode','wildcards-only')
     fl.close()
     constList = []
-    for item in datum[1]:
+    for item in ConstraintsItem[1]:
         if item.startswith('_'): continue
-        constList += datum[1][item]
-    constDict,fixedList,ignored = ProcessConstraints(constList)
-    if ignored:
-        G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
-    return constDict,fixedList
+        constList += ConstraintsItem[1][item]
+    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList,seqmode,seqHist)
+    #if ignored:
+    #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
+    return constrDict,fixedList
     
-def ProcessConstraints(constList):
-    """Interpret the constraints in the constList input into a dictionary, etc.
-    All :class:`GSASIIobj.G2VarObj` objects are mapped to the appropriate
-    phase/hist/atoms based on the object internals (random Ids). If this can't be
-    done (if a phase has been deleted, etc.), the variable is ignored.
-    If the constraint cannot be used due to too many dropped variables,
-    it is counted as ignored.
-    NB: this processing does not include symmetry imposed constraints
-    
-    :param list constList: a list of lists where each item in the outer list
-      specifies a constraint of some form, as described in the :mod:`GSASIIobj`
-      :ref:`Constraint definition <Constraint_definitions_table>`.
-
-    :returns:  a tuple of (constDict,fixedList,ignored) where:
-      
-      * constDict (list of dicts) contains the constraint relationships
-      * fixedList (list) contains the fixed values for each type
-        of constraint.
-      * ignored (int) counts the number of invalid constraint items
-        (should always be zero!)
-    """
-    constDict = []
-    fixedList = []
-    ignored = 0
-    namedVarList = []
-    for item in constList:
-        if item[-1] == 'h':
-            # process a hold
-            fixedList.append('0')
-            var = str(item[0][1])
-            if '?' not in var:
-                constDict.append({var:0.0})
-            else:
-                ignored += 1
-        elif item[-1] == 'f':
-            # process a new variable
-            fixedList.append(None)
-            D = {}
-            varyFlag = item[-2]
-            varname = item[-3]
-            for term in item[:-3]:
-                var = str(term[1])
-                if '?' not in var:
-                    D[var] = term[0]
-            if len(D) > 1:
-                # add extra dict terms for input variable name and vary flag
-                if varname is not None:
-                    varname = str(varname) # in case this is a G2VarObj
-                    if varname.startswith(':'):
-                        D['_name'] = varname
-                    else:
-                        D['_name'] = '::nv-' + varname
-                    D['_name'] = G2obj.MakeUniqueLabel(D['_name'],namedVarList)
-                D['_vary'] = varyFlag == True # force to bool
-                constDict.append(D)
-            else:
-                ignored += 1
-            #constFlag[-1] = ['Vary']
-        elif item[-1] == 'c': 
-            # process a contraint relationship
-            D = {}
-            for term in item[:-3]:
-                var = str(term[1])
-                if '?' not in var:
-                    D[var] = term[0]
-            if len(D) >= 1:
-                fixedList.append(str(item[-3]))
-                constDict.append(D)
-            else:
-                ignored += 1
-        elif item[-1] == 'e':
-            # process an equivalence
-            firstmult = None
-            eqlist = []
-            for term in item[:-3]:
-                if term[0] == 0: term[0] = 1.0
-                var = str(term[1])
-                if '?' in var: continue
-                if firstmult is None:
-                    firstmult = term[0]
-                    firstvar = var
-                else:
-                    eqlist.append([var,firstmult/term[0]])
-            if len(eqlist) > 0:
-                G2mv.StoreEquivalence(firstvar,eqlist,False)
-            else:
-                ignored += 1
-        else:
-            ignored += 1
-    return constDict,fixedList,ignored
-
 def ReadCheckConstraints(GPXfile, seqHist=None):
     '''Load constraints and related info and return any error or warning messages
     This is done from the GPX file rather than the tree.
 
-    :param dict seqHist: defines a specific histogram to be loaded for a sequential
-       refinement, if None (default) all are loaded.
+    :param str GPXfile: specifies the path to a .gpx file.
+    :param str seqHist: specifies a histogram to be loaded for 
+      a sequential refinement. If None (default) all are loaded.
     '''
     # init constraints
     G2mv.InitVars()    
@@ -273,25 +186,32 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
         return 'Error: No phases or no histograms in phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
-    constrDict,fixedList = GetConstraints(GPXfile) # load user constraints before internally generated ones
-    if seqHist: Histograms = {seqHist:Histograms[seqHist]}  # sequential fit: only need one histogram
+    if seqHist:
+        Histograms = {seqHist:Histograms[seqHist]}  # sequential fit: only need one histogram
+        hId = Histograms[seqHist]['hId']
+    else:
+        hId = None
+    constrDict,fixedList = ReadConstraints(GPXfile, hId) # load user constraints from file (uses ProcessConstraints)
+    parmDict = {}
+    # generate symmetry constraints to check for conflicts
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
-        GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+    parmDict.update(rbDict)
+    (Natoms, atomIndx, phaseVary, phaseDict, pawleyLookup, FFtables,
+         BLtables, MFtables, maxSSwave) = GetPhaseData(
+             Phases, RestraintDict=None, rbIds=rbIds, Print=False) # generates atom symmetry constraints
+    parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
+    parmDict.update(hapDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
+    parmDict.update(histDict)
     varyList = rbVary+phaseVary+hapVary+histVary
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
     if msg:
         return 'Unable to interpret multiplier(s): '+msg,''
-    errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
-    if errmsg:
-        # print some diagnostic info on the constraints
-        G2fil.G2Print('Error in constraints:\n'+errmsg+
-              '\nRefinement not possible due to conflict in constraints, see below:\n')
-        G2fil.G2Print(G2mv.VarRemapShow(varyList,True),mode='error')
+    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+    G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     return errmsg, warnmsg
     
 def makeTwinFrConstr(Phases,Histograms,hapVary):
@@ -1043,7 +963,7 @@ def cellVary(pfx,SGData):
     elif SGData['SGLaue'] in ['m3m','m3']:
         G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
         return [pfx+'A0',pfx+'A1',pfx+'A2']
-        
+    
 def modVary(pfx,SSGData):
     vary = []
     for i,item in enumerate(SSGData['modSymb']):
@@ -1056,8 +976,11 @@ def modVary(pfx,SSGData):
 ################################################################################
         
 def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
-    'Get Rigid body info from tree entry and print it to .LST file'
-    
+    '''Get Rigid body info from tree entry and print it to .LST file
+    Adds variables and dict items for vector RBs, but for Residue bodies 
+    this is done in :func:`GetPhaseData`.
+    '''
+
     def PrintResRBModel(RBModel):
         pFile.write('Residue RB name: %s no.atoms: %d, No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
@@ -1089,10 +1012,10 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 if Print:
                     pFile.write('\nVector rigid body model:\n')
                     PrintVecRBModel(rigidbodyDict['Vector'][item])
-    if len(rbIds['Residue']):
-        for item in rbIds['Residue']:
-            if rigidbodyDict['Residue'][item]['useCount']:
-                if Print:
+    if Print:
+        if len(rbIds['Residue']):
+            for item in rbIds['Residue']:
+                if rigidbodyDict['Residue'][item]['useCount']:
                     pFile.write('\nResidue rigid body model:\n')
                     PrintResRBModel(rigidbodyDict['Residue'][item])
     return rbVary,rbDict
@@ -1378,8 +1301,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 if xId[i] > 0:                               
                     phaseVary += [name,]
                     equivs[xId[i]].append([name,xCoef[i]])
-                elif symHold is not None: #variable is held due to symmetry
-                    symHold.append(name)
+                else:
+                    if symHold is not None: #variable is held due to symmetry
+                        symHold.append(name)
+                    G2mv.StoreHold(name)
         for equiv in equivs:
             if len(equivs[equiv]) > 1:
                 name = equivs[equiv][0][0]
@@ -1543,8 +1468,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         if xId[j] > 0:                               
                             phaseVary.append(names[j])
                             equivs[xId[j]].append([names[j],xCoef[j]])
-                        elif symHold is not None: #variable is held due to symmetry
-                            symHold.append(names[j])
+                        else:
+                            if symHold is not None: #variable is held due to symmetry
+                                symHold.append(names[j])
+                            G2mv.StoreHold(names[j])
                     for equiv in equivs:
                         if len(equivs[equiv]) > 1:
                             name = equivs[equiv][0][0]

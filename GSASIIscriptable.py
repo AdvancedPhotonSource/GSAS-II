@@ -2476,6 +2476,15 @@ class G2Project(G2ObjectWrapper):
             # TODO: migrate to RefineCore G2strMain does not properly use printFile
             # G2strMain.RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
             #      calcControls,pawleyLookup,ifPrint,printFile,dlg)
+
+            # check that constraints are OK
+            errmsg, warnmsg = G2strIO.ReadCheckConstraints(self.filename)
+            if errmsg:
+                G2fil.G2Print('Constraint error',errmsg)
+                raise Exception('Constraint error')
+            if warnmsg:
+                G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
+                G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
             G2strMain.Refine(self.filename, makeBack=makeBack)
         else:
             self._seqrefine()
@@ -2496,12 +2505,11 @@ class G2Project(G2ObjectWrapper):
         # check that constraints are OK
         errmsg, warnmsg = G2strIO.ReadCheckConstraints(self.filename)
         if errmsg:
-            G2fil.G2Print('Refinement error',errmsg)
+            G2fil.G2Print('Constraint error',errmsg)
             raise Exception('Constraint error')
         if warnmsg:
-            G2fil.G2Print(u'Warning: Conflict between refinment flag settings and constraints:\n'+
-                  warnmsg+u'\nRefinement not possible')
-            raise Exception('Constraint error')
+            G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
+            G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
         OK,Msg = G2strMain.SeqRefine(self.filename,None)
 
     def histogram(self, histname):

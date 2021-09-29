@@ -2265,7 +2265,7 @@ def VarRemapShow(varyList=None,inputOnly=False):
             s += lineOut + '\n'
     return s
 
-def GetSymEquiv():
+def GetSymEquiv(seqmode,seqhistnum):
     '''Return the automatically generated (equivalence) relationships.
 
     :returns: a list of strings containing the details of the contraint relationships
@@ -2279,14 +2279,14 @@ def GetSymEquiv():
         dependentParmList,indParmList,arrayList,invarrayList,symGenList):
         if not symFlag: continue
         for i,mv in enumerate(mapvars):
-            cnstr = [[1,mv]]
+            cnstr = [[1,G2obj.G2VarObj(mv)]]
             if multarr is None:
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0
                 helptext = 'Variable {:} '.format(mv) + " ("+ G2obj.fmtVarDescr(mv) + ")"
                 if len(varlist) == 1:
-                    cnstr.append([invmultarr[0][0],varlist[0]])
+                    cnstr.append([invmultarr[0][0],G2obj.G2VarObj(varlist[0])])
                     # format the way Bob prefers
                     if invmultarr[0][0] == 1: 
                         s1 = str(varlist[0]) + ' = ' + str(mv)
@@ -2305,7 +2305,7 @@ def GetSymEquiv():
                 else:
                     helptext += "\n\nis equivalent to the following:"
                     for v,m in zip(varlist,invmultarr):
-                        cnstr.append([m,v])
+                        cnstr.append([m,G2obj.G2VarObj(v)])
                         #if debug: print ('v,m[0]: ',v,m[0])
                         if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
                         if j > 0: s1 += ' =  '
@@ -2316,7 +2316,7 @@ def GetSymEquiv():
                             helptext += '\n  {:3g} * {:} '.format(m,v) + " ("+ G2obj.fmtVarDescr(v) + ")"
                         else:
                             helptext += '\n  {:} '.format(v) + " ("+ G2obj.fmtVarDescr(v) + ")"
-                err,msg,note = getConstrError(cnstr+[None,None,'e'])
+                err,msg,note = getConstrError(cnstr+[None,None,'e'],seqmode,seqhistnum)
                 symerr.append([msg,note])
                 symout.append(s1+s2)
                 symhelp.append(helptext)

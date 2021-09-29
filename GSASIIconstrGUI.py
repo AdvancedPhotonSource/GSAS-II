@@ -1073,7 +1073,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Sizer1.Add(wx.StaticText(panel,wx.ID_ANY,
                     'No holds generated'))
             Sizer1.Add((-1,10))
-            symGen,SymErr,SymHelp = G2mv.GetSymEquiv()
+            symGen,SymErr,SymHelp = G2mv.GetSymEquiv(seqmode,seqhistnum)
             if len(symGen) == 0:
                 Sizer1.Add(wx.StaticText(panel,wx.ID_ANY,
                     'No equivalences generated'))

@@ -4763,7 +4763,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 for pair in RMCPdict['Pairs']:
                     pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],0,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
                 pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Search from: '),0,WACV)
-            else:
+            elif G2frame.RMCchoice == 'fullrmc':
                 pairSizer.Add(wx.StaticText(pnl,label='%14s'%' Distance min: '),0,WACV)
             for pair in RMCPdict['Pairs']:
                 pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],
@@ -4967,7 +4967,7 @@ def UpdatePhaseData(G2frame,Item,data):
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         runFile = ' '
-        choice = ['RMCProfile','fullrmc',]
+        choice = ['RMCProfile','fullrmc','PDFfit']
         RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
@@ -5288,7 +5288,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='RMCProfile setup'),0,WACV)
             subSizer.Add((-1,-1),1,wx.EXPAND)
-            mainSizer.Add(subSizer,0,wx.EXPAND)
+            mainSizer.Add(subSizer,0,WACV)
             mainSizer.Add((5,5))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 '''"RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, 
@@ -5736,9 +5736,29 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add(samSizer,0)
 
             FileSizer(RMCPdict,mainSizer)
-    
+        else:
+            subSizer = wx.BoxSizer(wx.HORIZONTAL)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            subSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit setup'),0,WACV)
+            subSizer.Add((-1,-1),1,wx.EXPAND)
+            mainSizer.Add(subSizer,0,WACV)
+            mainSizer.Add((5,5))
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
+'''"PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals", 
+C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen && 
+S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter 
+(2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219'''))
+            mainSizer.Add((5,5))
+            if 'PDFfit' not in data['RMC']:
+                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
+                aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+                files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
+                          'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
+                data['RMC']['PDFfit'] = {'files':files}
+                
+            RMCPdict = data['RMC']['PDFfit']
         bigSizer.Add(mainSizer,1,wx.EXPAND)
-        # add help button to bring up help web page - at right sede of window
+        # add help button to bring up help web page - at right side of window
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
         
@@ -5764,7 +5784,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             # end debug stuff            
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
-        else:
+        elif G2frame.RMCchoice == 'RMCProfile':
             pName = generalData['Name'].replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
@@ -5807,9 +5827,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             else:
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+        elif G2frame.RMCchoice == 'PDFfit':
+            print('PDFfit2 prep under construction')
             
     def OnRunRMC(event):
-        '''Run a previously created RMCProfile/fullrmc script
+        '''Run a previously created RMCProfile/fullrmc/PDFfit2 script
         '''
         generalData = data['General']
         if G2frame.RMCchoice == 'fullrmc':
@@ -5891,7 +5913,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 else:
                     # TODO: better to create this in a new terminal on Linux
                     subp.Popen(['/bin/bash','fullrmc.sh'])
-        else:
+        elif G2frame.RMCchoice == 'RMCProfile':
             pName = generalData['Name'].replace(' ','_')
             RMCPdict = data['RMC']['RMCProfile']
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
@@ -5946,6 +5968,43 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             batch.write('pause\n')
             batch.close()
             subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+        elif G2frame.RMCchoice == 'PDFfit':
+            PDFfit_exec = G2pwd.findPDFfit()
+            if PDFfit_exec is None:
+                G2G.G2MessageBox(G2frame,'PDFfit2 Python not found. How did we get here?')
+                return
+            pName = generalData['Name'].replace(' ','_')
+            rname = pName+'_PDFfit.py'
+            if not os.path.exists(rname):
+                G2G.G2MessageBox(G2frame,
+                    'The PDFfit script has not been created. Running setup.',
+                    'Not setup')
+                OnSetupRMC(event)
+            wx.MessageBox(''' For use of PDFfit2, please cite:
+      PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals, 
+C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen & 
+S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter 
+(2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219''',
+      caption='PDFfit2',style=wx.ICON_INFORMATION)
+            G2frame.OnFileSave(event)
+            print (' GSAS-II project saved')
+            if sys.platform.lower().startswith('win'):
+                batch = open('pdffit2.bat','w')
+                batch.write(PDFfit_exec+' '+rname+'\n')
+                batch.write('pause')
+                batch.close()
+                subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+            else:
+                batch = open('pdffit2.sh','w')
+                batch.write('#!/bin/bash\n')
+                batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
+                batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
+                batch.close()
+                if sys.platform == "darwin":
+                    GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
+                else:
+                    # TODO: better to create this in a new terminal on Linux
+                    subp.Popen(['/bin/bash','pdffit2.sh'])
             
     def OnStopRMC(event):
         pass
@@ -6060,7 +6119,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                                 newPlot=True,Title=title,
                                 lines=True,names=plotLbls)
             return
-        else:
+        elif G2frame.RMCchoice == 'RMCProfile':
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
@@ -6320,6 +6379,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],
                             newPlot=False,Title='Number of %s-%s Bonds'%(bond[0],bond[1]),Centro=True)  
                     OutFile.close()
+        elif G2frame.RMCchoice == 'PDFfit':
+            generalData = data['General']
+            RMCPdict = data['RMC']['PDFfit']
+            pName = generalData['Name'].replace(' ','_')
+            print('PDFfit plots under construction')
         
             
 ### Layer Data page ################################################################################

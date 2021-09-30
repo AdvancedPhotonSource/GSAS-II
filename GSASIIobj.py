@@ -1140,38 +1140,49 @@ ISODISTORT implementation
 
 CIFs prepared with the ISODISTORT web site 
 https://stokes.byu.edu/iso/isodistort_version5.6.1/isodistort.php
-[B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).]
-can be read into GSAS-II using import CIF. This will cause constraints to be established for structural distortion modes read from the CIF.
-At present, of the five types of modes  only displacive(``_iso_displacivemode``...) and occupancy (``_iso_occupancymode``...) are processed. Not yet processed: ``_iso_magneticmode``..., ``_iso_rotationalmode``... & ``_iso_strainmode``...
+[B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
+ J. Appl. Cryst. 39, 607-614 (2006).] can be read into GSAS-II using import CIF. This will cause constraints to be established for 
+structural distortion modes read from the CIF. At present, of the five types of modes  only displacive(``_iso_displacivemode``...) 
+and occupancy (``_iso_occupancymode``...) are processed. Not yet processed: ``_iso_magneticmode``..., 
+``_iso_rotationalmode``... & ``_iso_strainmode``...
 
-The CIF importer :mod:`G2phase_CIF` implements class :class:`G2phase_CIF.CIFPhaseReader` which offers two methods associated with ISODISTORT (ID) input. Method :meth:`G2phase_CIF.CIFPhaseReader.ISODISTORT_test`
-checks to see if a CIF block contains the loops with ``_iso_displacivemode_label`` or  ``_iso_occupancymode_label`` items.
-If so, method :meth:`G2phase_CIF.CIFPhaseReader.ISODISTORT_proc` is called to read and interpret them.
-The results are placed into the reader object's ``.Phase`` class variable as a dict item with key ``'ISODISTORT'``. 
+The CIF importer :mod:`G2phase_CIF` implements class :class:`G2phase_CIF.CIFPhaseReader` which offers two methods associated 
+with ISODISTORT (ID) input. Method :meth:`G2phase_CIF.CIFPhaseReader.ISODISTORT_test` checks to see if a CIF block contains 
+the loops with ``_iso_displacivemode_label`` or  ``_iso_occupancymode_label`` items. If so, method 
+:meth:`G2phase_CIF.CIFPhaseReader.ISODISTORT_proc` is called to read and interpret them. The results are placed into the 
+reader object's ``.Phase`` class variable as a dict item with key ``'ISODISTORT'``. 
 
-Note that each mode ID has a long label with a name such as  Pm-3m[1/2,1/2,1/2]R5+(a,a,0)[La:b:dsp]T1u(a). Function :func:`G2phase_CIF.ISODISTORT_shortLbl` is used to create a short name for this,
-such as R5_T1u(a) which is made unique by addition of _n if the short name is duplicated.
-As each mode is processed, a constraint corresponding to that mode is 
-created and is added to list in the reader object's ``.Constraints`` class variable. Items placed into that list can either be a list, which corresponds to a function (new var) type :ref:`constraint definition <Constraints_table>` entry, or an item can be a dict, which provides help information for each constraint.
+Note that each mode ID has a long label with a name such as  Pm-3m[1/2,1/2,1/2]R5+(a,a,0)[La:b:dsp]T1u(a). Function 
+:func:`G2phase_CIF.ISODISTORT_shortLbl` is used to create a short name for this, such as R5_T1u(a) which is made unique 
+by addition of _n if the short name is duplicated. As each mode is processed, a constraint corresponding to that mode is 
+created and is added to list in the reader object's ``.Constraints`` class variable. Items placed into that list can either 
+be a list, which corresponds to a function (new var) type :ref:`constraint definition <Constraints_table>` entry, or an item 
+can be a dict, which provides help information for each constraint.
 
 ------------------------------
 Displacive modes
 ------------------------------
 
-The coordinate variables, as named by ISODISTORT, are placed in 
-``.Phase['ISODISTORT']['IsoVarList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2VarList']``. The mode variables,
-as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoModeList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2ModeList']``.
-[Use ``str(G2VarObj)`` to get the variable name from the G2VarObj object, but note that the phase number, *n*, for the prefix "*n*::" cannot be determined as the phase number is not yet assigned.]
+The coordinate variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoVarList']`` and the 
+corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2VarList']``. 
+The mode variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoModeList']`` and the 
+corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2ModeList']``.
+[Use ``str(G2VarObj)`` to get the variable name from the G2VarObj object, but note that the phase number, *n*, for the prefix 
+ "*n*::" cannot be determined as the phase number is not yet assigned.]
 
-Displacive modes are a bit complex in that they relate to delta displacements, relative to an offset value for each coordinate, and because the modes are normalized, while GSAS-II also uses displacements, but these are added to the coordinates after each refinement cycle and the delta values are set to zero. ISODISTORT uses fixed offsets (subtracted from the actual position to obtain the delta values) that are taken from ``_iso_coordinate_formula`` and these are placed in ``.Phase['ISODISTORT']['ParentStructure]`` (keyed by atom label). The normalization factors (which the delta values are divided by) are taken from ``_iso_displacivemodenorm_value`` and are placed in ``.Phase['ISODISTORT']['NormList']`` in the same order as as ``...['IsoModeList']`` and
-``...['G2ModeList']``.
+Displacive modes are a bit complex in that they relate to delta displacements, relative to an offset value for each coordinate, 
+and because the modes are normalized, while GSAS-II also uses displacements, but these are added to the coordinates after 
+each refinement cycle and the delta values are set to zero. ISODISTORT uses fixed offsets (subtracted from the actual position 
+to obtain the delta values) that are taken from ``_iso_coordinate_formula`` and these are placed in 
+``.Phase['ISODISTORT']['ParentStructure]`` (keyed by atom label). The normalization factors (which the delta values are divided by) 
+are taken from ``_iso_displacivemodenorm_value`` and are placed in ``.Phase['ISODISTORT']['NormList']`` in the same order as as 
+``...['IsoModeList']`` and ``...['G2ModeList']``.
 
-The CIF contains a sparse matrix, from the ``loop_`` containing 
-``_iso_displacivemodematrix_value`` which provides the equations for determining the mode values from the coordinates, that matrix is placed in ``.Phase['ISODISTORT']['Mode2VarMatrix']``. The matrix is inverted to produce
-``.Phase['ISODISTORT']['Var2ModeMatrix']``, which determines how to compute the
-mode values from the delta coordinate values. These values are used for the 
-in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` which shows coordinate and mode
-values, the latter with s.u. values. 
+The CIF contains a sparse matrix, from the ``loop_`` containing ``_iso_displacivemodematrix_value`` which provides the equations 
+for determining the mode values from the coordinates, that matrix is placed in ``.Phase['ISODISTORT']['Mode2VarMatrix']``. 
+The matrix is inverted to produce ``.Phase['ISODISTORT']['Var2ModeMatrix']``, which determines how to compute the
+mode values from the delta coordinate values. These values are used for the in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` 
+which shows coordinate and mode values, the latter with s.u. values. 
 
 
 ------------------------------
@@ -1180,19 +1191,21 @@ Occupancy modes
 
 
 The delta occupancy variables, as named by ISODISTORT, are placed in 
-``.Phase['ISODISTORT']['OccVarList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2OccVarList']``. The mode variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['OccModeList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2OccModeList']``.
+``.Phase['ISODISTORT']['OccVarList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed 
+in ``.Phase['ISODISTORT']['G2OccVarList']``. The mode variables, as named by ISODISTORT, are placed in 
+``.Phase['ISODISTORT']['OccModeList']`` and the corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed 
+in ``.Phase['ISODISTORT']['G2OccModeList']``.
 
-Occupancy modes, like Displacive modes, are also refined as delta values.  However, GSAS-II directly refines the fractional occupancies. 
-Offset values for each atom, are taken from ``_iso_occupancy_formula`` and are placed in 
-``.Phase['ISODISTORT']['ParentOcc]``. 
-(Offset values are subtracted from the actual position to obtain the delta values.) 
-Modes are normalized (where the mode values are divided by the normalization factor) 
-are taken from ``_iso_occupancymodenorm_value`` and are placed in ``.Phase['ISODISTORT']['OccNormList']`` in the same order as as ``...['OccModeList']`` and
+Occupancy modes, like Displacive modes, are also refined as delta values.  However, GSAS-II directly refines the fractional 
+occupancies. Offset values for each atom, are taken from ``_iso_occupancy_formula`` and are placed in 
+``.Phase['ISODISTORT']['ParentOcc]``. (Offset values are subtracted from the actual position to obtain the delta values.) 
+Modes are normalized (where the mode values are divided by the normalization factor) are taken from ``_iso_occupancymodenorm_value`` 
+and are placed in ``.Phase['ISODISTORT']['OccNormList']`` in the same order as as ``...['OccModeList']`` and
 ``...['G2OccModeList']``.
 
-The CIF contains a sparse matrix, from the ``loop_`` containing 
-``_iso_occupancymodematrix_value``, which provides the equations for determining the mode values from the coordinates. That matrix is placed in ``.Phase['ISODISTORT']['Occ2VarMatrix']``. The matrix is inverted to produce
-``.Phase['ISODISTORT']['Var2OccMatrix']``, which determines how to compute the
+The CIF contains a sparse matrix, from the ``loop_`` containing ``_iso_occupancymodematrix_value``, which provides the 
+equations for determining the mode values from the coordinates. That matrix is placed in ``.Phase['ISODISTORT']['Occ2VarMatrix']``. 
+The matrix is inverted to produce ``.Phase['ISODISTORT']['Var2OccMatrix']``, which determines how to compute the
 mode values from the delta coordinate values.
 
 
@@ -1200,23 +1213,17 @@ mode values from the delta coordinate values.
 Mode Computations
 ------------------------------
 
-Constraints are processed after the CIF has been read in
-:meth:`GSASIIdataGUI.GSASII.OnImportPhase` or  
-:meth:`GSASIIscriptable.G2Project.add_phase` by moving them from the reader
-object's ``.Constraints`` class variable to 
-the Constraints tree entry's ['Phase'] list (for list items defining constraints) or
+Constraints are processed after the CIF has been read in :meth:`GSASIIdataGUI.GSASII.OnImportPhase` or  
+:meth:`GSASIIscriptable.G2Project.add_phase` by moving them from the reader object's ``.Constraints`` 
+class variable to the Constraints tree entry's ['Phase'] list (for list items defining constraints) or
 the Constraints tree entry's ['_Explain'] dict (for dict items defining constraint help information)
 
-The information in ``.Phase['ISODISTORT']`` is used 
-in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` which shows coordinate and mode
+The information in ``.Phase['ISODISTORT']`` is used in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` which shows coordinate and mode
 values, the latter with s.u. values. This can be called from the Constraints and Phase/Atoms tree items. 
 
-Before each refinement, constraints are processed as
-:ref:`described elsewhere <Constraints_processing>`. After a refinement
-is complete, :func:`GSASIImapvars.PrintIndependentVars` shows the
-shifts and s.u.'s on the refined modes, using GSAS-II values, but 
-:func:`GSASIIstrIO.PrintISOmodes` prints the ISODISTORT modes as computed
-in the web site.
+Before each refinement, constraints are processed as :ref:`described elsewhere <Constraints_processing>`. After a refinement
+is complete, :func:`GSASIImapvars.PrintIndependentVars` shows the shifts and s.u.'s on the refined modes, 
+using GSAS-II values, but :func:`GSASIIstrIO.PrintISOmodes` prints the ISODISTORT modes as computed in the web site.
 
 
 .. _ParameterLimits:

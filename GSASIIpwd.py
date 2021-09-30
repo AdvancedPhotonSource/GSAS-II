@@ -2926,6 +2926,17 @@ def findfullrmc():
         if len(fl) > 0:
             return os.path.abspath(sorted(fl)[0])
         
+def findPDFfit():
+    '''Find where PDFfit2 is installed. Does the following:
+    :returns: the full path to a python executable that is assumed to 
+      have PDFfit2 installed or None, if it was not found.
+    '''
+    try:
+        import diffpy.pdffit2
+        return sys.executable
+    except:
+        return None
+        
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 
     created. 

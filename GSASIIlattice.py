@@ -2481,7 +2481,25 @@ def textureIndex(SHCoef):
         l = eval(term.strip('C'))[0]
         Tindx += SHCoef[term]**2/(2.0*l+1.)
     return Tindx
-    
+
+UniqueCellByLaue = [
+        [['m3','m3m'],(0,)],
+        [['3R','3mR'],(0,3)],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
+        [['mmm'],(0,1,2)],
+        [['2/m'+'a'],(0,1,2,3)],
+        [['2/m'+'b'],(0,1,2,4)],
+        [['2/m'+'c'],(0,1,2,5)],
+        [['-1'],(0,1,2,3,4,5)],
+    ]
+'''List the unique cell terms by index for each Laue class'''
+
+cellAlbl = ('a','b','c', 'alpha', 'beta', 'gamma')
+'ASCII labels for a, b, c, alpha, beta, gamma'
+
+cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3')
+'unicode labels for a, b, c, alpha, beta, gamma'
+  
 # self-test materials follow. 
 selftestlist = []
 '''Defines a list of self-tests'''

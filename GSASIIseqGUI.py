@@ -587,7 +587,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # convert to direct cell & add the unique terms to the dictionary
             for i,val in enumerate(G2lat.A2cell(A)):
                 if i in uniqCellIndx[pId]:
-                    lbl = str(pId)+'::'+cellUlbl[i]
+                    lbl = str(pId)+'::'+G2lat.cellUlbl[i]
                     parmDict[lbl] = val
             lbl = str(pId)+'::'+'Vol'
             parmDict[lbl] = G2lat.calc_V(A)
@@ -640,7 +640,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # convert to direct cell & add the unique terms to the dictionary
                 for i,val in enumerate(G2lat.A2cell(A)):
                     if i in uniqCellIndx[pId]:
-                        lbl = str(pId)+'::'+cellUlbl[i]
+                        lbl = str(pId)+'::'+G2lat.cellUlbl[i]
                         VparmDict[lbl] = val
                 lbl = str(pId)+'::'+'Vol'
                 VparmDict[lbl] = G2lat.calc_V(A)
@@ -888,6 +888,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def DoSequentialExport(event):
         '''Event handler for all Sequential Export menu items
         '''
+        if event.GetId() == G2G.wxID_XPORTSEQFCIF:
+            G2IO.ExportSequentialFullCIF(G2frame,data,Controls)
+            return
         vals = G2frame.dataWindow.SeqExportLookup.get(event.GetId())
         if vals is None:
             print('Error: Id not found. This should not happen!')
@@ -1071,20 +1074,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
         return
             
-##### UpdateSeqResults: start processing sequential results here ########## 
+#---- UpdateSeqResults: start processing sequential results here ########## 
     # lookup table for unique cell parameters by symmetry
-    cellGUIlist = [
-        [['m3','m3m'],(0,)],
-        [['3R','3mR'],(0,3)],
-        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
-        [['mmm'],(0,1,2)],
-        [['2/m'+'a'],(0,1,2,3)],
-        [['2/m'+'b'],(0,1,2,4)],
-        [['2/m'+'c'],(0,1,2,5)],
-        [['-1'],(0,1,2,3,4,5)],
-        ]
-    # cell labels
-    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3') # unicode a,b,c,alpha,beta,gamma
 
     if not data:
         print ('No sequential refinement results')
@@ -1147,7 +1138,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         laue = SGdata[pId]['SGLaue']
         if laue == '2/m':
             laue += SGdata[pId]['SGUniq']
-        for symlist,celllist in cellGUIlist:
+        for symlist,celllist in G2lat.UniqueCellByLaue:
             if laue in symlist:
                 uniqCellIndx[pId] = celllist
                 break
@@ -1179,9 +1170,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.Bind(wx.EVT_MENU, EditParFitEq, id=G2G.wxID_EDITPARFIT)
     G2frame.Bind(wx.EVT_MENU, DoParEqFit, id=G2G.wxID_DOPARFIT)
 
-    for id in G2frame.dataWindow.SeqExportLookup:        
+    for id in G2frame.dataWindow.SeqExportLookup:
         G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
     G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_XPORTSEQCSV)
+    G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=G2G.wxID_XPORTSEQFCIF)
 
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
@@ -1231,7 +1223,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
     #else:
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,False)
-    ######  build up the data table by columns -----------------------------------------------
+    #-----  build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
     G2frame.colList = [list(range(nRows)),nRows*[True]]
@@ -1275,7 +1267,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []
             cellESDs = []
-            colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
+            colLabels += [pfx+G2lat.cellUlbl[i] for i in uniqCellIndx[pId]]
             colLabels += [pfx+'Vol']
             Types += (len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT+':10,5',]
             Types += [wg.GRID_VALUE_FLOAT+':10,3',]
@@ -1417,7 +1409,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum
             wtFrList.append(wtFr)
             if var in data[name]['varyList']:
-                sig = data[name]['sig'][data[name]['varyList'].index(var)]*wtFr/Phases[phase]['Histograms'][name]['Scale'][0]
+                sig = data[name]['sig'][data[name]['varyList'].index(var)]*Phases[phase]['General']['Mass']/wtFrSum
+            elif var in data[name].get('depParmDict',{}):
+                sig = data[name]['depParmDict'][var][1]*Phases[phase]['General']['Mass']/wtFrSum
             else:
                 sig = 0.0
             sigwtFrList.append(sig)

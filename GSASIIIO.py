@@ -1721,6 +1721,8 @@ class ExportBaseclass(object):
           the name defaults to self.dirname + self.filename.
           If an extension is supplied, it is not overridded,
           but if not, the default extension is used. 
+        :param str mode:  The mode can 'w' to write a file, or 'a' to append to it. If 
+          the mode is 'd' (for debug), output is displayed on the console. 
         :returns: the file object opened by the routine which is also
           saved as self.fp
         '''
@@ -1949,6 +1951,16 @@ def ExportPowder(G2frame,TreeName,fileroot,extension,hint=''):
     else:
         print('No Export routine supports extension '+extension)
 
+def ExportSequentialFullCIF(G2frame,seqData,Controls):
+    '''Handles access to CIF exporter a bit differently for sequential fits, as this is 
+    not accessed via the usual export menus
+    '''
+    import G2export_CIF
+    #import imp
+    #imp.reload(G2export_CIF)   #TODO for debug
+    obj = G2export_CIF.ExportProjectCIF(G2frame)
+    obj.Exporter(None,seqData=seqData,Controls=Controls)
+    
 def ExportSequential(G2frame,data,obj,exporttype):
     '''
     Used to export from every phase/dataset in a sequential refinement using
@@ -1957,6 +1969,7 @@ def ExportSequential(G2frame,data,obj,exporttype):
 
     :param wx.Frame G2frame: the GSAS-II main data tree window
     :param dict data: the sequential refinement data object
+    :param exporter obj: an exporter object
     :param str exporttype: indicates the type of export ('project' or 'phase')
     '''
     if len(data['histNames']) == 0:

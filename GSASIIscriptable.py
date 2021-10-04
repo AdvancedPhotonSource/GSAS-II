@@ -1267,7 +1267,7 @@ GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these m
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
-import GSASIIstrIO as G2strIO
+import GSASIIstrIO as G2stIO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIfiles as G2fil
@@ -1378,7 +1378,7 @@ def LoadDictFromProjFile(ProjFile):
                    format(ProjFile))
         raise IOError('GPX file {} does not exist'.format(ProjFile))
     try:
-        Project, nameList = G2strIO.GetFullGPX(ProjFile)
+        Project, nameList = G2stIO.GetFullGPX(ProjFile)
     except Exception as msg:
         raise IOError(msg)
     return Project,nameList
@@ -2478,7 +2478,7 @@ class G2Project(G2ObjectWrapper):
             #      calcControls,pawleyLookup,ifPrint,printFile,dlg)
 
             # check that constraints are OK
-            errmsg, warnmsg = G2strIO.ReadCheckConstraints(self.filename)
+            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.filename)
             if errmsg:
                 G2fil.G2Print('Constraint error',errmsg)
                 raise Exception('Constraint error')
@@ -2503,7 +2503,7 @@ class G2Project(G2ObjectWrapper):
         #GSASIIpath.IPyBreak_base()
 
         # check that constraints are OK
-        errmsg, warnmsg = G2strIO.ReadCheckConstraints(self.filename)
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.filename)
         if errmsg:
             G2fil.G2Print('Constraint error',errmsg)
             raise Exception('Constraint error')
@@ -3005,7 +3005,7 @@ class G2Project(G2ObjectWrapper):
 
     def index_ids(self):
         self.save()
-        return G2strIO.GetUsedHistogramsAndPhases(self.filename)
+        return G2stIO.GetUsedHistogramsAndPhases(self.filename)
 
     def get_Constraints(self,ctype):
         '''Returns a list of constraints of the type selected.
@@ -5018,8 +5018,8 @@ class G2Phase(G2ObjectWrapper):
                                                   covDict['varyList'],
                                                   parmDict))
 
-            A, sigA = G2strIO.cellFill(pfx, sgdata, parmDict, sigDict)
-            cellSig = G2strIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
+            A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
+            cellSig = G2stIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             cellDict, cellSigDict = {}, {}
             for i, key in enumerate(['length_a', 'length_b', 'length_c',

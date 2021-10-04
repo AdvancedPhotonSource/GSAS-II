@@ -2869,7 +2869,11 @@ class GSASII(wx.Frame):
         mapmenu = wx.Menu()
         item = menu.AppendSubMenu(mapmenu,'Maps as','Export density map(s)')
 
-        # sequential exports are handled differently; N.B. enabled in testSeqRefineMode
+        # sequential exports are handled differently; N.B. en-/disabled in testSeqRefineMode
+        item = menu.Append(wx.ID_ANY,'Sequential project as CIF',
+                            'Export project from sequential fit as a full CIF')
+        self.Bind(wx.EVT_MENU, self.DoSequentialProjExport, item)
+        self.ExportSeq.append([menu,item.Id])
         seqPhasemenu = wx.Menu()
         item = menu.AppendSubMenu(seqPhasemenu,'Sequential phases','Export phases from sequential fit')
         self.ExportSeq.append([menu,item.Id])
@@ -2927,17 +2931,15 @@ class GSASII(wx.Frame):
                             return
                         data = self.GPXtree.GetItemPyData(Id)
                         G2IO.ExportSequential(self,data,obj,typ)
-                        if '2' in platform.python_version_tuple()[0]:
-                            if 'mode' in inspect.getargspec(obj.Writer)[0]:
-                                item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
-                                self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
-                        else:
-                            if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
-                                item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
-                                self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
-                        #                    self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
-                        # Bind is in UpdateSeqResults
-
+                    if '2' in platform.python_version_tuple()[0]:
+                        if 'mode' in inspect.getargspec(obj.Writer)[0]:
+                            item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                            self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+                    else:
+                        if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
+                            item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                            self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+           
         item = imagemenu.Append(wx.ID_ANY,'Multiple image controls and masks',
             'Export image controls and masks for multiple images')
         self.Bind(wx.EVT_MENU, self.OnSaveMultipleImg, id=item.GetId())
@@ -5563,6 +5565,19 @@ class GSASII(wx.Frame):
         '''
         G2IO.SaveMultipleImg(self)
 
+    def DoSequentialProjExport(self,event):
+        '''Export a sequential project
+
+        duplicates part of GSASIIseqGUI.DoSequentialExport
+        '''
+        Id = GetGPXtreeItemId(self,self.root,'Sequential results')
+        if not Id:
+            print('Error in DoSequentialProjExport: no Seq Res table. How did this happen?')
+            return
+        data = self.GPXtree.GetItemPyData(Id)
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        G2IO.ExportSequentialFullCIF(self,data,Controls)
+
 # Data window side of main GUI ################################################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     '''Create the data item window as well as the menu. Note that 
@@ -5901,11 +5916,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SeqExportLookup = {}
         self.SequentialEx = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
-        for lbl,txt in (('Phase','Export selected phase(s)'),
-                        ('Project','Export entire sequential fit'),
-                        ('Powder','Export selected powder histogram(s)'),
-                        ('sasd','Export selected small angle histogram(s)')
-                        ):
+        for lbl,txt in (
+                ('Project','Export entire sequential fit'),
+                ('Phase','Export selected phase(s)'),
+                ('Powder','Export selected powder histogram(s)'),
+                ('sasd','Export selected small angle histogram(s)')):
             objlist = []
             for obj in self.parent.GetTopLevelParent().exporterlist:
                 if lbl.lower() in obj.exporttype:
@@ -5919,13 +5934,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                     else:
                         if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
                             objlist.append(obj)
-            if objlist:
+            if objlist or lbl == 'Project':
                 submenu = wx.Menu()
                 item = self.SequentialEx.AppendSubMenu(submenu,lbl+' as',txt)
+                if  lbl == 'Project':
+                    G2G.Define_wxId('wxID_XPORTSEQFCIF')      
+                    submenu.Append(G2G.wxID_XPORTSEQFCIF,'... as full CIF',
+                            'Save all sequential refinement results as a CIF file')
                 for obj in objlist:
                     item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                     self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
                     # Bind is in UpdateSeqResults
+            
         G2G.Define_wxId('wxID_XPORTSEQCSV')      
         self.SequentialEx.Append(G2G.wxID_XPORTSEQCSV,'Save table as CSV',
             'Save all sequential refinement results as a CSV spreadsheet file')

@@ -58,7 +58,7 @@ import GSASIIplot as G2plt
 import GSASIIdataGUI as G2gd
 import GSASIIIO as G2IO
 import GSASIIstrMain as G2stMn
-import GSASIIstrIO as G2strIO
+import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIobj as G2obj
@@ -6544,7 +6544,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     GPXFile = dlg.GetPath()
-                    phaseNames = G2strIO.GetPhaseNames(GPXFile)
+                    phaseNames = G2stIO.GetPhaseNames(GPXFile)
                 else:
                     return
             finally:
@@ -6555,7 +6555,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 PhaseName = phaseNames[sel]
             else:
                 return
-            Phase = G2strIO.GetAllPhaseData(GPXFile,PhaseName)
+            Phase = G2stIO.GetAllPhaseData(GPXFile,PhaseName)
             #need cell compatibility check here
             Layer = {'Name':Phase['General']['Name'],'SameAs':'','Symm':'None'}
             cx,ct,cs,cia = Phase['General']['AtomPtrs']
@@ -7003,7 +7003,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 GPXFile = dlg.GetPath()
-                phaseNames = G2strIO.GetPhaseNames(GPXFile)
+                phaseNames = G2stIO.GetPhaseNames(GPXFile)
             else:
                 return
         finally:
@@ -7014,7 +7014,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             PhaseName = phaseNames[sel]
         else:
             return
-        General = G2strIO.GetAllPhaseData(GPXFile,PhaseName)['General']
+        General = G2stIO.GetAllPhaseData(GPXFile,PhaseName)['General']
         data['Layers']['Cell'] = General['Cell']
         wx.CallAfter(UpdateLayerData)
 

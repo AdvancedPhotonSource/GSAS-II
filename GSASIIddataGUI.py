@@ -245,7 +245,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         for i,key in enumerate(phaseKeys):
             if key in fixedVars: selected.append(i)
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase vars to fix for this histogram only', 
-                                      'Choose items to edit', phaseKeys,selected=selected)
+            'Choose items to edit', phaseKeys,selected=selected)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             dlg.Destroy()
@@ -921,7 +921,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             useBox.Add(lebail,0,WACV)
         bottomSizer.Add(useBox,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
         if G2frame.testSeqRefineMode() and not UseList[G2frame.hist]['LeBail']:
-            bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinemment Options'))
+            bottomSizer.Add(wx.StaticText(DData,label='     Sequential Refinement Options'))
             parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
             if generalData['Type'] == 'magnetic':
                 parmChoice += ['M','MX','MXU','MU','MF','MFX','MFXU','MFU']
@@ -943,7 +943,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 fixedVars = UseList[G2frame.hist].get('FixedSeqVars',[])
                 if len(fixedVars): 
                     fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
-            bottomSizer.Add(fixBox)
+                bottomSizer.Add(fixBox)
         
         if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
             bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)

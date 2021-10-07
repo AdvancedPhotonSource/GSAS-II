@@ -2907,6 +2907,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
+        if 'RMC' in data: del newPhase['RMC']
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
@@ -4773,6 +4774,25 @@ def UpdatePhaseData(G2frame,Item,data):
                 pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             return pairSizer
                     
+        def GetMetaSizer(metalist):
+            metaSizer = wx.FlexGridSizer(0,2,5,5)
+            for item in metalist:
+                metaSizer.Add(wx.StaticText(G2frame.FRMC,label=' Metadata item: '+item+' '),0,WACV)
+                metaSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['metadata'],item),0,WACV)
+            return metaSizer
+            
+        def SetRestart(invalid,value,tc):
+            RMCPdict['ReStart'] = [True,True]
+                
+        def GetSuperSizer(Xmax):
+           superSizer = wx.BoxSizer(wx.HORIZONTAL)
+           axes = ['X','Y','Z']
+           for i,ax in enumerate(axes):
+               superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
+               superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
+                   i,xmin=1,xmax=Xmax,size=(50,25),OnLeave=SetRestart),0,WACV)
+           return superSizer
+                      
         def FileSizer(RMCdict,mainSizer):
             
             def OnFitScale(event):
@@ -4793,9 +4813,23 @@ def UpdatePhaseData(G2frame,Item,data):
                     G2frame.LastImportDir = fpath    #set so next file is found in same place
                     dlg.Destroy()
                     RMCPdict['ReStart'][0] = True
+                    if G2frame.RMCchoice == 'PDFfit':
+                        start = 0
+                        XY = np.empty((1,2))
+                        while XY.shape[0] == 1:
+                            try:
+                                XY = np.loadtxt(fName,skiprows=start)
+                            except ValueError:
+                                start += 1
+                        name = 'Ndata'
+                        if 'X' in fil:
+                            name = 'Xdata'
+                        RMCPdict[name]['Datarange'][0] = np.min(XY.T[0])
+                        RMCPdict[name]['Datarange'][1] = np.max(XY.T[0])
+                        RMCPdict[name]['Fitrange'][1] = np.max(XY.T[0])
                 else:
                     dlg.Destroy()
-                    return
+                  
                 wx.CallAfter(UpdateRMC)
         
             def OnFileFormat(event):
@@ -4817,7 +4851,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Xlab = 'Q'
                 if 'G(R)' in fileItem[2].upper():
                     Xlab = 'R'
-                G2plt.PlotXY(G2frame,[XY.T,],labelX=Xlab,
+                G2plt.PlotXY(G2frame,[XY.T[:2],],labelX=Xlab,
                     labelY=fileItem[2],newPlot=True,Title=fileItem[0],
                     lines=True)
                 
@@ -4829,14 +4863,18 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnDelBtn(event):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
-                RMCPdict['files'][fil][0] = 'Select file'
+                RMCPdict['files'][fil][0] = 'Select'
                 RMCPdict['ReStart'][0] = True
                 wx.CallAfter(UpdateRMC)
+                
+            def OnRef(event):
+                Obj = event.GetEventObject()
+                name,item = Indx[Obj.GetId()]
+                RMCPdict[name][item][1] = not RMCPdict[name][item][1]
                             
             Indx = {}
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Select data for processing: '),0)
             if G2frame.RMCchoice == 'fullrmc':
-                #Heads = ['Name','File','Weight','type','Plot','Delete']
                 Heads = ['Name','File','type','Plot','Delete']
                 fileSizer = wx.FlexGridSizer(5,5,5)
                 Formats = ['RMC','GUDRUN','STOG']
@@ -4914,15 +4952,20 @@ def UpdatePhaseData(G2frame,Item,data):
             for head in Heads:
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
             for fil in RMCPdict['files']:
+                for head in Heads:
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=20*'-'),0,WACV)
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=fil),0,WACV)
                 Rfile = RMCPdict['files'][fil][0]
                 filSel = wx.Button(G2frame.FRMC,label=Rfile)
                 filSel.Bind(wx.EVT_BUTTON,OnFileSel)
                 Indx[filSel.GetId()] = fil
                 fileSizer.Add(filSel,0,WACV)
+                nform = 3
+                Name = 'Ndata'
+                if 'Xray' in fil: 
+                    nform = 1
+                    Name = 'Xdata'
                 if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
-                    nform = 3
-                    if 'Xray' in fil: nform = 1
                     fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
                     fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
                     Indx[fileFormat.GetId()] = fil
@@ -4943,24 +4986,55 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
+                if 'Select' not in Rfile and 'PDFfit' in G2frame.RMCchoice:
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Rrange (from/to)'),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['Fitrange'],0,xmin=RMCPdict[Name]['Datarange'][0],xmax=3.0),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['Fitrange'],1,xmin=10.0,xmax=RMCPdict[Name]['Datarange'][1]),0,WACV)
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Scale factor: '),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['dscale'],0,xmin=0.001,xmax=20.0),0,WACV)
+                    scaleref = wx.CheckBox(G2frame.FRMC,label='refine')
+                    scaleref.SetValue(RMCPdict[Name]['dscale'][1])
+                    Indx[scaleref.GetId()] = [Name,'dscale']
+                    scaleref.Bind(wx.EVT_CHECKBOX,OnRef)
+                    fileSizer.Add(scaleref,0,WACV)
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Qdamp '),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qdamp'],0,xmin=0.001,xmax=1.0),0,WACV)
+                    qdampref = wx.CheckBox(G2frame.FRMC,label='refine')
+                    qdampref.SetValue(RMCPdict[Name]['qdamp'][1])
+                    Indx[qdampref.GetId()] = [Name,'qdamp']
+                    qdampref.Bind(wx.EVT_CHECKBOX,OnRef)
+                    fileSizer.Add(qdampref,0,WACV)
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Qbroad '),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qbroad'],0,xmin=0.001,xmax=1.0),0,WACV)
+                    qbroadref = wx.CheckBox(G2frame.FRMC,label='refine')
+                    qbroadref.SetValue(RMCPdict[Name]['qbroad'][1])
+                    Indx[qbroadref.GetId()] = [Name,'qbroad']
+                    qbroadref.Bind(wx.EVT_CHECKBOX,OnRef)
+                    fileSizer.Add(qbroadref,0,WACV)
+                    
             mainSizer.Add(fileSizer,0)
-            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
-            fitscale.SetValue(RMCPdict['FitScale'])
-            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
-            mainSizer.Add(fitscale,0)
+            if 'PDFfit' not in G2frame.RMCchoice:
+                fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+                fitscale.SetValue(RMCPdict['FitScale'])
+                fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+                mainSizer.Add(fitscale,0)
+                
             return
         
         G2frame.GetStatusBar().SetStatusText('',1)
+        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,True)
         if G2frame.RMCchoice == 'RMCProfile':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
         elif G2frame.RMCchoice == 'fullrmc':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
             #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
@@ -5369,13 +5443,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 RMCPdict['Potentials']['Stretch'].append(['','',0.,0.])
                 wx.CallAfter(UpdateRMC)
                
-            def GetMetaSizer():
-                metalist = ['title','owner','material','phase','comment','source',]
-                metaSizer = wx.FlexGridSizer(0,2,5,5)
-                for item in metalist:
-                    metaSizer.Add(wx.StaticText(G2frame.FRMC,label=' Metadata item: '+item+' '),0,WACV)
-                    metaSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['metadata'],item),0,WACV)
-                return metaSizer
+            # def GetMetaSizer():
+            #     metalist = ['title','owner','material','phase','comment','source',]
+            #     metaSizer = wx.FlexGridSizer(0,2,5,5)
+            #     for item in metalist:
+            #         metaSizer.Add(wx.StaticText(G2frame.FRMC,label=' Metadata item: '+item+' '),0,WACV)
+            #         metaSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['metadata'],item),0,WACV)
+            #     return metaSizer
             
             def GetTimeSizer():
                 
@@ -5393,14 +5467,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 timeSizer.Add(usegpu,0,WACV)
                 return timeSizer
                 
-            def GetSuperSizer():
-                superSizer = wx.BoxSizer(wx.HORIZONTAL)
-                axes = ['X','Y','Z']
-                for i,ax in enumerate(axes):
-                    superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
-                    superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
-                        i,xmin=1,xmax=20,size=(50,25),OnLeave=SetRestart),0,WACV)
-                return superSizer
+            # def GetSuperSizer(Xmax):
+            #     superSizer = wx.BoxSizer(wx.HORIZONTAL)
+            #     axes = ['X','Y','Z']
+            #     for i,ax in enumerate(axes):
+            #         superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
+            #         superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
+            #             i,xmin=1,xmax=xamx,size=(50,25),OnLeave=SetRestart),0,WACV)
+            #     return superSizer
                       
             def GetBvsSizer(pnl):
                 
@@ -5584,32 +5658,19 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,3,xmin=0.,size=(50,25)),0,WACV)
                 return bondSizer
 
-            
             Indx = {}
 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
-            mainSizer.Add(GetMetaSizer(),0)
+            mainSizer.Add(GetMetaSizer(['title','owner','material','phase','comment','source',]),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(GetTimeSizer(),0)
             
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers; if changed will force reset of atom positions:'),0)
-            mainSizer.Add(GetSuperSizer(),0)
+            mainSizer.Add(GetSuperSizer(20),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             
-            # aPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-            #     style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-            # mSizer = wx.BoxSizer(wx.VERTICAL)
-            # mSizer.Add(wx.StaticText(aPanel,label='Enter atom settings'),0)
-            # mSizer.Add(GetAtmChoice(aPanel,RMCPdict),0)
-            # mSizer.Add(wx.StaticText(aPanel,label=' N.B.: be sure to set cations first && anions last in atom ordering'))
-            # mSizer.Layout()
-            # aPanel.SetSizer(mSizer)
-            # aPanel.SetMinSize((300,mSizer.GetMinSize()[1]))
-            # aPanel.SetAutoLayout(1)
-            # aPanel.SetupScrolling()
-            # mainSizer.Add(aPanel,1,wx.EXPAND)
             mSizer = wx.BoxSizer(wx.VERTICAL)
             mSizer.Add(wx.StaticText(G2frame.FRMC,label='Enter atom settings'),0)
             mSizer.Add(GetAtmChoice(G2frame.FRMC,RMCPdict),0)
@@ -5627,18 +5688,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 mainSizer.Add(GetSwapSizer(RMCPdict),0)            
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-
-            # sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-            #     style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-            # mSizer = wx.BoxSizer(wx.VERTICAL)
-            # mSizer.Add(wx.StaticText(sPanel,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
-            # mSizer.Add(GetPairSizer(sPanel,RMCPdict),0)
-            # sPanel.SetSizer(mSizer)
-            # mSizer.Layout()
-            # sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
-            # sPanel.SetAutoLayout(1)
-            # sPanel.SetupScrolling()
-            # mainSizer.Add(sPanel,1,wx.EXPAND)
             
             mSizer = wx.BoxSizer(wx.VERTICAL)
             mSizer.Add(wx.StaticText(G2frame.FRMC,label='Enter constraints && restraints via minimum && maximum distances for atom pairs:'),0)
@@ -5651,16 +5700,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             useBVS.Bind(wx.EVT_CHECKBOX,OnUseBVS)
             mainSizer.Add(useBVS,0)
             if RMCPdict.get('useBVS',False):
-                # sPanel = wxscroll.ScrolledPanel(G2frame.FRMC, wx.ID_ANY, 
-                #     style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-                # mSizer = wx.BoxSizer(wx.VERTICAL)
-                # mSizer.Add(GetBvsSizer(sPanel),0)
-                # sPanel.SetSizer(mSizer)
-                # mSizer.Layout()
-                # sPanel.SetMinSize((300,25+mSizer.GetMinSize()[1]))
-                # sPanel.SetAutoLayout(1)
-                # sPanel.SetupScrolling()
-                # mainSizer.Add(sPanel,1,wx.EXPAND)
                 mSizer = wx.BoxSizer(wx.VERTICAL)
                 mSizer.Add(GetBvsSizer(G2frame.FRMC),0)
                 mainSizer.Add(mSizer)
@@ -5737,6 +5776,33 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 
             FileSizer(RMCPdict,mainSizer)
         else:
+            Indx = {}
+            def PDFParmSizer():
+                
+                parmSizer = wx.FlexGridSizer(3,6,5,5)
+                Names = ['delta1','delta2','spdiameter','sratio']
+                Names2 = ['rcut','stepcut']
+                for name in Names:
+                    
+                    def OnRefine(event):
+                        Obj = event.GetEventObject()
+                        name = Indx[Obj.GetId()]
+                        RMCPdict[name][1] = not RMCPdict[name][1]
+                        
+                    parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
+                    parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[name],0,xmin=0.,size=(70,25)),0,WACV)
+                    refine = wx.CheckBox(G2frame.FRMC,label='Refine')
+                    refine.SetValue(RMCPdict[name][1])
+                    refine.Bind(wx.EVT_CHECKBOX,OnRefine)
+                    Indx[refine.GetId()] = name
+                    parmSizer.Add(refine,0,WACV)
+                    
+                for name in Names2:
+                    parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
+                    parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,name,xmin=0.,size=(70,25)),0,WACV)                   
+                    
+                return parmSizer
+            
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit setup'),0,WACV)
@@ -5752,11 +5818,27 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if 'PDFfit' not in data['RMC']:
                 Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+                metadata = {'title':'none','date':str(time.ctime()),'temperature':'300K',
+                    'doping':0}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
-                data['RMC']['PDFfit'] = {'files':files}
+                data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
+                'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],
+                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,         
+                'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
+                'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
             RMCPdict = data['RMC']['PDFfit']
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
+            mainSizer.Add(GetMetaSizer(['title','date','temperature','doping']),0)
+            
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDF profile coefficients:'),0,WACV)
+            mainSizer.Add(PDFParmSizer(),0)
+            
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            FileSizer(RMCPdict,mainSizer)
+
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         # add help button to bring up help web page - at right side of window
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
@@ -5828,6 +5910,12 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
         elif G2frame.RMCchoice == 'PDFfit':
+            pName = generalData['Name'].replace(' ','_')
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
+            RMCPdict = data['RMC']['PDFfit']
+            title = RMCPdict['metadata']['title']
+            print(RMCPdict)
+            
             print('PDFfit2 prep under construction')
             
     def OnRunRMC(event):
@@ -5974,7 +6062,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 G2G.G2MessageBox(G2frame,'PDFfit2 Python not found. How did we get here?')
                 return
             pName = generalData['Name'].replace(' ','_')
-            rname = pName+'_PDFfit.py'
+            rname = pName+'-PDFfit.py'
             if not os.path.exists(rname):
                 G2G.G2MessageBox(G2frame,
                     'The PDFfit script has not been created. Running setup.',
@@ -6383,10 +6471,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             generalData = data['General']
             RMCPdict = data['RMC']['PDFfit']
             pName = generalData['Name'].replace(' ','_')
+            print(data['RMC']['PDFfit'])
             print('PDFfit plots under construction')
+            
+    def OnRunISODISTORT(event):
+        import ISODISTORT as ISO
+        ISO.GetISODISTORT(data)
+        print('run ISODISTORT under construction')
+        
         
             
-### Layer Data page ################################################################################
+#### DIFFax Layer Data page ################################################################################
     def UpdateLayerData(Scroll=0):
         '''Present the contents of the Phase/Layers tab for stacking fault simulation
         '''
@@ -13110,6 +13205,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
         G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
         G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
+        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
@@ -13198,7 +13294,7 @@ of the crystal structure.
         data['General']['Modulated'] = True
         data['General']['Type'] = 'nuclear' 
     if 'RMC' not in data:
-        data['RMC'] = {'RMCProfile':{},'fullrmc':{}}
+        data['RMC'] = {'RMCProfile':{},'fullrmc':{},'PDFfit':{}}
 #end patch    
 
     global rbAtmDict   

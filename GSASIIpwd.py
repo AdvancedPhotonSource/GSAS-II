@@ -2936,6 +2936,17 @@ def findPDFfit():
         return sys.executable
     except:
         return None
+    
+def MakePDFfitAtomsFile(Phase,RMCPdict):
+    '''Make the PDFfit atoms file
+    '''
+    General = Phase['General']
+    print(RMCPdict)
+    fName = Phase['Name']+'.stru'
+    fatm = open(fName.replace(' ','_'),'w')
+    a,b,c,alp,bet,gam = General['Cell'][1:7]
+    fatm.write('\n')
+    
         
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 

@@ -3918,7 +3918,6 @@ def ShowIsoDistortCalc(G2frame,phase=None):
             except TypeError:
                 value = '?'
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
-            #GSASIIpath.IPyBreak()
     # ISODISTORT occupancy modes
     if 'G2OccVarList' in ISO:
         deltaList = []

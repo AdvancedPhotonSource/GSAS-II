@@ -1031,7 +1031,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
                 l = ''
                 s = 0.0
-                at,d = lbl.split('_')
+                at,d = lbl.rsplit('_',1)
                 if at not in DeltaCoords:
                     DeltaCoords[at] = [0,0,0]
                 for j,(k,n) in enumerate(zip(row,normlist)):

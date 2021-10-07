@@ -6434,7 +6434,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
         G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC',
-                            'wxID_STOPRMC')       
+                            'wxID_STOPRMC', 'wxID_ISODISTORT')       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6444,6 +6444,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_STOPRMC,'Stop run','Stop fullrmc run')
         self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'Plot','View fullrmc or RMCprofile results')
+        self.FRMCDataEdit.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT for PDFfit constraints')
         self.PostfillDataMenu()
         
         # Phase / Layer tab 

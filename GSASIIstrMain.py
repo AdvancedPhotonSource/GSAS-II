@@ -718,6 +718,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             for parm in NewparmDict:
                 if parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
+####TBD: if LeBail copy reflections here?
         elif histogram in SeqResult:  # update phase from last seq ref
             NewparmDict = SeqResult[histogram].get('parmDict',{})
             for parm in NewparmDict:

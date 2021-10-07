@@ -665,6 +665,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2stIO.SetupSeqSavePhases(GPXfile)
     msgs['steepestNum'] = 0
     msgs['maxshift/sigma'] = []
+    lasthist = ''
     for ihst,histogram in enumerate(histNames):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
@@ -718,6 +719,16 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             for parm in NewparmDict:
                 if parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
+            for phase in Phases:
+                if Phases[phase]['Histograms'][histogram]['LeBail'] and lasthist:
+                    oldFsqs = Histograms[lasthist]['Reflection Lists'][phase]['RefList'].T[8:10]    #assume no superlattice!
+                    newRefs = Histograms[histogram]['Reflection Lists'][phase]['RefList']
+                    if len(newRefs) == len(oldFsqs.T):
+                        newRefs.T[8:10] = copy.copy(oldFsqs)
+                        # for i,ref in enumerate(newRefs):
+                        #     ref[8:10] = oldFsqs.T[i]
+                    else:
+                        print('ERROR - mismatch in reflection list length bewteen %s and %s; no copy done'%(lasthist,histogram))
 ####TBD: if LeBail copy reflections here?
         elif histogram in SeqResult:  # update phase from last seq ref
             NewparmDict = SeqResult[histogram].get('parmDict',{})
@@ -786,6 +797,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         printFile.write('\n Refinement results for histogram id {}: {}\n'
                             .format(hId,histogram))
         printFile.write(135*'-'+'\n')
+        lasthist = histogram
         # remove frozen vars
         if 'parmFrozen' not in Controls:
             Controls['parmFrozen'] = {}

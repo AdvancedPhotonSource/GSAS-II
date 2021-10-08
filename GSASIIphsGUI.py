@@ -6093,6 +6093,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 else:
                     # TODO: better to create this in a new terminal on Linux
                     subp.Popen(['/bin/bash','pdffit2.sh'])
+                    
             
     def OnStopRMC(event):
         pass
@@ -6471,8 +6472,40 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             generalData = data['General']
             RMCPdict = data['RMC']['PDFfit']
             pName = generalData['Name'].replace(' ','_')
-            print(data['RMC']['PDFfit'])
-            print('PDFfit plots under construction')
+            Labels = [r'$\mathsf{R,\AA}$','G(R)','PDFfit2 G(R) for ']
+            files = RMCPdict['files']
+            for file in files:
+                if 'Select' not in files[file][0]:
+                    XY = np.empty((1,2))
+                    start = 0
+                    while XY.shape[0] == 1:
+                        try:
+                            XY = np.loadtxt(files[file][0],skiprows=start)
+                        except ValueError:
+                            start += 1
+                    if 'Neutron' in file:
+                        cname = pName+'-PDFfitN.fgr'
+                    else:
+                        cname = pName+'-PDFfitX.fgr'
+                    XYobs = XY.T[:2]
+                    XY = np.empty((1,2))
+                    start = 0
+                    while XY.shape[0] == 1:
+                        try:
+                            XY = np.loadtxt(cname,skiprows=start)
+                        except ValueError:
+                            start += 1
+                    XYcalc = XY.T[:2]
+                    XYdiff = np.zeros_like(XYcalc)
+                    XYdiff[0] = XYcalc[0]
+                    ibeg = np.searchsorted(XYobs[0],XYdiff[0][0])
+                    ifin = ibeg+XYcalc.shape[1]
+                    XYdiff[1] = XYobs[1][ibeg:ifin]-XYcalc[1]
+                    offset = 1.1*(np.max(XYdiff[1])-np.min(XYcalc[1]))
+                    XYdiff[1] -= offset
+                    G2plt.PlotXY(G2frame,[XYobs,],XY2=[XYcalc,XYdiff],labelX=Labels[0],
+                        labelY=Labels[1],newPlot=True,Title=Labels[2]+files[file][0],
+                        lines=False,names=['G(R) obs','G(R) calc','diff',])
             
     def OnRunISODISTORT(event):
         import ISODISTORT as ISO

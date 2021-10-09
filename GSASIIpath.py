@@ -975,21 +975,23 @@ IPyBreak = DoNothing
 pdbBreak = DoNothing
 def InvokeDebugOpts():
     'Called in GSASII.py to set up debug options'
-    if GetConfigValue('debug'):
-        print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
-        import pdb
-        global pdbBreak
-        pdbBreak = pdb.set_trace
+    if any('SPYDER' in name for name in os.environ):
+        print('Running from Spyder, keeping breakpoint() active & skipping exception trapping')
+    elif GetConfigValue('debug'):
         try:
+            import pdb
+            global pdbBreak
+            pdbBreak = pdb.set_trace
             import IPython
             global IPyBreak
             IPyBreak = IPyBreak_base
-            if any('SPYDER' in name for name in os.environ):
-                print('Running from Spyder, skipping exception trapping')
-            else:
-                sys.excepthook = exceptHook
+            sys.excepthook = exceptHook
+            os.environ['PYTHONBREAKPOINT'] = 'GSASIIpath.IPyBreak_base'
+            print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
         except:
-            pass
+            print ('Debug on failed. IPython not installed?')
+    else: # not in spyder or debug enabled, hide breakpoints
+        os.environ['PYTHONBREAKPOINT'] = '0'
 
 def TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path

@@ -416,9 +416,8 @@ versionDict['tooOldWarn'] = {'wx': '2.'}
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {'wx':'4.1'}
-#'matplotlib': '3.4', 
-'module versions newer than what we have tested where problems are suspected'
+versionDict['tooNewWarn'] = {'wx':'4.2'}
+'module versions newer than what we have tested & where problems are suspected'
 
 def ShowVersions():
     '''Show the versions all of required Python packages, etc.

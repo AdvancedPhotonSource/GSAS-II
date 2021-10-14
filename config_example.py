@@ -37,12 +37,17 @@ For example::
 '''
 
 debug = False
-'''Set to True to turn on debugging mode.This enables use of IPython on
-exceptions and on calls to :func:`GSASIIpath.IPyBreak`. Calls to
-:func:`GSASIIpath.pdbBreak` will invoke pdb at that location.
-
-If debug is False, calls to :func:`GSASIIpath.IPyBreak` and
+'''Set to True to turn on debugging mode. This enables use of IPython on
+exceptions and on calls to :func:`GSASIIpath.IPyBreak` or breakpoint(). 
+Calls to :func:`GSASIIpath.pdbBreak` will invoke pdb at that location.
+%%
+If debug is False, calls to :func:`GSASIIpath.IPyBreak`, breakpoint() and
 :func:`GSASIIpath.pdbBreak` are ignored.
+%%
+From inside Spyder, calls to breakpoint() invoke the Spyder debugger, 
+independent of the setting of debug. 
+%%
+Restart GSAS-II for the setting of debug to take effect.
 '''
 
 Clip_on = True

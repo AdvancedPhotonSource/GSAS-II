@@ -26,5 +26,5 @@
 released. This provides better diagnostics, works better with
 sequential fits and treats cases not
 previously allowed, such as where both refined and unrefined
-parameters appear in a constraint. %%%Please contact Brian if you find a
+parameters appear in a constraint. %%%%Please contact Brian if you find a
 case where a set of constraints that used to work, but now fails. 

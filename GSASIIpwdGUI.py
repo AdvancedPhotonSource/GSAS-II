@@ -1150,9 +1150,13 @@ def UpdatePeakGrid(G2frame, data):
     reflGrid.AutoSizeColumns(False)
     reflGrid.SetScrollRate(10,10)
     G2frame.reflGrid = reflGrid
-#    mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label='List of peaks to fit individually'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)    
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(reflGrid)
-    mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 
@@ -1712,7 +1716,8 @@ def UpdateBackground(G2frame,data):
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background used in refinement'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Background used in refinement'),0,WACV)
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
@@ -1801,7 +1806,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         G2frame.dataWindow.ClearData()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data range to be used in fits'),0,WACV)
         # add help button to bring up help web page - at right side of window
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
@@ -2948,6 +2954,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
@@ -4389,13 +4396,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
         'Orthorhombic-B','Orthorhombic-C','Orthorhombic-P',
         'Monoclinic-I','Monoclinic-A','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic',]
-    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
-    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
-    [[7,8,9,10,11,12],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
+    cellGUIlist = [[[0,1,2],4,zip([" a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
+    [[3,4,5,6],6,zip([" a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
+    [[7,8,9,10,11,12],8,zip([" a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
-    [[13,14,15,16],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
+    [[13,14,15,16],10,zip([" a = "," b = "," c = ",u'\u03B2 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[17,18],8,zip([" Unit cell: a = "," b = "," c = "," alpha = "," beta = "," gamma = "," Vol = "],
+    [[17,18],8,zip([" a = "," b = "," c = ",u'\u03B1 = ',u'\u03B2 = ',u'\u03B3 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
         [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
     
@@ -4420,7 +4427,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing controls'),0,WACV)
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
@@ -4445,7 +4453,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),
         0)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(0,5,5,5)
+    indentSizer = wx.BoxSizer(wx.HORIZONTAL)
+    indentSizer.Add((20,-1))
+    littleSizer = wx.FlexGridSizer(0,4,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
     for brav,bravName in bravs:
@@ -4454,7 +4464,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         bravCk.SetValue(brav)
         bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
         littleSizer.Add(bravCk,0,WACV)
-    mainSizer.Add(littleSizer,0)
+
+    indentSizer.Add(littleSizer,0)
+    mainSizer.Add(indentSizer,0)
     mainSizer.Add((-1,10),0)
     
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4551,12 +4563,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     Info = {}
     littleSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT))
-        # above changed from 
-        # littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
-        # which can't be valid, but not tested (BHT)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT)
         if ifEdit:          #a,b,c,etc.
-            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange)
+            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(80,-1))
             Info[cellVal.GetId()] = Id
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
@@ -4570,10 +4579,11 @@ def UpdateUnitCellsGrid(G2frame, data):
             cellList.append(cellSpin.GetId())
             valDict[cellSpin.GetId()] = cellVal
         else:               #volume
-            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY)
+            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(80,-1))
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
         
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Unit cell:'))
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]

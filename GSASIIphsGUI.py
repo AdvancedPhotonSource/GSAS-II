@@ -4722,6 +4722,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 for iType in range(nTypes):
                     atId = RMCPdict['atSeq'][iType]
                     atmChoice.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['aTypes'],atId,xmin=0.,xmax=1.),0,WACV)
+                atmChoice.Add(wx.StaticText(pnl,label='Isotope: '),0,WACV)
+                for iType in range(nTypes):
+                    atId = RMCPdict['atSeq'][iType]
+                    atmChoice.Add(wx.StaticText(pnl,label=RMCPdict['Isotope'][atId]),0,WACV)
             return atmChoice
         
         def GetSwapSizer(RMCPdict):
@@ -4734,8 +4738,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             Indx = {}
             atChoice = RMCPdict['atSeq']            
-            if G2frame.RMCchoice == 'fullrmc':
-                atChoice = atNames
+            # if G2frame.RMCchoice == 'fullrmc':
+            #     atChoice = atNames
             swapSizer = wx.FlexGridSizer(6,5,5)
             swapLabels = [' ','Atom-A','Atom-B',' Swap prob.',' ','delete']
             for lab in swapLabels:
@@ -4754,7 +4758,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 swapSizer.Add(delBtn,0,WACV)
             return swapSizer
         
-        def GetPairSizer(pnl,RMCdict):
+        def GetPairSizer(pnl,RMCPdict):
             pairSizer = wx.FlexGridSizer(len(RMCPdict['Pairs'])+1,5,5)
             pairSizer.Add((5,5),0)
             for pair in RMCPdict['Pairs']:
@@ -4774,7 +4778,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 pairSizer.Add(G2G.ValidatedTxtCtrl(pnl,RMCPdict['Pairs'][pair],2,xmin=0.,xmax=10.,size=(50,25)),0,WACV)
             return pairSizer
                     
-        def GetMetaSizer(metalist):
+        def GetMetaSizer(RMCPdict,metalist):
             metaSizer = wx.FlexGridSizer(0,2,5,5)
             for item in metalist:
                 metaSizer.Add(wx.StaticText(G2frame.FRMC,label=' Metadata item: '+item+' '),0,WACV)
@@ -4784,7 +4788,7 @@ def UpdatePhaseData(G2frame,Item,data):
         def SetRestart(invalid,value,tc):
             RMCPdict['ReStart'] = [True,True]
                 
-        def GetSuperSizer(Xmax):
+        def GetSuperSizer(RMCPdict,Xmax):
            superSizer = wx.BoxSizer(wx.HORIZONTAL)
            axes = ['X','Y','Z']
            for i,ax in enumerate(axes):
@@ -4793,7 +4797,7 @@ def UpdatePhaseData(G2frame,Item,data):
                    i,xmin=1,xmax=Xmax,size=(50,25),OnLeave=SetRestart),0,WACV)
            return superSizer
                       
-        def FileSizer(RMCdict,mainSizer):
+        def FileSizer(RMCPdict,mainSizer):
             
             def OnFitScale(event):
                 RMCPdict['FitScale'] = not RMCPdict['FitScale']
@@ -5021,33 +5025,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             return
         
-        G2frame.GetStatusBar().SetStatusText('',1)
-        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,True)
-        if G2frame.RMCchoice == 'RMCProfile':
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
-        elif G2frame.RMCchoice == 'fullrmc':
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
-            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
-        if G2frame.FRMC.GetSizer():
-            G2frame.FRMC.GetSizer().Clear(True)
-        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        runFile = ' '
-        choice = ['RMCProfile','fullrmc','PDFfit']
-        RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
-        RMCsel.SetStringSelection(G2frame.RMCchoice)
-        RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
-        mainSizer.Add(RMCsel,0)
-        mainSizer.Add((5,5),0)
-        if G2frame.RMCchoice == 'fullrmc':
+        def fullrmcSizer(RMCPdict):
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
             if G2pwd.findfullrmc() is None:
                 dlg = wx.MessageDialog(G2frame,
                     'The fullrmc code is not installed or could not be'
@@ -5061,7 +5040,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     dlg.Destroy()
                 if result == wx.ID_YES:
                     G2G.ShowHelp('fullrmc',G2frame)
-                return
+                return mainSizer
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 ''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with 
 Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 
@@ -5089,7 +5068,6 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
                     'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
                     'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,'Torsions':[],'Torsion Weight':1.e-5,
                     'Bond Weight':1.e-5,'min Contact':1.5,'periodicBound':True}
-            RMCPdict = data['RMC']['fullrmc']
 
             def GetSuperSizer():
                 def ShowRmax(*args,**kwargs):
@@ -5356,8 +5334,10 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
     
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             FileSizer(RMCPdict,mainSizer)
-                
-        elif G2frame.RMCchoice ==  'RMCProfile':
+            return mainSizer
+            
+        def RMCProfileSizer(RMCPdict):
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='RMCProfile setup'),0,WACV)
@@ -5398,6 +5378,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
                     'Stretch search':10.,'Pot. Temp.':300.,'useGPU':False,}}
                 
+            data['RMC']['RMCProfile']['Isotope'] = copy.copy(data['General']['Isotope'])
+            data['RMC']['RMCProfile']['Isotopes'] = copy.deepcopy(data['General']['Isotopes'])
+            data['RMC']['RMCProfile']['NoAtoms'] = copy.copy(data['General']['NoAtoms'])
             RMCPdict = data['RMC']['RMCProfile']
 #patches
             if 'FitScale' not in RMCPdict:
@@ -5443,14 +5426,6 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 RMCPdict['Potentials']['Stretch'].append(['','',0.,0.])
                 wx.CallAfter(UpdateRMC)
                
-            # def GetMetaSizer():
-            #     metalist = ['title','owner','material','phase','comment','source',]
-            #     metaSizer = wx.FlexGridSizer(0,2,5,5)
-            #     for item in metalist:
-            #         metaSizer.Add(wx.StaticText(G2frame.FRMC,label=' Metadata item: '+item+' '),0,WACV)
-            #         metaSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['metadata'],item),0,WACV)
-            #     return metaSizer
-            
             def GetTimeSizer():
                 
                 def OnUseGPU(event):
@@ -5661,13 +5636,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             Indx = {}
 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
-            mainSizer.Add(GetMetaSizer(['title','owner','material','phase','comment','source',]),0)
+            mainSizer.Add(GetMetaSizer(RMCPdict,['title','owner','material','phase','comment','source',]),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(GetTimeSizer(),0)
             
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers; if changed will force reset of atom positions:'),0)
-            mainSizer.Add(GetSuperSizer(20),0)
+            mainSizer.Add(GetSuperSizer(RMCPdict,20),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             
@@ -5775,13 +5750,21 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add(samSizer,0)
 
             FileSizer(RMCPdict,mainSizer)
-        else:
+            return mainSizer
+            
+        def PDFfitSizer(data):
+            
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
             Indx = {}
             def PDFParmSizer():
                 
+                def OnShape(event):
+                    RMCPdict['shape'] = shape.GetValue()
+                    wx.CallAfter(UpdateRMC)
+                
                 parmSizer = wx.FlexGridSizer(3,6,5,5)
-                Names = ['delta1','delta2','spdiameter','sratio']
-                Names2 = ['rcut','stepcut']
+                Names = ['delta1','delta2','sratio','spdiameter']
+                Names2 = ['stepcut','rcut']
                 for name in Names:
                     
                     def OnRefine(event):
@@ -5789,17 +5772,27 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         name = Indx[Obj.GetId()]
                         RMCPdict[name][1] = not RMCPdict[name][1]
                         
-                    parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
-                    parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[name],0,xmin=0.,size=(70,25)),0,WACV)
-                    refine = wx.CheckBox(G2frame.FRMC,label='Refine')
-                    refine.SetValue(RMCPdict[name][1])
-                    refine.Bind(wx.EVT_CHECKBOX,OnRefine)
-                    Indx[refine.GetId()] = name
-                    parmSizer.Add(refine,0,WACV)
-                    
-                for name in Names2:
-                    parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
-                    parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,name,xmin=0.,size=(70,25)),0,WACV)                   
+                    if name == 'spdiameter' and RMCPdict.get('shape','sphere') != 'sphere':
+                        parmSizer.Add((5,5))
+                        parmSizer.Add((5,5))
+                        parmSizer.Add((5,5))
+                    else:
+                        parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
+                        parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[name],0,xmin=0.,size=(70,25)),0,WACV)
+                        refine = wx.CheckBox(G2frame.FRMC,label='Refine')
+                        refine.SetValue(RMCPdict[name][1])
+                        refine.Bind(wx.EVT_CHECKBOX,OnRefine)
+                        Indx[refine.GetId()] = name
+                        parmSizer.Add(refine,0,WACV)
+                parmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Shape'),0,WACV)
+                shape = wx.ComboBox(G2frame.FRMC,choices=['sphere','stepcut'],style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                shape.SetStringSelection(RMCPdict.get('shape','sphere'))
+                shape.Bind(wx.EVT_COMBOBOX,OnShape)
+                parmSizer.Add(shape,0,WACV)
+                if RMCPdict.get('shape','sphere') == 'stepcut':
+                    for name in Names2:
+                        parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
+                        parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,name,xmin=0.,size=(70,25)),0,WACV)                   
                     
                 return parmSizer
             
@@ -5824,20 +5817,59 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
                 'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],
-                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,         
+                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere',         
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
             RMCPdict = data['RMC']['PDFfit']
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
-            mainSizer.Add(GetMetaSizer(['title','date','temperature','doping']),0)
+            mainSizer.Add(GetMetaSizer(RMCPdict,['title','date','temperature','doping']),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDF profile coefficients:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDF phase profile coefficients:'),0,WACV)
             mainSizer.Add(PDFParmSizer(),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             FileSizer(RMCPdict,mainSizer)
+            return mainSizer
+            
+####start of UpdateRMC            
+        G2frame.GetStatusBar().SetStatusText('',1)
+        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,True)
+        if G2frame.RMCchoice == 'RMCProfile':
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
+        elif G2frame.RMCchoice == 'fullrmc':
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ISODISTORT,False)
+            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
+        if G2frame.FRMC.GetSizer():
+            G2frame.FRMC.GetSizer().Clear(True)
+        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        runFile = ' '
+        choice = ['RMCProfile','fullrmc','PDFfit']
+        RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
+        RMCsel.SetStringSelection(G2frame.RMCchoice)
+        RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
+        mainSizer.Add(RMCsel,0)
+        mainSizer.Add((5,5),0)
+        if G2frame.RMCchoice == 'fullrmc':
+            RMCPdict = data['RMC']['fullrmc']
+            mainSizer.Add(fullrmcSizer(RMCPdict))
+                
+        elif G2frame.RMCchoice ==  'RMCProfile':
+            RMCPdict = data['RMC']['RMCProfile']
+            mainSizer.Add(RMCProfileSizer(RMCPdict))
+            
+        else:       #PDFfit
+            mainSizer.Add(PDFfitSizer(data))
 
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         # add help button to bring up help web page - at right side of window
@@ -5914,9 +5946,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
             title = RMCPdict['metadata']['title']
-            print(RMCPdict)
+            G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
+            G2pwd.MakePDFfitRunFile(data,RMCPdict)
             
-            print('PDFfit2 prep under construction')
             
     def OnRunRMC(event):
         '''Run a previously created RMCProfile/fullrmc/PDFfit2 script
@@ -6001,6 +6033,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 else:
                     # TODO: better to create this in a new terminal on Linux
                     subp.Popen(['/bin/bash','fullrmc.sh'])
+                    
         elif G2frame.RMCchoice == 'RMCProfile':
             pName = generalData['Name'].replace(' ','_')
             RMCPdict = data['RMC']['RMCProfile']
@@ -6056,6 +6089,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             batch.write('pause\n')
             batch.close()
             subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+            
         elif G2frame.RMCchoice == 'PDFfit':
             PDFfit_exec = G2pwd.findPDFfit()
             if PDFfit_exec is None:
@@ -6091,8 +6125,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 if sys.platform == "darwin":
                     GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
                 else:
-                    # TODO: better to create this in a new terminal on Linux
                     subp.Popen(['/bin/bash','pdffit2.sh'])
+            #update choice? here?
+            
+            G2pwdr.UpdatePDFfit(data,RMCPdata)
+            
                     
             
     def OnStopRMC(event):

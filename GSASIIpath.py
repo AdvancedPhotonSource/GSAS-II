@@ -931,6 +931,7 @@ try:
     from IPython.core import ultratb
 except:
     pass
+
 def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment

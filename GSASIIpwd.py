@@ -2615,6 +2615,10 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     Meta = RMCPdict['metadata']
     Times = RMCPdict['runTimes']
     Atseq = RMCPdict['atSeq']
+    Natoms = RMCPdict['NoAtoms']
+    sumatms = np.sum(np.array([Natoms[iatm] for iatm in Natoms]))
+    Isotope = RMCPdict['Isotope']
+    Isotopes = RMCPdict['Isotopes']
     Atypes = RMCPdict['aTypes']
     atPairs = RMCPdict['Pairs']
     Files = RMCPdict['files']
@@ -2640,9 +2644,19 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
         Xfl.close()
     lenA = len(Atseq)
     Pairs = []
+    Ncoeff = []
+    Nblen = [Isotopes[at][Isotope[at]]['SL'][0] for at in Atypes]
     for pair in [[' %s-%s'%(Atseq[i],Atseq[j]) for j in range(i,lenA)] for i in range(lenA)]:
         Pairs += pair
-    pairMin = [atPairs[pair]for pair in Pairs if pair in atPairs]
+    for pair in Pairs:
+        pair = pair.replace(' ','')
+        at1,at2 = pair.split('-')
+        ncoef = Isotopes[at1][Isotope[at1]]['SL'][0]*Natoms[at1]/sumatms
+        ncoef *= Isotopes[at2][Isotope[at2]]['SL'][0]*Natoms[at2]/sumatms
+        if at1 != at2:
+            ncoef *= 2.
+        Ncoeff += [ncoef,]
+    pairMin = [atPairs[pair] for pair in Pairs if pair in atPairs]
     maxMoves = [Atypes[atm] for atm in Atseq if atm in Atypes]
     fname = Name+'.dat'
     fl = open(fname,'w')
@@ -2676,6 +2690,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
     fl.write('IGNORE_HISTORY_FILE ::\n')
     fl.write('\n')
+    fl.write('NEUTRON_COEFFICIENTS :: '+''.join(['%8.5f'%coeff for coeff in Ncoeff])+'\n')
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)
     fl.write('  > MXDIST :: %s\n'%maxD)
@@ -2773,6 +2788,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('  > RECALCUATE\n')
     fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
     fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
+    fl.write('  > SCATTERING LENGTH :: '+''.join(['%7.4f'%blen for blen in Nblen])+'\n')
     fl.write('\n')
     fl.write('END  ::\n')
     fl.close()
@@ -2941,12 +2957,83 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     '''Make the PDFfit atoms file
     '''
     General = Phase['General']
-    print(RMCPdict)
-    fName = Phase['Name']+'.stru'
+    fName = General['Name']+'-PDFfit.stru'
     fatm = open(fName.replace(' ','_'),'w')
-    a,b,c,alp,bet,gam = General['Cell'][1:7]
-    fatm.write('\n')
+    fatm.write('title  structure of '+General['Name']+'\n')
+    fatm.write('format pdffit\n')
+    fatm.write('scale   1.000000\n')    #fixed
+    sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'][0])
+    fatm.write('sharp '+sharp)
+    shape = ''
+    if RMCPdict['spdiameter'] > 0.:
+        shape = 'sphere, %10.6f\n'%RMCPdict['spdiameter']
+    elif RMCPdict['stepcut'] > 0.:
+        shape = 'stepcut, %10.6f\n'%RMCPdict['stepcut']
+    if shape:
+        fatm.write('shape  '+shape)
+    fatm.write('spcgr   %s\n'%General['SGData']['SpGrp'].replace(' ',''))
+    cell = General['Cell'][1:7]
+    fatm.write('cell  %10.6f,%10.6f,%10.6f,%10.6f,%10.6f,%10.6f\n'%(
+        cell[0],cell[1],cell[2],cell[3],cell[4],cell[5]))
+    fatm.write('dcell '+5*'  0.000000,'+'  0.000000\n') 
+    Atoms = Phase['Atoms']
+    fatm.write('ncell %8d,%8d,%8d,%10d\n'%(1,1,1,len(Atoms)))
+    fatm.write('atoms\n')
+    cx,ct,cs,cia = General['AtomPtrs']
+    for atom in Atoms:
+        fatm.write('%4s%18.8f%18.8f%18.8f%13.4f\n'%(atom[ct][:2].ljust(2),atom[cx],atom[cx+1],atom[cx+2],atom[cx+3]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f%13.4f\n'%(0.,0.,0.,0.))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(atom[cia+2],atom[cia+3],atom[cia+4]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(0.,0.,0.,))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(atom[cia+5],atom[cia+6],atom[cia+7]))
+        fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(0.,0.,0.))
+    fatm.close()
     
+def MakePDFfitRunFile(Phase,RMCPdict):
+    '''Make the PDFfit atoms file
+    '''
+    print(RMCPdict)
+    General = Phase['General']
+    rundata = '''
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from diffpy.pdffit2 import PdfFit
+pf = PdfFit()
+
+# Load data ------------------------------------------------------------------
+
+# Load experimental x-ray PDF data
+qmax = 30.0  # Q-cutoff used in PDF calculation in 1/A
+qdamp = 0.01 # instrument Q-resolution factor, responsible for PDF decay
+pf.read_data('Ni-xray.gr', 'X', qmax, qdamp)
+pf.read_data('Ni-neutron.gr', 'N', qmax, qdamp)
+
+# Load nickel structure, must be in PDFFIT or DISCUS format
+pf.read_struct('Ni.stru')
+'''
+ 
+    fName = General['Name']+'.py'
+    
+    rfile = open(fName,'w')
+    rfile.writelines(rundata)
+    rfile.close()
+    
+  
+    print('PDFfit2 prep under construction')
+    
+def UpdatePDFfit(Phase,RMCPdict):
+    
+    General = Phase['General']
+    fName = General['Name']+'-PDFfit.rstr'
+    rstr = open(fName.replace(' ','_'),'r')
+    lines = rstr.readlines()
+    resdict = dict(zip(lines[:6].split(' ',)))
+    General['Cell'][:7] = resdict['cell']
+    for inam,name in enumerate(['delta1','delta2','sratio','spdiameter']):
+        RMCPdict['delta1'] = resdict['sharp'][0]
+    
+    
+    print('PDFfit2 update under construction')
         
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 

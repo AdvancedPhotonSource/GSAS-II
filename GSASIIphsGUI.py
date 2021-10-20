@@ -4991,7 +4991,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                 if 'Select' not in Rfile and 'PDFfit' in G2frame.RMCchoice:
-                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Rrange (from/to)'),0,WACV)
+                    fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' R-range (from/to)'),0,WACV)
                     fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['Fitrange'],0,xmin=RMCPdict[Name]['Datarange'][0],xmax=3.0),0,WACV)
                     fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['Fitrange'],1,xmin=10.0,xmax=RMCPdict[Name]['Datarange'][1]),0,WACV)
                     fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Scale factor: '),0,WACV)
@@ -6127,9 +6127,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 else:
                     subp.Popen(['/bin/bash','pdffit2.sh'])
             #update choice? here?
-            
-            G2pwdr.UpdatePDFfit(data,RMCPdata)
-            
+            wx.MessageBox('PDFfit finished',caption='Updating results',style=wx.ICON_EXCLAMATION)
+            RMCPdict = data['RMC']['PDFfit']
+            G2pwd.UpdatePDFfit(data,RMCPdict)
+            wx.CallAfter(UpdateRMC)
+           
                     
             
     def OnStopRMC(event):

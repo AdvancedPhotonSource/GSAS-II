@@ -2690,7 +2690,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
     fl.write('IGNORE_HISTORY_FILE ::\n')
     fl.write('\n')
-    fl.write('NEUTRON_COEFFICIENTS :: '+''.join(['%8.5f'%coeff for coeff in Ncoeff])+'\n')
+    fl.write('NEUTRON_COEFFICIENTS :: '+''.join(['%9.5f'%coeff for coeff in Ncoeff])+'\n')
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)
     fl.write('  > MXDIST :: %s\n'%maxD)
@@ -2788,7 +2788,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('  > RECALCUATE\n')
     fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
     fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
-    fl.write('  > SCATTERING LENGTH :: '+''.join(['%7.4f'%blen for blen in Nblen])+'\n')
+    fl.write('  > SCATTERING LENGTH :: '+''.join(['%8.4f'%blen for blen in Nblen])+'\n')
     fl.write('\n')
     fl.write('END  ::\n')
     fl.close()
@@ -2999,27 +2999,20 @@ def MakePDFfitRunFile(Phase,RMCPdict):
 # -*- coding: utf-8 -*-
 from diffpy.pdffit2 import PdfFit
 pf = PdfFit()
-
 # Load data ------------------------------------------------------------------
-
-# Load experimental x-ray PDF data
 qmax = 30.0  # Q-cutoff used in PDF calculation in 1/A
 qdamp = 0.01 # instrument Q-resolution factor, responsible for PDF decay
-pf.read_data('Ni-xray.gr', 'X', qmax, qdamp)
-pf.read_data('Ni-neutron.gr', 'N', qmax, qdamp)
-
-# Load nickel structure, must be in PDFFIT or DISCUS format
-pf.read_struct('Ni.stru')
 '''
+    rundata += "pf.read_data(%s, 'X', qmax, qdamp)\n"
+    rundata += "pf.read_data(%s, 'N', qmax, qdamp)\n"   
+    rundata += "pf.read_struct(%s)\n"
  
-    fName = General['Name']+'.py'
-    
+    fName = General['Name']+'.py'    
     rfile = open(fName,'w')
     rfile.writelines(rundata)
     rfile.close()
     
   
-    print('PDFfit2 prep under construction')
     
 def UpdatePDFfit(Phase,RMCPdict):
     
@@ -3027,13 +3020,32 @@ def UpdatePDFfit(Phase,RMCPdict):
     fName = General['Name']+'-PDFfit.rstr'
     rstr = open(fName.replace(' ','_'),'r')
     lines = rstr.readlines()
-    resdict = dict(zip(lines[:6].split(' ',)))
-    General['Cell'][:7] = resdict['cell']
-    for inam,name in enumerate(['delta1','delta2','sratio','spdiameter']):
-        RMCPdict['delta1'] = resdict['sharp'][0]
-    
-    
-    print('PDFfit2 update under construction')
+    rstr.close()
+    header = [line[:-1].split(' ',1) for line in lines[:7]]
+    resdict = dict(header)
+    for item in ['scale','sharp','cell']:
+        resdict[item] = [float(val) for val in resdict[item].split(',')]
+    General['Cell'][1:7] = resdict['cell']
+    for inam,name in enumerate(['delta2','delta1','sratio']):
+        RMCPdict[name][0] = resdict['sharp'][inam]
+    if 'shape' in resdict and 'sphere' in resdict['shape']:
+        RMCPdict['spdiameter'][0] = resdict['shape'][-1]
+    cx,ct,cs,ci = G2mth.getAtomPtrs(Phase)      
+    Atoms = Phase['Atoms']
+    atmBeg = 0
+    for line in lines:
+        atmBeg += 1
+        if 'atoms' in line:
+            break
+    for atom in Atoms:
+        atstr = lines[atmBeg][:-1].split()
+        Uiistr = lines[atmBeg+2][:-1].split()
+        Uijstr = lines[atmBeg+4][:-1].split()
+        atom[cx:cx+4] = [float(atstr[1]),float(atstr[2]),float(atstr[3]),float(atstr[4])]
+        atom[ci] = 'A'
+        atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
+        atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
+        atmBeg += 6
         
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 

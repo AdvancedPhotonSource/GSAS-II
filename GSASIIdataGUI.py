@@ -6070,7 +6070,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.peaksAll = self.PeakEdit.Append(wx.ID_ANY,'Set all ref flags...','Set refinement flags for all peaks')
         self.AutoSearch = self.PeakEdit.Append(G2G.wxID_AUTOSEARCH,'Auto search','Automatic peak search')
         self.UnDo = self.PeakEdit.Append(G2G.wxID_UNDO,'UnDo','Undo last least squares refinement')
-        self.PeakFit = self.PeakEdit.Append(G2G.wxID_LSQPEAKFIT,'Peakfit','Peak fitting' )
+        self.PeakFit = self.PeakEdit.Append(G2G.wxID_LSQPEAKFIT,'Peakfit\tCtrl+P','Peak fitting' )
         self.PFOneCycle = self.PeakEdit.Append(G2G.wxID_LSQONECYCLE,'Peakfit one cycle','One cycle of Peak fitting' )
         self.PeakEdit.Append(G2G.wxID_RESETSIGGAM,'Reset sig and gam','Reset sigma and gamma to global fit' )
         self.PeakCopy = self.PeakEdit.Append(G2G.wxID_PEAKSCOPY,'Peak copy','Copy peaks to other histograms')

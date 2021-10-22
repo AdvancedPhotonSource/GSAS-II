@@ -3653,6 +3653,7 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
     sigstr = '  esds  :'
     for i,px in enumerate(['Px:','Py:','Pz:']):
         name = pfx+rbfx+px+rbsx
+        if name not in parmDict: continue
         namstr += '%12s'%('Pos '+px[1])
         valstr += '%12.5f'%(parmDict[name])
         if name in sigDict:
@@ -3661,6 +3662,7 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
             sigstr += 12*' '
     for i,po in enumerate(['Oa:','Oi:','Oj:','Ok:']):
         name = pfx+rbfx+po+rbsx
+        if name not in parmDict: continue
         namstr += '%12s'%('Ori '+po[1])
         valstr += '%12.5f'%(parmDict[name])
         if name in sigDict:
@@ -3668,12 +3670,13 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
         else:
             sigstr += 12*' '
     name = pfx+rbfx+'f:'+rbsx
-    namstr += '%12s'%('Frac')
-    valstr += '%12.5f'%(parmDict[name])
-    if name in sigDict:
-        sigstr += '%12.5f'%(sigDict[name])
-    else:
-        sigstr += 12*' '
+    if name in parmDict:
+        namstr += '%12s'%('Frac')
+        valstr += '%12.5f'%(parmDict[name])
+        if name in sigDict:
+            sigstr += '%12.5f'%(sigDict[name])
+        else:
+            sigstr += 12*' '
     return (namstr,valstr,sigstr)
 
 def WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):

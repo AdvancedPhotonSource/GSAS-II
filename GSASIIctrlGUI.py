@@ -7493,7 +7493,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer.Add(fInp3,1,wx.EXPAND)
     btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
     btn3.Bind(wx.EVT_BUTTON, OnBrowse)
-    sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    sizer.Add(btn3,0,wx.ALIGN_CENTER_VERTICAL)
     mnsizer.Add(sizer,0,wx.EXPAND)
         
     if FileTyp == 'pwd':
@@ -7503,7 +7503,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         sizer.Add(fInp4,1,wx.EXPAND)
         btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(btn4,0,wx.ALIGN_CENTER_VERTICAL)
         mnsizer.Add(sizer,0,wx.EXPAND)
     
     # buttons on bottom

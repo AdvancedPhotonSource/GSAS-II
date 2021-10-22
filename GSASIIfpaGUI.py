@@ -97,7 +97,7 @@ IBmonoParms = [
    
 Citation = '''MH Mendenhall, K Mullen && JP Cline (2015), J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014
 
-For Incident Beam Mono model, also cite: MH Mendenhall, D. Black && JP Cline, J. Appl. Cryst. (2019), 52, p1087. DOI: 10.1107/S1600576719010951
+For Incident Beam Mono model, also cite: MH Mendenhall, D Black && JP Cline (2019), J. Appl. Cryst., 52, p1087. DOI: 10.1107/S1600576719010951
 '''
 
 IBmono = False
@@ -180,9 +180,12 @@ def FillParmSizer():
     text = wx.StaticText(prmPnl,wx.ID_ANY,'value',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
     prmSizer.Add(text,0,wx.EXPAND)
+    txtSizer = wx.BoxSizer(wx.HORIZONTAL)
     text = wx.StaticText(prmPnl,wx.ID_ANY,'explanation',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
-    prmSizer.Add(text,0,wx.EXPAND)
+    txtSizer.Add(text,1,wx.EXPAND)
+    txtSizer.Add(G2G.HelpButton(prmPnl,helpIndex='FPAinput'))
+    prmSizer.Add(txtSizer,0,wx.EXPAND)
     for lbl,defVal,text in itemList:
         prmSizer.Add(wx.StaticText(prmPnl,wx.ID_ANY,lbl),1,wx.ALIGN_RIGHT|WACV,1)
         if lbl not in parmDict: parmDict[lbl] = defVal
@@ -749,10 +752,15 @@ def MakeSimSizer(G2frame, dlg):
 
     if dlg.GetSizer(): dlg.GetSizer().Clear(True)
     MainSizer = wx.BoxSizer(wx.VERTICAL)
-    MainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
             'Fit Profile Parameters to Peaks from Fundamental Parameters',
-            style=wx.ALIGN_CENTER),0,wx.EXPAND)
-    MainSizer.Add((-1,5))
+            style=wx.ALIGN_CENTER),0)
+    topSizer.Add((5,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(dlg,helpIndex='FPA'))
+    MainSizer.Add(topSizer,0,wx.EXPAND)
+    G2G.HorizontalLine(MainSizer,dlg)
+    MainSizer.Add((5,5),0)    
     prmSizer = wx.FlexGridSizer(cols=2,hgap=3,vgap=5)
     text = wx.StaticText(dlg,wx.ID_ANY,'value',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)

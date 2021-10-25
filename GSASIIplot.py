@@ -2993,7 +2993,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
     if not G2frame.PatternId:
         return
-    if 'PKS' in plottype:
+    if 'PKS' in plottype: # This is probably not used anymore; PlotPowderLines seems to be called directly
         PlotPowderLines(G2frame)
         return
     if data is None:

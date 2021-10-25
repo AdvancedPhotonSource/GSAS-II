@@ -77,10 +77,9 @@ needed for Bragg Brentano instruments with point detectors.
 '''
 
 BBPSDDetector = [
-    ('lpsd_th2_angular_range', 3.0, 'Angular range observed by PSD (degrees 2Theta)'),
-    ('lpsd_equitorial_divergence', 0.1, 'Equatorial divergence of the primary beam (degrees)'),]
+    ('SiPSD_th2_angular_range', 3.0, 'Angular range observed by PSD (degrees 2Theta)'),]
 '''Additional FPA dict entries used in :func:`FillParmSizer` 
-needed for Bragg Brentano instruments with linear (1-D) PSD detectors.
+needed for Bragg Brentano instruments with linear (1-D) Si PSD detectors.
 '''
 
 IBmonoParms = [
@@ -466,12 +465,10 @@ def XferFPAsettings(InpParms):
             'sample_thickness': 1e-3 * InpParms['sample_thickness'],
             }
 
-    if InpParms.get('lpsd_equitorial_divergence',0) > 0 and InpParms.get(
-            'lpsd_th2_angular_range',0) > 0 and DetMode == 'BBPSD':
-        PSDdetector_length_mm=np.arcsin(np.pi*InpParms['lpsd_th2_angular_range']/180.
+    if InpParms.get('SiPSD_th2_angular_range',0) > 0 and DetMode == 'BBPSD':
+        PSDdetector_length_mm=np.arcsin(np.pi*InpParms['SiPSD_th2_angular_range']/180.
                                             )*InpParms['Rs'] # mm
         NISTparms["si_psd"] = {
-            'equatorial_divergence_deg': InpParms['lpsd_equitorial_divergence'],
             'si_psd_window_bounds': (0.,PSDdetector_length_mm/1000.)
             }
 

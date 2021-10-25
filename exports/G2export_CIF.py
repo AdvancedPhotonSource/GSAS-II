@@ -1842,9 +1842,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             http://www.iucr.org/__data/iucr/cifdic_html/1/cif_core.dic/Igeom_angle_site_symmetry_.html
 
             TODO: this is based on WriteDistances and could likely be merged with that
-            without too much work.
-
-            TODO: need a method to select publication flags for distances/angles
+            without too much work. Note also that G2stMn.RetDistAngle is pretty slow for 
+            sequential fits, since it is called so many times. 
             '''
             #breakpoint()
             Atoms = phasedict['Atoms']
@@ -3252,7 +3251,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
                 dlg.CenterOnParent()
 
-                # publication info
+                # publication info block
                 step = 1
                 dlg.Update(step,"Exporting overall section")
                 WriteCIFitem(self.fp, '\ndata_'+self.CIFname+'_publ')
@@ -3262,7 +3261,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                              str(self.shortauthorname) + "|Overall")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
                 # ``template_publ.cif`` or a modified version
-                # overall info
+                
+                # overall info block
                 WriteCIFitem(self.fp, 'data_'+str(self.CIFname)+'_overall')
                 WriteOverall('seq')
                 hist = self.powderDict[sorted(self.powderDict.keys())[0]]
@@ -3355,8 +3355,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                             s += PutInCol(str(tblValues[c][r]),15)
                     WriteCIFitem(self.fp,s+'\n')
 
-                # sample template info & info for all phases
-
+                # sample template info: a block for each phase in project
                 i = sorted(self.powderDict.keys())[0]
                 hist = self.powderDict[i]
                 histblk = self.Histograms[hist]
@@ -3371,9 +3370,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                         WriteCIFitem(self.fp, 'data_'+self.CIFname+"_overall_phase"+str(j)+'\n')
                         writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
                         WriteSeqOverallPhaseInfo(phasenam,histblk)
-                        
+
+                # create a block for each histogram, include phase in block for one-phase refinements
+                # or separate blocks for each phase & histogram if more than one phase
                 for i in sorted(self.powderDict.keys()):
                     hist = self.powderDict[i]
+                    print('processing hist #',i,hist)
                     hId = self.Histograms[hist]['hId']
                     dlg.Update(step,"Exporting "+hist.strip())
                     histblk = self.Histograms[hist]
@@ -3421,6 +3423,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 
                     WritePowderData(hist,seq=True) # write background, data & reflections, some instrument & sample terms
                     WriteCIFitem(self.fp, '\n# PHASE INFO FOR HISTOGRAM '+hist)
+                    # loop over phases, add a block header if there is more than one phase
                     for j,phasenam in enumerate(sorted(self.Phases.keys())):
                         pId = self.Phases[phasenam]['pId']
                         if hist not in self.Phases[phasenam]['Histograms']: continue

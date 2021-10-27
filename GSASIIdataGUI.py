@@ -6315,7 +6315,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # Phase / General tab
         G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP','wxID_VALIDPROTEIN', 
             'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE','wxID_USEBILBAOMAG',
-            'wxID_COMPARESTRUCTURE',)
+            'wxID_COMPARESTRUCTURE','wxID_ISODISTORT')
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral)
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6330,6 +6330,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
+        self.GeneralCalc.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT for PDFfit constraints')
         self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare','Compare polyhedra to ideal octahedra/tetrahedra')
         self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)   
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')        
@@ -6432,8 +6433,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
-        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC',
-                            'wxID_STOPRMC', 'wxID_ISODISTORT')       
+        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC','wxID_STOPRMC', )       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6443,9 +6443,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_STOPRMC,'Stop run','Stop fullrmc run')
         self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'Plot','View fullrmc or RMCprofile results')
-        self.FRMCDataEdit.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT for PDFfit constraints')
         self.PostfillDataMenu()
         
+        # Phase/ ISODISTORT tab
+        G2G.Define_wxId('wxID_ISODNEWPHASE',)       
+        self.ISODData = wx.MenuBar()
+        self.PrefillDataMenu(self.ISODData)
+        self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.ISODDataEdit = wx.Menu(title='')
+        self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
+        self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make new phase','From ISODISTORT cif file')
+        self.PostfillDataMenu()
+
         # Phase / Layer tab 
         G2G.Define_wxId('wxID_LOADDIFFAX', 'wxID_LAYERSIMULATE', 'wxID_SEQUENCESIMULATE', 'wxID_LAYERSFIT', 'wxID_COPYPHASE',)       
         self.LayerData = wx.MenuBar()

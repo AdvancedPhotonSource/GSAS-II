@@ -2911,6 +2911,22 @@ def UpdatePhaseData(G2frame,Item,data):
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
+        
+    def OnRunISODISTORT(event):
+        import ISODISTORT as ISO
+        dlg = wx.FileDialog(General, 'Choose parent cif file for ISODISTORT',G2G.GetImportPath(G2frame),
+            style=wx.FD_OPEN ,wildcard='(*.cif)|*.cif')
+        if dlg.ShowModal() == wx.ID_OK:
+            fpath,parentcif = os.path.split(dlg.GetPath())
+            radio,rundata = ISO.GetISODISTORT(data,parentcif)
+            data['ISODISTORT']['radio'] = radio
+            data['ISODISTORT']['rundata'] = rundata
+            data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
+            data['ISODISTORT']['selection'] = None
+            print('ISODISTORT run complete')
+            UpdateISODISTORT()
+        else:
+            print('ISODISTORT run cancelled')
                 
     def OnCompare(event):
         generalData = data['General']
@@ -5796,6 +5812,31 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     
                 return parmSizer
             
+            def OnSpaceGroup(event):
+                # try a lookup on the user-supplied name
+                SpcGp = GetSpGrpfromUser(G2frame.FRMC,SpGrp)
+                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+                if SGErr:
+                    text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
+                    SGTxt.SetLabel(RMCPdict.get('Target SpGrp','P 1'))
+                    msg = 'Space Group Error'
+                    Text = '\n'.join(text)
+                    wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
+                else:
+                    text,table = G2spc.SGPrint(SGData)
+                    RMCPdict['SGData'] = SGData
+                    SGTxt.SetLabel(RMCPdict['SGData']['SpGrp'])
+                    msg = 'Target Space Group Information'
+                    G2G.SGMessageBox(G2frame.FRMC,msg,text,table).Show()
+                G2spc.UpdateSytSym(data)
+                
+            def OnCellRef(event):
+                RMCPdict['cellref'] = not RMCPdict['cellref']
+                
+            def AtomSizer():
+                return None
+                
+
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit setup'),0,WACV)
@@ -5809,24 +5850,48 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
 (2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219'''))
             mainSizer.Add((5,5))
             if 'PDFfit' not in data['RMC']:
-                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
-                aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+                SGData = G2spc.SpcGroup('P 1')[1]
                 metadata = {'title':'none','date':str(time.ctime()),'temperature':'300K',
                     'doping':0}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
                 'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],
-                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere',         
+                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,       
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
             RMCPdict = data['RMC']['PDFfit']
+#patch
+            if 'SGData' not in RMCPdict:
+                RMCPdict['SGData'] = G2spc.SpcGroup('P 1')[1]
+            if 'cellref' not in RMCPdict:
+                RMCPdict['cellref'] = False
+#end patch
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
             mainSizer.Add(GetMetaSizer(RMCPdict,['title','date','temperature','doping']),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDF phase profile coefficients:'),0,WACV)
+            SgSizer = wx.BoxSizer(wx.HORIZONTAL)
+            SgSizer.Add(wx.StaticText(G2frame.FRMC,label=' Target space group: '),0,WACV)
+            
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit phase structure parameters:'),0,WACV)
+            
+            SpGrp = RMCPdict['SGData']['SpGrp']
+            SGTxt = wx.Button(G2frame.FRMC,wx.ID_ANY,SpGrp,size=(100,-1))
+            SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
+            SgSizer.Add(SGTxt,0,WACV)
+            mainSizer.Add(SgSizer,0,WACV)
+            
+            cellref = wx.CheckBox(G2frame.FRMC,label=' Refine unit cell?')
+            cellref.SetValue(RMCPdict['cellref'])
+            cellref.Bind(wx.EVT_CHECKBOX,OnCellRef)
+            mainSizer.Add(cellref,0,WACV)
+                        
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'),0,WACV)
+            mainSizer.Add(AtomSizer())
+            
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'),0,WACV)
             mainSizer.Add(PDFParmSizer(),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
@@ -5945,7 +6010,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             pName = generalData['Name'].replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
-            title = RMCPdict['metadata']['title']
             G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
             G2pwd.MakePDFfitRunFile(data,RMCPdict)
             
@@ -6546,13 +6610,115 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         labelY=Labels[1],newPlot=True,Title=Labels[2]+files[file][0],
                         lines=False,names=['G(R) obs','G(R) calc','diff',])
             
-    def OnRunISODISTORT(event):
-        import ISODISTORT as ISO
-        ISO.GetISODISTORT(data)
-        print('run ISODISTORT under construction')
         
-        
+#### ISOTDISTORT results tab ###############################################################################
+
+    def UpdateISODISTORT(Scroll=0):
+        ''' Present the results of an ISODISTORT run & allow selection of a distortion model for PDFfit 
+        & refinement constraints 
+        '''
+        def OnLaue(event):
+            Obj = event.GetEventObject()
+            name = Indx[Obj.GetId()]
+            data['ISODISTORT']['SGselect'][name[:4]] = not data['ISODISTORT']['SGselect'][name[:4]]
+            data['ISODISTORT']['selection'] = None
+            UpdateISODISTORT()
             
+        def OnAllBtn(event):
+            for item in data['ISODISTORT']['SGselect']:
+                data['ISODISTORT']['SGselect'][item] = not data['ISODISTORT']['SGselect'][item]
+            data['ISODISTORT']['selection'] = None
+            UpdateISODISTORT()
+            
+        def CheckItem(item):
+            SGnum = int(item.split()[1].split('*')[0])
+            for SGtype in data['ISODISTORT']['SGselect']:
+                if data['ISODISTORT']['SGselect'][SGtype] and SGnum in SGrange[SGtype]:
+                    return True
+            return False
+        
+        def OnSelect(event):
+            r,c = event.GetRow(),event.GetCol()
+            if c == 0:
+                data['ISODISTORT']['selection'] = [r,isoTable.GetValue(r,1)]
+                for row in range(isoGrid.GetNumberRows()):
+                    isoTable.SetValue(row,c,False)
+                isoTable.SetValue(r,c,True)
+                isoGrid.ForceRefresh()
+                
+        if not data['ISODISTORT']:
+            return
+        if ISODIST.GetSizer():
+            ISODIST.GetSizer().Clear(True)
+        SGrange = {'Cubi':np.arange(195,231),'Hexa':np.arange(168,195),'Trig':np.arange(143,168),'Tetr':np.arange(75,143),
+                   'Orth':np.arange(16,75),'Mono':np.arange(3,16),'Tric':np.arange(1,3)}        
+        colLabels = ['select',' ISODISTORT order parameter direction description']
+        colTypes = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.VERTICAL)   
+        bottomSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion search results:'),0,WACV)
+        topSizer.Add(wx.StaticText(ISODIST,label='''
+For use of ISODISTORT, please cite:
+  H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
+  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
+  J. Appl. Cryst. 39, 607-614 (2006).
+  '''),0,WACV)
+        topSizer.Add(wx.StaticText(ISODIST,label=' Subset selection if desired:'))
+        laueName = ['Cubic','Hexagonal','Trigonal','Tetragonal','Orthorhombic','Monoclinic','Triclinic']
+        littleSizer = wx.FlexGridSizer(0,8,5,5)
+        Indx = {}
+        for name in laueName:
+            laueCk = wx.CheckBox(ISODIST,label=name)
+            Indx[laueCk.GetId()] = name
+            laueCk.SetValue(data['ISODISTORT']['SGselect'][name[:4]])
+            laueCk.Bind(wx.EVT_CHECKBOX,OnLaue)
+            littleSizer.Add(laueCk,0,WACV)
+        allBtn = wx.Button(ISODIST,label='Toggle all')
+        allBtn.Bind(wx.EVT_BUTTON,OnAllBtn)
+        littleSizer.Add(allBtn)
+        topSizer.Add(littleSizer)
+        
+        mainSizer.Add(topSizer)
+          
+        if 'radio' in data['ISODISTORT']:
+            Radio = data['ISODISTORT']['radio']
+            rowLabels = []
+            table = []
+            for i,item in enumerate(Radio):
+                if CheckItem(Radio[item]):
+                    if data['ISODISTORT']['selection'] and data['ISODISTORT']['selection'][0] == i:
+                        table.append([True,Radio[item]])
+                    else:
+                        table.append([False,Radio[item]])
+                    rowLabels.append(str(i))
+            isoTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=colTypes)
+            isoGrid = G2G.GSGrid(ISODIST)
+            isoGrid.SetTable(isoTable,True,useFracEdit=False)
+            isoGrid.AutoSizeColumns(True)
+            isoGrid.SetColLabelAlignment(wx.ALIGN_LEFT,wx.ALIGN_CENTRE)
+            bottomSizer.Add(isoGrid)
+            attr = wg.GridCellAttr()
+            attr.SetReadOnly(True)
+            attr.SetBackgroundColour(VERY_LIGHT_GREY)
+            isoGrid.SetColAttr(1,attr)
+            isoGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnSelect)
+        mainSizer.Add(bottomSizer)
+        SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)
+        
+    def OnNewISOPhase(event):
+        ''' Make cif file with ISODISTORT
+        '''
+        import ISODISTORT as ISO
+
+        if data['ISODISTORT']:
+            CIFfile = ISO.GetISODISTORTcif(data)
+            print(CIFfile)
+        else:
+            print('ERROR-need to run ISODISTORT first - see General/Compute menu')
+            
+        
+          
 #### DIFFax Layer Data page ################################################################################
     def UpdateLayerData(Scroll=0):
         '''Present the contents of the Phase/Layers tab for stacking fault simulation
@@ -13113,6 +13279,9 @@ of the crystal structure.
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
             UpdateRMC()
+        elif text == 'ISODISTORT':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
+            UpdateISODISTORT()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
@@ -13155,6 +13324,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
@@ -13271,13 +13441,13 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnPeaksSave, id=G2G.wxID_PEAKSSAVE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
-        # fullrmc
+        # RMCProfile/fullrmc/PDFfit
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
         G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
         G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
         G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
         G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
-        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
+        G2frame.Bind(wx.EVT_MENU, OnNewISOPhase, id=G2G.wxID_ISODNEWPHASE)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
@@ -13367,6 +13537,8 @@ of the crystal structure.
         data['General']['Type'] = 'nuclear' 
     if 'RMC' not in data:
         data['RMC'] = {'RMCProfile':{},'fullrmc':{},'PDFfit':{}}
+    if 'ISODISTORT' not in data:
+        data['ISODISTORT'] = {}
 #end patch    
 
     global rbAtmDict   
@@ -13414,14 +13586,17 @@ of the crystal structure.
         # TODO: might need to be on a different widget for Windows 
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
+        
     MapPeaks = G2G.GSGrid(G2frame.phaseDisplay)
 #    MapPeaks.SetScrollRate(0,0)
     G2frame.phaseDisplay.gridList.append(MapPeaks)    
     G2frame.phaseDisplay.AddPage(MapPeaks,'Map peaks')
+    
     if data['General']['doDysnomia']:
         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
-        Pages.append('Dysnomia')        
+        Pages.append('Dysnomia')
+        
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
@@ -13430,6 +13605,12 @@ of the crystal structure.
         G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
         Pages.append('RMC')
+        
+    if data['General']['Type'] == 'nuclear':
+        ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(ISODIST,'ISODISTORT')
+        Pages.append('ISODISTORT')        
+    
     Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')

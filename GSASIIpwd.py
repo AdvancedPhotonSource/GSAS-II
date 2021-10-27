@@ -2962,11 +2962,14 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     fatm.write('title  structure of '+General['Name']+'\n')
     fatm.write('format pdffit\n')
     fatm.write('scale   1.000000\n')    #fixed
-    sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'][0])
+    if RMCPdict['shape'] == 'sphere':
+        sharp = '%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0])
+    else:
+        sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'])
     fatm.write('sharp '+sharp)
     shape = ''
-    if RMCPdict['spdiameter'] > 0.:
-        shape = 'sphere, %10.6f\n'%RMCPdict['spdiameter']
+    if RMCPdict['shape'] == 'sphere' and RMCPdict['spdiameter'][0] > 0.:
+        shape = '   sphere, %10.6f\n'%RMCPdict['spdiameter'][0]
     elif RMCPdict['stepcut'] > 0.:
         shape = 'stepcut, %10.6f\n'%RMCPdict['stepcut']
     if shape:
@@ -2990,27 +2993,89 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     fatm.close()
     
 def MakePDFfitRunFile(Phase,RMCPdict):
-    '''Make the PDFfit atoms file
+    '''Make the PDFfit python run file
     '''
-    print(RMCPdict)
+    
+    def GetCellConstr(SGData):
+        if SGData['SGLaue'] in ['m3', 'm3m']:
+            return [1,1,1,0,0,0]
+        elif SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:
+            return [1,1,2,0,0,0]
+        elif SGData['SGLaue'] in ['3R','3mR']:
+            return [1,1,1,2,2,2]
+        elif SGData['SGLaue'] == 'mmm':
+            return [1,2,3,0,0,0]
+        elif SGData['SGLaue'] == '2/m':
+            if SGData['SGUniq'] == 'a':
+                return [1,2,3,4,0,0]
+            elif SGData['SGUniq'] == 'b':
+                return [1,2,3,0,4,0]
+            elif SGData['SGUniq'] == 'c':
+                return [1,2,3,0,0,4]
+        else:
+            return [1,2,3,4,5,6]
+        
     General = Phase['General']
     rundata = '''
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from diffpy.pdffit2 import PdfFit
 pf = PdfFit()
-# Load data ------------------------------------------------------------------
-qmax = 30.0  # Q-cutoff used in PDF calculation in 1/A
-qdamp = 0.01 # instrument Q-resolution factor, responsible for PDF decay
 '''
-    rundata += "pf.read_data(%s, 'X', qmax, qdamp)\n"
-    rundata += "pf.read_data(%s, 'N', qmax, qdamp)\n"   
-    rundata += "pf.read_struct(%s)\n"
+    Nd = 0
+    Np = 0
+    for file in RMCPdict['files']:
+        if 'Neutron' in file:
+            Nd += 1
+            dType = 'Ndata'
+        else:
+            Nd += 1
+            dType = 'Xdata'
+        rundata += "pf.read_data(%s, '%s', 30.0, %.4f)\n"%(dType[0],RMCPdict['files'][file][0],RMCPdict[dType]['qdamp'][0])
+        rundata += 'pf.pdfrange(%d, %6.2f, %6.2f\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
+        rundata += 'pf.setdata(%d)\n'%Nd
+        for item in ['dscale','qdamp','qbroad']:
+            rundata += "pf.setvar('%s', %.2f)\n"%(item,RMCPdict[dType][item][0])
+            if RMCPdict[dType][item][1]:
+                Np += 1
+                rundata += 'pf.constrain("%s","@%d")\n'%(item,Np)
+    rundata += "pf.read_struct(%s)\n"%(General['Name']+'-PDFfit.stru')
+    for item in ['delta1','delta2','sratio']:
+        if RMCPdict[item][1]:
+            Np += 1
+            rundata += 'pf.constrain(pf.%s,"@%d")\n'%(item,Np)
+    if 'sphere' in RMCPdict['shape'][0] and RMCPdict['spdiameter'][1]:
+        Np += 1
+        rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
+        
+    if RMCPdict['cellref']:
+        cellconst = GetCellConstr(RMCPdict['SGData'])
+        for ic in range(6):
+            if cellconst[ic]:
+                rundata += 'pf.constrain(pf.lat(%d), "@%d")\n'%(ic+1,Np+cellconst[ic])
+#Atom constraints here -------------------------------------------------------        
+    
+    
+    
+# Refine & Save results ---------------------------------------------------------------    
+    rundata += 'pf.refine()\n'
+    fName = General['Name'].replace(' ','_')+'-PDFfit'
+    Nd = 0    
+    for file in RMCPdict['files']:
+        Nd += 1
+        rundata += 'pf.save_pdf(%d, %s)\n'%(Nd,fName+file[0]+'.fgr')
+        
+    rundata += 'pf.save_struct(1, %s)\n'%(fName+'.rstr')
+    rundata += 'pf.save_res(%s)\n'%(fName+'.res')
+    
+    
+    print(rundata)
+    
+    
  
-    fName = General['Name']+'.py'    
-    rfile = open(fName,'w')
-    rfile.writelines(rundata)
-    rfile.close()
+    # rfile = open(fName+.py','w')
+    # rfile.writelines(rundata)
+    # rfile.close()
     
   
     

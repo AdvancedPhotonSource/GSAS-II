@@ -2918,7 +2918,9 @@ def UpdatePhaseData(G2frame,Item,data):
             style=wx.FD_OPEN ,wildcard='(*.cif)|*.cif')
         if dlg.ShowModal() == wx.ID_OK:
             fpath,parentcif = os.path.split(dlg.GetPath())
+            wx.BeginBusyCursor()
             radio,rundata = ISO.GetISODISTORT(data,parentcif)
+            wx.EndBusyCursor()
             data['ISODISTORT']['radio'] = radio
             data['ISODISTORT']['rundata'] = rundata
             data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
@@ -2926,7 +2928,7 @@ def UpdatePhaseData(G2frame,Item,data):
             print('ISODISTORT run complete')
             UpdateISODISTORT()
         else:
-            print('ISODISTORT run cancelled')
+            G2G.G2MessageBox(G2frame,'ISODISTORT run cancelled')        
                 
     def OnCompare(event):
         generalData = data['General']
@@ -6713,11 +6715,9 @@ For use of ISODISTORT, please cite:
 
         if data['ISODISTORT']:
             CIFfile = ISO.GetISODISTORTcif(data)
-            print(CIFfile)
+            G2G.G2MessageBox(G2frame,'ISODISTORT generated cif file %s has been created.'%CIFfile)
         else:
-            print('ERROR-need to run ISODISTORT first - see General/Compute menu')
-            
-        
+            G2G.G2MessageBox(G2frame,'ERROR - need to run ISODISTORT first - see General/Compute menu')        
           
 #### DIFFax Layer Data page ################################################################################
     def UpdateLayerData(Scroll=0):

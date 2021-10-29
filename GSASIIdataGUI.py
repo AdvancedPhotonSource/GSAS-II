@@ -6452,7 +6452,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.ISODDataEdit = wx.Menu(title='')
         self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
-        self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make new phase','From ISODISTORT cif file')
+        self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make cif file','From ISODISTORT selection')
         self.PostfillDataMenu()
 
         # Phase / Layer tab 

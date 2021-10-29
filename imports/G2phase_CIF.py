@@ -24,6 +24,7 @@ import random as ran
 import numpy as np
 import re
 import copy
+import os.path
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -608,9 +609,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     continue
                 else:
                     break
-            else: # no name found, use block name for lack of a better choice
+            else: # no name found, use block name for lack of a better choice; for isodistort use filename
                 name = blknm
-            self.Phase['General']['Name'] = name.strip()
+            if 'isodistort' in name:
+                self.Phase['General']['Name'] = os.path.split(filename)[1].split('.')[0]
+            else:
+                self.Phase['General']['Name'] = name.strip()
             self.Phase['General']['Super'] = Super
             self.Phase = copy.deepcopy(self.Phase)      #clean copy
             if magnetic:

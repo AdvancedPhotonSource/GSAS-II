@@ -1528,7 +1528,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         return
     G2obj.IndexAllIds(Histograms,Phases)
     for p in Phases:
-        if 'ISODISTORT' in Phases[p]:
+        if 'ISODISTORT' in Phases[p] and 'G2VarList' in Phases[p]['ISODISTORT']:
             G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
             break
     ###### patch: convert old-style (str) variables in constraints to G2VarObj objects #####
@@ -3809,34 +3809,24 @@ def ShowIsoDistortCalc(G2frame,phase=None):
         helptext += '\n\nISODISTORT full name: '+str(fullname)
         return helptext
 
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # init for constraint
-    isophases = [p for p in Phases if 'ISODISTORT' in Phases[p]]
-    
+    Phases = G2frame.GetPhaseData()
+    isophases = [p for p in Phases if 'G2VarList' in Phases[p]['ISODISTORT']]
     if not isophases:
-        G2frame.ErrorDialog('no ISODISTORT phases',
-                            'Unexpected error: no ISODISTORT phases')
+        G2G.G2MessageBox(G2frame,'no ISODISTORT mode data for any phase')
         return
     if phase and phase not in isophases:
-        G2frame.ErrorDialog('not ISODISTORT phase',
-                            'Unexpected error: selected phase is not an ISODISTORT phase')
-        print('Unexpected error: selected phase is not an ISODISTORT phase',
-                  phase,isophases)
+        G2G.G2MessageBox(G2frame,'no ISODISTORT mode data for this phase')
+        return
     elif not phase and len(isophases) == 1:
         phase = isophases[0]
     elif not phase:
         dlg = wx.SingleChoiceDialog(G2frame,'Select phase from ISODISTORT phases',
-                                        'Select Phase',isophases)
+            'Select Phase',isophases)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             phase = isophases[sel]
         else:
             return
-    # if len(data.get('Histograms',[])) == 0:
-    #     G2frame.ErrorDialog(
-    #         'No data',
-    #         'Sorry, this computation requires that a histogram first be added to the phase'
-    #         )
-    #     return
    
     covdata = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
@@ -3851,17 +3841,12 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     parmDict,varyList = G2frame.MakeLSParmDict()
 
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT mode values',#size=(630,400),
-                       style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    if 'ISODISTORT' not in Phases[phase]:
-        G2frame.ErrorDialog('not ISODISTORT phase',
-                            'Unexpected error: selected phase is not an ISODISTORT phase')
-        return
     data = Phases[phase]
     ISO = data['ISODISTORT']
     mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                'ISODISTORT mode computation for cordinates in phase '+
-                                str(data['General'].get('Name'))))
+        'ISODISTORT mode computation for cordinates in phase '+str(data['General'].get('Name'))))
     aSizer = wx.BoxSizer(wx.HORIZONTAL)
     panel1 = wxscroll.ScrolledPanel(
         dlg, wx.ID_ANY,#size=(100,200),
@@ -3888,15 +3873,12 @@ def ShowIsoDistortCalc(G2frame,phase=None):
             if var in parmDict:
                 cval = parmDict[var][0]
             else:
-                dlg.EndModal(wx.ID_CANCEL)
-                G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
-                return
+                cval = 0.0
             deltaList.append(cval-pval)
         modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
         for lbl,xyz,var,val,norm,G2mode in zip(
                 ISO['IsoVarList'],deltaList,
                 ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] ):
-            #GSASIIpath.IPyBreak()
             if str(G2mode) in constrDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],var))
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)

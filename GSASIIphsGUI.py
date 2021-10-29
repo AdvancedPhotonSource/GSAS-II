@@ -6650,15 +6650,32 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             idsp,dispVal = Indx[Obj.GetId()]
             modeDisp[idsp] = (Obj.GetValue()-100)/1000.
             dispVal.SetValue(modeDisp[idsp])
+            G2mth.ApplyModeDisp(data)
+            G2plt.PlotStructure(G2frame,data)
             
+        def OnDispVal(invalid,value,tc):
+            idsp,displ = Indx[tc.GetId()]
+            displ.SetValue(int(value*1000)+100)
+            G2mth.ApplyModeDisp(data)
+            G2plt.PlotStructure(G2frame,data)
+           
+        def OnReset(event):
+            data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
+            G2mth.ApplyModeDisp(data)
+            G2plt.PlotStructure(G2frame,data)
+            UpdateISODISTORT()                                   
         
-        Indx = {}        
+        Indx = {}      
         if 'radio' not in data['ISODISTORT']:
             if not data['ISODISTORT']:
                 mainSizer = wx.BoxSizer(wx.VERTICAL)
                 mainSizer.Add(wx.StaticText(ISODIST,label='No ISODISTORT information found for this phase'),0,WACV)
                 SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
                 return
+#patch
+            if 'modeDispl' not in data['ISODISTORT']:
+                data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
+#end patch
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.VERTICAL)   
             bottomSizer = wx.BoxSizer(wx.VERTICAL)
@@ -6669,19 +6686,26 @@ For use of ISODISTORT, please cite:
   B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
   J. Appl. Cryst. 39, 607-614 (2006).
   '''),0,WACV)
-            topSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-0.1 to +0.1):'))
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-0.1 to +0.1):  '),0,WACV)
+            reset = wx.Button(ISODIST,label='Reset modes')
+            reset.Bind(wx.EVT_BUTTON,OnReset)
+            lineSizer.Add(reset,0,WACV)
+            topSizer.Add(lineSizer,0,WACV)
             slideSizer = wx.FlexGridSizer(0,3,0,0)
             slideSizer.AddGrowableCol(2,1)
-            modeDisp = np.zeros(len(data['ISODISTORT']['G2ModeList']))
+            modeDisp = data['ISODISTORT']['modeDispl']
             for idsp,item in enumerate(data['ISODISTORT']['G2ModeList']):
                 slideSizer.Add(wx.StaticText(ISODIST,label=item.name),0,WACV)
-                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-0.1,xmax=0.1,size=(50,20))
+                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-0.1,xmax=0.1,size=(50,20),OnLeave=OnDispVal)
                 slideSizer.Add(dispVal,0,WACV)
                 displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,value=int(modeDisp[idsp]*1000)+100)
                 displ.SetRange(0,200)
                 displ.Bind(wx.EVT_SLIDER, OnDispl)
                 Indx[displ.GetId()] = [idsp,dispVal]
+                Indx[dispVal.GetId()] = [idsp,displ]
                 slideSizer.Add(displ,1,wx.EXPAND|wx.RIGHT)
+            slideSizer.SetMinSize(wx.Size(350,10))
             topSizer.Add(slideSizer)
             mainSizer.Add(topSizer)
             SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                

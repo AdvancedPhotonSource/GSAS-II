@@ -3846,7 +3846,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     data = Phases[phase]
     ISO = data['ISODISTORT']
     mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-        'ISODISTORT mode computation for cordinates in phase '+str(data['General'].get('Name'))))
+        'ISODISTORT mode computation for coordinates in phase '+str(data['General'].get('Name'))))
     aSizer = wx.BoxSizer(wx.HORIZONTAL)
     panel1 = wxscroll.ScrolledPanel(
         dlg, wx.ID_ANY,#size=(100,200),

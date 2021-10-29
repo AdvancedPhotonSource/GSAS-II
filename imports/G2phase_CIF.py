@@ -784,6 +784,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             displacivemodeInvmatrix = np.linalg.inv(displacivemodematrix)
             # create the constraints
             modeVarList = []
+            modeDispl = []
             for i,row in enumerate(displacivemodeInvmatrix):
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
@@ -794,6 +795,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 modeVarList.append(modeVar)                
                 constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
+                modeDispl.append(0.0)
             # normilization constants
             normlist = []
             idlist = []
@@ -819,6 +821,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 # transform matrices
                 'Var2ModeMatrix' : displacivemodeInvmatrix,
                 'Mode2VarMatrix' : displacivemodematrix,
+                'modeDispl' : modeDispl
                 })
             # make explaination dictionary
             for mode,shortmode in zip(modelist,shortmodelist):

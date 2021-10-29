@@ -2068,6 +2068,29 @@ def ApplyModulation(data,tau):
                 M = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,atmom+mom)
                 drawatom[dcx+3:dcx+6] = M
     return drawAtoms,Fade
+
+def ApplyModeDisp(data):
+    ''' Applies ISODISTORT mode displacements to drawing atoms
+    '''
+    return
+    # generalData = data['General']
+    # cell = generalData['Cell'][1:7]
+    # G,g = G2lat.cell2Gmat(cell)
+    # SGData = generalData['SGData']
+    # cx,ct,cs,cia = getAtomPtrs(data)
+    # drawingData = data['Drawing']
+    # dcx,dct,dcs,dci = getAtomPtrs(data,True)
+    # atoms = data['Atoms']
+    # drawAtoms = drawingData['Atoms']
+    # for atom in atoms:
+    #     atxyz = np.array(atom[cx:cx+3])
+    #     indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+    #     for ind in indx:
+    #         drawatom = drawAtoms[ind]
+    #         opr = drawatom[dcs-1]            
+    #         X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
+    #         drawatom[dcx:dcx+3] = X
+
     
 # gauleg.py Gauss Legendre numerical quadrature, x and w computation 
 # integrate from a to b using n evaluations of the function f(x)  

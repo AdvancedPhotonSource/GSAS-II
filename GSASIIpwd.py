@@ -3441,6 +3441,7 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
             bondAngles.append(npacosd(np.sum(DAv*DBv)))
     return np.array(bondAngles)
     
+    
 #### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))

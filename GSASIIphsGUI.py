@@ -4672,7 +4672,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #  5) better plotting when fullrmc in main Python image?
 
     def UpdateRMC():
-        ''' Present the controls for running fullrmc or RMCProfile
+        ''' Present the controls for running fullrmc, RMCProfile or PDFfit
         '''
         global runFile
         def OnRMCselect(event):
@@ -5853,8 +5853,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer.Add((5,5))
             if 'PDFfit' not in data['RMC']:
                 SGData = G2spc.SpcGroup('P 1')[1]
-                metadata = {'title':'none','date':str(time.ctime()),'temperature':'300K',
-                    'doping':0}
+                metadata = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
@@ -5869,6 +5868,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 RMCPdict['SGData'] = G2spc.SpcGroup('P 1')[1]
             if 'cellref' not in RMCPdict:
                 RMCPdict['cellref'] = False
+            if 'metadata' not in RMCPdict:
+                RMCPdict['metadata'] = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
 #end patch
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
             mainSizer.Add(GetMetaSizer(RMCPdict,['title','date','temperature','doping']),0)

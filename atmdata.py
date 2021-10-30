@@ -861,7 +861,6 @@ AtmBlens = {
     'Bk_247':{'Mass':247.070,'SL':[     .8,      0],'SA':           0},
     'Cf_249':{'Mass':249.075,'SL':[     .8,      0],'SA':           0},
     'Va_':   {'Mass':0.0,'SL':[0.0,0],'SA':0},
-    'Va':    {'Mass':0.0,'SL':[0.0,0],'SA':0},
         }
 MagFF = {
 #neutron magnetic form factor coeff: M for j<0> & N for j<2>

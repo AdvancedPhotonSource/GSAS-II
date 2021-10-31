@@ -2072,24 +2072,39 @@ def ApplyModulation(data,tau):
 def ApplyModeDisp(data):
     ''' Applies ISODISTORT mode displacements to drawing atoms
     '''
-    return
-    # generalData = data['General']
-    # cell = generalData['Cell'][1:7]
-    # G,g = G2lat.cell2Gmat(cell)
-    # SGData = generalData['SGData']
-    # cx,ct,cs,cia = getAtomPtrs(data)
-    # drawingData = data['Drawing']
-    # dcx,dct,dcs,dci = getAtomPtrs(data,True)
-    # atoms = data['Atoms']
-    # drawAtoms = drawingData['Atoms']
-    # for atom in atoms:
-    #     atxyz = np.array(atom[cx:cx+3])
-    #     indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
-    #     for ind in indx:
-    #         drawatom = drawAtoms[ind]
-    #         opr = drawatom[dcs-1]            
-    #         X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
-    #         drawatom[dcx:dcx+3] = X
+    generalData = data['General']
+    Atoms= data['Atoms']
+    ISOdata = data['ISODISTORT']
+    modeDisp = np.array(ISOdata['modeDispl'])
+    mode2var = np.array(ISOdata['Mode2VarMatrix'])
+    varDisp = np.sum(mode2var*modeDisp,axis=1)
+    vardict = dict(zip(ISOdata['IsoVarList'],varDisp))
+    cell = generalData['Cell'][1:7]
+    G,g = G2lat.cell2Gmat(cell)
+    SGData = generalData['SGData']
+    cx,ct,cs,cia = getAtomPtrs(data)
+    atNames = [atm[ct-1] for atm in Atoms]
+    parNames = [[atName+'_dx',atName+'_dy',atName+'_dz',] for atName in atNames]
+    if data['Drawing']:
+        drawingData = data['Drawing']
+        dcx,dct,dcs,dci = getAtomPtrs(data,True)
+        atoms = data['Atoms']
+        drawAtoms = drawingData['Atoms']
+        for iat,atom in enumerate(atoms):
+            atxyz = np.array(atom[cx:cx+3])
+            displ = np.zeros(3)
+            for ip,parm in enumerate(parNames[iat]):
+                if parm in vardict:
+                    displ[ip] = vardict[parm]
+            indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+            for ind in indx:
+                drawatom = drawAtoms[ind]
+                opr = drawatom[dcs-1]            
+                X = G2spc.ApplyStringOps(opr,SGData,atxyz+displ)
+                drawatom[dcx:dcx+3] = X
+        return None
+    else:
+        return 'Draw structure first'
 
     
 # gauleg.py Gauss Legendre numerical quadrature, x and w computation 

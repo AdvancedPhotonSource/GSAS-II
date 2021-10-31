@@ -6651,18 +6651,24 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             idsp,dispVal = Indx[Obj.GetId()]
             modeDisp[idsp] = (Obj.GetValue()-100)/1000.
             dispVal.SetValue(modeDisp[idsp])
-            G2mth.ApplyModeDisp(data)
+            err = G2mth.ApplyModeDisp(data)
+            if err:
+                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
             G2plt.PlotStructure(G2frame,data)
             
         def OnDispVal(invalid,value,tc):
             idsp,displ = Indx[tc.GetId()]
             displ.SetValue(int(value*1000)+100)
-            G2mth.ApplyModeDisp(data)
+            err = G2mth.ApplyModeDisp(data)
+            if err:
+                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
             G2plt.PlotStructure(G2frame,data)
            
         def OnReset(event):
             data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
-            G2mth.ApplyModeDisp(data)
+            err = G2mth.ApplyModeDisp(data)
+            if err:
+                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
             G2plt.PlotStructure(G2frame,data)
             UpdateISODISTORT()                                   
         
@@ -6677,6 +6683,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if 'modeDispl' not in data['ISODISTORT']:
                 data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
 #end patch
+            if ISODIST.GetSizer():
+                ISODIST.GetSizer().Clear(True)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.VERTICAL)   
             bottomSizer = wx.BoxSizer(wx.VERTICAL)

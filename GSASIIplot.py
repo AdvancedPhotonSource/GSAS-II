@@ -889,7 +889,7 @@ def SetCursor(page):
         else:
             page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
             
-def PlotFPAconvolutors(G2frame,NISTpk):
+def PlotFPAconvolutors(G2frame,NISTpk,conv2T=None,convI=None,convList=None):
     '''Plot the convolutions used for the current peak computed with
     :func:`GSASIIfpaGUI.doFPAcalc`
     '''
@@ -906,7 +906,9 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     ttmin = ttmax = 0
     #GSASIIpath.IPyBreak()
     i = -1
-    for conv in NISTpk.convolvers:
+    if convList is None:
+        convList = NISTpk.convolvers
+    for conv in convList:
         if 'smoother' in conv: continue
         if 'crystallite_size' in conv: continue
         f = NISTpk.convolver_funcs[conv]()
@@ -921,6 +923,9 @@ def PlotFPAconvolutors(G2frame,NISTpk):
         ttmax = max(ttmax,ttArr[::-1][np.argmax(FFT[::-1]>.005)])
         color = refColors[i%len(refColors)]
         Plot.plot(ttArr,FFT,color,label=conv[5:])
+    if conv2T is not None and convI is not None:
+        color = refColors[(i+1)%len(refColors)]
+        Plot.plot(conv2T,convI,color,label='Convolution')
     legend = Plot.legend(loc='best')
     SetupLegendPick(legend,new)
     Page.toolbar.push_current()

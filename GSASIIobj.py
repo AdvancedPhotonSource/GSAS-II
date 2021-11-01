@@ -1330,7 +1330,7 @@ import platform
 import re
 import random as ran
 import sys
-import os.path as ospath
+import os.path
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
@@ -1638,6 +1638,37 @@ def IndexAllIds(Histograms,Phases):
         while shortname in ShortHistNames.values():
             shortname = hist[:11] + ' ('+ hId + ')'
         ShortHistNames[hId] = shortname
+
+def AddPhase2Index(rdObj,filename):
+    '''Add a phase to the index during reading
+    Used where constraints are generated during import (ISODISTORT CIFs)        
+    '''
+    ranId = rdObj.Phase['ranId']
+    ph = 'from  '+filename #  phase is not named yet
+    if ranId in PhaseRanIdLookup: return
+    maxph = -1
+    for r in PhaseRanIdLookup:
+        maxph = max(maxph,PhaseRanIdLookup[r])
+    PhaseRanIdLookup[ranId] = pId = str(maxph + 1)
+    PhaseIdLookup[pId] = (ph,ranId)
+    shortname = 'from '+ os.path.splitext((os.path.split(filename))[1])[0]
+    while shortname in ShortPhaseNames.values():
+        shortname = ph[:8] + ' ('+ pId + ')'
+    ShortPhaseNames[pId] = shortname
+    AtomIdLookup[pId] = {}
+    AtomRanIdLookup[pId] = {}
+    for iatm,at in enumerate(rdObj.Phase['Atoms']):
+        ranId = at[-1]
+        while ranId in AtomRanIdLookup[pId]: # check for dups
+            print ("\n\n*** Phase "+str(ph)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
+            at[-1] = ranId = ran.randint(0,sys.maxsize)
+        AtomRanIdLookup[pId][ranId] = str(iatm)
+        #if Phases[ph]['General']['Type'] == 'macromolecular':
+        #    label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+        #else:
+        #    label = at[ct-1]
+        label = at[0]
+        AtomIdLookup[pId][str(iatm)] = (label,ranId)
 
 def LookupAtomId(pId,ranId):
     '''Get the atom number from a phase and atom random Id
@@ -2508,7 +2539,7 @@ class ImportBaseclass(object):
           
         '''
         if filename:
-            ext = ospath.splitext(filename)[1]
+            ext = os.path.splitext(filename)[1]
             if not ext and self.strictExtension: return False
             for ext in self.extensionlist:                
                 if sys.platform == 'windows':

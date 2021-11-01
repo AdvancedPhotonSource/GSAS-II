@@ -6688,13 +6688,13 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.VERTICAL)   
             bottomSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:'%data['General']['Name']))
-            topSizer.Add(wx.StaticText(ISODIST,label='''
-For use of ISODISTORT, please cite:
+            topSizer.Add(wx.StaticText(ISODIST,
+                         label=''' For use of ISODISTORT, please cite:
   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
-  J. Appl. Cryst. 39, 607-614 (2006).
+  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
+  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
   '''))
+            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s\n:'%data['General']['Name']))
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
             lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-0.1 to +0.1):  '),0,WACV)
             reset = wx.Button(ISODIST,label='Reset modes')
@@ -6732,8 +6732,8 @@ For use of ISODISTORT, please cite:
         topSizer.Add(wx.StaticText(ISODIST,label='''
 For use of ISODISTORT, please cite:
   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
-  J. Appl. Cryst. 39, 607-614 (2006).
+  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
+  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
   '''))
         topSizer.Add(wx.StaticText(ISODIST,label=' Subset selection if desired:'))
         laueName = ['Cubic','Hexagonal','Trigonal','Tetragonal','Orthorhombic','Monoclinic','Triclinic']

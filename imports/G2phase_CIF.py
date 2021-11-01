@@ -650,7 +650,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += isodistort_warnings
                 else:
                     self.errors = "Error while processing ISODISTORT constraints"
-                    self.ISODISTORT_proc(blk,atomlbllist,ranIdlookup)
+                    self.ISODISTORT_proc(blk,atomlbllist,ranIdlookup,filename)
                     self.errors = ""
             returnstat = True
         return returnstat
@@ -666,7 +666,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if blk.get(i): return True
         return False
         
-    def ISODISTORT_proc(self,blk,atomlbllist,ranIdlookup):
+    def ISODISTORT_proc(self,blk,atomlbllist,ranIdlookup,filename):
         '''Process ISODISTORT items to create constraints etc.
         Constraints are generated from information extracted from 
         loops beginning with _iso_ and are placed into 
@@ -684,6 +684,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
         # used for all types of modes
         self.Constraints = []
         explaination = {}
+        G2obj.AddPhase2Index(self,filename)   # put phase info into Var index
         #----------------------------------------------------------------------
         # read in the ISODISTORT displacement modes
         #----------------------------------------------------------------------
@@ -721,8 +722,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += ' ERROR: _iso_deltacoordinate_label atom not found: '+lbl
                     error = True
                     continue
-                else:
-                    anum = atomlbllist.index(albl)
+                # else:
+                #     anum = atomlbllist.index(albl)
                 var = varLookup.get(vlbl)
                 if not var:
                     self.warnings += ' ERROR: _iso_deltacoordinate_label variable not found: '+lbl
@@ -864,8 +865,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += ' ERROR: _iso_deltaoccupancy_label atom not found: '+lbl
                     error = True
                     continue
-                else:
-                    anum = atomlbllist.index(albl)
+                # else:
+                #     anum = atomlbllist.index(albl)
                 var = varLookup.get(vlbl)
                 if not var:
                     self.warnings += ' ERROR: _iso_deltaoccupancy_label variable not found: '+lbl
@@ -984,14 +985,28 @@ class CIFPhaseReader(G2obj.ImportPhase):
         
             print( 70*'=')
             print('\nVar2ModeMatrix' ,'IsoVarList' )
+            def fmtConstr(i,head,l,var,k):
+                if len(head) + len(l) > 65:
+                    print(head+l)
+                    head = 20*' '
+                    l = ''
+                if k == 0: return
+                if k < 0 and i > 0:
+                    l += '  -  '
+                    k = -k
+                elif i > 0: 
+                    l += '  +  '
+                if k == 1:
+                    l += '%s ' % str(var)
+                else:
+                    l += '%.3f * %s' % (k,str(var))
+                return head,l
             for i,row in enumerate(displacivemodeInvmatrix):
-                l = ''
+                head = str(i) + ': ' + str(modeVarList[i]) + ' = '
+                line = ''
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                    if k == 0: continue
-                    if l: l += ' + '
-                    #l += lbl+' * '+str(k)
-                    l += str(G2varObj[j])+' * '+str(k)
-                print( str(i) + ': '+str(modeVarList[i])+' = '+l)
+                    head,line = fmtConstr(j,head,line,G2varObj[j],k)
+                print(head+line)
 
             # Get the ISODISTORT offset values
             coordVarDelta = {}
@@ -1009,12 +1024,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
             print('\nInverse relations using Var2ModeMatrix, NormList, IsoVarList')
             # compute the mode values from the reported coordinate deltas
             for i,(row,n) in enumerate(zip(displacivemodeInvmatrix,normlist)):
-                l = ''
-                for lbl,k in zip(coordVarLbl,row):
-                    if k == 0: continue
-                    if l: l += ' + '
-                    l += lbl+' * '+str(k)
-                print('a'+str(i)+' = '+str(modeVarList[i])+' = ('+l+')/'+str(n))
+                line = ''
+                head = 'a'+str(i)+': '+str(modeVarList[i])+' = ('
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                    head,line = fmtConstr(j,head,line,lbl,k)
+                print(head+line+') / '+('%.3f'%n))
+                breakpoint()
             print('\nCalculation checks\n')
             for i,(row,n) in enumerate(zip(displacivemodeInvmatrix,normlist)):
                 #l = ''

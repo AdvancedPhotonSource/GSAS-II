@@ -6676,7 +6676,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         if 'radio' not in data['ISODISTORT']:
             if not data['ISODISTORT']:
                 mainSizer = wx.BoxSizer(wx.VERTICAL)
-                mainSizer.Add(wx.StaticText(ISODIST,label='No ISODISTORT information found for this phase'),0,WACV)
+                mainSizer.Add(wx.StaticText(ISODIST,label='No ISODISTORT information found for this phase'))
                 SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
                 return
 #patch
@@ -6688,19 +6688,19 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.VERTICAL)   
             bottomSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:'%data['General']['Name']),0,WACV)
+            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:'%data['General']['Name']))
             topSizer.Add(wx.StaticText(ISODIST,label='''
 For use of ISODISTORT, please cite:
   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
   B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
   J. Appl. Cryst. 39, 607-614 (2006).
-  '''),0,WACV)
+  '''))
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
             lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-0.1 to +0.1):  '),0,WACV)
             reset = wx.Button(ISODIST,label='Reset modes')
             reset.Bind(wx.EVT_BUTTON,OnReset)
             lineSizer.Add(reset,0,WACV)
-            topSizer.Add(lineSizer,0,WACV)
+            topSizer.Add(lineSizer)
             slideSizer = wx.FlexGridSizer(0,3,0,0)
             slideSizer.AddGrowableCol(2,1)
             modeDisp = data['ISODISTORT']['modeDispl']
@@ -6728,13 +6728,13 @@ For use of ISODISTORT, please cite:
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.VERTICAL)   
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion search results:'),0,WACV)
+        topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion search results:'))
         topSizer.Add(wx.StaticText(ISODIST,label='''
 For use of ISODISTORT, please cite:
   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
   B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
   J. Appl. Cryst. 39, 607-614 (2006).
-  '''),0,WACV)
+  '''))
         topSizer.Add(wx.StaticText(ISODIST,label=' Subset selection if desired:'))
         laueName = ['Cubic','Hexagonal','Trigonal','Tetragonal','Orthorhombic','Monoclinic','Triclinic']
         littleSizer = wx.FlexGridSizer(0,8,5,5)

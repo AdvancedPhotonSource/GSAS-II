@@ -4893,9 +4893,20 @@ def UpdatePhaseData(G2frame,Item,data):
                 Obj = event.GetEventObject()
                 name,item = Indx[Obj.GetId()]
                 RMCPdict[name][item][1] = not RMCPdict[name][item][1]
-                            
+                
+            def OnRefSel(event):
+                RMCPdict['refinement'] = reftype.GetStringSelection()
+                wx.CallAfter(UpdateRMC)                
+                                           
             Indx = {}
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Select data for processing: '),0)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            if G2frame.RMCchoice == 'PDFfit':
+                reftype = wx.RadioBox(G2frame.FRMC,label='PDFfit refinement type:',choices=['normal','sequential'])
+                reftype.SetStringSelection(RMCPdict.get('refinement','normal'))
+                reftype.Bind(wx.EVT_RADIOBOX,OnRefSel)
+                topSizer.Add(reftype,0,WACV)
+            topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '),0,WACV)
+            mainSizer.Add(topSizer)
             if G2frame.RMCchoice == 'fullrmc':
                 Heads = ['Name','File','type','Plot','Delete']
                 fileSizer = wx.FlexGridSizer(5,5,5)
@@ -4967,7 +4978,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add(wx.StaticText(G2frame.FRMC,
                     label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0)
                 return 
-            # RMCProfile
+            elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
+                mainSizer.Add(wx.StaticText(G2frame.FRMC,label='sequential file list - TBD'))
+                return
+            # RMCProfile & PDFfit (Normal)
             Heads = ['Name','File','Format','Weight','Plot','Delete']
             fileSizer = wx.FlexGridSizer(6,5,5)
             Formats = ['RMC','GUDRUN','STOG']
@@ -5355,6 +5369,19 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             return mainSizer
             
         def RMCProfileSizer(RMCPdict):
+            
+            def CheckAtms(Atypes):
+                newAtm = False
+                for atm in Atypes:
+                    if atm not in data['RMC']['RMCProfile'].get('aTypes',{}):
+                        newAtm = True
+                        break
+                for atm in data['RMC']['RMCProfile'].get('aTypes',{}):
+                    if atm not in Atypes:
+                        newAtm = True
+                        break
+                return newAtm
+                
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
@@ -5367,16 +5394,23 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
 D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007), 
 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218'''))
             mainSizer.Add((5,5))
-            if not data['RMC']['RMCProfile']:
-                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
+            Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
+            if CheckAtms(Atypes):
                 aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
                 atSeq = list(aTypes.keys())
                 atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]
                 lenA = len(atSeq)
-                Pairs= []
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
-                    Pairs += pair
-                Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+                oldPairs = data['RMC']['RMCProfile'].get('Pairs',{})
+                Pairs = {}
+                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                    for pair in pairs:
+                        if pair in oldPairs:
+                            Pairs[pair] = oldPairs[pair]
+                        else:
+                            Pairs[pair] = [0.0,0.0,0.0]
+                data['RMC']['RMCProfile'].update({'aTypes':aTypes, 'atSeq':atSeq,'Pairs':Pairs,'Oxid':atOxid,})
+                
+            if not data['RMC']['RMCProfile']:
                 BVSpairs = []
                 if lenA > 1:
                     for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
@@ -5841,7 +5875,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
-            subSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit setup'),0,WACV)
+            subSizer.Add(wx.StaticText(G2frame.FRMC,label='For use of PDFfit, please cite:'),0,WACV)
             subSizer.Add((-1,-1),1,wx.EXPAND)
             mainSizer.Add(subSizer,0,WACV)
             mainSizer.Add((5,5))
@@ -5851,13 +5885,13 @@ C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen &&
 S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter 
 (2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219'''))
             mainSizer.Add((5,5))
-            if 'PDFfit' not in data['RMC']:
+            if 'PDFfit' not in data['RMC'] or not data['RMC']['PDFfit']:
                 SGData = G2spc.SpcGroup('P 1')[1]
                 metadata = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
-                'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],
+                'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],'refinement':'normal',
                 'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,       
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
@@ -5866,6 +5900,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
 #patch
             if 'SGData' not in RMCPdict:
                 RMCPdict['SGData'] = G2spc.SpcGroup('P 1')[1]
+            if 'refinement' not in RMCPdict:
+                RMCPdict['refinement'] = 'combined'
             if 'cellref' not in RMCPdict:
                 RMCPdict['cellref'] = False
             if 'metadata' not in RMCPdict:
@@ -5892,7 +5928,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer.Add(cellref,0,WACV)
                         
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'),0,WACV)
-            mainSizer.Add(AtomSizer())
+#            mainSizer.Add(AtomSizer())
             
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'),0,WACV)
             mainSizer.Add(PDFParmSizer(),0)

@@ -1964,9 +1964,7 @@ class GSASII(wx.Frame):
                     del Iparm1['CorrectionCode']
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
-            self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Comments'),
-                rd.comments)
+            self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
             Tmin1 = Tmin
@@ -2167,9 +2165,7 @@ class GSASII(wx.Frame):
             'Yminmax':[Ymin,Ymax]
             }
         self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
-        self.GPXtree.SetItemPyData(
-            self.GPXtree.AppendItem(Id,text='Comments'),
-            rd.comments)
+        self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Limits'),
             [(Tmin,Tmax),[Tmin,Tmax]])
@@ -2301,9 +2297,7 @@ class GSASII(wx.Frame):
             'Yminmax':[Ymin,Ymax]
             }
         self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
-        self.GPXtree.SetItemPyData(
-            self.GPXtree.AppendItem(Id,text='Comments'),
-            rd.comments)
+        self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
         self.GPXtree.SetItemPyData(
             self.GPXtree.AppendItem(Id,text='Limits'),
             [(Tmin,Tmax),[Tmin,Tmax]])
@@ -2505,9 +2499,7 @@ class GSASII(wx.Frame):
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.GPXtree.SetItemPyData(Id,[valuesdict,rd.smallangledata])
-            self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Comments'),
-                rd.comments)
+            self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Limits'),
                 [(Tmin,Tmax),[Tmin,Tmax]])
@@ -2620,9 +2612,7 @@ class GSASII(wx.Frame):
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.GPXtree.SetItemPyData(Id,[valuesdict,rd.reflectometrydata])
-            self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Comments'),
-                rd.comments)
+            self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Limits'),
                 [(Tmin,Tmax),[Tmin,Tmax]])
@@ -2708,10 +2698,10 @@ class GSASII(wx.Frame):
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
                 'Yminmax':[Ymin,Ymax],
                 }
-            self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='PDF Controls'),
-                    {'G(R)':[valuesdict,rd.pdfdata,HistName],
-                         'diffGRname':'','diffMult':1.0,'Rmax':Ymax,})
+            self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
+            self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Controls'),
+                {'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':'','diffMult':1.0,'Rmax':Ymax,'Type':rd.Type,
+                 'dscale':[1.0,False],'Fitrange':[Ymin,Ymax],'qdamp':[0.03,False],'qbroad':[0,False]})
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
         else:

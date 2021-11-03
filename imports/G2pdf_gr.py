@@ -38,7 +38,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         filepointer = open(filename,'r')
         Ndata = 0
         for i,S in enumerate(filepointer):
-            if '#' in S[:2]:
+            if '#L' in S[:2]:
                 break
             if len(S.split()) != 2:
                 break
@@ -65,13 +65,14 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         filepointer = open(filename,'r')
         for i,S in enumerate(filepointer):
             if not ifData:
+                if '#L' in S[:2]:
+                    ifData = True
+                    continue
                 if len(S) == 1:     #skip blank line
                     continue
                 if len(S.split()) != 2:
                     continue
                 self.comments.append(S[:-1])
-                if '#' in S[:2]:
-                    ifData = True
             else:
                 vals = S.split()
                 if len(vals) >= 2:
@@ -81,8 +82,9 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
                         y.append(float(data[1]))
                     except ValueError:
                         msg = 'Error in line '+str(i+1)
-                        print (msg)
+                        print (msg,S)
                         continue
+        self.Type = 'X f(q)'             #assume X-ray PDF
         self.pdfdata = np.array([
             np.array(x), # x-axis values q
             np.array(y), # pdf f(q))
@@ -109,7 +111,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         filepointer = open(filename,'r')
         Ndata = 0
         for i,S in enumerate(filepointer):
-            if '#' in S[:2]:
+            if '#L r' in S[:4]:
                 break
         for i,S in enumerate(filepointer):            
             vals = S.split()
@@ -132,13 +134,16 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         y = []
         ifData = False
         filepointer = open(filename,'r')
+        self.Type = 'N g(r)'
         for i,S in enumerate(filepointer):
             if not ifData:
                 if len(S) == 1:     #skip blank line
                     continue
-                self.comments.append(S[:-1])
-                if '#' in S[:2]:
+                if '#L r' in S[:4]:
                     ifData = True
+                if 'X-Ray' in S:
+                    self.Type = 'X g(r)'
+                self.comments.append(S[:-1])
             else:
                 vals = S.split()
                 if len(vals) >= 2:
@@ -148,7 +153,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
                         y.append(float(data[1]))
                     except ValueError:
                         msg = 'Error in line '+str(i+1)
-                        print (msg)
+                        print (msg,S[:-1])
                         continue
         self.pdfdata = np.array([
             np.array(x), # x-axis values r
@@ -216,6 +221,7 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
             np.array(x), # x-axis values r
             np.array(y), # pdf g(r)
             ])
+        self.Type = 'X g(r)'         #assume X-ray PDF
         self.pdfentry[0] = filename
         self.pdfentry[2] = 1 # xy file only has one bank
         self.idstring = ospath.basename(filename)

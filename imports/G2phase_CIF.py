@@ -241,6 +241,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
+            if E:   #try lookup from number  - found full symbol?                
+                SpGrpNorm = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
+                if SpGrpNorm:
+                    E,SGData = G2spc.SpcGroup(SpGrpNorm) 
             # nope, try the space group "out of the Box"
             if E:
                 self.warnings += 'ERROR in space group symbol '+SpGrp
@@ -990,7 +994,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     print(head+l)
                     head = 20*' '
                     l = ''
-                if k == 0: return
+#                if k == 0: return
                 if k < 0 and i > 0:
                     l += '  -  '
                     k = -k
@@ -1005,7 +1009,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 head = str(i) + ': ' + str(modeVarList[i]) + ' = '
                 line = ''
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                    head,line = fmtConstr(j,head,line,G2varObj[j],k)
+                    head,line = fmtConstr(j,head,line,G2varObj[j].name,k)
                 print(head+line)
 
             # Get the ISODISTORT offset values
@@ -1029,7 +1033,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
                     head,line = fmtConstr(j,head,line,lbl,k)
                 print(head+line+') / '+('%.3f'%n))
-                breakpoint()
             print('\nCalculation checks\n')
             for i,(row,n) in enumerate(zip(displacivemodeInvmatrix,normlist)):
                 #l = ''

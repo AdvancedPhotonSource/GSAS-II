@@ -2921,12 +2921,15 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.BeginBusyCursor()
             radio,rundata = ISO.GetISODISTORT(data,parentcif)
             wx.EndBusyCursor()
-            data['ISODISTORT']['radio'] = radio
-            data['ISODISTORT']['rundata'] = rundata
-            data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
-            data['ISODISTORT']['selection'] = None
-            print('ISODISTORT run complete')
-            UpdateISODISTORT()
+            if radio and rundata:
+                data['ISODISTORT']['radio'] = radio
+                data['ISODISTORT']['rundata'] = rundata
+                data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
+                data['ISODISTORT']['selection'] = None
+                print('ISODISTORT run complete')
+                UpdateISODISTORT()
+            else:
+                G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see opened web paage')        
         else:
             G2G.G2MessageBox(G2frame,'ISODISTORT run cancelled')        
                 
@@ -5395,11 +5398,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218'''))
             mainSizer.Add((5,5))
             Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
+            aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+            atSeq = list(aTypes.keys())
+            lenA = len(atSeq)
+            atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]
             if CheckAtms(Atypes):
-                aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
-                atSeq = list(aTypes.keys())
-                atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]
-                lenA = len(atSeq)
                 oldPairs = data['RMC']['RMCProfile'].get('Pairs',{})
                 Pairs = {}
                 for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
@@ -5408,9 +5411,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                             Pairs[pair] = oldPairs[pair]
                         else:
                             Pairs[pair] = [0.0,0.0,0.0]
-                data['RMC']['RMCProfile'].update({'aTypes':aTypes, 'atSeq':atSeq,'Pairs':Pairs,'Oxid':atOxid,})
+                data['RMC']['RMCProfile'].update({'aTypes':aTypes,'atSeq':atSeq,'Pairs':Pairs,'Oxid':atOxid,})
                 
-            if not data['RMC']['RMCProfile']:
+            if not data['RMC']['RMCProfile'] or 'metadata' not in RMCPdict:
+                Pairs = {}
+                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                    for pair in pairs:
+                        Pairs[pair] = [0.0,0.0,0.0]
                 BVSpairs = []
                 if lenA > 1:
                     for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
@@ -5424,11 +5431,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 runTimes = [10.,1.]
                 metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
                     'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
-                data['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
-                    'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,'FitScale':False,
+                data['RMC']['RMCProfile'].update({'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
+                    'histogram':['',1.0],'files':files,'metadata':metadata,'FitScale':False,'atSeq':atSeq,
                     'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,'Swaps':[],
-                    'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
-                    'Stretch search':10.,'Pot. Temp.':300.,'useGPU':False,}}
+                    'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Pairs':Pairs,
+                    'Stretch search':10.,'Pot. Temp.':300.,'useGPU':False,}})
                 
             data['RMC']['RMCProfile']['Isotope'] = copy.copy(data['General']['Isotope'])
             data['RMC']['RMCProfile']['Isotopes'] = copy.deepcopy(data['General']['Isotopes'])
@@ -6689,7 +6696,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             dispVal.SetValue(modeDisp[idsp])
             err = G2mth.ApplyModeDisp(data)
             if err:
-                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+                G2G.G2MessageBox(G2frame,'Do Draw atoms first')      
+            FindBondsDraw(data)                
             G2plt.PlotStructure(G2frame,data)
             
         def OnDispVal(invalid,value,tc):
@@ -6698,6 +6706,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             err = G2mth.ApplyModeDisp(data)
             if err:
                 G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+            FindBondsDraw(data)                
             G2plt.PlotStructure(G2frame,data)
            
         def OnReset(event):
@@ -6705,6 +6714,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             err = G2mth.ApplyModeDisp(data)
             if err:
                 G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+            FindBondsDraw(data)                
             G2plt.PlotStructure(G2frame,data)
             UpdateISODISTORT()                                   
         

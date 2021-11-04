@@ -13,10 +13,23 @@
 # $Id: kSUBGROUPSMAG.py 3465 2018-07-10 16:41:00Z vondreele $
 ########### SVN repository information ###################
 from __future__ import division, print_function
+import subprocess as subp
+import os.path
 import requests
 import copy
 isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+
+def HandleError(out):
+    open('out.html','wb').write(out.encode("utf-8"))
+    url = os.path.realpath('out.html')
+    try:
+        os.startfile(url)
+    except AttributeError:
+        try: # should work on MacOS and most linux versions
+            subp.call(['open', url])
+        except:
+            print('Could not open URL')
 
 def GetISODISTORT(Phase,parentcif):
     '''Run Stokes & Campbell ISODISTORT. 
@@ -62,7 +75,11 @@ def GetISODISTORT(Phase,parentcif):
     
     #recover required info for the distortion search; includes info from cif file (no longer needed)
     
-    pos = out2.index('<p><FORM')
+    try:
+        pos = out2.index('<p><FORM')
+    except ValueError:
+        HandleError(out2)
+        return [],[]
     data = {}
     while True:
         try:
@@ -94,7 +111,12 @@ def GetISODISTORT(Phase,parentcif):
     
     radio = {}
     num = 0
-    pos = out3.index('RADIO')
+    try:
+        pos = out3.index('RADIO')
+    except ValueError:
+        HandleError(out3)
+        return [],[]
+        
     while True:
         try:
             posF = out3[pos:].index('<BR>')+pos
@@ -108,70 +130,73 @@ def GetISODISTORT(Phase,parentcif):
     return radio,data2
 
 def GetISODISTORTcif(Phase):
-   '''Run Stokes & Campbell ISODISTORT. 
-   Selection of one of the order parameter disrections is returned to the BYU 
-   form site which returns the text of a cif file to be used to create the new phase
-   which can apply the distortion mode constraints
+    '''Run Stokes & Campbell ISODISTORT. 
+    Selection of one of the order parameter disrections is returned to the BYU 
+    form site which returns the text of a cif file to be used to create the new phase
+    which can apply the distortion mode constraints
+     
+    :params dict Phase: GSAS-II phase data; contains result of GetISODISTORT above & selection
+    
+    :returns: CIFfile str: name of cif file created by this in local directory
+    '''
+    
+    ISOdata = Phase['ISODISTORT']
+    data2 = ISOdata['rundata']
+    #choose one & resubmit
+    data2['origintype'] = 'method1'
+    data2['orderparam'] = ISOdata['selection'][1]
+    data2['input'] = 'distort'
+    # for item in data2:
+    #     print(item,data2[item])
+    out4 = requests.post(isoformsite,data=data2).text
+    #print(out4)
+    #open('pyout4.html','wb').write(out4.encode("utf-8"))
+     
+    #retrieve data needed for next(last) step
 
-   :params dict Phase: GSAS-II phase data; contains result of GetISODISTORT above & selection
-   
-   :returns: CIFfile str: name of cif file created by this in local directory
-   '''
-   
-   ISOdata = Phase['ISODISTORT']
-   data2 = ISOdata['rundata']
-   #choose one & resubmit
-   data2['origintype'] = 'method1'
-   data2['orderparam'] = ISOdata['selection'][1]
-   data2['input'] = 'distort'
-   # for item in data2:
-   #     print(item,data2[item])
-   out4 = requests.post(isoformsite,data=data2).text
-   #print(out4)
-   #open('pyout4.html','wb').write(out4.encode("utf-8"))
-
-   #retrieve data needed for next(last) step
-
-   pos = out4.index('<FORM ACTION')
-   data3 = {}
-   while True:
-       try:
-           posB = out4[pos:].index('INPUT TYPE')+pos
-           posF = out4[posB:].index('>')+posB
-           items = out4[posB:posF].split('=',3)
-           name = items[2].split()[0].replace('"','')
-           if 'subsetting' in name:
-               data3[name] = ''
-               pos = posF
-               continue
-           elif 'atomsfile' in name:
-               data3[name] = ' '
-               pos = posF
-               continue
-           vals = items[3].replace('"','')
-           data3[name] = vals
-           pos = posF
-           if 'lattparamsub' in name:
-               break
-       except ValueError:
-           break
+    try:
+        pos = out4.index('<FORM ACTION')
+    except ValueError:
+        HandleError(out4)
+    data3 = {}
+    while True:
+        try:
+            posB = out4[pos:].index('INPUT TYPE')+pos
+            posF = out4[posB:].index('>')+posB
+            items = out4[posB:posF].split('=',3)
+            name = items[2].split()[0].replace('"','')
+            if 'subsetting' in name:
+                data3[name] = ''
+                pos = posF
+                continue
+            elif 'atomsfile' in name:
+                data3[name] = ' '
+                pos = posF
+                continue
+            vals = items[3].replace('"','')
+            data3[name] = vals
+            pos = posF
+            if 'lattparamsub' in name:
+                break
+        except ValueError:
+            break
        
    #request a cif file    
        
-   data3['origintype'] = 'structurefile'
-   data3['inputvalues'] = 'false'
-   data3['atomicradius'] = '0.4'
-   data3['bondlength'] = '2.50'
-   data3['modeamplitude'] = '1.0'
-   data3['strainamplitude'] = '0.1'
-   # for item in data3:
-   #     print(item,data3[item])
-   k = requests.post(isoformsite,data=data3)
-   out5 = k.text   #this is output cif!
-   #print(out5)
-   names = ISOdata['selection'][1].split()
-   cifFile = '%s_%s%s%s.cif'%(Phase['General']['Name'],names[1],names[2].replace('*','_'),names[3])
-   fl = open(cifFile,'wb')
-   fl.write(out5.encode("utf-8"))
-   fl.close()
-   return cifFile
+    data3['origintype'] = 'structurefile'
+    data3['inputvalues'] = 'false'
+    data3['atomicradius'] = '0.4'
+    data3['bondlength'] = '2.50'
+    data3['modeamplitude'] = '1.0'
+    data3['strainamplitude'] = '0.1'
+    # for item in data3:
+    #     print(item,data3[item])
+    k = requests.post(isoformsite,data=data3)
+    out5 = k.text   #this is output cif!
+    #print(out5)
+    names = ISOdata['selection'][1].split()
+    cifFile = '%s_%s%s%s.cif'%(Phase['General']['Name'],names[1],names[2].replace('*','_'),names[3])
+    fl = open(cifFile,'wb')
+    fl.write(out5.encode("utf-8"))
+    fl.close()
+    return cifFile

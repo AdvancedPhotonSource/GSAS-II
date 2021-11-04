@@ -1503,9 +1503,10 @@ class ExportBaseclass(object):
             # no constraints can use varyList
             varyList = covDict.get('varyList')
         elif varyList is None:
-            # old GPX file from before pre-constraint varyList is saved
-            print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
-            raise Exception(' *** Export aborted ***')
+            varyList = []
+            # # old GPX file from before pre-constraint varyList is saved
+            # print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
+            # raise Exception(' *** Export aborted ***')
         else:
             varyList = list(varyList)
         # add symmetry-generated constraints

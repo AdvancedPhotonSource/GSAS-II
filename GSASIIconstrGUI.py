@@ -1519,18 +1519,20 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         seqmode = data.get('_seqmode','wildcards-only')
         seqhistnum = min(data.get('_seqhist',0),len(seqHistList)-1)
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if not len(Phases) or not len(Histograms):
-        dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
-            'No phases or histograms')
-        dlg.CenterOnParent()
-        dlg.ShowModal()
-        dlg.Destroy()
-        return
+    G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
+#removed this check as it prevents examination of ISODISTORT constraints without data
+    # if not len(Phases) or not len(Histograms):        
+    #     dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
+    #         'No phases or histograms')
+    #     dlg.CenterOnParent()
+    #     dlg.ShowModal()
+    #     dlg.Destroy()
+    #     return
     G2obj.IndexAllIds(Histograms,Phases)
-    for p in Phases:
-        if 'ISODISTORT' in Phases[p] and 'G2VarList' in Phases[p]['ISODISTORT']:
-            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
-            break
+    # for p in Phases:
+    #     if 'ISODISTORT' in Phases[p] and 'G2VarList' in Phases[p]['ISODISTORT']:
+    #         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
+    #         break
     ###### patch: convert old-style (str) variables in constraints to G2VarObj objects #####
     for key,value in data.items():
         if key.startswith('_'): continue

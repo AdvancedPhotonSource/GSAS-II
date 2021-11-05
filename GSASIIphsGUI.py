@@ -2913,6 +2913,11 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GPXtree.SelectItem(sub)
         
     def OnRunISODISTORT(event):
+        ''' this needs to setup for method #3 or #4 in ISODISTORT
+        after providing parent cif:
+        #3 asks for transformation matrix & space group of child structure
+        #4 asks for cif file of child structure
+        '''
         import ISODISTORT as ISO
         dlg = wx.FileDialog(General, 'Choose parent cif file for ISODISTORT',G2G.GetImportPath(G2frame),
             style=wx.FD_OPEN ,wildcard='(*.cif)|*.cif')
@@ -4899,8 +4904,24 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnRefSel(event):
                 RMCPdict['refinement'] = reftype.GetStringSelection()
-                wx.CallAfter(UpdateRMC)                
-                                           
+                wx.CallAfter(UpdateRMC)
+
+            def OnAddPDF(event):
+                usedList = RMCPdict['seqfiles']
+                PDFdict = dict([item[1:] for item in G2frame.GetFileList('PDF')])
+                PDFnames = [item for item in PDFdict if item not in usedList]
+                dlg = G2G.G2MultiChoiceDialog(G2frame.FRMC,'PDF dataset',
+                    'Select G(r) data to use in seq. PDFfit',PDFnames)
+#                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+                if dlg.ShowModal() == wx.ID_OK:
+                    PDFuse = dlg.GetSelections()
+                    for item in PDFuse:
+                        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFnames[item])
+                        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
+                        RMCPdict['seqfiles'].append([PDFnames[item],data])
+                dlg.Destroy()
+                wx.CallAfter(UpdateRMC)
+                
             Indx = {}
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             if G2frame.RMCchoice == 'PDFfit':
@@ -4982,7 +5003,64 @@ def UpdatePhaseData(G2frame,Item,data):
                     label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0)
                 return 
             elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
-                mainSizer.Add(wx.StaticText(G2frame.FRMC,label='sequential file list - TBD'))
+                
+                def OnSetColVal(event):
+                    
+                    parms = {'Rmin':[0.0,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],'qdamp':[0.0,0.5],'qbroad':[0.0,0.1]}
+                    c =  event.GetCol()
+                    if c >= 0:
+                        if c in [3,5,7]:
+                            seqGrid.ClearSelection()
+                            seqGrid.SelectCol(c,True)
+                            if seqGrid.GetColLabelValue(c) != 'refine': return
+                            choice = ['Y - vary all','N - vary none',]
+                            dlg = wx.SingleChoiceDialog(G2frame,'Select refinement option for '+seqGrid.GetColLabelValue(c-1),
+                                'Refinement controls',choice)
+                            dlg.CenterOnParent()
+                            if dlg.ShowModal() == wx.ID_OK:
+                                sel = dlg.GetSelection()
+                                varib = colLabels[c-1]
+                                if sel == 0:
+                                    for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][varib][1]=True
+                                else:
+                                    for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][varib][1]=False
+                        elif c in [0,1,2,4,6]:
+                            seqGrid.ClearSelection()
+                            seqGrid.SelectCol(c,True)
+                            parm = colLabels[c]
+                            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter value for '+parm,0.0,parms[parm])
+                            if dlg.ShowModal() == wx.ID_OK:
+                                value = dlg.GetValue()
+                                if c in [2,4,6]:
+                                    for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][parm][0] = value
+                                else:
+                                    for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1]['Fitrange'][c] = value
+                        wx.CallAfter(UpdateRMC)
+                                
+                if 'seqfiles' not in RMCPdict:
+                    RMCPdict['seqfiles'] = []
+                topSizer = wx.BoxSizer(wx.HORIZONTAL)
+                topSizer.Add(wx.StaticText(G2frame.FRMC,label=' Sequential file list for PDFfit:  '),0,WACV)
+                addPDF = wx.Button(G2frame.FRMC,label='Add PDF G(r) data sets')
+                addPDF.Bind(wx.EVT_BUTTON,OnAddPDF)
+                topSizer.Add(addPDF,0,WACV)
+                mainSizer.Add(topSizer)
+                table = [[item[1]['Fitrange'][0],item[1]['Fitrange'][1],
+                    item[1]['dscale'][0],item[1]['dscale'][1],item[1]['qdamp'][0],item[1]['qdamp'][1],
+                    item[1]['qbroad'][0],item[1]['qbroad'][1],] for item in RMCPdict['seqfiles']]
+                colLabels = ['Rmin','Rmax','dscale','refine','qdamp','refine','qbroad','refine']
+                rowLabels = [item[0] for item in RMCPdict['seqfiles']]
+                Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_FLOAT+':10,2',
+                         wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                         wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                         wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]
+                seqTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                seqGrid = G2G.GSGrid(G2frame.FRMC)
+                seqGrid.SetTable(seqTable, True)
+                seqGrid.AutoSizeColumns(True)
+                seqGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, OnSetColVal)
+                mainSizer.Add(seqGrid)
+                
                 return
             # RMCProfile & PDFfit (Normal)
             Heads = ['Name','File','Format','Weight','Plot','Delete']
@@ -5405,7 +5483,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             if CheckAtms(Atypes):
                 oldPairs = data['RMC']['RMCProfile'].get('Pairs',{})
                 Pairs = {}
-                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+#                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                     for pair in pairs:
                         if pair in oldPairs:
                             Pairs[pair] = oldPairs[pair]
@@ -5415,12 +5494,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 
             if not data['RMC']['RMCProfile'] or 'metadata' not in RMCPdict:
                 Pairs = {}
-                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+#                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                     for pair in pairs:
                         Pairs[pair] = [0.0,0.0,0.0]
                 BVSpairs = []
                 if lenA > 1:
-                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+#                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
+                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                         BVSpairs += pair
                 BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
                 files = {'Neutron real space data; G(r): ':['Select',0.05,'G(r)','RMC',],
@@ -5437,6 +5518,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Pairs':Pairs,
                     'Stretch search':10.,'Pot. Temp.':300.,'useGPU':False,}})
                 
+#            data['RMC']['RMCProfile']['aTypes'] = {aTypes[atype] for atype in aTypes if atype in Atypes}
             data['RMC']['RMCProfile']['Isotope'] = copy.copy(data['General']['Isotope'])
             data['RMC']['RMCProfile']['Isotopes'] = copy.deepcopy(data['General']['Isotopes'])
             data['RMC']['RMCProfile']['NoAtoms'] = copy.copy(data['General']['NoAtoms'])

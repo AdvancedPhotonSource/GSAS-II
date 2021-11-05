@@ -2620,6 +2620,9 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     Isotope = RMCPdict['Isotope']
     Isotopes = RMCPdict['Isotopes']
     Atypes = RMCPdict['aTypes']
+    if 'Va' in Atypes:
+        Isotope['Va'] = 'Nat. Abund.'
+        Isotopes['Va'] = {'Nat. Abund.':{'SL':[0.0,0.0]}}
     atPairs = RMCPdict['Pairs']
     Files = RMCPdict['files']
     BraggWt = RMCPdict['histogram'][1]
@@ -2651,13 +2654,16 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     for pair in Pairs:
         pair = pair.replace(' ','')
         at1,at2 = pair.split('-')
-        ncoef = Isotopes[at1][Isotope[at1]]['SL'][0]*Natoms[at1]/sumatms
-        ncoef *= Isotopes[at2][Isotope[at2]]['SL'][0]*Natoms[at2]/sumatms
+        if at1 == 'Va' or at2 == 'Va':
+            ncoef = 0.0
+        else:
+            ncoef = Isotopes[at1][Isotope[at1]]['SL'][0]*Natoms[at1]/sumatms
+            ncoef *= Isotopes[at2][Isotope[at2]]['SL'][0]*Natoms[at2]/sumatms
         if at1 != at2:
             ncoef *= 2.
         Ncoeff += [ncoef,]
-    pairMin = [atPairs[pair] for pair in Pairs if pair in atPairs]
-    maxMoves = [Atypes[atm] for atm in Atseq if atm in Atypes]
+    pairMin = [atPairs[pair] if pair in atPairs else [0.0,0.,0.] for pair in Pairs ]
+    maxMoves = [Atypes[atm] if atm in Atypes else 0.0 for atm in Atseq ]
     fname = Name+'.dat'
     fl = open(fname,'w')
     fl.write(' %% Hand edit the following as needed\n')

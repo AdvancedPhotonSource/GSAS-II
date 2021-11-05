@@ -2692,7 +2692,9 @@ class GSASII(wx.Frame):
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(self.root,text=HistName)
             Ymin = np.min(rd.pdfdata[1])                 
-            Ymax = np.max(rd.pdfdata[1])                 
+            Ymax = np.max(rd.pdfdata[1])
+            Rmin = np.min(rd.pdfdata[0])                 
+            Rmax = np.max(rd.pdfdata[0])                 
             valuesdict = {
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
@@ -2701,7 +2703,7 @@ class GSASII(wx.Frame):
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Controls'),
                 {'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':'','diffMult':1.0,'Rmax':Ymax,'Type':rd.Type,
-                 'dscale':[1.0,False],'Fitrange':[Ymin,Ymax],'qdamp':[0.03,False],'qbroad':[0,False]})
+                 'dscale':[1.0,False],'Fitrange':[Rmin,Rmax],'qdamp':[0.03,False],'qbroad':[0,False]})
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
         else:

@@ -266,3 +266,9 @@ for each phase. Requires GSAS-II be restarted to take effect. Default is False.
 
 This option is under development and is not fully tested. 
 '''
+
+svn_exec = None
+'''Defines the full path to a subversion executable. 
+If None (the default), GSAS-II will search for a svn or svn.exe file 
+in the current path or in the location where the current Python is located.
+'''

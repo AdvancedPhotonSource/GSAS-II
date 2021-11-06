@@ -252,6 +252,19 @@ def whichsvn():
     host,port,etc = getsvnProxy()
     if GetConfigValue('debug') and host:
         print('DBG_Using proxy host {} port {}'.format(host,port))
+    if GetConfigValue('svn_exec'):
+        exe_file = GetConfigValue('svn_exec')
+        print('Using ',exe_file)
+        if is_exe(exe_file):
+            try:
+                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
+                res = p.stdout.read()
+                if not res: return
+                p.communicate()
+                svnLocCache = os.path.abspath(exe_file)
+                return svnLocCache
+            except:
+                pass
     # add likely places to find subversion when installed with GSAS-II
     pathlist = os.environ["PATH"].split(os.pathsep)
     pathlist.insert(0,os.path.split(sys.executable)[0])
@@ -1156,7 +1169,9 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
     if newpath not in sys.path: sys.path.append(newpath)
     newpath = os.path.join(path2GSAS2,'exports')
     if newpath not in sys.path: sys.path.append(newpath)
+    LoadConfig(printInfo)
 
+def LoadConfig(printInfo=True):
     # setup read of config.py, if present
     global configDict
     try:
@@ -1300,6 +1315,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''
+    LoadConfig()
     import time
     time.sleep(1) # delay to give the main process a chance to exit
     # perform an update and restart GSAS-II

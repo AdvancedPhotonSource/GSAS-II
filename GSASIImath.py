@@ -2069,8 +2069,107 @@ def ApplyModulation(data,tau):
                 drawatom[dcx+3:dcx+6] = M
     return drawAtoms,Fade
 
+def patchIsoDisp(ISO):
+    '''patch: look for older ISODISTORT imports (<Nov 2021)'''
+    print('''
+======================================================================
+Warning: The ISODISTORT modes were read before the importer
+was corrected to save displacement offsets. Will attempt to correct
+from ParentStructure (correct only if displacivemode values are all
+zero in initial CIF.) Reimporting is suggested. 
+======================================================================
+''')
+    ISO['G2coordOffset'] = []
+    for Ilbl in ISO['IsoVarList']:
+        albl = Ilbl[:Ilbl.rfind('_')]
+        v = Ilbl[Ilbl.rfind('_')+1:]
+        ISO['G2coordOffset'].append(
+                ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+                ) # this will be wrong if the _iso_deltacoordinate_value are not zero
+
+def CalcIsoDisp(Phase,parmDict={},covdata={}):
+    '''Compute the ISODISTORT displacement variable values from the
+    atomic coordinates, applying the p::dA?:n displacements if parmDict
+    is supplied. Uncertainties are computed if covdata is supplied.
+    '''
+    ISO = Phase['ISODISTORT']
+    if 'G2coordOffset' not in ISO: patchIsoDisp(ISO) # patch Nov 2021
+    atmIndex = {a[-1]:i for i,a in enumerate(Phase['Atoms'])}
+    cx,ct,cs,ci = getAtomPtrs(Phase,False)
+    coordOffset = {xyz:cx+i for i,xyz in enumerate(('x','y','z'))}
+    # get uncertainties on modes and compute them for displacements
+    if 'varyList' in covdata:
+        modes = [i.name for i in ISO['G2ModeList']]
+        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[])))
+        modeEsds = [covDict.get(str(g2),-1) for g2 in modes]
+        vcov = getVCov(modes,covdata['varyList'],covdata['covMatrix'])
+        normMode2Var = ISO['Mode2VarMatrix']*ISO['NormList']
+        # to get displacements from modes use np.dot(normMode2Var,vector-of-mode-values)
+        sigMat = np.inner(normMode2Var,np.inner(normMode2Var,vcov))
+        var = np.diag(sigMat)
+        dispEsds = list(np.where(var>0.,np.sqrt(var),-0.0001))
+    else:
+        dispEsds = len(ISO['G2VarList'])*[-0.0001]
+        modeEsds = len(ISO['G2ModeList'])*[-0.0001]
+
+    dispValues = []
+    for iso,g2,off in zip(ISO['IsoVarList'],ISO['G2VarList'],ISO['G2coordOffset']):
+        if g2.atom not in atmIndex:
+            print('Atom not found in atom list',g2)
+            return [],[],[],[]
+        atm = Phase['Atoms'][atmIndex[g2.atom]]
+        pos = atm[coordOffset[g2.name[-1]]] + parmDict.get(str(g2),0.0) - off
+        dispValues.append(pos)
+
+    modeValues = np.dot(ISO['Var2ModeMatrix'],dispValues) / ISO['NormList']
+        
+    return dispValues,dispEsds,modeValues,modeEsds
+
+def CalcIsoCoords(Phase,parmDict,covdata={}):
+    '''Compute the coordinate positions from ISODISTORT displacement mode values
+    Uncertainties are computed if covdata is supplied.
+
+    :returns: modeDict,posDict where modeDict contains pairs of mode values 
+    and mode s.u. values; posDict contains pairs of displacement values 
+    and their s.u. values.
+    '''
+    ISO = Phase['ISODISTORT']
+    if 'G2coordOffset' not in ISO: patchIsoDisp(ISO) # patch Nov 2021
+    modes = [i.name for i in ISO['G2ModeList']]  # modes from the parmDict
+    normMode2Var = ISO['Mode2VarMatrix']*ISO['NormList']
+    modeVals = []
+    for i in modes:
+        if i not in parmDict:
+            print('Mode ',i,'not defined in the parameter dictionary')
+            return {},{}
+        try:
+            modeVals.append(float(parmDict[i][0]))
+        except:
+            modeVals.append(float(parmDict[i]))
+    if 'varyList' in covdata:
+        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[])))
+        modeEsds = [covDict.get(str(g2),-1) for g2 in modes]
+        vcov = getVCov(modes,covdata['varyList'],covdata['covMatrix'])
+        sigMat = np.inner(normMode2Var,np.inner(normMode2Var,vcov))
+        var = np.diag(sigMat)
+        dispEsds = list(np.where(var>0.,np.sqrt(var),-0.0001))
+    else:
+        modeEsds = len(ISO['G2ModeList'])*[-0.0001]
+        dispEsds = len(ISO['G2VarList'])*[-0.0001]        
+    dispValues =   np.dot(normMode2Var,modeVals)
+    modeDict = {str(g2):([val,esd]) for val,g2,esd in
+                        zip(modeVals,ISO['G2ModeList'],modeEsds)}
+    posDict = {str(g2).replace('::dA','::A'):([dsp,esd]) for dsp,g2,off,esd in
+                        zip(dispValues,ISO['G2VarList'],ISO['G2coordOffset'],dispEsds)}
+    return modeDict,posDict
+
 def ApplyModeDisp(data):
-    ''' Applies ISODISTORT mode displacements to drawing atoms
+    ''' Applies ISODISTORT mode displacements to drawing atoms. 
+    This changes the contents of the Draw Atoms positions but not 
+    the Atoms positions.
+
+    :param dict data: the contents of the Phase data tree item for a 
+      particular phase
     '''
     generalData = data['General']
     Atoms= data['Atoms']

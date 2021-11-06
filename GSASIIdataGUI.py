@@ -4437,6 +4437,7 @@ class GSASII(wx.Frame):
                 self.SetTitleByGPX()
                 self.EnableRefineCommand()
                 self.init_vars()
+                G2obj.IndexAllIds({},{}) # clear old index info
         finally:
             dlg.Destroy()
 
@@ -5045,7 +5046,7 @@ class GSASII(wx.Frame):
         if badnum > 1: print('  ...hist not in histIdList error occured {} times'.format(badnum))
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
-        
+    
     def MakeLSParmDict(self,seqHist=None):
         '''Load all parameters used for computation from the tree into a
         dict of paired values [value, refine flag]. Note that this is
@@ -6438,13 +6439,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         # Phase/ ISODISTORT tab
-        G2G.Define_wxId('wxID_ISODNEWPHASE',)       
         self.ISODData = wx.MenuBar()
         self.PrefillDataMenu(self.ISODData)
         self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.ISODDataEdit = wx.Menu(title='')
         self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
-        self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make cif file','From ISODISTORT selection')
+        G2G.Define_wxId('wxID_ISODNEWPHASE')
+        self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make CIF file','From ISODISTORT selection')
+        G2G.Define_wxId('wxID_SHOWISO1')
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show ISODISTORT modes',
+                'Show ISODISTORT mode values for all phases')
         self.PostfillDataMenu()
 
         # Phase / Layer tab 

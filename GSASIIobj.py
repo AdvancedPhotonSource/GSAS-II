@@ -1171,19 +1171,23 @@ corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phas
  "*n*::" cannot be determined as the phase number is not yet assigned.]
 
 Displacive modes are a bit complex in that they relate to delta displacements, relative to an offset value for each coordinate, 
-and because the modes are normalized, while GSAS-II also uses displacements, but these are added to the coordinates after 
-each refinement cycle and the delta values are set to zero. ISODISTORT uses fixed offsets (subtracted from the actual position 
-to obtain the delta values) that are taken from ``_iso_coordinate_formula`` and these are placed in 
-``.Phase['ISODISTORT']['ParentStructure]`` (keyed by atom label). The normalization factors (which the delta values are divided by) 
-are taken from ``_iso_displacivemodenorm_value`` and are placed in ``.Phase['ISODISTORT']['NormList']`` in the same order as as 
-``...['IsoModeList']`` and ``...['G2ModeList']``.
+and because the modes are normalized. While GSAS-II also uses displacements,  these are added to the coordinates after 
+each refinement cycle and then the delta values are set to zero. 
+ISODISTORT uses fixed offsets (subtracted from the actual position 
+to obtain the delta values) that are taken from the parent structure coordinate and the initial offset value 
+(in ``_iso_deltacoordinate_value``) and these are placed in 
+``.Phase['ISODISTORT']['G2coordOffset']`` in the same order as ``.Phase['ISODISTORT']['G2ModeList']`` and 
+``.Phase['ISODISTORT']['IsoVarList']``. 
+
+The normalization factors (which the delta values are divided by) 
+are taken from ``_iso_displacivemodenorm_value`` and are placed in ``.Phase['ISODISTORT']['NormList']`` in the same 
+order as as ``...['IsoModeList']`` and ``...['G2ModeList']``.
 
 The CIF contains a sparse matrix, from the ``loop_`` containing ``_iso_displacivemodematrix_value`` which provides the equations 
 for determining the mode values from the coordinates, that matrix is placed in ``.Phase['ISODISTORT']['Mode2VarMatrix']``. 
 The matrix is inverted to produce ``.Phase['ISODISTORT']['Var2ModeMatrix']``, which determines how to compute the
-mode values from the delta coordinate values. These values are used for the in :func:`GSASIIconstrGUI.ShowIsoDistortCalc` 
+mode values from the delta coordinate values. These values are used for the in :func:`GSASIIconstrGUI.ShowIsoDistortCalc`,
 which shows coordinate and mode values, the latter with s.u. values. 
-
 
 ------------------------------
 Occupancy modes

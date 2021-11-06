@@ -708,44 +708,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
             # read in the coordinate offset variables names and map them to G2 names/objects
             coordVarLbl = []
             G2varObj = []
+            G2coordOffset = []
             idlist = []
-            error = False
-            for id,lbl in zip(
-                blk.get('_iso_deltacoordinate_ID'),
-                blk.get('_iso_deltacoordinate_label') ):
-                idlist.append(int(id))
-                coordVarLbl.append(lbl)
-                if '_' in lbl:
-                    albl = lbl[:lbl.rfind('_')]
-                    vlbl = lbl[lbl.rfind('_')+1:]
-                else:
-                    self.warnings += ' ERROR: _iso_deltacoordinate_label not parsed: '+lbl
-                    error = True
-                    continue
-                if albl not in atomlbllist:
-                    self.warnings += ' ERROR: _iso_deltacoordinate_label atom not found: '+lbl
-                    error = True
-                    continue
-                # else:
-                #     anum = atomlbllist.index(albl)
-                var = varLookup.get(vlbl)
-                if not var:
-                    self.warnings += ' ERROR: _iso_deltacoordinate_label variable not found: '+lbl
-                    error = True
-                    continue
-                G2varObj.append(G2obj.G2VarObj(
-                    (self.Phase['ranId'],None,var,ranIdlookup[albl])
-                    ))
-            if error:
-                raise Exception("Error decoding variable labels")
-            # just in case the items are not ordered increasing by id, sort them here
-            coordVarLbl = [i for i,j in sorted(zip(coordVarLbl,idlist),key=lambda k:k[1])]
-            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist),key=lambda k:k[1])]
-
-            if len(G2varObj) != len(modelist):
-                print ("non-square input")
-                raise Exception("Rank of _iso_displacivemode != _iso_deltacoordinate")
-
             error = False
             ParentCoordinates = {}
             for lbl,exp in zip(
@@ -778,6 +742,48 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if error:
                 print (self.warnings)
                 raise Exception("Error decoding variable labels")
+            
+            error = False
+            coordOffset = {xyz:i for i,xyz in enumerate(('dx','dy','dz'))}
+            for id,lbl,val in zip(
+                blk.get('_iso_deltacoordinate_ID'),
+                blk.get('_iso_deltacoordinate_label'),
+                blk.get('_iso_deltacoordinate_value')
+                ):
+                idlist.append(int(id))
+                coordVarLbl.append(lbl)
+                if '_' in lbl:
+                    albl = lbl[:lbl.rfind('_')]
+                    vlbl = lbl[lbl.rfind('_')+1:]
+                else:
+                    self.warnings += ' ERROR: _iso_deltacoordinate_label not parsed: '+lbl
+                    error = True
+                    continue
+                if albl not in atomlbllist:
+                    self.warnings += ' ERROR: _iso_deltacoordinate_label atom not found: '+lbl
+                    error = True
+                    continue
+                # else:
+                #     anum = atomlbllist.index(albl)
+                var = varLookup.get(vlbl)
+                if not var:
+                    self.warnings += ' ERROR: _iso_deltacoordinate_label variable not found: '+lbl
+                    error = True
+                    continue
+                G2coordOffset.append(ParentCoordinates[albl][coordOffset[vlbl]] - float(val))
+                G2varObj.append(G2obj.G2VarObj(
+                    (self.Phase['ranId'],None,var,ranIdlookup[albl])
+                    ))
+            if error:
+                raise Exception("Error decoding variable labels")
+            # just in case the items are not ordered increasing by id, sort them here
+            coordVarLbl = [i for i,j in sorted(zip(coordVarLbl,idlist),key=lambda k:k[1])]
+            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist),key=lambda k:k[1])]
+
+            if len(G2varObj) != len(modelist):
+                print ("non-square input")
+                raise Exception("Rank of _iso_displacivemode != _iso_deltacoordinate")
+
             # get mapping of modes to atomic coordinate displacements
             displacivemodematrix = np.zeros((len(G2varObj),len(G2varObj)))
             for row,col,val in zip(
@@ -786,11 +792,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 blk.get('_iso_displacivemodematrix_value'),):
                 displacivemodematrix[int(row)-1,int(col)-1] = float(val)
             # Invert to get mapping of atom displacements to modes
-            displacivemodeInvmatrix = np.linalg.inv(displacivemodematrix)
+            Var2ModeMatrix = np.linalg.inv(displacivemodematrix)
             # create the constraints
             modeVarList = []
             modeDispl = []
-            for i,row in enumerate(displacivemodeInvmatrix):
+            for i,row in enumerate(Var2ModeMatrix):
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
                     if k == 0: continue
@@ -801,7 +807,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
                 modeDispl.append(0.0)
-            # normilization constants
+            # normalization constants
             normlist = []
             idlist = []
             for id,exp in zip(
@@ -818,20 +824,22 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 # coordinate items
                 'IsoVarList' : coordVarLbl,
                 'G2VarList' : G2varObj,
-                'ParentStructure' : ParentCoordinates,
+                'G2coordOffset' : G2coordOffset, 
                 # mode items
                 'IsoModeList' : modelist,
                 'G2ModeList' : modeVarList,
                 'NormList' : normlist,
                 # transform matrices
-                'Var2ModeMatrix' : displacivemodeInvmatrix,
+                'Var2ModeMatrix' : Var2ModeMatrix,
                 'Mode2VarMatrix' : displacivemodematrix,
                 'modeDispl' : modeDispl
                 })
             # make explaination dictionary
             for mode,shortmode in zip(modelist,shortmodelist):
-                explaination[str(self.Phase['ranId'])+shortmode] = (
-                    "ISODISTORT full name "+str(mode))
+                modeVar = G2obj.G2VarObj(
+                    (self.Phase['ranId'],None,shortmode,None))
+                explaination[modeVar] = ("Full ISODISTORT name for " +
+                                            shortmode + " is " + str(mode))
         #----------------------------------------------------------------------
         # now read in the ISODISTORT occupancy modes
         #----------------------------------------------------------------------
@@ -964,52 +972,52 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 })
             # make explaination dictionary
             for mode,shortmode in zip(modelist,shortmodelist):
-                explaination[str(self.Phase['ranId'])+shortmode] = (
-                    "ISODISTORT full name "+str(mode))
+                modeVar = G2obj.G2VarObj(
+                    (self.Phase['ranId'],None,shortmode,None))
+                explaination[modeVar] = ("Full ISODISTORT name for " +
+                                            shortmode + " is " + str(mode))
+        if explaination: self.Constraints.append(explaination)
         #----------------------------------------------------------------------
         # done with read
         #----------------------------------------------------------------------
-        if explaination: self.Constraints.append(explaination)
 
-        if not debug: return
+        def fmtEqn(i,head,l,var,k):
+            'format a section of a row of variables and multipliers' 
+            if k == 0: return head,l
+            if len(head) + len(l) > 65:
+                print(head+l)
+                head = 20*' '
+                l = ''
+            if k < 0 and i > 0:
+                l += ' - '
+                k = -k
+            elif i > 0: 
+                l += ' + '
+            if k == 1:
+                l += '%s ' % str(var)
+            else:
+                l += '%.3f * %s' % (k,str(var))
+            return head,l
 
         # debug: show displacive mode var to mode relations
-        if 'IsoVarList' in self.Phase['ISODISTORT']:
-            # coordinate items
-            #coordVarLbl = self.Phase['ISODISTORT']['IsoVarList']
-            G2varObj = self.Phase['ISODISTORT']['G2VarList']
-            #ParentCoordinates = self.Phase['ISODISTORT']['ParentStructure']
-            # mode items
-            modelist = self.Phase['ISODISTORT']['IsoModeList']
-            modeVarList = self.Phase['ISODISTORT']['G2ModeList']
-            normlist = self.Phase['ISODISTORT']['NormList']
-            # transform matrices
-            #displacivemodeInvmatrix = self.Phase['ISODISTORT']['Var2ModeMatrix']
-            #displacivemodematrix = self.Phase['ISODISTORT']['Mode2VarMatrix']
-        
-            print( 70*'=')
-            print('\nVar2ModeMatrix' ,'IsoVarList' )
-            def fmtConstr(i,head,l,var,k):
-                if len(head) + len(l) > 65:
-                    print(head+l)
-                    head = 20*' '
-                    l = ''
-#                if k == 0: return
-                if k < 0 and i > 0:
-                    l += '  -  '
-                    k = -k
-                elif i > 0: 
-                    l += '  +  '
-                if k == 1:
-                    l += '%s ' % str(var)
-                else:
-                    l += '%.3f * %s' % (k,str(var))
-                return head,l
-            for i,row in enumerate(displacivemodeInvmatrix):
-                head = str(i) + ': ' + str(modeVarList[i]) + ' = '
+        if debug and 'IsoVarList' in self.Phase['ISODISTORT']:
+            print('\n' + 70*'=')
+            print('ISO modes from Iso coordinate vars (using Var2ModeMatrix, IsoVarList, G2VarList & G2ModeList)' )
+            for i,row in enumerate(self.Phase['ISODISTORT']['Var2ModeMatrix']):
+                head = '  ' + str(self.Phase['ISODISTORT']['G2ModeList'][i]) + ' = '
                 line = ''
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                    head,line = fmtConstr(j,head,line,G2varObj[j].name,k)
+                    var = self.Phase['ISODISTORT']['IsoVarList'][j]
+                    head,line = fmtEqn(j,head,line,var,k)
+                print(head+line)
+            print('\nConstraints')
+            for c in self.Constraints:
+                if type(c) is dict: continue
+                if c[-1] != 'f': continue
+                line = ''
+                head = '  ' + str(c[-3]) + ' = '
+                for j,(k,var) in enumerate(c[:-3]):
+                    head,line = fmtEqn(j,head,line,var,k)
                 print(head+line)
 
             # Get the ISODISTORT offset values
@@ -1024,59 +1032,78 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 blk.get('_iso_displacivemode_value'),):
                 modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
-            print( 70*'=')
-            print('\nInverse relations using Var2ModeMatrix, NormList, IsoVarList')
+            print('\n' + 70*'=')
+            print('Confirming inverse mode relations computed from displacement values',
+                      '\nusing Var2ModeMatrix, NormList, IsoVarList')
             # compute the mode values from the reported coordinate deltas
-            for i,(row,n) in enumerate(zip(displacivemodeInvmatrix,normlist)):
+            for i,(row,n) in enumerate(zip(self.Phase['ISODISTORT']['Var2ModeMatrix'],
+                                           self.Phase['ISODISTORT']['NormList'])):
                 line = ''
-                head = 'a'+str(i)+': '+str(modeVarList[i])+' = ('
+                head = str(self.Phase['ISODISTORT']['G2ModeList'][i])+' = ('
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                    head,line = fmtConstr(j,head,line,lbl,k)
+                    head,line = fmtEqn(j,head,line,lbl,k)
                 print(head+line+') / '+('%.3f'%n))
-            print('\nCalculation checks\n')
-            for i,(row,n) in enumerate(zip(displacivemodeInvmatrix,normlist)):
-                #l = ''
-                sl = ''
-                s = 0.
-                for lbl,k in zip(coordVarLbl,row):
-                    if k == 0: continue
-                    #if l: l += ' + '
-                    #l += lbl+' * '+str(k)
-                    if sl: sl += ' + '
-                    sl += str(coordVarDelta[lbl])+' * '+str(k)
-                    s += coordVarDelta[lbl] * k
-                print(str(modeVarList[i]),'=','('+sl+') / ',n,'=',s/n)
-                print(' ?= ',modeVarDelta[modelist[i]])
-                print()
+                line = ''
+                head = str(self.Phase['ISODISTORT']['G2ModeList'][i])+' = ('
+                vsum = 0.
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                    val = "{:3g}".format(coordVarDelta[lbl])
+                    head,line = fmtEqn(j,head,line,val,k)
+                    vsum += coordVarDelta[lbl] * k
+                print(head+line+') / '+('%.3f'%n))
+                fileval = modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][i]]
+                print("{} = {:4g} (value read from CIF = {:4g})\n".format(
+                    self.Phase['ISODISTORT']['G2ModeList'][i], vsum, fileval))
 
             print( 70*'=')
-            print('\nDirect relations using Mode2VarMatrix, NormList, IsoVarList')
+            print('Direct displacement relations computed from ISO modes in CIF',
+                      '\nusing Mode2VarMatrix, NormList, IsoModeList, IsoVarList',)
             # compute the coordinate displacements from the reported mode values
-            DeltaCoords = {}
-            for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
+            for lbl,row in zip(self.Phase['ISODISTORT']['IsoVarList'],
+                               self.Phase['ISODISTORT']['Mode2VarMatrix']):
                 l = ''
                 s = 0.0
+                head = lbl+' ='
+                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+                    if k == 0: continue
+                    if len(l) > 65:
+                        print(head,l)
+                        head = 20*' '
+                        l = ''
+                    l1 = ''
+                    k1 = k
+                    if j > 0 and k < 0:
+                        k1 = -k
+                        l1 = ' - '
+                    elif j > 0:
+                        l1 += ' + '
+                    l += '{:} {:3g} * {:4g} * {:}'.format(
+                        l1, k1, n, self.Phase['ISODISTORT']['G2ModeList'][j])
+                    
+                    s += n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]] * k
+                print(head,l)
+                print(lbl,'=',s)
+                print(lbl,'==>',str(self.Phase['ISODISTORT']['G2VarList'][i]),'\n')
+            DeltaCoords = {}
+            for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
+                s = 0.0
+                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+                    s += k * n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]]
                 at,d = lbl.rsplit('_',1)
                 if at not in DeltaCoords:
                     DeltaCoords[at] = [0,0,0]
-                for j,(k,n) in enumerate(zip(row,normlist)):
-                    if k == 0: continue
-                    if l: l += ' + '
-                    l += str(n)+' * '+str(modeVarList[j])+' * '+str(k)
-                    s += n * modeVarDelta[modelist[j]] * k
-                print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
                 if d == 'dx':
                     DeltaCoords[at][0] = s
                 elif d == 'dy':
                     DeltaCoords[at][1] = s
                 elif d == 'dz':
                     DeltaCoords[at][2] = s
-                else:
-                    print('unexpected',d)
+                #else:
+                #    print('unexpected',d)
 
             print( 70*'=')
-            print('\nCoordinate checks')
-            print('\nComputed')
+            print('Coordinate checks')
+            print("\nxyz's Computed from ISO mode values, as above")
             for at in sorted(DeltaCoords):
                 s = at
                 for i in range(3):
@@ -1085,34 +1112,28 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 print(s)
 
             # determine the coordinate delta values from deviations from the parent structure
-            print('\nFrom CIF')
+            print("\nxyz Values read directly from CIF")
             for atmline in self.Phase['Atoms']:
                 lbl = atmline[0]
                 x,y,z = atmline[3:6]
                 print( lbl,x,y,z)
 
-            print( 70*'=')
-            print('\nGenerated constraints')
+            print('\n' + 70*'=')
+            print("G2 short name ==> ISODISTORT full name",
+                      " (from IsoModeList and G2ModeList)")
+            for mode,G2mode in zip(self.Phase['ISODISTORT']['IsoModeList'],
+                                   self.Phase['ISODISTORT']['G2ModeList']):
+                print("  "+str(G2mode),' ==>', mode)
+            print('\nConstraint help dict info')
             for i in self.Constraints:
                 if type(i) is dict:
-                    print('\nconstraint help dict')
                     for key in i:
                         print('\t',key,':',i[key])
-                elif i[-1] == 'f':
-                    print('\n\t',i[-3],' =')
-                    for m,j in i[:-3]:
-                        print('\t\t+',m,' * ',j,'   ',repr(j))
-                else:
-                    print('  unexpected: ',repr(i))
-            print("\nG2name ==> ISODISTORT full name",
-                      ".Phase['ISODISTORT']['IsoModeList']",
-                      ".Phase['ISODISTORT']['G2ModeList']")
-            for mode,G2mode in zip(modelist,modeVarList):
-                print("  ?::"+str(G2mode),' ==>', mode)
+            print( 70*'=')
 
         #======================================================================
         # debug: show occupancy mode var to mode relations
-        if 'G2OccVarList' in self.Phase['ISODISTORT']:
+        if debug and 'G2OccVarList' in self.Phase['ISODISTORT']:
             # coordinate items
             #occVarLbl = self.Phase['ISODISTORT']['OccVarList']
             G2varObj = self.Phase['ISODISTORT']['G2OccVarList']

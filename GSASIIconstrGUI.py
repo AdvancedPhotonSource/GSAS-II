@@ -1135,12 +1135,13 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         helptext += " named "+str(item[-3])
                     helptext += " is created from a linear combination of the following variables:\n"
                     for term in item[:-3]:
+                        m = term[0]
+                        if np.isclose(m,0): continue
                         #var = str(term[1])
                         var,explain,note,warnmsg = term[1].fmtVarByMode(seqmode,note,warnmsg)
                         #if '?' in var: badVar = True
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
-                        m = term[0]
                         if eqString[-1] != '':
                             if m >= 0:
                                 eqString[-1] += ' + '
@@ -1150,21 +1151,20 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         if m == 1:
                             eqString[-1] += '{:} '.format(var)
                         else:
-                            eqString[-1] += '{:g}*{:} '.format(m,var)
+                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += '\n  {:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
-                    # Add ISODISTORT help items
+                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                    # Add extra notes about this constraint (such as from ISODISTORT)
                     if '_Explain' in data:
-                        # this ignores the phase number. TODO: refactor that in?
                         hlptxt = None
                         try:
                             hlptxt = data['_Explain'].get(item[-3])
                         except TypeError:
-                            # note that phase RanId is item[-3].phase
+                            # Patch fixed Nov 2021. Older projects have phase RanId in 
+                            # item[-3].phase rather than a properly formed G2VarObj
                             hlptxt = data['_Explain'].get(str(item[-3].phase)+item[-3].name)
                         if hlptxt:
-                            if helptext: helptext += '\n\nNote warning:\n'
-                            helptext += hlptxt
+                            helptext += '\n\n'+ hlptxt
                     if item[-3]:
                         typeString = '(NEWVAR) ' + str(item[-3]) + ' = '
                     else:
@@ -1189,9 +1189,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         if m == 1:
                             eqString[-1] += '{:} '.format(var)
                         else:
-                            eqString[-1] += '{:g}*{:} '.format(m,var)
+                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += '\n  {:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                         helptext += explain
                     typeString = 'CONST'
                     eqString[-1] += ' = '+str(item[-3])
@@ -1206,7 +1206,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     m = item[0][0]/item[1][0]
                     #var1 = str(item[1][1])
                     var1,explain,note,warnmsg = item[1][1].fmtVarByMode(seqmode,note,warnmsg)
-                    helptext += '\n  {:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                    helptext += '\n  {:.5g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
                     eqString[-1] += '{:} = {:}'.format(var1,var)
                     if m != 1:
                         eqString[-1] += ' / ' + str(m)
@@ -1234,8 +1234,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         if m == 1:
                             eqString[-1] += '{:}'.format(var)
                         else:
-                            eqString[-1] += '{:g}*{:} '.format(m,var)
-                        helptext += '\n  {:3g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
+                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     eqString[-1] += ' = {:} '.format(indepterm)
                     typeString = 'EQUIV'
                 else:
@@ -1528,7 +1528,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     #     dlg.ShowModal()
     #     dlg.Destroy()
     #     return
-    G2obj.IndexAllIds(Histograms,Phases)
+    if Histograms and Phases:
+        G2obj.IndexAllIds(Histograms,Phases)
     # for p in Phases:
     #     if 'ISODISTORT' in Phases[p] and 'G2VarList' in Phases[p]['ISODISTORT']:
     #         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)
@@ -3829,7 +3830,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
             phase = isophases[sel]
         else:
             return
-   
+
     covdata = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     # make a lookup table for named NewVar Phase constraints
@@ -3839,8 +3840,6 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     for c in Constraints['Phase']:
         if c[-1] != 'f' or not c[-3]: continue
         constrDict[str(c[-3])] = c
-
-    parmDict,varyList = G2frame.MakeLSParmDict()
 
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT mode values',#size=(630,400),
         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -3853,58 +3852,51 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     panel1 = wxscroll.ScrolledPanel(
         dlg, wx.ID_ANY,#size=(100,200),
         style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-    subSizer1 = wx.FlexGridSizer(cols=2,hgap=5,vgap=2)
+    subSizer1 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
     panel2 = wxscroll.ScrolledPanel(
         dlg, wx.ID_ANY,#size=(100,200),
         style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-    subSizer2 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
-    subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name  '))
+    subSizer2 = wx.FlexGridSizer(cols=4,hgap=5,vgap=2)
+    subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'ISODISTORT\nname'))
+    subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'GSAS-II\nname'))
     subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
+    for i in range(3): subSizer1.Add((-1,5)) # spacer
     subSizer2.Add((-1,-1))
-    subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'Mode name  '))
+    subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'ISODISTORT\nMode name'))
+    subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'GSAS-II\nname'))
     subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
+    for i in range(4): subSizer2.Add((-1,5))
     # ISODISTORT displacive modes
     if 'G2VarList' in ISO:
-        deltaList = []
-        for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
-            dvar = gv.varname()
-            var = dvar.replace('::dA','::A')
-            albl = Ilbl[:Ilbl.rfind('_')]
-            v = Ilbl[Ilbl.rfind('_')+1:]
-            pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
-            if var in parmDict:
-                cval = parmDict[var][0]
-            else:
-                cval = 0.0
-            deltaList.append(cval-pval)
-        modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
-        for lbl,xyz,var,val,norm,G2mode in zip(
-                ISO['IsoVarList'],deltaList,
-                ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] ):
+        dispVals,dispSUs,modeVals,modeSUs = G2mth.CalcIsoDisp(Phases[phase],covdata=covdata)
+        for (lbl,xyz,xyzsig,G2var,
+             var,mval,msig,G2mode) in zip(
+                ISO['IsoVarList'],dispVals,dispSUs,ISO['G2VarList'],
+                ISO['IsoModeList'],modeVals,modeSUs,ISO['G2ModeList'] ):
             if str(G2mode) in constrDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],var))
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 subSizer2.Add((-1,-1))
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)))
             try:
-                value = G2py3.FormatSigFigs(xyz)
+                value = G2mth.ValEsd(xyz,xyzsig)
             except TypeError:
                 value = str(xyz)            
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(G2mode)))
             try:
-                value = G2py3.FormatSigFigs(val/norm)
-                if 'varyList' in covdata:
-                    if str(G2mode) in covdata['varyList']:
-                        sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]
-                        value = G2mth.ValEsd(val/norm,sig/norm)
+                value = G2mth.ValEsd(mval,msig)
             except TypeError:
-                value = '?'
+                value = str(mval)
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
     # ISODISTORT occupancy modes
     if 'G2OccVarList' in ISO:
         deltaList = []
+        parmDict,varyList = G2frame.MakeLSParmDict()
         for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
             var = gv.varname()
             albl = Ilbl[:Ilbl.rfind('_')]

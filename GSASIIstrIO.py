@@ -320,7 +320,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 var = dvar.replace('::dA','::A')
                 albl = Ilbl[:Ilbl.rfind('_')]
                 v = Ilbl[Ilbl.rfind('_')+1:]
-                pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+                #pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
                 if var in parmDict:
                     cval = parmDict[var]
                 else:

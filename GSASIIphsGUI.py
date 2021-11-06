@@ -4427,7 +4427,10 @@ def UpdatePhaseData(G2frame,Item,data):
         G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
             thresh=[[8.0,6.0],[17.191,11.527]],pickHandler=pickHandler)
 
-    def OnIsoDistortCalc(event):
+    def OnShowIsoDistortCalc(event):
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if Histograms and Phases:
+            G2obj.IndexAllIds(Histograms,Phases)
         G2cnstG.ShowIsoDistortCalc(G2frame,data['General']['Name'])
             
     def OnReImport(event):
@@ -6736,7 +6739,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         lines=False,names=['G(R) obs','G(R) calc','diff',])
             
         
-#### ISOTDISTORT results tab ###############################################################################
+#### ISODISTORT results tab ###############################################################################
 
     def UpdateISODISTORT(Scroll=0):
         ''' Present the results of an ISODISTORT run & allow selection of a distortion model for PDFfit 
@@ -6772,6 +6775,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 isoGrid.ForceRefresh()
                 
         def OnDispl(event):
+            '''Respond to movement of distortion mode slider'''
             Obj = event.GetEventObject()
             idsp,dispVal = Indx[Obj.GetId()]
             modeDisp[idsp] = (Obj.GetValue()-100)/1000.
@@ -6783,6 +6787,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2plt.PlotStructure(G2frame,data)
             
         def OnDispVal(invalid,value,tc):
+            '''Respond to entry of a value into a distortion mode entry widget'''
             idsp,displ = Indx[tc.GetId()]
             displ.SetValue(int(value*1000)+100)
             err = G2mth.ApplyModeDisp(data)
@@ -6792,6 +6797,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2plt.PlotStructure(G2frame,data)
            
         def OnReset(event):
+            '''Reset all distortion mode values to zero'''
             data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
             err = G2mth.ApplyModeDisp(data)
             if err:
@@ -6801,6 +6807,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             UpdateISODISTORT()                                   
         
         Indx = {}      
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,
+                                'rundata' in data['ISODISTORT'])
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,
+                    ('G2VarList' in data['ISODISTORT']) or
+                    ('G2OccVarList' in data['ISODISTORT']))
         if 'radio' not in data['ISODISTORT']:
             if not data['ISODISTORT']:
                 mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -6906,13 +6917,15 @@ For use of ISODISTORT, please cite:
         SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)
         
     def OnNewISOPhase(event):
-        ''' Make cif file with ISODISTORT
+        ''' Make CIF file with ISODISTORT
         '''
         import ISODISTORT as ISO
 
-        if data['ISODISTORT']:
+        if 'rundata' in data['ISODISTORT'] and data['ISODISTORT']['selection'] is not None:
             CIFfile = ISO.GetISODISTORTcif(data)
             G2G.G2MessageBox(G2frame,'ISODISTORT generated cif file %s has been created.'%CIFfile)
+        elif 'rundata' in data['ISODISTORT']:
+            G2G.G2MessageBox(G2frame,'Need to select an ISODISTORTdistortion model first before creating a CIF')
         else:
             G2G.G2MessageBox(G2frame,'ERROR - need to run ISODISTORT first - see General/Compute menu')        
           
@@ -13562,7 +13575,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnDistAngleHist, id=G2G.wxID_ATOMSBNDANGLHIST)
         G2frame.Bind(wx.EVT_MENU, OnFracSplit, id=G2G.wxID_ATOMFRACSPLIT)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
-        G2frame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2G.wxID_ISODISP)
+        G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
         else:
@@ -13647,6 +13660,7 @@ of the crystal structure.
         # ISODISTORT
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.ISODData)
         G2frame.Bind(wx.EVT_MENU, OnNewISOPhase, id=G2G.wxID_ISODNEWPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_SHOWISO1)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)

@@ -6444,6 +6444,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.ISODDataEdit = wx.Menu(title='')
         self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
+        G2G.Define_wxId('wxID_ISODISTORT1')
+        self.ISODDataEdit.Append(G2G.wxID_ISODISTORT1,'Run ISODISTORT','Run ISODISTORT to find displacement modes')
         G2G.Define_wxId('wxID_ISODNEWPHASE')
         self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make CIF file','From ISODISTORT selection')
         G2G.Define_wxId('wxID_SHOWISO1')

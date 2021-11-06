@@ -2934,7 +2934,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 print('ISODISTORT run complete')
                 UpdateISODISTORT()
             else:
-                G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see opened web paage')        
+                G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
         else:
             G2G.G2MessageBox(G2frame,'ISODISTORT run cancelled')        
                 
@@ -13659,6 +13659,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
         # ISODISTORT
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.ISODData)
+        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT1)
         G2frame.Bind(wx.EVT_MENU, OnNewISOPhase, id=G2G.wxID_ISODNEWPHASE)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_SHOWISO1)
         # MC/SA

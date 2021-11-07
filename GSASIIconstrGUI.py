@@ -3778,7 +3778,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     UpdateVectorRB()
     G2frame.rbBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     wx.CallAfter(OnPageChanged,None)
-
+    
 def ShowIsoDistortCalc(G2frame,phase=None):
     '''Compute the ISODISTORT mode values from the current coordinates.
     Called in response to the (Phase/Atoms tab) AtomCompute or 
@@ -3787,30 +3787,6 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     '''
     def _onClose(event):
         dlg.EndModal(wx.ID_CANCEL)
-    def fmtHelp(item,fullname):
-        helptext = "A new variable"
-        if item[-3]:
-            helptext += " named "+str(item[-3])
-        helptext += " is a linear combination of the following parameters:\n"
-        first = True
-        for term in item[:-3]:
-            line = ''
-            var = str(term[1])
-            m = term[0]
-            if first:
-                first = False
-                line += ' = '
-            else:
-                if m >= 0:
-                    line += ' + '
-                else:
-                    line += ' - '
-                m = abs(m)
-            line += '%.3f*%s '%(m,var)
-            varMean = G2obj.fmtVarDescr(var)
-            helptext += "\n" + line + " ("+ varMean + ")"
-        helptext += '\n\nISODISTORT full name: '+str(fullname)
-        return helptext
 
     Phases = G2frame.GetPhaseData()
     isophases = [p for p in Phases if 'G2VarList' in Phases[p]['ISODISTORT']]
@@ -3961,5 +3937,165 @@ def ShowIsoDistortCalc(G2frame,phase=None):
 
     mainSizer.Fit(dlg)
     dlg.SetMinSize(dlg.GetSize())
+    dlg.CenterOnParent()
     dlg.ShowModal()
     dlg.Destroy()
+
+def ShowIsoModes(G2frame,phase):
+    '''Show details about the ISODISTORT mode and the displacements they 
+    translate to.
+    '''
+    def _onClose(event):
+        dlg.EndModal(wx.ID_CANCEL)
+
+    # make a lookup table for named NewVar Phase constraints
+    sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+    Constraints = G2frame.GPXtree.GetItemPyData(sub)
+    constrDict = {}
+    for c in Constraints['Phase']:
+        if c[-1] != 'f' or not c[-3]: continue
+        constrDict[str(c[-3])] = c
+        
+    Phases = G2frame.GetPhaseData()
+    data = Phases[phase]
+    ISO = data['ISODISTORT']
+    if 'IsoVarList' in ISO:
+        modeExp = {}
+        for i,row in enumerate(ISO['Var2ModeMatrix']):
+            line = '('
+            for j,k in enumerate(row):
+                var = ISO['IsoVarList'][j]
+                if np.isclose(k,0): continue
+                if k < 0 and j > 0:
+                    line += ' - '
+                    k = -k
+                elif j > 0: 
+                    line += ' + '
+                if np.isclose(k,1):
+                    line += '%s ' % str(var)
+                else:
+                    line += '%.3f * %s' % (k,str(var))
+            line += ')/{:.3g}'.format(ISO['NormList'][i])
+            modeExp[str(ISO['G2ModeList'][i])] = line
+                
+        crdExp = {}
+        for i,(lbl,row) in enumerate(zip(ISO['IsoVarList'],ISO['Mode2VarMatrix'])):
+            l = ''
+            for j,(k,n) in enumerate(zip(row,ISO['NormList'])):
+                if np.isclose(k,0): continue
+                l1 = ''
+                if j > 0 and k < 0:
+                    k = -k
+                    l1 = ' -'
+                elif j > 0:
+                    l1 += ' +'
+                if np.isclose(k,1):
+                    l += '{:} {:4g} * {:}'.format(
+                        l1, n, ISO['G2ModeList'][j])
+                else:
+                    l += '{:} {:3g} * {:4g} * {:}'.format(
+                        l1, k, n, ISO['G2ModeList'][j])               
+            crdExp[lbl] = l
+
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT modes and displacements',#size=(630,400),
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+        'ISODISTORT modes and displacements in phase '+str(data['General'].get('Name','?'))))
+    # ISODISTORT displacive modes
+    if 'G2VarList' in ISO:
+        panel1 = wxscroll.ScrolledPanel(
+            dlg, wx.ID_ANY,#size=(100,200),
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        subSizer1 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
+        panel2 = wxscroll.ScrolledPanel(
+            dlg, wx.ID_ANY,#size=(100,200),
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        subSizer2 = wx.FlexGridSizer(cols=4,hgap=5,vgap=2)
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'GSAS-II\nequiv.'))
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' expression'),0,wx.ALIGN_CENTER)
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'ISODISTORT\nname'))
+        for i in range(3): subSizer1.Add((-1,5)) # spacer
+        subSizer2.Add((-1,-1))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'GSAS-II\nMode Name'))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' expression'),0,wx.ALIGN_CENTER)
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'ISODISTORT\nMode name'))
+        for i in range(4): subSizer2.Add((-1,5))
+        for i,lbl in enumerate(ISO['IsoVarList']):
+            if np.isclose(ISO['G2coordOffset'][i],0):
+                G2var = '{:}'.format(str(ISO['G2VarList'][i]).replace('::dA','::A'))
+            elif ISO['G2coordOffset'][i] < 0:
+                G2var = '({:} + {:.3g})'.format(
+                    str(ISO['G2VarList'][i]).replace('::dA','::A'),
+                    -ISO['G2coordOffset'][i])
+            else:
+                G2var = '({:} - {:.3g})'.format(
+                    str(ISO['G2VarList'][i]).replace('::dA','::A'),
+                    ISO['G2coordOffset'][i])
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            
+        for (isomode,G2mode) in zip(ISO['IsoModeList'],ISO['G2ModeList']):
+            if str(G2mode) in constrDict:
+                ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],isomode))
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+            else:
+                subSizer2.Add((-1,-1))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(G2mode)))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,modeExp[str(G2mode)]))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(isomode)))
+            
+        # finish up ScrolledPanel
+        panel1.SetSizer(subSizer1)
+        panel2.SetSizer(subSizer2)
+        panel1.SetAutoLayout(1)
+        panel1.SetupScrolling()
+        panel2.SetAutoLayout(1)
+        panel2.SetupScrolling()
+        # Allow window to be enlarged but not made smaller
+        w1,l1 = subSizer1.GetSize()
+        w2,l2 = subSizer2.GetSize()
+        panel1.SetMinSize((min(700,w1+20),max(50,l1)))
+        panel2.SetMinSize((min(700,w2+20),max(50,l2)))
+        mainSizer.Add(panel1,1, wx.ALL|wx.EXPAND,1)
+        mainSizer.Add(panel2,1, wx.ALL|wx.EXPAND,1)
+
+    # make OK button 
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CLOSE) 
+    btn.Bind(wx.EVT_BUTTON,_onClose)
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    dlg.SetMinSize(dlg.GetSize())
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+    dlg.Destroy()
+
+def fmtHelp(item,fullname):
+    helptext = "A new variable"
+    if item[-3]:
+        helptext += " named "+str(item[-3])
+    helptext += " is a linear combination of the following parameters:\n"
+    first = True
+    for term in item[:-3]:
+        line = ''
+        var = str(term[1])
+        m = term[0]
+        if first:
+            first = False
+            line += ' = '
+        else:
+            if m >= 0:
+                line += ' + '
+            else:
+                line += ' - '
+            m = abs(m)
+        line += '%.3f*%s '%(m,var)
+        varMean = G2obj.fmtVarDescr(var)
+        helptext += "\n" + line + " ("+ varMean + ")"
+    helptext += '\n\nISODISTORT full name: '+str(fullname)
+    return helptext

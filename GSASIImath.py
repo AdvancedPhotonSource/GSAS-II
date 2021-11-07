@@ -2129,6 +2129,12 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
     '''Compute the coordinate positions from ISODISTORT displacement mode values
     Uncertainties are computed if covdata is supplied.
 
+    :param dict Phase: contents of tree entry for selected phase
+    :param dict parmDict: a dict with values for the modes; note that in the 
+       parmDict from refinements the mode values are not normalized, 
+       but this assumes they are.
+    :param dict Phase: full covariance information from tree
+
     :returns: modeDict,posDict where modeDict contains pairs of mode values 
     and mode s.u. values; posDict contains pairs of displacement values 
     and their s.u. values.

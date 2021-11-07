@@ -2919,24 +2919,29 @@ def UpdatePhaseData(G2frame,Item,data):
         #4 asks for cif file of child structure
         '''
         import ISODISTORT as ISO
-        dlg = wx.FileDialog(General, 'Choose parent cif file for ISODISTORT',G2G.GetImportPath(G2frame),
-            style=wx.FD_OPEN ,wildcard='(*.cif)|*.cif')
-        if dlg.ShowModal() == wx.ID_OK:
-            fpath,parentcif = os.path.split(dlg.GetPath())
-            wx.BeginBusyCursor()
-            radio,rundata = ISO.GetISODISTORT(data,parentcif)
-            wx.EndBusyCursor()
-            if radio and rundata:
-                data['ISODISTORT']['radio'] = radio
-                data['ISODISTORT']['rundata'] = rundata
-                data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
-                data['ISODISTORT']['selection'] = None
-                print('ISODISTORT run complete')
-                UpdateISODISTORT()
-            else:
-                G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
+        # Use GSAS2Scriptable to make a CIF for the current phase in a
+        # scratch directory
+        data['pId'] = data.get('pId',0) # needs a pId
+        import GSASIIscriptable as G2sc
+        import tempfile
+        wx.BeginBusyCursor()
+        proj = G2sc.G2Project(newgpx='tmp4cif.gpx')
+        ph = G2sc.G2Phase(data,data['General']['Name'],proj)
+        tmpdir = tempfile.TemporaryDirectory()
+        parentcif = os.path.join(tmpdir.name,'ISOin.cif')
+        ph.export_CIF(parentcif)
+        radio,rundata = ISO.GetISODISTORT(data,parentcif)
+        wx.EndBusyCursor()
+        tmpdir.cleanup()
+        if radio and rundata:
+            data['ISODISTORT']['radio'] = radio
+            data['ISODISTORT']['rundata'] = rundata
+            data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
+            data['ISODISTORT']['selection'] = None
+            print('ISODISTORT run complete')
+            wx.CallAfter(UpdateISODISTORT)
         else:
-            G2G.G2MessageBox(G2frame,'ISODISTORT run cancelled')        
+            G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
                 
     def OnCompare(event):
         generalData = data['General']
@@ -4432,7 +4437,15 @@ def UpdatePhaseData(G2frame,Item,data):
         if Histograms and Phases:
             G2obj.IndexAllIds(Histograms,Phases)
         G2cnstG.ShowIsoDistortCalc(G2frame,data['General']['Name'])
-            
+
+    def OnShowIsoModes(event):
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if Histograms and Phases:
+            G2obj.IndexAllIds(Histograms,Phases)
+        #import imp
+        #imp.reload(G2cnstG)
+        G2cnstG.ShowIsoModes(G2frame,data['General']['Name'])
+        
     def OnReImport(event):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -6812,10 +6825,16 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,
                     ('G2VarList' in data['ISODISTORT']) or
                     ('G2OccVarList' in data['ISODISTORT']))
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,
+                    ('G2VarList' in data['ISODISTORT'])
+#                    or ('G2OccVarList' in data['ISODISTORT'])
+                                                   )
         if 'radio' not in data['ISODISTORT']:
             if not data['ISODISTORT']:
                 mainSizer = wx.BoxSizer(wx.VERTICAL)
-                mainSizer.Add(wx.StaticText(ISODIST,label='No ISODISTORT information found for this phase'))
+                mainSizer.Add(wx.StaticText(ISODIST,
+                        label='No ISODISTORT information found for this phase\n'
+                            +'  (use Operations->Run ISODISTORT to generate)'))
                 SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
                 return
 #patch
@@ -13534,7 +13553,6 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
-        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
@@ -13659,9 +13677,10 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
         # ISODISTORT
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.ISODData)
-        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT1)
+        G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
         G2frame.Bind(wx.EVT_MENU, OnNewISOPhase, id=G2G.wxID_ISODNEWPHASE)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_SHOWISO1)
+        G2frame.Bind(wx.EVT_MENU, OnShowIsoModes, id=G2G.wxID_SHOWISOMODES)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)

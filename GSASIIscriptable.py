@@ -1273,6 +1273,7 @@ import GSASIIElem as G2elem
 import GSASIIfiles as G2fil
 import GSASIIimage as G2img
 import GSASIIlattice as G2lat
+import GSASIImapvars as G2mv
 
 # Delay imports to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
@@ -2395,16 +2396,16 @@ class G2Project(G2ObjectWrapper):
                     Constraints['Phase'].append(i)
 
         data = self.data['Phases'][phasename]
-        generalData = data['General']
-        SGData = generalData['SGData']
-        NShkl = len(G2spc.MustrainNames(SGData))
-        NDij = len(G2spc.HStrainNames(SGData))
-        Super = generalData.get('Super', 0)
-        if Super:
-            SuperVec = np.array(generalData['SuperVec'][0])
-        else:
-            SuperVec = []
-        UseList = data['Histograms']
+#        generalData = data['General']
+#        SGData = generalData['SGData']
+#        NShkl = len(G2spc.MustrainNames(SGData))
+#        NDij = len(G2spc.HStrainNames(SGData))
+#        Super = generalData.get('Super', 0)
+#        if Super:
+#            SuperVec = np.array(generalData['SuperVec'][0])
+#        else:
+#            SuperVec = []
+#        UseList = data['Histograms']
 
         for hist in histograms:
             self.link_histogram_phase(hist, phasename)
@@ -5073,10 +5074,10 @@ class G2Phase(G2ObjectWrapper):
             cif.WriteCIFitem(fp, '_pd_phase_name', self.name)
             # TODO get esds
             cellDict = self.get_cell()
-            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
-            names = ['length_a','length_b','length_c',
-                     'angle_alpha','angle_beta ','angle_gamma',
-                     'volume']
+#            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+#            names = ['length_a','length_b','length_c',
+#                     'angle_alpha','angle_beta ','angle_gamma',
+#                     'volume']
             for key, val in cellDict.items():
                 cif.WriteCIFitem(fp, '_cell_' + key, G2mth.ValEsd(val))
 

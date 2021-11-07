@@ -983,7 +983,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
         def fmtEqn(i,head,l,var,k):
             'format a section of a row of variables and multipliers' 
-            if k == 0: return head,l
+            if np.isclose(k,0): return head,l
             if len(head) + len(l) > 65:
                 print(head+l)
                 head = 20*' '

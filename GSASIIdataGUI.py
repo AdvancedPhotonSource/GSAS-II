@@ -6308,7 +6308,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # Phase / General tab
         G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP','wxID_VALIDPROTEIN', 
             'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE','wxID_USEBILBAOMAG',
-            'wxID_COMPARESTRUCTURE','wxID_ISODISTORT')
+            'wxID_COMPARESTRUCTURE')
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral)
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6323,7 +6323,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
-        self.GeneralCalc.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT for PDFfit constraints')
         self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare','Compare polyhedra to ideal octahedra/tetrahedra')
         self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)   
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')        
@@ -6444,13 +6443,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.ISODDataEdit = wx.Menu(title='')
         self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
-        G2G.Define_wxId('wxID_ISODISTORT1')
-        self.ISODDataEdit.Append(G2G.wxID_ISODISTORT1,'Run ISODISTORT','Run ISODISTORT to find displacement modes')
+        G2G.Define_wxId('wxID_ISODISTORT')
+        self.ISODDataEdit.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT to find displacement modes')
         G2G.Define_wxId('wxID_ISODNEWPHASE')
         self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make CIF file','From ISODISTORT selection')
         G2G.Define_wxId('wxID_SHOWISO1')
         self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show ISODISTORT modes',
-                'Show ISODISTORT mode values for all phases')
+                'Show ISODISTORT mode values for current phase')
+        G2G.Define_wxId('wxID_SHOWISOMODES')
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISOMODES,'Show ISODISTORT relationships',
+                'Show how ISODISTORT modes are defined in current phase')
         self.PostfillDataMenu()
 
         # Phase / Layer tab 

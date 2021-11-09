@@ -4922,22 +4922,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['refinement'] = reftype.GetStringSelection()
                 wx.CallAfter(UpdateRMC)
 
-            def OnAddPDF(event):
-                usedList = RMCPdict['seqfiles']
-                PDFdict = dict([item[1:] for item in G2frame.GetFileList('PDF')])
-                PDFnames = [item for item in PDFdict if item not in usedList]
-                dlg = G2G.G2MultiChoiceDialog(G2frame.FRMC,'PDF dataset',
-                    'Select G(r) data to use in seq. PDFfit',PDFnames)
-#                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-                if dlg.ShowModal() == wx.ID_OK:
-                    PDFuse = dlg.GetSelections()
-                    for item in PDFuse:
-                        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFnames[item])
-                        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
-                        RMCPdict['seqfiles'].append([PDFnames[item],data])
-                dlg.Destroy()
-                wx.CallAfter(UpdateRMC)
-                
             Indx = {}
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             if G2frame.RMCchoice == 'PDFfit':
@@ -5020,9 +5004,44 @@ def UpdatePhaseData(G2frame,Item,data):
                 return 
             elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
                 
+                def OnAddPDF(event):
+                    ''' Add PDF G(r)s while maintanining original sequence
+                    '''
+                    usedList = RMCPdict['seqfiles']
+                    PDFlist = [item[1:][0] for item in G2frame.GetFileList('PDF')]
+                    PDFdict = dict([item[1:] for item in G2frame.GetFileList('PDF')])
+                    PDFnames = [item for item in PDFdict if item not in [itm[0] for itm in usedList]]
+                    dlg = G2G.G2MultiChoiceDialog(G2frame.FRMC,'Add PDF dataset',
+                        'Select G(r) data to use in seq. PDFfit',PDFnames)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        PDFuse = dlg.GetSelections()
+                        for item in PDFuse:
+                            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFnames[item])
+                            data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
+                            try:
+                                insrt = PDFlist.index(PDFnames[item])-1
+                                RMCPdict['seqfiles'].insert(insrt+1,[PDFnames[item],data])
+                            except ValueError:
+                                RMCPdict['seqfiles'].append([PDFnames[item],data])
+                    dlg.Destroy()
+                    wx.CallAfter(UpdateRMC)
+                    
+                def OnDelPDF(event):
+                    usedList = [item[0] for item in RMCPdict['seqfiles']]
+                    dlg = G2G.G2MultiChoiceDialog(G2frame.FRMC,'Delete PDF dataset',
+                        'Select G(r) data to delete frpm seq. PDFfit',usedList)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        PDFdel = dlg.GetSelections()
+                        PDFdel.reverse()
+                        for item in PDFdel:
+                            del RMCPdict['seqfiles'][item]
+                    dlg.Destroy()
+                    wx.CallAfter(UpdateRMC)
+                
                 def OnSetColVal(event):
                     
-                    parms = {'Rmin':[0.0,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],'qdamp':[0.0,0.5],'qbroad':[0.0,0.1]}
+                    parms = {'Rmin':[0.0,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],
+                        'qdamp':[0.0,0.5],'qbroad':[0.0,0.1],'Temp':300}
                     c =  event.GetCol()
                     if c >= 0:
                         if c in [3,5,7]:
@@ -5040,7 +5059,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                     for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][varib][1]=True
                                 else:
                                     for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][varib][1]=False
-                        elif c in [0,1,2,4,6]:
+                        elif c in [0,1,2,4,6,8]:
                             seqGrid.ClearSelection()
                             seqGrid.SelectCol(c,True)
                             parm = colLabels[c]
@@ -5049,9 +5068,26 @@ def UpdatePhaseData(G2frame,Item,data):
                                 value = dlg.GetValue()
                                 if c in [2,4,6]:
                                     for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][parm][0] = value
+                                elif c == 8:
+                                    for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][parm] = value
                                 else:
                                     for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1]['Fitrange'][c] = value
                         wx.CallAfter(UpdateRMC)
+                        
+                def OnSetVal(event):
+                    r,c= event.GetRow(),event.GetCol()
+                    if c >= 0:
+                        if c in [3,5,7]:
+                            varib = colLabels[c-1]
+                            RMCPdict['seqfiles'][r][1][varib][1] = bool(seqGrid.GetCellValue(r,c))
+                        elif c in [0,1,2,4,6,8]:
+                            parm = colLabels[c]
+                            if c in [2,4,6]:
+                                RMCPdict['seqfiles'][r][1][parm][0] = float(seqGrid.GetCellValue(r,c))
+                            elif c == 8:
+                                RMCPdict['seqfiles'][r][1][parm] = float(seqGrid.GetCellValue(r,c))
+                            else:
+                                RMCPdict['seqfiles'][r][1]['Fitrange'][c] = float(seqGrid.GetCellValue(r,c))
                                 
                 if 'seqfiles' not in RMCPdict:
                     RMCPdict['seqfiles'] = []
@@ -5060,21 +5096,25 @@ def UpdatePhaseData(G2frame,Item,data):
                 addPDF = wx.Button(G2frame.FRMC,label='Add PDF G(r) data sets')
                 addPDF.Bind(wx.EVT_BUTTON,OnAddPDF)
                 topSizer.Add(addPDF,0,WACV)
+                delPDF = wx.Button(G2frame.FRMC,label='Delete PDF G(r) data sets')
+                delPDF.Bind(wx.EVT_BUTTON,OnDelPDF)
+                topSizer.Add(delPDF,0,WACV)
                 mainSizer.Add(topSizer)
                 table = [[item[1]['Fitrange'][0],item[1]['Fitrange'][1],
                     item[1]['dscale'][0],item[1]['dscale'][1],item[1]['qdamp'][0],item[1]['qdamp'][1],
-                    item[1]['qbroad'][0],item[1]['qbroad'][1],] for item in RMCPdict['seqfiles']]
-                colLabels = ['Rmin','Rmax','dscale','refine','qdamp','refine','qbroad','refine']
+                    item[1]['qbroad'][0],item[1]['qbroad'][1],item[1].get('Temp',300.)] for item in RMCPdict['seqfiles']]
+                colLabels = ['Rmin','Rmax','dscale','refine','qdamp','refine','qbroad','refine','Temp']
                 rowLabels = [item[0] for item in RMCPdict['seqfiles']]
                 Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_FLOAT+':10,2',
                          wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
                          wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-                         wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]
+                         wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2']
                 seqTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
                 seqGrid = G2G.GSGrid(G2frame.FRMC)
                 seqGrid.SetTable(seqTable, True)
                 seqGrid.AutoSizeColumns(True)
                 seqGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, OnSetColVal)
+                seqGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSetVal)
                 mainSizer.Add(seqGrid)
                 
                 return
@@ -5975,7 +6015,30 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 RMCPdict['cellref'] = not RMCPdict['cellref']
                 
             def AtomSizer():
-                return None
+                
+                def OnSetVal(event):
+                    r,c = event.GetRow(),event.GetCol()
+                    if c > 0:
+                        strval = atmGrid.GetCellValue(r,c).strip()
+                        if strval == '' or '@' in strval:
+                            RMCPdict['AtomConstr'][r][c+1] = strval
+                        else:
+                            print('ERROR - atom constraints must be blank or contain "@"')                    
+                
+                atmSizer = wx.BoxSizer(wx.VERTICAL)
+                atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=10'))
+
+                table = [item[1:] for item in RMCPdict['AtomConstr']]
+                colLabels = ['Type','x constraint','y constraint','z  constraint','frac constr','Uiso constr']
+                rowLabels = [item[0] for item in RMCPdict['AtomConstr']]
+                Types = 6*[wg.GRID_VALUE_STRING,]
+                atmTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                atmGrid = G2G.GSGrid(G2frame.FRMC)
+                atmGrid.SetTable(atmTable, True,useFracEdit=False)
+                atmGrid.AutoSizeColumns(True)
+                atmGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSetVal)
+                atmSizer.Add(atmGrid)
+                return atmSizer
                 
 
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5997,7 +6060,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                           'Xray real space data; G(r): ':['Select',0.01,'G(r)','RMC',],}
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
                 'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],'refinement':'normal',
-                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,       
+                'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,
+                'AtomConstr':[],
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
@@ -6009,9 +6073,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 RMCPdict['refinement'] = 'combined'
             if 'cellref' not in RMCPdict:
                 RMCPdict['cellref'] = False
+            if 'AtomConstr' not in RMCPdict:
+                RMCPdict['AtomConstr'] = []
             if 'metadata' not in RMCPdict:
                 RMCPdict['metadata'] = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
 #end patch
+            Atoms = data['Atoms']
+            cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
+            if not RMCPdict['AtomConstr']:
+                for atom in Atoms:
+                    RMCPdict['AtomConstr'].append([atom[ct-1],atom[ct],'','','','',''])
+                
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
             mainSizer.Add(GetMetaSizer(RMCPdict,['title','date','temperature','doping']),0)
             
@@ -6032,9 +6104,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             cellref.Bind(wx.EVT_CHECKBOX,OnCellRef)
             mainSizer.Add(cellref,0,WACV)
                         
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'),0,WACV)
-#            mainSizer.Add(AtomSizer())
+            mainSizer.Add(AtomSizer())
             
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'),0,WACV)
             mainSizer.Add(PDFParmSizer(),0)
             

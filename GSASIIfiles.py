@@ -1027,10 +1027,12 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         fqfile = open(fqfilename,'w')
         qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
         nq = qnew.shape[0]
-        fqfile.write('%20d\n'%nq-1)
+        fqfile.write('%20d\n'%(nq-1))
         fqfile.write(fqfilename+'\n')
         fqnew = zip(qnew,fqfxn(qnew))
-        for q,fq in fqnew[1:]:
+        for q,fq in fqnew:
+            if not q:
+                continue
             fqfile.write("%15.6g %15.6g\n" % (q,fq))
         fqfile.close()
         G2Print (' F(Q) saved to: '+fqfilename)
@@ -1041,10 +1043,12 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfile = open(grfilename,'w')
         rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
         nr = rnew.shape[0]
-        grfile.write('%20d\n'%nr-1)
+        grfile.write('%20d\n'%(nr-1))
         grfile.write(grfilename+'\n')
         grnew = zip(rnew,grfxn(rnew))
-        for r,gr in grnew[1:]:
+        for r,gr in grnew:
+            if not r:
+                continue
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
         G2Print (' G(R) saved to: '+grfilename)

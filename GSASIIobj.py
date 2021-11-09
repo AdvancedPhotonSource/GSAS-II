@@ -3392,7 +3392,9 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
         'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0*numAtm,'Flat Bkg':FltBkg,
         'DetType':'Area detector','ObliqCoeff':0.3,'Ruland':0.025,'QScaleLim':Qlimits,
         'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,'Rmin':1.0,
-        'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
+        'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[],
+        #items for sequential PDFfit
+        'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False],'Temp':300}
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Controls'),Data)
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})

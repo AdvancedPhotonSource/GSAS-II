@@ -2703,7 +2703,7 @@ class GSASII(wx.Frame):
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Controls'),
                 {'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':'','diffMult':1.0,'Rmax':Ymax,'Type':rd.Type,
-                 'dscale':[1.0,False],'Fitrange':[Rmin,Rmax],'qdamp':[0.03,False],'qbroad':[0,False]})
+                 'dscale':[1.0,False],'Fitrange':[Rmin,Rmax],'qdamp':[0.03,False],'qbroad':[0,False],'Temp':300.})
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
         else:

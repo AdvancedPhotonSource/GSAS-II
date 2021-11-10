@@ -1113,8 +1113,7 @@ class GSASII(wx.Frame):
             for h in usedHistograms[p]:
                 if h.startswith('HKLF ') and h not in usedHKLFhists:
                     usedHKLFhists.append(h)
-                    
-                    
+                      
         rdlist = self.OnImportGeneric(reqrdr,self.ImportPhaseReaderlist,
             'phase',usedRanIdList=phaseRIdList)
         if len(rdlist) == 0: return
@@ -1192,6 +1191,7 @@ class GSASII(wx.Frame):
                 item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         TextList = PWDRlist + HKLFlist
         if not TextList:
+            Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
             return          #no histograms
         header = 'Select histogram(s) to add to new phase(s):'
         for phaseName in newPhaseList:
@@ -1200,7 +1200,9 @@ class GSASII(wx.Frame):
         notOK = True
         while notOK:
             result = G2G.ItemSelector(TextList,self,header,header='Add histogram(s)',multiple=True)
-            if not result: return
+            if not result: 
+                Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
+                return
             # check that selected single crystal histograms are not already in use!
             used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
             #for i in result:
@@ -1268,6 +1270,7 @@ class GSASII(wx.Frame):
                     UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+histoName)
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         wx.EndBusyCursor()
         self.EnableRefineCommand()
         
@@ -1444,6 +1447,7 @@ class GSASII(wx.Frame):
                                 ref[3+Super] = 1    #twin id?
                         else:
                             ref[3] = 0
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         wx.EndBusyCursor()
         self.EnableRefineCommand()        
         return # success
@@ -2042,6 +2046,7 @@ class GSASII(wx.Frame):
                 refList = self.GPXtree.GetItemPyData(
                     GetGPXtreeItemId(self,Id,'Reflection Lists'))
                 refList[generalData['Name']] = []
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         self.EnableRefineCommand()
         return # success
 
@@ -2229,6 +2234,7 @@ class GSASII(wx.Frame):
         Controls = self.GPXtree.GetItemPyData(cId)
         Controls['max cyc'] = 0
         self.EnableRefineCommand()
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         return # success
 
     def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):
@@ -5130,8 +5136,7 @@ class GSASII(wx.Frame):
             Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
             if not len(Phases) or not len(Histograms):
                 print('No constraints processing without phases and histograms defined')
-                raise G2mv.ConstraintException                
-            G2obj.IndexAllIds(Histograms,Phases)
+                raise G2mv.ConstraintException
             sub = GetGPXtreeItemId(self,self.root,'Constraints') 
             Constraints = self.GPXtree.GetItemPyData(sub)
             errmsg,warnmsg = G2cnstG.CheckConstraints(self,Phases,Histograms,Constraints,[],reqVaryList)

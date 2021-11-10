@@ -1583,13 +1583,17 @@ def IndexAllIds(Histograms,Phases):
     Note: this code assumes that the atom random Id (ranId) is the last
     element each atom record.
 
-    This is called in three places (only): :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
-    (which loads the histograms and phases from a GPX file),
-    :meth:`~GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
-    (which loads the histograms and phases from the data tree.) and
-    :meth:`GSASIIconstrGUI.UpdateConstraints`
-    (which displays & edits the constraints in a GUI)
-
+    This is called when phases & histograms are looked up 
+    in these places (only): 
+        
+     * :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` (which loads the histograms and phases from a GPX file),
+     * :meth:`~GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree` (which does the same thing but from the data tree.) 
+     * :meth:`~GSASIIdataGUI.GSASII.OnFileClose` (clears out an old project)
+    
+    Note that globals :data:`PhaseIdLookup` and :data:`PhaseRanIdLookup` are 
+    also set in :func:`AddPhase2Index` to temporarily assign a phase number
+    as a phase is being imported.
+ 
     TODO: do we need a lookup for rigid body variables?
     '''
     # process phases and atoms
@@ -1652,7 +1656,7 @@ def AddPhase2Index(rdObj,filename):
     if ranId in PhaseRanIdLookup: return
     maxph = -1
     for r in PhaseRanIdLookup:
-        maxph = max(maxph,PhaseRanIdLookup[r])
+        maxph = max(maxph,int(PhaseRanIdLookup[r]))
     PhaseRanIdLookup[ranId] = pId = str(maxph + 1)
     PhaseIdLookup[pId] = (ph,ranId)
     shortname = 'from '+ os.path.splitext((os.path.split(filename))[1])[0]

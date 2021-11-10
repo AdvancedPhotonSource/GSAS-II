@@ -4434,14 +4434,10 @@ def UpdatePhaseData(G2frame,Item,data):
 
     def OnShowIsoDistortCalc(event):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if Histograms and Phases:
-            G2obj.IndexAllIds(Histograms,Phases)
         G2cnstG.ShowIsoDistortCalc(G2frame,data['General']['Name'])
 
     def OnShowIsoModes(event):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if Histograms and Phases:
-            G2obj.IndexAllIds(Histograms,Phases)
         #import imp
         #imp.reload(G2cnstG)
         G2cnstG.ShowIsoModes(G2frame,data['General']['Name'])

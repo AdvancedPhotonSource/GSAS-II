@@ -1528,8 +1528,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     #     dlg.ShowModal()
     #     dlg.Destroy()
     #     return
-    if Histograms and Phases:
-        G2obj.IndexAllIds(Histograms,Phases)
     # for p in Phases:
     #     if 'ISODISTORT' in Phases[p] and 'G2VarList' in Phases[p]['ISODISTORT']:
     #         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_SHOWISO,True)

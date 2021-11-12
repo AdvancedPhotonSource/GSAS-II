@@ -2959,12 +2959,32 @@ def findPDFfit():
     except:
         return None
     
+def GetPDFfitAtomVar(Phase,RMCPdict):
+    ''' Find dict of independent "@n" variables for PDFfit in atom constraints
+    '''
+    General = Phase['General']
+    Atoms = Phase['Atoms']
+    cx,ct,cs,cia = General['AtomPtrs']
+    AtomVar = RMCPdict['AtomVar']
+    for iat,atom in enumerate(RMCPdict['AtomConstr']):
+        for it,item in enumerate(atom):
+            if it > 1 and item:
+                itnum = item.split('@')[1]
+                if it < 6:
+                    if '@%s'%itnum not in AtomVar:
+                        AtomVar['@%s'%itnum] = 0.0      #put ISODISTORT mode displ here?
+                else:
+                    for i in range(3):
+                        if '@%s'%itnum not in AtomVar:
+                            AtomVar['@%s'%itnum] = Atoms[iat][cia+i+2]
+    
 def MakePDFfitAtomsFile(Phase,RMCPdict):
     '''Make the PDFfit atoms file
     '''
     General = Phase['General']
     fName = General['Name']+'-PDFfit.stru'
-    fatm = open(fName.replace(' ','_'),'w')
+    fName = fName.replace(' ','_')
+    fatm = open(fName,'w')
     fatm.write('title  structure of '+General['Name']+'\n')
     fatm.write('format pdffit\n')
     fatm.write('scale   1.000000\n')    #fixed
@@ -3022,6 +3042,7 @@ def MakePDFfitRunFile(Phase,RMCPdict):
             return [1,2,3,4,5,6]
         
     General = Phase['General']
+    Cell = General['Cell'][1:7]
     rundata = '''
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -3031,65 +3052,94 @@ pf = PdfFit()
     Nd = 0
     Np = 0
     for file in RMCPdict['files']:
+        if 'Select' in RMCPdict['files'][file][0]:
+            continue
         if 'Neutron' in file:
             Nd += 1
             dType = 'Ndata'
         else:
             Nd += 1
             dType = 'Xdata'
-        rundata += "pf.read_data(%s, '%s', 30.0, %.4f)\n"%(dType[0],RMCPdict['files'][file][0],RMCPdict[dType]['qdamp'][0])
-        rundata += 'pf.pdfrange(%d, %6.2f, %6.2f\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
+        rundata += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(RMCPdict['files'][file][0],dType[0],RMCPdict[dType]['qdamp'][0])
         rundata += 'pf.setdata(%d)\n'%Nd
+        rundata += 'pf.pdfrange(%d, %6.2f, %6.2f)\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
         for item in ['dscale','qdamp','qbroad']:
-            rundata += "pf.setvar('%s', %.2f)\n"%(item,RMCPdict[dType][item][0])
             if RMCPdict[dType][item][1]:
                 Np += 1
-                rundata += 'pf.constrain("%s","@%d")\n'%(item,Np)
-    rundata += "pf.read_struct(%s)\n"%(General['Name']+'-PDFfit.stru')
+                rundata += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
+                rundata += "pf.setpar(%d, %.2f)\n"%(Np,RMCPdict[dType][item][0])
+    fName = General['Name']+'-PDFfit.stru'
+    fName = fName.replace(' ','_')
+    rundata += "pf.read_struct('%s')\n"%(fName)
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1
             rundata += 'pf.constrain(pf.%s,"@%d")\n'%(item,Np)
+            rundata += 'pf.setpar(%d,%.3f)\n'%(Np,RMCPdict[item][0])
     if 'sphere' in RMCPdict['shape'][0] and RMCPdict['spdiameter'][1]:
         Np += 1
         rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
-        
+        rundata += 'pf.setpar(%d,%.3f)\n'%(Np,RMCPdict['spdiameter'][0])
+      
     if RMCPdict['cellref']:
         cellconst = GetCellConstr(RMCPdict['SGData'])
+        used = []
         for ic in range(6):
             if cellconst[ic]:
                 rundata += 'pf.constrain(pf.lat(%d), "@%d")\n'%(ic+1,Np+cellconst[ic])
-#Atom constraints here -------------------------------------------------------        
-    
-    
-    
+                if cellconst[ic] not in used:
+                    rundata += 'pf.setpar(%d,%.5f)\n'%(Np+cellconst[ic],Cell[ic])
+                used.append(cellconst[ic])
+#Atom constraints here ------------------------------------------------------- 
+    AtomVar = RMCPdict['AtomVar']
+    used = []
+    for iat,atom in enumerate(RMCPdict['AtomConstr']):
+        for it,item in enumerate(atom):
+            names = ['pf.x(%d)'%(iat+1),'pf.y(%d)'%(iat+1),'pf.z(%d)'%(iat+1),'pf.occ(%d)'%(iat+1)]
+            if it > 1 and item:
+                itnum = item.split('@')[1]
+                if it < 6:
+                    rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
+                    if itnum not in used:
+                        rundata += 'pf.setpar(%s,%.6f)\n'%(itnum,AtomVar['@%s'%itnum])
+                        used.append(itnum)
+                else:
+                    uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
+                    for i in range(3):
+                        rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
+                        if itnum not in used:
+                            rundata += 'pf.setpar(%s,%.5f)\n'%(itnum,AtomVar['@%s'%itnum])
+                            used.append(itnum)
+                        
 # Refine & Save results ---------------------------------------------------------------    
     rundata += 'pf.refine()\n'
     fName = General['Name'].replace(' ','_')+'-PDFfit'
     Nd = 0    
     for file in RMCPdict['files']:
+        if 'Select' in RMCPdict['files'][file][0]:
+            continue
         Nd += 1
-        rundata += 'pf.save_pdf(%d, %s)\n'%(Nd,fName+file[0]+'.fgr')
+        rundata += 'pf.save_pdf(%d, "%s")\n'%(Nd,fName+file[0]+'.fgr')
         
-    rundata += 'pf.save_struct(1, %s)\n'%(fName+'.rstr')
-    rundata += 'pf.save_res(%s)\n'%(fName+'.res')
-    
-    
-    print(rundata)
-    
-    
+    rundata += 'pf.save_struct(1, "%s")\n'%(fName+'.rstr')
+    rundata += 'pf.save_res("%s")\n'%(fName+'.res')
  
-    # rfile = open(fName+.py','w')
-    # rfile.writelines(rundata)
-    # rfile.close()
+    rfile = open(fName+'.py','w')
+    rfile.writelines(rundata)
+    rfile.close()
     
-  
+    return fName+'.py'
     
 def UpdatePDFfit(Phase,RMCPdict):
+    ''' Updates various PDFfit parameters held in GSAS-II
+    '''
     
     General = Phase['General']
     fName = General['Name']+'-PDFfit.rstr'
-    rstr = open(fName.replace(' ','_'),'r')
+    try:
+        rstr = open(fName.replace(' ','_'),'r')
+    except FileNotFoundError:
+        return [fName,'Not found - PDFfit failed']
     lines = rstr.readlines()
     rstr.close()
     header = [line[:-1].split(' ',1) for line in lines[:7]]
@@ -3117,6 +3167,30 @@ def UpdatePDFfit(Phase,RMCPdict):
         atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
         atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
         atmBeg += 6
+        
+    fName = General['Name']+'-PDFfit.res'
+    try:
+        res = open(fName.replace(' ','_'),'r')
+    except FileNotFoundError:
+        return [fName,'Not found - PDFfit failed']
+    lines = res.readlines()
+    res.close()
+    Ibeg = False
+    resline = ''
+    for iline,line in enumerate(lines):
+        if 'Refinement parameters' in line:
+            Ibeg = True
+            continue
+        if Ibeg:
+            if '---------' in line:
+                break
+            resline += line[:-1]
+    results = resline.replace('(','').split(')')[:-1]
+    results = ['@'+result.lstrip() for result in results]
+    results = [item.split()[:2] for item in results]
+    results = dict([[item[0][:-1],float(item[1])] for item in results if item[0][:-1] in RMCPdict['AtomVar']])
+    RMCPdict['AtomVar'].update(results)
+    return None
         
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 

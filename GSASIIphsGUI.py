@@ -4917,15 +4917,23 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnRefSel(event):
                 RMCPdict['refinement'] = reftype.GetStringSelection()
                 wx.CallAfter(UpdateRMC)
+                
+            def OnDataSel(event):
+                RMCPdict['SeqDataType'] = dataType.GetStringSelection()
 
             Indx = {}
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
             if G2frame.RMCchoice == 'PDFfit':
                 reftype = wx.RadioBox(G2frame.FRMC,label='PDFfit refinement type:',choices=['normal','sequential'])
                 reftype.SetStringSelection(RMCPdict.get('refinement','normal'))
                 reftype.Bind(wx.EVT_RADIOBOX,OnRefSel)
-                topSizer.Add(reftype,0,WACV)
-            topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '),0,WACV)
+                topSizer.Add(reftype)
+                if 'seq' in RMCPdict.get('refinement','normal'):
+                    dataType = wx.RadioBox(G2frame.FRMC,label='Seq data type:',choices=['X','N'])
+                    dataType.SetStringSelection(RMCPdict.get('SeqDataType','X'))
+                    dataType.Bind(wx.EVT_RADIOBOX,OnDataSel)
+                    topSizer.Add(dataType)
             mainSizer.Add(topSizer)
             if G2frame.RMCchoice == 'fullrmc':
                 Heads = ['Name','File','type','Plot','Delete']
@@ -5085,10 +5093,11 @@ def UpdatePhaseData(G2frame,Item,data):
                             else:
                                 RMCPdict['seqfiles'][r][1]['Fitrange'][c] = float(seqGrid.GetCellValue(r,c))
                                 
+                G2frame.GetStatusBar().SetStatusText('NB: All PDFs used in sequential PDFfit must be the same type ("X" or "N") - there is no check',1)
                 if 'seqfiles' not in RMCPdict:
                     RMCPdict['seqfiles'] = []
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
-                topSizer.Add(wx.StaticText(G2frame.FRMC,label=' Sequential file list for PDFfit:  '),0,WACV)
+                topSizer.Add(wx.StaticText(G2frame.FRMC,label=' Sequential data list for PDFfit:  '),0,WACV)
                 addPDF = wx.Button(G2frame.FRMC,label='Add PDF G(r) data sets')
                 addPDF.Bind(wx.EVT_BUTTON,OnAddPDF)
                 topSizer.Add(addPDF,0,WACV)
@@ -6016,13 +6025,18 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     r,c = event.GetRow(),event.GetCol()
                     if c > 0:
                         strval = atmGrid.GetCellValue(r,c).strip()
-                        if strval == '' or '@' in strval:
-                            RMCPdict['AtomConstr'][r][c+1] = strval
-                        else:
-                            print('ERROR - atom constraints must be blank or contain "@"')                    
+                        try:
+                            if strval == '' or ('@' in strval and int(strval.split('@')[-1]) >= 10):
+                                RMCPdict['AtomConstr'][r][c+1] = strval
+                            else:
+                                raise ValueError
+                        except ValueError:
+                            atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
+                            wx.MessageBox('ERROR - atom constraints must be blank or have "@n" at end with n >= 10',
+                                style=wx.ICON_ERROR)
                 
                 atmSizer = wx.BoxSizer(wx.VERTICAL)
-                atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=10'))
+                atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=10 && "@n" should be at end'))
 
                 table = [item[1:] for item in RMCPdict['AtomConstr']]
                 colLabels = ['Type','x constraint','y constraint','z  constraint','frac constr','Uiso constr']
@@ -6035,7 +6049,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 atmGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSetVal)
                 atmSizer.Add(atmGrid)
                 return atmSizer
-                
+            
+            def AtomVarSizer():
+                atomVarSizer = wx.FlexGridSizer(0,8,5,5)
+                for item in RMCPdict['AtomVar']:
+                    atomVarSizer.Add(wx.StaticText(G2frame.FRMC,label=item),0,WACV)
+                    atomVarSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['AtomVar'],
+                        item,xmin=-1.,xmax=1.,size=(70,25)),0,WACV)
+                return atomVarSizer
 
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
@@ -6057,7 +6078,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
                 'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],'refinement':'normal',
                 'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,
-                'AtomConstr':[],
+                'AtomConstr':[],'AtomVar':{},'SeqDataType':'X',
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
@@ -6066,13 +6087,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if 'SGData' not in RMCPdict:
                 RMCPdict['SGData'] = G2spc.SpcGroup('P 1')[1]
             if 'refinement' not in RMCPdict:
-                RMCPdict['refinement'] = 'combined'
+                RMCPdict['refinement'] = 'normal'
             if 'cellref' not in RMCPdict:
                 RMCPdict['cellref'] = False
             if 'AtomConstr' not in RMCPdict:
                 RMCPdict['AtomConstr'] = []
             if 'metadata' not in RMCPdict:
                 RMCPdict['metadata'] = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
+            if 'SeqDataType' not in RMCPdict:
+                RMCPdict['SeqDataType'] = 'X'
+            if 'AtomVar' not in RMCPdict:
+                RMCPdict['AtomVar'] = {}
 #end patch
             Atoms = data['Atoms']
             cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
@@ -6103,6 +6128,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'),0,WACV)
             mainSizer.Add(AtomSizer())
+            
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit starting atom variables:'),0,WACV)
+            G2pwd.GetPDFfitAtomVar(data,RMCPdict)
+            mainSizer.Add(AtomVarSizer())
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'),0,WACV)
@@ -6222,7 +6252,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
             G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
-            G2pwd.MakePDFfitRunFile(data,RMCPdict)
+            fname = G2pwd.MakePDFfitRunFile(data,RMCPdict)
+            print(fname+ ' written')
+            print('PDFfit file build completed')
             
             
     def OnRunRMC(event):
@@ -6367,16 +6399,16 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
         elif G2frame.RMCchoice == 'PDFfit':
             PDFfit_exec = G2pwd.findPDFfit()
-            if PDFfit_exec is None:
-                G2G.G2MessageBox(G2frame,'PDFfit2 Python not found. How did we get here?')
-                return
+            # if PDFfit_exec is None:
+            #     G2G.G2MessageBox(G2frame,'PDFfit2 Python not found. How did we get here?')
+            #     return
             pName = generalData['Name'].replace(' ','_')
             rname = pName+'-PDFfit.py'
-            if not os.path.exists(rname):
-                G2G.G2MessageBox(G2frame,
-                    'The PDFfit script has not been created. Running setup.',
-                    'Not setup')
-                OnSetupRMC(event)
+            # if not os.path.exists(rname):
+            #     G2G.G2MessageBox(G2frame,
+            #         'The PDFfit script has not been created. Running setup.',
+            #         'Not setup')
+            #     OnSetupRMC(event)
             wx.MessageBox(''' For use of PDFfit2, please cite:
       PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals, 
 C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen & 
@@ -6402,12 +6434,19 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 else:
                     subp.Popen(['/bin/bash','pdffit2.sh'])
             #update choice? here?
-            wx.MessageBox('PDFfit finished',caption='Updating results',style=wx.ICON_EXCLAMATION)
-            RMCPdict = data['RMC']['PDFfit']
-            G2pwd.UpdatePDFfit(data,RMCPdict)
+            dlg = wx.MessageDialog(G2frame,'Check PDFfit console for results; do you want to update?',
+                'PDFfit run finished',wx.YES|wx.NO)
+            try:
+                dlg.CenterOnParent()
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_YES:
+                RMCPdict = data['RMC']['PDFfit']
+                Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
+                if Error:
+                    wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)                
             wx.CallAfter(UpdateRMC)
-           
-                    
             
     def OnStopRMC(event):
         pass

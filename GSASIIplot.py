@@ -4206,8 +4206,8 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         def increase_line_width(plot):
             layr = op.GLayer(plot.layer)
             pindex = plot.index()
-            pname = layr.obj.GetStrProp(f'plot{pindex + 1}.name')
-            layr.lt_exec(f'set {pname} -w 1000')
+            pname = layr.obj.GetStrProp('plot{}.format(pindex+1).name')
+            layr.lt_exec('set {} -w 1000'.format(pname))
         
         import itertools # delay this since not commonly called or needed
 

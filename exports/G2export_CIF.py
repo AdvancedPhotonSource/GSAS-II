@@ -730,6 +730,181 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
             s += PutInCol(G2mth.ValEsd(val,sig),11)
         WriteCIFitem(fp, s)
 
+def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
+                          RBparms={}):
+    'Write atom positions to CIF using mmCIF items'
+    # phasedict = self.Phases[phasenam] # pointer to current phase info
+    General = phasedict['General']
+    cx,ct,cs,cia = General['AtomPtrs']
+    GS = G2lat.cell2GS(General['Cell'][1:7])
+    Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
+    Atoms = phasedict['Atoms']
+    cfrac = cx+3
+    fpfx = str(phasedict['pId'])+'::Afrac:'
+    for i,at in enumerate(Atoms):
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval != 0.0:
+            break
+    else:
+        WriteCIFitem(fp, '\n# PHASE HAS NO ATOMS!')
+        return
+
+    WriteCIFitem(fp, '\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
+    WriteCIFitem(fp, 'loop_ '+
+                 '\n   _atom_site.id'+
+                 '\n   _atom_site.type_symbol'+
+                 '\n   _atom_site.label_atom_id'+
+                 '\n   _atom_site.label_alt_id'+
+                 '\n   _atom_site.label_comp_id'+
+                 '\n   _atom_site.label_asym_id'+
+                 '\n   _atom_site.label_entity_id'+
+                 '\n   _atom_site.label_seq_id'+
+                 '\n   _atom_site.pdbx_PDB_ins_code'+
+                 '\n   _atom_site.fract_x'+
+                 '\n   _atom_site.fract_y'+
+                 '\n   _atom_site.fract_z'+
+                 '\n   _atom_site.occupancy'+
+#                 '\n   _atom_site_adp_type'+
+                 '\n   _atom_site.U_iso_or_equiv'
+#                 '\n   _atom_site_site_symmetry_multiplicity'
+                 )
+# _atom_site.group_PDB
+# _atom_site.Cartn_x
+# _atom_site.Cartn_y
+# _atom_site.Cartn_z
+# _atom_site.Cartn_x_esd
+# _atom_site.Cartn_y_esd
+# _atom_site.Cartn_z_esd
+# _atom_site.occupancy_esd
+# _atom_site.B_iso_or_equiv_esd
+# _atom_site.pdbx_formal_charge
+# _atom_site.auth_seq_id
+# _atom_site.auth_comp_id
+# _atom_site.auth_asym_id
+# _atom_site.auth_atom_id
+# _atom_site.pdbx_PDB_model_num
+    varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
+                cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
+                cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
+
+    pfx = str(phasedict['pId'])+'::'
+    # loop over all atoms
+    naniso = 0
+    for i,at in enumerate(Atoms):
+        s = ''
+        s += PutInCol(str(i),5) # atom number
+        s += PutInCol(FmtAtomType(at[ct]),4) # type
+        s += PutInCol(at[ct-1],4) # label_atom_id
+        s += PutInCol('.',2) # alt_id
+        s += PutInCol(at[ct-3],4) # comp_id
+        s += PutInCol(at[ct-2],3) # _asym_id
+        s += PutInCol(at[ct-4],3) # entity_id
+        s += PutInCol('?',2) # _seq_id
+        s += PutInCol('?',2) # pdbx_PDB_ins_code
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+        if at[cia] == 'I':
+            adp = 'Uiso '
+        else:
+            adp = 'Uani '
+            naniso += 1
+            t = G2lat.Uij2Ueqv(at[cia+2:cia+8],GS,Amat)[0]
+            for j in (2,3,4):
+                var = pfx+varnames[cia+j]+":"+str(i)
+        for j in (cx,cx+1,cx+2,cx+3):
+            if j in (cx,cx+1,cx+2):
+                dig = 11
+                sigdig = -0.00009
+            else:
+                dig = 5
+                sigdig = -0.09
+            var = pfx+varnames[j]+":"+str(i)
+            dvar = pfx+"d"+varnames[j]+":"+str(i)
+            if dvar not in sigDict:
+                dvar = var
+            #print var,(var in parmDict),(var in sigDict)
+            val = parmDict.get(var,at[j])
+            sig = sigDict.get(dvar,sigdig)
+            if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                sig = -abs(sig)
+            s += PutInCol(G2mth.ValEsd(val,sig),dig)
+        s += PutInCol(at[cs+1],3)
+        WriteCIFitem(fp, s)
+    # save information about rigid bodies
+#     header = False
+#     num = 0
+#     rbAtoms = []
+#     for irb,RBObj in enumerate(phasedict['RBModels'].get('Residue',[])):
+#         if not header:
+#             header = True
+#             RBheader(fp)
+#         jrb = RBparms['RBIds']['Residue'].index(RBObj['RBId'])
+#         rbsx = str(irb)+':'+str(jrb)
+#         num += 1
+#         WriteCIFitem(fp,'',str(num))
+#         RBModel = RBparms['Residue'][RBObj['RBId']]
+#         SGData = phasedict['General']['SGData']
+#         Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+#         s = '''GSAS-II residue rigid body "{}" with {} atoms
+#   Site symmetry @ origin: {}, multiplicity: {}
+# '''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
+#         for i in G2stIO.WriteResRBModel(RBModel):
+#             s += i
+#         s += '\n Location:\n'
+#         for i in G2stIO.WriteRBObjPOAndSig(pfx,'RBR',rbsx,parmDict,sigDict):
+#             s += i+'\n'
+#         for i in G2stIO.WriteRBObjTLSAndSig(pfx,'RBR',rbsx,
+#                         RBObj['ThermalMotion'][0],parmDict,sigDict):
+#             s += i
+#         nTors = len(RBObj['Torsions'])
+#         if nTors:
+#             for i in G2stIO.WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,
+#                         nTors):
+#                 s += i
+#         WriteCIFitem(fp,'',s.rstrip())
+        
+#         pId = phasedict['pId']
+#         for i in RBObj['Ids']:
+#             lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
+#             rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
+#         #GSASIIpath.IPyBreak()
+
+#     for irb,RBObj in enumerate(phasedict['RBModels'].get('Vector',[])):
+#         if not header:
+#             header = True
+#             RBheader(fp)
+#         jrb = RBparms['RBIds']['Vector'].index(RBObj['RBId'])
+#         rbsx = str(irb)+':'+str(jrb)
+#         num += 1
+#         WriteCIFitem(fp,'',str(num))
+#         RBModel = RBparms['Vector'][RBObj['RBId']]
+#         SGData = phasedict['General']['SGData']
+#         Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+#         s = '''GSAS-II vector rigid body "{}" with {} atoms
+#   Site symmetry @ origin: {}, multiplicity: {}
+# '''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
+#         for i in G2stIO.WriteVecRBModel(RBModel,sigDict,irb):
+#             s += i
+#         s += '\n Location:\n'
+#         for i in G2stIO.WriteRBObjPOAndSig(pfx,'RBV',rbsx,parmDict,sigDict):
+#             s += i+'\n'
+#         for i in G2stIO.WriteRBObjTLSAndSig(pfx,'RBV',rbsx,
+#                         RBObj['ThermalMotion'][0],parmDict,sigDict):
+#             s += i
+#         WriteCIFitem(fp,'',s.rstrip())
+        
+#         pId = phasedict['pId']
+#         for i in RBObj['Ids']:
+#             lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
+#             rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
+
+#     if rbAtoms:
+#         WriteCIFitem(fp,'loop_\n    _restr_rigid_body.id'+
+#             '\n    _restr_rigid_body.atom_site_label\n    _restr_rigid_body.site_symmetry'+
+#             '\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details')
+#         for i,l in enumerate(rbAtoms):
+#             WriteCIFitem(fp,'   {:5d} {}'.format(i+1,l))
+
 # Refactored over here to allow access by GSASIIscriptable.py
 def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
     'Write atom positions to CIF'
@@ -1105,6 +1280,140 @@ def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None
     WriteCIFitem(fp,  '_cell_formula_units_Z',str(Z))
     WriteCIFitem(fp,  '_chemical_formula_sum',formula)
     WriteCIFitem(fp,  '_chemical_formula_weight',
+                  G2mth.ValEsd(cellmass/Z,-0.09,True))
+
+def WriteCompositionMM(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None):
+    '''determine the composition for the unit cell, crudely determine Z and
+    then compute the composition in formula units.
+
+    If quickmode is False, then scattering factors are added to the element loop.
+
+    If keV is specified, then resonant scattering factors are also computed and included. 
+    '''
+    General = phasedict['General']
+    Z = General.get('cellZ',0.0)
+    cx,ct,cs,cia = General['AtomPtrs']
+    Atoms = phasedict['Atoms']
+    fpfx = str(phasedict['pId'])+'::Afrac:'
+    cfrac = cx+3
+    cmult = cs+1
+    compDict = {} # combines H,D & T
+    sitemultlist = []
+    massDict = dict(zip(General['AtomTypes'],General['AtomMass']))
+    cellmass = 0
+    elmLookup = {}
+    for i,at in enumerate(Atoms):
+        atype = at[ct].strip()
+        if atype.find('-') != -1: atype = atype.split('-')[0]
+        if atype.find('+') != -1: atype = atype.split('+')[0]
+        atype = atype[0].upper()+atype[1:2].lower() # force case conversion
+        if atype == "D" or atype == "D": atype = "H"
+        fvar = fpfx+str(i)
+        fval = parmDict.get(fvar,at[cfrac])
+        mult = at[cmult]
+        if not massDict.get(at[ct]):
+            print('Error: No mass found for atom type '+at[ct])
+            print('Will not compute cell contents for phase '+phasenam)
+            return
+        cellmass += massDict[at[ct]]*mult*fval
+        compDict[atype] = compDict.get(atype,0.0) + mult*fval
+        elmLookup[atype] = at[ct].strip()
+        if fval == 1: sitemultlist.append(mult)
+    if len(compDict.keys()) == 0: return # no elements!
+    if Z < 1: # Z has not been computed or set by user
+        Z = 1
+        if not sitemultlist:
+            General['cellZ'] = 1
+            return
+        for i in range(2,min(sitemultlist)+1):
+            for m in sitemultlist:
+                if m % i != 0:
+                    break
+                else:
+                    Z = i
+        General['cellZ'] = Z # save it
+
+    if not quickmode:
+        FFtable = G2el.GetFFtable(General['AtomTypes'])
+        BLtable = G2el.GetBLtable(General)
+
+    WriteCIFitem(fp, '\nloop_  _atom_site.type_symbol _atom_type.number_in_cell')
+    s = '       '
+    if not quickmode:
+        for j in ('a1','a2','a3','a4','b1','b2','b3','b4','c',2,1):
+            if len(s) > 80:
+                WriteCIFitem(fp, s)
+                s = '       '
+            if j==1:
+                s += ' _atom_type.scat_source'
+            elif j==2:
+                s += ' _atom_type.scat_length_neutron'
+            else:
+                s += ' _atom_type.scat_Cromer_Mann_'
+                s += j
+        if keV:
+            WriteCIFitem(fp, s)
+            s = '        _atom_type.scat_dispersion_real _atom_type.scat_dispersion_imag _atom_type_scat_dispersion_source'
+        WriteCIFitem(fp, s)
+
+            
+    formula = ''
+    for elem in HillSortElements(list(compDict.keys())):
+        s = '  '
+        elmsym = elmLookup[elem]
+        # CIF does not allow underscore in element symbol (https://www.iucr.org/__data/iucr/cifdic_html/1/cif_core.dic/Iatom_type_symbol.html)
+        if elmsym.endswith("_"):
+             s += PutInCol(elmsym.replace('_',''))
+        elif '_' in elmsym:
+             s += PutInCol(elmsym.replace('_','~'))
+        else:
+            s += PutInCol(elmsym,7)
+        s += PutInCol(G2mth.ValEsd(compDict[elem],-0.009,True),5)
+        if not quickmode:
+            for i in 'fa','fb','fc':
+                if i != 'fc':
+                    for j in range(4):
+                        if elmsym in FFtable:
+                            val = G2mth.ValEsd(FFtable[elmsym][i][j],-0.0009,True)
+                        else:
+                            val = '?'
+                        s += ' '
+                        s += PutInCol(val,9)
+                else:
+                    if elmsym in FFtable:
+                        val = G2mth.ValEsd(FFtable[elmsym][i],-0.0009,True)
+                    else:
+                        val = '?'
+                    s += ' '
+                    s += PutInCol(val,9)
+            if elmsym in BLtable:
+                bldata = BLtable[elmsym]
+                #isotope = bldata[0]
+                #mass = bldata[1]['Mass']
+                if 'BW-LS' in bldata[1]:
+                    val = 0
+                else:
+                    val = G2mth.ValEsd(bldata[1]['SL'][0],-0.0009,True)
+            else:
+                val = '?'
+            s += ' '
+            s += PutInCol(val,9)
+            WriteCIFitem(fp,s.rstrip())
+            WriteCIFitem(fp,'      https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py')
+            if keV:
+                Orbs = G2el.GetXsectionCoeff(elem.split('+')[0].split('-')[0])
+                FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
+                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP))
+        else:
+            WriteCIFitem(fp,s.rstrip())
+        if formula: formula += " "
+        formula += elem
+        if compDict[elem] == Z: continue
+        formula += G2mth.ValEsd(compDict[elem]/Z,-0.009,True)
+    WriteCIFitem(fp,  '\n# Note that Z affects _cell_formula.sum and .weight')
+    WriteCIFitem(fp,  '_cell.formula_units_Z',str(Z))
+    WriteCIFitem(fp,  '_chemical_formula.sum',formula)
+    WriteCIFitem(fp,  '_chemical_formula.weight',
                   G2mth.ValEsd(cellmass/Z,-0.09,True))
 
 class ExportCIF(G2IO.ExportBaseclass):
@@ -2220,6 +2529,116 @@ class ExportCIF(G2IO.ExportBaseclass):
                 MinMax = phasedict['General']['Map']['minmax']
                 WriteCIFitem(self.fp, '_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
                 WriteCIFitem(self.fp, '_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
+
+        def WritePhaseInfoMM(phasenam,quick=True,oneblock=True):
+            'Write out the phase information for the selected phase for a macromolecular phase'
+            WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
+            phasedict = self.Phases[phasenam] # pointer to current phase info
+            WriteCIFitem(self.fp, '_pd_phase_name', phasenam)
+            cellList,cellSig = self.GetCell(phasenam)
+            if oneblock:
+                pass # temperature should be written when the histogram saved later
+            else: # get T set in _SelectPhaseT_CellSelectHist and possibly get new cell params
+                T,hRanId = self.CellHistSelection.get(phasedict['ranId'],
+                                                          ('?',None))
+                try:
+                    T = G2mth.ValEsd(T,-1.0)
+                except:
+                    pass
+                WriteCIFitem(self.fp,"_cell_measurement.temp",T)
+                for h in self.Histograms:
+                    if self.Histograms[h]['ranId'] == hRanId:
+                        pId = phasedict['pId']
+                        hId = self.Histograms[h]['hId']
+                        cellList,cellSig = G2stIO.getCellSU(pId,hId,
+                                        phasedict['General']['SGData'],
+                                        self.parmDict,
+                                        self.OverallParms['Covariance'])
+                        break
+                else:
+                    T = '?'
+
+            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+            prevsig = 0
+            for lbl,defsig,val,sig in zip(cellNames,defsigL,cellList,cellSig):
+                if sig:
+                    txt = G2mth.ValEsd(val,sig)
+                    prevsig = -sig # use this as the significance for next value
+                else:
+                    txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
+                WriteCIFitem(self.fp, '_cell.'+lbl,txt)
+                
+            density = G2mth.getDensity(phasedict['General'])[0]
+            WriteCIFitem(self.fp, '_exptl_crystal.density_diffrn',
+                    G2mth.ValEsd(density,-0.001))                    
+
+            WriteCIFitem(self.fp, '_symmetry.cell_setting',
+                         phasedict['General']['SGData']['SGSys'])
+
+            spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
+            # regularize capitalization and remove trailing H/R
+            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
+            WriteCIFitem(self.fp, '_symmetry.space_group_name_H-M',spacegroup)
+
+            # generate symmetry operations including centering and center of symmetry
+            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
+                phasedict['General']['SGData'])
+            WriteCIFitem(self.fp, 'loop_\n    _space_group.symop_id\n    _space_group.symop_operation_xyz')
+            for i,op in enumerate(SymOpList,start=1):
+                WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,op.lower()))
+
+            # loop over histogram(s) used in this phase
+            if not oneblock and not self.quickmode:
+                # report pointers to the histograms used in this phase
+                histlist = []
+                for hist in self.Phases[phasenam]['Histograms']:
+                    if self.Phases[phasenam]['Histograms'][hist]['Use']:
+                        if phasebyhistDict.get(hist):
+                            phasebyhistDict[hist].append(phasenam)
+                        else:
+                            phasebyhistDict[hist] = [phasenam,]
+                        blockid = datablockidDict.get(hist)
+                        if not blockid:
+                            print("Internal error: no block for data. Phase "+str(
+                                phasenam)+" histogram "+str(hist))
+                            histlist = []
+                            break
+                        histlist.append(blockid)
+
+                if len(histlist) == 0:
+                    WriteCIFitem(self.fp, '# Note: phase has no associated data')
+
+            # report atom params
+            try:
+                self.labellist
+            except AttributeError:
+                self.labellist = []
+            WriteAtomsMM(self.fp, self.Phases[phasenam], phasenam,
+                              self.parmDict, self.sigDict, 
+                                  self.OverallParms['Rigid bodies'])
+
+            keV = None             
+            if oneblock: # get xray wavelength
+                lamlist = []
+                for hist in self.Histograms:
+                    if 'X' not in self.Histograms[hist]['Instrument Parameters'][0]['Type'][0]:
+                        continue
+                    for k in ('Lam','Lam1'):
+                        if k in self.Histograms[hist]['Instrument Parameters'][0]:
+                            lamlist.append(self.Histograms[hist]['Instrument Parameters'][0][k][0])
+                            break
+                if len(lamlist) == 1:
+                    keV = 12.397639/lamlist[0]
+
+            # report cell contents                        
+            WriteCompositionMM(self.fp, self.Phases[phasenam], phasenam, self.parmDict, self.quickmode, keV)
+            if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
+                WriteDistances(phasenam)
+            if 'Map' in phasedict['General'] and 'minmax' in phasedict['General']['Map']:
+                WriteCIFitem(self.fp, '\n# Difference density results')
+                MinMax = phasedict['General']['Map']['minmax']
+                WriteCIFitem(self.fp, '_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
+                WriteCIFitem(self.fp, '_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
                 
         def Yfmt(ndec,val):
             'Format intensity values'
@@ -3010,7 +3429,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, 'data_'+phaseOnly.replace(' ','_'))
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
-            WritePhaseInfo(phaseOnly)
+            if self.Phases[phaseOnly]['General']['Type'] == 'macromolecular':
+                WritePhaseInfoMM(phaseOnly)
+            else:
+                WritePhaseInfo(phaseOnly)
             return
         elif histOnly: #====Histogram only CIF ================================
             print('Writing CIF output to file '+self.filename)
@@ -3217,7 +3639,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteOverall()
             writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
-            WritePhaseInfo(phasenam,False)
+            if self.Phases[phasenam]['General']['Type'] == 'macromolecular':
+                WritePhaseInfoMM(phasenam,False)
+            else:
+                WritePhaseInfo(phasenam,False)
             if hist.startswith("PWDR"):  # this is invoked for single-block CIFs
                 # preferred orientation
                 SH = FormatSH(phasenam)
@@ -3532,7 +3957,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[phasenam])
                     # report the phase
                     writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-                    WritePhaseInfo(phasenam,False,False)
+                    if self.Phases[phasenam]['General']['Type'] == 'macromolecular':
+                        WritePhaseInfoMM(phasenam,False,False)
+                    else:
+                        WritePhaseInfo(phasenam,False,False)
                     # preferred orientation
                     if self.ifPWDR:
                         SH = FormatSH(phasenam)

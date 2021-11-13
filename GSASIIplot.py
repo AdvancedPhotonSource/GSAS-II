@@ -3589,9 +3589,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.plot(X,Y,marker=pP,color=colors[0],linewidth=lW,
                             picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
-                            Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))
+                            Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:
-                                Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))     #background
+                                Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.set_xscale("log",nonpositive='mask') # >=3.3
@@ -3611,8 +3611,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         else:
                             Plot.plot(X,YB,marker=pP,color=colors[0],linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                        Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'))     #const. background
-                        Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
+                        Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'),linewidth=1.5)     #const. background
+                        Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
                 else:  # not logPlot
                     ymax = 1.
                     if Page.plotStyle['Normalize'] and Y.max() != 0 and not G2frame.SinglePlot:
@@ -3622,24 +3622,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,linewidth=lW,
                                 picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,(Z-W)/ymax,colors[1],picker=False,label=incCptn('calc-bkg'))               #Ic-Ib
+                                CalcLine = Plot.plot(X,(Z-W)/ymax,colors[1],picker=False,
+                                    label=incCptn('calc-bkg'),linewidth=1.5)               #Ic-Ib
                         else:
                             Plot.plot(X,YB,color=colors[0],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
+                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
                     else:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
-                            CalcLine = Plot.plot(X,Z/ymax,colors[1],picker=False,label=incCptn('calc'))                 #Ic
+                            CalcLine = Plot.plot(X,Z/ymax,colors[1],picker=False,label=incCptn('calc'),linewidth=1.5)                 #Ic
                         else:
                             Plot.plot(X,YB,color=colors[0],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
+                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W/ymax,colors[2],picker=False,label=incCptn('bkg'))                 #Ib
+                        BackLine = Plot.plot(X,W/ymax,colors[2],picker=False,label=incCptn('bkg'),linewidth=1.5)                 #Ib
                         if not G2frame.Weight and np.any(Z):
-                            DifLine = Plot.plot(X,D/ymax,colors[3],
+                            DifLine = Plot.plot(X,D/ymax,colors[3],linewidth=1.5,
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
@@ -3682,27 +3683,27 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if 'PWDR' in plottype:
                         try:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor), # >=3.3
-                                            picker=False,nonpositive='mask')
+                                picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                            picker=False,nonposy='mask')
+                                picker=False,nonposy='mask')
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                            picker=False,nonpositive='mask')
+                                picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                            picker=False,nonposy='mask')
+                                picker=False,nonposy='mask')
                 else:
                     if 'PWDR' in plottype:
                         Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False)
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                            picker=False,nonpositive='mask')
+                                picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                            picker=False,nonposy='mask')
+                                picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:

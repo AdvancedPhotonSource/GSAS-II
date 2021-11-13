@@ -733,10 +733,12 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
 def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
                           RBparms={}):
     'Write atom positions to CIF using mmCIF items'
+    AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+                'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     General = phasedict['General']
     cx,ct,cs,cia = General['AtomPtrs']
-    GS = G2lat.cell2GS(General['Cell'][1:7])
+    #GS = G2lat.cell2GS(General['Cell'][1:7])
     Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
     Atoms = phasedict['Atoms']
     cfrac = cx+3
@@ -751,6 +753,7 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
 
     WriteCIFitem(fp, '\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
     WriteCIFitem(fp, 'loop_ '+
+                 '\n   _atom_site.group_PDB'+
                  '\n   _atom_site.id'+
                  '\n   _atom_site.type_symbol'+
                  '\n   _atom_site.label_atom_id'+
@@ -765,22 +768,22 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
                  '\n   _atom_site.auth_seq_id'+
                  '\n   _atom_site.pdbx_PDB_ins_code'+
                  '\n   _atom_site.pdbx_formal_charge'+
+                 '\n   _atom_site.pdbx_PDB_model_num'
                  '\n   _atom_site.fract_x'+
                  '\n   _atom_site.fract_y'+
                  '\n   _atom_site.fract_z'+
                  '\n   _atom_site.occupancy'+
-                 '\n   _atom_site.U_iso_or_equiv'
+                 '\n   _atom_site.U_iso_or_equiv'+
+                 '\n   _atom_site.Cartn_x'+
+                 '\n   _atom_site.Cartn_y'+
+                 '\n   _atom_site.Cartn_z'
                  )
 
-# _atom_site.group_PDB
-# _atom_site.Cartn_x
-# _atom_site.Cartn_y
-# _atom_site.Cartn_z
 # _atom_site.Cartn_x_esd
 # _atom_site.Cartn_y_esd
 # _atom_site.Cartn_z_esd
 # _atom_site.occupancy_esd
-# _atom_site.pdbx_PDB_model_num
+#
 
     varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                 cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
@@ -788,10 +791,13 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
 
     pfx = str(phasedict['pId'])+'::'
     # loop over all atoms
-    naniso = 0
+#    naniso = 0
     for i,at in enumerate(Atoms):
-        s = ''
-        s += PutInCol(str(i),5) # atom number
+        if at[ct-3] in AA3letter:
+            s = 'ATOM   '
+        else:
+            s = 'HETATM '
+        s += PutInCol(str(i+1),5) # atom number
         s += PutInCol(FmtAtomType(at[ct]),4) # type
         s += PutInCol(at[ct-1],4) # _atom_id
         s += PutInCol(at[ct-1],4) # _atom_id
@@ -805,16 +811,18 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
         s += PutInCol('?',2) # _seq_id
         s += PutInCol('?',2) # pdbx_PDB_ins_code
         s += PutInCol('?',2) # pdbx_formal_charge
+        s += PutInCol('1',2) # pdbx_PDB_model_num
+            
         fval = parmDict.get(fpfx+str(i),at[cfrac])
         if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
-        if at[cia] == 'I':
-            adp = 'Uiso '
-        else:
-            adp = 'Uani '
-            naniso += 1
-            t = G2lat.Uij2Ueqv(at[cia+2:cia+8],GS,Amat)[0]
-            for j in (2,3,4):
-                var = pfx+varnames[cia+j]+":"+str(i)
+#        if at[cia] == 'I':
+#            adp = 'Uiso '
+#        else:
+#            adp = 'Uani '
+#            naniso += 1
+#            t = G2lat.Uij2Ueqv(at[cia+2:cia+8],GS,Amat)[0]
+#            for j in (2,3,4):
+#                var = pfx+varnames[cia+j]+":"+str(i)
         for j in (cx,cx+1,cx+2,cx+3,cia+1):
             if j in (cx,cx+1,cx+2):
                 dig = 11
@@ -832,6 +840,9 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
             if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                 sig = -abs(sig)
             s += PutInCol(G2mth.ValEsd(val,sig),dig)
+            # Cartesian coordinates
+            for xyz in np.inner(Amat,at[cx:cx+3]):
+                s += PutInCol(G2mth.ValEsd(xyz,-0.009),8)
         WriteCIFitem(fp, s)
     # save information about rigid bodies
 #     header = False
@@ -2537,7 +2548,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             'Write out the phase information for the selected phase for a macromolecular phase'
             WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info
-            WriteCIFitem(self.fp, '_pd_phase_name', phasenam)
+            WriteCIFitem(self.fp, '_cell.entry_id', phasenam)
             cellList,cellSig = self.GetCell(phasenam)
             if oneblock:
                 pass # temperature should be written when the histogram saved later
@@ -2635,13 +2646,13 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             # report cell contents                        
             WriteCompositionMM(self.fp, self.Phases[phasenam], phasenam, self.parmDict, self.quickmode, keV)
-            if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
-                WriteDistances(phasenam)
+            #if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
+            #    WriteDistances(phasenam)
             if 'Map' in phasedict['General'] and 'minmax' in phasedict['General']['Map']:
                 WriteCIFitem(self.fp, '\n# Difference density results')
                 MinMax = phasedict['General']['Map']['minmax']
-                WriteCIFitem(self.fp, '_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
-                WriteCIFitem(self.fp, '_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
+                WriteCIFitem(self.fp, '_refine.diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
+                WriteCIFitem(self.fp, '_refine.diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
                 
         def Yfmt(ndec,val):
             'Format intensity values'

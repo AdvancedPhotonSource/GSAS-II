@@ -754,20 +754,24 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
                  '\n   _atom_site.id'+
                  '\n   _atom_site.type_symbol'+
                  '\n   _atom_site.label_atom_id'+
+                 '\n   _atom_site.auth_atom_id'+
                  '\n   _atom_site.label_alt_id'+
                  '\n   _atom_site.label_comp_id'+
+                 '\n   _atom_site.auth_comp_id'+
                  '\n   _atom_site.label_asym_id'+
+                 '\n   _atom_site.auth_asym_id'+
                  '\n   _atom_site.label_entity_id'+
                  '\n   _atom_site.label_seq_id'+
+                 '\n   _atom_site.auth_seq_id'+
                  '\n   _atom_site.pdbx_PDB_ins_code'+
+                 '\n   _atom_site.pdbx_formal_charge'+
                  '\n   _atom_site.fract_x'+
                  '\n   _atom_site.fract_y'+
                  '\n   _atom_site.fract_z'+
                  '\n   _atom_site.occupancy'+
-#                 '\n   _atom_site_adp_type'+
                  '\n   _atom_site.U_iso_or_equiv'
-#                 '\n   _atom_site_site_symmetry_multiplicity'
                  )
+
 # _atom_site.group_PDB
 # _atom_site.Cartn_x
 # _atom_site.Cartn_y
@@ -776,13 +780,8 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
 # _atom_site.Cartn_y_esd
 # _atom_site.Cartn_z_esd
 # _atom_site.occupancy_esd
-# _atom_site.B_iso_or_equiv_esd
-# _atom_site.pdbx_formal_charge
-# _atom_site.auth_seq_id
-# _atom_site.auth_comp_id
-# _atom_site.auth_asym_id
-# _atom_site.auth_atom_id
 # _atom_site.pdbx_PDB_model_num
+
     varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                 cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
                 cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
@@ -794,13 +793,18 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
         s = ''
         s += PutInCol(str(i),5) # atom number
         s += PutInCol(FmtAtomType(at[ct]),4) # type
-        s += PutInCol(at[ct-1],4) # label_atom_id
+        s += PutInCol(at[ct-1],4) # _atom_id
+        s += PutInCol(at[ct-1],4) # _atom_id
         s += PutInCol('.',2) # alt_id
         s += PutInCol(at[ct-3],4) # comp_id
+        s += PutInCol(at[ct-3],4) # comp_id
+        s += PutInCol(at[ct-2],3) # _asym_id
         s += PutInCol(at[ct-2],3) # _asym_id
         s += PutInCol(at[ct-4],3) # entity_id
         s += PutInCol('?',2) # _seq_id
+        s += PutInCol('?',2) # _seq_id
         s += PutInCol('?',2) # pdbx_PDB_ins_code
+        s += PutInCol('?',2) # pdbx_formal_charge
         fval = parmDict.get(fpfx+str(i),at[cfrac])
         if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
         if at[cia] == 'I':
@@ -811,7 +815,7 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
             t = G2lat.Uij2Ueqv(at[cia+2:cia+8],GS,Amat)[0]
             for j in (2,3,4):
                 var = pfx+varnames[cia+j]+":"+str(i)
-        for j in (cx,cx+1,cx+2,cx+3):
+        for j in (cx,cx+1,cx+2,cx+3,cia+1):
             if j in (cx,cx+1,cx+2):
                 dig = 11
                 sigdig = -0.00009
@@ -828,7 +832,6 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
             if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                 sig = -abs(sig)
             s += PutInCol(G2mth.ValEsd(val,sig),dig)
-        s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)
     # save information about rigid bodies
 #     header = False

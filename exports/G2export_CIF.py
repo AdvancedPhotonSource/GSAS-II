@@ -2953,6 +2953,292 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += PutInCol(Yfmt(ndec,ybkg),11)
                     s += PutInCol(Yfmt(ndecSU,yw),9)
                     WriteCIFitem(self.fp, "  "+s)
+                    
+        def WritePowderDataMM(histlbl,seq=False):
+            'Write out the selected powder diffraction histogram info'
+            histblk = self.Histograms[histlbl]
+            inst = histblk['Instrument Parameters'][0]
+            hId = histblk['hId']
+            pfx = ':' + str(hId) + ':'
+
+            if 'Lam1' in inst:
+                ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
+                sratio = self.sigDict.get('I(L2)/I(L1)',-0.0009)
+                lam1 = self.parmDict.get('Lam1',inst['Lam1'][1])
+                slam1 = self.sigDict.get('Lam1',-0.00009)
+                lam2 = self.parmDict.get('Lam2',inst['Lam2'][1])
+                slam2 = self.sigDict.get('Lam2',-0.00009)
+                # always assume Ka1 & Ka2 if two wavelengths are present
+                WriteCIFitem(self.fp, '_diffrn_radiation.type','K\\a~1,2~')
+                WriteCIFitem(self.fp, 'loop_' +
+                             '\n   _diffrn_radiation_wavelength.wavelength' +
+                             '\n   _diffrn_radiation_wavelength.wt' +
+                             '\n   _diffrn_radiation_wavelength.id')
+                WriteCIFitem(self.fp, '  ' + PutInCol(G2mth.ValEsd(lam1,slam1),15)+
+                             PutInCol('1.0',15) +
+                             PutInCol('1',5))
+                WriteCIFitem(self.fp, '  ' + PutInCol(G2mth.ValEsd(lam2,slam2),15)+
+                             PutInCol(G2mth.ValEsd(ratio,sratio),15)+
+                             PutInCol('2',5))
+            elif 'Lam' in inst:
+                lam1 = self.parmDict.get('Lam',inst['Lam'][1])
+                slam1 = self.sigDict.get('Lam',-0.00009)
+                WriteCIFitem(self.fp, '_diffrn_radiation_wavelength.wavelength',G2mth.ValEsd(lam1,slam1))
+
+            if not oneblock:
+                if seq:
+                    pass
+                elif not phasebyhistDict.get(histlbl):
+                    WriteCIFitem(self.fp, '\n# No phases associated with this data set')
+                else:
+                    WriteCIFitem(self.fp, '\n# PHASE TABLE')
+                    WriteCIFitem(self.fp, 'loop_' +
+                                 '\n   _pd_phase_id' +
+                                 '\n   _pd_phase_block_id' +
+                                 '\n   _pd_phase_mass_%')
+                    wtFrSum = 0.
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
+                        General = self.Phases[phasenam]['General']
+                        wtFrSum += hapData['Scale'][0]*General['Mass']
+
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
+                        General = self.Phases[phasenam]['General']
+                        wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum
+                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
+                        if pfx+'Scale' in self.sigDict:
+                            sig = self.sigDict[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                        else:
+                            sig = -0.0001
+                        WriteCIFitem(self.fp,
+                            '  '+
+                            str(self.Phases[phasenam]['pId']) +
+                            '  '+datablockidDict[phasenam]+
+                            '  '+G2mth.ValEsd(wtFr,sig)
+                            )
+                    WriteCIFitem(self.fp, 'loop_' +
+                                 '\n   _gsas_proc_phase_R_F_factor' +
+                                 '\n   _gsas_proc_phase_R_Fsqd_factor' +
+                                 '\n   _gsas_proc_phase_id' +
+                                 '\n   _gsas_proc_phase_block_id')
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
+                        WriteCIFitem(self.fp,
+                            '  '+
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf']/100.,-.00009) +
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2']/100.,-.00009)+
+                            '  '+str(self.Phases[phasenam]['pId'])+
+                            '  '+datablockidDict[phasenam]
+                            )
+            elif len(self.Phases) == 1:
+                # single phase in this histogram
+                # get the phase number here
+                pId = self.Phases[list(self.Phases.keys())[0]]['pId']
+                pfx = str(pId)+':'+str(hId)+':'
+                WriteCIFitem(self.fp, '_refine.ls_R_factor_all    ','%.5f'%(histblk[pfx+'Rf']/100.))
+                WriteCIFitem(self.fp, '_refine_ls.R_Fsqd_factor   ','%.5f'%(histblk[pfx+'Rf^2']/100.))
+                
+            try:
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_R_factor   ','%.5f'%(histblk['R']/100.))
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_factor  ','%.5f'%(histblk['wR']/100.))
+                WriteCIFitem(self.fp, '_gsas_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
+                WriteCIFitem(self.fp, '_gsas_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_expected','%.5f'%(histblk['wRmin']/100.))
+            except KeyError:
+                pass
+
+            if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
+                WriteCIFitem(self.fp, '_diffrn_radiation.probe','x-ray')
+                pola = histblk['Instrument Parameters'][0].get('Polariz.')
+                if pola:
+                    pfx = ':' + str(hId) + ':'
+                    sig = self.sigDict.get(pfx+'Polariz.',-0.0009)
+                    txt = G2mth.ValEsd(pola[1],sig)
+                    WriteCIFitem(self.fp, '_diffrn_radiation.polarisn_ratio',txt)
+            elif histblk['Instrument Parameters'][0]['Type'][1][1] == 'N':
+                WriteCIFitem(self.fp, '_diffrn_radiation.probe','neutron')
+            if 'T' in inst['Type'][0]:
+                txt = G2mth.ValEsd(inst['2-theta'][0],-0.009)
+                WriteCIFitem(self.fp, '_pd_meas_2theta_fixed',txt)
+
+            WriteCIFitem(self.fp, '_pd_proc_ls_background_function',FormatBackground(histblk['Background'],histblk['hId']))
+
+            # TODO: this will need help from Bob
+            #WriteCIFitem(self.fp, '_exptl_absorpt_process_details','?')
+            #WriteCIFitem(self.fp, '_exptl_absorpt_correction_T_min','?')
+            #WriteCIFitem(self.fp, '_exptl_absorpt_correction_T_max','?')
+            #C extinction
+            #WRITE(IUCIF,'(A)') '# Extinction correction'
+            #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_min',TEXT(1:10))
+            #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_max',TEXT(11:20))
+
+            # code removed because it is causing duplication in histogram block 1/26/19 BHT 
+            #if not oneblock:                 # instrumental profile terms go here
+            #    WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
+            #        FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
+
+            # data collection parameters for the powder dataset
+
+            temperature = histblk['Sample Parameters'].get('Temperature') # G2 uses K
+            if not temperature:
+                T = '?'
+            else:
+                T = G2mth.ValEsd(temperature,-0.009,True) # CIF uses K
+            WriteCIFitem(self.fp, '_diffrn_ambient.temp',T)
+
+            pressure = histblk['Sample Parameters'].get('Pressure') #G2 uses mega-Pascal
+            if not pressure:
+                P = '?'
+            else:
+                P = G2mth.ValEsd(pressure*1000,-0.09,True) # CIF uses kilopascal (G2 Mpa)
+            WriteCIFitem(self.fp, '_diffrn_ambient.pressure',P)
+
+            WriteCIFitem(self.fp, '\n# STRUCTURE FACTOR TABLE')
+            # compute maximum intensity reflection
+            Imax = 0
+            phaselist = []
+            for phasenam in histblk['Reflection Lists']:
+                try:
+                    scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                except KeyError: # reflection table from removed phase?
+                    continue
+                phaselist.append(phasenam)
+                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                I100 = scale*refList.T[8]*refList.T[11]
+                #Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
+                #FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
+                #I100 = scale*FO2*Icorr
+#                Imax = max(Imax,max(I100))
+
+            WriteCIFitem(self.fp, 'loop_')
+            #refprx = '_refln.' # mm
+            if len(phaselist) > 1:
+                WriteCIFitem(self.fp, '   _pd_refln_phase_id')
+            WriteCIFitem(self.fp, '   _refln.index_h' +
+                         '\n   _refln.index_k' +
+                         '\n   _refln.index_l' +
+                         '\n   _refln.F_squared_meas' +
+                         '\n   _refln.F_squared_calc' +
+                         '\n   _refln.phase_calc' +
+                         '\n   _refln.d_spacing' +
+                         '\n   _refln.status' +
+                         '\n   _refln.crystal_id' +
+                         '\n   _refln.wavelength_id' + 
+                         '\n   _refln.scale_group_code' + 
+                         '\n   _refln.F_squared_sigma')
+            
+#            if Imax > 0:
+#                WriteCIFitem(self.fp, '   _gsas_i100_meas')
+
+            refcount = 0
+            hklmin = None
+            hklmax = None
+            dmax = None
+            dmin = None
+            for phasenam in phaselist:
+                scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                phaseid = self.Phases[phasenam]['pId']
+                refcount += len(histblk['Reflection Lists'][phasenam]['RefList'])
+                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                I100 = scale*refList.T[8]*refList.T[11]
+                for j,ref in enumerate(histblk['Reflection Lists'][phasenam]['RefList']):
+                    if DEBUG:
+                        print('DEBUG: skipping reflection list')
+                        break
+                    if hklmin is None:
+                        hklmin = copy.copy(ref[0:3])
+                        hklmax = copy.copy(ref[0:3])
+                    if dmin is None:
+                         dmax = dmin = ref[4]
+                    if len(phaselist) > 1:
+                        s = PutInCol(phaseid,2)
+                    else:
+                        s = ""
+                    for i,hkl in enumerate(ref[0:3]):
+                        hklmax[i] = max(hkl,hklmax[i])
+                        hklmin[i] = min(hkl,hklmin[i])
+                        s += PutInCol(int(hkl),4)
+                    for I in ref[8:10]:
+                        s += PutInCol(G2mth.ValEsd(I,-0.0009),14)
+                    s += PutInCol(G2mth.ValEsd(ref[10],-0.9),7)
+                    dmax = max(dmax,ref[4])
+                    dmin = min(dmin,ref[4])
+                    s += PutInCol(G2mth.ValEsd(ref[4],-0.00009),8)
+#                    if Imax > 0:
+#                        s += PutInCol(G2mth.ValEsd(100.*I100[j]/Imax,-0.09),6)
+                    s += PutInCol('o',2)
+                    s += PutInCol('1',2)
+                    s += PutInCol('1',2)
+                    s += PutInCol('1',2)
+                    s += PutInCol('.',2)
+                    WriteCIFitem(self.fp, "  "+s)
+
+            # Write reflection statistics
+            WriteCIFitem(self.fp, '_diffrn_reflns.number', str(refcount))
+            if hklmin is not None and len(phaselist) == 1: # hkl range has no meaning with multiple phases
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_h_min', str(int(hklmin[0])))
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_h_max', str(int(hklmax[0])))
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_k_min', str(int(hklmin[1])))
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_k_max', str(int(hklmax[1])))
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_l_min', str(int(hklmin[2])))
+                WriteCIFitem(self.fp, '_diffrn_reflns.limit_l_max', str(int(hklmax[2])))
+            if hklmin is not None:
+                WriteCIFitem(self.fp, '_reflns.d_resolution_low  ', G2mth.ValEsd(dmax,-0.009))
+                WriteCIFitem(self.fp, '_reflns.d_resolution_high ', G2mth.ValEsd(dmin,-0.009))
+                
+            WriteCIFitem(self.fp, '\n# POWDER DATA TABLE')
+
+            # is data fixed step? If the step varies by <0.01% treat as fixed step
+            fixedstep = False
+            zero = None
+            WriteCIFitem(self.fp, '_refine.pdbx_pd_meas_number_of_points', str(len(histblk['Data'][0])))
+            WriteCIFitem(self.fp, '\nloop_')
+            #            WriteCIFitem(self.fp, '   _pd_proc_d_spacing') # need easy way to get this
+            if 'T' in inst['Type'][0]: # and not TOF
+                WriteCIFitem(self.fp, '   _pd_meas_time_of_flight')
+            else:
+                WriteCIFitem(self.fp, '   _pdbx_powder_data.pd_meas_2theta_scan')
+            # at least for now, always report weights.
+            #if countsdata:
+            #    WriteCIFitem(self.fp, '   _pd_meas_counts_total')
+            #else:
+            WriteCIFitem(self.fp, '   _pdbx_powder_data.pd_meas_intensity_total')
+            WriteCIFitem(self.fp, '   _pdbx_powder_data.pd_calc_intensity_total')
+            WriteCIFitem(self.fp, '   _pdbx_powder_data.pd_proc_intensity_bkg_calc')
+            WriteCIFitem(self.fp, '   _pdbx_powder_data.pd_proc_ls_weight')
+            maxY = max(histblk['Data'][1].max(),histblk['Data'][3].max())
+            if maxY < 0: maxY *= -10 # this should never happen, but...
+            ndec = max(0,10-int(np.log10(maxY))-1) # 10 sig figs should be enough
+            maxSU = histblk['Data'][2].max()
+            if maxSU < 0: maxSU *= -1 # this should never happen, but...
+            ndecSU = max(0,8-int(np.log10(maxSU))-1) # 8 sig figs should be enough
+            lowlim,highlim = histblk['Limits'][1]
+
+            if DEBUG:
+                print('DEBUG: skipping profile list')
+            else:
+                for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0].data,        #get the data from these masked arrays
+                                                histblk['Data'][1].data,
+                                                histblk['Data'][2].data,
+                                                histblk['Data'][3].data,
+                                                histblk['Data'][4].data):
+                    if lowlim <= x <= highlim:
+                        pass
+                    else:
+                        yw = 0.0 # show the point is not in use
+
+                    if fixedstep:
+                        s = ""
+                    elif zero:
+                        s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
+                    else:
+                        s = PutInCol(G2mth.ValEsd(x,-0.00009),10)
+                    s += PutInCol(Yfmt(ndec,yobs),12)
+                    s += PutInCol(Yfmt(ndec,ycalc),12)
+                    s += PutInCol(Yfmt(ndec,ybkg),11)
+                    s += PutInCol(Yfmt(ndecSU,yw),9)
+                    WriteCIFitem(self.fp, "  "+s)
 
         def WriteSingleXtalData(histlbl):
             'Write out the selected single crystal histogram info'
@@ -3439,6 +3725,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             return
         elif histOnly: #====Histogram only CIF ================================
             print('Writing CIF output to file '+self.filename)
+            MM = False
+            for p in self.Phases:
+                if self.Phases[p]['General']['Type'] == 'macromolecular':
+                    MM = True
+                    break
             hist = histOnly
             #histname = histOnly.replace(' ','')
             oneblock = True
@@ -3449,7 +3740,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.Write(70*'#')
             #phasenam = self.Phases.keys()[0]
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
-            if hist.startswith("PWDR"):
+            if hist.startswith("PWDR") and MM:
+                WritePowderDataMM(hist)
+            elif hist.startswith("PWDR"):
                 WritePowderData(hist)
             elif hist.startswith("HKLF"):
                 WriteSingleXtalData(hist)
@@ -3611,6 +3904,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 self.cifdefs.Destroy()
                 return
         self.cifdefs.Destroy()
+        MM = False
+        for p in self.Phases:
+            if self.Phases[p]['General']['Type'] == 'macromolecular':
+                MM = True
+                break
         #======================================================================
         #---- Start writing the CIF - single block
         #======================================================================
@@ -3620,7 +3918,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             hist = self.histnam[0]
             self.CIFname = hist[5:40].replace(' ','')
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
-            if hist.startswith("PWDR"):
+            if hist.startswith("PWDR") and MM:
+                WritePowderDataMM(hist)
+            elif hist.startswith("PWDR"):
                 WritePowderData(hist)
             elif hist.startswith("HKLF"):
                 WriteSingleXtalData(hist)
@@ -3663,7 +3963,10 @@ class ExportCIF(G2IO.ExportBaseclass):
 
                 histblk = self.Histograms[hist]["Sample Parameters"]
                 writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
-                WritePowderData(hist)
+                if hist.startswith("PWDR") and MM:
+                    WritePowderDataMM(hist)
+                else:
+                    WritePowderData(hist)
             elif hist.startswith("HKLF"):
                 histprm = self.Histograms[hist]["Instrument Parameters"][0]
                 writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
@@ -4032,7 +4335,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                                 s += '  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP)
                                 WriteCIFitem(self.fp,s.rstrip())
                             WriteCIFitem(self.fp,'')
-                        WritePowderData(hist)
+                        if MM:
+                            WritePowderDataMM(hist)
+                        else:
+                            WritePowderData(hist)
                 for i in sorted(self.xtalDict.keys()):
                     hist = self.xtalDict[i]
                     histblk = self.Histograms[hist]

@@ -1354,7 +1354,8 @@ width parameters are computed from the instrument parameters (UVW,... or
 alpha,... etc) unless the individual parameter is refined. This allows the 
 instrument parameters to be refined. When peakInstPrmMode=False, the instrument
 parameters are not used and cannot be refined. 
-The default is peakFitMode=True.
+The default is peakFitMode=True. This is changed only in 
+:func:`setPeakInstPrmMode`, which is called only from :mod:`GSASIIscriptable`.
 '''
 
 def setPeakInstPrmMode(normal=True):
@@ -1362,6 +1363,7 @@ def setPeakInstPrmMode(normal=True):
     peak width parameters are computed from the instrument parameters
     unless the individual parameter is refined. If normal=False, 
     peak widths are used as supplied for each peak. 
+    At present this is called only in G2scriptable.
 
     Note that normal=True unless this routine is called. Also, 
     instrument parameters can only be refined with normal=True. 
@@ -1373,7 +1375,8 @@ def setPeakInstPrmMode(normal=True):
     peakInstPrmMode = normal
 
 def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
-    '''Computes the profile for a powder pattern for single peak fitting
+    '''Computes the profiles from multiple peaks for individual peak fitting
+    for powder patterns. 
     NB: not used for Rietveld refinement
     '''
     
@@ -1963,8 +1966,8 @@ def DoCalibInst(IndexPeaks,Inst):
     GetInstParms(parmDict,Inst,varyList)
     InstPrint(Inst,sigDict)
     return True
-            
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,wtFactor=1.0,dlg=None):
+
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,wtFactor=1.0,dlg=None,noFit=False):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
@@ -1991,6 +1994,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     :param float wtFactor: weight multiplier; = 1.0 by default
     :param wx.Dialog dlg: A dialog box that is updated with progress from the fit.
       Defaults to None, which means no updates are done.
+    :param bool noFit: When noFit is True, a refinement is not performed. Default
+      is False.
+
     '''
     def GetBackgroundParms(parmList,Background):
         iBak = 0
@@ -2232,10 +2238,17 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
                 
     def devPeakProfile(values,xdata,ydata,fixback, weights,dataType,parmdict,varylist,bakType,dlg):
+        '''Computes a matrix where each row is the derivative of the calc-obs 
+        values (see :func:`errPeakProfile`) with respect to each parameter
+        in backVary,insVary,peakVary. Used for peak fitting.
+        '''
         parmdict.update(zip(varylist,values))
         return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,fixback,varylist,bakType)
             
-    def errPeakProfile(values,xdata,ydata,fixback,weights,dataType,parmdict,varylist,bakType,dlg):        
+    def errPeakProfile(values,xdata,ydata,fixback,weights,dataType,parmdict,varylist,bakType,dlg):
+        '''Computes a vector with the weighted calc-obs values differences 
+        for peak fitting
+        '''
         parmdict.update(zip(varylist,values))
         M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,fixback,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
@@ -2246,7 +2259,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 return -M           #abort!!
         return M
 
-    # beginning of DoPeakFit
+    #---- beginning of DoPeakFit ----------------------------------------------
     if controls:
         Ftol = controls['min dM/M']
     else:
@@ -2281,7 +2294,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if v in varyList:
                 raise Exception('Instrumental profile terms cannot be varied '+
                                     'after setPeakInstPrmMode(False) is used')
-    while True:
+    while not noFit:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         Rvals = {}
@@ -2317,10 +2330,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             else: # nothing removed
                 break
     if dlg: dlg.Destroy()
-    sigDict = dict(zip(varyList,sig))
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin],fixback[xBeg:xFin])[0]
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],fixback[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
+    if noFit:
+        return
+    sigDict = dict(zip(varyList,sig))
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)

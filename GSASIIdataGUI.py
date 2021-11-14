@@ -6453,10 +6453,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_ISODNEWPHASE')
         self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make CIF file','From ISODISTORT selection')
         G2G.Define_wxId('wxID_SHOWISO1')
-        self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show ISODISTORT modes',
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show modes',
                 'Show ISODISTORT mode values for current phase')
         G2G.Define_wxId('wxID_SHOWISOMODES')
-        self.ISODDataEdit.Append(G2G.wxID_SHOWISOMODES,'Show ISODISTORT relationships',
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISOMODES,'Show relationships',
                 'Show how ISODISTORT modes are defined in current phase')
         self.PostfillDataMenu()
 

@@ -3961,21 +3961,28 @@ def ShowIsoModes(G2frame,phase):
         modeExp = {}
         for i,row in enumerate(ISO['Var2ModeMatrix']):
             line = '('
+            l = 1
             for j,k in enumerate(row):
                 var = ISO['IsoVarList'][j]
                 if np.isclose(k,0): continue
+                if l > 30:
+                    line += '\n'
+                    l = 0
+                l += 3
                 if k < 0 and j > 0:
                     line += ' - '
                     k = -k
                 elif j > 0: 
                     line += ' + '
                 if np.isclose(k,1):
-                    line += '%s ' % str(var)
+                    l1 = '%s ' % str(var)
                 else:
-                    line += '%.3f * %s' % (k,str(var))
-            line += ')/{:.3g}'.format(ISO['NormList'][i])
+                    l1 = '%.3f * %s' % (k,str(var))
+                line += l1
+                l += len(l1)
+            line += ') / {:.3g}'.format(ISO['NormList'][i])
             modeExp[str(ISO['G2ModeList'][i])] = line
-                
+
         crdExp = {}
         for i,(lbl,row) in enumerate(zip(ISO['IsoVarList'],ISO['Mode2VarMatrix'])):
             l = ''
@@ -3984,15 +3991,15 @@ def ShowIsoModes(G2frame,phase):
                 l1 = ''
                 if j > 0 and k < 0:
                     k = -k
-                    l1 = ' -'
+                    l1 = '\n-'
                 elif j > 0:
-                    l1 += ' +'
+                    l1 += '\n+'
                 if np.isclose(k,1):
                     l += '{:} {:4g} * {:}'.format(
-                        l1, n, ISO['G2ModeList'][j])
+                        l1, n, ISO['IsoModeList'][j])
                 else:
                     l += '{:} {:3g} * {:4g} * {:}'.format(
-                        l1, k, n, ISO['G2ModeList'][j])               
+                        l1, k, n, ISO['IsoModeList'][j])               
             crdExp[lbl] = l
 
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT modes and displacements',#size=(630,400),
@@ -4005,34 +4012,36 @@ def ShowIsoModes(G2frame,phase):
         panel1 = wxscroll.ScrolledPanel(
             dlg, wx.ID_ANY,#size=(100,200),
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer1 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
+        subSizer1 = wx.FlexGridSizer(cols=5,hgap=5,vgap=2)
         panel2 = wxscroll.ScrolledPanel(
             dlg, wx.ID_ANY,#size=(100,200),
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer2 = wx.FlexGridSizer(cols=4,hgap=5,vgap=2)
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'GSAS-II\nequiv.'))
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' expression'),0,wx.ALIGN_CENTER)
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'ISODISTORT\nname'))
-        for i in range(3): subSizer1.Add((-1,5)) # spacer
+        subSizer2 = wx.FlexGridSizer(cols=6,hgap=5,vgap=2)
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'ISODISTORT\nvariable'),0,wx.ALIGN_CENTER)
+        subSizer1.Add((8,-1)) # spacer
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'GSAS-II\nequiv.'),0,wx.ALIGN_CENTER)
+        subSizer1.Add((8,-1)) # spacer
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'expression'),0,wx.ALIGN_CENTER)
         subSizer2.Add((-1,-1))
-        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'GSAS-II\nMode Name'))
-        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' expression'),0,wx.ALIGN_CENTER)
-        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'ISODISTORT\nMode name'))
-        for i in range(4): subSizer2.Add((-1,5))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'ISODISTORT\nMode name'),0,wx.ALIGN_CENTER)
+        subSizer2.Add((8,-1)) # spacer
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'GSAS-II\nequiv.'),0,wx.ALIGN_CENTER)
+        subSizer2.Add((8,-1)) # spacer
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'expression'),0,wx.ALIGN_CENTER)
+        for i in range(6): subSizer2.Add((-1,5))
         for i,lbl in enumerate(ISO['IsoVarList']):
+            var = str(ISO['G2VarList'][i]).replace('::dA','::A')
             if np.isclose(ISO['G2coordOffset'][i],0):
-                G2var = '{:}'.format(str(ISO['G2VarList'][i]).replace('::dA','::A'))
+                G2var = '{:}'.format(var)
             elif ISO['G2coordOffset'][i] < 0:
-                G2var = '({:} + {:.3g})'.format(
-                    str(ISO['G2VarList'][i]).replace('::dA','::A'),
-                    -ISO['G2coordOffset'][i])
+                G2var = '({:} + {:.3g})'.format(var,-ISO['G2coordOffset'][i])
             else:
-                G2var = '({:} - {:.3g})'.format(
-                    str(ISO['G2VarList'][i]).replace('::dA','::A'),
-                    ISO['G2coordOffset'][i])
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)))
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]))
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+                G2var = '({:} - {:.3g})'.format(var,ISO['G2coordOffset'][i])
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)),0,WACV)
+            subSizer1.Add((-1,-1)) # spacer
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)),0,WACV)
+            subSizer1.Add((-1,-1)) # spacer
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]),0,wx.TOP,7)
             
         for (isomode,G2mode) in zip(ISO['IsoModeList'],ISO['G2ModeList']):
             if str(G2mode) in constrDict:
@@ -4040,9 +4049,11 @@ def ShowIsoModes(G2frame,phase):
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 subSizer2.Add((-1,-1))
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(G2mode)))
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,modeExp[str(G2mode)]))
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(isomode)))
+            subSizer2.Add((-1,-1)) # spacer
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(G2mode)))
+            subSizer2.Add((-1,-1)) # spacer
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,modeExp[str(G2mode)]))
             
         # finish up ScrolledPanel
         panel1.SetSizer(subSizer1)

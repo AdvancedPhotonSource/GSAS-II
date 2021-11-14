@@ -1339,14 +1339,15 @@ def CentCheck(Cent,H):
 def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
     """ Checks members of a rigid body to see if one is a symmetry equivalent of another.
     If so the atom site frac is set to zero.
-    param: Atoms: atom array as defined in GSAS-II; modified here
-    param: ct: int location of atom type in Atoms item
-    param: cx: int location of x,y,z,frac in Atoms item
-    param: AtLookUp: dict: atom lookup by Id table
-    param: Amat: np .array: crystal-to-Cartesian transformationmatri
-    param: RBObjIds: list: atom Id belonging to rigid body being tested
-    param: SGData: Dict: GSAS-II space group info.
-    :return: Atoms with modified atom frac entries
+
+    :param Atoms: atom array as defined in GSAS-II; modified here
+    :param ct: int location of atom type in Atoms item
+    :param cx: int location of x,y,z,frac in Atoms item
+    :param dict AtLookUp: atom lookup by Id table
+    :param np.array Amat: crystal-to-Cartesian transformation matrix
+    :param list RBObjIds: atom Id belonging to rigid body being tested
+    :param dict SGData: GSAS-II space group info.
+    :returns: Atoms with modified atom frac entries
     
     """
     for i,Id in enumerate(RBObjIds):

@@ -828,6 +828,11 @@ if __name__ == "__main__":
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
     frm.TutorialImportDir = '/tmp'
+    size = wx.Size(700,600)                
+    frm.plotFrame = wx.Frame(None,-1,'GSASII Plots',size=size,
+                    style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
+    frm.G2plotNB = G2plt.G2PlotNoteBook(frm.plotFrame,G2frame=frm)
+    frm.plotFrame.Show()
 
     GetFPAInput(frm)
     

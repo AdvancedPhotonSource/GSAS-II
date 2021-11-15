@@ -741,13 +741,9 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
     #GS = G2lat.cell2GS(General['Cell'][1:7])
     Amat = G2lat.cell2AB(General['Cell'][1:7])[0]
     Atoms = phasedict['Atoms']
-    cfrac = cx+3
-    fpfx = str(phasedict['pId'])+'::Afrac:'
-    for i,at in enumerate(Atoms):
-        fval = parmDict.get(fpfx+str(i),at[cfrac])
-        if fval != 0.0:
-            break
-    else:
+    #cfrac = cx+3
+    #fpfx = str(phasedict['pId'])+'::Afrac:'
+    if len(Atoms) == 0:
         WriteCIFitem(fp, '\n# PHASE HAS NO ATOMS!')
         return
 
@@ -790,6 +786,14 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
                 cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
 
     pfx = str(phasedict['pId'])+'::'
+    num = 0
+    # uniquely index the side chains
+    entity_id = {}
+    for i,at in enumerate(Atoms): 
+        if at[ct-2] not in entity_id:
+            num += 1
+            entity_id[at[ct-2]] = num
+
     # loop over all atoms
 #    naniso = 0
     for i,at in enumerate(Atoms):
@@ -806,15 +810,15 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
         s += PutInCol(at[ct-3],4) # comp_id
         s += PutInCol(at[ct-2],3) # _asym_id
         s += PutInCol(at[ct-2],3) # _asym_id
-        s += PutInCol(at[ct-4],3) # entity_id
-        s += PutInCol('?',2) # _seq_id
-        s += PutInCol('?',2) # _seq_id
+        s += PutInCol(str(entity_id[at[ct-2]]),3) # entity_id
+        s += PutInCol(at[ct-4],2) # _seq_id
+        s += PutInCol(at[ct-4],2) # _seq_id
         s += PutInCol('?',2) # pdbx_PDB_ins_code
         s += PutInCol('?',2) # pdbx_formal_charge
         s += PutInCol('1',2) # pdbx_PDB_model_num
             
-        fval = parmDict.get(fpfx+str(i),at[cfrac])
-        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+#        fval = parmDict.get(fpfx+str(i),at[cfrac])
+#        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
 #        if at[cia] == 'I':
 #            adp = 'Uiso '
 #        else:
@@ -840,9 +844,9 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
             if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                 sig = -abs(sig)
             s += PutInCol(G2mth.ValEsd(val,sig),dig)
-            # Cartesian coordinates
-            for xyz in np.inner(Amat,at[cx:cx+3]):
-                s += PutInCol(G2mth.ValEsd(xyz,-0.009),8)
+        # Cartesian coordinates
+        for xyz in np.inner(Amat,at[cx:cx+3]):
+            s += PutInCol(G2mth.ValEsd(xyz,-0.009),8)
         WriteCIFitem(fp, s)
     # save information about rigid bodies
 #     header = False
@@ -1683,6 +1687,63 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # _refine_ls_R_factor_obs
             #WriteCIFitem(self.fp, '_refine_ls_matrix_type','userblocks')
 
+        def WriteOverallMM(mode=None):
+            '''Write out overall refinement information.
+
+            More could be done here, but this is a good start.
+            '''
+            if self.ifPWDR:
+                WriteCIFitem(self.fp, '_pd_proc_info_datetime', self.CIFdate)
+                WriteCIFitem(self.fp, '_pd_calc_method', 'Rietveld Refinement')
+                
+            #WriteCIFitem(self.fp, '_refine.ls_shift_over_su_mean',DAT2)
+            WriteCIFitem(self.fp, '_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
+            if self.ifHKLF:
+                controls = self.OverallParms['Controls']
+                try:
+                    if controls['F**2']:
+                        thresh = 'F**2>%.1fu(F**2)'%(controls['UsrReject']['minF/sig'])
+                    else:
+                        thresh = 'F>%.1fu(F)'%(controls['UsrReject']['minF/sig'])
+                    WriteCIFitem(self.fp, '_reflns.threshold_expression', thresh)
+                except KeyError:
+                    pass
+            WriteCIFitem(self.fp, '_refine.ls_matrix_type','full')
+
+            if mode == 'seq': return
+            try:
+                vars = str(len(self.OverallParms['Covariance']['varyList']))
+            except:
+                vars = '?'
+            WriteCIFitem(self.fp, '_refine.ls_number_parameters',vars)
+            try:
+                GOF = G2mth.ValEsd(self.OverallParms['Covariance']['Rvals']['GOF'],-0.009)
+            except:
+                GOF = '?'
+            WriteCIFitem(self.fp, '_refine.ls_goodness_of_fit_all',GOF)
+            DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            if DAT1:
+                WriteCIFitem(self.fp, '_refine.ls_shift_over_su_max','%.4f'%DAT1)
+
+            # get restraint info
+            # restraintDict = self.OverallParms.get('Restraints',{})
+            # for i in  self.OverallParms['Constraints']:
+            #     print i
+            #     for j in self.OverallParms['Constraints'][i]:
+            #         print j
+            #WriteCIFitem(self.fp, '_refine_ls_number_restraints',TEXT)
+            # other things to consider reporting
+            # _refine_ls_number_reflns
+            # _refine_ls_goodness_of_fit_obs
+            # _refine_ls_wR_factor_obs
+            # _refine_ls_restrained_S_all
+            # _refine_ls_restrained_S_obs
+
+            # include an overall profile r-factor, if there is more than one powder histogram
+            R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
+            WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
+            WriteCIFitem(self.fp, '_refine.ls_wR_factor_obs',R)
+
         def writeCIFtemplate(G2dict,tmplate,defaultname=''):
             '''Write out the selected or edited CIF template
             An unedited CIF template file is copied, comments intact; an edited
@@ -1698,6 +1759,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 defaultname = ''
             templateDefName = 'template_'+tmplate+'.cif'
             if not CIFobj: # copying a template
+                lbl = 'Standard version'
                 for pth in [os.getcwd()]+sys.path:
                     fil = os.path.join(pth,defaultname)
                     if os.path.exists(fil) and defaultname: break
@@ -1712,6 +1774,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 txt = fp.read()
                 fp.close()
             elif type(CIFobj) is not list and type(CIFobj) is not tuple:
+                lbl = 'Saved version'
                 if not os.path.exists(CIFobj):
                     print("Error: requested template file has disappeared: "+CIFobj)
                     return
@@ -1719,10 +1782,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                 txt = fp.read()
                 fp.close()
             else:
+                lbl = 'Project-specific version'
                 txt = dict2CIF(CIFobj[0],CIFobj[1]).WriteOut()
             # remove the PyCifRW header, if present
             #if txt.find('PyCifRW') > -1 and txt.find('data_') > -1:
-            txt = "# GSAS-II edited template follows "+txt[txt.index("data_")+5:]
+            pre = txt.index("data_")
+            restofline = txt.index("\n",pre)
+            name = txt[pre+5:restofline]
+            txt = "\n# {} of {} template follows{}".format(
+                lbl, name, txt[restofline:])
             #txt = txt.replace('data_','#')
             WriteCIFitem(self.fp, txt)
 
@@ -3950,7 +4018,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                          str(self.shortauthorname) + "|" + instnam)
             WriteAudit()
             writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
-            WriteOverall()
+            if MM:
+                WriteOverallMM()
+            else:
+                WriteOverall()
             writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
             if self.Phases[phasenam]['General']['Type'] == 'macromolecular':
@@ -4216,27 +4287,37 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteAudit()
                 WriteCIFitem(self.fp, '_pd_block_id',
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             str(self.shortauthorname) + "|Overall")
+                             str(self.shortauthorname) + "|PubInfo")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
                 # ``template_publ.cif`` or a modified version
-                # overall info
+                
+                # overall info -- it is not strictly necessary to separate this from the previous
+                # publication block, but I think this makes sense
+                
                 WriteCIFitem(self.fp, 'data_'+str(self.CIFname)+'_overall')
-                WriteOverall()
+                WriteCIFitem(self.fp, '_pd_block_id',
+                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                             str(self.shortauthorname) + "|Overall")
+                if MM:
+                    WriteOverallMM()
+                else:
+                    WriteOverall()
                 #============================================================
-                WriteCIFitem(self.fp, '# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
+                WriteCIFitem(self.fp, '# POINTERS TO PHASE AND/OR HISTOGRAM BLOCKS')
                 datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
                 # loop over phase blocks
                 if len(self.Phases) > 1:
                     loopprefix = ''
                     WriteCIFitem(self.fp, 'loop_   _pd_phase_block_id')
-                else:
-                    loopprefix = '_pd_phase_block_id'
-
-                for phasenam in sorted(self.Phases.keys()):
-                    i = self.Phases[phasenam]['pId']
+                    for phasenam in sorted(self.Phases.keys()):
+                        i = self.Phases[phasenam]['pId']
+                        datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                                         'phase_'+ str(i) + '|' + str(self.shortauthorname))
+                        WriteCIFitem(self.fp, loopprefix,datablockidDict[phasenam])
+                else:    # phase in overall block
+                    for phasenam in sorted(self.Phases.keys()): break
                     datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                 'phase_'+ str(i) + '|' + str(self.shortauthorname))
-                    WriteCIFitem(self.fp, loopprefix,datablockidDict[phasenam])
+                                                     str(self.shortauthorname) + "|Overall")
                 # loop over data blocks
                 if len(self.powderDict) + len(self.xtalDict) > 1:
                     loopprefix = ''
@@ -4269,9 +4350,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                     step += 1
                     dlg.Update(step,"Exporting phase "+phasenam+' (#'+str(j+1)+')')
                     i = self.Phases[phasenam]['pId']
-                    WriteCIFitem(self.fp, '\ndata_'+self.CIFname+"_phase_"+str(i))
-                    WriteCIFitem(self.fp, '# Information for phase '+str(i))
-                    WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[phasenam])
+                    if len(self.Phases) > 1:   # in a single-phase CIF the overall and phase block can be combined
+                        WriteCIFitem(self.fp, '\ndata_'+self.CIFname+"_phase_"+str(i))
+                    WriteCIFitem(self.fp, '\n# Information for phase '+str(i))
+                    if len(self.Phases) > 1:   # in a single-phase CIF the overall and phase block can be combined
+                        WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[phasenam])
                     # report the phase
                     writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
                     if self.Phases[phasenam]['General']['Type'] == 'macromolecular':

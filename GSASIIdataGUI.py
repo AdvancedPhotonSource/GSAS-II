@@ -52,7 +52,7 @@ try:
 except ImportError:
     pass
 import scipy as sp
-#import scipy.optimize as so
+import struct as st
 try:
     import wx
 #    import wx.grid as wg
@@ -86,6 +86,7 @@ import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 import GSASIIseqGUI as G2seq
 import GSASIIddataGUI as G2ddG
+import GSASIIspc as G2spc
 
 try:
     wx.NewIdRef
@@ -2910,9 +2911,7 @@ class GSASII(wx.Frame):
                 item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
-            for lbl,submenu in (('Phase',seqPhasemenu),
-                        ('Powder',seqHistmenu),
-                        ):
+            for lbl,submenu in (('Phase',seqPhasemenu),('Powder',seqHistmenu),):
                 if lbl.lower() in obj.exporttype:
                     try:
                         obj.Writer
@@ -2972,6 +2971,10 @@ class GSASII(wx.Frame):
         item = parent.Append(wx.ID_ANY,'Export HKLs...','')
         self.ExportHKL.append(item)
         self.Bind(wx.EVT_MENU, self.OnExportHKL, id=item.GetId())
+        
+        item = parent.Append(wx.ID_ANY,'Export MTZ file...','')
+        self.ExportMTZ.append(item)
+        self.Bind(wx.EVT_MENU, self.OnExportMTZ, id=item.GetId())
 
         item = parent.Append(wx.ID_ANY,'Export PDF...','Select PDF item to enable')
         self.ExportPDF.append(item)
@@ -3077,6 +3080,7 @@ class GSASII(wx.Frame):
         self.ExportPDF = []
         self.ExportPhase = []
         self.ExportCIF = []
+        self.ExportMTZ = []
         #
         self.MacroStatusList = []  # logging
         self.Status = self.CreateStatusBar()
@@ -4611,6 +4615,152 @@ class GSASII(wx.Frame):
         if self.undofile:
             os.remove(self.undofile)
         sys.exit()
+        
+    def OnExportMTZ(self,event):
+        ''' exports MTZ file from macromoleculat Reflection Lists in multiple histograms
+        '''
+        
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        MTZok = False
+        for phase in Phases:
+            Phase = Phases[phase]
+            General = Phase['General']
+            if 'macro' in General['Type']:    #really ought to be just one
+                SGData = General['SGData']
+                Cell = General['Cell'][1:7]
+                MTZok = True
+                break
+        if not MTZok:
+            wx.MessageBox('No macromolecular phase found; no MTZ file created',caption='No macromolecular phase',
+                style=wx.ICON_EXCLAMATION)
+            return
+        header = 'Select histograms for MTZ file:'
+        histList = [item for item in Histograms]
+        od = {'label_1':'Export Fo','value_1':False,}
+        dlg = G2G.G2MultiChoiceDialog(self,header,'Add to MTZ',histList,extraOpts=od)
+        result = None
+        if dlg.ShowModal() == wx.ID_OK:
+            result = dlg.GetSelections()
+        dlg.Destroy()
+        if not result: return
+        useHist = [histList[item] for item in result]
+        useFo = od['value_1']
+        nDif = len(useHist)
+        nCol = 4*nDif+3
+        refDict = {}
+        Hrange = [1000,-1000]
+        Krange = [1000,-1000]
+        Lrange = [1000,-1000]
+        dRange = [10000.,0.0]
+        IoRange = [[10000.0,0.0] for i in range(nDif)]
+        IcRange = [[10000.0,0.0] for i in range(nDif)]
+        WIRange = [[10000.0,0.0] for i in range(nDif)]
+        
+        for ih,hist in enumerate(useHist):
+            Refset = Histograms[hist]['Reflection Lists'][General['Name']]['RefList']
+            for ref in Refset:
+                Hrange[0] = min(ref[0],Hrange[0])
+                Hrange[1] = max(ref[0],Hrange[1])
+                Krange[0] = min(ref[1],Krange[0])
+                Krange[1] = max(ref[1],Krange[1])
+                Lrange[0] = min(ref[2],Lrange[0])
+                Lrange[1] = max(ref[2],Lrange[1])
+                dRange[0] = min(ref[4],dRange[0])
+                dRange[1] = max(ref[4],dRange[1])
+                if useFo:
+                    IoRange[ih][0] = min(np.sqrt(ref[8]),IoRange[ih][0])
+                    IoRange[ih][1] = max(np.sqrt(ref[8]),IoRange[ih][1])
+                    WIRange[ih][0] = min(1./np.sqrt(ref[8]),WIRange[ih][0])
+                    WIRange[ih][1] = max(1./np.sqrt(ref[8]),WIRange[ih][1])
+                    IcRange[ih][0] = min(np.sqrt(ref[9]),IcRange[ih][0])
+                    IcRange[ih][1] = max(np.sqrt(ref[9]),IcRange[ih][1])
+                else:
+                    IoRange[ih][0] = min(ref[8],IoRange[ih][0])
+                    IoRange[ih][1] = max(ref[8],IoRange[ih][1])
+                    WIRange[ih][0] = min(1./ref[8],WIRange[ih][0])
+                    WIRange[ih][1] = max(1./ref[8],WIRange[ih][1])
+                    IcRange[ih][0] = min(ref[9],IcRange[ih][0])
+                    IcRange[ih][1] = max(ref[9],IcRange[ih][1])
+                hklStr = '%5d%5d%5d'%(ref[0],ref[1],ref[2])
+                if useFo:
+                    rec = {ih:np.array([np.sqrt(ref[8]),1./np.sqrt(ref[8]),np.sqrt(ref[9]),ref[10]],dtype=np.float32)}
+                else:
+                    rec = {ih:np.array([ref[8],1./ref[8],ref[9],ref[10]],dtype=np.float32)}
+                if hklStr in refDict:
+                    refDict[hklStr].update(rec)
+                else:
+                    refDict[hklStr] = rec
+            nRef = len(refDict)
+        #set up header stuff
+        Header = '%s'%('VERS MTZ:V1.1'.ljust(80))
+        Header += ('TITLE %s'%(General['Name'])).ljust(80)
+        Header += ('NCOL %10d%10d%10d'%(nCol,nRef,0)).ljust(80)
+        Header += ('CELL %9.4f%9.4f%9.4f%9.4f%9.4f%9.4f'%(Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5])).ljust(80)
+        Header += 'SORT    1   2   3   0   0'.ljust(80)
+        Nops = len(SGData['SGOps'])
+        Ncent = len(SGData['SGCen'])
+        SGSym = SGData['SpGrp']
+        SGnum = G2spc.SpaceGroupNumber(SGSym)
+        Header += ("SYMINF %6d%6d %s %6d '%s' PG%s"%(Nops*Ncent,Nops,SGSym[0],SGnum,SGSym,SGData['SGPtGrp'])).ljust(80)
+        SGtext,SGTable = G2spc.SGPrint(SGData)
+        textOps = G2spc.TextOps(SGtext,SGTable,reverse=True)
+        for ops in textOps:
+            Header += ('SYMM  %s'%ops.upper()).ljust(80)
+        Header += ('RESO  %.4f  %.4f '%(1./dRange[1]*2,1./dRange[0]*2)).ljust(80)
+        Header += 'VALM NAN'.ljust(80)
+        Header += ('COLUMN %s H%18d%18d'%('H'.ljust(30),Hrange[0],Hrange[1])).ljust(79)+'0'
+        Header += ('COLUMN %s H%18d%18d'%('K'.ljust(30),Krange[0],Krange[1])).ljust(79)+'0'
+        Header += ('COLUMN %s H%18d%18d'%('L'.ljust(30),Lrange[0],Lrange[1])).ljust(79)+'0'
+        for ih,hist in enumerate(useHist):
+            hname = hist.split()[1].split('.')[0]
+            if useFo:
+                Header += ('COLUMN %s F%18.4f%18.4f'%(('F_'+hname).ljust(30),IoRange[ih][0],IoRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s Q%18.8f%18.8f'%(('WT_'+hname).ljust(30),WIRange[ih][0],WIRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s F%18.4f%18.4f'%(('FC_'+hname).ljust(30),IcRange[ih][0],IcRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+            else:
+                Header += ('COLUMN %s J%18.4f%18.4f'%(('I_'+hname).ljust(30),IoRange[ih][0],IoRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s Q%18.8f%18.8f'%(('WT_'+hname).ljust(30),WIRange[ih][0],WIRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s J%18.4f%18.4f'%(('IC_'+hname).ljust(30),IcRange[ih][0],IcRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+            Header += ('COLUMN %s P%18.4f%18.4f'%(('PHIC_'+hname).ljust(30),-180.0,180.)).ljust(78)+'%2d'%(ih+1)
+        Header += ('NDIF %10d'%nDif).ljust(80)
+        projName = os.path.split(self.GSASprojectfile)[1]
+        for iH,hist in enumerate(useHist):
+            hname = hist.split()[1].split('.')[0]
+            Iparm = Histograms[hist]['Instrument Parameters'][0]
+            wave = G2mth.getWave(Iparm)
+            cell = G2lat.CellDijCorr(Cell,SGData,Phase['Histograms'],hist)
+            Header += ('PROJECT %7d %s'%(iH+1,projName)).ljust(80)
+            Header += ('CRYSTAL %7d %s'%(iH+1,General['Name'])).ljust(80)
+            Header += ('DATASET %7d %s'%(iH+1,hname)).ljust(80)
+            Header += ('DCELL   %7d %10.4f%10.4f%10.4f%10.4f%10.4f%10.4f'   \
+                %(iH+1,cell[0],cell[1],cell[2],cell[3],cell[4],cell[5])).ljust(80) # not correct- sholud include Dijs
+            Header += ('DWAVE   %7d %10.5f'%(iH+1,wave)).ljust(80)
+        Header += ('END'.ljust(80))
+        Header += ('Created by GSAS-II on %s'%time.ctime()).ljust(80)
+        Header += ('MTZENDOFHEADER'.ljust(80))
+        
+        if useFo:
+            fName = General['Name'].replace(' ','_')+'F.mtz'
+        else:
+            fName = General['Name'].replace(' ','_')+'F2.mtz'
+        MTZ = open(fName,'wb')
+        MTZ.write(st.pack('4sl2s70x',b'MTZ ',21+nCol*nRef,b'DA'))
+        
+        for ref in refDict:
+            rec = [float(i) for i in ref.split()]
+            refData = refDict[ref]
+            for i in range(nDif):
+                if i in refData:
+                    rec += list(refData[i])
+                else:
+                    rec += [np.nan,np.nan,np.nan,np.nan]
+            string = b''
+            for item in rec:
+                string += st.pack('f',item)
+            MTZ.write(string)
+        MTZ.write(Header.encode())
+        MTZ.close()
+        print('MTZ file %s written'%fName)
         
     def OnExportPeakList(self,event):
         pth = G2G.GetExportPath(self)
@@ -6823,7 +6973,7 @@ def UpdateControls(G2frame,data):
         tmpSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement\ntype: '),0,WACV)
         tmpSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='RefineType'))
         LSSizer.Add(tmpSizer,0,WACV)
-        Choice=['analytic Jacobian','numeric','analytic Hessian','Hessian SVD']   #TODO +'SVD refine' - what flags will it need?
+        Choice=['analytic Jacobian','numeric','analytic Hessian','Hessian SVD']
         derivSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         derivSel.SetValue(data['deriv type'])
@@ -6848,7 +6998,7 @@ def UpdateControls(G2frame,data):
                 LSSizer.Add(marqLam,0,WACV)
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label='SVD zero\ntolerance:'),0,WACV)
             LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'SVDtol',nDig=(10,1,'g'),xmin=1.e-9,xmax=.01),0,WACV)
-        else:       #TODO what for SVD refine?
+        else:
             LSSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Initial shift factor: '),0,WACV)
             Factr = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'shift factor',nDig=(10,5),xmin=1.e-5,xmax=100.)
             LSSizer.Add(Factr,0,WACV)

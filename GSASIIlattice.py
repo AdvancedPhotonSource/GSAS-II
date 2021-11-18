@@ -253,6 +253,39 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
              parmDict[pfx+'A0']+parmDict[phfx+'D11'],0,0,0]
     return A
+
+def CellDijCorr(Cell,SGData,Data,hist):
+    '''Returns the cell corrected for Dij values. 
+
+    :param list Cell: lattice parameters
+    :param dict SGdata: a symmetry object
+    :param dict Data: phase data structure; contains set of Dij values
+    :param str hist: histogram name
+
+    :returns: cell corrected for Dij values 
+    '''
+    A = cell2A(Cell)
+    Dij = Data[hist]['HStrain'][0]
+    if SGData['SGLaue'] in ['-1',]:
+        newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],A[3]+Dij[3],A[4]+Dij[4],A[5]+Dij[5]]
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,0,A[5]+Dij[3]]
+        elif SGData['SGUniq'] == 'b':
+            newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,A[4]+Dij[3]]
+        else:
+            newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],A[3]+Dij[3],0,0]
+    elif SGData['SGLaue'] in ['mmm',]:
+        newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,0,0]
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        newA = [A[0]+Dij[0],A[0]+Dij[0],A[2]+Dij[1],0,0,0]
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        newA = [A[0]+Dij[0],A[0]+Dij[0],A[2]+Dij[1],A[0]+Dij[0],0,0]
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],A[3]+Dij[1],A[3]+Dij[1],A[3]+Dij[1]]
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],0,0,0]
+    return A2cell(newA)
     
 def prodMGMT(G,Mat):
     '''Transform metric tensor by matrix

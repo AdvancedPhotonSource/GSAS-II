@@ -6270,8 +6270,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             pName = pName.replace(' ','_')
             rname = pName+'-fullrmc.py'
             if not os.path.exists(rname):
-                G2G.G2MessageBox(G2frame,
-                    'The fullrmc script has not been created. Running setup.',
+                G2G.G2MessageBox(G2frame,'The fullrmc script has not been created. Running setup.',
                     'Not setup')
                 OnSetupRMC(event)
             RMCPdict = data['RMC']['fullrmc']
@@ -6405,8 +6404,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             pName = generalData['Name'].replace(' ','_')
             rname = pName+'-PDFfit.py'
             # if not os.path.exists(rname):
-            #     G2G.G2MessageBox(G2frame,
-            #         'The PDFfit script has not been created. Running setup.',
+            #     G2G.G2MessageBox(G2frame,'The PDFfit script has not been created. Running setup.',
             #         'Not setup')
             #     OnSetupRMC(event)
             wx.MessageBox(''' For use of PDFfit2, please cite:

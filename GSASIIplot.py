@@ -2220,7 +2220,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             dlg.Destroy()
             newPlot = True
         elif event.key in ['+','=']:
-            G2frame.plusPlot = not G2frame.plusPlot
+            G2frame.plusPlot = (G2frame.plusPlot+1)%3
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
             newPlot=True
@@ -3068,7 +3068,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.SinglePlot = True
         G2frame.Contour = False
         G2frame.Weight = True
-        G2frame.plusPlot = True
+        G2frame.plusPlot = 1
         G2frame.SubBack = False
         Page.plotStyle['logPlot'] = False
         # is the selected histogram in the refinement? if not pick the 1st to show
@@ -3164,11 +3164,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ifLimits:
                 Page.Choice += ['e: create excluded region',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
-                        '+: no selection']
+                        '+: toggle obs line plot']
             else:
                 Page.Choice += ['q: toggle q plot','s: toggle sqrt plot',
                     't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
-                    '+: no selection']
+                    '+: toggle obs line plot']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
                 del Page.Choice[1]
                 del Page.Choice[1]
@@ -3184,7 +3184,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
                 'm: toggle multidata plot','n: toggle semilog/loglog',
-                'q: toggle S(q) plot','w: toggle (Io-Ic)/sig plot','+: toggle selection',]
+                'q: toggle S(q) plot','w: toggle (Io-Ic)/sig plot','+: toggle obs line plot',]
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u: offset up','d: offset down','l: offset left',
@@ -3485,11 +3485,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     Plot.set_ylabel('Data sequence',fontsize=14)
         else:
-            if G2frame.plusPlot:
+            if not G2frame.plusPlot:
+                pP = ''
+                lW = 1.5
+            elif G2frame.plusPlot == 1:
                 pP = '+'
                 lW = 0
             else:
-                pP = ''
+                pP = '+'
                 lW = 1.5
             if plottype in ['SASD','REFD'] and Page.plotStyle['logPlot']:
                 X *= (1.01)**(offsetX*N)

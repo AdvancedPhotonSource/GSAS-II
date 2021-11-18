@@ -247,4 +247,4 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
                 self.Write(fmt.format(atom[ct],*xyz))
             self.CloseFile()
             print('Phase '+phasenam+' written to XYZ file '+self.fullpath)
-    
+                

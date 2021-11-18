@@ -899,23 +899,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def onSelectSeqVars(event):
         '''Select which variables will be shown in table'''
-        hides = [saveColLabels[1:].index(item) for item in G2frame.SeqTblHideList if
-                     item in saveColLabels[1:]]
+        hides = [saveColLabels[2:].index(item) for item in G2frame.SeqTblHideList if
+                     item in saveColLabels[2:]]
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to hide',
-                'Hide columns',saveColLabels[1:])
+                'Hide columns',saveColLabels[2:])
         dlg.SetSelections(hides)
         if dlg.ShowModal() == wx.ID_OK:
-            G2frame.SeqTblHideList = [saveColLabels[1:][sel] for sel in dlg.GetSelections()]
+            G2frame.SeqTblHideList = [saveColLabels[2:][sel] for sel in dlg.GetSelections()]
             dlg.Destroy()
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         else:
             dlg.Destroy()
             
     def OnCellChange(event):
+        c = event.GetCol()
+        if c != 1: return
         r = event.GetRow()
-        val = G2frame.SeqTable.GetValue(r,0)
-#        print (r,val)
-        G2frame.SeqTable.SetValue(r,0, val)
+        val = G2frame.SeqTable.GetValue(r,c)
+        data['Use'][r] = val
+        G2frame.SeqTable.SetValue(r,c, val)
         
     def OnSelectUpdate(event):
         '''Update all phase parameters from a selected column in the Sequential Table. 
@@ -1223,10 +1225,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
     #else:
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,False)
-    #-----  build up the data table by columns -----------------------------------------------
+    ####--  build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
-    G2frame.colList = [list(range(nRows)),nRows*[True]]
+    G2frame.colList = [list(range(nRows))]
+    if len(data.get('Use',[])) != nRows:
+        data['Use'] = nRows*[True]
+    G2frame.colList += [data['Use']]
     G2frame.colSigs = [None,None,]
     colLabels = ['No.','Use',]
     Types = [wg.GRID_VALUE_LONG,wg.GRID_VALUE_BOOL,]
@@ -1523,6 +1528,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             del colLabels[l]
             del G2frame.colList[l]
             del G2frame.colSigs[l]
+            if deltaChiCol == l:
+                deltaChiCol = None
 
     # make a copy of the column labels substituting alternate labels when defined
     displayLabels = colLabels[:]
@@ -1563,7 +1570,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     # highlight unconverged shifts 
-    if histNames[0][:4] not in ['SASD','IMG ','REFD',]:
+    if histNames[0][:4] not in ['SASD','IMG ','REFD',] and deltaChiCol is not None:
         for row,name in enumerate(histNames):
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             try:

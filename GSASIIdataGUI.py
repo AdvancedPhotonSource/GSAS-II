@@ -4706,7 +4706,7 @@ class GSASII(wx.Frame):
         textOps = G2spc.TextOps(SGtext,SGTable,reverse=True)
         for ops in textOps:
             Header += ('SYMM  %s'%ops.upper()).ljust(80)
-        Header += ('RESO  %.4f  %.4f '%(1./dRange[1]*2,1./dRange[0]*2)).ljust(80)
+        Header += ('RESO  %.8f  %.8f '%(1./dRange[1]**2,1./dRange[0]**2)).ljust(80)
         Header += 'VALM NAN'.ljust(80)
         Header += ('COLUMN %s H%18d%18d'%('H'.ljust(30),Hrange[0],Hrange[1])).ljust(79)+'0'
         Header += ('COLUMN %s H%18d%18d'%('K'.ljust(30),Krange[0],Krange[1])).ljust(79)+'0'

@@ -631,7 +631,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
     BkgMax = max(xydata['IofQ'][1][1])/50.
     return EvalLowPDF,GetCurrentVals,SetFinalVals
 
-#### GSASII peak fitting routines: Finger, Cox & Jephcoat model  ################################################################################
+#### GSASII convolution peak fitting routines: Finger, Cox & Jephcoat model  
 def factorize(num):
     ''' Provide prime number factors for integer num
     :returns: dictionary of prime factors (keys) & power for each (data)

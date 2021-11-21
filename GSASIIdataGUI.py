@@ -4636,7 +4636,7 @@ class GSASII(wx.Frame):
             return
         header = 'Select histograms for MTZ file:'
         histList = [item for item in Histograms]
-        od = {'label_1':'Export Fo','value_1':False,}
+        od = {'label_1':'Export Fo^2','value_1':False,}
         dlg = G2G.G2MultiChoiceDialog(self,header,'Add to MTZ',histList,extraOpts=od)
         result = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -4644,7 +4644,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
         if not result: return
         useHist = [histList[item] for item in result]
-        useFo = od['value_1']
+        useFo = not od['value_1']
         nDif = len(useHist)
         nCol = 4*nDif+3
         refDict = {}
@@ -4654,7 +4654,7 @@ class GSASII(wx.Frame):
         dRange = [10000.,0.0]
         IoRange = [[10000.0,0.0] for i in range(nDif)]
         IcRange = [[10000.0,0.0] for i in range(nDif)]
-        WIRange = [[10000.0,0.0] for i in range(nDif)]
+        SigRange = [[10000.0,0.0] for i in range(nDif)]
         
         for ih,hist in enumerate(useHist):
             Refset = Histograms[hist]['Reflection Lists'][General['Name']]['RefList']
@@ -4670,22 +4670,22 @@ class GSASII(wx.Frame):
                 if useFo:
                     IoRange[ih][0] = min(np.sqrt(ref[8]),IoRange[ih][0])
                     IoRange[ih][1] = max(np.sqrt(ref[8]),IoRange[ih][1])
-                    WIRange[ih][0] = min(1./np.sqrt(ref[8]),WIRange[ih][0])
-                    WIRange[ih][1] = max(1./np.sqrt(ref[8]),WIRange[ih][1])
+                    SigRange[ih][0] = min(np.sqrt(ref[8])/2.,SigRange[ih][0])
+                    SigRange[ih][1] = max(np.sqrt(ref[8])/2.,SigRange[ih][1])
                     IcRange[ih][0] = min(np.sqrt(ref[9]),IcRange[ih][0])
                     IcRange[ih][1] = max(np.sqrt(ref[9]),IcRange[ih][1])
                 else:
                     IoRange[ih][0] = min(ref[8],IoRange[ih][0])
                     IoRange[ih][1] = max(ref[8],IoRange[ih][1])
-                    WIRange[ih][0] = min(1./ref[8],WIRange[ih][0])
-                    WIRange[ih][1] = max(1./ref[8],WIRange[ih][1])
+                    SigRange[ih][0] = min(np.sqrt(ref[8]),SigRange[ih][0])
+                    SigRange[ih][1] = max(np.sqrt(ref[8]),SigRange[ih][1])
                     IcRange[ih][0] = min(ref[9],IcRange[ih][0])
                     IcRange[ih][1] = max(ref[9],IcRange[ih][1])
                 hklStr = '%5d%5d%5d'%(ref[0],ref[1],ref[2])
                 if useFo:
-                    rec = {ih:np.array([np.sqrt(ref[8]),1./np.sqrt(ref[8]),np.sqrt(ref[9]),ref[10]],dtype=np.float32)}
+                    rec = {ih:np.array([np.sqrt(ref[8]),np.sqrt(ref[8])/2.,np.sqrt(ref[9]),ref[10]],dtype=np.float32)}
                 else:
-                    rec = {ih:np.array([ref[8],1./ref[8],ref[9],ref[10]],dtype=np.float32)}
+                    rec = {ih:np.array([ref[8],np.sqrt(ref[8]),ref[9],ref[10]],dtype=np.float32)}
                 if hklStr in refDict:
                     refDict[hklStr].update(rec)
                 else:
@@ -4715,11 +4715,11 @@ class GSASII(wx.Frame):
             hname = hist.split()[1].split('.')[0]
             if useFo:
                 Header += ('COLUMN %s F%18.4f%18.4f'%(('F_'+hname).ljust(30),IoRange[ih][0],IoRange[ih][1])).ljust(78)+'%2d'%(ih+1)
-                Header += ('COLUMN %s Q%18.8f%18.8f'%(('WT_'+hname).ljust(30),WIRange[ih][0],WIRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s Q%18.8f%18.8f'%(('SIGFP_'+hname).ljust(30),SigRange[ih][0],SigRange[ih][1])).ljust(78)+'%2d'%(ih+1)
                 Header += ('COLUMN %s F%18.4f%18.4f'%(('FC_'+hname).ljust(30),IcRange[ih][0],IcRange[ih][1])).ljust(78)+'%2d'%(ih+1)
             else:
                 Header += ('COLUMN %s J%18.4f%18.4f'%(('I_'+hname).ljust(30),IoRange[ih][0],IoRange[ih][1])).ljust(78)+'%2d'%(ih+1)
-                Header += ('COLUMN %s Q%18.8f%18.8f'%(('WT_'+hname).ljust(30),WIRange[ih][0],WIRange[ih][1])).ljust(78)+'%2d'%(ih+1)
+                Header += ('COLUMN %s Q%18.8f%18.8f'%(('SIGI_'+hname).ljust(30),SigRange[ih][0],SigRange[ih][1])).ljust(78)+'%2d'%(ih+1)
                 Header += ('COLUMN %s J%18.4f%18.4f'%(('IC_'+hname).ljust(30),IcRange[ih][0],IcRange[ih][1])).ljust(78)+'%2d'%(ih+1)
             Header += ('COLUMN %s P%18.4f%18.4f'%(('PHIC_'+hname).ljust(30),-180.0,180.)).ljust(78)+'%2d'%(ih+1)
         Header += ('NDIF %10d'%nDif).ljust(80)

@@ -6398,15 +6398,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
         elif G2frame.RMCchoice == 'PDFfit':
             PDFfit_exec = G2pwd.findPDFfit()
-            # if PDFfit_exec is None:
-            #     G2G.G2MessageBox(G2frame,'PDFfit2 Python not found. How did we get here?')
-            #     return
+            print(PDFfit_exec)
             pName = generalData['Name'].replace(' ','_')
             rname = pName+'-PDFfit.py'
-            # if not os.path.exists(rname):
-            #     G2G.G2MessageBox(G2frame,'The PDFfit script has not been created. Running setup.',
-            #         'Not setup')
-            #     OnSetupRMC(event)
             wx.MessageBox(''' For use of PDFfit2, please cite:
       PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals, 
 C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen & 

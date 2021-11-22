@@ -6397,7 +6397,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
         elif G2frame.RMCchoice == 'PDFfit':
             PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
-            print(PDFfit_exec)
+            if not PDFfit_exec:
+                wx.MessageBox(''' PDFfit2 is currently not available for this platform. 
+    Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
+                return
             pName = generalData['Name'].replace(' ','_')
             rname = pName+'-PDFfit.py'
             wx.MessageBox(''' For use of PDFfit2, please cite:

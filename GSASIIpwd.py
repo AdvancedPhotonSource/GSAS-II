@@ -2964,12 +2964,11 @@ def findfullrmc():
             return os.path.abspath(sorted(fl)[0])
         
 def findPDFfit():
-    '''Find where PDFfit2 is installed. Does the following:
-    :returns: the full path to a python executable that is assumed to 
-      have PDFfit2 installed or None, if it was not found.
+    '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
+    :returns: the full path to a python executable or None, if it was not found.
     '''
     try:
-        import diffpy.pdffit2
+        from diffpy.pdffit2 import PdfFit
         return sys.executable
     except:
         return None
@@ -3058,12 +3057,15 @@ def MakePDFfitRunFile(Phase,RMCPdict):
         
     General = Phase['General']
     Cell = General['Cell'][1:7]
+    G2path = GSASIIpath.path2GSAS2
     rundata = '''
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('%s') 
 from diffpy.pdffit2 import PdfFit
 pf = PdfFit()
-'''
+'''%G2path
     Nd = 0
     Np = 0
     for file in RMCPdict['files']:

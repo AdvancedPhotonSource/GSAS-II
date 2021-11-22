@@ -6178,7 +6178,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer.Add(PDFfitSizer(data))
 
         bigSizer.Add(mainSizer,1,wx.EXPAND)
-        # add help button to bring up help web page - at right side of window
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
         
@@ -6397,7 +6396,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
             
         elif G2frame.RMCchoice == 'PDFfit':
-            PDFfit_exec = G2pwd.findPDFfit()
+            PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
             print(PDFfit_exec)
             pName = generalData['Name'].replace(' ','_')
             rname = pName+'-PDFfit.py'

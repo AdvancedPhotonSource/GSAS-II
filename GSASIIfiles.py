@@ -392,8 +392,7 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
             pkg = os.path.splitext(os.path.split(filename)[1])[0]
             if pkg in import_files:
-                G2Print('Warning: file {} hidden by {}'
-                                  .format(os.path.abspath(filename),import_files[pkg]))
+                G2Print('Warning: file {} hidden by {}'.format(os.path.abspath(filename),import_files[pkg]))
             else:
                 import_files[pkg] = filename            
 

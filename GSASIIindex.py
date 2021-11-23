@@ -985,7 +985,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
     print ("%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs))
     cells = []
     lastcell = np.zeros(7)
-    for ibrav in range(17):
+    for ibrav in range(len(bravaisNames)):
         begin = time.time()
         if bravais[ibrav]:
             print ('cell search for ',bravaisNames[ibrav])

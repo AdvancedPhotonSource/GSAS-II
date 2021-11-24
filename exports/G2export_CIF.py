@@ -1747,13 +1747,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
             WriteCIFitem(self.fp, '_refine.ls_wR_factor_obs',R)
 
-        def writeCIFtemplate(G2dict,tmplate,defaultname=''):
+        def writeCIFtemplate(G2dict,tmplate,defaultname='',
+                                 cifKey="CIF_template"):
             '''Write out the selected or edited CIF template
             An unedited CIF template file is copied, comments intact; an edited
             CIF template is written out from PyCifRW which of course strips comments.
             In all cases the initial data_ header is stripped (there should only be one!)
             '''
-            CIFobj = G2dict.get("CIF_template")
+            CIFobj = G2dict.get(cifKey)
             if defaultname:
                 defaultname = G2obj.StripUnicode(defaultname)
                 defaultname = re.sub(r'[^a-zA-Z0-9_-]','',defaultname)
@@ -3593,13 +3594,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                     hist = self.powderDict[i]
                     histblk = self.Histograms[hist]
                     title = 'All Powder datasets'
-                    self.seqSmplParms = {}
                     cbox.Add(
                         CIFtemplateSelect(self.cifdefs,
-                                      cpnl,'powder',self.seqSmplParms,
+                                      cpnl,'powder',self.OverallParms['Controls'],
                                       EditCIFDefaults,
                                       title,
-                                      histblk["Sample Parameters"]['InstrName']),
+                                      histblk["Sample Parameters"]['InstrName'],
+                                      cifKey="seqCIF_template"),
                         0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                     break
                 hist = self.powderDict[i]
@@ -3914,7 +3915,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         if not self.filename:
             print('No name supplied')
             return
-        self.OpenFile()
+        self.OpenFile(delayOpen=True)
         
         #if self.ExportSelect('default'): return
         # Someday: get restraint & constraint info
@@ -4047,6 +4048,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # export different types of CIFs below
         #======================================================================
         print('Writing CIF output to file '+self.filename+"...")
+        self.openDelayed()
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======================================================================
             #### Data only CIF (powder/xtal) ======================================
@@ -4141,7 +4143,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteOverall('seq')
                 hist = seqHistList[0]
                 instnam = self.Histograms[hist]["Sample Parameters"]['InstrName']
-                writeCIFtemplate(self.seqSmplParms,'powder',instnam) # powder template
+                writeCIFtemplate(self.OverallParms['Controls'],'powder',instnam,
+                                     cifKey="seqCIF_template") # powder template for all histograms
                 instnam = instnam.replace(' ','')
                 #============================================================
                 if phaseWithHist:
@@ -4293,6 +4296,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                         WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',PP)
                 
                     WritePowderData(hist,seq=True) # write background, data & reflections, some instrument & sample terms
+                    writeCIFtemplate(self.OverallParms['Controls'],'powder',
+                                         self.Histograms[hist]["Sample Parameters"]['InstrName'],
+                                         cifKey="seqCIF_template") # powder template for all histograms
                     WriteCIFitem(self.fp, '\n# PHASE INFO FOR HISTOGRAM '+hist)
                     # loop over phases, add a block header if there is more than one phase
                     for j,phasenam in enumerate(sorted(self.Phases.keys())):
@@ -4886,7 +4892,7 @@ class EditCIFtemplate(wx.Dialog):
         self.SetTitle('Edit items in CIF template')
         vbox = wx.BoxSizer(wx.VERTICAL)
         cpnl = EditCIFpanel(self,cifblk,loopstructure,CIFdic,OKbuttons,size=(300,300))
-        vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
+        vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 1)
         G2G.HorizontalLine(vbox,self)
         vbox.Add(self.helptxt, 0, wx.EXPAND|wx.ALL, 5)
         G2G.HorizontalLine(vbox,self)
@@ -5148,7 +5154,8 @@ class CIFtemplateSelect(wx.BoxSizer):
     :param str tmplate: one of 'publ', 'phase', or 'instrument' to determine
       the type of template
     :param dict G2dict: GSAS-II dict where CIF should be placed. The key
-      "CIF_template" will be used to store either a list or a string.
+      specified in cifKey (defaults to "CIF_template") will be used to 
+      store either a list or a string.
       If a list, it will contain a dict and a list defining loops. If
       an str, it will contain a file name.
     :param function repaint: reference to a routine to be called to repaint
@@ -5156,16 +5163,20 @@ class CIFtemplateSelect(wx.BoxSizer):
     :param str title: A line of text to show at the top of the window
     :param str defaultname: specifies the default file name to be used for
       saving the CIF.
+    :param str cifKey: key to be used for saving the CIF information in 
+      G2dict. Defaults to "CIF_template"
     '''
-    def __init__(self,frame,panel,tmplate,G2dict, repaint, title, defaultname=''):
+    def __init__(self,frame,panel,tmplate,G2dict, repaint, title,
+                     defaultname='', cifKey="CIF_template"):
         def _onResetTemplate(event):
             self.CIF = None
-            self.dict["CIF_template"] = resetTemplate
+            self.dict[self.cifKey] = resetTemplate
             wx.CallAfter(self.repaint)
         wx.BoxSizer.__init__(self,wx.VERTICAL)
         self.cifdefs = frame
         self.dict = G2dict
         self.repaint = repaint
+        self.cifKey = cifKey
         self.G2frame = frame.G2frame
         templateDefName = 'template_'+tmplate+'.cif'
         if defaultname:
@@ -5201,40 +5212,40 @@ class CIFtemplateSelect(wx.BoxSizer):
                 localTemplate = fil
                 break
 
-        if G2dict.get("CIF_template") == localTemplate and localTemplate:
+        if G2dict.get(self.cifKey) == localTemplate and localTemplate:
             self.CIF = localTemplate
             CIFtxt = "Customized template: "+os.path.split(self.CIF)[1]
-        elif G2dict.get("CIF_template") == resetTemplate and resetTemplate:
+        elif G2dict.get(self.cifKey) == resetTemplate and resetTemplate:
             self.CIF = resetTemplate
             CIFtxt = "Default template: "+os.path.split(self.CIF)[1]
-        elif not G2dict.get("CIF_template"): # empty or None
+        elif not G2dict.get(self.cifKey): # empty or None
             if localTemplate:
-                G2dict["CIF_template"] = self.CIF = localTemplate
+                G2dict[self.cifKey] = self.CIF = localTemplate
                 CIFtxt = "Customized template: "+os.path.split(self.CIF)[1]
             elif resetTemplate:
-                G2dict["CIF_template"] = self.CIF = resetTemplate
+                G2dict[self.cifKey] = self.CIF = resetTemplate
                 CIFtxt = "Default template: "+os.path.split(self.CIF)[1]
             else:
-                G2dict["CIF_template"] = self.CIF = None
+                G2dict[self.cifKey] = self.CIF = None
                 CIFtxt = "none (Template not found!)"
-        elif type(G2dict["CIF_template"]) is not list and type(
-                G2dict["CIF_template"]) is not tuple:
-            if not os.path.exists(G2dict["CIF_template"]):
+        elif type(G2dict[self.cifKey]) is not list and type(
+                G2dict[self.cifKey]) is not tuple:
+            if not os.path.exists(G2dict[self.cifKey]):
                 print("Warning: saved template file,",
-                          os.path.abspath(G2dict["CIF_template"]),
+                          os.path.abspath(G2dict[self.cifKey]),
                           ' not found!\nWas this file moved or deleted?')
                 self.CIF = None
                 CIFtxt = "none! (file not found)"
                 if resetTemplate:
-                    G2dict["CIF_template"] = None
+                    G2dict[self.cifKey] = None
                     wx.CallLater(100,self.repaint)
                     return
             else:
-                CIFtxt = "Edited template: "+os.path.split(G2dict["CIF_template"])[1]
+                CIFtxt = "Edited template: "+os.path.split(G2dict[self.cifKey])[1]
                 if GSASIIpath.GetConfigValue('debug'):
-                    print('Template file found',os.path.abspath(G2dict["CIF_template"]))
+                    print('Template file found',os.path.abspath(G2dict[self.cifKey]))
         else:
-            self.CIF = G2dict["CIF_template"]
+            self.CIF = G2dict[self.cifKey]
             CIFtxt = "Customized template is reloaded"
         # show template source
         self.Add(wx.StaticText(panel,wx.ID_ANY,CIFtxt))
@@ -5271,7 +5282,7 @@ class CIFtemplateSelect(wx.BoxSizer):
                 raise Exception("No CIF data_ blocks found")
             if len(cf.keys()) != 1:
                 raise Exception('Error, CIF Template has more than one block: '+fil)
-            self.dict["CIF_template"] = fil
+            self.dict[self.cifKey] = fil
             wx.CallAfter(self.repaint)
 
     def _onEditTemplateContents(self,event):
@@ -5285,9 +5296,9 @@ class CIFtemplateSelect(wx.BoxSizer):
         val = dlg.Post()
         if val:
             if dlg.newfile: # results saved in file
-                self.dict["CIF_template"] = dlg.newfile
+                self.dict[self.cifKey] = dlg.newfile
             else:
-                self.dict["CIF_template"] = [dlg.cifblk,dlg.loopstructure]
+                self.dict[self.cifKey] = [dlg.cifblk,dlg.loopstructure]
             wx.CallAfter(self.repaint) #EditCIFDefaults() # note that this does a dlg.Destroy()
         else:
             dlg.Destroy()

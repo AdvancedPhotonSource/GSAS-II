@@ -1715,7 +1715,7 @@ class ExportBaseclass(object):
         return filename
 
     # Tools for file writing. 
-    def OpenFile(self,fil=None,mode='w'):
+    def OpenFile(self,fil=None,mode='w',delayOpen=False):
         '''Open the output file
 
         :param str fil: The name of the file to open. If None (default)
@@ -1736,6 +1736,16 @@ class ExportBaseclass(object):
                 self.filename += self.extension
             fil = os.path.join(self.dirname,self.filename)
         self.fullpath = os.path.abspath(fil)
+        self.DelayOpen = False
+        if delayOpen:
+            self.DelayOpen = True
+            self.fp = None
+            return
+        self.fp = open(self.fullpath,mode)
+        return self.fp
+
+    def openDelayed(self,mode='w'):
+        self.DelayOpen = False
         self.fp = open(self.fullpath,mode)
         return self.fp
 
@@ -1754,6 +1764,10 @@ class ExportBaseclass(object):
         :param file fp: the file object to be closed. If None (default)
           file object self.fp is closed. 
         '''
+        if self.fp is None and self.DelayOpen:
+            if GSASIIpath.GetConfigValue('debug'): 
+                print('Delayed open: close before file not created')
+            return
         if self.fp is None:
             raise Exception('Attempt to CloseFile without use of OpenFile')
         if self.fp == sys.stdout: return # debug mode
@@ -1959,6 +1973,7 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     import G2export_CIF
     #import imp
     #imp.reload(G2export_CIF)   #TODO for debug
+    #print('reload G2export_CIF')
     obj = G2export_CIF.ExportProjectCIF(G2frame)
     obj.Exporter(None,seqData=seqData,Controls=Controls)
     

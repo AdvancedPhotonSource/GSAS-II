@@ -500,13 +500,33 @@ class G2PlotNoteBook(wx.Panel):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
         Set a flag (Page.plotInvalid) that it has been redrawn
         Record the name of the this plot in self.lastRaisedPlotTab
+
+        :param str label: title of plot
+        :param str Type: determines the type of plot that will be opened. 
+          'mpl' for 2D graphs in matplotlib
+          'ogl' for openGL
+          '3d' for 3D plotting in matplotlib
+        :param bool newImage: forces creation of a new graph for matplotlib
+          plots only (defaults as True)
+        :param function publish: reference to routine used to create a 
+          publication version of the current mpl plot (default is None, 
+          which prevents use of this).
+        :returns: new,plotNum,Page,Plot,limits where 
+          * new: will be True if the tab was just created
+          * plotNum: is the tab number 
+          * Page: is the subclassed wx.Panel (:class:`G2PlotMpl`, etc.) where 
+            the plot appears
+          * Plot: the mpl.Axes object for the graphic (mpl) or the figure for 
+            openGL.
+          * limits: for mpl plots, when a plot already exists, this will be a tuple
+            with plot scaling. None otherwise.
         '''
         limits = None
         Plot = None
         try:
             new = False
             plotNum,Page = self.GetTabIndex(label)
-            if Type == 'mpl' or Type == '3d': 
+            if Type == 'mpl' or Type == '3d':
                 Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
@@ -532,6 +552,7 @@ class G2PlotNoteBook(wx.Panel):
             self.SetSelectionNoRefresh(plotNum) # raises plot tab
 
         Page.plotInvalid = False # plot has just been drawn
+        Page.excludeMode = False
         self.lastRaisedPlotTab = label
         self.RaisePageNoRefresh(Page)
         # Save the help name from the DataItem that has created the plot in Tabbed page object

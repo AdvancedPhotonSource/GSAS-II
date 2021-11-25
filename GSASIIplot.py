@@ -2276,7 +2276,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.savedplot = None
                 Page.excludeMode = False
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
-                                 plotType=plottype,extraKeys=extraKeys)
+                    plotType=plottype,extraKeys=extraKeys)
                 return
             else:
                 Page.canvas.restore_region(Page.savedplot)
@@ -2288,7 +2288,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.savedplot = None            
             Page.excludeMode = False
             wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
-                                 plotType=plottype,extraKeys=extraKeys)
+                plotType=plottype,extraKeys=extraKeys)
             return
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
@@ -4432,7 +4432,7 @@ in a cmd.exe window to do this.
 
         # Set up legend
         label = gl.label('Legend')
-        label.text = '\\l(1) %(1)\\l(2) %(2)\\l(3) %(3\\l(4) %(4) %(CRLF)' + refLegendText
+        label.text = '\\l(1) %(1)\\l(2) %(2)\\l(3) %(3)\\l(4) %(4) %(CRLF)' + refLegendText
 
     def CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,filename,G2frame):
         '''Copy the contents of the Rietveld graph from the plot window to

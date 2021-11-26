@@ -4817,6 +4817,9 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     Pro, that largely duplicate the displayed plot. Once read into Grace
     or Igor the graphs can then be customized.
     '''
+    if sys.platform == "win32":
+        helpinfo += '''
+Note that the OriginPro connection export requires Origin 2021 or later.'''
     hlp = G2G.HelpButton(dlg,helpinfo)
     sizebox.Add(hlp,0,wx.ALL)
     vbox.Add(sizebox,0,wx.ALL|wx.EXPAND)

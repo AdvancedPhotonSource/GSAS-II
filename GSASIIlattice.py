@@ -272,7 +272,7 @@ def CellDijCorr(Cell,SGData,Data,hist):
         if SGData['SGUniq'] == 'a':
             newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,0,A[5]+Dij[3]]
         elif SGData['SGUniq'] == 'b':
-            newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,A[4]+Dij[3]]
+            newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],0,A[4]+Dij[3],0]
         else:
             newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],A[3]+Dij[3],0,0]
     elif SGData['SGLaue'] in ['mmm',]:

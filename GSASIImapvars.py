@@ -291,8 +291,7 @@ calls. This is done in GSAS-II from several locations:
   constraint info is read from the sequential results section of the 
   data tree. Function 
   :func:`GSASIIseqGUI.UpdateSeqResults` displays the sequential results
-  table 
-also processes constraints. 
+  table also processes constraints. 
 
 TODO: Note that G2stIO.makeTwinFrConstr is called only in one place. It probably needs to be included in all of the above.
 

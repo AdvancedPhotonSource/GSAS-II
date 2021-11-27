@@ -1130,10 +1130,13 @@ angles are defined so that with the goniometer angles at zero Omega-s and Phi-s 
 about K and Chi-s is a rotation about J.
 
 Three typical examples:
+
     1) Bragg-Brentano laboratory diffractometer: Chi=0
     2) Debye-Scherrer counter detector; sample capillary axis perpendicular to diffraction plane: Chi=90
     3) Debye-Scherrer 2D area detector positioned directly behind sample; sample capillary axis horizontal; Chi=0
-            NB: The area detector azimuthal angle = 0 in horizontal plane to right as viewed from x-ray source & 90 at vertical "up" direction
+
+NB: The area detector azimuthal angle will equal 0 in horizontal plane to right as viewed from x-ray source and will equal 
+90 at vertical "up" direction.
             
 ISODISTORT implementation
 ------------------------------
@@ -1141,7 +1144,7 @@ ISODISTORT implementation
 CIFs prepared with the ISODISTORT web site 
 https://stokes.byu.edu/iso/isodistort_version5.6.1/isodistort.php
 [B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
- J. Appl. Cryst. 39, 607-614 (2006).] can be read into GSAS-II using import CIF. This will cause constraints to be established for 
+J. Appl. Cryst. 39, 607-614 (2006).] can be read into GSAS-II using import CIF. This will cause constraints to be established for 
 structural distortion modes read from the CIF. At present, of the five types of modes  only displacive(``_iso_displacivemode``...) 
 and occupancy (``_iso_occupancymode``...) are processed. Not yet processed: ``_iso_magneticmode``..., 
 ``_iso_rotationalmode``... & ``_iso_strainmode``...
@@ -1168,7 +1171,7 @@ corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phas
 The mode variables, as named by ISODISTORT, are placed in ``.Phase['ISODISTORT']['IsoModeList']`` and the 
 corresponding :class:`GSASIIobj.G2VarObj` objects for each are placed in ``.Phase['ISODISTORT']['G2ModeList']``.
 [Use ``str(G2VarObj)`` to get the variable name from the G2VarObj object, but note that the phase number, *n*, for the prefix 
- "*n*::" cannot be determined as the phase number is not yet assigned.]
+"*n*::" cannot be determined as the phase number is not yet assigned.]
 
 Displacive modes are a bit complex in that they relate to delta displacements, relative to an offset value for each coordinate, 
 and because the modes are normalized. While GSAS-II also uses displacements,  these are added to the coordinates after 
@@ -2428,6 +2431,7 @@ class G2VarObj(object):
         :param str warnmsg: a message saying the constraint is not used
 
         :returns: varname, explain, note, warnmsg (all str values) where:
+
           * varname is the parameter expressed as a string,
           * explain is blank unless there is a warning explanation about 
             the parameter or blank

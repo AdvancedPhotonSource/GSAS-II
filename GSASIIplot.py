@@ -503,15 +503,18 @@ class G2PlotNoteBook(wx.Panel):
 
         :param str label: title of plot
         :param str Type: determines the type of plot that will be opened. 
+
           'mpl' for 2D graphs in matplotlib
           'ogl' for openGL
           '3d' for 3D plotting in matplotlib
+
         :param bool newImage: forces creation of a new graph for matplotlib
           plots only (defaults as True)
         :param function publish: reference to routine used to create a 
           publication version of the current mpl plot (default is None, 
           which prevents use of this).
         :returns: new,plotNum,Page,Plot,limits where 
+
           * new: will be True if the tab was just created
           * plotNum: is the tab number 
           * Page: is the subclassed wx.Panel (:class:`G2PlotMpl`, etc.) where 

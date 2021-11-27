@@ -2136,8 +2136,8 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
     :param dict Phase: full covariance information from tree
 
     :returns: modeDict,posDict where modeDict contains pairs of mode values 
-    and mode s.u. values; posDict contains pairs of displacement values 
-    and their s.u. values.
+      and mode s.u. values; posDict contains pairs of displacement values 
+      and their s.u. values.
     '''
     ISO = Phase['ISODISTORT']
     if 'G2coordOffset' not in ISO: patchIsoDisp(ISO) # patch Nov 2021

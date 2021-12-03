@@ -6140,7 +6140,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Add excluded region - select a point on plot; drag to adjust')            
         self.PostfillDataMenu()
             
-        # PDR / Background
+        # PWDR / Background
         G2G.Define_wxId('wxID_BACKCOPY', 'wxID_BACKFLAGCOPY','wxID_MAKEBACKRDF', 
             'wxID_RESCALEALL','wxID_BACKPEAKSMOVE','wxID_BACKSAVE','wxID_BACKLOAD')
         self.BackMenu = wx.MenuBar()
@@ -6171,7 +6171,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Fit background function to fixed background points')
         self.PostfillDataMenu()
             
-        # PDR / Instrument Parameters
+        # PWDR / Instrument Parameters
         G2G.Define_wxId('wxID_INSTPRMRESET','wxID_INSTCOPY','wxID_INSTFLAGCOPY','wxID_INSTLOAD',
             'wxID_INSTSAVE', 'wxID_INST1VAL', 'wxID_INSTCALIB', 'wxID_INSTSAVEALL',)
         self.InstMenu = wx.MenuBar()
@@ -6188,7 +6188,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.InstEdit.Append(G2G.wxID_INST1VAL,'Set one value','Set one instrument parameter value across multiple histograms')
         self.PostfillDataMenu()
         
-        # PDR / Sample Parameters
+        # PWDR / Sample Parameters
         G2G.Define_wxId('wxID_SAMPLECOPY', 'wxID_SAMPLECOPYSOME', 'wxID_SAMPLEFLAGCOPY','wxID_SAMPLESAVE',
              'wxID_SAMPLELOAD', 'wxID_SETSCALE', 'wxID_SAMPLE1VAL', 'wxID_ALLSAMPLELOAD',)            
         self.SampleMenu = wx.MenuBar()
@@ -6207,7 +6207,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         self.SetScale.Enable(False)
 
-        # PDR / Peak List
+        # PWDR / Peak List
         G2G.Define_wxId('wxID_UNDO', 'wxID_LSQPEAKFIT', 'wxID_LSQONECYCLE', 'wxID_RESETSIGGAM', 
             'wxID_CLEARPEAKS', 'wxID_AUTOSEARCH','wxID_PEAKSCOPY', 'wxID_SEQPEAKFIT','wxID_PEAKLOAD','wxID_PEAKSAVE')
         self.PeakMenu = wx.MenuBar()
@@ -6235,7 +6235,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PFOneCycle.Enable(False)
         self.AutoSearch.Enable(True)
         
-        # PDR / Index Peak List
+        # PWDR / Index Peak List
         G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE',)
         self.IndPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndPeaksMenu)
@@ -6245,7 +6245,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndPeaksEdit.Append(G2G.wxID_INDEXSAVE,'Save','Save index peaks to CSV file')
         self.PostfillDataMenu()
         
-        # PDR / Unit Cells List
+        # PWDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
             'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUB','wxID_RUNSUBMAG','wxID_LATSYM')
         self.IndexMenu = wx.MenuBar()
@@ -6282,7 +6282,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RefineCell.Enable(False)
         self.MakeNewPhase.Enable(False)
         
-        # PDR / Reflection Lists
+        # PWDR / Reflection Lists
         G2G.Define_wxId('wxID_SELECTPHASE','wxID_SHOWHIDEEXTINCT','wxID_WILSONSTAT' ) #some wxIDs defined above in PWDR & SASD
         self.ReflMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ReflMenu)

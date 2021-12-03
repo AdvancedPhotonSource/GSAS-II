@@ -49,6 +49,7 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 ateln2 = 8.0*math.log(2.0)
 DEBUG = True
+PhFrExtPOSig = None
 
 def ReportProblems(result,Rvals,varyList):
     '''Create a message based results from the refinement
@@ -410,6 +411,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
+            covData['depSig'] = G2stIO.PhFrExtPOSig
             if len(frozen):
                 if 'msg' in Rvals:
                     Rvals['msg'] += '\n'

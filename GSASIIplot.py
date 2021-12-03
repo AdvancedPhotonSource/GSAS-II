@@ -5362,9 +5362,22 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
+            ifCalc = False
             X = xye[0]+Page.Offset[0]*.005*N
             Y = xye[1]+Page.Offset[1]*.01*N
-            XYlist.append(list(zip(X,Y)))
+            if xye.shape[0] > 2 and len(PlotList) == 1:     #PDF calc present - single plot only
+                ifCalc = True
+                NZ = np.nonzero(xye[2])[0]
+                ibeg = NZ[0]
+                ifin = NZ[-1]+1
+                Z = xye[2]
+                D = xye[3]
+                D -= 0.75*(np.max(D)-np.min(Z))
+                XYlist.append(np.array([X,Y]))
+                XYlist.append(np.array([X,Z]))
+                XYlist.append(np.array([X,D]))
+            else:
+                XYlist.append(list(zip(X,Y)))
 #            if G2frame.Legend:
 #                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
 #            else:
@@ -5378,11 +5391,17 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Page.figure.colorbar(Img)
     else:
         XYlist = np.array(XYlist)
-        Xmin = np.amin(XYlist.T[0])
-        Xmax = np.amax(XYlist.T[0])
+        if ifCalc:
+            Xmin = np.amin(XYlist[0][0])
+            Xmax = np.amax(XYlist[0][0])
+            Ymax = np.amax(XYlist[0][1])
+            Ymin = np.amin(XYlist[2][1])
+        else:    
+            Xmin = np.amin(XYlist.T[0])
+            Xmax = np.amax(XYlist.T[0])
+            Ymin = np.amin(XYlist.T[1][1:])
+            Ymax = np.amax(XYlist.T[1][1:])
         dx = 0.02*(Xmax-Xmin)
-        Ymin = np.amin(XYlist.T[1][1:])
-        Ymax = np.amax(XYlist.T[1][1:])
         dy = 0.02*(Ymax-Ymin)
         try:
             Plot.set_xlim(Xmin-dx,Xmax+dx)
@@ -5407,21 +5426,26 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     axcb = Page.figure.colorbar(line)
                     axcb.set_label(plotType)
                 else:   #ok
-                    lines = mplC.LineCollection(XYlist,cmap=acolor)
-                    lines.set_array(np.arange(XYlist.shape[0]))
-                    Plot.add_collection(lines)
-                    axcb = Page.figure.colorbar(lines)
-                    axcb.set_label('PDF number')
-                    lgndlist = []
-                    if G2frame.Legend:
-                        # make short names from choices dropping PDF and AZM and then extension
-                        labels = [os.path.splitext(i[3:i.find('Azm')].strip())[0] for i in choices]
-                        numlines = len(labels)
-                        # create an empty labeled line for each label with color from color map
-                        for i,lbl in enumerate(labels):
-                            color = acolor(int(0.5+acolor.N*i/(numlines-1.)))
-                            lgndlist.append(mpl.lines.Line2D([], [], color=color, label=lbl))
-                        Plot.legend(handles=lgndlist,loc='best')
+                    if ifCalc:  #obs, calc & diff
+                        Plot.plot(XYlist[0][0],XYlist[0][1],color='b',marker='+',linewidth=0)
+                        Plot.plot(XYlist[1][0][ibeg:ifin],XYlist[1][1][ibeg:ifin],color='g')
+                        Plot.plot(XYlist[2][0][ibeg:ifin],XYlist[2][1][ibeg:ifin],color='r')
+                    else:    
+                        lines = mplC.LineCollection(XYlist,cmap=acolor)
+                        lines.set_array(np.arange(XYlist.shape[0]))
+                        Plot.add_collection(lines)
+                        axcb = Page.figure.colorbar(lines)
+                        axcb.set_label('PDF number')
+                        lgndlist = []
+                        if G2frame.Legend:
+                            # make short names from choices dropping PDF and AZM and then extension
+                            labels = [os.path.splitext(i[3:i.find('Azm')].strip())[0] for i in choices]
+                            numlines = len(labels)
+                            # create an empty labeled line for each label with color from color map
+                            for i,lbl in enumerate(labels):
+                                color = acolor(int(0.5+acolor.N*i/(numlines-1.)))
+                                lgndlist.append(mpl.lines.Line2D([], [], color=color, label=lbl))
+                            Plot.legend(handles=lgndlist,loc='best')
             else:
                 if G2frame.Waterfall:
                     colorRange = XYlist[0].T[1]

@@ -2957,7 +2957,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
         
-    
+    global PhFrExtPOSig
     PhFrExtPOSig = {}
     SizeMuStrSig = {}
     ScalExtSig = {}

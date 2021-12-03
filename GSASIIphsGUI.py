@@ -4890,6 +4890,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         XY = np.loadtxt(fileItem[0],skiprows=start)
                     except ValueError:
                         start += 1
+                        if start > 500:     #absurd number of header lines!
+                            wx.MessageBox('WARNING: %s has bad data at end;\n RMCProfile may fail to read it'%fileItem[0],
+                                style=wx.ICON_ERROR)
+                            break
                 Xlab = 'Q'
                 if 'G(R)' in fileItem[2].upper():
                     Xlab = 'R'
@@ -4920,6 +4924,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnDataSel(event):
                 RMCPdict['SeqDataType'] = dataType.GetStringSelection()
+                
+            def OnSeqCopy(event):
+                RMCPdict['SeqCopy'] = not RMCPdict['SeqCopy']
+
+            def OnSeqReverse(event):
+                RMCPdict['SeqReverse'] = not RMCPdict['SeqReverse']
 
             Indx = {}
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4934,6 +4944,17 @@ def UpdatePhaseData(G2frame,Item,data):
                     dataType.SetStringSelection(RMCPdict.get('SeqDataType','X'))
                     dataType.Bind(wx.EVT_RADIOBOX,OnDataSel)
                     topSizer.Add(dataType)
+                    endSizer = wx.BoxSizer(wx.VERTICAL)
+                    seqcopy = wx.CheckBox(G2frame.FRMC,label=' Copy to next')
+                    seqcopy.SetValue(RMCPdict['SeqCopy'])
+                    seqcopy.Bind(wx.EVT_CHECKBOX,OnSeqCopy)
+                    endSizer.Add(seqcopy)
+                    seqreverse = wx.CheckBox(G2frame.FRMC,label=' Reverse processing')
+                    seqreverse.SetValue(RMCPdict['SeqReverse'])
+                    seqreverse.Bind(wx.EVT_CHECKBOX,OnSeqReverse)
+                    endSizer.Add(seqreverse)
+                    topSizer.Add(endSizer,0,WACV)
+                    
             mainSizer.Add(topSizer)
             if G2frame.RMCchoice == 'fullrmc':
                 Heads = ['Name','File','type','Plot','Delete']
@@ -6026,17 +6047,17 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     if c > 0:
                         strval = atmGrid.GetCellValue(r,c).strip()
                         try:
-                            if strval == '' or ('@' in strval and int(strval.split('@')[-1]) >= 10):
+                            if strval == '' or ('@' in strval and int(strval.split('@')[-1]) >= 20):
                                 RMCPdict['AtomConstr'][r][c+1] = strval
                             else:
                                 raise ValueError
                         except ValueError:
                             atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
-                            wx.MessageBox('ERROR - atom constraints must be blank or have "@n" at end with n >= 10',
+                            wx.MessageBox('ERROR - atom constraints must be blank or have "@n" at end with n >= 20',
                                 style=wx.ICON_ERROR)
                 
                 atmSizer = wx.BoxSizer(wx.VERTICAL)
-                atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=10 && "@n" should be at end'))
+                atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=20 && "@n" should be at end'))
 
                 table = [item[1:] for item in RMCPdict['AtomConstr']]
                 colLabels = ['Type','x constraint','y constraint','z  constraint','frac constr','Uiso constr']
@@ -6078,7 +6099,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 data['RMC']['PDFfit'] = {'files':files,'ReStart':[False,False],'metadata':metadata,
                 'delta1':[0.,False],'delta2':[0.,False],'spdiameter':[0.,False],'refinement':'normal',
                 'sratio':[1.,False],'rcut':0.0,'stepcut':0.0,'shape':'sphere','SGData':SGData,'cellref':False,
-                'AtomConstr':[],'AtomVar':{},'SeqDataType':'X',
+                'AtomConstr':[],'AtomVar':{},'SeqDataType':'X','SeqCopy':True,'SeqReverse':False,
                 'Xdata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},
                 'Ndata':{'dscale':[1.0,False],'Datarange':[0.,30.],'Fitrange':[0.,30.],'qdamp':[0.03,False],'qbroad':[0,False]},}
                 
@@ -6096,6 +6117,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 RMCPdict['metadata'] = {'title':'none','date':str(time.ctime()),'temperature':'300K','doping':0}
             if 'SeqDataType' not in RMCPdict:
                 RMCPdict['SeqDataType'] = 'X'
+            if 'SeqCopy' not in RMCPdict:
+                RMCPdict['SeqCopy'] = False
+                RMCPdict['SeqReverse'] = False
             if 'AtomVar' not in RMCPdict:
                 RMCPdict['AtomVar'] = {}
 #end patch
@@ -6255,178 +6279,147 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             print(fname+ ' written')
             print('PDFfit file build completed')
             
-            
-    def OnRunRMC(event):
-        '''Run a previously created RMCProfile/fullrmc/PDFfit2 script
-        '''
+    def RunPDFfit(event):
         generalData = data['General']
-        if G2frame.RMCchoice == 'fullrmc':
-            fullrmc_exec = G2pwd.findfullrmc()
-            if fullrmc_exec is None:
-                G2G.G2MessageBox(G2frame,'fullrmc Python not found. How did we get here?')
-                return
-            pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
-            pName = pName.replace(' ','_')
-            rname = pName+'-fullrmc.py'
-            if not os.path.exists(rname):
-                G2G.G2MessageBox(G2frame,'The fullrmc script has not been created. Running setup.',
-                    'Not setup')
-                OnSetupRMC(event)
-            RMCPdict = data['RMC']['fullrmc']
-            rmcname = pName+'-fullrmc.rmc'
-            if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
-                msg = '''You have asked to start a new fullrmc run rather than 
-                     continue the existing {} run. 
-                     %%Press "Yes" to continue, deleting this 
-                     previous run or "No" to change the restart checkbox to 
-                     continue from the previous results.'''.format(rmcname)
-
-                dlg = wx.MessageDialog(G2frame,G2G.StripIndents(msg,True),
-                                           'Restart or continue',
-                    wx.YES|wx.NO)
-                try:
-                    dlg.CenterOnParent()
-                    result = dlg.ShowModal()
-                finally:
-                    dlg.Destroy()
-                if result == wx.ID_YES:
-                    import shutil
-                    shutil.rmtree(rmcname)
-                else:
-                    return
-            G2G.G2MessageBox(G2frame,
-'''For use of fullrmc, please cite:
-      "Fullrmc, a Rigid Body Reverse Monte Carlo 
-      Modeling Package Enabled with Machine Learning 
-      and Artificial Intelligence",
-      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
-      DOI: https://doi.org/10.1002/jcc.24304
-''',
-                                 'Please cite fullrmc')
-            ilog = 0
-            while True:
-                logname = '%s_%d.log'%(pName,ilog)
-                if os.path.isfile(logname):
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print('removing',logname)
-                    os.remove(logname)
-                else:
-                    break
-                ilog += 1
-            if sys.platform.lower().startswith('win'):
-                batch = open('fullrmc.bat','w')
-                #batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
-                batch.write(fullrmc_exec+' '+rname+'\n')
-                batch.write('pause')
-                batch.close()
-                subp.Popen('fullrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-            else:
-                batch = open('fullrmc.sh','w')
-                batch.write('#!/bin/bash\n')
-                #activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
-                batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
-                #if os.path.exists(activate):
-                #    batch.write('source ' + activate + ' ' +
-                #                os.environ['CONDA_DEFAULT_ENV'] +'\n')
-                #    batch.write('python ' + rname + '\n')
-                #else:
-                #    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
-                batch.write(fullrmc_exec + ' ' + os.path.abspath(rname) + '\n')
-                batch.close()
-                if sys.platform == "darwin":
-                    GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
-                else:
-                    # TODO: better to create this in a new terminal on Linux
-                    subp.Popen(['/bin/bash','fullrmc.sh'])
-                    
-        elif G2frame.RMCchoice == 'RMCProfile':
-            pName = generalData['Name'].replace(' ','_')
-            RMCPdict = data['RMC']['RMCProfile']
-            rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-            if rmcfile is None:
-                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
-      Obtain the zip file distribution from www.rmcprofile.org, 
-      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
-          caption='RMCProfile',style=wx.ICON_INFORMATION)
-                return
-            rmcexe = os.path.split(rmcfile)[0]
-            print(rmcexe)
-            wx.MessageBox(''' For use of RMCProfile, please cite:
-      RMCProfile: Reverse Monte Carlo for polycrystalline materials,
-      M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
-      Jour. Phys.: Cond. Matter 2007, 19, 335218.
-      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',
-      caption='RMCProfile',style=wx.ICON_INFORMATION)
-            if os.path.isfile(pName+'.his6f'):
-                os.remove(pName+'.his6f')
-            if os.path.isfile(pName+'.xray'):
-                os.remove(pName+'.xray')
-            if os.path.isfile(pName+'.neigh'):
-                os.remove(pName+'.neigh')
-            if os.path.isfile(pName+'.bonds'):
-                os.remove(pName+'.bonds')
-            if os.path.isfile(pName+'.triplets'):
-                os.remove(pName+'.triplets')
-            i = 1
-            while True:
-                if os.path.isfile(pName+'.bondodf_%d'%i):
-                    os.remove(pName+'.bondodf_%d'%i)
-                    os.remove(pName+'_bondplot_%d.ppm'%i)
-                    i += 1
-                else:
-                    break
-            i = 1
-            while True:
-                if os.path.isfile(pName+'_anglehist_%d.csv'%i):
-                    os.remove(pName+'_anglehist_%d.csv'%i)
-                    i += 1
-                else:
-                    break
-                
-            G2frame.OnFileSave(event)
-            print (' GSAS-II project saved')
-            generalData = data['General']
-            pName = generalData['Name'].replace(' ','_')
-            exstr = rmcexe+'\\rmcprofile.exe '+pName
-            batch = open('runrmc.bat','w')
-            batch.write('Title RMCProfile\n')
-            batch.write(exstr+'\n')
-            batch.write('pause\n')
-            batch.close()
-            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-            
-        elif G2frame.RMCchoice == 'PDFfit':
-            PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
-            if not PDFfit_exec:
-                wx.MessageBox(''' PDFfit2 is currently not available for this platform. 
+        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
+        if not PDFfit_exec:
+            wx.MessageBox(''' PDFfit2 is currently not available for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
-                return
-            pName = generalData['Name'].replace(' ','_')
+            return
+        RMCPdict = data['RMC']['PDFfit']
+        pName = generalData['Name'].replace(' ','_')
+        if 'sequential' in RMCPdict['refinement']:
+            rname = 'Seq_PDFfit.py'
+        else:
             rname = pName+'-PDFfit.py'
-            wx.MessageBox(''' For use of PDFfit2, please cite:
+        wx.MessageBox(''' For use of PDFfit2, please cite:
       PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals, 
 C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen & 
 S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter 
 (2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219''',
       caption='PDFfit2',style=wx.ICON_INFORMATION)
-            G2frame.OnFileSave(event)
-            print (' GSAS-II project saved')
-            if sys.platform.lower().startswith('win'):
-                batch = open('pdffit2.bat','w')
-                batch.write(PDFfit_exec+' '+rname+'\n')
+        G2frame.OnFileSave(event)
+        print (' GSAS-II project saved')
+        if sys.platform.lower().startswith('win'):
+            batch = open('pdffit2.bat','w')
+            batch.write(PDFfit_exec+' '+rname+'\n')
+            if 'normal' in RMCPdict['refinement']:
                 batch.write('pause')
-                batch.close()
-                subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+            batch.close()
+        else:
+            batch = open('pdffit2.sh','w')
+            batch.write('#!/bin/bash\n')
+            batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
+            batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
+            batch.close()
+        if 'sequential' in RMCPdict['refinement']:
+            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
+            if Id:
+                SeqResult = G2frame.GPXtree.GetItemPyData(Id)
             else:
-                batch = open('pdffit2.sh','w')
-                batch.write('#!/bin/bash\n')
-                batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
-                batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
-                batch.close()
+                SeqResult = {}
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
+            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+            SeqResult['histNames'] = []         #this clears the previous seq. result!
+            for itm in range(len(RMCPdict['seqfiles'])):
+                SeqResult['histNames'].append([itm,RMCPdict['seqfiles'][itm][0]])
+            if RMCPdict['SeqReverse']:
+                SeqResult['histNames'].reverse()
+            nPDF = len(SeqResult['histNames'])
+            pgbar = wx.ProgressDialog('Sequential PDFfit','PDF G(R) done = 0',nPDF+1, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+            newParms = {}
+            for itm,item in enumerate(SeqResult['histNames']):
+                PDFfile = RMCPdict['seqfiles'][item[0]]
+                pfdata = PDFfile[1]['G(R)'][1].T
+#                    pfname = PDFfile[0].replace(' ','_')
+                pfname = 'Seq_PDF.gr'
+                pfile = open(pfname,'w')
+                for dp in pfdata:
+                    pfile.write('%12.5f%12.5f\n'%(dp[0],dp[1]))
+                pfile.close()
+                rfile = open('Seq_PDFfit_template.py','r')
+                lines = rfile.readlines()       #template lines
+                rfile.close()
+                newlines = []
+                parms = {}
+                Np = 0
+                for line in lines:
+                    if '#sequential' in line:
+                        newlines += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(pfname,PDFfile[1]['Type'][0],PDFfile[1]['qdamp'][0])
+                        newlines += 'pf.setdata(1)\n'
+                        newlines += 'pf.pdfrange(1, %6.2f, %6.2f)\n'%(PDFfile[1]['Fitrange'][0],PDFfile[1]['Fitrange'][1])
+                        for item in ['dscale','qdamp','qbroad']:
+                            if PDFfile[1][item][1]:
+                                Np += 1
+                                newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
+                                parms[item] = '%d'%Np
+                    elif '#parameters' in line:
+                        startParms = RMCPdict['Parms']
+                        if newParms and RMCPdict['SeqCopy']:
+                            startParms = newParms
+                        for iprm in startParms:
+                            newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                    else:
+                        newlines += line
+                rfile= open('Seq_PDFfit.py','w')
+                rfile.writelines(newlines)
+                rfile.close()
+
+                if sys.platform.lower().startswith('win'):
+                    Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+                    Proc.wait()     #for it to finish before continuing on
+                else:
+                    if sys.platform == "darwin":
+                        GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
+                    else:
+                        Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
+                        Proc.wait()
+
+                newParms,Rwp =  G2pwd.UpdatePDFfit(data,RMCPdict)
+                for item in ['dscale','qdamp','qbroad']:
+                    if PDFfile[1][item][1]:
+                        PDFfile[1][item][0] = newParms[parms[item]][0]
+                parmDict = copy.deepcopy(newParms)
+                parmDict.update({'Temperature':PDFfile[1]['Temp']})
+                varyList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in RMCPdict['Parms']]
+                result = np.array(list(newParms.values())).T
+                SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
+                    'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
+                
+                pfile = open('Sequential_PDFfit%s.fgr'%(PDFfile[1]['Type'][0])) # X or N
+                XYcalc = np.loadtxt(pfile).T[:2]
+                pfile.close()
+                pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])
+                PDFctrl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
+                XYobs = PDFctrl['G(R)'][1]
+                XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
+                ibeg = np.searchsorted( XYobs[0],XYcalc[0][0])
+                ifin = ibeg+XYcalc.shape[1]
+                XYobs[2][ibeg:ifin] = XYcalc[1]
+                XYobs[3] = XYobs[1]-XYobs[2]
+                PDFctrl['G(R)'][1] = XYobs
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'),PDFctrl)
+                GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
+                if not GoOn[0]:
+                    print(' Sequential PDFfit aborted')
+                    break
+                
+            pgbar.Destroy()
+            G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
+            G2frame.GPXtree.SelectItem(Id)
+
+        else:
+            if sys.platform.lower().startswith('win'):
+                Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+                Proc.wait()     #for it to finish before continuing on
+            else:
                 if sys.platform == "darwin":
                     GSASIIpath.MacRunScript(os.path.abspath('pdffit2.sh'))
                 else:
-                    subp.Popen(['/bin/bash','pdffit2.sh'])
+                    Proc = subp.Popen(['/bin/bash','pdffit2.sh'])
+                    Proc.wait()     #for it to finish before continuing on
             #update choice? here?
             dlg = wx.MessageDialog(G2frame,'Check PDFfit console for results; do you want to update?',
                 'PDFfit run finished',wx.YES|wx.NO)
@@ -6439,8 +6432,155 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 RMCPdict = data['RMC']['PDFfit']
                 Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
                 if Error:
-                    wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)                
-            wx.CallAfter(UpdateRMC)
+                    wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)
+            UpdateRMC()
+                    
+    def Runfullrmc(event):
+        fullrmc_exec = G2pwd.findfullrmc()
+        if fullrmc_exec is None:
+            G2G.G2MessageBox(G2frame,'fullrmc Python not found. How did we get here?')
+            return
+        generalData = data['General']
+        pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
+        pName = pName.replace(' ','_')
+        rname = pName+'-fullrmc.py'
+        if not os.path.exists(rname):
+            G2G.G2MessageBox(G2frame,'The fullrmc script has not been created. Running setup.',
+                'Not setup')
+            OnSetupRMC(event)
+        RMCPdict = data['RMC']['fullrmc']
+        rmcname = pName+'-fullrmc.rmc'
+        if os.path.isdir(rmcname) and RMCPdict['ReStart'][0]:
+            msg = '''You have asked to start a new fullrmc run rather than 
+                 continue the existing {} run. 
+                 %%Press "Yes" to continue, deleting this 
+                 previous run or "No" to change the restart checkbox to 
+                 continue from the previous results.'''.format(rmcname)
+
+            dlg = wx.MessageDialog(G2frame,G2G.StripIndents(msg,True),
+                'Restart or continue',wx.YES|wx.NO)
+            try:
+                dlg.CenterOnParent()
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_YES:
+                import shutil
+                shutil.rmtree(rmcname)
+            else:
+                return
+        G2G.G2MessageBox(G2frame,
+'''For use of fullrmc, please cite:
+      "Fullrmc, a Rigid Body Reverse Monte Carlo 
+      Modeling Package Enabled with Machine Learning 
+      and Artificial Intelligence",
+      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
+      DOI: https://doi.org/10.1002/jcc.24304''','Please cite fullrmc')
+        ilog = 0
+        while True:
+            logname = '%s_%d.log'%(pName,ilog)
+            if os.path.isfile(logname):
+                if GSASIIpath.GetConfigValue('debug'):
+                    print('removing',logname)
+                os.remove(logname)
+            else:
+                break
+            ilog += 1
+        if sys.platform.lower().startswith('win'):
+            batch = open('fullrmc.bat','w')
+            #batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
+            batch.write(fullrmc_exec+' '+rname+'\n')
+            batch.write('pause')
+            batch.close()
+            Proc = subp.Popen('fullrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+            Proc.wait()     #for it to finish before continuing on
+        else:
+            batch = open('fullrmc.sh','w')
+            batch.write('#!/bin/bash\n')
+            #activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
+            batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
+            #if os.path.exists(activate):
+            #    batch.write('source ' + activate + ' ' +
+            #                os.environ['CONDA_DEFAULT_ENV'] +'\n')
+            #    batch.write('python ' + rname + '\n')
+            #else:
+            #    batch.write(sys.exec_prefix+'/python ' + rname + '\n')
+            batch.write(fullrmc_exec + ' ' + os.path.abspath(rname) + '\n')
+            batch.close()
+            if sys.platform == "darwin":
+                GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
+            else:
+                # TODO: better to create this in a new terminal on Linux
+                Proc = subp.Popen(['/bin/bash','fullrmc.sh'])
+                Proc.wait()     #for it to finish before continuing on
+        UpdateRMC()
+                    
+    def RunRMCProfile(event):
+        generalData = data['General']
+        pName = generalData['Name'].replace(' ','_')
+        rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
+        if rmcfile is None:
+            wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
+      Obtain the zip file distribution from www.rmcprofile.org, 
+      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
+          caption='RMCProfile',style=wx.ICON_INFORMATION)
+            return
+        rmcexe = os.path.split(rmcfile)[0]
+        print(rmcexe)
+        wx.MessageBox(''' For use of RMCProfile, please cite:
+      RMCProfile: Reverse Monte Carlo for polycrystalline materials,
+      M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
+      Jour. Phys.: Cond. Matter 2007, 19, 335218.
+      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',
+      caption='RMCProfile',style=wx.ICON_INFORMATION)
+        if os.path.isfile(pName+'.his6f'):
+            os.remove(pName+'.his6f')
+        if os.path.isfile(pName+'.xray'):
+            os.remove(pName+'.xray')
+        if os.path.isfile(pName+'.neigh'):
+            os.remove(pName+'.neigh')
+        if os.path.isfile(pName+'.bonds'):
+            os.remove(pName+'.bonds')
+        if os.path.isfile(pName+'.triplets'):
+            os.remove(pName+'.triplets')
+        i = 1
+        while True:
+            if os.path.isfile(pName+'.bondodf_%d'%i):
+                os.remove(pName+'.bondodf_%d'%i)
+                os.remove(pName+'_bondplot_%d.ppm'%i)
+                i += 1
+            else:
+                break
+        i = 1
+        while True:
+            if os.path.isfile(pName+'_anglehist_%d.csv'%i):
+                os.remove(pName+'_anglehist_%d.csv'%i)
+                i += 1
+            else:
+                break
+            
+        G2frame.OnFileSave(event)
+        print (' GSAS-II project saved')
+        pName = generalData['Name'].replace(' ','_')
+        exstr = rmcexe+'\\rmcprofile.exe '+pName
+        batch = open('runrmc.bat','w')
+        batch.write('Title RMCProfile\n')
+        batch.write(exstr+'\n')
+        batch.write('pause\n')
+        batch.close()
+        Proc = subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+        Proc.wait()     #for it to finish before continuing on
+        UpdateRMC()
+        
+    def OnRunRMC(event):
+        '''Run a previously created RMCProfile/fullrmc/PDFfit2 script
+        '''
+        if G2frame.RMCchoice == 'fullrmc':
+             Runfullrmc(event)       
+        elif G2frame.RMCchoice == 'RMCProfile':
+            RunRMCProfile(event)
+        elif G2frame.RMCchoice == 'PDFfit':
+            RunPDFfit(event)
             
     def OnStopRMC(event):
         pass

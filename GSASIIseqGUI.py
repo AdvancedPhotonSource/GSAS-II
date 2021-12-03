@@ -94,6 +94,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''
         if 'IMG' in histNames[0]:
             sampleParmDict = {'Sample load':[],}
+        elif 'PDF' in histNames[0]:
+            sampleParmDict = {'Temperature':[]}
         else:
             sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
                 'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],'Omega':[],
@@ -102,7 +104,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         sampleParm = {}
         for name in histNames:
-            if 'IMG' in name:
+            if 'IMG' in name or 'PDF' in name:
                 if name not in data:
                     continue
                 for item in sampleParmDict:
@@ -160,7 +162,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2frame.PickId = pickId
         elif rows:
             name = histNames[rows[0]]       #only does 1st one selected
-            G2plt.PlotCovariance(G2frame,data[name])
+            if data.get('covMatrix',[]):
+                G2plt.PlotCovariance(G2frame,data[name])
         else:
             G2frame.ErrorDialog(
                 'Select row or columns',
@@ -1085,13 +1088,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
-    # create a place to store Pseudo Vars & Parametric Fit functions, if not present
-    if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
-    if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
-    histNames = data['histNames']
-    foundNames = [name for name in histNames if name in data]
-    histNames = foundNames
+    if not Histograms and not Phases:   #PDF histogrms not PWDR
+        histNames = [name[1] for name in data['histNames']]
+        Controls = {}
+    else:        
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
+        # create a place to store Pseudo Vars & Parametric Fit functions, if not present
+        if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
+        if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
+        foundNames = [name for name in histNames if name in data]
+        histNames = foundNames
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.GetStatusBar().SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance",1)

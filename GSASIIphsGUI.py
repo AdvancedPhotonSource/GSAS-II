@@ -413,6 +413,8 @@ class TransformDialog(wx.Dialog):
                 G2G.SGMessageBox(self.panel,msg,text,table).Show()
 
         def OnTest(event):
+            if not self.TestMat():
+                return
             if self.Mtrans:
                 self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans.T)
             else:
@@ -589,12 +591,28 @@ class TransformDialog(wx.Dialog):
         self.panel.Fit()
         self.Fit()
         
+    def TestMat(self):
+        VC = nl.det(self.Trans)
+        if VC < 0.:
+            wx.MessageBox('Warning - left handed transformation',caption='Transformation matrix check',
+                style=wx.ICON_EXCLAMATION)
+            return True
+        try:
+            nl.inv(self.Trans)
+        except nl.LinAlgError:
+            wx.MessageBox('ERROR - bad transformation matrix',caption='Transformation matrix check',
+                style=wx.ICON_ERROR)
+            return False
+        return True
+        
     def GetSelection(self):
         self.Phase['General']['SGData'] = self.SGData
         if self.ifMag:
             self.Phase['General']['Name'] += ' mag: '
         else:
             self.Phase['General']['Name'] += ' %s'%(self.Common)
+        if not self.TestMat():
+            return None
         if self.Mtrans:
             self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans.T)            
             return self.Phase,self.Trans.T,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
@@ -2825,7 +2843,10 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg = TransformDialog(G2frame,data,Trans,Uvec,Vvec,ifMag,BNSlatt)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
+                    result = dlg.GetSelection()
+                    if result is None:
+                        return
+                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = result
                     newPhase['ranId'] = ran.randint(0,sys.maxsize)
                     SGData = newPhase['General']['SGData']
                     if ifMag:

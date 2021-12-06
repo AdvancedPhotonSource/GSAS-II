@@ -372,15 +372,14 @@ separated into separate storage.
      * an entry of either True or False is placed in :data:`~GSASIImapvars.symGenList`, where True indicates that the entry has been generated from symmetry.
 
 The output from :func:`ProcessConstraints` will have the form as below, 
-where the first entry is a "Const", the second is a "New Var" and the final is a "Hold". 
+where the first entry is a "Const" and the second is a "New Var". 
 
   .. code-block:: python
 
     constrDict = [
          {'0:12:Scale': 2.0, '0:14:Scale': 4.0, '0:13:Scale': 3.0, '0:0:Scale': 0.5},
-         {'2::C(10,6,1)': 1.0, '1::C(10,6,1)': 1.0, '_vary':True},
-         {'0::A0': 0.0}]
-    fixedList = ['5.0', None, '0']
+         {'2::C(10,6,1)': 1.0, '1::C(10,6,1)': 1.0, '_vary':True}]
+    fixedList = ['5.0', None]
 
 .. _GenerateConstraints:
 
@@ -1728,6 +1727,18 @@ def StoreEquivalence(independentVar,dependentList,symGen=True):
     return
 
 def SubfromParmDict(s,prmDict):
+    '''Process a string as a multiplier and convert it to a float value. This
+    is done by subsituting any GSAS-II parameter names that appear in the 
+    string that have associated values in the parameter dict with the value 
+    for that parameter. 
+
+    :param str s: a string to be converted to a value
+    :param dict prmDict: a dictionary with keys as GSAS-II parameter names
+      and values the corresponding parameter value.
+    :returns: the evaluated expression as a float.
+    '''
+    # TODO: perhaps SubfromParmDict should be called to convert the
+    # fixed-val in constraint equations from strings to values.
     for key in prmDict:
         if key in s:
             s = s.replace(key,str(prmDict[key]))

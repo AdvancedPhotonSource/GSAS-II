@@ -75,8 +75,7 @@ Each constraint is defined as an item in a list. Each constraint is of form::
 Where the variable pair list item containing two values [<mult>, <var>], where:
 
   * <mult> is a multiplier for the constraint (float)
-  * <var> a :class:`G2VarObj` object (previously a str variable name of form
-      'p:h:name[:at]')
+  * <var> a :class:`G2VarObj` object. (Note that in very old .gpx files this might be a str with a variable name of form 'p:h:name[:at]')
 
 Note that the last three items in the list play a special role:
 

@@ -9888,6 +9888,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
                 
     def Draw(caller='',Fade=[],NPkey=False):
+        #reinitialize geometry stuff - needed after tab change
+        global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
+        cell = generalData['Cell'][1:7]
+        Vol = generalData['Cell'][7:8][0]
+        Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+        Gmat,gmat = G2lat.cell2Gmat(cell)
+        A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         vdWRadii = generalData['vdWRadii']
         BondRadii = generalData['BondRadii']
         mapData = generalData['Map']
@@ -10220,9 +10228,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Draw('size')
         
     def OnFocus(event):
-        Draw('focus')
+        Draw('focus')            
+        Draw('focus')     #to get correct drawing after tab change       
         
-    # PlotStructure starts here
+    #### PlotStructure starts here
     global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
     txID = 0

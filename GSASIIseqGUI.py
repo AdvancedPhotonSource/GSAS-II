@@ -1096,8 +1096,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         # create a place to store Pseudo Vars & Parametric Fit functions, if not present
         if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
         if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
-        foundNames = [name for name in histNames if name in data]
-        histNames = foundNames
+        histNames = [name for name in data['histNames'] if name in data]
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.GetStatusBar().SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance",1)

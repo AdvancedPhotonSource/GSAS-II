@@ -5571,7 +5571,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='RMCProfile setup'),0,WACV)
             subSizer.Add((-1,-1),1,wx.EXPAND)
-            mainSizer.Add(subSizer,0,WACV)
+            mainSizer.Add(subSizer)
             mainSizer.Add((5,5))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 '''"RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, 
@@ -6104,7 +6104,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             subSizer.Add((-1,-1),1,wx.EXPAND)
             subSizer.Add(wx.StaticText(G2frame.FRMC,label='For use of PDFfit, please cite:'),0,WACV)
             subSizer.Add((-1,-1),1,wx.EXPAND)
-            mainSizer.Add(subSizer,0,WACV)
+            mainSizer.Add(subSizer)
             mainSizer.Add((5,5))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 '''"PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals", 
@@ -6157,30 +6157,30 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             SgSizer = wx.BoxSizer(wx.HORIZONTAL)
             SgSizer.Add(wx.StaticText(G2frame.FRMC,label=' Target space group: '),0,WACV)
             
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit phase structure parameters:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit phase structure parameters:'))
             
             SpGrp = RMCPdict['SGData']['SpGrp']
             SGTxt = wx.Button(G2frame.FRMC,wx.ID_ANY,SpGrp,size=(100,-1))
             SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
             SgSizer.Add(SGTxt,0,WACV)
-            mainSizer.Add(SgSizer,0,WACV)
+            mainSizer.Add(SgSizer)
             
             cellref = wx.CheckBox(G2frame.FRMC,label=' Refine unit cell?')
             cellref.SetValue(RMCPdict['cellref'])
             cellref.Bind(wx.EVT_CHECKBOX,OnCellRef)
-            mainSizer.Add(cellref,0,WACV)
+            mainSizer.Add(cellref)
                         
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit atom parameters:'))
             mainSizer.Add(AtomSizer())
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit starting atom variables:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='PDFfit starting atom variables:'))
             G2pwd.GetPDFfitAtomVar(data,RMCPdict)
             mainSizer.Add(AtomVarSizer())
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' PDFfit phase profile coefficients:'))
             mainSizer.Add(PDFParmSizer(),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)

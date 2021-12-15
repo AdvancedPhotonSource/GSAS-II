@@ -31,7 +31,7 @@ def HandleError(out):
         except:
             print('Could not open URL')
 
-def GetISODISTORT(Phase,parentcif):
+def GetISODISTORT(Phase,parentcif,method=1):
     '''Run Stokes & Campbell ISODISTORT. 
     This requires doing a post to the BYU upload site with a cif file, which returns a BYU local
     copy. This is then sent to the BYU form site with various options, which returns all
@@ -73,35 +73,36 @@ def GetISODISTORT(Phase,parentcif):
     up2 = {'filename':filename,'input':'uploadparentcif'}
     out2 = requests.post(isoformsite,up2).text
     
+    ISOdata = Phase['ISODISTORT']
     #recover required info for the distortion search; includes info from cif file (no longer needed)
-    
-    try:
-        pos = out2.index('<p><FORM')
-    except ValueError:
-        HandleError(out2)
-        return [],[]
-    data = {}
-    while True:
+    if method == 1:
         try:
-            posB = out2[pos:].index('INPUT TYPE')+pos
-            posF = out2[posB:].index('>')+posB
-            items = out2[posB:posF].split('=',3)
-            name = items[2].split()[0].replace('"','')
-            if 'isosystem' in name:
-                break
-            vals = items[3].replace('"','')
-            data[name] = vals
-            pos = posF
+            pos = out2.index('<p><FORM')
         except ValueError:
-            break
-    #save copy for future use
-    data2 = copy.deepcopy(data)
-            
-    #no limits on space group or lattice
-    
-    data['isosubgroup'] = 'no choice'
-    data['isolattice'] = 'no choice'
-    data['isoplattice'] = 'no choice'
+            HandleError(out2)
+            return [],[]
+        data = {}
+        while True:
+            try:
+                posB = out2[pos:].index('INPUT TYPE')+pos
+                posF = out2[posB:].index('>')+posB
+                items = out2[posB:posF].split('=',3)
+                name = items[2].split()[0].replace('"','')
+                if 'isosystem' in name:
+                    break
+                vals = items[3].replace('"','')
+                data[name] = vals
+                pos = posF
+            except ValueError:
+                break
+        #save copy for future use
+        data2 = copy.deepcopy(data)
+                
+        #no limits on space group or lattice
+        
+        data['isosubgroup'] = 'no choice'
+        data['isolattice'] = 'no choice'
+        data['isoplattice'] = 'no choice'
     
     #do the distortion search - result is radio button list of choices
     
@@ -121,8 +122,8 @@ def GetISODISTORT(Phase,parentcif):
         try:
             posF = out3[pos:].index('<BR>')+pos
             num += 1
-            items = out3[pos:posF].split('=',2)
-            radio['orderparam%d'%num] = items[2].replace('"','')
+            items = out3[pos:posF].split('=',2)[2].split('>')[0]
+            radio['orderparam%d'%num] = items.replace('"','')
             pos = out3[posF:].index('RADIO')+posF
         except ValueError:
             break

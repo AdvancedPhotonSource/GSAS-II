@@ -276,6 +276,15 @@ def SetPowderInstParms(Iparm, rd):
                 Inst2['Iesd'] = Iesd
                 Inst2['Icovar'] = Icovar
         return [Inst1,Inst2]
+    elif 'E' in DataType:
+        tth = float(Iparm['INS  1 ICONS'])
+        s = Iparm['INS  1PRCF11'].split()
+        names = ['Type','2-theta','XE','YE','ZE','A','B', 'C']
+        codes = [0,0,0,0,0,0,0,0]
+        data.extend([tth,0.0,0.0,0.0,sfloat(s[0]),sfloat(s[1]),sfloat(s[2])])    #A,B,C
+        Iparm1 = makeInstDict(names,data,codes)
+        Iparm1['Bank'] = [Bank,Bank,0]
+        return [Iparm1,{}]
 
 def ReadPowderInstprm(instLines, bank, databanks, rd):
     '''Read lines from a GSAS-II (new) instrument parameter file

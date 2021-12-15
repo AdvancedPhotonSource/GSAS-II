@@ -806,6 +806,23 @@ def getWidthsCW(pos,sig,gam,shl):
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
     
+def getWidthsED(pos,sig):
+    '''Compute the peak widths used for computing the range of a peak
+    for energy dispersive data. On low-energy side, 20 FWHM are used, 
+    on high-energy side 20 are used
+    
+    :param pos: peak position; energy in keV
+    :param sig: Gaussian peak variance in keV^2
+    
+    :returns: widths; [Gaussian sigma] in keV, and 
+        low angle, high angle ends of peak; 20 FWHM & 50 FWHM from position
+    '''
+    widths = [np.sqrt(sig),.001]
+    fwhm = 2.355*widths[0]
+    fmin = 5.*fwhm
+    fmax = 5.*fwhm
+    return widths,fmin,fmax
+    
 def getWidthsTOF(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
     for constant wavelength data. 50 FWHM are used on both sides each 
@@ -836,6 +853,7 @@ def getFWHM(pos,Inst):
     ''' 
     
     sig = lambda Th,U,V,W: np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))
+    sigED = lambda E,A,B,C: np.sqrt(max(0.001,A*E**2+B*E+C))
     sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq*dsp)
     gam = lambda Th,X,Y,Z: Z+X/cosd(Th)+Y*tand(Th)
     gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
@@ -854,6 +872,9 @@ def getFWHM(pos,Inst):
         s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
         g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)/100.  #returns FWHM in deg
+    elif 'E' in Inst['Type'][0]:
+        s = sigED(pos,Inst['A'][1],Inst['B'][1],Inst['C'][1])
+        return 2.35482*s
     else:   #'B'
         alp = alpPink(pos,Inst['alpha-0'][1],Inst['alpha-1'][1])
         bet = betPink(pos,Inst['beta-0'][1],Inst['beta-1'][1])
@@ -942,8 +963,8 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(ma.getdata(xdata))
         sumBk[0] = np.sum(yb)
-#Debye function        
-    if pfx+'difC' in parmDict:
+#Debye function
+    if pfx+'difC' in parmDict or 'E' in parmDict[pfx+'Type']:
         ff = 1.
     else:        
         try:
@@ -1209,7 +1230,8 @@ def getdPsVoigt(pos,sig,gam,xdata):
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
 
-    returns: arrays: function and derivatives of pos, sig, gam, & shl
+    returns: arrays: function and derivatives of pos, sig & gam
+    NB: the pos derivative has the opposite sign compared to that in other profile functions 
     '''
     
     Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
@@ -1429,6 +1451,31 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
+    elif 'E' in dataType:
+        iPeak = 0
+        dsp = 1.0 #for now - fix later
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                intens = parmDict['int'+str(iPeak)]
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList or not peakInstPrmMode:
+                    sig = parmDict[sigName]
+                else:
+                    sig = G2mth.getEDsig(parmDict,pos)
+                sig = max(sig,0.001)          #avoid neg sigma^2
+                Wd,fmin,fmax = getWidthsED(pos,sig)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = max(iBeg+3,np.searchsorted(xdata,pos+fmin))
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    return yb+yc
+                yc[iBeg:iFin] += intens*getPsVoigt(pos,sig*10.**4,0.001,xdata[iBeg:iFin])[0]
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                return yb+yc        
     elif 'B' in dataType:
         iPeak = 0
         dsp = 1.0 #for now - fix later
@@ -1588,7 +1635,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
-                iFin = np.searchsorted(xdata,pos+fmin)
+                iFin = max(iBeg+3,np.searchsorted(xdata,pos+fmin))
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
@@ -1636,6 +1683,50 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 break
+    elif 'E' in dataType:
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                intens = parmDict['int'+str(iPeak)]
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList or not peakInstPrmMode:
+                    sig = parmDict[sigName]
+                    dsdA = dsdB = dsdC = 0
+                else:
+                    sig = G2mth.getEDsig(parmDict,pos)
+                    dsdA,dsdB,dsdC = G2mth.getEDsigDeriv(parmDict,pos)
+                sig = max(sig,0.001)          #avoid neg sigma
+                Wd,fmin,fmax = getWidthsED(pos,sig)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = np.searchsorted(xdata,pos+fmin)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    break
+                dMdpk = np.zeros(shape=(4,len(xdata)))
+                dMdipk = getdPsVoigt(pos,sig*10.**4,0.001,xdata[iBeg:iFin])
+                dMdpk[0][iBeg:iFin] += dMdipk[0]
+                for i in range(1,4):
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                dervDict = {'int':dMdpk[0],'pos':-dMdpk[1],'sig':dMdpk[2]*10**4}
+                for parmName in ['pos','int','sig']:
+                    try:
+                        idx = varyList.index(parmName+str(iPeak))
+                        dMdv[idx] = dervDict[parmName]
+                    except ValueError:
+                        pass
+                if 'A' in varyList:
+                    dMdv[varyList.index('A')] += dsdA*dervDict['sig']
+                if 'B' in varyList:
+                    dMdv[varyList.index('B')] += dsdB*dervDict['sig']
+                if 'C' in varyList:
+                    dMdv[varyList.index('C')] += dsdC*dervDict['sig']
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                break        
+        
     elif 'B' in dataType:
         iPeak = 0
         while True:
@@ -1887,7 +1978,7 @@ def DoCalibInst(IndexPeaks,Inst):
         for parm in Inst:
             insNames.append(parm)
             insVals.append(Inst[parm][1])
-            if parm in ['Lam','difC','difA','difB','Zero',]:
+            if parm in ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
                 if Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
@@ -1907,7 +1998,7 @@ def DoCalibInst(IndexPeaks,Inst):
         ptstr =  'values:'
         sigstr = 'esds  :'
         for parm in Inst:
-            if parm in  ['Lam','difC','difA','difB','Zero',]:
+            if parm in  ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
@@ -2096,12 +2187,10 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         for parm in Inst:
             insNames.append(parm)
             insVals.append(Inst[parm][1])
-            if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
+            if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1'] and Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
-#        instDict['X'] = max(instDict['X'],0.01)
-#        instDict['Y'] = max(instDict['Y'],0.01)
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
@@ -2118,6 +2207,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                     if 'T' in Inst['Type'][0]:
                         dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
+                    if 'E' in Inst['Type'][0]:
+                        parmDict[sigName] = G2mth.getEDsig(parmDict,pos)
                     else:
                         parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                 gamName = 'gam'+str(iPeak)
@@ -2138,7 +2229,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         ptstr =  'values:'
         sigstr = 'esds  :'
         for parm in Inst:
-            if parm in  ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
+            if parm in  ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1']:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
@@ -2156,6 +2247,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         peakVals = []
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
+        elif 'E' in dataType:
+            names = ['pos','int','sig']
         else:   #'T' and 'B'
             names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
@@ -2170,6 +2263,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         if 'C' in Inst['Type'][0]:
             names = ['pos','int','sig','gam']
+        elif 'E' in Inst['Type'][0]:
+            names = ['pos','int','sig']
         else:   #'T' & 'B'
             names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
@@ -2193,6 +2288,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 elif 'sig' in parName:
                     if 'T' in Inst['Type'][0]:
                         peak[2*j] = G2mth.getTOFsig(parmDict,dsp)
+                    elif 'E' in Inst['Type'][0]:
+                        peak[2*j] = G2mth.getEDsig(parmDict,pos)
                     else:   #'C' & 'B'
                         peak[2*j] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
@@ -2205,6 +2302,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print ('Peak coefficients:')
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
+        elif 'E' in dataType:
+            names = ['pos','int','sig']
         else:   #'T' & 'B'
             names = ['pos','int','alp','bet','sig','gam']            
         head = 13*' '
@@ -2217,6 +2316,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (head)
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
+        elif 'E' in dataType:
+            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f"}
         elif 'T' in dataType:
             ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%8.3f",'bet':"%8.5f",'sig':"%10.3f",'gam':"%10.3f"}
         else: #'B'
@@ -2289,7 +2390,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         varyList = bakVary+insVary+peakVary
     fullvaryList = varyList[:]
     if not peakInstPrmMode:
-        for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',
+        for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1','A','B','C',
             'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
             if v in varyList:
                 raise Exception('Instrumental profile terms cannot be varied '+

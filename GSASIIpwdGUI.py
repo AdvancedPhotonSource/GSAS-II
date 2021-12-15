@@ -674,15 +674,15 @@ def UpdatePeakGrid(G2frame, data):
         refs = list(zip(poss,mags))
         if 'T' in Inst['Type'][0]:    
             refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
-        else:   #'c' or 'B'
-            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas first
+        else:   #'C', 'E' or 'B'
+            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
         for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
             for ref2 in refs[i+1:]:
                 if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
                     del(refs[i])
         if 'T' in Inst['Type'][0]:    
             refs = G2mth.sortArray(refs,1,reverse=False)
-        else:   #'C' or 'B'
+        else:   #'C', 'E' or 'B'
             refs = G2mth.sortArray(refs,1,reverse=True)
         for pos,mag in refs:
             data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
@@ -916,17 +916,14 @@ def UpdatePeakGrid(G2frame, data):
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0,
             parent=G2frame,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
-        Size = dlg.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-            dlg.CenterOnParent()
-        try:
-            results = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
-            peaks['sigDict'] = results[0]
-            text = 'Peak fit: Rwp=%.2f%% Nobs= %d Nparm= %d Npeaks= %d'%(results[3]['Rwp'],results[1][2]['fjac'].shape[1],len(results[0]),len(peaks['peaks']))
-        finally:
-            dlg.Destroy()
+        # Size = dlg.GetSize()
+        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        #     dlg.CenterOnParent()
+        results = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
+        peaks['sigDict'] = results[0]
+        text = 'Peak fit: Rwp=%.2f%% Nobs= %d Nparm= %d Npeaks= %d'%(results[3]['Rwp'],results[1][2]['fjac'].shape[1],len(results[0]),len(peaks['peaks']))
+#        dlg.Destroy()
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2frame.AddToNotebook(text)
@@ -1142,6 +1139,11 @@ def UpdatePeakGrid(G2frame, data):
             wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+    elif 'E' in Inst['Type'][0]:
+        colLabels = ['position','refine','intensity','refine','sigma','refine']
+        Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
     else:
         colLabels = ['position','refine','intensity','refine','alpha','refine',
             'beta','refine','sigma','refine','gamma','refine']
@@ -1185,7 +1187,7 @@ def UpdatePeakGrid(G2frame, data):
     reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
 #    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
     reflGrid.AutoSizeColumns(False)
-    reflGrid.SetScrollRate(10,10)
+#    reflGrid.SetScrollRate(10,10)
     G2frame.reflGrid = reflGrid
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label='List of peaks to fit individually'),0,WACV)
@@ -1892,9 +1894,9 @@ def UpdateInstrumentGrid(G2frame,data):
     def keycheck(keys):
         good = []
         for key in keys:
-            if key in ['Type','Bank','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
+            if key in ['Type','Bank','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.','alpha-0','alpha-1',
-                'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
+                'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2','XE','YE','ZE',]:
                 good.append(key)
         return good
         
@@ -2181,7 +2183,8 @@ def UpdateInstrumentGrid(G2frame,data):
             return
         copyList = []
         copyData = copy.deepcopy(data)
-        del copyData['Azimuth'] #not to be copied!
+        if 'E' not in data['Type'][0]:
+            del copyData['Azimuth'] #not to be copied!
         instType = data['Type'][0]
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy inst params from\n'+hst,
             'Copy parameters', histList)
@@ -2380,6 +2383,26 @@ def UpdateInstrumentGrid(G2frame,data):
                     itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
+            elif 'E' in insVal['Type']:
+                key = '2-theta'
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' 2-theta): (%10.6f)'%(insDef[key])),0,WACV)
+                tthVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                labelLst.append(u'2-theta')
+                elemKeysLst.append([key,1])
+                dspLst.append([10,3])
+                instSizer.Add(tthVal,0,WACV)
+                refFlgElem.append([key,2])                   
+                instSizer.Add(RefineBox(key),0,WACV)
+                for item in ['XE','YE','ZE','A','B','C']:
+                    nDig = (10,6,'g')
+                    labelLst.append(item)
+                    elemKeysLst.append([item,1])
+                    dspLst.append(nDig)
+                    refFlgElem.append([item,2])
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
+                    instSizer.Add(itemVal,0,WACV)
+                    instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flight path: '),0,WACV)
@@ -2504,7 +2527,7 @@ def UpdateInstrumentGrid(G2frame,data):
             data[key] = list(data[key])
             patched += 1
     if patched: print (patched,' instrument parameters changed from tuples')
-    if 'Z' not in data:
+    if 'E' not in data['Type'][0] and 'Z' not in data:
         data['Z'] = [0.0,0.0,False]
     #end of patch
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
@@ -2525,7 +2548,7 @@ def UpdateInstrumentGrid(G2frame,data):
         insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
         insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
         insRef = {}
-    elif 'R' in data['Type'][0]:                               #low angle data
+    elif 'R' in data['Type'][0]:                               #Reflectometry data
         insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
         insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
         insRef = {}
@@ -3023,7 +3046,7 @@ def UpdateSampleGrid(G2frame,data):
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
         nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),
                     0,WACV)
-        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
+        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0] or 'E' in Inst['Type'][0]:
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]
@@ -3712,7 +3735,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
-#        if not controls[13]: controls[13] = SPGlist[controls[5]][0]    #don't know if this is needed?   
         SGData = G2spc.SpcGroup(controls[13])[1]
         if 'T' in Inst['Type'][0]:
             if ssopt.get('Use',False):
@@ -3725,7 +3747,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
+                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])
+        elif 'E' in Inst['Type'][0]:        #no super lattice stuff for EDX data - resolution too low
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+            Lhkl,M20,X20,Aref = G2indx.refinePeaksE(peaks[0],TTh,ibrav,A)
+            Zero = 0.0
         else:   
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
@@ -4406,7 +4433,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[0])
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+    elif 'E' in Inst['Type'][0]:
+        TTh = Inst['2-theta'][1]
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
     else:   #'C', 'B', or 'PKS'
         wave = G2mth.getWave(Inst)
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
@@ -4495,8 +4525,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer.Add(x20,0,WACV)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),
-        0)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),0)
     mainSizer.Add((5,5),0)
     indentSizer = wx.BoxSizer(wx.HORIZONTAL)
     indentSizer.Add((20,-1))
@@ -4542,26 +4571,27 @@ def UpdateUnitCellsGrid(G2frame, data):
         pass
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
-    if ssopt.get('Use',False):        #zero for super lattice doesn't work!
-        controls[0] = False
-    else:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
-        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
-                                    xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
-        littleSizer.Add(zero,0,WACV)
-        zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
-        zeroVar.SetValue(controls[0])
-        zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
-        littleSizer.Add(zeroVar,0,WACV)
-    SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
-    SSopt.SetValue(ssopt.get('Use',False))
-    SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
-    littleSizer.Add(SSopt,0,WACV)
-    if 'N' in Inst['Type'][0]:
-        MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
-        MagSel.SetValue('MagSpGrp' in SGData)
-        MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
-        littleSizer.Add(MagSel,0,WACV)
+    if 'E' not in Inst['Type'][0]:
+        if ssopt.get('Use',False):        #zero for super lattice doesn't work!
+            controls[0] = False
+        else:
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
+            zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
+                                        xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
+            littleSizer.Add(zero,0,WACV)
+            zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
+            zeroVar.SetValue(controls[0])
+            zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
+            littleSizer.Add(zeroVar,0,WACV)
+        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+        SSopt.SetValue(ssopt.get('Use',False))
+        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
+        littleSizer.Add(SSopt,0,WACV)
+        if 'N' in Inst['Type'][0]:
+            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
+            MagSel.SetValue('MagSpGrp' in SGData)
+            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
+            littleSizer.Add(MagSel,0,WACV)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     if 'N' in Inst['Type'][0]:
@@ -4973,6 +5003,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 refs = np.vstack((refList.T[:18+Super],I100,MuStr,CrSize)).T
             elif 'B' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:17+Super],I100,MuStr,CrSize)).T
+            elif 'E' in Inst['Type'][0]:
+                refs = np.vstack((refList.T[:11+Super],I100,MuStr,CrSize)).T
         rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
@@ -4994,6 +5026,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             elif 'B' in Inst['Type'][0]:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
+            elif 'E' in Inst['Type'][0]:
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','I100']
+                Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
         refs.T[3+Super] = np.where(refs.T[4+Super]<dMin,-refs.T[3+Super],refs.T[3+Super])
@@ -7721,8 +7756,8 @@ def UpdatePDFGrid(G2frame,data):
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
         mainSizer.Add(DiffSizer())
     else:
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
-                                     powName+' not in Tree'))
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Controls for %s:\n'%powName))
+        mainSizer.Add(DiffSizer())
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
 

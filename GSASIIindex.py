@@ -635,6 +635,39 @@ def FitHKLT(difC,ibrav,peaks,A,Z,Zref):
     chisq = np.sum(errFitT(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref)**2)
     return True,chisq,A,Z,result
     
+def FitHKLE(tth,ibrav,peaks,A):
+    'needs a doc string'
+    
+    def errFitE(values,ibrav,d,H,keV,tth):
+        A = Values2A(ibrav,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsq(H,A)
+        return (Qo-Qc)
+        
+    def dervFitE(values,ibrav,d,H,keV,tth):
+        if ibrav in [0,1,2]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+        elif ibrav in [3,4,]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+        elif ibrav in [5,6]:
+            derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [7,8,9,10,11,12]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [13,14,15,16]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+        else:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+        derv = np.array(derv)
+        return derv.T
+      
+    Peaks = np.array(peaks).T    
+    values = A2values(ibrav,A)
+    result = so.leastsq(errFitE,values,Dfun=dervFitE,full_output=True,ftol=0.0001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],tth))
+    A = Values2A(ibrav,result[0])
+    chisq = np.sum(errFitE(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],tth)**2)
+    return True,chisq,A,result
+    
 def errFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
     Zero = Z
     if Zref:    
@@ -760,6 +793,18 @@ def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
     HKL = G2lat.GenHBravais(dmin,ibrav,A)
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
+    
+def refinePeaksE(peaks,tth,ibrav,A):
+    'needs a doc string'
+    dmin = getDmin(peaks)
+    OK,smin,Aref,result = FitHKLE(tth,ibrav,peaks,A)
+    Peaks = np.array(peaks).T
+    H = Peaks[4:7]
+    Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,Aref))
+    peaks = Peaks.T    
+    HKL = G2lat.GenHBravais(dmin,ibrav,A)
+    M20,X20 = calc_M20(peaks,HKL)
+    return len(HKL),M20,X20,Aref
     
 def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,ZeroRef):
     'needs a doc string'

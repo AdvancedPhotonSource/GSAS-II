@@ -4512,6 +4512,27 @@ def getCWgamDeriv(pos):
     
     '''
     return 1./cosd(pos/2.0),tand(pos/2.0),1.0
+
+def getEDsig(ins,pos):
+    '''get ED peak profile sig
+    
+    :param dict ins: instrument parameters with at least 'A', 'B' & 'C'
+      as values only
+    :param float pos: energy of peak as keV
+    :returns: float getEDsig: peak sigma^2 im keV**2
+    
+    '''
+    return ins['A']*pos**2+ins['B']*pos+ins['C']
+
+def getEDsigDeriv(ins,pos):
+    '''get derivatives of ED peak profile sig wrt A, B & C
+    
+    :param float pos: energy of peak in keV
+    
+    :returns: list getEDsigDeriv: d(sig)/dA, d(sig)/dB & d(sig)/dC,
+    
+    '''
+    return pos**2,pos,1.0
     
 def getTOFsig(ins,dsp):
     '''get TOF peak profile sigma^2
@@ -4704,6 +4725,12 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getCWsig(ins,pos)
         gam = getCWgam(ins,pos)           
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]       #default refine intensity 1st
+    elif 'E' in Parms['Type'][0]:
+        for x in ['A','B','C']:
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
+        sig = getEDsig(ins,pos)
+        XY = [pos,0,mag,1,sig,0]       #default refine intensity 1st
+        
     return XY
     
 ################################################################################

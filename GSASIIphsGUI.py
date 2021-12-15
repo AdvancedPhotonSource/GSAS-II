@@ -6199,7 +6199,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
-            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,True)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6210,7 +6209,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
         mainSizer.Add(RMCsel,0)
-        mainSizer.Add((5,5),0)
+        G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+        mainSizer.Add(wx.StaticText(G2frame.FRMC,
+            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step \n above to apply them before doing Operations/Execute'),0,WACV)
+        G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
             mainSizer.Add(fullrmcSizer(RMCPdict))
@@ -10751,10 +10753,11 @@ For use of ISODISTORT, please cite:
                         newList = TextList[1:]
                     for histoName in newList:
                         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+                        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
                         data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                                [1.,1.,1.,0.,0.,0.],6*[False,]],
+                                [1.,1.,1.,0.,0.,0.],6*[False,]],'Type':Inst['Type'][0],
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],

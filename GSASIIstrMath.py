@@ -446,7 +446,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
             if hist in Histograms and 'PWDR' in hist:
                 hId = Histograms[hist]['hId']
                 phfx = '%d:%d:'%(pId,hId)
-                if calcControls[phfx+'poType'] == 'SH':
+                if calcControls.get(phfx+'poType','') == 'SH':
                     toler = calcControls[phfx+'SHtoler']
                     wt = 1./toler**2
                     HKLs = np.array(calcControls[phfx+'SHhkl'])
@@ -2691,6 +2691,8 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             for i,strm in enumerate(Strms):
                 Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
             Mgam = 0.018*refl[4+im]**2*tand(refl[5+im]/2.)*np.sqrt(Sum)/np.pi
+    elif 'E' in calcControls[hfx+'histType']:
+        return 0.,0.
     elif 'T' in calcControls[hfx+'histType']:       #All checked & OK
         #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
@@ -2801,6 +2803,8 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
                 sigDict[phfx+'Mustrain;'+str(i)] *= const**2/ateln2
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
+    elif 'E' in calcControls[hfx+'histType']:
+        return {},{}
     else:   #'T'OF - All checked & OK
         if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
             Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4+im]**2/parmDict[phfx+'Size;i']
@@ -3201,6 +3205,14 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         sig += Ssig
         gam += Sgam
         return sig,gam
+    
+    def GetReflSigGamED(refl,im,G,GB,phfx,calcControls,parmDict):
+        sig = parmDict[hfx+'A']*refl[4+im]**2+parmDict[hfx+'B']*refl[4+im]+parmDict[hfx+'C']
+        gam = 0.001
+        Ssig,Sgam = GetSampleSigGam(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
+        sig += Ssig
+        gam += Sgam
+        return sig,gam
         
     def GetReflAlpBet(refl,im,hfx,parmDict):
         alp = parmDict[hfx+'alpha']/refl[4+im]
@@ -3587,13 +3599,18 @@ def getPowderProfileDerv(args):
             Uniq = np.inner(refl[:3],SGMT)
             if 'T' in calcControls[hfx+'histType']:
                 wave = refl[14+im]
-            dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,im,wave,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
+            if 'E' in calcControls[hfx+'histType']:
+                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = [0.,0.,0.,0.,0.,0.,0.,0.]
+            else:
+                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,im,wave,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5+im],refl[6+im],refl[7+im],shl)
             elif 'T' in calcControls[hfx+'histType']:
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
             elif 'B' in calcControls[hfx+'histType']:
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
+            elif 'E' in calcControls[hfx+'histType']:
+                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[10+im])
             iBeg = np.searchsorted(x,refl[5+im]-fmin)
             iFin = np.searchsorted(x,refl[5+im]+fmax)
             if not iBeg+iFin:       #peak below low limit - skip peak
@@ -3641,7 +3658,16 @@ def getPowderProfileDerv(args):
                 dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
                     dMdpk[i] = refl[11+im]*refl[9+im]*dMdipk[i]
-                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}            
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}    
+            elif 'E' in calcControls[hfx+'histType']:
+                lenBF = iFin-iBeg
+                if lenBF < 0:   #bad peak coeff
+                    break
+                dMdpk = np.zeros(shape=(4,lenBF))
+                dMdipk = G2pwd.getdPsVoigt(refl[5+im],refl[12+im]*10**4,0.001,ma.getdata(x[iBeg:iFin]))
+                for i in range(4):
+                    dMdpk[i] = refl[11+im]*refl[9+im]*dMdipk[i]
+                dervDict = {'int':dMdpk[0],'pos':-dMdpk[1],'sig':dMdpk[4]*1.e4}    
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))
                 try:
@@ -3685,6 +3711,14 @@ def getPowderProfileDerv(args):
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],hfx+'Polariz.':[dIdpola,'int'],
                     hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
+            elif 'E' in calcControls[hfx+'histType']:
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict)
+                names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],hfx+'Lam':[dpdw,'pos'],
+                    hfx+'Zero':[dpdZ,'pos'],hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],
+                    hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],hfx+'Polariz.':[dIdpola,'int'],
+                    hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
+                    hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
+                
             for name in names:
                 item = names[name]
                 if name in varylist:

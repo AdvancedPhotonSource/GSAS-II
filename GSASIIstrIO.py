@@ -319,7 +319,8 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
                 albl = Ilbl[:Ilbl.rfind('_')]
-                v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = 0
+                #v = Ilbl[Ilbl.rfind('_')+1:]
                 #pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
                 if var in parmDict:
                     cval = parmDict[var]
@@ -2519,7 +2520,10 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         wave = inst['Lam1'][1]
                     dmin = wave/(2.0*sind(limits[1]/2.0))
                 elif 'T' in inst['Type'][0]:
+                    dmin = G2lat.Pos2dsp(inst,limits[1])
                     dmin = limits[0]/inst['difC'][1]
+                elif 'E' in inst['Type'][0]:
+                    dmin = G2lat.Pos2dsp(inst,limits[1])
                 else:
                     wave = inst['Lam'][1]
                     dmin = wave/(2.0*sind(limits[1]/2.0))
@@ -2553,68 +2557,69 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         hapVary.append(pfx+'LayerDisp')
                 else:
                     hapDict[pfx+'LayerDisp'] = 0.0
-                controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
-                if hapData['Pref.Ori.'][0] == 'MD':
-                    hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
-                    controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                    if hapData['Pref.Ori.'][2]:     # and not hapDict[pfx+'LeBail']:
-                        hapVary.append(pfx+'MD')
-                else:                           #'SH' spherical harmonics
-                    controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
-                    controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                    controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
-                    controlDict[pfx+'SHhkl'] = []
-                    try: #patch for old Pref.Ori. items
-                        controlDict[pfx+'SHtoler'] = 0.1
-                        if hapData['Pref.Ori.'][6][0] != '':
-                            controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
-                        controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
-                    except IndexError:
-                        pass
-                    for item in hapData['Pref.Ori.'][5]:
-                        hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                        if hapData['Pref.Ori.'][2]:         # and not hapDict[pfx+'LeBail']:
-                            hapVary.append(pfx+item)
-                for item in ['Mustrain','Size']:
-                    controlDict[pfx+item+'Type'] = hapData[item][0]
-                    hapDict[pfx+item+';mx'] = hapData[item][1][2]
-                    if hapData[item][2][2]:
-                        hapVary.append(pfx+item+';mx')
-                    if hapData[item][0] in ['isotropic','uniaxial']:
-                        hapDict[pfx+item+';i'] = hapData[item][1][0]
-                        if hapData[item][2][0]:
-                            hapVary.append(pfx+item+';i')
-                        if hapData[item][0] == 'uniaxial':
-                            controlDict[pfx+item+'Axis'] = hapData[item][3]
-                            hapDict[pfx+item+';a'] = hapData[item][1][1]
-                            if hapData[item][2][1]:
-                                hapVary.append(pfx+item+';a')
-                    else:       #generalized for mustrain or ellipsoidal for size
-                        Nterms = len(hapData[item][4])
-                        if item == 'Mustrain':
-                            names = G2spc.MustrainNames(SGData)
-                            pwrs = []
-                            for name in names:
-                                h,k,l = name[1:]
-                                pwrs.append([int(h),int(k),int(l)])
-                            controlDict[pfx+'MuPwrs'] = pwrs
-                        for i in range(Nterms):
-                            sfx = ';'+str(i)
-                            hapDict[pfx+item+sfx] = hapData[item][4][i]
-                            if hapData[item][5][i]:
-                                hapVary.append(pfx+item+sfx)
-                if Phases[phase]['General']['Type'] != 'magnetic':
-                    for bab in ['BabA','BabU']:
-                        hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                        if hapData['Babinet'][bab][1]:      # and not hapDict[pfx+'LeBail']:
-                            hapVary.append(pfx+bab)
+                if 'E' not in inst['Type'][0]:
+                    controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
+                    if hapData['Pref.Ori.'][0] == 'MD':
+                        hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
+                        controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
+                        if hapData['Pref.Ori.'][2]:     # and not hapDict[pfx+'LeBail']:
+                            hapVary.append(pfx+'MD')
+                    else:                           #'SH' spherical harmonics
+                        controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
+                        controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
+                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
+                        controlDict[pfx+'SHhkl'] = []
+                        try: #patch for old Pref.Ori. items
+                            controlDict[pfx+'SHtoler'] = 0.1
+                            if hapData['Pref.Ori.'][6][0] != '':
+                                controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
+                            controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
+                        except IndexError:
+                            pass
+                        for item in hapData['Pref.Ori.'][5]:
+                            hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
+                            if hapData['Pref.Ori.'][2]:         # and not hapDict[pfx+'LeBail']:
+                                hapVary.append(pfx+item)
+                    for item in ['Mustrain','Size']:
+                        controlDict[pfx+item+'Type'] = hapData[item][0]
+                        hapDict[pfx+item+';mx'] = hapData[item][1][2]
+                        if hapData[item][2][2]:
+                            hapVary.append(pfx+item+';mx')
+                        if hapData[item][0] in ['isotropic','uniaxial']:
+                            hapDict[pfx+item+';i'] = hapData[item][1][0]
+                            if hapData[item][2][0]:
+                                hapVary.append(pfx+item+';i')
+                            if hapData[item][0] == 'uniaxial':
+                                controlDict[pfx+item+'Axis'] = hapData[item][3]
+                                hapDict[pfx+item+';a'] = hapData[item][1][1]
+                                if hapData[item][2][1]:
+                                    hapVary.append(pfx+item+';a')
+                        else:       #generalized for mustrain or ellipsoidal for size
+                            Nterms = len(hapData[item][4])
+                            if item == 'Mustrain':
+                                names = G2spc.MustrainNames(SGData)
+                                pwrs = []
+                                for name in names:
+                                    h,k,l = name[1:]
+                                    pwrs.append([int(h),int(k),int(l)])
+                                controlDict[pfx+'MuPwrs'] = pwrs
+                            for i in range(Nterms):
+                                sfx = ';'+str(i)
+                                hapDict[pfx+item+sfx] = hapData[item][4][i]
+                                if hapData[item][5][i]:
+                                    hapVary.append(pfx+item+sfx)
+                    if Phases[phase]['General']['Type'] != 'magnetic':
+                        for bab in ['BabA','BabU']:
+                            hapDict[pfx+bab] = hapData['Babinet'][bab][0]
+                            if hapData['Babinet'][bab][1]:      # and not hapDict[pfx+'LeBail']:
+                                hapVary.append(pfx+bab)
                                 
                 if Print: 
                     pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                     pFile.write(135*'='+'\n')
                     if hapDict[pfx+'LeBail']:
                         pFile.write(' Perform LeBail extraction\n')                     
-                    else:
+                    elif 'E' not in inst['Type'][0]:
                         pFile.write(' Phase fraction  : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                         pFile.write(' Extinction coeff: %10.4f Refine? %s\n'%(hapData['Extinction'][0],hapData['Extinction'][1]))
                         if hapData['Pref.Ori.'][0] == 'MD':
@@ -2624,12 +2629,13 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         else: #'SH' for spherical harmonics
                             PrintSHPO(hapData['Pref.Ori.'])
                             pFile.write(' Penalty hkl list: %s tolerance: %.2f\n'%(controlDict[pfx+'SHhkl'],controlDict[pfx+'SHtoler']))
-                    PrintSize(hapData['Size'])
-                    PrintMuStrain(hapData['Mustrain'],SGData)
+                    if 'E' not in inst['Type'][0]:
+                        PrintSize(hapData['Size'])
+                        PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
                     if 'Layer Disp' in hapData:
                         pFile.write(' Layer Displacement: %10.3f Refine? %s\n'%(hapData['Layer Disp'][0],hapData['Layer Disp'][1]))
-                    if Phases[phase]['General']['Type'] != 'magnetic':
+                    if Phases[phase]['General']['Type'] != 'magnetic'and 'E' not in inst['Type'][0]:
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
                 if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
@@ -2689,6 +2695,11 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                                 if limits[0] < pos < limits[1]:
                                     refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
+                            elif 'E' in inst['Type'][0]:
+                                pos = G2lat.Dsp2pos(inst,d)
+                                if limits[0] < pos < limits[1]:
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0])
+                                    # ... sig,gam,fotsq,fctsq, phase,icorr
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
@@ -2986,48 +2997,51 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             if hId not in wtFrSum:
                 wtFrSum[hId] = 0.
             if 'PWDR' in histogram:
-                parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])
-                for item in ['Scale','Extinction']:
-                    hapData[item][0] = parmDict[pfx+item]
-                    if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
-                        PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
-                wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
-                if hapData['Pref.Ori.'][0] == 'MD':
-                    hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                    if pfx+'MD' in sigDict and not parmDict[pfx+'LeBail']:
-                        PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
-                else:                           #'SH' spherical harmonics
-                    for item in hapData['Pref.Ori.'][5]:
-                        hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                inst = Histogram['Instrument Parameters'][0]    #TODO - grab table here if present
+                if 'E' not in inst['Type'][0]:
+                    parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])
+                    for item in ['Scale','Extinction']:
+                        hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
                             PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
-                SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                    pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
-                    pfx+'HStrain':{}})                  
-                for item in ['Mustrain','Size']:
-                    hapData[item][1][2] = parmDict[pfx+item+';mx']
-#                    hapData[item][1][2] = min(1.,max(0.,hapData[item][1][2]))
-                    if pfx+item+';mx' in sigDict:
-                        SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+';mx']
-                    if hapData[item][0] in ['isotropic','uniaxial']:                    
-                        hapData[item][1][0] = parmDict[pfx+item+';i']
-                        if item == 'Size':
-                            hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
-                        if pfx+item+';i' in sigDict: 
-                            SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+';i']
-                        if hapData[item][0] == 'uniaxial':
-                            hapData[item][1][1] = parmDict[pfx+item+';a']
+                    wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
+                    if hapData['Pref.Ori.'][0] == 'MD':
+                        hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
+                        if pfx+'MD' in sigDict and not parmDict[pfx+'LeBail']:
+                            PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
+                    else:                           #'SH' spherical harmonics
+                        for item in hapData['Pref.Ori.'][5]:
+                            hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                            if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
+                                PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
+                    SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
+                        pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],pfx+'HStrain':{}})                  
+                    for item in ['Mustrain','Size']:
+                        hapData[item][1][2] = parmDict[pfx+item+';mx']
+    #                    hapData[item][1][2] = min(1.,max(0.,hapData[item][1][2]))
+                        if pfx+item+';mx' in sigDict:
+                            SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+';mx']
+                        if hapData[item][0] in ['isotropic','uniaxial']:                    
+                            hapData[item][1][0] = parmDict[pfx+item+';i']
                             if item == 'Size':
-                                hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
-                            if pfx+item+';a' in sigDict:
-                                SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+';a']
-                    else:       #generalized for mustrain or ellipsoidal for size
-                        Nterms = len(hapData[item][4])
-                        for i in range(Nterms):
-                            sfx = ';'+str(i)
-                            hapData[item][4][i] = parmDict[pfx+item+sfx]
-                            if pfx+item+sfx in sigDict:
-                                SizeMuStrSig[pfx+item][1][i] = sigDict[pfx+item+sfx]
+                                hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
+                            if pfx+item+';i' in sigDict: 
+                                SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+';i']
+                            if hapData[item][0] == 'uniaxial':
+                                hapData[item][1][1] = parmDict[pfx+item+';a']
+                                if item == 'Size':
+                                    hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
+                                if pfx+item+';a' in sigDict:
+                                    SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+';a']
+                        else:       #generalized for mustrain or ellipsoidal for size
+                            Nterms = len(hapData[item][4])
+                            for i in range(Nterms):
+                                sfx = ';'+str(i)
+                                hapData[item][4][i] = parmDict[pfx+item+sfx]
+                                if pfx+item+sfx in sigDict:
+                                    SizeMuStrSig[pfx+item][1][i] = sigDict[pfx+item+sfx]
+                else:
+                    SizeMuStrSig.update({pfx+'HStrain':{}})                  
                 names = G2spc.HStrainNames(SGData)
                 for i,name in enumerate(names):
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
@@ -3037,7 +3051,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     hapData['Layer Disp'][0] = parmDict[pfx+'LayerDisp']
                     if pfx+'LayerDisp' in sigDict:
                         SizeMuStrSig[pfx+'LayerDisp'] = sigDict[pfx+'LayerDisp']
-                if Phases[phase]['General']['Type'] != 'magnetic':
+                if Phases[phase]['General']['Type'] != 'magnetic' and 'E' not in inst['Type'][0]:
                     for name in ['BabA','BabU']:
                         hapData['Babinet'][name][0] = parmDict[pfx+name]
                         if pfx+name in sigDict and not parmDict[pfx+'LeBail']:
@@ -3103,14 +3117,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     pFile.write(' Durbin-Watson statistic = %.3f\n'%(Histogram['Residuals']['Durbin-Watson']))
                     pFile.write(' Bragg intensity sum = %.3g\n'%(Histogram['Residuals'][pfx+'sumInt']))
                     
-                    if parmDict[pfx+'LeBail']:
+                    if parmDict[pfx+'LeBail'] or 'E' in Inst['Type'][0]:
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
-                    else:
-                        # if calcControls != None:    #skipped in seqRefine
-                        #     if 'X'in Inst['Type'][0]:
-                        #         PrintFprime(calcControls['FFtables'],hfx,pFile)
-                        #     elif 'NC' in Inst['Type'][0]:
-                        #         PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)
+                    elif 'E' not in Inst['Type'][0]:
                         if pfx+'Scale' in PhFrExtPOSig:
                             wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
                             sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
@@ -3123,12 +3132,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                                 pFile.write(' March-Dollase PO: %10.4f, sig %10.4f\n'%(hapData['Pref.Ori.'][1],PhFrExtPOSig[pfx+'MD']))
                         else:
                             PrintSHPOAndSig(pfx,hapData['Pref.Ori.'],PhFrExtPOSig)
-                    PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
-                    PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
+                    if 'E' not in  Inst['Type'][0]:       
+                        PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
+                        PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
                     if pfx+'LayerDisp' in SizeMuStrSig:
                         pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))            
-                    if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict[pfx+'LeBail']:
+                    if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict[pfx+'LeBail'] and 'E' not in Inst['Type'][0]:
                         if len(BabSig):
                             PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
@@ -3209,16 +3219,16 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         
     def GetInstParms(hId,Inst):
         #patch
-        if 'Z' not in Inst:
-            Inst['Z'] = [0.0,0.0,False]
         dataType = Inst['Type'][0]
+        if 'Z' not in Inst and 'E' not in dataType:
+            Inst['Z'] = [0.0,0.0,False]
         instDict = {}
         insVary = []
         pfx = ':'+str(hId)+':'
         insKeys = list(Inst.keys())
         insKeys.sort()
         for item in insKeys:
-            if item in 'Azimuth':
+            if 'Azimuth' in item:
                 continue
             insName = pfx+item
             instDict[insName] = Inst[item][1]
@@ -3236,6 +3246,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 instDict[pfx+'alpha-1'] = 1.0
             if not instDict[pfx+'beta-0'] and not instDict[pfx+'beta-1']:
                 instDict[pfx+'beta-1'] = 1.0
+        elif 'E' in dataType:
+            pass
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):
@@ -3397,7 +3409,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             if Print: 
                 pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
                 pFile.write(135*'='+'\n')
-                Units = {'C':' deg','T':' msec','B':' deg'}
+                Units = {'C':' deg','T':' msec','B':' deg','E':'keV'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
                 pFile.write(' Instrument type: %s\n'%Sample['Type'])

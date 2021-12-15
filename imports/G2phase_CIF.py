@@ -234,6 +234,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         return False
                 else:
                     SpGrp = SpGrp.replace('_','')
+                    SpGrp = G2spc.fullHM2shortHM(SpGrp)
                     self.Phase['General']['Type'] = 'nuclear'
 #process space group symbol
             E,SGData = G2spc.SpcGroup(SpGrp)
@@ -241,10 +242,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
-            if E:   #try lookup from number  - found full symbol?                
-                SpGrpNorm = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
-                if SpGrpNorm:
-                    E,SGData = G2spc.SpcGroup(SpGrpNorm) 
+            # if E:   #try lookup from number  - found full symbol?                
+            #     SpGrpNorm = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
+            #     if SpGrpNorm:
+            #         E,SGData = G2spc.SpcGroup(SpGrpNorm) 
             # nope, try the space group "out of the Box"
             if E:
                 self.warnings += 'ERROR in space group symbol '+SpGrp

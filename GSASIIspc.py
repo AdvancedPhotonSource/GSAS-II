@@ -3693,6 +3693,40 @@ def StandardizeSpcName(spcgroup):
     # not found
         return ''
     
+def fullHM2shortHM(SpcGp):
+    ''' Accepts a full H-M space group symbol and returns a short H-M symbol that the space group 
+    interpreter can translate
+    '''
+    fields = SpcGp.split()
+    if len(fields) == 4 and fields[1] == '1' and fields[3] == '1': #b-unique monoclinics
+        return fields[0]+' '+fields[2]
+    if '/' not in SpcGp:
+        return SpcGp
+    if '-3' in fields[1]:   #trigonals
+        fields[2] = fields.split('/')[1]
+        return ' '.join(fields)
+    if '-3' in fields[2]:       #cubics
+        fields[1] = fields.split('/')[1]
+        if len(fields) == 4:
+            fields[3].split('/')[1]
+        return ' '.join(fields)
+    if '6' in fields[1] and '/' in fields[2]:    #hexagonals
+        fields[2] = fields[2].split('/')[1]
+        fields[3] = fields[3].split('/')[1]
+        return ' '.join(fields)
+    if '4' in fields[1] and '/' in fields[2] and len(fields) == 4:   #tetragonals
+        fields[2] = fields[2].split('/')[1]
+        fields[3] = fields[3].split('/')[1]
+        return ' '.join(fields)
+    if '/' in fields[1] and len(fields) == 4:    #orthorhombics
+        if fields[2] == '1':     #skip a-unique monoclinics
+            return SpcGp
+        fields[1] = fields[1].split('/')[1]
+        fields[2] = fields[2].split('/')[1]
+        fields[3] = fields[3].split('/')[1]
+        return ' '.join(fields)
+    return SpcGp
+    
 def SpaceGroupNumber(spcgroup):
     SGNo = -1
     SpcGp = StandardizeSpcName(spcgroup)

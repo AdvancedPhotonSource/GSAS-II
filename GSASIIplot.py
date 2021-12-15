@@ -2320,6 +2320,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     return
                 if 'T' in Parms['Type'][0]: # TOF
                     dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
+                elif 'E' in Parms['Type'][0]: # energy dispersive x-rays
+                    pass    #for now
                 else: # 'C' or  'B' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
                     wave = G2mth.getWave(Parms)
                     dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
@@ -2359,6 +2361,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         G2frame.G2plotNB.status.SetStatusText('TOF = %9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                     else:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                elif 'E' in Parms['Type'][0]:
+                    G2frame.G2plotNB.status.SetStatusText('Energy =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                 else:
                     if 'PWDR' in plottype:
                         if Page.plotStyle['sqrtPlot']:
@@ -3325,6 +3329,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 xLabel = r'Channel no.'
             else:
                 xLabel = r'$TOF, \mathsf{\mu}$s'
+        elif 'E' in ParmList[0]['Type'][0]:
+            xLabel = 'E, keV'
         else:
             xLabel = r'$\mathsf{2\theta}$'
     if G2frame.Weight:
@@ -3407,6 +3413,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 magLineList = data[0].get('Magnification',[])
             if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
                 ('B' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
+                ('E' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
                 ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
                 tcorner = 1
                 tpos = 1.0
@@ -5349,7 +5356,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Nseq = 0
         
     for N,Pattern in enumerate(PlotList):
-        xye = Pattern[1]
+        xye = np.array(Pattern[1])
         X = xye[0]
         if not lenX:
             lenX = len(X)           
@@ -6314,7 +6321,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
     if 'PKS' in Parms['Type'][0]:
         return
     elif 'T' in Parms['Type'][0]:
-        difC = Parms['difC'][0]
+        difC = Parms['difC'][1]
+    elif 'E' in Parms['Type'][0]:
+        tth = Parms['2-theta'][1]
     else:
         lam = G2mth.getWave(Parms)
     try:  # PATCH: deal with older peak lists, before changed to dict to implement TOF
@@ -6368,7 +6377,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
 
-        fit = G2mth.setPeakparms(Parms,Parms2,T,Z)
+        fit = G2mth.setPeakparms(Parms,Parms2,T,Z,useFit=True)
         ds = T/difC
         Q = 2.*np.pi/ds
         Af = fit[4]
@@ -6401,6 +6410,40 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
             Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
+    elif 'E' in Parms['Type'][0]:
+        isig = 4
+        Plot.set_title('Instrument and sample peak widths')
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
+        Xmin,Xmax = limits[1]
+        X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+        Q = 2.*np.pi*X*npsind(tth/2.)/12.3986
+        Z = np.ones_like(X)
+        data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        s = np.sqrt(data[isig])   #var -> sig(radians)
+        Y = sq8ln2*s/X
+        Plot.plot(Q,Y,color='r',label='Gaussian')
+        
+        fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
+        sf = np.sqrt(fit[isig])
+        Yf = sq8ln2*sf/X
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
+        
+        Xp = []
+        Yp = []
+        for peak in peaks:
+            Xp.append(2.*np.pi*peak[0]*npsind(tth/2.)/12.3986)
+            try:
+                s = math.sqrt(peak[isig])
+            except ValueError:
+                s = 0.01
+            Yp.append(sq8ln2*s/peak[0])
+        if len(peaks):
+            Plot.plot(Xp,Yp,'+',color='r',label='G peak')
+        legend = Plot.legend(loc='best')
+        SetupLegendPick(legend,new)
+        Page.canvas.draw()
+        
     else:       #'C' & 'B'
         isig = 4
         igam = 6

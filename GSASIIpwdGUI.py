@@ -3059,6 +3059,8 @@ def UpdateSampleGrid(G2frame,data):
 
     parmSizer = wx.FlexGridSizer(0,2,5,0)
     for key,lbl,nDig in parms:
+        if 'E' in Inst['Type'][0] and key in ['DisplaceX','DisplaceY','Absorption']:
+            continue
         labelLst.append(lbl.strip().strip(':').strip())
         dspLst.append(nDig)
         if 'list' in str(type(data[key])):
@@ -7031,9 +7033,10 @@ def computePDF(G2frame,data):
         print('PDF computation aborted')
         return
     powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Sample']['Name'])
-    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))
+    Xlimits = [limits[1][0],limits[0][1]]       #use lower limit but ignore upper limit 
     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-    auxPlot = G2pwd.CalcPDF(data,inst,limits,xydata)
+    auxPlot = G2pwd.CalcPDF(data,inst,Xlimits,xydata)
     data['I(Q)'] = xydata['IofQ']
     data['S(Q)'] = xydata['SofQ']
     data['F(Q)'] = xydata['FofQ']
@@ -7052,9 +7055,10 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
             xydata[key] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name))
     powName = data['Sample']['Name']
     powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,powName)
-    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))
+    Xlimits = [limits[1][0],limits[0][1]]       #use lower limit but ignore upper limit 
     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-    res = G2pwd.OptimizePDF(data,xydata,limits,inst,showFit,maxCycles)
+    res = G2pwd.OptimizePDF(data,xydata,Xlimits,inst,showFit,maxCycles)
     return res['success']
     
 def UpdatePDFGrid(G2frame,data):

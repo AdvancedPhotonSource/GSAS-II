@@ -811,7 +811,7 @@ def getWidthsED(pos,sig):
     for energy dispersive data. On low-energy side, 20 FWHM are used, 
     on high-energy side 20 are used
     
-    :param pos: peak position; energy in keV
+    :param pos: peak position; energy in keV (not used)
     :param sig: Gaussian peak variance in keV^2
     
     :returns: widths; [Gaussian sigma] in keV, and 
@@ -828,7 +828,7 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     for constant wavelength data. 50 FWHM are used on both sides each 
     extended by exponential coeff.
     
-    param pos: peak position; TOF in musec
+    param pos: peak position; TOF in musec (not used)
     param alp,bet: TOF peak exponential rise & decay parameters
     param sig: Gaussian peak variance in musec^2
     param gam: Lorentzian peak width in musec

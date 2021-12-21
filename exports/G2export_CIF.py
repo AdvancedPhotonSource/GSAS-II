@@ -3882,6 +3882,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # setup for sequential fits here
         #===============================================================================
         seqmode = False
+        seqHistList = []
         if self.G2frame.testSeqRefineMode():
             if self.seqData is None:
                 raise Exception('Use Export/Sequential project for sequential refinements')

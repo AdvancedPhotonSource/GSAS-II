@@ -5006,7 +5006,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             elif 'B' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:17+Super],I100,MuStr,CrSize)).T
             elif 'E' in Inst['Type'][0]:
-                refs = np.vstack((refList.T[:11+Super],I100,MuStr,CrSize)).T
+                refs = np.vstack((refList.T[:12+Super],I100,MuStr,CrSize)).T        #last two not shown for now
         rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
@@ -7700,7 +7700,7 @@ def UpdatePDFGrid(G2frame,data):
         inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
         if 'C' in inst['Type'][0]:
             wave = G2mth.getWave(inst)
-            keV = 12.397639/wave
+            keV = G2mth.wavekE(wave)
             qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
             polariz = inst['Polariz.'][1]
         else:   #'T'of

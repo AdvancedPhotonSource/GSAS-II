@@ -3910,10 +3910,8 @@ def UpdatePhaseData(G2frame,Item,data):
         for i in indx:
             if delList: delList += ', '
             delList += data['Atoms'][i][0]
-        dlg = wx.MessageDialog(G2frame,
-            'Do you want to delete atom(s): {}?'.format(delList),
-                    'Confirm delete',
-                    wx.YES|wx.NO)
+        dlg = wx.MessageDialog(G2frame,'Do you want to delete atom(s): {}?'.format(delList),
+            'Confirm delete',wx.YES|wx.NO)
         try:
             dlg.CenterOnParent()
             result = dlg.ShowModal()
@@ -6251,7 +6249,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
         elif G2frame.RMCchoice == 'RMCProfile':
-            pName = generalData['Name'].replace(' ','_')
+            if ' ' in generalData['Name']:
+                wx.MessageDialog(G2frame,'ERROR: Phase name has space; change phase name','Bad phase name',wx.ICON_ERROR).ShowModal()
+                G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+                return
+            pName = generalData['Name']
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
             PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,RMCPdict['histogram'][0])
@@ -6294,7 +6296,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
         elif G2frame.RMCchoice == 'PDFfit':
-            pName = generalData['Name'].replace(' ','_')
+            if ' ' in generalData['Name']:
+                wx.MessageDialog(G2frame,'ERROR: Phase name has space; change phase name','Bad phase name',wx.ICON_ERROR).ShowModal()
+                G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+                return
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
             G2pwd.MakePDFfitAtomsFile(data,RMCPdict)

@@ -42,8 +42,8 @@ npacosd = lambda x: 180.*np.arccos(x)/math.pi
 nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
-npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
+# npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
+# npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
     
 ###############################################################################
 #### Particle form factors

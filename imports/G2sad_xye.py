@@ -75,19 +75,20 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(float(data[0]))
                     f = float(data[1])
                     if f <= 0.0:
-                        del x[-1]
-                        continue
+                        break
+                        # del x[-1]
+                        # continue
                     elif len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[1]))
+                    x.append(float(data[0]))
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
+                    msg = 'Error in line :%s'%S
                     print (msg)
                     continue
         fp.close()
@@ -169,19 +170,20 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(float(data[0])/10.)        #convert nm-1 to A-1
                     f = float(data[1])
                     if f <= 0.0:
-                        x.pop()
-                        continue
+                        break
+                        # x.pop()
+                        # continue
                     elif len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[1]))
+                    x.append(float(data[0])/10.)        #convert nm-1 to A-1
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
+                    msg = 'Error in line :%s'%S
                     print (msg)
                     continue
         fp.close()
@@ -211,13 +213,13 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
 
         return True
 
-class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
-    'Routines to import neutron CW q SAXD data from a .nsad or .ndat file'
+class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
+    'Routines to import neutron q SAXD data from a .nsad or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.nsad','.ndat'),
             strictExtension=False,
-            formatName = 'q (A-1) step neutron CW QIE data',
+            formatName = 'q (A-1) step neutron QIE data',
             longFormatName = 'q (A-1) stepped neutron CW text data file in Q,I,E order; E optional'
             )
 
@@ -251,7 +253,7 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
-            if '=' in S:
+            if '=' in S or '#' in S:
                 self.comments.append(S[:-1])
                 if 'wave' in S.split('=')[0].lower():
                     try:
@@ -263,19 +265,20 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(float(data[0]))
                     f = float(data[1])
                     if f <= 0.0:
-                        y.append(0.0)
-                        w.append(1.0)
+                        break
+                        # y.append(0.0)
+                        # w.append(1.0)
                     elif len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[1]))
+                    x.append(float(data[0]))
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
+                    msg = 'Error in line :%s'%S
                     print (msg)
                     continue
         fp.close()
@@ -307,14 +310,14 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
 
         return True
 
-class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
-    'Routines to import neutron CW q in nm-1 SAXD data from a .nsad or .ndat file'
+class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
+    'Routines to import neutron q in nm-1 SAXD data from a .nsad or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.nsad','.ndat'),
             strictExtension=False,
-            formatName = 'q (nm-1) step neutron CW QIE data',
-            longFormatName = 'q (nm-1) stepped neutron CW text data file in Q,I,E order; E optional'
+            formatName = 'q (nm-1) step neutron QIE data',
+            longFormatName = 'q (nm-1) stepped neutron text data file in Q,I,E order; E optional'
             )
 
     # Validate the contents -- make sure we only have valid lines
@@ -347,7 +350,7 @@ class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
-            if '=' in S:
+            if '=' in S or '#' in S:
                 self.comments.append(S[:-1])
                 if 'wave' in S.split('=')[0].lower():
                     try:
@@ -359,19 +362,20 @@ class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(float(data[0])/10.)    #convert to A-1
                     f = float(data[1])
                     if f <= 0.0:
-                        y.append(0.0)
-                        w.append(1.0)
+                        break
+                        # y.append(0.0)
+                        # w.append(1.0)
                     elif len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[1]))
+                    x.append(float(data[0])/10.)    #convert to A-1
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
+                    msg = 'Error in line :%s'%S
                     print (msg)
                     continue
         fp.close()

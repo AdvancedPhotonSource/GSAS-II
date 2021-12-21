@@ -3324,10 +3324,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             varstr = ' refine:'
             iFin = min(iBeg+9,len(insKeys))
             for item in insKeys[iBeg:iFin]:
-                if item not in ['Type','Source']:
+                if item not in ['Type','Source','Bank']:
                     ptlbls += '%12s' % (item)
                     ptstr += '%12.6f' % (Inst[item][1])
-                    if item in ['Lam1','Lam2','Azimuth','fltPath','2-theta',]:
+                    if item in ['Lam1','Lam2','Azimuth','fltPath']:
                         varstr += 12*' '
                     else:
                         varstr += '%12s' % (str(bool(Inst[item][2])))
@@ -3393,9 +3393,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'histType'] = Type
             if 'XC' in Type or 'XB' in Type:
                 if pfx+'Lam1' in instDict:
-                    controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
+                    controlDict[pfx+'keV'] = G2mth.wavekE(instDict[pfx+'Lam1'])
                 else:
-                    controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
+                    controlDict[pfx+'keV'] = G2mth.wavekE(instDict[pfx+'Lam'])            
             histDict.update(instDict)
             histVary += insVary
             
@@ -3430,7 +3430,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'histType'] = Inst['Type'][0]
             if 'X' in Inst['Type'][0]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
-                controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']
+                controlDict[pfx+'keV'] = G2mth.wavekE(histDict[pfx+'Lam'])
             elif 'NC' in Inst['Type'][0] or 'NB' in Inst['Type'][0]:                   
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
@@ -3572,7 +3572,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             sigstr = ' sig   :'
             iFin = min(iBeg+9,len(insKeys))
             for name in insKeys[iBeg:iFin]:
-                if name not in  ['Type','Lam1','Lam2','Azimuth','Source','fltPath']:
+                if name not in  ['Type','Lam1','Lam2','Azimuth','Source','fltPath','Bank']:
                     ptlbls += '%12s' % (name)
                     ptstr += '%12.6f' % (Inst[name][1])
                     if instSig[name]:
@@ -3648,7 +3648,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                 (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin']))
                 pFile.write(' Instrument type: %s\n'%Sample['Type'])
                 if calcControls != None:    #skipped in seqRefine
-                    if 'X' in Inst['Type'][0]:
+                    if 'X' in Inst['Type'][0] and 'E' not in Inst['Type'][0]:
                         PrintFprime(calcControls['FFtables'],pfx,pFile)
                     elif 'NC' in Inst['Type'][0]:
                         PrintBlength(calcControls['BLtables'],Inst['Lam'][1],pFile)

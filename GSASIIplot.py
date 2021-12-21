@@ -3578,7 +3578,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     try:
                         Plot.set_yscale("log",nonpositive='mask') # >=3.3
                     except:
-                        Plot.set_yscale("log",nonposy='mask')
+                        Plot.set_yscale("log",nonpositive='mask')
                     if np.any(W>0.):
                         lims = [np.min(np.trim_zeros(W))/2.,np.max(Y)*2.]
                     else:
@@ -3619,7 +3619,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         try:
                             Plot.set_yscale("log",nonpositive='mask') # >=3.3
                         except:
-                            Plot.set_yscale("log",nonposy='mask')
+                            Plot.set_yscale("log",nonpositive='mask')
                         Plot.plot(X,Y,marker=pP,color=colors[0],linewidth=lW,
                             picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
@@ -3631,8 +3631,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_xscale("log",nonpositive='mask') # >=3.3
                             Plot.set_yscale("log",nonpositive='mask')
                         except:
-                            Plot.set_xscale("log",nonposx='mask')
-                            Plot.set_yscale("log",nonposy='mask')
+                            Plot.set_xscale("log",nonpositive='mask')
+                            Plot.set_yscale("log",nonpositive='mask')
                         if G2frame.ErrorBars:
                             if Page.plotStyle['sqPlot']:
                                 Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
@@ -3720,14 +3720,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                picker=False,nonposy='mask')
+                                picker=False,nonpositive='mask')
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
                                 picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                picker=False,nonposy='mask')
+                                picker=False,nonpositive='mask')
                 else:
                     if 'PWDR' in plottype:
                         Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False)
@@ -3737,7 +3737,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=False,nonpositive='mask',linewidth=1.5)
                         except:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                picker=False,nonposy='mask')
+                                picker=False,nonpositive='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
@@ -3863,8 +3863,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.toolbar.push_current()
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
             G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)-1.))
-        Plot.set_xlim(G2frame.xylim[0])
-        Plot.set_ylim(G2frame.xylim[1])
+        if 'PWDR' in plottype:
+            Plot.set_xlim(G2frame.xylim[0])
+            Plot.set_ylim(G2frame.xylim[1])
         Page.toolbar.push_current()
         Page.ToolBarDraw()
     else:
@@ -6157,12 +6158,15 @@ def PlotSASDSizeDist(G2frame):
     Page.Choice = None
     PatternId = G2frame.PatternId
     data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'))
-    Bins,Dbins,BinMag = data['Size']['Distribution']
+    try:
+        Bins,Dbins,BinMag = data['Size']['Distribution']
+    except ValueError:  #no data found; skip plot
+        return
     Plot.set_title('Size Distribution')
     Plot.set_xlabel(r'$D, \AA$',fontsize=14)
     Plot.set_ylabel(r'$Volume\ distribution,\ f(D)$',fontsize=14)
     if data['Size']['logBins']:
-        Plot.set_xscale("log",nonposx='mask')
+        Plot.set_xscale("log",nonpositive='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
     Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white',edgecolor='green')       #plot diameters
 #    colors=['b','r','c','m','k']

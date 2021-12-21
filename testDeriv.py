@@ -241,7 +241,6 @@ class testDeriv(wx.Frame):
             hplot.plot(M2,'b',label='analytic deriv')
             mmin = np.min(dMdV[names.index(name)])
             mmax = np.max(dMdV[names.index(name)])
-            print('parameter:',name,self.parmDict[name],delt,mmin,mmax)
             if name in self.varylist:
                 self.values[self.varylist.index(name)] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
@@ -262,9 +261,8 @@ class testDeriv(wx.Frame):
                     names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] -= delt    
             Mn = (M1-M0)/(2.*abs(delt))
+            print('parameter:',name,self.parmDict[name],delt,mmin,mmax,np.sum(M0),np.sum(M1),np.sum(Mn))
             hplot.plot(Mn,'r',label='numeric deriv')
-#            hplot.plot(M2-Mn,'g',label='diff')
-#            GSASIIpath.IPyBreak()
             hplot.legend(loc='best')            
             
         while self.plotNB.nb.GetPageCount():

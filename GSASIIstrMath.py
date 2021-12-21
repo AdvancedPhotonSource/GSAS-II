@@ -2894,7 +2894,7 @@ def GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
         else:               #Debye-Scherrer - simple but maybe not right
             pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+(parmDict[hfx+'DisplaceY']+parmDict[phfx+'LayerDisp'])*sind(pos))
     elif 'E' in calcControls[hfx+'histType']:
-        pos = G2mth.wavekE(2.0*d*sind(parmDict[hfx+'2-theta']/2.0))+parmDict[hfx+'ZE']+parmDict[hfx+'YE']*d+parmDict[hfx+'XE']*d**2
+        pos = 12.397639/(2.0*d*sind(parmDict[hfx+'2-theta']/2.0))+parmDict[hfx+'ZE']+parmDict[hfx+'YE']*d+parmDict[hfx+'XE']*d**2
     elif 'T' in calcControls[hfx+'histType']:
         pos = parmDict[hfx+'difC']*d+parmDict[hfx+'difA']*d**2+parmDict[hfx+'difB']/d+parmDict[hfx+'Zero']
         #do I need sample position effects - maybe?
@@ -2937,7 +2937,7 @@ def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
         dpdYE = dsp
         dpdXE = dsp**2
         dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])*refl[5+im]*dsp**2/2.
-        dpdTTh = -12.397639/(2.*tand(tth)*dsp*sind(tth))
+        dpdTTh = -12.397639*cosd(tth)/(dsp*sind(tth)**2)
         return dpdA,dpdTTh,dpdXE,dpdYE,dpdZE
     elif 'T' in calcControls[hfx+'histType']:
         dpdA = -np.array([h**2,k**2,l**2,h*k,h*l,k*l])*parmDict[hfx+'difC']*dsp**3/2.
@@ -2980,7 +2980,7 @@ def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
     if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:
         return -180.*Dij*refl[4+im]**2*tand(refl[5+im]/2.0)/np.pi
     elif 'E' in calcControls[hfx+'histType']:
-        return Dij*(12.397639/(2.*dsp*sind(tth)))
+        return Dij*refl[5+im]/refl[4+im]**2
     else:
         return -Dij*parmDict[hfx+'difC']*0.5*refl[4+im]**2
             
@@ -3016,7 +3016,7 @@ def GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict):
             dDijDict[item] *= 180.0*refl[4+im]**2*tand(refl[5+im]/2.0)/np.pi
     elif 'E' in calcControls[hfx+'histType']:
         for item in dDijDict:
-            dDijDict[item] *= refl[5+im]*refl[4+im]**2/2.
+            dDijDict[item] *= refl[5+im]/refl[4+im]**2
     else:
         for item in dDijDict:
             dDijDict[item] *= -parmDict[hfx+'difC']*refl[4+im]**3/2.
@@ -3799,7 +3799,7 @@ def getPowderProfileDerv(args):
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
             elif 'E' in calcControls[hfx+'histType']:
                 dpdA,dpdTTh,dpdXE,dpdYE,dpdZE = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
-                names = {hfx+'Scale':[dIdsh,'int'],
+                names = {hfx+'Scale':[dIdsh,'int'],hfx+'2-theta':[dpdTTh,'pos'],
                     hfx+'A':[refl[5+im]**2,'sig'],hfx+'B':[refl[5+im],'sig'],hfx+'C':[1.0,'sig'],
                     hfx+'XE':[dpdXE,'pos'],hfx+'YE':[dpdYE,'pos'],hfx+'ZE':[dpdZE,'pos']   }
             for name in names:

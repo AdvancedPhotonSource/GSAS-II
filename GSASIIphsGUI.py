@@ -12971,7 +12971,6 @@ of the crystal structure.
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
         '''
-        #GSASIIpath.IPyBreak()
         
         def DisablePawleyOpts(*args):
             pawlVal.Enable(generalData['doPawley'])
@@ -13117,7 +13116,6 @@ of the crystal structure.
         xdata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Sample Parameters'))
-        wave = G2mth.getWave(Inst)
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         gconst = 2.35482 # sqrt(8 ln 2)
         dx = (xdata[0][1]-xdata[0][0])*20.              #this ian approximation - not correct, but CW seems to be needed
@@ -13126,11 +13124,11 @@ of the crystal structure.
         wx.BeginBusyCursor()
         try:
             for ref in Refs:
-                pos = 2.0*asind(wave/(2.0*ref[4+im]))
+                pos = G2lat.Dsp2pos(Inst,ref[4+im])
                 if 'Bragg' in Sample['Type']:
                     pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
                         Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
-                else:               #Debye-Scherrer - simple but maybe not right - +Layer Disp from DData?
+                elif 'E' not in Inst['Type'][0]:               #Debye-Scherrer - simple but maybe not right - +Layer Disp from DData?
                     pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
                 indx = np.searchsorted(xdata[0],pos)
                 try:
@@ -13140,14 +13138,17 @@ of the crystal structure.
                     # we multiply the observed peak height by sqrt(8 ln 2)/(FWHM*sqrt(pi)) to determine the value of Icorr*F^2 
                     # then divide by Icorr to get F^2.
                     ref[6+im] = (xdata[1][indx]-xdata[4][indx])*gconst/(FWHM*np.sqrt(np.pi))  #Area of Gaussian is height * FWHM * sqrt(pi)
-                    Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
-                    pola = 1.0
-                    if 'X' in Inst['Type']:
-                        pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
-                    else:
+                    if 'E' not in Inst['Type'][0]:
+                        Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
                         pola = 1.0
+                        if 'X' in Inst['Type']:
+                            pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
+                        else:
+                            pola = 1.0
                     # Include histo scale and volume in calculation
-                    ref[6+im] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3+im])
+                        ref[6+im] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3+im])
+                    else:
+                        ref[6+im] /= (Sample['Scale'][0] * ref[3+im])
                 except IndexError:
                     pass
         finally:

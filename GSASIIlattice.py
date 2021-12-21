@@ -1173,7 +1173,7 @@ def Dsp2pos(Inst,dsp):
     if 'T' in Inst['Type'][0]:
         pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
     elif 'E' in Inst['Type'][0]:
-        return 12.398/(2.0*dsp*sind(Inst['2-theta'][1]/2.0)+Inst['ZE'][1]+Inst['YE'][1]*dsp+Inst['XE'][1]*dsp**2)
+        return 12.398/(2.0*dsp*sind(Inst['2-theta'][1]/2.0))+Inst['ZE'][1]+Inst['YE'][1]*dsp+Inst['XE'][1]*dsp**2
     else:   #'C' or 'B'
         wave = G2mth.getWave(Inst)
         val = min(0.995,wave/(2.*dsp))  #set max at 168deg

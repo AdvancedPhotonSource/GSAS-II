@@ -12911,6 +12911,25 @@ of the crystal structure.
         
 ##### Pawley routines ################################################################################
     def FillPawleyReflectionsGrid():
+        
+        def onRefineDClick(event):
+            '''Called after a double-click on a cell label'''
+            c =  event.GetCol()
+            if c == 5:     #refine column label: just select it (& redisplay)
+                G2frame.PawleyRefl.ClearSelection()
+                G2frame.PawleyRefl.SelectCol(c,True)
+                choice = ['Y - vary all','N - vary none',]
+                dlg = wx.SingleChoiceDialog(G2frame,'Select refinement option',
+                    'Refinement controls',choice)
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    if sel == 0:
+                        for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=True
+                    else:
+                        for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=False
+                FillPawleyReflectionsGrid()
+                
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
             rowList = G2frame.PawleyRefl.GetSelectedRows()
@@ -12958,6 +12977,7 @@ of the crystal structure.
             PawleyTable = G2G.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             G2frame.PawleyRefl.SetTable(PawleyTable, True)
             G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+            G2frame.PawleyRefl.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onRefineDClick)
             for r in range(G2frame.PawleyRefl.GetNumberRows()):
                 for c in range(G2frame.PawleyRefl.GetNumberCols()):
                     if c in pos:
@@ -13119,6 +13139,8 @@ of the crystal structure.
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         gconst = 2.35482 # sqrt(8 ln 2)
         dx = (xdata[0][1]-xdata[0][0])*20.              #this ian approximation - not correct, but CW seems to be needed
+        cw = np.diff(xdata[0])
+        cw = np.append(cw,cw[-1])
         gconst *= dx
         
         wx.BeginBusyCursor()
@@ -13137,9 +13159,12 @@ of the crystal structure.
                     # routines, which use Icorr * F^2 * peak profile, where peak profile has an area of 1.  So
                     # we multiply the observed peak height by sqrt(8 ln 2)/(FWHM*sqrt(pi)) to determine the value of Icorr*F^2 
                     # then divide by Icorr to get F^2.
-                    ref[6+im] = (xdata[1][indx]-xdata[4][indx])*gconst/(FWHM*np.sqrt(np.pi))  #Area of Gaussian is height * FWHM * sqrt(pi)
+                    ref[6+im] = (xdata[1][indx]-xdata[4][indx])*FWHM*np.sqrt(np.pi)  #Area of Gaussian is height * FWHM * sqrt(pi)
                     if 'E' not in Inst['Type'][0]:
-                        Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
+                        if 'C' in Inst['Type'][0]:
+                            Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
+                        else:
+                            Lorenz = ref[4+im]**4
                         pola = 1.0
                         if 'X' in Inst['Type']:
                             pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
@@ -13148,7 +13173,7 @@ of the crystal structure.
                     # Include histo scale and volume in calculation
                         ref[6+im] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3+im])
                     else:
-                        ref[6+im] /= (Sample['Scale'][0] * ref[3+im])
+                        ref[6+im] /= (0.02*Sample['Scale'][0] * ref[3+im]*cw[indx])     #why 0.02*cw?
                 except IndexError:
                     pass
         finally:

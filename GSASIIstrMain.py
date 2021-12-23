@@ -297,7 +297,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     if IfOK:
         if CheckLeBail(Phases):   # only needed for LeBail extraction
             G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],
-                                parmDict,[],calcControls,pawleyLookup,dlg)
+                parmDict,[],calcControls,pawleyLookup,dlg)
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     if chisq0 is not None:
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))

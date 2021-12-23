@@ -3457,7 +3457,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                             pInd = pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
                         refl[9+im] = parmDict[pInd]
                     except KeyError:
-#                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
                 iBeg = np.searchsorted(x,refl[5+im]-fmin)
@@ -3500,7 +3499,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                             pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
                         refl[9+im] = parmDict[pInd]
                     except KeyError:
-#                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
                 iBeg = np.searchsorted(x,refl[5+im]-fmin)
@@ -3696,7 +3694,7 @@ def getPowderProfileDerv(args):
             elif 'B' in calcControls[hfx+'histType']:
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
             elif 'E' in calcControls[hfx+'histType']:
-                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im]*1.e4)
+                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im])
             iBeg = np.searchsorted(x,refl[5+im]-fmin)
             iFin = np.searchsorted(x,refl[5+im]+fmax)
             if not iBeg+iFin:       #peak below low limit - skip peak
@@ -3872,8 +3870,11 @@ def getPowderProfileDerv(args):
                         depDerivDict[name][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
             if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:
                 sigDict,gamDict = GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
-            else:   #'T'OF
+            elif 'T' in calcControls[hfx+'histType']:   #'T'OF
                 sigDict,gamDict = GetSampleSigGamDerv(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
+            else: #'E'
+                sigDict = {}
+                gamDict = {}
             for name in gamDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']

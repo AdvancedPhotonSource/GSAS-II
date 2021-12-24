@@ -5296,6 +5296,7 @@ class GSASII(wx.Frame):
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
+        G2mv.Map2Dict(parmValDict,G2mv.saveVaryList)
         wx.EndBusyCursor()
         # # check for limits on dependent vars
         # consVars = [i for i in reqVaryList if i not in varyList]
@@ -5317,7 +5318,7 @@ class GSASII(wx.Frame):
         #    import imp
         #    imp.reload(G2G)
         # end debug stuff    
-        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList,Controls)
+        dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,G2mv.saveVaryList,reqVaryList,Controls)
         dlg.CenterOnParent()
         dlg.ShowModal()
         dlg.Destroy()

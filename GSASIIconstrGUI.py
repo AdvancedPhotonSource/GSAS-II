@@ -749,6 +749,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         try:
             errmsg,warnmsg = CheckConstraints(G2frame,Phases,Histograms,data,[],reqVaryList,seqhst=seqhistnum,seqmode=seqmode)
         except Exception as msg:
+            if GSASIIpath.GetConfigValue('debug'): 
+                import traceback
+                print (traceback.format_exc())
             return 'CheckConstraints error retrieving parameter\nError='+str(msg),''
         return errmsg,warnmsg
 
@@ -1257,7 +1260,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1) # delete selection
             panel.delBtn.checkboxList.append([constDel,Id,name])
             if refineflag:
-                ch = G2G.G2CheckBox(panel,'vary ',item,-2)
+                refresh = lambda event: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True)
+                ch = G2G.G2CheckBox(panel,'vary ',item,-2,OnChange=refresh)
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))
@@ -1383,7 +1387,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             btn.Bind(wx.EVT_BUTTON,lambda event:
                          G2G.ShowScrolledInfo(panel,
-                        'Constraints after processing\n\n'+G2mv.VarRemapShow(),
+                        '*** Constraints after processing ***\n'+G2mv.VarRemapShow(),
                          header='Generated constraints'))
             panel.delBtn = wx.Button(panel, wx.ID_ANY, 'Delete selected')
             butSizer.Add(panel.delBtn,0,wx.ALIGN_CENTER_VERTICAL)

@@ -3700,7 +3700,7 @@ def fullHM2shortHM(SpcGp):
     fields = SpcGp.split()
     if len(fields) == 4 and fields[1] == '1' and fields[3] == '1': #b-unique monoclinics
         return fields[0]+' '+fields[2]
-    if '/' not in SpcGp:
+    if '/' not in SpcGp or len(fields) < 3:
         return SpcGp
     if '-3' in fields[1]:   #trigonals
         fields[2] = fields.split('/')[1]
@@ -3718,7 +3718,7 @@ def fullHM2shortHM(SpcGp):
         fields[2] = fields[2].split('/')[1]
         fields[3] = fields[3].split('/')[1]
         return ' '.join(fields)
-    if '/' in fields[1] and len(fields) == 4:    #orthorhombics
+    if len(fields) == 4 and '/' in fields[1] and '/' in fields[2] and '/' in fields[3]:    #orthorhombics
         if fields[2] == '1':     #skip a-unique monoclinics
             return SpcGp
         fields[1] = fields[1].split('/')[1]

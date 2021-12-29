@@ -766,7 +766,15 @@ class GSASIItoolbar(Toolbar):
 
     def OnArrow(self,event):
         'reposition limits to scan or zoom by button press'
-        ax = self.plotCanvas.figure.get_axes()[0]
+        axlist = self.plotCanvas.figure.get_axes()
+        if len(axlist) == 1:
+             ax = axlist[0]
+             ax1 = None
+        elif len(axlist) == 3: # used in "w" mode in PlotPatterns
+             _,ax,ax1 = axlist
+             xmin,xmax,ymin1,ymax1 = ax1.axis()
+        else:
+            return
         xmin,xmax,ymin,ymax = ax.axis()
         #print xmin,xmax,ymin,ymax
         if event.Id == self.arrows['right']:
@@ -807,6 +815,8 @@ class GSASIItoolbar(Toolbar):
                 GSASIIpath.IPyBreak()
         self.parent.toolbar.push_current()      #NB: self.parent.toolbar = self
         ax.axis((xmin,xmax,ymin,ymax))
+        if ax1:
+            ax1.axis((xmin,xmax,ymin1,ymax1))
         #print xmin,xmax,ymin,ymax
         self.plotCanvas.figure.canvas.draw()
         self.parent.ToolBarDraw()

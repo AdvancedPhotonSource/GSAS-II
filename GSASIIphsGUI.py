@@ -4939,7 +4939,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnRefSel(event):
                 RMCPdict['refinement'] = reftype.GetStringSelection()
-                wx.CallAfter(UpdateRMC)
+                wx.CallLater(100,UpdateRMC)
                 
             def OnDataSel(event):
                 RMCPdict['SeqDataType'] = dataType.GetStringSelection()
@@ -4951,9 +4951,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['SeqReverse'] = not RMCPdict['SeqReverse']
 
             Indx = {}
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
             if G2frame.RMCchoice == 'PDFfit':
+                topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 reftype = wx.RadioBox(G2frame.FRMC,label='PDFfit refinement type:',choices=['normal','sequential'])
                 reftype.SetStringSelection(RMCPdict.get('refinement','normal'))
                 reftype.Bind(wx.EVT_RADIOBOX,OnRefSel)
@@ -4973,9 +4972,11 @@ def UpdatePhaseData(G2frame,Item,data):
                     seqreverse.Bind(wx.EVT_CHECKBOX,OnSeqReverse)
                     endSizer.Add(seqreverse)
                     topSizer.Add(endSizer,0,WACV)
-                    
-            mainSizer.Add(topSizer)
-            if G2frame.RMCchoice == 'fullrmc':
+                mainSizer.Add(topSizer)
+            elif G2frame.RMCchoice == 'fullrmc':
+                topSizer = wx.BoxSizer(wx.HORIZONTAL)
+                topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing (files must be 2 columns w/headers preceeded by "#"; edit if needed)'))
+                mainSizer.Add(topSizer)
                 Heads = ['Name','File','type','Plot','Delete']
                 fileSizer = wx.FlexGridSizer(5,5,5)
                 Formats = ['RMC','GUDRUN','STOG']
@@ -5043,11 +5044,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 fitscale.SetValue(RMCPdict['FitScale'])
                 fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
                 mainSizer.Add(fitscale,0)
-                mainSizer.Add(wx.StaticText(G2frame.FRMC,
-                    label=' NB: fullrmc data files must be 2 columns; all other lines preceeded by "#". Edit before use.'),0)
                 return 
             elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
-                
                 def OnAddPDF(event):
                     ''' Add PDF G(r)s while maintanining original sequence
                     '''
@@ -5083,7 +5081,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     wx.CallAfter(UpdateRMC)
                 
                 def OnSetColVal(event):
-                    
                     parms = {'Rmin':[0.0,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],
                         'qdamp':[0.0,0.5],'qbroad':[0.0,0.1],'Temp':300}
                     c =  event.GetCol()
@@ -5132,7 +5129,10 @@ def UpdatePhaseData(G2frame,Item,data):
                                 RMCPdict['seqfiles'][r][1][parm] = float(seqGrid.GetCellValue(r,c))
                             else:
                                 RMCPdict['seqfiles'][r][1]['Fitrange'][c] = float(seqGrid.GetCellValue(r,c))
-                                
+
+                topSizer = wx.BoxSizer(wx.HORIZONTAL)
+                topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
+                mainSizer.Add(topSizer)                
                 G2frame.GetStatusBar().SetStatusText('NB: All PDFs used in sequential PDFfit must be the same type ("X" or "N") - there is no check',1)
                 if 'seqfiles' not in RMCPdict:
                     RMCPdict['seqfiles'] = []
@@ -5161,8 +5161,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 seqGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, OnSetColVal)
                 seqGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSetVal)
                 mainSizer.Add(seqGrid)
-                
                 return
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
+            mainSizer.Add(topSizer)
             # RMCProfile & PDFfit (Normal)
             Heads = ['Name','File','Format','Weight','Plot','Delete']
             fileSizer = wx.FlexGridSizer(6,5,5)
@@ -5241,47 +5243,46 @@ def UpdatePhaseData(G2frame,Item,data):
         
         def fullrmcSizer(RMCPdict):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            if G2pwd.findfullrmc() is None:
-                dlg = wx.MessageDialog(G2frame,
-                    'The fullrmc code is not installed or could not be'
-                    ' located. Do you want help information on fullrmc?',
-                    'Install info',
-                    wx.YES|wx.NO)
-                try:
-                    dlg.CenterOnParent()
-                    result = dlg.ShowModal()
-                finally:
-                    dlg.Destroy()
-                if result == wx.ID_YES:
-                    G2G.ShowHelp('fullrmc',G2frame)
-                return mainSizer
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 ''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with 
 Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 
 (2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
+            if G2pwd.findfullrmc() is None:
+                mainSizer.Add(wx.StaticText(G2frame.FRMC,
+                    label="\nsorry, fullrmc not installed or was not located"))
+                return mainSizer
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             #mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0)
-            if not data['RMC']['fullrmc']:
-                Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
-                aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
-                atSeq = list(aTypes.keys())
-                lenA = len(atSeq)
-                Pairs= []
-                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
-                    Pairs += pair
-                Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-                files = {'Neutron real space data; G(r): ':['Select',1.,'G(r)',0,True],
-                          'Neutron reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],
-                          'Xray real space data; G(r): ':['Select',1.,'G(r)',0,True],
-                          'Xray reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],}
-                data['RMC']['fullrmc'] = {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
-                    'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Cycles':1,
-                    'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],'Angles':[],'Angle Weight':1.e-5,
-                    'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000,'Torsions':[],'Torsion Weight':1.e-5,
-                    'Bond Weight':1.e-5,'min Contact':1.5,'periodicBound':True}
+
+            # initialize fullrmc dictionary if needed
+            RMCPdict = data['RMC']['fullrmc'] = data['RMC'].get('fullrmc',{})
+            # always update, in case atoms have been updated
+            Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
+            aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+            atSeq = list(aTypes.keys())
+            lenA = len(atSeq)
+            Pairs= []
+            for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]]
+                                 for i in range(lenA) if 'Va' not in atSeq[i]]:
+                Pairs += pair
+            Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+            RMCPdict.update({'aTypes':aTypes,'atSeq':atSeq,'Pairs':Pairs})
+            RMCPdict['files'] = RMCPdict.get('files',
+                            {'Neutron real space data; G(r): ':['Select',1.,'G(r)',0,True],
+                            'Neutron reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],
+                            'Xray real space data; G(r): ':['Select',1.,'G(r)',0,True],
+                            'Xray reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True]})
+            if 'moleculePdb' not in RMCPdict:
+                RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
+            if 'Angles' not in RMCPdict:
+                RMCPdict.update({'Angles':[],'Angle Weight':1.e-5,'Bond Weight':1.e-5,'Torsions':[],'Torsion Weight':1.e-5})
+            for key,val in {'SuperCell':[1,1,1],'Box':[10.,10.,10.],'ReStart':[False,False],'Cycles':1,
+                    'Swaps':[],'useBVS':False,'FitScale':False,'AveCN':[],'FxCN':[],
+                    'min Contact':1.5,'periodicBound':True}.items():
+                RMCPdict[key] = RMCPdict.get(key,val)                    
 
             def GetSuperSizer():
                 def ShowRmax(*args,**kwargs):
@@ -5424,24 +5425,6 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             #         for i in  [4,5,6,7,8,9]: 
             #             torsionSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,torsion,i,xmin=0.,xmax=360.,OnLeave=SetRestart1,size=(50,25)),0,WACV)
             #     return torsionSizer
-#patches
-            if 'useBVS' not in RMCPdict:
-                RMCPdict['useBVS'] = False
-            if 'moleculePdb' not in RMCPdict:
-                RMCPdict.update({'moleculePdb':'Select','targetDensity':1.0,'maxRecursion':10000})
-            if 'FitScale' not in RMCPdict:
-                RMCPdict['FitScale'] = False
-#            if 'atomPDB' not in RMCPdict:
-#                RMCPdict['atomPDB'] = ''
-            if 'Angles' not in RMCPdict:
-                RMCPdict.update({'Angles':[],'Angle Weight':1.e-5,'Bond Weight':1.e-5,'Torsions':[],'Torsion Weight':1.e-5})
-            if 'Cycles' not in RMCPdict:
-                RMCPdict['Cycles'] = 1
-            if 'min Contact' not in RMCPdict:
-                RMCPdict['min Contact'] = 1.5
-            #if 'periodicBound' not in RMCPdict:
-            #    RMCPdict['periodicBound'] = True
-#end patches
 
             generalData = data['General']
             cx,ct,cs,cia = generalData['AtomPtrs']
@@ -6209,7 +6192,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         mainSizer.Add(RMCsel,0)
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         mainSizer.Add(wx.StaticText(G2frame.FRMC,
-            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step \n above to apply them before doing Operations/Execute'),0,WACV)
+            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step \n above to apply them before doing Operations/Execute'),0)
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
@@ -6225,6 +6208,20 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
+        if G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
+            dlg = wx.MessageDialog(G2frame,
+                    'The fullrmc code is not installed or could not be'
+                    ' located. Do you want help information on fullrmc?',
+                    'Install info',
+                    wx.YES|wx.NO)
+            try:
+                dlg.CenterOnParent()
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_YES:
+                G2G.ShowHelp('fullrmc',G2frame)
+            return mainSizer
         
     def OnSetupRMC(event):
         generalData = data['General']

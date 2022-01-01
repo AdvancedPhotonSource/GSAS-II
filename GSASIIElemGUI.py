@@ -19,6 +19,8 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import wx
 import os
 import wx.lib.colourselect as wscs
+# for Python 3.10+, define a version of wxPoint that accepts float params
+def wxPoint(x,y): return wx.Point(int(x),int(y))
 class PickElement(wx.Dialog):
     '''Makes periodic table widget for picking element. Modes:
         oneOnly if True element symbols are provided, otherwise select valence
@@ -48,12 +50,12 @@ class PickElement(wx.Dialog):
             else:
                 color=E[6]
             self.ElButton(name=E[0],
-               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),
+               pos=wxPoint(E[1]*self.butWid+25,E[2]*24+24),
                tip=E[3],color=color)
             i+=1
         if self.multiple:
             b = wx.Button(self,wx.ID_CLOSE,
-                pos=wx.Point(16.5*self.butWid+25,7.75*24+24),label="Done")
+                pos=wxPoint(16.5*self.butWid+25,7.75*24+24),label="Done")
             b.Bind(wx.EVT_BUTTON, self.OnClose)
 
     def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,multiple=False):
@@ -245,7 +247,7 @@ class PickElements(wx.Dialog):
         i=0
         for E in self.ElTable:
             PickElements.ElButton(self,parent=elPanel,name=E[0],
-                pos=wx.Point(E[1]*30+20,E[2]*30+25),tip=E[3],color=E[4])
+                pos=wxPoint(E[1]*30+20,E[2]*30+25),tip=E[3],color=E[4])
             i+=1
         mainSizer.Add(elPanel,0,wx.EXPAND)
         mainSizer.Add((10,10),0)
@@ -320,7 +322,7 @@ class DeleteElement(wx.Dialog):
         i = 0
         Elem = []
         for Elem in choice:
-            self.ElButton(name=Elem,pos=wx.Point(16+i*24, 16))
+            self.ElButton(name=Elem,pos=wxPoint(16+i*24, 16))
             i+=1
               
     def __init__(self, parent,choice):

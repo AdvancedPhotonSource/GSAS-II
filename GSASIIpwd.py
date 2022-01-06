@@ -904,8 +904,8 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
         q = npT2q(xdata,wave)
     yb = np.zeros_like(xdata)
     nBak = 0
-    cw = np.diff(xdata)
-    cw = np.append(cw,cw[-1])
+    # cw = np.diff(xdata)
+    # cw = np.append(cw,cw[-1])
     sumBk = [0.,0.,0]
     while True:
         key = pfx+'Back;'+str(nBak)
@@ -1008,8 +1008,10 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
+                # ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
+                # yb[iBeg:iFin] += ybi/cw[iBeg:iFin]
                 ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
-                yb[iBeg:iFin] += ybi/cw[iBeg:iFin]
+                yb[iBeg:iFin] += ybi
             elif 'T' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])[0]
                 yb[iBeg:iFin] += ybi
@@ -1046,8 +1048,8 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
     dyddb = np.zeros(shape=(3*parmDict[hfx+'nDebye'],len(xdata)))
     dydpk = np.zeros(shape=(4*parmDict[hfx+'nPeaks'],len(xdata)))
     dydfb = []
-    cw = np.diff(xdata)
-    cw = np.append(cw,cw[-1])
+    # cw = np.diff(xdata)
+    # cw = np.append(cw,cw[-1])
 
     if bakType in ['chebyschev','cosine','chebyschev-1']:
         dt = xdata[-1]-xdata[0]    
@@ -1147,10 +1149,10 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 # dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
                 # dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
                 # dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
-                dydpk[4*iD][iBeg:iFin] += 1000.*pkI*dFdp
-                dydpk[4*iD+1][iBeg:iFin] += 1000.*Df
-                dydpk[4*iD+2][iBeg:iFin] += 1000.*pkI*dFds
-                dydpk[4*iD+3][iBeg:iFin] += 1000.*pkI*dFdg
+                dydpk[4*iD][iBeg:iFin] += pkI*dFdp
+                dydpk[4*iD+1][iBeg:iFin] += Df
+                dydpk[4*iD+2][iBeg:iFin] += pkI*dFds
+                dydpk[4*iD+3][iBeg:iFin] += pkI*dFdg
             else:   #'T'OF
                 Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
                 dydpk[4*iD][iBeg:iFin] += pkI*dFdp

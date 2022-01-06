@@ -781,6 +781,13 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
     return updatecount,modcount,locked
 
 def GetBinaryPrefix(pyver=None):
+    '''Creates the first part of the binary directory name
+    such as linux_64_p3.9 (where the full name will be 
+    linux_64_p3.9_n1.21). 
+
+    Note that any change made here is also needed in GetBinaryDir in 
+    fsource/SConstruct
+    '''
     if sys.platform == "win32":
         prefix = 'win'
     elif sys.platform == "darwin":
@@ -790,8 +797,10 @@ def GetBinaryPrefix(pyver=None):
     else:
         print(u'Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
-    if 'arm' in platform.machine():
+    if 'arm' in platform.machine() and platform.architecture()[0] == '64bit':
         bits = 'arm'
+    elif 'arm' in platform.machine():
+        bits = 'arm32'
     elif platform.architecture()[0] == '64bit':
         bits = '64'
     else:
@@ -803,8 +812,7 @@ def GetBinaryPrefix(pyver=None):
     else:
         pyver = 'p{}.{}'.format(*sys.version_info[0:2])
 
-    items = [prefix,bits,pyver]
-    return '_'.join(items)
+    return '_'.join([prefix,bits,pyver])
 
 def svnList(URL,verbose=True):
     '''Get a list of subdirectories from and svn repository

@@ -103,6 +103,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         return macro        #advanced past 1st line
         
     def getMOGULFile():
+        # Type,Classification, No. of hits, Query value, Mean, Std. dev.
+        colNums = [0,2,3,5,6,7]
         dlg = wx.FileDialog(G2frame,message='Choose MOGUL csv file',
             defaultDir='.',defaultFile="",wildcard="MOGUL csv file (*.csv)|*.csv",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
@@ -113,12 +115,19 @@ def UpdateRestraints(G2frame,data,phaseName):
                 mogul = open(csvfile,'r')
                 head = mogul.readline()
                 if 'Type' not in head:
-                    print (head)
-                    print ('**** ERROR - not a MOGUL csv file selected, try again ****')
+                    print ('Note: header line is\n',head)
+                    print ('**** ERROR - file selected is not a MOGUL csv file, try again ****')
                     mogul = []
+                else:
+                    for i,k in enumerate(('Type','Classification',
+                            'No. of hits','Query value','Mean','Std. dev.')):
+                        try:
+                            colNums[i] = head.split(',').index(k)
+                        except ValueError:
+                            pass
         finally:
             dlg.Destroy()
-        return mogul        #advanced past 1st line
+        return mogul,colNums        #file pointer advanced past 1st line & col pointers
         
     def OnPlotAARestraint(event):
         page = G2frame.restrBook.GetSelection()
@@ -359,18 +368,18 @@ def UpdateRestraints(G2frame,data,phaseName):
         UpdateBondRestr(bondRestData)
 
     def AddMogulBondRestraint(bondRestData):
-        mogul = getMOGULFile()
+        mogul,colNums = getMOGULFile()
         for line in mogul:
             items = line.split(',')
-            if 'bond' == items[0]:
-                oName,tName = items[2].split()
+            if 'bond' == items[colNums[0]]:
+                oName,tName = items[colNums[1]].split()
                 oInd = Names.index(oName)
                 tInd = Names.index(tName)
-                if items[3] != 'No hits':
-                    dist = float(items[6])
-                    esd = float(items[7])
+                if items[colNums[2]] != 'No hits':
+                    dist = float(items[colNums[4]])
+                    esd = float(items[colNums[5]])
                 else:
-                    dist = float(items[5])
+                    dist = float(items[colNums[3]])
                     esd = 0.02
                 newBond = [[Ids[oInd],Ids[tInd]],['1','1'],dist,esd]
                 if newBond not in bondRestData['Bonds']:
@@ -512,19 +521,19 @@ def UpdateRestraints(G2frame,data,phaseName):
         UpdateAngleRestr(angleRestData)                
         
     def AddMogulAngleRestraint(angleRestData):
-        mogul = getMOGULFile()
+        mogul,colNums = getMOGULFile()
         for line in mogul:
             items = line.split(',')
-            if 'angle' == items[0]:
-                aName,bName,cName = items[2].split()
+            if 'angle' == items[colNums[0]]:
+                aName,bName,cName = items[colNums[1]].split()
                 aInd = Names.index(aName)
                 bInd = Names.index(bName)
                 cInd = Names.index(cName)
-                if items[3] != 'No hits':
-                    angle = float(items[6])
-                    esd = float(items[7])
+                if items[colNums[2]] != 'No hits':
+                    angle = float(items[colNums[4]])
+                    esd = float(items[colNums[5]])
                 else:
-                    angle = float(items[5])
+                    angle = float(items[colNums[3]])
                     esd = 2.00
                 newAngle = [[Ids[aInd],Ids[bInd],Ids[cInd]],['1','1','1'],angle,esd]
                 if newAngle not in angleRestData['Angles']:

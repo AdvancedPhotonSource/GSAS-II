@@ -5259,17 +5259,19 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
 
             # initialize fullrmc dictionary if needed
             RMCPdict = data['RMC']['fullrmc'] = data['RMC'].get('fullrmc',{})
-            # always update, in case atoms have been updated
+            # update, if atoms list has been updated
             Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
             aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
-            atSeq = list(aTypes.keys())
-            lenA = len(atSeq)
-            Pairs= []
-            for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]]
+            if len(data['RMC']['fullrmc'].get('aTypes',-1)) != len(aTypes):
+                #print('atypes has changed')
+                atSeq = list(aTypes.keys())
+                lenA = len(atSeq)
+                Pairs= []
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]]
                                  for i in range(lenA) if 'Va' not in atSeq[i]]:
-                Pairs += pair
-            Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-            RMCPdict.update({'aTypes':aTypes,'atSeq':atSeq,'Pairs':Pairs})
+                    Pairs += pair
+                Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+                RMCPdict.update({'aTypes':aTypes,'atSeq':atSeq,'Pairs':Pairs})
             RMCPdict['files'] = RMCPdict.get('files',
                             {'Neutron real space data; G(r): ':['Select',1.,'G(r)',0,True],
                             'Neutron reciprocal space data; S(Q)-1: ':['Select',1.,'F(Q)',0,True],

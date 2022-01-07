@@ -511,8 +511,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
                     sig = sigDict.get(dvar,sigdig)
-                    if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
-                        sig = -abs(sig)
+                    #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                    #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)
@@ -690,8 +690,8 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
                     sig = sigDict.get(dvar,sigdig)
-                    if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
-                        sig = -abs(sig)
+                    #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                    #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)
@@ -844,8 +844,8 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
             if j == cia+1:  # convert U to B
                 val *= 8*np.pi**2
                 sig *= 8*np.pi**2
-            if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
-                sig = -abs(sig)
+            #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+            #    sig = -abs(sig)
             s += PutInCol(G2mth.ValEsd(val,sig),dig)
         # Cartesian coordinates
         for xyz in np.inner(Amat,at[cx:cx+3]):
@@ -1007,8 +1007,8 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
                     sig = sigDict.get(dvar,sigdig)
-                    if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
-                        sig = -abs(sig)
+                    #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                    #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)

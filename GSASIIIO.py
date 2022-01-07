@@ -1553,6 +1553,7 @@ class ExportBaseclass(object):
         self.Histograms = {}
         self.SeqRefdata = None
         self.SeqRefhist = None
+        self.DelayOpen = False
         if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
         histType = None        
         if self.currentExportType == 'phase':
@@ -1769,7 +1770,11 @@ class ExportBaseclass(object):
                 print('Delayed open: close before file not created')
             return
         if self.fp is None:
-            raise Exception('Attempt to CloseFile without use of OpenFile')
+            if GSASIIpath.GetConfigValue('debug'): 
+                raise Exception('Attempt to CloseFile without use of OpenFile')
+            else:
+                print('Attempt to CloseFile without use of OpenFile')
+                return
         if self.fp == sys.stdout: return # debug mode
         if fp is None:
             fp = self.fp

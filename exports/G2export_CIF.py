@@ -4518,8 +4518,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
 
         WriteCIFitem(self.fp, '#--' + 15*'eof--' + '#')
-        print("...export completed")
-        print('file '+self.fullpath)
+        print("...export completed. File created:",self.fullpath)
         # end of CIF export
 
 class ExportProjectCIF(ExportCIF):
@@ -4540,6 +4539,7 @@ class ExportProjectCIF(ExportCIF):
         self.seqData = seqData
         self.Controls = Controls
         self.InitExport(event)
+        self.CIFname = ''
         # load all of the tree into a set of dicts
         self.loadTree()
         self._Exporter(event=event)
@@ -5170,8 +5170,8 @@ class CIFtemplateSelect(wx.BoxSizer):
     def __init__(self,frame,panel,tmplate,G2dict, repaint, title,
                      defaultname='', cifKey="CIF_template"):
         def _onResetTemplate(event):
-            self.CIF = None
-            self.dict[self.cifKey] = resetTemplate
+            self.CIF_template = resetTemplate
+            self.dict[self.cifKey] = None
             wx.CallAfter(self.repaint)
         wx.BoxSizer.__init__(self,wx.VERTICAL)
         self.cifdefs = frame
@@ -5212,42 +5212,45 @@ class CIFtemplateSelect(wx.BoxSizer):
             if os.path.exists(fil) and self.defaultname:
                 localTemplate = fil
                 break
-
-        if G2dict.get(self.cifKey) == localTemplate and localTemplate:
-            self.CIF = localTemplate
-            CIFtxt = "Customized template: "+os.path.split(self.CIF)[1]
-        elif G2dict.get(self.cifKey) == resetTemplate and resetTemplate:
-            self.CIF = resetTemplate
-            CIFtxt = "Default template: "+os.path.split(self.CIF)[1]
-        elif not G2dict.get(self.cifKey): # empty or None
-            if localTemplate:
-                G2dict[self.cifKey] = self.CIF = localTemplate
-                CIFtxt = "Customized template: "+os.path.split(self.CIF)[1]
-            elif resetTemplate:
-                G2dict[self.cifKey] = self.CIF = resetTemplate
-                CIFtxt = "Default template: "+os.path.split(self.CIF)[1]
-            else:
-                G2dict[self.cifKey] = self.CIF = None
-                CIFtxt = "none (Template not found!)"
-        elif type(G2dict[self.cifKey]) is not list and type(
-                G2dict[self.cifKey]) is not tuple:
-            if not os.path.exists(G2dict[self.cifKey]):
-                print("Warning: saved template file,",
-                          os.path.abspath(G2dict[self.cifKey]),
-                          ' not found!\nWas this file moved or deleted?')
-                self.CIF = None
-                CIFtxt = "none! (file not found)"
-                if resetTemplate:
+        repeat = True
+        while repeat:
+            repeat = False
+            if G2dict.get(self.cifKey) == localTemplate and localTemplate:
+                self.CIF_template = localTemplate
+                CIFtxt = "Customized template: "+os.path.split(self.CIF_template)[1]
+            elif resetTemplate and G2dict.get(self.cifKey) == resetTemplate:
+                self.CIF_template = resetTemplate
+                CIFtxt = "Default template: "+os.path.split(self.CIF_template)[1]
+            elif not G2dict.get(self.cifKey): # empty or None
+                if localTemplate:
+                    G2dict[self.cifKey] = self.CIF_template = localTemplate
+                    CIFtxt = "Customized template: "+os.path.split(self.CIF_template)[1]
+                elif resetTemplate:
                     G2dict[self.cifKey] = None
-                    wx.CallLater(100,self.repaint)
-                    return
+                    self.CIF_template = resetTemplate
+                    CIFtxt = "Default template: "+os.path.split(self.CIF_template)[1]
+                else:
+                    G2dict[self.cifKey] = self.CIF_template = None
+                    CIFtxt = "none (Template not found!)"
+            elif type(G2dict[self.cifKey]) is not list and type(
+                    G2dict[self.cifKey]) is not tuple:
+                if not os.path.exists(G2dict[self.cifKey]):
+                    print("\nWarning: previous template file:\n  ",
+                              os.path.abspath(G2dict[self.cifKey]),
+                              '\nwas not found! Was this file moved or deleted? Resetting to default.')
+                    self.CIF_template = None
+                    CIFtxt = "none! (file not found)"
+                    if resetTemplate:
+                        G2dict[self.cifKey] = None
+                        repeat = True
+                        continue
+                else:
+                    CIFtxt = "Edited template: "+os.path.split(G2dict[self.cifKey])[1]
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('Template file found',os.path.abspath(G2dict[self.cifKey]))
             else:
-                CIFtxt = "Edited template: "+os.path.split(G2dict[self.cifKey])[1]
-                if GSASIIpath.GetConfigValue('debug'):
-                    print('Template file found',os.path.abspath(G2dict[self.cifKey]))
-        else:
-            self.CIF = G2dict[self.cifKey]
-            CIFtxt = "Customized template is reloaded"
+                self.CIF_template = G2dict[self.cifKey]
+                CIFtxt = "Customized template is reloaded"
         # show template source
         self.Add(wx.StaticText(panel,wx.ID_ANY,CIFtxt))
         # show str, button to select file; button to edit (if CIF defined)
@@ -5257,7 +5260,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         hbox.Add(but,0,0,2)
         but = wx.Button(panel,wx.ID_ANY,"Edit Template")
         but.Bind(wx.EVT_BUTTON,self._onEditTemplateContents)
-        if self.CIF is None: but.Disable() # nothing to edit!
+        if self.CIF_template is None: but.Disable() # nothing to edit!
         if resetTemplate and not CIFtxt.startswith('Default'):
             hbox.Add(but,0,0,2)
             but = wx.Button(panel,wx.ID_ANY,"Reset to default template")
@@ -5288,10 +5291,10 @@ class CIFtemplateSelect(wx.BoxSizer):
 
     def _onEditTemplateContents(self,event):
         'Called to edit the contents of a CIF template'
-        if type(self.CIF) is list or  type(self.CIF) is tuple:
-            dblk,loopstructure = copy.deepcopy(self.CIF) # don't modify original
+        if type(self.CIF_template) is list or  type(self.CIF_template) is tuple:
+            dblk,loopstructure = copy.deepcopy(self.CIF_template) # don't modify original
         else:
-            cf = G2obj.ReadCIF(self.CIF)
+            cf = G2obj.ReadCIF(self.CIF_template)
             dblk,loopstructure = CIF2dict(cf)
         dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure,self.defaultname)
         val = dlg.Post()

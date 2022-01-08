@@ -31,7 +31,9 @@ def which_path(program):
     return ""
 
 def GetBinaryDir():
-    # format current platform, Python & numpy version
+    '''Format current platform, Python & numpy version;
+    note that this must match GSASIIpath.GetBinaryPrefix
+    '''
     if sys.platform == "win32":
         prefix = 'win'
     elif sys.platform == "darwin":
@@ -41,8 +43,8 @@ def GetBinaryDir():
     else:
         print(u'Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
-    if 'arm' in platform.machine() and platform.architecture()[0] == '64bit':
-        bits = 'arm'
+    if 'aarch' in platform.machine() and platform.architecture()[0] == '64bit':
+        bits = 'arm64'
     elif 'arm' in platform.machine():
         bits = 'arm32'
     elif platform.architecture()[0] == '64bit':
@@ -167,7 +169,7 @@ help    -- causes this message to be displayed (no compiling is done)
 install=T -- causes the module files to be placed in an installation directory
    (../AllBinaries/<X>_NN_pv.v_nv.v) rather than ../bin, where:
      <X> is mac, win or linux;
-     NN is 64 or 32;
+     NN is 64 or 32 for Intel; arm64 or arm32 for ARM (aarch or arm)
      pv.v is the Python version (p2.7 or p3.6,...) and
      nv.v is the Numpy version (n1.13,...).
    Normally used only by Brian or Bob for distribution of compiled software.
@@ -241,7 +243,7 @@ for program in ['python3','../python3','python','../python']:
 else:
     print ('python not found')
     sys.exit()
-p = subprocess.Popen(pythonprogram, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+p = subprocess.Popen(pythonprogram, stdout=subprocess.PIPE, stdin=subprocess.PIPE, encoding='utf-8')
 p.stdin.write("""
 import sys,platform;
 print (str(sys.version_info[0]))
@@ -260,8 +262,8 @@ if 'arm' in platform.machine() and sys.platform == "darwin":
    PlatformBits = 'arm'
 elif 'arm' in platform.machine() and '32' in platform.architecture()[0]:
    PlatformBits = 'arm32'
-elif 'arm' in platform.machine():
-   PlatformBits = 'arm'
+elif 'aarch' in platform.machine():
+   PlatformBits = 'arm64'
 elif '32' in platform.architecture()[0]:
    PlatformBits = '32bits'
 #PlatformBits = pyVersions[2][:-1]
@@ -277,8 +279,12 @@ else:
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
     if sys.platform.startswith("linux") and "64" in PlatformBits:
-        if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
-        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"' # --arch="-arch x86_64"'
+        if 'aarch' in platform.machine():
+            if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
+            if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+        else:
+            if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
+            if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"' # --arch="-arch x86_64"'
     elif sys.platform.startswith("linux") and 'arm' in platform.machine():
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
@@ -416,8 +422,8 @@ print ('Use "scons help" to see build options')
 print (80*'=')
 #print (env.Dump())
 if 'help' in COMMAND_LINE_TARGETS: sys.exit()
+import datetime
 if not os.path.exists(InstallLoc) and not GetOption('no_exec'):
-    import datetime
     print('Creating '+InstallLoc)
     os.makedirs(InstallLoc)
 if not GetOption('no_exec'):

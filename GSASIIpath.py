@@ -797,8 +797,8 @@ def GetBinaryPrefix(pyver=None):
     else:
         print(u'Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
-    if 'arm' in platform.machine() and platform.architecture()[0] == '64bit':
-        bits = 'arm'
+    if 'aarch' in platform.machine() and platform.architecture()[0] == '64bit':
+        bits = 'arm64'
     elif 'arm' in platform.machine():
         bits = 'arm32'
     elif platform.architecture()[0] == '64bit':

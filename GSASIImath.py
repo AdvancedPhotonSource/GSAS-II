@@ -2180,7 +2180,8 @@ def ApplyModeDisp(data):
     generalData = data['General']
     Atoms= data['Atoms']
     ISOdata = data['ISODISTORT']
-    modeDisp = np.array(ISOdata['modeDispl'])
+    coords = ISOdata['G2parentCoords']
+    modeDisp = np.array(ISOdata['modeDispl'])*np.array(ISOdata['NormList'])
     mode2var = np.array(ISOdata['Mode2VarMatrix'])
     varDisp = np.sum(mode2var*modeDisp,axis=1)
     vardict = dict(zip(ISOdata['IsoVarList'],varDisp))
@@ -2196,11 +2197,12 @@ def ApplyModeDisp(data):
         atoms = data['Atoms']
         drawAtoms = drawingData['Atoms']
         for iat,atom in enumerate(atoms):
-            atxyz = np.array(atom[cx:cx+3])
+            atxyz = coords[iat]
             displ = np.zeros(3)
             for ip,parm in enumerate(parNames[iat]):
                 if parm in vardict:
                     displ[ip] = vardict[parm]
+            atom[cx:cx+3] = atxyz+displ
             indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
             for ind in indx:
                 drawatom = drawAtoms[ind]
@@ -4707,7 +4709,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getTOFsig(ins,dsp)
         gam = getTOFgamma(ins,dsp)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
-    elif 'C' in Parms['Type'][0]:                            #CW data - TOF later in an else
+    elif 'C' in Parms['Type'][0]:
         for x in ['U','V','W','X','Y','Z']:
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
         if ifQ:                              #qplot - convert back to 2-theta

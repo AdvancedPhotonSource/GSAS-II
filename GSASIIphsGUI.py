@@ -68,6 +68,7 @@ import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
 import atmdata
+import ISODISTORT as ISO
 
 try:
     wx.NewIdRef
@@ -2933,37 +2934,6 @@ def UpdatePhaseData(G2frame,Item,data):
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
         
-    def OnRunISODISTORT(event):
-        ''' this needs to setup for method #3 or #4 in ISODISTORT
-        after providing parent cif:
-        #3 asks for transformation matrix & space group of child structure
-        #4 asks for cif file of child structure
-        '''
-        import ISODISTORT as ISO
-        # Use GSAS2Scriptable to make a CIF for the current phase in a
-        # scratch directory
-        data['pId'] = data.get('pId',0) # needs a pId
-        import GSASIIscriptable as G2sc
-        import tempfile
-        wx.BeginBusyCursor()
-        proj = G2sc.G2Project(newgpx='tmp4cif.gpx')
-        ph = G2sc.G2Phase(data,data['General']['Name'],proj)
-        tmpdir = tempfile.TemporaryDirectory()
-        parentcif = os.path.join(tmpdir.name,'ISOin.cif')
-        ph.export_CIF(parentcif)
-        radio,rundata = ISO.GetISODISTORT(data,parentcif)
-        wx.EndBusyCursor()
-        tmpdir.cleanup()
-        if radio and rundata:
-            data['ISODISTORT']['radio'] = radio
-            data['ISODISTORT']['rundata'] = rundata
-            data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
-            data['ISODISTORT']['selection'] = None
-            print('ISODISTORT run complete')
-            wx.CallAfter(UpdateISODISTORT)
-        else:
-            G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
-                
     def OnCompare(event):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -6636,8 +6606,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             engineFilePath = pName+'-fullrmc.rmc'
             if not os.path.exists(engineFilePath):
                 dlg = wx.FileDialog(G2frame, 'Open fullrmc directory',
-                                        defaultFile='*.rmc',
-                                        wildcard='*.rmc')
+                    defaultFile='*.rmc',wildcard='*.rmc')
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         engineFilePath = dlg.GetPath()
@@ -7025,168 +6994,152 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
 #### ISODISTORT results tab ###############################################################################
 
     def UpdateISODISTORT(Scroll=0):
-        ''' Present the results of an ISODISTORT run & allow selection of a distortion model for PDFfit 
-        & refinement constraints 
+        ''' Setup ISODISTORT and present the results. Allow selection of a distortion model for PDFfit or
+        GSAS-II structure refinement as a cif file produced by ISODISTORT. Allows manipulation of distortion 
+        mode displacements selection their refinement for this new phase.
         '''
-        def OnLaue(event):
-            Obj = event.GetEventObject()
-            name = Indx[Obj.GetId()]
-            data['ISODISTORT']['SGselect'][name[:4]] = not data['ISODISTORT']['SGselect'][name[:4]]
-            data['ISODISTORT']['selection'] = None
-            UpdateISODISTORT()
-            
-        def OnAllBtn(event):
-            for item in data['ISODISTORT']['SGselect']:
-                data['ISODISTORT']['SGselect'][item] = not data['ISODISTORT']['SGselect'][item]
-            data['ISODISTORT']['selection'] = None
-            UpdateISODISTORT()
-            
-        def CheckItem(item):
-            SGnum = int(item.split()[1].split('*')[0])
-            for SGtype in data['ISODISTORT']['SGselect']:
-                if data['ISODISTORT']['SGselect'][SGtype] and SGnum in SGrange[SGtype]:
-                    return True
-            return False
         
-        def OnSelect(event):
-            r,c = event.GetRow(),event.GetCol()
-            if c == 0:
-                data['ISODISTORT']['selection'] = [r,isoTable.GetValue(r,1)]
-                for row in range(isoGrid.GetNumberRows()):
-                    isoTable.SetValue(row,c,False)
-                isoTable.SetValue(r,c,True)
-                isoGrid.ForceRefresh()
+        def displaySetup():
+            
+            def OnParentCif(event):
+                dlg = wx.FileDialog(ISODIST, 'Select parent cif file',G2frame.LastGPXdir,
+                    style=wx.FD_OPEN ,wildcard='cif file(*.cif)|*.cif')
+                if dlg.ShowModal() == wx.ID_OK:
+                    fName = dlg.GetFilename()
+                    ISOdata['ParentCIF'] = fName
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                UpdateISODISTORT()
                 
-        def OnDispl(event):
-            '''Respond to movement of distortion mode slider'''
-            Obj = event.GetEventObject()
-            idsp,dispVal = Indx[Obj.GetId()]
-            modeDisp[idsp] = (Obj.GetValue()-100)/1000.
-            dispVal.SetValue(modeDisp[idsp])
-            err = G2mth.ApplyModeDisp(data)
-            if err:
-                G2G.G2MessageBox(G2frame,'Do Draw atoms first')      
-            FindBondsDraw(data)                
-            G2plt.PlotStructure(G2frame,data)
+            def OnUsePhase(event):
+                ISOdata['ParentCIF'] = 'Use this phase'                    
+                UpdateISODISTORT()
+                
+            def OnMethodSel(event):
+                method = methodSel.GetSelection()+1
+                if method in [1,4]:
+                    ISOdata['ISOmethod'] = method
+                UpdateISODISTORT()
+                
+            def OnChildCif(event):
+                dlg = wx.FileDialog(ISODIST, 'Select child cif file',G2frame.LastGPXdir,
+                    style=wx.FD_OPEN ,wildcard='cif file(*.cif)|*.cif')
+                if dlg.ShowModal() == wx.ID_OK:
+                    fName = dlg.GetFilename()
+                    ISOdata['ChildCIF'] = fName
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                UpdateISODISTORT()
+
+            def OnUsePhase2(event):
+                ISOdata['ChildCIF'] = 'Use this phase'                    
+                UpdateISODISTORT()
+
+            topSizer = wx.BoxSizer(wx.VERTICAL)
+            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT setup controls:'))
+            parentSizer = wx.BoxSizer(wx.HORIZONTAL)
+            parentSizer.Add(wx.StaticText(ISODIST,label=' Parent cif file:'),0,WACV)
+            parentCif = wx.Button(ISODIST,label=ISOdata['ParentCIF'],size=(200,24))
+            parentCif.Bind(wx.EVT_BUTTON,OnParentCif)
+            parentSizer.Add(parentCif,0,WACV)
+            if 'Use this phase' not in ISOdata['ChildCIF'] and 'Use this phase' not in ISOdata['ParentCIF']:
+                usePhase = wx.Button(ISODIST,label=' Use this phase? ')
+                usePhase.Bind(wx.EVT_BUTTON,OnUsePhase)
+                parentSizer.Add(usePhase,0,WACV)
+            topSizer.Add(parentSizer)
+            #patch
+            if 'ISOmethod' not in ISOdata:
+                ISOdata['ISOmethod'] = 1
+            #end patch
+            choice = ['Method 1: Search over all special k points - yields only single Irrep models',
+                'Method 2: not implemented in GSAS-II',
+                'Method 3: not implemented in GSAS-II',
+                'Method 4: Mode decomposition of known child structure']
+            methodSel = wx.RadioBox(ISODIST,label='Select ISODISTORT method:',choices=choice,
+                majorDimension=1,style=wx.RA_SPECIFY_COLS)
+            methodSel.SetSelection(ISOdata['ISOmethod']-1)
+            methodSel.Bind(wx.EVT_RADIOBOX,OnMethodSel)
+            topSizer.Add(methodSel)
+            if ISOdata['ISOmethod'] == 4:
+                childSizer = wx.BoxSizer(wx.HORIZONTAL)
+                childSizer.Add(wx.StaticText(ISODIST,label=' Child cif file:'),0,WACV)
+                childCif = wx.Button(ISODIST,label=ISOdata['ChildCIF'],size=(200,24))
+                childCif.Bind(wx.EVT_BUTTON,OnChildCif)
+                childSizer.Add(childCif,0,WACV)
+                if 'Use this phase' not in ISOdata['ChildCIF'] and 'Use this phase' not in ISOdata['ParentCIF']:
+                    usePhase2 = wx.Button(ISODIST,label=' Use this phase? ')
+                    usePhase2.Bind(wx.EVT_BUTTON,OnUsePhase2)
+                    childSizer.Add(usePhase2,0,WACV)
+                topSizer.Add(childSizer)
             
-        def OnDispVal(invalid,value,tc):
-            '''Respond to entry of a value into a distortion mode entry widget'''
-            idsp,displ = Indx[tc.GetId()]
-            displ.SetValue(int(value*1000)+100)
-            err = G2mth.ApplyModeDisp(data)
-            if err:
-                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
-            FindBondsDraw(data)                
-            G2plt.PlotStructure(G2frame,data)
-           
-        def OnReset(event):
-            '''Reset all distortion mode values to zero'''
-            data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
-            err = G2mth.ApplyModeDisp(data)
-            if err:
-                G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
-            FindBondsDraw(data)                
-            G2plt.PlotStructure(G2frame,data)
-            UpdateISODISTORT()                                   
-        
-        Indx = {}      
-        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,
-                                'rundata' in data['ISODISTORT'])
-        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,
-                    ('G2VarList' in data['ISODISTORT']) or
-                    ('G2OccVarList' in data['ISODISTORT']))
-        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,
-                    ('G2VarList' in data['ISODISTORT'])
-#                    or ('G2OccVarList' in data['ISODISTORT'])
-                                                   )
-        if 'radio' not in data['ISODISTORT']:
-            if not data['ISODISTORT']:
-                mainSizer = wx.BoxSizer(wx.VERTICAL)
-                mainSizer.Add(wx.StaticText(ISODIST,
-                        label='No ISODISTORT information found for this phase\n'
-                            +'  (use Operations->Run ISODISTORT to generate)'))
-                SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
-                return
-#patch
-            if 'modeDispl' not in data['ISODISTORT']:
-                data['ISODISTORT']['modeDispl'] = np.zeros(len(data['ISODISTORT']['G2ModeList']))
-#end patch
-            if ISODIST.GetSizer():
-                ISODIST.GetSizer().Clear(True)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            return topSizer
+            
+        def displaySubset():
+            
+            def OnLaue(event):
+                Obj = event.GetEventObject()
+                name = Indx[Obj.GetId()]
+                ISOdata['SGselect'][name[:4]] = not ISOdata['SGselect'][name[:4]]
+                ISOdata['selection'] = None
+                UpdateISODISTORT()
+                
+            def OnAllBtn(event):
+                for item in ISOdata['SGselect']:
+                    ISOdata['SGselect'][item] = not ISOdata['SGselect'][item]
+                ISOdata['selection'] = None
+                UpdateISODISTORT()
+                
             topSizer = wx.BoxSizer(wx.VERTICAL)   
-            bottomSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer.Add(wx.StaticText(ISODIST,
-                         label=''' For use of ISODISTORT, please cite:
-  H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
-  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
-  '''))
-            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:\n'%data['General']['Name']))
-            lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
-            lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-0.1 to +0.1):  '),0,WACV)
-            reset = wx.Button(ISODIST,label='Reset modes')
-            reset.Bind(wx.EVT_BUTTON,OnReset)
-            lineSizer.Add(reset,0,WACV)
-            topSizer.Add(lineSizer)
-            slideSizer = wx.FlexGridSizer(0,3,0,0)
-            slideSizer.AddGrowableCol(2,1)
-            modeDisp = data['ISODISTORT']['modeDispl']
-            for idsp,item in enumerate(data['ISODISTORT']['G2ModeList']):
-                slideSizer.Add(wx.StaticText(ISODIST,label=item.name),0,WACV)
-                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-0.1,xmax=0.1,size=(50,20),OnLeave=OnDispVal)
-                slideSizer.Add(dispVal,0,WACV)
-                displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,value=int(modeDisp[idsp]*1000)+100)
-                displ.SetRange(0,200)
-                displ.Bind(wx.EVT_SLIDER, OnDispl)
-                Indx[displ.GetId()] = [idsp,dispVal]
-                Indx[dispVal.GetId()] = [idsp,displ]
-                slideSizer.Add(displ,1,wx.EXPAND|wx.RIGHT)
-            slideSizer.SetMinSize(wx.Size(350,10))
-            topSizer.Add(slideSizer)
-            mainSizer.Add(topSizer)
-            SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
-            return
-        if ISODIST.GetSizer():
-            ISODIST.GetSizer().Clear(True)
-        SGrange = {'Cubi':np.arange(195,231),'Hexa':np.arange(168,195),'Trig':np.arange(143,168),'Tetr':np.arange(75,143),
-                   'Orth':np.arange(16,75),'Mono':np.arange(3,16),'Tric':np.arange(1,3)}        
-        colLabels = ['select',' ISODISTORT order parameter direction description']
-        colTypes = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.VERTICAL)   
-        bottomSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion search results:'))
-        topSizer.Add(wx.StaticText(ISODIST,label='''
-For use of ISODISTORT, please cite:
-  H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
-  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
-  '''))
-        topSizer.Add(wx.StaticText(ISODIST,label=' Subset selection if desired:'))
-        laueName = ['Cubic','Hexagonal','Trigonal','Tetragonal','Orthorhombic','Monoclinic','Triclinic']
-        littleSizer = wx.FlexGridSizer(0,8,5,5)
-        Indx = {}
-        for name in laueName:
-            laueCk = wx.CheckBox(ISODIST,label=name)
-            Indx[laueCk.GetId()] = name
-            laueCk.SetValue(data['ISODISTORT']['SGselect'][name[:4]])
-            laueCk.Bind(wx.EVT_CHECKBOX,OnLaue)
-            littleSizer.Add(laueCk,0,WACV)
-        allBtn = wx.Button(ISODIST,label='Toggle all')
-        allBtn.Bind(wx.EVT_BUTTON,OnAllBtn)
-        littleSizer.Add(allBtn)
-        topSizer.Add(littleSizer)
+            G2G.HorizontalLine(topSizer,ISODIST)
+            topSizer.Add(wx.StaticText(ISODIST,label='ISODISTORT Method 1 distortion search results:'))
+            topSizer.Add(wx.StaticText(ISODIST,label=' Subset selection if desired:'))
+            laueName = ['Cubic','Hexagonal','Trigonal','Tetragonal','Orthorhombic','Monoclinic','Triclinic']
+            littleSizer = wx.FlexGridSizer(0,8,5,5)
+            Indx = {}
+            for name in laueName:
+                laueCk = wx.CheckBox(ISODIST,label=name)
+                Indx[laueCk.GetId()] = name
+                laueCk.SetValue(data['ISODISTORT']['SGselect'][name[:4]])
+                laueCk.Bind(wx.EVT_CHECKBOX,OnLaue)
+                littleSizer.Add(laueCk,0,WACV)
+            allBtn = wx.Button(ISODIST,label='Toggle all')
+            allBtn.Bind(wx.EVT_BUTTON,OnAllBtn)
+            littleSizer.Add(allBtn)
+            topSizer.Add(littleSizer)
+            return topSizer
+            
+        def displayRadio():
+            
+            def CheckItem(item):
+                SGnum = int(item.split()[1].split('*')[0])
+                for SGtype in ISOdata['SGselect']:
+                    if ISOdata['SGselect'][SGtype] and SGnum in SGrange[SGtype]:
+                        return True
+                return False
         
-        mainSizer.Add(topSizer)
-          
-        if 'radio' in data['ISODISTORT']:
-            Radio = data['ISODISTORT']['radio']
+            def OnSelect(event):
+               r,c = event.GetRow(),event.GetCol()
+               if c == 0:
+                   ISOdata['selection'] = [r,isoTable.GetValue(r,1)]
+                   for row in range(isoGrid.GetNumberRows()):
+                       isoTable.SetValue(row,c,False)
+                   isoTable.SetValue(r,c,True)
+                   isoGrid.ForceRefresh()
+           
+            SGrange = {'Cubi':np.arange(195,231),'Hexa':np.arange(168,195),'Trig':np.arange(143,168),'Tetr':np.arange(75,143),
+                       'Orth':np.arange(16,75),'Mono':np.arange(3,16),'Tric':np.arange(1,3)}        
+            bottomSizer = wx.BoxSizer(wx.VERTICAL)
+            colLabels = ['select',' ISODISTORT order parameter direction description']
+            colTypes = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]
+            
+            Radio = ISOdata['radio']
             rowLabels = []
             table = []
             for i,item in enumerate(Radio):
                 if CheckItem(Radio[item]):
-                    if data['ISODISTORT']['selection'] and data['ISODISTORT']['selection'][0] == i:
+                    if ISOdata['selection'] and ISOdata['selection'][0] == i:
                         table.append([True,Radio[item]])
                     else:
                         table.append([False,Radio[item]])
@@ -7202,14 +7155,146 @@ For use of ISODISTORT, please cite:
             attr.SetBackgroundColour(VERY_LIGHT_GREY)
             isoGrid.SetColAttr(1,attr)
             isoGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnSelect)
-        mainSizer.Add(bottomSizer)
+            return bottomSizer
+                
+        def displayModes():
+            
+            def OnDispl(event):
+                '''Respond to movement of distortion mode slider'''
+                Obj = event.GetEventObject()
+                idsp,dispVal = Indx[Obj.GetId()]
+                modeDisp[idsp] = Obj.GetValue()/1000.
+                dispVal.SetValue(modeDisp[idsp])
+                err = G2mth.ApplyModeDisp(data)
+                if err:
+                    G2G.G2MessageBox(G2frame,'Do Draw atoms first')      
+                FindBondsDraw(data)                
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnDispVal(invalid,value,tc):
+                '''Respond to entry of a value into a distortion mode entry widget'''
+                idsp,displ = Indx[tc.GetId()]
+                displ.SetValue(int(value*1000))
+                err = G2mth.ApplyModeDisp(data)
+                if err:
+                    G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+                FindBondsDraw(data)                
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnRefDispl(event):
+                Obj = event.GetEventObject()
+                idsp = Indx[Obj.GetId()][0]
+                ISOdata['modeDisplFlag'][idsp] = not ISOdata['modeDisplFlag'][idsp]
+                
+            def OnReset(event):
+                '''Reset all distortion mode values to zero'''
+                ISOdata['modeDispl'] = copy.deepcopy(ISOdata['ISOmodeDispl'])
+                err = G2mth.ApplyModeDisp(data)
+                if err:
+                    G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+                FindBondsDraw(data)                
+                G2plt.PlotStructure(G2frame,data)
+                UpdateISODISTORT()
+            
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            topSizer = wx.BoxSizer(wx.VERTICAL)   
+            topSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
+            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:'%data['General']['Name']))
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-2 to +2):  '),0,WACV)
+            reset = wx.Button(ISODIST,label='Reset modes')
+            reset.Bind(wx.EVT_BUTTON,OnReset)
+            lineSizer.Add(reset,0,WACV)
+            topSizer.Add(lineSizer)
+            slideSizer = wx.FlexGridSizer(0,4,0,0)
+            slideSizer.AddGrowableCol(2,1)
+            modeDisp = ISOdata['modeDispl']
+            for idsp,item in enumerate(ISOdata['G2ModeList']):
+                slideSizer.Add(wx.StaticText(ISODIST,label=item.name),0,WACV)
+                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(50,20),OnLeave=OnDispVal)
+                slideSizer.Add(dispVal,0,WACV)
+                displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,value=int(modeDisp[idsp]*1000))
+                displ.Bind(wx.EVT_SLIDER, OnDispl)
+                Indx[displ.GetId()] = [idsp,dispVal]
+                Indx[dispVal.GetId()] = [idsp,displ]
+                slideSizer.Add(displ,1,wx.EXPAND|wx.RIGHT)
+                refDispl = wx.CheckBox(ISODIST,label=' Refine?')
+                refDispl.SetValue(ISOdata['modeDisplFlag'][idsp])
+                refDispl.Bind(wx.EVT_CHECKBOX,OnRefDispl)
+                Indx[refDispl.GetId()] = [idsp]
+                slideSizer.Add(refDispl,0,WACV)
+            slideSizer.SetMinSize(wx.Size(350,10))
+            topSizer.Add(slideSizer)
+            mainSizer.Add(topSizer)
+            SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
+        
+        Indx = {}      
+        ISOdata = data['ISODISTORT']
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,'rundata' in ISOdata)
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,('G2VarList' in ISOdata) 
+            or ('G2OccVarList' in ISOdata))
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,('G2VarList' in ISOdata)
+#           or ('G2OccVarList' in data['ISODISTORT'])
+                                                   )
+        ISOcite = ''' For use of ISODISTORT, please cite:
+  H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
+  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
+  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
+  '''
+        if ISODIST.GetSizer():
+            ISODIST.GetSizer().Clear(True)
+            
+        if 'G2ModeList' in ISOdata:      #invoked only if phase is from a ISODISTORT cif file & thus contains distortion mode constraints
+            
+#patch
+            if 'modeDispl' not in ISOdata:
+                ISOdata['modeDispl'] = np.zeros(len(ISOdata['G2ModeList']))
+            if 'modeDisplFlag' not in ISOdata:
+                ISOdata['modeDisplFlag'] = [False,]*len(ISOdata['G2ModeList'])
+#end patch
+            
+            displayModes()
+            return
+        
+#initialization
+        if 'ParentCIF' not in ISOdata:
+            ISOdata.update({'ParentCIF':'Select','ChildCIF':'Select','ISOmethod':4,
+                'ChildMatrix':np.eye(3),'ChildSprGp':'P 1','ChildCell':'abc',})         #these last 3 currently unused
+#end initialization
+  
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
+        
+        mainSizer.Add(displaySetup())
+           
+        if 'radio' in ISOdata:
+            mainSizer.Add(displaySubset())              
+            mainSizer.Add(displayRadio())
         SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)
         
+    def OnRunISODISTORT(event):
+        ''' this needs to setup for method #3 or #4 in ISODISTORT
+        after providing parent cif:
+        #3 asks for transformation matrix & space group of child structure
+        #4 asks for cif file of child structure
+        '''
+        radio,rundata = ISO.GetISODISTORT(data)
+        if radio:
+            data['ISODISTORT']['radio'] = radio
+            data['ISODISTORT']['rundata'] = rundata
+            data['ISODISTORT']['SGselect'] =  {'Tric':True,'Mono':True,'Orth':True,'Tetr':True,'Trig':True,'Hexa':True,'Cubi':True}
+            data['ISODISTORT']['selection'] = None
+            print('ISODISTORT run complete')
+            wx.CallAfter(UpdateISODISTORT)
+        elif data['ISODISTORT']['ISOmethod'] != 4 or radio is None:
+            G2G.G2MessageBox(G2frame,'ISODISTORT run failed - see page opened in web browser')
+        else:
+            G2G.G2MessageBox(G2frame,'ISODISTORT run complete; new cif file %s created.\n To use, import it as a new phase.'%rundata)
+            print(' ISODISTORT run complete; new cif file %s created. To use, import it as a new phase.'%rundata)
+                
     def OnNewISOPhase(event):
         ''' Make CIF file with ISODISTORT
         '''
-        import ISODISTORT as ISO
-
         if 'rundata' in data['ISODISTORT'] and data['ISODISTORT']['selection'] is not None:
             CIFfile = ISO.GetISODISTORTcif(data)
             G2G.G2MessageBox(G2frame,'ISODISTORT generated cif file %s has been created.'%CIFfile)
@@ -9489,9 +9574,7 @@ For use of ISODISTORT, please cite:
         rMax = max(data['General']['vdWRadii'])
         cell = data['General']['Cell'][1:7]
         drawingData = data['Drawing']
-        voidDlg = wx.Dialog(G2frame,wx.ID_ANY,
-                    'Void computation parameters',
-                    style=wx.DEFAULT_DIALOG_STYLE)
+        voidDlg = wx.Dialog(G2frame,wx.ID_ANY,'Void computation parameters',style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,
                     'Set parameters for void computation for phase '+generalData.get('Name','?')))
@@ -9499,17 +9582,14 @@ For use of ISODISTORT, please cite:
         xmax = 2. - rMax/cell[0]
         voidPar = {'a':1., 'b':1., 'c':1., 'grid':.25, 'probe':0.5}
         for i in ('a', 'b', 'c'):
-            mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,i,
-                'Max '+i+' value: ',0.,xmax,100))
+            mainSizer.Add(G2G.G2SliderWidget(voidDlg,voidPar,i,'Max '+i+' value: ',0.,xmax,100))
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Grid spacing (A)'))
-        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'grid',
-                nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
+        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'grid',nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
         mainSizer.Add(hSizer)
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(voidDlg,wx.ID_ANY,'Probe radius (A)'))
-        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'probe',
-                nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
+        hSizer.Add(G2G.ValidatedTxtCtrl(voidDlg,voidPar,'probe',nDig=(5,2), xmin=0.1, xmax=2., typeHint=float))        
         mainSizer.Add(hSizer)
 
         def OnOK(event): voidDlg.EndModal(wx.ID_OK)
@@ -9531,7 +9611,7 @@ For use of ISODISTORT, please cite:
         voidDlg.Destroy()
         if res != wx.ID_OK: return
         drawingData['Voids'] = VoidMap(data, voidPar['a'], voidPar['b'], voidPar['c'],
-                          voidPar['grid'],voidPar['probe'])
+            voidPar['grid'],voidPar['probe'])
         drawingData['showVoids'] = True
         G2plt.PlotStructure(G2frame,data)
         
@@ -9637,8 +9717,8 @@ For use of ISODISTORT, please cite:
                     xmax=500.,OnLeave=OnCameraPos,size=valSize)
             G2frame.phaseDisplay.cameraPosTxt = cameraPosTxt
             slideSizer.Add(cameraPosTxt,0,WACV)
-            cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
-            cameraPos.SetRange(10,500)
+            cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],
+                minValue=10,maxValue=500,name='cameraSlider')
             cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
             G2frame.phaseDisplay.cameraSlider = cameraPos
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
@@ -9649,9 +9729,8 @@ For use of ISODISTORT, please cite:
                     xmax=.99*drawingData['cameraPos'],size=valSize,OnLeave=OnZclipVal)
             G2frame.phaseDisplay.Zval = Zval
             slideSizer.Add(Zval)
-            Zclip = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'])
+            Zclip = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'],minValue=1,maxValue=99)
             G2frame.phaseDisplay.Zclip = Zclip
-            Zclip.SetRange(1,99)
             Zclip.Bind(wx.EVT_SLIDER, OnZclip)
             slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
             
@@ -9692,8 +9771,7 @@ For use of ISODISTORT, please cite:
             slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond radius, A: '),0,WACV)
             bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'bondRadius',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
             slideSizer.Add(bondRadiusTxt,0,WACV)
-            bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
-            bondRadius.SetRange(1,25)
+            bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']),minValue=1,maxValue=25)
             bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
             slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
             
@@ -9701,8 +9779,7 @@ For use of ISODISTORT, please cite:
                 slideSizer.Add(wx.StaticText(drawOptions,-1,' Mag. mom. mult.: '),0,WACV)
                 magMultTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'magMult',nDig=(10,2),xmin=0.1,xmax=5.,size=valSize,OnLeave=OnMagMultTxt)
                 slideSizer.Add(magMultTxt,0,WACV)
-                magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']))
-                magMult.SetRange(10,500)
+                magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']),minValue=10,maxValue=500)
                 magMult.Bind(wx.EVT_SLIDER, OnMagMult)
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
                         
@@ -9905,8 +9982,8 @@ For use of ISODISTORT, please cite:
                 line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
                 contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
                 line3Sizer.Add(contourMaxTxt,0,WACV)
-                contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),value=int(100*drawingData['contourMax']))
-                contourMax.SetRange(1,100)
+                contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
+                    value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
                 contourMax.Bind(wx.EVT_SLIDER, OnContourMax)
                 line3Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
                 
@@ -11879,9 +11956,8 @@ of the crystal structure.
             OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
                 xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
             OriSizer2.Add(OrientVecSiz[-1],0,WACV)
-            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25))
-            azSlide.SetRange(0,3600)
-            azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
+            azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
+                minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
             azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
             OriSizer2.Add(azSlide,0,WACV)
             mainSizer.Add(OriSizer2)
@@ -11920,9 +11996,7 @@ of the crystal structure.
                         else:
                             torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
                     TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
-                    torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
-                    torSlide.SetRange(0,3600)
-                    torSlide.SetValue(int(torsion[0]*10.))
+                    torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxVaue=3600,value=int(torsion[0]*10.))
                     torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                     TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
                     TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)

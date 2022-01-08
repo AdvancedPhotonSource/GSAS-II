@@ -696,12 +696,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
         if blk.get('_iso_displacivemode_label'):
             modelist = []
             shortmodelist = []
+            modedispl = []
             idlist = []
-            for id,lbl in zip(
+            for id,lbl,val in zip(
                 blk.get('_iso_displacivemode_ID'),
-                blk.get('_iso_displacivemode_label')):
+                blk.get('_iso_displacivemode_label'),
+                blk.get('_iso_displacivemode_value')):
                 idlist.append(int(id))
                 modelist.append(lbl)
+                modedispl.append(float(val))
                 ISODISTORT_shortLbl(lbl,shortmodelist) # shorten & make unique
             # just in case the items are not ordered increasing by id, sort them here
             modelist = [i for i,j in sorted(zip(modelist,idlist),key=lambda k:k[1])]
@@ -749,8 +752,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             for id,lbl,val in zip(
                 blk.get('_iso_deltacoordinate_ID'),
                 blk.get('_iso_deltacoordinate_label'),
-                blk.get('_iso_deltacoordinate_value')
-                ):
+                blk.get('_iso_deltacoordinate_value') ):
                 idlist.append(int(id))
                 coordVarLbl.append(lbl)
                 if '_' in lbl:
@@ -806,7 +808,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
             Var2ModeMatrix = np.linalg.inv(displacivemodematrix)
             # create the constraints
             modeVarList = []
-            modeDispl = []
             for i,(row,norm) in enumerate(zip(Var2ModeMatrix,normlist)):
                 constraint = []
                 for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
@@ -817,7 +818,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 modeVarList.append(modeVar)                
                 constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
-                modeDispl.append(0.0)
             #----------------------------------------------------------------------
             # save the ISODISTORT info for "mode analysis"
             if 'ISODISTORT' not in self.Phase: self.Phase['ISODISTORT'] = {}
@@ -825,15 +825,17 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 # coordinate items
                 'IsoVarList' : coordVarLbl,
                 'G2VarList' : G2varObj,
-                'G2coordOffset' : G2coordOffset, 
+                'G2coordOffset' : G2coordOffset,
+                'G2parentCoords' : [ParentCoordinates[item] for item in ParentCoordinates], #Assumes python 3.7 dict ordering!
                 # mode items
                 'IsoModeList' : modelist,
                 'G2ModeList' : modeVarList,
                 'NormList' : normlist,
+                'modeDispl' : modedispl,
+                'ISOmodeDispl' : copy.deepcopy(modedispl),
                 # transform matrices
                 'Var2ModeMatrix' : Var2ModeMatrix,
                 'Mode2VarMatrix' : displacivemodematrix,
-                'modeDispl' : modeDispl
                 })
             # make explaination dictionary
             for mode,shortmode in zip(modelist,shortmodelist):

@@ -6296,8 +6296,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         elif event.key == 's':
             # write the function values (not peaks) onto a file
             dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', G2G.GetExportPath(G2frame),
-                    wildcard='column-separated file (*.csv)|.csv',
-                    style=wx.FD_CHANGE_DIR|wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+                wildcard='column-separated file (*.csv)|.csv',
+                style=wx.FD_CHANGE_DIR|wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     filename = dlg.GetPath()
@@ -6308,16 +6308,11 @@ def PlotPeakWidths(G2frame,PatternName=None):
             fp = open(filename,'w')
             fp.write("# Peak widths. Def. are default values from InstParms file, fit are from refined Instrument Parameters\n")
             if 'C' in Parms['Type'][0]:
-                Write2csv(fp,['Q',
-                                'Gauss-def','Lorenz-def,total-def',
-                                'Gauss-fit','Lorenz-fit,total-fit']
-                                  ,header=True)
+                Write2csv(fp,['Q','Gauss-def','Lorenz-def,total-def',
+                    'Gauss-fit','Lorenz-fit,total-fit'],header=True)
                 for vals in zip(Q,Y,Z,W,Yf,Zf,Wf): Write2csv(fp,vals)
             else:
-                Write2csv(fp,['Q',
-                                'Gauss-def','Lorenz-def',
-                                'Gauss-fit','Lorenz-fit',]
-                                  ,header=True)
+                Write2csv(fp,['Q','Gauss-def','Lorenz-def','Gauss-fit','Lorenz-fit',],header=True)
                 for vals in zip(Q,S,G,Sf,Gf): Write2csv(fp,vals)
             fp.close()
         wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
@@ -6372,9 +6367,11 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Y = []
     Z = []
     W = []
+    Plot.set_title('Instrument peak widths')
+    Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+    Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
+    negWarn = False
     if 'T' in Parms['Type'][0]:   #'T'OF
-        Plot.set_title('Instrument and sample peak coefficients')
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
         Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
@@ -6382,6 +6379,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
         data = G2mth.setPeakparms(Parms,Parms2,T,Z)
         ds = T/difC
         Q = 2.*np.pi/ds
+        for did in [4,6,8,10]:
+            if np.any(data[did] < 0.):
+                negWarn = True
         A = data[4]
         B = data[6]
         S = 1.17741*np.sqrt(data[8])/T
@@ -6394,6 +6394,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
         fit = G2mth.setPeakparms(Parms,Parms2,T,Z,useFit=True)
         ds = T/difC
         Q = 2.*np.pi/ds
+        for did in [4,6,8,10]:
+            if np.any(fit[did] < 0.):
+                negWarn = True
         Af = fit[4]
         Bf = fit[6]
         Sf = 1.17741*np.sqrt(fit[8])/T
@@ -6426,19 +6429,20 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.legend(loc='best')
     elif 'E' in Parms['Type'][0]:
         isig = 4
-        Plot.set_title('Instrument and sample peak widths')
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
-        Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Q = 2.*np.pi*X*npsind(tth/2.)/12.3986
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        if np.any(data[isig] < 0.):
+            negWarn = True
         s = np.sqrt(data[isig])   #var -> sig(radians)
         Y = sq8ln2*s/X
         Plot.plot(Q,Y,color='r',label='Gaussian')
         
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
+        if np.any(fit[isig] < 0.):
+            negWarn = True
         sf = np.sqrt(fit[isig])
         Yf = sq8ln2*sf/X
         Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
@@ -6465,14 +6469,14 @@ def PlotPeakWidths(G2frame,PatternName=None):
             isig = 8
             igam = 10
         Plot.figure.suptitle(TreeItemText)
-        Plot.set_title('Instrument and sample peak widths')
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
-        Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        for did in [isig,igam]:
+            if np.any(data[did] < 0.):
+                negWarn = True
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
@@ -6484,6 +6488,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,W,color='b',label='G+L')
         
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
+        for did in [isig,igam]:
+            if np.any(fit[did] < 0.):
+                negWarn = True
         sf = np.sqrt(fit[isig])*np.pi/18000.
         gf = fit[igam]*np.pi/18000.
         Gf = G2pwd.getgamFW(gf,sf)      #/2.
@@ -6516,6 +6523,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()
+    if negWarn:
+        Plot.set_title('WARNING: profile coefficients yield negative peak widths; peaks may be skipped in calcuations')
         
     if xylim and not G2frame.G2plotNB.allowZoomReset:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)

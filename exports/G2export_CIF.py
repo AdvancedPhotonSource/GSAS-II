@@ -3904,6 +3904,23 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
             'Controls'].get('CellHistSelection',{})
         self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
+        if self.OverallParms['Controls']['max cyc'] > 1:
+            dlg = wx.MessageDialog(
+                self.G2frame,
+                'GSAS-II reports the maximum shift to s.u. ratio over all cycles in the last refinement,'+
+                ' while CIF expects it over only the last cycle. \n\n'+
+                'Do you want to set the maximum cycles to 1 and repeat the last refinement'+
+                ' so these will be the same before creating CIF? (Use No to continue)',
+                'Max(shift/esd) in question',wx.YES|wx.NO)
+            ret = dlg.ShowModal()
+            dlg.CenterOnParent()
+            dlg.Destroy()
+            if ret == wx.ID_YES:
+                self.OverallParms['Controls']['max cyc'] = 1
+                self.G2frame.OnRefine(None)
+                self.InitExport(event)  # restart export using updated project
+                self.loadTree()
+                
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
         # is there anything to export?
@@ -4536,12 +4553,11 @@ class ExportProjectCIF(ExportCIF):
         self.exporttype = ['project']
 
     def Exporter(self,event=None,seqData=None,Controls=None):
+        self.CIFname = ''
         self.seqData = seqData
         self.Controls = Controls
         self.InitExport(event)
-        self.CIFname = ''
-        # load all of the tree into a set of dicts
-        self.loadTree()
+        self.loadTree()         # load all of the tree into a set of dicts
         self._Exporter(event=event)
         self.CloseFile()
 

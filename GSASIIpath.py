@@ -1080,7 +1080,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
         # also look for matching binary dist in loc/AllBinaries
         versions = {}
         for d in glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*')):
-            v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
+            v = intver(d.rstrip('/').split('_')[-1].lstrip('n'))
             versions[v] = d
         searchpathlist = [os.path.join(loc,'bin')]
         vmin = None

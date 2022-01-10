@@ -216,8 +216,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             if len(varyList):
                 ncyc = int(result[2]['nfev']/len(varyList))
             if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot
-#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-#        for item in table: print item,table[item]               #useful debug - are things shifting?
+        #table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+        #for item in table: print(item,table[item])               #useful debug - are things shifting?
         runtime = time.time()-begin
         Rvals['SVD0'] = result[2].get('SVD0',0)
         Rvals['converged'] = result[2].get('Converged')
@@ -259,9 +259,14 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
             Lastshft = result[0]-values     #NOT last shift since values is starting set before current refinement
+            #table = dict(zip(varyList,zip(values,result[0],Lastshft,Lastshft/sig)))
+            #for item in table: print(item,table[item])               #useful debug
             Rvals['Max shft/sig'] = np.max(np.nan_to_num(Lastshft/sig))
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
+            else:
+                print('Maximum shift/esd = {:.3f} for all cycles'
+                          .format(Rvals['Max shft/sig']))
             # report on refinement issues. Result in Rvals['msg']
             ReportProblems(result,Rvals,varyList)
             break                   #refinement succeeded - finish up!

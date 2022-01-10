@@ -7725,7 +7725,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
                     Rvals['Nobs'],Nvars,Rvals.get('SVD0',0.))
                 if Rvals.get('Max shft/sig') is not None:
-                    text += '\n\tmax shift/esd = {:.3f}'.format(Rvals['Max shft/sig'])
+                    text += '\n\tmax shift/esd = {:.3f} (over all cycles)'.format(Rvals['Max shft/sig'])
                 if 'lamMax' in Rvals:
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?

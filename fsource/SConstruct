@@ -10,7 +10,6 @@ import sys
 import os
 import glob
 import subprocess
-import numpy as np
 #==========================================================================================
 def is_exe(fpath):
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
@@ -128,8 +127,13 @@ if sys.platform == "win32":
       print ('No Fortran compiler in path')
       sys.exit()
 elif sys.platform == "darwin":
-    LDFLAGS = '-undefined dynamic_lookup -bundle'
-    SDKROOT = os.environ['SDKROOT']
+    if 'arm' in platform.machine():
+        LDFLAGS = '-undefined dynamic_lookup -bundle -rpath ./ -mmacosx-version-min=11.1'
+        # I am not sure I completely understand the -rpath & -mmacosx-version-min options,
+        # but thet seem to work; this probably needs to be tested more
+    else:
+        LDFLAGS = '-undefined dynamic_lookup -bundle'
+    SDKROOT = os.environ.get('SDKROOT','')
     F2PYsuffix = '.so'
 elif sys.platform.startswith("linux"):
     #LDFLAGS = '-Wall -shared -static-libgfortran -static-libgcc' # does not work with gfortran 4.4.4 20100726 (Red Hat 4.4.4-13)

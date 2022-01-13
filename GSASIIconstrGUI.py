@@ -1265,8 +1265,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))
-            constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString),
-                           0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString),0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
             #if badVar: eqString[-1] += ' -- Error: variable removed'
             #if note: eqString[-1] += '  (' + note + ')'
             if len(eqString) > 1:
@@ -1296,7 +1295,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     def OnConstDel(event):
         'Delete selected constraints'
         sel = G2frame.constr.GetSelection()
-        delList = []
+        selList = event.GetEventObject().checkboxList
+        selList.reverse()
         for obj,Id,name in event.GetEventObject().checkboxList:
             if obj.GetValue(): del data[name][Id]
         wx.CallAfter(UpdateConstraints,G2frame,data,sel,True)
@@ -1317,7 +1317,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 varname = ""
             lbl = 'Enter value for each term in constraint; sum = new variable'
             dlg = ConstraintDialog(G2frame,constType,lbl,items,
-                                   varname=varname,varyflag=data[name][Id][-2])
+                varname=varname,varyflag=data[name][Id][-2])
         elif data[name][Id][-1] == 'c':
             items = data[name][Id][:-3]+[
                 [str(data[name][Id][-3]),'fixed value =']]
@@ -3856,21 +3856,22 @@ def ShowIsoDistortCalc(G2frame,phase=None):
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 subSizer2.Add((-1,-1))
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)))
+            subSizer1.Add(wx.StaticText(panel1,label=str(lbl)))
+            subSizer1.Add(wx.StaticText(panel1,label=str(G2var)))
             try:
                 value = G2mth.ValEsd(xyz,xyzsig)
             except TypeError:
                 value = str(xyz)            
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            subSizer1.Add(wx.StaticText(panel1,label=value),0,wx.ALIGN_RIGHT)
 
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(G2mode)))
+            subSizer2.Add(wx.StaticText(panel2,label=str(var)))
+            subSizer2.Add(wx.StaticText(panel2,label=str(G2mode)))
             try:
-                value = G2mth.ValEsd(mval,msig)
+                # value = G2mth.ValEsd(mval,msig)
+                value = '%.5f'%(mval/2.)      #why /2.0
             except TypeError:
                 value = str(mval)
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            subSizer2.Add(wx.StaticText(panel2,label=value),0,wx.ALIGN_RIGHT)
     # ISODISTORT occupancy modes
     if 'G2OccVarList' in ISO:
         deltaList = []

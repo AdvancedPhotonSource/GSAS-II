@@ -313,15 +313,16 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
         if 'ISODISTORT' not in Phases[phase]: continue
         data = Phases[phase]
         ISO = data['ISODISTORT']
+        atNames = [atom[0] for atom in data['Atoms']]
+                       
         if 'G2VarList' in ISO:
             deltaList = []
             for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
-                albl = Ilbl[:Ilbl.rfind('_')]
-                pval = 0
-                #v = Ilbl[Ilbl.rfind('_')+1:]
-                #pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+                atnum = atNames.index(Ilbl[:Ilbl.rfind('_')])
+                v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = ISO['G2parentCoords'][atnum][['dx','dy','dz'].index(v)]
                 if var in parmDict:
                     cval = parmDict[var]
                 else:
@@ -330,7 +331,25 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 deltaList.append(cval-pval)
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
             
-        if 'G2OccVarList' in ISO:
+            pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
+            l = str(max([len(i) for i in ISO['IsoModeList']])+3)
+            fmt = '  {:'+l+'}{}'
+            for varid,[var,val,norm,G2mode] in enumerate(zip(
+                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] )):
+                try:
+                    ISO['modeDispl'][varid]  = val/norm
+                    value = G2py3.FormatSigFigs(val/norm)
+                    item = str(G2mode).replace('::','::nv-')
+                    item1 = ISO['G2VarList'][varid].varname()      #case where constraint has only single term
+                    if item in sigDict:
+                        value = G2mth.ValEsd(val/norm,sigDict[item]/norm)
+                    elif item1 in sigDict:
+                        value = G2mth.ValEsd(val/norm,sigDict[item1]/norm)+' *not in refined constraints'
+                except TypeError:
+                    value = '?'
+                pFile.write(fmt.format(var,value)+'\n')
+                
+        if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
             for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
                 var = gv.varname()
@@ -344,21 +363,6 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 deltaOccList.append(cval-pval)
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
             
-        if 'G2VarList' in ISO:
-            pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
-            l = str(max([len(i) for i in ISO['IsoModeList']])+3)
-            fmt = '  {:'+l+'}{}'
-            for var,val,norm,G2mode in zip(
-                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] ):
-                try:
-                    value = G2py3.FormatSigFigs(val/norm)
-                    if str(G2mode) in sigDict:
-                        value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
-                except TypeError:
-                    value = '?'
-                pFile.write(fmt.format(var,value)+'\n')
-                
-        if 'G2OccVarList' in ISO:
             pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
             l = str(max([len(i) for i in ISO['OccModeList']])+3)
             fmt = '  {:'+l+'}{}'

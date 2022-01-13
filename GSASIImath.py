@@ -2170,8 +2170,8 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
     return modeDict,posDict
 
 def ApplyModeDisp(data):
-    ''' Applies ISODISTORT mode displacements to drawing atoms. 
-    This changes the contents of the Draw Atoms positions but not 
+    ''' Applies ISODISTORT mode displacements to atom lists. 
+    This changes the contents of the Draw Atoms positions and 
     the Atoms positions.
 
     :param dict data: the contents of the Phase data tree item for a 

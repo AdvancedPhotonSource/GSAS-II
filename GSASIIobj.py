@@ -261,9 +261,32 @@ Drawing         \\               (dict) Display parameters
                                 in fractional coordinates for the center of
                                 the plot. Second item list of previous & current
                                 atom number viewed (may be [0,0])
+ISODISTORT      \\              (dict) contains controls for running ISODISTORT and results from it
+\\           ISOmethod          (int) ISODISTORT method (currently 1 or 4; 2 & 3 not implemented in GSAS-II)
+\\           ParentCIF          (str) parent cif file name for ISODISTORT method 4
+\\           ChildCIF           (str) child cif file name for ISODISTORT method 4
+\\           SGselect           (dict) selection list for lattice types in radio result from ISODISTORT method 1
+\\           selection          (int) chosen selection from radio
+\\           radio              (list) results from ISODISTORT method 1
+\\           ChildMatrix        (3x3 array) transformation matrix for method 3 (not currently used)
+\\           ChildSprGp         (str) child space group for method 3 (not currently used)
+\\           ChildCell          (str) cell ordering for nonstandard orthorhombic ChildSprGrp in method 3 (not currently used)
+\\           G2ModeList         (list) ISODISTORT mode names
+\\           modeDispl          (list) distortion mode values; refinable parameters
+\\           ISOmodeDispl       (list) distortion mode values as determined in method 4 by ISODISTORT
+\\           NormList           (list) ISODISTORT normalization values; to convert mode value to fractional coordinate dsplacement
+\\           G2parentCoords     (list) full set of parent structure coordinates transformed to child structure; starting basis for mode displacements
+\\           G2VarList          (list) 
+\\           IsoVarList         (list)
+\\           G2coordOffset      (list) only adjustible set of parent structure coordinates
+\\           G2OccVarList       (list) 
+\\           Var2ModeMatrix     (array) atom variable to distortion mode transformation 
+\\           Mode2VarMatrix     (array) distortion mode to atom variable transformation
+\\           rundata            (dict) saved input information for use by ISODISTORT method 1
+
 RBModels        \\               Rigid body assignments (note Rigid body definitions
                                 are stored in their own main top-level tree entry.)
-RMC             \\               (dict) RMCProfile & rmcfull controls
+RMC             \\               (dict) RMCProfile, PDFfit & fullrmc controls
 Pawley ref      \\               (list) Pawley reflections
 Histograms      \\               (dict of dicts) The key for the outer dict is
                                 the histograms tied to this phase. The inner

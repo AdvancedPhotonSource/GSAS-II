@@ -7101,7 +7101,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             for name in laueName:
                 laueCk = wx.CheckBox(ISODIST,label=name)
                 Indx[laueCk.GetId()] = name
-                laueCk.SetValue(data['ISODISTORT']['SGselect'][name[:4]])
+                laueCk.SetValue(ISOdata['SGselect'][name[:4]])
                 laueCk.Bind(wx.EVT_CHECKBOX,OnLaue)
                 littleSizer.Add(laueCk,0,WACV)
             allBtn = wx.Button(ISODIST,label='Toggle all')
@@ -7183,11 +7183,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 
             def OnRefDispl(event):
                 Obj = event.GetEventObject()
-                idsp = Indx[Obj.GetId()][0]
-                ISOdata['modeDisplFlag'][idsp] = not ISOdata['modeDisplFlag'][idsp]
+                idsp,item = Indx[Obj.GetId()]
+                item[-2] = not item[-2]
                 
             def OnReset(event):
-                '''Reset all distortion mode values to zero'''
+                '''Reset all distortion mode values to initial values'''
                 ISOdata['modeDispl'] = copy.deepcopy(ISOdata['ISOmodeDispl'])
                 err = G2mth.ApplyModeDisp(data)
                 if err:
@@ -7196,6 +7196,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 G2plt.PlotStructure(G2frame,data)
                 UpdateISODISTORT()
             
+            ConstrData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Constraints'))
+            pId = data['ranId']
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.VERTICAL)   
             topSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
@@ -7209,9 +7211,12 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             slideSizer = wx.FlexGridSizer(0,4,0,0)
             slideSizer.AddGrowableCol(2,1)
             modeDisp = ISOdata['modeDispl']
-            for idsp,item in enumerate(ISOdata['G2ModeList']):
-                slideSizer.Add(wx.StaticText(ISODIST,label=item.name),0,WACV)
-                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(50,20),OnLeave=OnDispVal)
+            idsp = 0
+            for item in ConstrData['Phase']:
+                if pId != item[-3].phase:
+                    continue
+                slideSizer.Add(wx.StaticText(ISODIST,label=item[-3].name),0,WACV)
+                dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(75,20),OnLeave=OnDispVal)
                 slideSizer.Add(dispVal,0,WACV)
                 displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,value=int(modeDisp[idsp]*1000))
                 displ.Bind(wx.EVT_SLIDER, OnDispl)
@@ -7219,10 +7224,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 Indx[dispVal.GetId()] = [idsp,displ]
                 slideSizer.Add(displ,1,wx.EXPAND|wx.RIGHT)
                 refDispl = wx.CheckBox(ISODIST,label=' Refine?')
-                refDispl.SetValue(ISOdata['modeDisplFlag'][idsp])
+                refDispl.SetValue(item[-2])
                 refDispl.Bind(wx.EVT_CHECKBOX,OnRefDispl)
-                Indx[refDispl.GetId()] = [idsp]
+                Indx[refDispl.GetId()] = [idsp,item]
                 slideSizer.Add(refDispl,0,WACV)
+                idsp += 1
             slideSizer.SetMinSize(wx.Size(350,10))
             topSizer.Add(slideSizer)
             mainSizer.Add(topSizer)
@@ -7246,13 +7252,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
         if 'G2ModeList' in ISOdata:      #invoked only if phase is from a ISODISTORT cif file & thus contains distortion mode constraints
             
-#patch
-            if 'modeDispl' not in ISOdata:
-                ISOdata['modeDispl'] = np.zeros(len(ISOdata['G2ModeList']))
-            if 'modeDisplFlag' not in ISOdata:
-                ISOdata['modeDisplFlag'] = [False,]*len(ISOdata['G2ModeList'])
-#end patch
-            
+# #patch
+#             if 'modeDispl' not in ISOdata:
+#                 ISOdata['modeDispl'] = np.zeros(len(ISOdata['G2ModeList']))
+# #end patch
             displayModes()
             return
         

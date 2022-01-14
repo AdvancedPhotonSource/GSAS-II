@@ -3321,20 +3321,20 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             msg = None
         if msg:
             print('\nInvalid cell metric tensor for phase #{} ({})\n'.format(
-                pId,Phase['General']['Name']),
-                'values (A): {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n'
-                .format(*A))
-            raise G2obj.G2Exception('Error: '+msg+
-                        ' See console.\nCheck for refinement of conflicting variables')
+                pId,Phase['General']['Name']),'values (A): {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n'.format(*A))
+            raise G2obj.G2Exception('Error: '+msg+' See console.\nCheck for refinement of conflicting variables')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
         Vst = np.sqrt(nl.det(G))    #V*
         if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
-            if im:
-                SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
-            elif parmDict[pfx+'isMag'] and 'N' in calcControls[hfx+'histType']:
-                MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+            if 'E' in calcControls[hfx+'histType']:
+                print('\n\n**** Error: EDX data not suitable for Rietveld refinement ****\n\n')
             else:
-                StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                if im:
+                    SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+                elif parmDict[pfx+'isMag'] and 'N' in calcControls[hfx+'histType']:
+                    MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                else:
+                    StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
         badPeak = False
         # test to see if we are using multiprocessing here
         useMP,ncores = G2mp.InitMP()
@@ -3640,7 +3640,7 @@ def getPowderProfileDerv(args):
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail'] and 'E' not in calcControls[hfx+'histType']:
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
                 dFdvDict.update(SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict))
@@ -3903,7 +3903,7 @@ def getPowderProfileDerv(args):
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
-            if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+            if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail'] and 'E' not in calcControls[hfx+'histType']:
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.

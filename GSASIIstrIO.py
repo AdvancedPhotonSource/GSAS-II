@@ -270,7 +270,11 @@ def GetFprime(controlDict,Histograms):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
-            if 'X' in controlDict[hfx+'histType']:
+            if 'E' in controlDict[hfx+'histType']:
+                for El in FFtables:
+                    FFtables[El][hfx+'FP'] = 0.
+                    FFtables[El][hfx+'FPP'] = 0.
+            elif 'X' in controlDict[hfx+'histType']:
                 keV = controlDict[hfx+'keV']
                 for El in FFtables:
                     Orbs = G2el.GetXsectionCoeff(El.split('+')[0].split('-')[0])

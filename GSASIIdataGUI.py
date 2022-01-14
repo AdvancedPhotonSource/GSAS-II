@@ -121,18 +121,18 @@ commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P
 
 def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
     if dType in ['SXC','SNC']:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
             'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
             'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}],
             'Flack':[0.0,False]}
     elif dType == 'SNT':
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
             'Extinction':['Lorentzian','None', {
             'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
     elif 'P' in dType:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],'Type':dType,
             'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                 [1.,1.,1.,0.,0.,0.],6*[False,]],

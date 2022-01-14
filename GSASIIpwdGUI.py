@@ -1349,13 +1349,14 @@ def UpdateBackground(G2frame,data):
             for parm in Inst:
                 insNames.append(parm)
                 insVals.append(Inst[parm][1])
-                if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
+                if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                     'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
                         Inst[parm][2] = False
 #                        insVary.append(parm)
             instDict = dict(zip(insNames,insVals))
-            instDict['X'] = max(instDict['X'],0.01)
-            instDict['Y'] = max(instDict['Y'],0.01)
+            if 'E' not in dataType:  #exclude EDX
+                instDict['X'] = max(instDict['X'],0.01)
+                instDict['Y'] = max(instDict['Y'],0.01)
             if 'SH/L' in instDict:
                 instDict['SH/L'] = max(instDict['SH/L'],0.002)
             return dataType,instDict,insVary
@@ -1366,7 +1367,7 @@ def UpdateBackground(G2frame,data):
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         # sort the points for convenience and then separate them; extend the range if needed
-        if 'FixedPoints' not in background[1]:
+        if 'FixedPoints' not in background[1] or not len(background[1]['FixedPoints']):
             msg = ("You have not defined any fixed background points. "+
                     "Use the Fixed Points/Add menu item to define points that will be fit."+
                     '\n\nSee the "Fitting the Starting Background using Fixed Points" tutorial for more details.')

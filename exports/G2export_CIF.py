@@ -102,7 +102,7 @@ def getCellwStrain(phasedict,seqData,pId,histname):
     try:    # convert to direct cell
         A,zeros = G2stIO.cellFill(pfx,phasedict['General']['SGData'],cellDict,zeroDict)
         cell = list(G2lat.A2cell(A)) + [G2lat.calc_V(A)]
-        cE = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,covData)
+        cE = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,covData,unique=True)
     except:
         cell = 7*[None]
         cE = 7*[None]
@@ -278,7 +278,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
-                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData,unique=True)
                 except:
                     c = 6*[None]
                     cE = 6*[None]
@@ -2512,7 +2512,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info
             WriteCIFitem(self.fp, '_pd_phase_name', phasenam)
-            cellList,cellSig = self.GetCell(phasenam)
+            cellList,cellSig = self.GetCell(phasenam,unique=True)
             if quick:  # leave temperature as unknown
                 WriteCIFitem(self.fp,"_cell_measurement_temperature","?")
             elif oneblock:
@@ -2654,7 +2654,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info
             WriteCIFitem(self.fp, '_cell.entry_id', phasenam)
-            cellList,cellSig = self.GetCell(phasenam)
+            cellList,cellSig = self.GetCell(phasenam,unique=True)
             if oneblock:
                 pass # temperature should be written when the histogram saved later
             else: # get T set in _SelectPhaseT_CellSelectHist and possibly get new cell params

@@ -2075,28 +2075,37 @@ def getConstrError(constrLst,seqmode,seqhst):
             note = 'Parameters removed'
     return False,msg,note
         
-def ComputeDepESD(covMatrix,varyList,parmDict):
+def ComputeDepESD(covMatrix,varyList,allvars=True):
     '''Compute uncertainties for dependent parameters from independent ones
     returns a dictionary containing the esd values for dependent parameters
+    
+    :param np.array covMatrix: the full covariance matrix
+    :param list varyList: the names of the variables matching the columns 
+      and rows in covMatrix
+    :param bool allvars: When True (default) s.u. values for all parameters 
+      are placed in the returned dict. When False the number of s.u. values
+      attempts to match the number of refined degrees of freedom. The s.u.'s 
+      for dependent params from equivalences are not computed and 
+      the number of dependent params from new var and generated var
+      constraints matches the number of refined independent parameters. 
     '''
     sigmaDict = {}
-    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
-        #if invmultarr is None: continue # probably not needed
-#        try: 
-#            valuelist = [parmDict[var] for var in mapvars]
-#        except KeyError:
-#            continue
+    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
+        if multarr is None and not allvars: continue # probably not needed
+        varied = 0
         # get the v-covar matrix for independent parameters 
         vcov = np.zeros((len(mapvars),len(mapvars)))
         for i1,name1 in enumerate(mapvars):
             if name1 not in varyList: continue
+            varied += 1
             iv1 = varyList.index(name1)
             for i2,name2 in enumerate(mapvars):
                 if name2 not in varyList: continue
                 iv2 = varyList.index(name2)
                 vcov[i1][i2] = covMatrix[iv1][iv2]
         # vec is the vector that multiplies each of the independent values
-        for v,vec in zip(varlist,invmultarr):
+        for i,(v,vec) in enumerate(zip(varlist,invmultarr)):
+            if i == varied: break
             sigmaDict[v] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
     return sigmaDict
 

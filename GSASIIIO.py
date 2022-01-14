@@ -1457,7 +1457,7 @@ class ExportBaseclass(object):
         
         self.G2frame.CheckNotebook()
         self.parmDict = {}
-        self.sigDict = {}
+        self.sigDict = {} # dict with s.u. values, currently used only for CIF exports
         rigidbodyDict = {}
         covDict = {}
         consDict = {}
@@ -1531,7 +1531,7 @@ class ExportBaseclass(object):
         G2mv.Dict2Map(self.parmDict)   # add the constrained values to the parameter dictionary
         # and add their uncertainties into the esd dictionary (sigDict)
         if covDict.get('covMatrix') is not None:
-            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],self.parmDict))
+            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],allvars=False))
 
     def loadTree(self):
         '''Load the contents of the data tree into a set of dicts
@@ -1805,10 +1805,13 @@ class ExportBaseclass(object):
         #GSASIIpath.IPyBreak()
 
     # Tools to pull information out of the data arrays
-    def GetCell(self,phasenam):
+    def GetCell(self,phasenam,unique=False):
         """Gets the unit cell parameters and their s.u.'s for a selected phase
 
         :param str phasenam: the name for the selected phase
+        :param bool unique: when True, only directly refined parameters
+          (a in cubic, a & alpha in rhombohedral cells) are assigned 
+          positive s.u. values. Used as True for CIF generation.
         :returns: `cellList,cellSig` where each is a 7 element list corresponding
           to a, b, c, alpha, beta, gamma, volume where `cellList` has the
           cell values and `cellSig` has their uncertainties.
@@ -1820,7 +1823,7 @@ class ExportBaseclass(object):
             pfx = str(phasedict['pId'])+'::'
             A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
             cellSig = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,
-                self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
+                self.OverallParms['Covariance'],unique=unique)  # returns 7 vals, includes sigVol
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             return cellList,cellSig
         except KeyError:

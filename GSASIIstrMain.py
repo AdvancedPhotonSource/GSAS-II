@@ -406,7 +406,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
                        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
                        'newCellDict':newCellDict,'freshCOV':True}
             # add the uncertainties into the esd dictionary (sigDict)
-            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
+            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
@@ -842,7 +842,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 break
             sigDict = dict(zip(varyList,sig))
             # the uncertainties for dependent constrained parms into the esd dict
-            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
+            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             msg = None

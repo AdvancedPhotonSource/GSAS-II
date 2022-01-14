@@ -5015,9 +5015,7 @@ class G2Phase(G2ObjectWrapper):
                                covDict.get('sig',[])))
 
             if covDict.get('covMatrix') is not None:
-                sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],
-                                                  covDict['varyList'],
-                                                  parmDict))
+                sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList']))
 
             A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
             cellSig = G2stIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
@@ -5062,9 +5060,7 @@ class G2Phase(G2ObjectWrapper):
                            covDict.get('sig',[])))
 
         if covDict.get('covMatrix') is not None:
-            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],
-                                              covDict['varyList'],
-                                              parmDict))
+            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],allvars=False))
 
         with open(outputname, 'w') as fp:
             fp.write(' \n' + 70*'#' + '\n')

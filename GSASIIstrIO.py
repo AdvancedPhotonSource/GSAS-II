@@ -1831,13 +1831,16 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                             sum = np.sum(Z)
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
         
-def getCellEsd(pfx,SGData,A,covData):
+def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters
     
     :param str pfx: prefix of form p\:\:
     :param SGdata: space group information
     :param list A: Reciprocal cell Ai terms
     :param dict covData: covariance tree item 
+    :param bool unique: when True, only directly refined parameters
+      (a in cubic, a & alpha in rhombohedral cells) are assigned 
+      positive s.u. values. Used for CIF generation.
     '''
     rVsq = G2lat.calc_rVsq(A)
     G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
@@ -1891,11 +1894,25 @@ def getCellEsd(pfx,SGData,A,covData):
     CS = np.where(var>0.,np.sqrt(var),0.)
     if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
         CS[3:6] = 0.0
+    # show s.u. values only for the unique values
+    if not unique:
+        pass
+    elif SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','4/m', '4/mmm']:
+        CS[1] = -CS[1]
+    elif SGData['SGLaue'] in ['m3','m3m']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+    elif SGData['SGLaue'] in ['3R','3mR']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+        CS[4] = -CS[4]
+        CS[3] = -CS[3]
     return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
 
 def getCellSU(pId,hId,SGData,parmDict,covData):
     '''Compute the unit cell parameters and standard uncertainties
-    where lattice parameters and Hstrain (Dij) may be refined
+    where lattice parameters and Hstrain (Dij) may be refined. This is 
+    called only for generation of CIFs. 
     
     :param pId: phase index
     :param hId: histogram index
@@ -1962,6 +1979,17 @@ def getCellSU(pId,hId,SGData,parmDict,covData):
     CS = np.where(var>0.,np.sqrt(var),0.)
     if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
         CS[3:6] = 0.0
+    # show s.u. values only for the unique values
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','4/m', '4/mmm']:
+        CS[1] = -CS[1]
+    elif SGData['SGLaue'] in ['m3','m3m']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+    elif SGData['SGLaue'] in ['3R','3mR']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+        CS[4] = -CS[4]
+        CS[3] = -CS[3]
     return cell,[CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
 
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
@@ -2205,7 +2233,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         pfx = str(pId)+'::'
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
-            cellSig = getCellEsd(pfx,SGData,A,covData)  #includes sigVol
+            cellSig = getCellEsd(pfx,SGData,A,covData,unique=True)  #includes sigVol
             if pFile: pFile.write(' Reciprocal metric tensor: \n')
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']
@@ -2233,7 +2261,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for name,fmt,a,siga in zip(names,ptfmt,cell[1:8],cellSig):
                 namstr += '%12s'%(name)
                 ptstr += fmt%(a)
-                if siga:
+                if siga and siga > 0:
                     sigstr += fmt%(siga)
                 else:
                     sigstr += 12*' '

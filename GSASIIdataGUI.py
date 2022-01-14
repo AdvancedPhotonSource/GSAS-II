@@ -1265,10 +1265,10 @@ class GSASII(wx.Frame):
                     UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 elif histoName in PWDRlist:
                     Id = GetGPXtreeItemId(self,self.root,histoName)
-                    refList = self.GPXtree.GetItemPyData(
-                        GetGPXtreeItemId(self,Id,'Reflection Lists'))
+                    Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Instrument Parameters'))[0]
+                    refList = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Reflection Lists'))
                     refList[generalData['Name']] = {}
-                    UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
+                    UseList[histoName] = SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+histoName)
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
@@ -2042,7 +2042,7 @@ class GSASII(wx.Frame):
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             for histoName in newHistList:
-                UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
+                UseList[histoName] = SetDefaultDData(Iparm1['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 Id = GetGPXtreeItemId(self,self.root,histoName)
                 refList = self.GPXtree.GetItemPyData(
                     GetGPXtreeItemId(self,Id,'Reflection Lists'))

@@ -103,8 +103,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         return macro        #advanced past 1st line
         
     def getMOGULFile():
-        # Type,Classification, No. of hits, Query value, Mean, Std. dev.
-        colNums = [0,2,3,5,6,7]
+        colNums = [0,2,3,5,6,7] # location for these fields:
+        # Type, Fragment, No. of hits, Query value, Mean, Std. dev.
         dlg = wx.FileDialog(G2frame,message='Choose MOGUL csv file',
             defaultDir='.',defaultFile="",wildcard="MOGUL csv file (*.csv)|*.csv",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
@@ -119,7 +119,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     print ('**** ERROR - file selected is not a MOGUL csv file, try again ****')
                     mogul = []
                 else:
-                    for i,k in enumerate(('Type','Classification',
+                    for i,k in enumerate(('Type','Fragment',
                             'No. of hits','Query value','Mean','Std. dev.')):
                         try:
                             colNums[i] = head.split(',').index(k)

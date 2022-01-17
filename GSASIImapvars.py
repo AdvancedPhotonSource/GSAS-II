@@ -2381,16 +2381,13 @@ def Dict2Deriv(varyList,derivDict,dMdv):
             # dependent variables to the independent ones
             if name not in varyList: continue # skip if independent var not varied
             if multarr is None:
+                if debug: print ('start dMdv for',name,dMdv[varyList.index(name)])
                 for v,m in zip(varlist,invmultarr):
-                    if debug: print ('start dMdv',dMdv[varyList.index(name)])
-                    if debug: print ('add derv',v,'/',m[0],'to derv',name,'add=',derivDict[v] / m[0])
-                    if m == 0: continue
-                    dMdv[varyList.index(name)] += derivDict[v] / m[0]
+                    if m[0] == 0: continue
+                    dMdv[varyList.index(name)] += derivDict[v]/ m[0] 
             else:
-                for v,m in zip(varlist,multarr[i,:]):
-                    if debug: print ('start dMdv',dMdv[varyList.index(name)])
-                    if debug: print ('add derv',v,'*',m,'to derv',name,'add=',m * derivDict[v])
-                    if m == 0 or name not in varyList: continue
+                for v,m in zip(varlist,invmultarr[:,i]):
+                    if m == 0: continue
                     dMdv[varyList.index(name)] += m * derivDict[v]
 
 def Map2Dict(parmDict,varyList):

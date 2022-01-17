@@ -23,6 +23,7 @@ calculation & for the 1st selected derivative (rest should be the same).
 import sys
 import os
 import platform
+import copy
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
     import StringIO
@@ -44,15 +45,11 @@ except ImportError:
     pass
 
 try:
-    wx.NewId
+    NewId = wx.NewIdRef
 except AttributeError:
-    wx.NewId = wx.NewIdRef
-
-def create(parent):
-    return testDeriv(parent)
-    
+    NewId = wx.NewId
 [wxID_FILEEXIT, wxID_FILEOPEN, wxID_MAKEPLOTS, wxID_CLEARSEL,wxID_SELECTALL,
-] = [wx.NewId() for _init_coll_File_Items in range(5)]
+] = [NewId() for _init_coll_File_Items in range(5)]
 
 def FileDlgFixExt(dlg,file):            #this is needed to fix a problem in linux wx.FileDialog
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
@@ -67,11 +64,11 @@ class testDeriv(wx.Frame):
             size=wx.Size(800, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(wxID_FILEOPEN,'Open testDeriv file','Open testDeriv')
-        self.File.Append(wxID_MAKEPLOTS,'Make plots','Make derivative plots')
-        self.File.Append(wxID_SELECTALL,'Select all')
-        self.File.Append(wxID_CLEARSEL,'Clear selections')
-        self.File.Append(wxID_FILEEXIT,'Exit','Exit from testDeriv')
+        self.File.Append(wxID_FILEOPEN,'Open testDeriv file\tCtrl+O','Open testDeriv')
+        self.File.Append(wxID_MAKEPLOTS,'Make plots\tCtrl+P','Make derivative plots')
+        self.File.Append(wxID_SELECTALL,'Select all\tCtrl+S')
+        self.File.Append(wxID_CLEARSEL,'Clear selections\tCtrl+C')
+        self.File.Append(wxID_FILEEXIT,'Exit\tALT+F4','Exit from testDeriv')
         self.Bind(wx.EVT_MENU,self.OnTestRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnMakePlots,id=wxID_MAKEPLOTS)
         self.Bind(wx.EVT_MENU,self.ClearSelect,id=wxID_CLEARSEL)
@@ -79,7 +76,7 @@ class testDeriv(wx.Frame):
         self.Bind(wx.EVT_MENU,self.OnFileExit, id=wxID_FILEEXIT)
         self.testDerivMenu.Append(menu=self.File, title='File')
         self.SetMenuBar(self.testDerivMenu)
-        self.testDerivPanel = wx.ScrolledWindow(self)        
+        self.testDerivPanel = wx.ScrolledWindow(self)
         self.plotNB = plot.PlotNotebook()
         self.testFile = ''
         arg = sys.argv
@@ -97,6 +94,7 @@ class testDeriv(wx.Frame):
         self.dirname = ''
         self.testfile = []
         self.dataFrame = None
+        self.timingOn = False
 
     def ExitMain(self, event):
         sys.exit()
@@ -148,6 +146,7 @@ class testDeriv(wx.Frame):
             if name.split(':')[-1] in ['Shift','DisplaceX','DisplaceY',]:
                 self.delt[iname] = 0.1
         file.close()
+        G2mv.InitVars()
         msg = G2mv.EvaluateMultipliers(self.constrDict,self.parmDict)
         if msg:
             print('Unable to interpret multiplier(s): '+msg)
@@ -155,9 +154,10 @@ class testDeriv(wx.Frame):
         G2mv.GenerateConstraints(self.varylist,self.constrDict,self.fixedList,self.parmDict)
         print(G2mv.VarRemapShow(self.varylist))
         print('Dependent Vary List:',self.depVarList)
-            
+        G2mv.Map2Dict(self.parmDict,copy.copy(self.varylist))   # compute independent params, N.B. changes varylist
+        G2mv.Dict2Map(self.parmDict) # imposes constraints on dependent values
+
     def UpdateControls(self,event):
-        
         def OnItemCk(event):
             Obj = event.GetEventObject()
             item = ObjInd[Obj.GetId()]
@@ -174,13 +174,17 @@ class testDeriv(wx.Frame):
             self.delt[item] = value
             Obj.SetValue('%g'%(value))
         
-        self.testDerivPanel.DestroyChildren()
+        if self.testDerivPanel.GetSizer():
+            self.testDerivPanel.GetSizer().Clear(True)
         ObjInd = {}
-        names = self.names
         use = self.use
         delt = self.delt
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        self.timingVal = wx.CheckBox(self.testDerivPanel,label='Show Execution Profiling')
+        topSizer.Add(self.timingVal,0)
+        topSizer.Add((-1,10))
         mainSizer = wx.FlexGridSizer(0,8,5,5)
-        for id,[ck,name,d] in enumerate(zip(use,names,delt)):
+        for id,[ck,name,d] in enumerate(zip(use,self.names,delt)):
             useVal = wx.CheckBox(self.testDerivPanel,label=name)
             useVal.SetValue(ck)
             ObjInd[useVal.GetId()] = id
@@ -191,36 +195,40 @@ class testDeriv(wx.Frame):
             delVal.Bind(wx.EVT_TEXT_ENTER,OnDelValue)
             delVal.Bind(wx.EVT_KILL_FOCUS,OnDelValue)
             mainSizer.Add(delVal,0)
-        self.testDerivPanel.SetSizer(mainSizer)    
-        Size = mainSizer.GetMinSize()
-        self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        topSizer.Add(mainSizer,0)
+        self.testDerivPanel.SetSizer(topSizer)    
+        Size = topSizer.GetMinSize()
+        self.testDerivPanel.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
         Size[1] = min(200,Size[1])
-        self.testDerivPanel.SetSize(Size)
+        Size[0] += 20
+        self.SetSize(Size)
 
     def OnMakePlots(self,event):
         
         def test1():
             fplot = self.plotNB.add('function test').gca()
-            pr = cProfile.Profile()
-            pr.enable()
+            if self.timingOn:
+                pr = cProfile.Profile()
+                pr.enable()
             M = G2stMth.errRefine(self.values,self.HistoPhases,
                 self.parmDict,self.varylist,self.calcControls,
                 self.pawleyLookup,None)
-            pr.disable()
-            s = StringIO.StringIO()
-            sortby = 'tottime'
-            ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
-            print('Profiler of function calculation; top 50% of routines:')
-            ps.print_stats("GSASII",.5)
-            print(s.getvalue())
+            if self.timingOn:
+                pr.disable()
+                s = StringIO.StringIO()
+                sortby = 'tottime'
+                ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
+                print('Profiler of function calculation; top 50% of routines:')
+                ps.print_stats("GSASII",.5)
+                print(s.getvalue())
             fplot.plot(M,'r',label='M')
             fplot.legend(loc='best')
             
         def test2(name,delt,doProfile):
             Title = 'derivatives test for '+name
-            names = self.names
+            ind = self.names.index(name)
             hplot = self.plotNB.add(Title).gca()
-            if doProfile:
+            if doProfile and self.timingOn:
                 pr = cProfile.Profile()
                 pr.enable()
             #regenerate minimization fxn
@@ -228,8 +236,8 @@ class testDeriv(wx.Frame):
                 self.parmDict,self.varylist,self.calcControls,
                 self.pawleyLookup,None)
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
-                names,self.calcControls,self.pawleyLookup,None)
-            if doProfile:
+                self.names,self.calcControls,self.pawleyLookup,None)
+            if doProfile and self.timingOn:
                 pr.disable()
                 s = StringIO.StringIO()
                 sortby = 'tottime'
@@ -237,29 +245,46 @@ class testDeriv(wx.Frame):
                 ps.print_stats("GSASII",.5)
                 print('Profiler of '+name+' derivative calculation; top 50% of routines:')
                 print(s.getvalue())
-            M2 = dMdV[names.index(name)]
+            M2 = dMdV[ind]
             hplot.plot(M2,'b',label='analytic deriv')
-            mmin = np.min(dMdV[names.index(name)])
-            mmax = np.max(dMdV[names.index(name)])
+            mmin = np.min(dMdV[ind])
+            mmax = np.max(dMdV[ind])
             if name in self.varylist:
-                self.values[self.varylist.index(name)] -= delt
+                ind = self.varylist.index(name)
+                orig = copy.copy(self.parmDict)  # save parmDict before changes
+                self.parmDict[name] = self.values[ind] =  self.values[ind] - delt
+                G2mv.Dict2Map(self.parmDict)
+                first = True
+                for i in self.parmDict:
+                    if orig[i] != self.parmDict[i] and i != name:
+                        if first:
+                            print('Propogated changes from this shift')
+                            print(name,orig[name],self.parmDict[name],orig[name]-self.parmDict[name])
+                            print('are:')
+                            first = False
+                        print(i,orig[i],self.parmDict[i],orig[i]-self.parmDict[i])
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    names,self.calcControls,self.pawleyLookup,None)
-                self.values[self.varylist.index(name)] += 2.*delt
+                    self.names,self.calcControls,self.pawleyLookup,None)
+                self.parmDict[name] = self.values[ind] =  self.values[ind] + 2.*delt
+                G2mv.Dict2Map(self.parmDict)
                 M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    names,self.calcControls,self.pawleyLookup,None)
-                self.values[self.varylist.index(name)] -= delt
+                    self.names,self.calcControls,self.pawleyLookup,None)
+                self.parmDict[name] = self.values[ind] =  self.values[ind] - delt
+                G2mv.Dict2Map(self.parmDict)
             elif name in self.depVarList:   #in depVarList
                 if 'dA' in name:
                     name = name.replace('dA','A')
-                    delt *= -1
+                    #delt *= -1  # why???
                 self.parmDict[name] -= delt
+                G2mv.Dict2Map(self.parmDict)
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    names,self.calcControls,self.pawleyLookup,None)
+                        self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] += 2.*delt
+                G2mv.Dict2Map(self.parmDict)
                 M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    names,self.calcControls,self.pawleyLookup,None)
+                        self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] -= delt    
+                G2mv.Dict2Map(self.parmDict)
             Mn = (M1-M0)/(2.*abs(delt))
             print('parameter:',name,self.parmDict[name],delt,mmin,mmax,np.sum(M0),np.sum(M1),np.sum(Mn))
             hplot.plot(Mn,'r',label='numeric deriv')
@@ -269,25 +294,22 @@ class testDeriv(wx.Frame):
             self.plotNB.nb.DeletePage(0)
             
         test1()
+        self.timingOn = self.timingVal.GetValue()
 
         doProfile = True
-        for use,name,delt in zip(self.use,self.varylist+self.depVarList,self.delt):
+        for use,name,delt in zip(self.use,self.names,self.delt):
             if use:
                 test2(name,delt,doProfile)
                 doProfile = False
         
         self.plotNB.Show()
         
-class testDerivmain(wx.App):
-    def OnInit(self):
-        self.main = testDeriv(None)
-        self.main.Show()
-        self.SetTopWindow(self.main)
-        return True
-
 def main():
     'Starts main application to compute and plot derivatives'
-    application = testDerivmain(0)
+    application = wx.App(0)
+    application.main = testDeriv(None)
+    application.main.Show()
+    application.SetTopWindow(application.main)
     application.MainLoop()
     
 if __name__ == '__main__':

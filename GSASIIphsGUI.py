@@ -4824,10 +4824,7 @@ def UpdatePhaseData(G2frame,Item,data):
                    i,xmin=1,xmax=Xmax,size=(50,25),OnLeave=SetRestart),0,WACV)
            return superSizer
                       
-        def FileSizer(RMCPdict,mainSizer):
-            
-            def OnFitScale(event):
-                RMCPdict['FitScale'] = not RMCPdict['FitScale']
+        def FileSizer(RMCPdict):
             
             def OnFileSel(event):
                 Obj = event.GetEventObject()
@@ -4921,7 +4918,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict['SeqReverse'] = not RMCPdict['SeqReverse']
 
             Indx = {}
-            if G2frame.RMCchoice == 'PDFfit':
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            if G2frame.RMCchoice == 'PDFfit'and RMCPdict['refinement'] != 'sequential':
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 reftype = wx.RadioBox(G2frame.FRMC,label='PDFfit refinement type:',choices=['normal','sequential'])
                 reftype.SetStringSelection(RMCPdict.get('refinement','normal'))
@@ -5010,12 +5008,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                 mainSizer.Add(fileSizer,0)
-                fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
-                fitscale.SetValue(RMCPdict['FitScale'])
-                fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
-                mainSizer.Add(fitscale,0)
-                return 
+                return mainSizer
+            
             elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
+                
                 def OnAddPDF(event):
                     ''' Add PDF G(r)s while maintanining original sequence
                     '''
@@ -5099,7 +5095,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 RMCPdict['seqfiles'][r][1][parm] = float(seqGrid.GetCellValue(r,c))
                             else:
                                 RMCPdict['seqfiles'][r][1]['Fitrange'][c] = float(seqGrid.GetCellValue(r,c))
-
+                                
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
                 mainSizer.Add(topSizer)                
@@ -5131,7 +5127,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 seqGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, OnSetColVal)
                 seqGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSetVal)
                 mainSizer.Add(seqGrid)
-                return
+                return mainSizer
+            
+# begin FileSizer
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             topSizer.Add(wx.StaticText(G2frame.FRMC,label='  Select data for processing: '))
             mainSizer.Add(topSizer)
@@ -5203,13 +5201,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileSizer.Add(qbroadref,0,WACV)
                     
             mainSizer.Add(fileSizer,0)
-            if 'PDFfit' not in G2frame.RMCchoice:
-                fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
-                fitscale.SetValue(RMCPdict['FitScale'])
-                fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
-                mainSizer.Add(fitscale,0)
                 
-            return
+            return mainSizer
         
         def fullrmcSizer(RMCPdict):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5502,7 +5495,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             #     mainSizer.Add(GetTorsionSizer(),0)
     
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            FileSizer(RMCPdict,mainSizer)
+            mainSizer.Add(FileSizer(RMCPdict))
             return mainSizer
             
         def RMCProfileSizer(RMCPdict):
@@ -5596,6 +5589,9 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             def OnStrain(event):
                 RMCPdict['UseSampBrd'][1] = strain.GetValue()
                 
+            def OnFitScale(event):
+                RMCPdict['FitScale'] = not RMCPdict['FitScale']
+
             def SetRestart(invalid,value,tc):
                 RMCPdict['ReStart'] = [True,True]
                 
@@ -5944,9 +5940,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             strain.Bind(wx.EVT_CHECKBOX,OnStrain)
             samSizer.Add(samSize,0,WACV)
             samSizer.Add(strain,0,WACV)
+            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+            fitscale.SetValue(RMCPdict['FitScale'])
+            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+            samSizer.Add(fitscale,0,WACV)
             mainSizer.Add(samSizer,0)
 
-            FileSizer(RMCPdict,mainSizer)
+            mainSizer.Add(FileSizer(RMCPdict))
             return mainSizer
             
         def PDFfitSizer(data):
@@ -6137,7 +6137,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer.Add(PDFParmSizer(),0)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            FileSizer(RMCPdict,mainSizer)
+            mainSizer.Add(FileSizer(RMCPdict))
             return mainSizer
             
 ####start of UpdateRMC            
@@ -6507,9 +6507,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if sys.platform == "darwin":
                 GSASIIpath.MacRunScript(os.path.abspath('fullrmc.sh'))
             else:
-                # TODO: better to create this in a new terminal on Linux
                 Proc = subp.Popen(['/bin/bash','fullrmc.sh'])
-                Proc.wait()     #for it to finish before continuing on
+#                Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
                     
     def RunRMCProfile(event):
@@ -6566,7 +6565,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         batch.write('pause\n')
         batch.close()
         Proc = subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
-        Proc.wait()     #for it to finish before continuing on
+#        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         
     def OnRunRMC(event):

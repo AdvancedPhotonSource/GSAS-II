@@ -2697,8 +2697,6 @@ def MakeBragg(PWDdata,Name,Phase):
     Bank = int(Inst['Bank'][1])
     Sample = PWDdata['Sample Parameters']
     Scale = Sample['Scale'][0]
-    if 'X' in Inst['Type'][1]:
-        Scale *= 2.
     Limits = PWDdata['Limits'][1]
     Ibeg = np.searchsorted(Data[0],Limits[0])
     Ifin = np.searchsorted(Data[0],Limits[1])+1
@@ -2801,7 +2799,8 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
     fl.write('IGNORE_HISTORY_FILE ::\n')
     fl.write('\n')
-    fl.write('NEUTRON_COEFFICIENTS :: '+''.join(['%9.5f'%coeff for coeff in Ncoeff])+'\n')
+    if 'T' in inst['Type'][1]:
+        fl.write('NEUTRON_COEFFICIENTS :: '+''.join(['%9.5f'%coeff for coeff in Ncoeff])+'\n')
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)
     fl.write('  > MXDIST :: %s\n'%maxD)
@@ -2869,6 +2868,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
             if 'Xray' in File and 'F(Q)' in File:
                 fqdata = open(Files[File][0],'r')
                 lines = int(fqdata.readline()[:-1])
+                fqdata.close()
             fl.write('\n')
             fl.write('%s ::\n'%File.split(';')[0].upper().replace(' ','_'))
             fl.write('  > FILENAME :: %s\n'%Files[File][0])
@@ -2899,7 +2899,8 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     fl.write('  > RECALCUATE\n')
     fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
     fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
-    fl.write('  > SCATTERING LENGTH :: '+''.join(['%8.4f'%blen for blen in Nblen])+'\n')
+    if 'T' in inst['Type'][1]:
+        fl.write('  > SCATTERING LENGTH :: '+''.join(['%8.4f'%blen for blen in Nblen])+'\n')
     fl.write('\n')
     fl.write('END  ::\n')
     fl.close()
@@ -3658,7 +3659,7 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
     for angle in angleList:
         Oxyz = np.array(Atoms[angle[0]][1:])
         TAxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[0]])        
-        TBxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[1]])        
+        TBxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[1]])
         DAxV = np.inner(np.array([TAxyz-Oxyz+unit for unit in Units]),Amat)
         DAx = np.sqrt(np.sum(DAxV**2,axis=2))
         DBxV = np.inner(np.array([TBxyz-Oxyz+unit for unit in Units]),Amat)
@@ -3670,7 +3671,6 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
             DBv = DBxV[iB,i]/DBx[iB,i]
             bondAngles.append(npacosd(np.sum(DAv*DBv)))
     return np.array(bondAngles)
-    
     
 #### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):

@@ -11998,7 +11998,7 @@ of the crystal structure.
                         else:
                             torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
                     TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
-                    torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxVaue=3600,value=int(torsion[0]*10.))
+                    torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxValue=3600,value=int(torsion[0]*10.))
                     torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                     TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
                     TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)

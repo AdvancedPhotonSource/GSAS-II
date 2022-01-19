@@ -436,20 +436,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
             hstrainSizer.Add(hstrainRef,0,WACV|wx.LEFT,5)
             hstrainVal = G2G.ValidatedTxtCtrl(DData,
-                        UseList[G2frame.hist]['HStrain'][0],Id,nDig=(10,3,'g'),
-                        OnLeave=OnNewValueReDraw)
+                UseList[G2frame.hist]['HStrain'][0],Id,nDig=(10,3,'g'),OnLeave=OnNewValueReDraw)
             if abs(UseList[G2frame.hist]['HStrain'][0][Id]) > 1e-8:
                 allzero = False
             hstrainSizer.Add(hstrainVal,0,WACV)
         hSizer.Add(hstrainSizer,0)
         if not allzero:   # show Dij shifted unit cell
             DijVals = UseList[G2frame.hist]['HStrain'][0][:]
+            A = G2lat.cell2A(data['General']['Cell'][1:7])
             # apply the Dij values to the reciprocal cell
-            newA = []
-            Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
-            for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
-                            ['D11','D22','D33','D12','D13','D23']):
-                newA.append(Aij + Dijdict.get(lbl,0.0))
+            newA =  G2lat.AplusDij(A,DijVals,SGData)
             cell = G2lat.A2cell(newA)   # convert back to direct cell
             laue = generalData['SGData']['SGLaue']
             if laue == '2/m':

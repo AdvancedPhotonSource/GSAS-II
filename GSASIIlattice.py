@@ -266,6 +266,18 @@ def CellDijCorr(Cell,SGData,Data,hist):
     '''
     A = cell2A(Cell)
     Dij = Data[hist]['HStrain'][0]
+    newA = AplusDij(A,Dij,SGData)
+    return A2cell(newA)
+
+def AplusDij(A,Dij,SGData):
+    ''' returns the A corrected by Dij
+    
+    :param list A: reciprocal metric terms A0-A5
+    :param array Dij: unique Dij values as stored in Hstrain
+    :param dict SGdata: a symmetry object
+    
+    :returns list newA: A corrected by Dij
+    '''
     if SGData['SGLaue'] in ['-1',]:
         newA = [A[0]+Dij[0],A[1]+Dij[1],A[2]+Dij[2],A[3]+Dij[3],A[4]+Dij[4],A[5]+Dij[5]]
     elif SGData['SGLaue'] in ['2/m',]:
@@ -285,7 +297,8 @@ def CellDijCorr(Cell,SGData,Data,hist):
         newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],A[3]+Dij[1],A[3]+Dij[1],A[3]+Dij[1]]
     elif SGData['SGLaue'] in ['m3m','m3']:
         newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],0,0,0]
-    return A2cell(newA)
+        
+    return newA
     
 def prodMGMT(G,Mat):
     '''Transform metric tensor by matrix

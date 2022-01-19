@@ -7207,14 +7207,15 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             reset.Bind(wx.EVT_BUTTON,OnReset)
             lineSizer.Add(reset,0,WACV)
             topSizer.Add(lineSizer)
-            slideSizer = wx.FlexGridSizer(0,4,0,0)
-            slideSizer.AddGrowableCol(2,1)
+            slideSizer = wx.FlexGridSizer(0,5,0,0)
+            slideSizer.AddGrowableCol(3,1)
             modeDisp = ISOdata['modeDispl']
             idsp = 0
             for item in ConstrData['Phase']:
                 if pId != item[-3].phase:
                     continue
                 slideSizer.Add(wx.StaticText(ISODIST,label=item[-3].name),0,WACV)
+                slideSizer.Add(wx.StaticText(ISODIST,label=' %.5g '%ISOdata['ISOmodeDispl'][idsp]),0,WACV)
                 dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(75,20),OnLeave=OnDispVal)
                 slideSizer.Add(dispVal,0,WACV)
                 displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,value=int(modeDisp[idsp]*1000))
@@ -7228,7 +7229,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 Indx[refDispl.GetId()] = [idsp,item]
                 slideSizer.Add(refDispl,0,WACV)
                 idsp += 1
-            slideSizer.SetMinSize(wx.Size(350,10))
+            slideSizer.SetMinSize(wx.Size(450,10))
             topSizer.Add(slideSizer)
             mainSizer.Add(topSizer)
             SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
@@ -10890,8 +10891,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         # apply the Dij values to the reciprocal cell
         newA = []
         Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
-        for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
-                            ['D11','D22','D33','D12','D13','D23']):
+        for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),['D11','D22','D33','D12','D13','D23']):
             newA.append(Aij + Dijdict.get(lbl,0.0))
         # convert back to direct cell
         data['General']['Cell'][1:7] = G2lat.A2cell(newA)

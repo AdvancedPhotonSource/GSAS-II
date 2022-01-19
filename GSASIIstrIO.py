@@ -2587,6 +2587,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     HSvals.append(hapDict[pfx+name])
                     if hapData['HStrain'][1][i]:
                         hapVary.append(pfx+name)
+#                Acorr = G2lat.AplusDij(A,hapData['HStrain'][0],SGData)
+                Acorr = A
+                #adjust A for the Dij rith here?
                 if 'Layer Disp' in hapData:
                     hapDict[pfx+'LayerDisp'] = hapData['Layer Disp'][0]
                     if hapData['Layer Disp'][1]:
@@ -2681,7 +2684,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     useExt = 'magnetic' in Phases[phase]['General']['Type'] and 'N' in inst['Type'][0]
                     if Phases[phase]['General'].get('Modulated',False):
                         ifSuper = True
-                        HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
+                        HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,Acorr))
                         HKLd = G2mth.sortArray(HKLd,4,reverse=True)
                         for h,k,l,m,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
@@ -2706,7 +2709,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     else:
                         ifSuper = False
-                        HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+                        HKLd = np.array(G2lat.GenHLaue(dmin,SGData,Acorr))
                         HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)

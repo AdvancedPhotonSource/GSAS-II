@@ -2950,7 +2950,10 @@ def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
         return dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV
             
 def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
-    'Needs a doc string'
+    '''Computes the shifts in peak position due to the Hydrostatic strain 
+    (HStrain, Dij terms).
+    This routine is not used anywhere
+    '''
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]
@@ -2985,7 +2988,9 @@ def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
         return -Dij*parmDict[hfx+'difC']*0.5*refl[4+im]**2
             
 def GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict):
-    'Needs a doc string'
+    '''Computes the derivatives due to the shifts in peak position from Hydrostatic strain 
+    (HStrain, Dij terms).
+    '''
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]

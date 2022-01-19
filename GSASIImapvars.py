@@ -698,6 +698,7 @@ in these variables is related to a group of constraints.
                                  that an equivalence was generated internally GSAS-II 
                                  meaning it is generated based on symmetry, twining 
                                  or Pawley overlap.
+
 =============================  ===================================================================
 
 Lists with information from Hold and Equivalence constraints. Each entry
@@ -706,12 +707,10 @@ in these variables is related to a group of constraints.
 .. tabularcolumns:: |l|p{4.5in}|
 
 =============================  ===================================================================
-  variable                      explanation
+  variable                       explanation
 =============================  ===================================================================
-
 :data:`holdParmList`             a list of parameters that have been marked as "Hold".
-                                 Unlikely to be used externally. 
-                                 
+                                 Unlikely to be used externally.                                  
                                  Set in :func:`StoreHold`. (Also see :data:`newHolds`)
 
 :data:`dependentVars`            a list of dependent variables in equivalences, compiled 
@@ -723,7 +722,6 @@ in these variables is related to a group of constraints.
 
 :data:`saveVaryList`             a list of the varied parameters used when constraints 
                                  were last processed.
-
 =============================  ===================================================================
 
 
@@ -736,37 +734,44 @@ names from equivalences and constraints. Used in :func:`CheckEquivalences` and
 =============================  ===================================================================
   variable                      explanation
 =============================  ===================================================================
-:data:`depVarList`             a list of the parameters used in equivalences as dependent 
-                               parameters for all equivalences initially specified (including 
-                               those to be reclassified as "Constr" constraints.)
-:data:`indepVarList`           a list of the parameters used in equivalences as independent 
-                               parameters for all equivalences initially specified (including 
-                               those to be reclassified as "Constr" constraints.)
-:data:`constrVarList`          a list of the parameters that are used in "Constr" or 
-                               "New Var" constraints. Does not include those in equivalences
-                               to be reclassified as "Constr" constraints.)
+:data:`depVarList`              a list of the parameters used in equivalences as dependent 
+                                parameters for all equivalences initially specified (including 
+                                those to be reclassified as "Constr" constraints.)
+
+:data:`indepVarList`            a list of the parameters used in equivalences as independent 
+                                parameters for all equivalences initially specified (including 
+                                those to be reclassified as "Constr" constraints.)
+
+:data:`constrVarList`           a list of the parameters that are used in "Constr" or 
+                                "New Var" constraints. Does not include those in equivalences
+                                to be reclassified as "Constr" constraints.)
 =============================  ===================================================================
 
-
-.. tabularcolumns:: |l|p{4.5in}|
 
 A third set of global variables to store equivalence warning information. 
 Set in :func:`CheckEquivalences` and :func:`GenerateConstraints`.
 Used in :func:`getConstrError` to display warning messages.
 
+.. tabularcolumns:: |l|p{4.5in}|
+
 =============================  ===================================================================
   variable                      explanation
 =============================  ===================================================================
-:data:`convVarList`            parameters in equivalences that were converted to "Const"
-                               constraints
-:data:`multdepVarList`         parameters used as dependent parameters in equivalences 
-                               multiple times
-:data:`newHolds`               parameters to be added as "Hold"s
-:data:`unvariedParmsList`      parameters used in equivalences and constraints 
-                               that are not varied
-:data:`undefinedVars`          parameters used in equivalences 
-                               that are not defined in the parameter dict (parmDict)
-:data:`groupErrors`            parameters in constraints that cause grouping errors
+:data:`convVarList`             parameters in equivalences that were converted to "Const"
+                                constraints
+
+:data:`multdepVarList`          parameters used as dependent parameters in equivalences 
+                                multiple times
+
+:data:`newHolds`                parameters to be added as "Hold"s
+
+:data:`unvariedParmsList`       parameters used in equivalences and constraints 
+                                that are not varied
+
+:data:`undefinedVars`           parameters used in equivalences 
+                                that are not defined in the parameter dict (parmDict)
+
+:data:`groupErrors`             parameters in constraints that cause grouping errors
 =============================  ===================================================================
 
 

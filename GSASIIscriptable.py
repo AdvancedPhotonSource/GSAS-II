@@ -38,6 +38,8 @@ summarized below.
 Overview of Classes 
 ---------------------
 
+.. tabularcolumns:: |l|p{4in}|
+
 ===============================    ===============================================================================================================
 class                              Encapsulates 
 ===============================    ===============================================================================================================
@@ -59,6 +61,8 @@ Functions
 
 A small amount of the Scriptable code does not require use of objects. 
 
+.. tabularcolumns:: |l|p{4in}|
+
 ==================================================    ===============================================================================================================
 method                                                Use
 ==================================================    ===============================================================================================================
@@ -74,7 +78,7 @@ Class :class:`G2Project`
   either for a new GSAS-II project or to read in an existing project (.gpx) file. 
   The most commonly used routines in this object are:
 
-.. tabularcolumns:: |l|p{3.5in}|
+.. tabularcolumns:: |l|p{3.in}|
 
 ==================================================    ===============================================================================================================
 method                                                Use
@@ -324,6 +328,8 @@ In this example, two refinement steps will be performed:
 The keys defined in the following table
 may be used in a dict supplied to :meth:`G2Project.do_refinements`. Note that keys ``histograms``
 and ``phases`` are used to limit actions to specific sets of parameters within the project. 
+
+.. tabularcolumns:: |l|p{4in}|
 
 ========== ============================================================================
 key         explanation

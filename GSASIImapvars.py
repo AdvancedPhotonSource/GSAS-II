@@ -27,6 +27,8 @@ parameters to be varied. In addition, one uses
 See the :ref:`Constraints Processing section<Constraints_processing>` for details on how 
 processing of constraints is done. 
 
+.. tabularcolumns:: |l|p{4in}|
+
 =============================  ===================================================================
   routine                      explanation
 =============================  ===================================================================

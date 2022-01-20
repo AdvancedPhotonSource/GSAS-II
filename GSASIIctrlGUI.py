@@ -13,6 +13,8 @@
 
 A library of GUI controls for reuse throughout GSAS-II, as indexed below
 
+.. tabularcolumns:: |l|p{4in}|
+
 ================================  =================================================================
 Class or function name             Description
 ================================  =================================================================
@@ -60,7 +62,7 @@ Class or function name             Description
                                    can be sorted by clicking on a column label.
 :class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
                                    with validation. Results are placed in dict or list.
-:class:`SGMagSpinBox`               Special version of MessageBox that displays magnetic spin text
+:class:`SGMagSpinBox`              Special version of MessageBox that displays magnetic spin text
 :class:`SGMessageBox`              Special version of MessageBox that displays space group & 
                                    super space group text in two blocks
 :class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
@@ -103,7 +105,9 @@ Class or function name             Description
 
 ================================  =================================================================
 
-Other miscellaneous routines that may be of use:
+Other miscellaneous non-GUI routines that may be of use for GUI-related actions:
+
+.. tabularcolumns:: |l|p{4in}|
 
 ================================  =================================================================
 Function name                      Description
@@ -6775,19 +6779,22 @@ tutorialIndex = (
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
     )
-'''A catalog of GSAS-II tutorials with headings. This is the master list of GSAS-II tutorials and must be updated when tutorials are
-added. Each item has either one or three items. 
-Titles are single item in a list or tuple. Tutorials have four items: (a) the name of the directory,
-(b) the name of the web page, (c) a title for the tutorial and (d) a short text description (optional). 
-Tutorials that depend on a previous tutorial being completed should have the title for
-the tutorial indented by five spaces.
+    
+    # A catalog of GSAS-II tutorials with headings. This is the master list of GSAS-II tutorials and
+    # must be updated when tutorials are added. Each item has either one or three items. 
+    # Titles are single item in a list or tuple. Tutorials have four items:
+    #  (a) the name of the directory,
+    #  (b) the name of the web page,
+    #  (c) a title for the tutorial and
+    #  (d) a short text description (optional). 
+    # Tutorials that depend on a previous tutorial being completed should have the title for
+    # the tutorial indented by five spaces.
+    #
+    # Note that :data:`tutorialCatalog` is generated from this tuple. Also see
+    # :mod:`makeTutorial` which is used to read this and create a web page.
 
-Note that :data:`tutorialCatalog` is generated from this tuple. 
-Also see :mod:`makeTutorial` which is used to read this and create a web page.
-'''
-
-#A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
 tutorialCatalog = [l for l in tutorialIndex if len(l) >= 3]
+# A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
 
 class OpenTutorial(wx.Dialog):
     '''Open a tutorial web page, optionally copying the web page, screen images and

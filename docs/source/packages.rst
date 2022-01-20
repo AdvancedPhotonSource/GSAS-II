@@ -1,22 +1,32 @@
-Required packages
-====================
+Required Packages & Supported Platforms
+==========================================
 
 GSAS-II requires a standard Python interpreter to be installed, as
 well as several separately-developed packages. GSAS-II is being
-developed using Python 2.7, 3.6 and 3.7. At this point we think that 
-most sections of the code have been exercised in Python 2 and 3,
-but  bugs are still expected (please report them). Our
-goal is to keep the code compliant with both Python 2.7 and 3.x for
-the immediate future. 
+developed using Python 3.7 and 3.9. At this point we think that 
+most sections of the code have been exercised in Python 3,
+but  bugs are still expected (please report them). We are no longer
+testing with Python 2.7 and strongly urge everyone to upgrade,
+but if problems running GSAS-II in Python 2.7 are reported, we will 
+consider making that the code compliant with both. 
 
 Note that the packages listed below are not distributed as part of the Python standard
-library. We use the free Anaconda Python (https://www.anaconda.com/)
-distribution (and provide installers based on that), but there are
-many other fine distributions, such as Enthought Inc.'s Canopy and
-Python(x,y), see here: https://www.python.org/download/alternatives/. 
-We do some testing using the older Enthought Python Distribution
-(EPD); this is known to have some problems with reading CIFs and
-encourage updating from that.
+library. We have been depending on the free Anaconda
+Python (https://www.anaconda.com/)
+distribution (and provide installers based on that), but Anaconda does
+not seem to be supplying up to date versions of the wxpython package
+that the GUI requires and does not have versions for all supported
+platforms. Use of the miniforge
+(https://github.com/conda-forge/miniforge) distribution is recommended
+where needed. 
+
+There are many other Python distributions, such as Enthought Inc.'s Canopy and
+Python(x,y), see here:
+https://www.python.org/download/alternatives/. We are no longer using
+any of them and are unsure of how they will function. Some very old
+GSAS-II installations were based on the quite outdated Enthought Python Distribution
+(EPD); this is known to have some problems with reading CIFs and we
+strongly encourage updating from that.
 
 More details on allowed and prefered package versions can be found in
 the documentation for variable :attr:`GSASIIdataGUI.versionDict`.
@@ -59,10 +69,22 @@ only the following Python extension packages are required:
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/).
 
-Note that some sections of the code may require matplotlib (http://matplotlib.org/contents.html), Pillow
+Note that a few sections of the code require matplotlib (http://matplotlib.org/contents.html), Pillow
 (https://pillow.readthedocs.org) (or PIL,
-http://www.pythonware.com/products/pil/), or h5py + hdf5 to function
-but scripts will load and run without these. 
+http://www.pythonware.com/products/pil/), or h5py + hdf5, but none of
+these are required to run scripts and the vast
+majority of scripts will not need these packages.
+
+Optional Packages
+-----------------------
+
+* Sphinx (https://www.sphinx-doc.org) is used to generate the
+  documentation you are currently reading. Generation of documentation
+  is not generally something needed by users or even most code developers.
+
+ * SCons (https://scons.org/) is used to compile the small amount of
+   Fortran code that is included with GSAS-II. Use of this is
+   discussed in the last section of this chapter.
 
 
 External and Supplied Programs
@@ -112,3 +134,61 @@ with GSAS-II and must be installed separately:
   **Dysnomia**
     Computes enhanced Fourier maps with Maximum Entropy estimated
     extension of reflection sphere
+
+Supported Platforms
+--------------------------------
+
+It should be possible to run GSAS-II on any computer where Python 3.7+ and
+the appropriate required packages are available. For many platforms,
+binary versions of the Fortran code used in GSAS-II are supplied, but the
+binaries must match the platform and the major versions of both Python and
+numpy; even for supported platforms; not all combinations are
+provided. Should one wish to run GSAS-II where binary files are not
+supplied, compilation will be needed. This will require the GNU Fortran (gfortran)
+compiler (https://gcc.gnu.org/fortran/) as well as the Python SCons
+package. Instructions are supplied for a number of platforms (such as 
+https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallLinux#CompilingFortranCode). Note
+that there are prepackaged versions of GSAS-II for most common
+platforms. These include Python, all required and most optional
+packages and a version of all files needed to run GSAS-II -- albeit
+not usually the current version. The
+installation process will try to update to the current version, if the
+computer where installation is occuring has internet access. 
+
+At present the following platforms are directly supported:
+
+* **Windows-10**: Installation kits are available for both 32-bit and
+  64-bit windows. Running GSAS-II on older versions of Windows is
+  likely possible, but to do so one must locate compatible versions of Python
+  and packages. This is getting increasingly tough. We have not tried
+  Windows-11, but expect the Windows-10 versions to run there.
+
+* **MacOS**: We provide an installer for Macs with Intel
+  processors. This can also be used on ARM-equipped Macs ("M1" or "Apple
+  Silicon" processors) but native M1 code runs way
+  faster. Installation on the native ARM code is more complex; our
+  instructions (https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/MacM1Notes)
+  require that the homebrew package installer be installed and then
+  brew (homebrew) be used to install Python and a number of packages.
+  Macs older than
+  Catalina (10.15) may require older distributions of Python. 
+
+* **Linux** (Intel-compatible): GSAS-II does not get a lot of testing in Linux by us, but is
+  fairly widely used on this platform nonetheless.  One can use the
+  installer that we provide, but compatibility with older and very new
+  versions of OSes can be tough and may require compatibility
+  libraries. At times it may be better to use the Linux distribution's
+  versions of Python and packages. This is typically done with a
+  software tool such as apt or yum. An example on how to do this is
+  shown for the Raspberry Pi.
+
+* **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
+  and the experimental 64-bit version of the Raspberry Pi OS (formerly
+  called Raspbian) and compiled binaries are provided. It should also
+  run with Ubuntu Linux for this platform, but this has not been
+  tried. It is necessary to use the Raspbian Linux distribution's
+  versions of Python and its packages. Instructions are provided
+  (https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallPiLinux). 
+  The performance of GSAS-II on a Raspberry Pi is not blindingly fast,
+  but one can indeed run GSAS-II on a computer that costs only $15!
+ 

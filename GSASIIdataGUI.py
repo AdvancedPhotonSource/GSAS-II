@@ -5609,8 +5609,8 @@ class GSASII(wx.Frame):
                 l = 'one histogram'
             else:
                 l = str(len(allwarnings)) + ' histograms'
-            msg = 'There were changes to constraints needed in {}. See console output or visit Constraints data tree item for more details. Continue with refinement?'.format(l)
-            dlg = wx.MessageDialog(self,msg,caption='Constraint changes',style=wx.YES_NO)
+            msg = 'There were constraint warnings generated in {}. See console output or visit the Constraints data tree item for more details. Continue with refinement?'.format(l)
+            dlg = wx.MessageDialog(self,msg,caption='Constraint warnings',style=wx.YES_NO)
             dlg.CenterOnParent()
             result = wx.ID_NO
             try:

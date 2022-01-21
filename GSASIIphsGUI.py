@@ -4919,7 +4919,7 @@ def UpdatePhaseData(G2frame,Item,data):
 
             Indx = {}
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            if G2frame.RMCchoice == 'PDFfit'and RMCPdict['refinement'] != 'sequential':
+            if G2frame.RMCchoice == 'PDFfit':
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 reftype = wx.RadioBox(G2frame.FRMC,label='PDFfit refinement type:',choices=['normal','sequential'])
                 reftype.SetStringSelection(RMCPdict.get('refinement','normal'))
@@ -4995,14 +4995,14 @@ def UpdatePhaseData(G2frame,Item,data):
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
                             fileSizer.Add((-1,-1),0)
-                    elif Rfile != 'Select file': # file specified, but must not exist
-                        RMCPdict['files'][fil][0] = 'Select file' # set filSel?
+                    elif 'Select' not in Rfile: # file specified, but must not exist
+                        RMCPdict['files'][fil][0] = 'Select' # set filSel?
                         fileSizer.Add(wx.StaticText(G2frame.FRMC,
                                 label='Warning: file not found.\nWill be removed'),0)
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                     else:
-                        RMCPdict['files'][fil][0] = 'Select file' # set filSel?
+                        RMCPdict['files'][fil][0] = 'Select' # set filSel?
                         #fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
                         fileSizer.Add((-1,-1),0)
@@ -5010,7 +5010,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add(fileSizer,0)
                 return mainSizer
             
-            elif G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
+            if G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
                 
                 def OnAddPDF(event):
                     ''' Add PDF G(r)s while maintanining original sequence
@@ -5211,10 +5211,10 @@ def UpdatePhaseData(G2frame,Item,data):
 Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 
 (2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
-            if G2pwd.findfullrmc() is None:
-                mainSizer.Add(wx.StaticText(G2frame.FRMC,
-                    label="\nsorry, fullrmc not installed or was not located"))
-                return mainSizer
+            # if G2pwd.findfullrmc() is None:
+            #     mainSizer.Add(wx.StaticText(G2frame.FRMC,
+            #         label="\nsorry, fullrmc not installed or was not located"))
+            #     return mainSizer
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
@@ -5225,7 +5225,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             # update, if atoms list has been updated
             Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
             aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
-            if len(data['RMC']['fullrmc'].get('aTypes',-1)) != len(aTypes):
+            if len(data['RMC']['fullrmc'].get('aTypes',{})) != len(aTypes):
                 #print('atypes has changed')
                 atSeq = list(aTypes.keys())
                 lenA = len(atSeq)
@@ -6021,13 +6021,14 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     if c > 0:
                         strval = atmGrid.GetCellValue(r,c).strip()
                         try:
-                            if strval == '' or ('@' in strval and int(strval.split('@')[-1]) >= 20):
+#                            if strval == '' or ('@' in strval and int(strval.split('@')[-1]) >= 20):
+                            if strval == '' or '@' in strval:
                                 RMCPdict['AtomConstr'][r][c+1] = strval
                             else:
                                 raise ValueError
                         except ValueError:
                             atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
-                            wx.MessageBox('ERROR - atom constraints must be blank or have "@n" at end with n >= 20',
+                            wx.MessageBox('ERROR - atom constraints must be blank or have "@n" with n >= 20',
                                 style=wx.ICON_ERROR)
                 
                 atmSizer = wx.BoxSizer(wx.VERTICAL)
@@ -6050,7 +6051,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                 for item in RMCPdict['AtomVar']:
                     atomVarSizer.Add(wx.StaticText(G2frame.FRMC,label=item),0,WACV)
                     atomVarSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['AtomVar'],
-                        item,xmin=-1.,xmax=1.,size=(70,25)),0,WACV)
+                        item,xmin=-3.,xmax=3.,size=(70,25)),0,WACV)
                 return atomVarSizer
 
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6318,16 +6319,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
             SeqResult['histNames'] = []         #this clears the previous seq. result!
+            SeqNames = []
             for itm in range(len(RMCPdict['seqfiles'])):
-                SeqResult['histNames'].append([itm,RMCPdict['seqfiles'][itm][0]])
+                SeqNames.append([itm,RMCPdict['seqfiles'][itm][0]])
             if RMCPdict['SeqReverse']:
-                SeqResult['histNames'].reverse()
-            nPDF = len(SeqResult['histNames'])
+                SeqNames.reverse()
+            nPDF = len(SeqNames)
             pgbar = wx.ProgressDialog('Sequential PDFfit','PDF G(R) done = 0',nPDF+1, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             newParms = {}
-            for itm,item in enumerate(SeqResult['histNames']):
-                PDFfile = RMCPdict['seqfiles'][item[0]]
+            for itm,Item in enumerate(SeqNames):
+                PDFfile = RMCPdict['seqfiles'][Item[0]]
                 pfdata = PDFfile[1]['G(R)'][1].T
 #                    pfname = PDFfile[0].replace(' ','_')
                 pfname = 'Seq_PDF.gr'
@@ -6397,6 +6399,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 XYobs[3] = XYobs[1]-XYobs[2]
                 PDFctrl['G(R)'][1] = XYobs
                 G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'),PDFctrl)
+                SeqResult['histNames'].append(Item[1])
                 GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
                 if not GoOn[0]:
                     print(' Sequential PDFfit aborted')

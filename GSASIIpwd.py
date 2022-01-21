@@ -899,6 +899,9 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
     '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[pfx+'difC']/xdata
+    elif 'E' in dataType:
+        const = 4.*np.pi*npsind(parmDict[pfx+'2-theta']/2.0)
+        q = const*xdata
     else:
         wave = parmDict.get(pfx+'Lam',parmDict.get(pfx+'Lam1',1.0))
         q = npT2q(xdata,wave)
@@ -990,10 +993,12 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
         try:
             pkP = parmDict[pfx+'BkPkpos;'+str(iD)]
             pkI = max(parmDict[pfx+'BkPkint;'+str(iD)],0.1)
-            pkS = max(parmDict[pfx+'BkPksig;'+str(iD)],1.)
+            pkS = max(parmDict[pfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[pfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
                 Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+            elif 'E' in dataType:
+                Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T'OF
                 Wd,fmin,fmax = getWidthsTOF(pkP,1.,1.,pkS,pkG)
             iBeg = np.searchsorted(xdata,pkP-fmin)
@@ -1014,6 +1019,9 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             elif 'B' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])[0]
                 yb[iBeg:iFin] += ybi
+            elif 'E' in dataType:
+                ybi = pkI*getPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])[0]
+                yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1       
         except KeyError:
@@ -1030,6 +1038,9 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
     'needs a doc string'
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[hfx+'difC']/xdata
+    elif 'E' in dataType:
+        const = 4.*np.pi*npsind(parmDict[hfx+'2-theta']/2.0)
+        q = const*xdata
     else:
         wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
         q = 2.*np.pi*npsind(xdata/2.)/wave
@@ -1122,10 +1133,12 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
         try:
             pkP = parmDict[hfx+'BkPkpos;'+str(iD)]
             pkI = max(parmDict[hfx+'BkPkint;'+str(iD)],0.1)
-            pkS = max(parmDict[hfx+'BkPksig;'+str(iD)],1.0)
+            pkS = max(parmDict[hfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[hfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
                 Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+            elif 'E' in dataType:
+                Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T' or 'B'
                 Wd,fmin,fmax = getWidthsTOF(pkP,1.,1.,pkS,pkG)
             iBeg = np.searchsorted(xdata,pkP-fmin)
@@ -1139,6 +1152,8 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
                 Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,.002,xdata[iBeg:iFin])
+            elif 'E' in dataType:
+                Df,dFdp,dFds,dFdg = getdPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])
             else:   #'T'OF
                 Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
             dydpk[4*iD][iBeg:iFin] += pkI*dFdp
@@ -3076,16 +3091,18 @@ def GetPDFfitAtomVar(Phase,RMCPdict):
     for iat,atom in enumerate(RMCPdict['AtomConstr']):
         for it,item in enumerate(atom):
             if it > 1 and item:
-                itnum = item.split('@')[1]
-                varname = '@%s'%itnum
-                varnames.append(varname)
-                if it < 6:
-                    if varname not in AtomVar:
-                        AtomVar[varname] = 0.0      #put ISODISTORT mode displ here?
-                else:
-                    for i in range(3):
+                itms = item.split('@')
+                for itm in itms[1:]:
+                    itnum = itm[:2]
+                    varname = '@%s'%itnum
+                    varnames.append(varname)
+                    if it < 6:
                         if varname not in AtomVar:
-                            AtomVar[varname] = Atoms[iat][cia+i+2]
+                            AtomVar[varname] = 0.0      #put ISODISTORT mode displ here?
+                    else:
+                        for i in range(3):
+                            if varname not in AtomVar:
+                                AtomVar[varname] = Atoms[iat][cia+i+2]
     varnames = set(varnames)
     for name in list(AtomVar.keys()):       #clear out unused parameters
         if name not in varnames:
@@ -3221,19 +3238,21 @@ pf = PdfFit()
         for it,item in enumerate(atom):
             names = ['pf.x(%d)'%(iat+1),'pf.y(%d)'%(iat+1),'pf.z(%d)'%(iat+1),'pf.occ(%d)'%(iat+1)]
             if it > 1 and item:
-                itnum = item.split('@')[1]
-                if it < 6:
-                    rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
-                    if itnum not in used:
-                        parms[itnum] = [AtomVar['@%s'%itnum],names[it-2].split('.')[1]]
-                        used.append(itnum)
-                else:
-                    uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
-                    for i in range(3):
-                        rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
+                itms = item.split('@')
+                for itm in itms[1:]:
+                    itnum = itm[:2]
+                    if it < 6:
+                        rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
                         if itnum not in used:
-                            parms[itnum] = [AtomVar['@%s'%itnum],uijs[i].split('.')[1]]
+                            parms[itnum] = [AtomVar['@%s'%itnum],names[it-2].split('.')[1]]
                             used.append(itnum)
+                    else:
+                        uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
+                        for i in range(3):
+                            rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
+                            if itnum not in used:
+                                parms[itnum] = [AtomVar['@%s'%itnum],uijs[i].split('.')[1]]
+                                used.append(itnum)
                             
     if 'sequential' in RMCPdict['refinement']:
         rundata += '#parameters here\n'
@@ -3331,7 +3350,10 @@ def UpdatePDFfit(Phase,RMCPdict):
             resline += line[:-1]
     for iline,line in enumerate(lines):
         if 'Rw - ' in line:
-            Rwp = float(line.split(':')[1])
+            if 'nan' in line:
+                Rwp = 100.0
+            else:
+                Rwp = float(line.split(':')[1])
     results = resline.replace('(','').split(')')[:-1]
     results = ['@'+result.lstrip() for result in results]
     results = [item.split() for item in results]

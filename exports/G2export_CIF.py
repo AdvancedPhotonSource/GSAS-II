@@ -2593,11 +2593,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # report pointers to the histograms used in this phase
                 histlist = []
                 for hist in self.Phases[phasenam]['Histograms']:
-                    if self.Phases[phasenam]['Histograms'][hist]['Use']:
-                        if phasebyhistDict.get(hist):
-                            phasebyhistDict[hist].append(phasenam)
-                        else:
-                            phasebyhistDict[hist] = [phasenam,]
+                    # if self.Phases[phasenam]['Histograms'][hist]['Use']:
+                    #     if phasebyhistDict.get(hist):
+                    #         phasebyhistDict[hist].append(phasenam)
+                    #     else:
+                    #         phasebyhistDict[hist] = [phasenam,]
                         blockid = datablockidDict.get(hist)
                         if not blockid:
                             print("Internal error: no block for data. Phase "+str(
@@ -2711,11 +2711,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # report pointers to the histograms used in this phase
                 histlist = []
                 for hist in self.Phases[phasenam]['Histograms']:
-                    if self.Phases[phasenam]['Histograms'][hist]['Use']:
-                        if phasebyhistDict.get(hist):
-                            phasebyhistDict[hist].append(phasenam)
-                        else:
-                            phasebyhistDict[hist] = [phasenam,]
+                    # if self.Phases[phasenam]['Histograms'][hist]['Use']:
+                    #     if phasebyhistDict.get(hist):
+                    #         phasebyhistDict[hist].append(phasenam)
+                    #     else:
+                    #         phasebyhistDict[hist] = [phasenam,]
                         blockid = datablockidDict.get(hist)
                         if not blockid:
                             print("Internal error: no block for data. Phase "+str(
@@ -3836,7 +3836,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             else:
                 s += '.'
         self.CIFname = s
-        phasebyhistDict = {} # a cross-reference to phases by histogram -- sequential fits
+        phasebyhistDict = {} # a cross-reference to phases by histogram -- used in sequential fits
+        for phasenam in self.Phases:
+            for hist in self.Phases[phasenam]['Histograms']:
+                if self.Phases[phasenam]['Histograms'][hist]['Use']:
+                    if phasebyhistDict.get(hist):
+                        phasebyhistDict[hist].append(phasenam)
+                    else:
+                        phasebyhistDict[hist] = [phasenam,]
         #=================================================================
         # write quick CIFs
         #=================================================================
@@ -4309,6 +4316,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                             else:
                                 sig = -0.0001
                             WriteCIFitem(self.fp, "  "+ s + " " + phaseBlockName[pId] + "  " + G2mth.ValEsd(wtFr,sig))
+                            datablockidDict[phasenam] = phaseBlockName[pId]
                         PP = FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
                         PP += '\n'
                         WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',PP)

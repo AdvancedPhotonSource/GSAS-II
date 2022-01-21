@@ -174,9 +174,10 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         #self.multiple = False # only allow one histogram to be selected
         self.multiple = True
 
-    def Writer(self,TreeName,filename=None):
+    def Writer(self,TreeName,filename=None,mode='w'):
         #print filename
-        self.OpenFile(filename)
+        self.OpenFile(filename,mode=mode)
+        self.Write('"Histogram","'+TreeName+'"')
         histblk = self.Histograms[TreeName]
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
         for parm in Parms:
@@ -214,6 +215,8 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
                 line += '%.6g'%val
 #                line += G2py3.FormatValue(val,digits)
             self.Write(line)
+        if mode == 'w':
+            print('Powder data written to CSV file '+self.fullpath)
         self.CloseFile()
         
     def Exporter(self,event=None):
@@ -298,20 +301,19 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'reflection list as CSV',
+            formatName = 'reflection list CSV file',
             extension='.csv',
             longFormatName = 'Export powder reflection list as a comma-separated (csv) file'
             )
         self.exporttype = ['powder']
         self.multiple = False # only allow one histogram to be selected
 
-    def Writer(self,TreeName,filename=None):
-        print(filename)
-        self.OpenFile(filename)
+    def Writer(self,TreeName,filename=None,mode='w'):
+        self.OpenFile(filename,mode=mode)
         histblk = self.Histograms[TreeName]
         self.write(TreeName,histblk)
         self.CloseFile()
-        print(TreeName+' reflections written to file '+self.fullpath)
+        if mode == "w": print(TreeName+' reflections written to file '+self.fullpath)
         
     def Exporter(self,event=None):
         '''Export a set of powder reflections as a csv file
@@ -328,8 +330,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         print(hist+' reflections written to file '+self.fullpath)
         
     def write(self,hist,histblk):
-        self.Write('"Histogram"')
-        self.Write('"'+hist+'"')
+        self.Write('"Histogram","'+hist+'"')
         self.Write('')
         # table of phases
         self.Write('"Phase name","phase #"')

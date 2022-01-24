@@ -84,6 +84,7 @@ Class or function name             Description
                                    used in Bind elsewhere in the code.
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
 :func:`ShowScrolledInfo`           Displays longer text where scrolling is possibly needed
+:func:`ShowScrolledColText`        Displays tabular text with scrolling where needed
 :func:`GetItemOrder`               Creates a dialog for ordering items into columns
 :func:`GetImportFile`              Gets one ore more file from the appropriate import
                                    directory, which can be overridden. Arguments follow those
@@ -2421,7 +2422,8 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.ShowModal()
     dlg.Destroy()
 
-def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info'):
+def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
+                         buttonlist=None):
     '''Simple code to display possibly extensive error or warning text
     in a scrolled window.
 
@@ -2429,7 +2431,10 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info'):
     :param str txt: text to be displayed
     :param int width: lateral of window in pixels (defaults to 600)
     :param int height: vertical dimension of window in pixels (defaults to 400)
-    :param str header: width of window in pixels (defaults to 600)
+    :param str header: title to be placed on window
+    :param list buttonlist: list of button Ids to show. The default is None 
+      which places a single "Close" button and returns wx.ID_CANCEL 
+    :returns: the wx Id for the selected button
     '''
     
     dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -2444,6 +2449,88 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info'):
     txtSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
     spanel.SetSizer(txtSizer)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    if buttonlist is None:
+        btn = wx.Button(dlg, wx.ID_CLOSE) 
+        btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+        btnsizer.Add(btn)
+    else:
+        for b in buttonlist:
+            btn = wx.Button(dlg, b) 
+            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
+            btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    spanel.SetAutoLayout(1)
+    spanel.SetupScrolling()
+    #dlg.SetMaxSize((-1,400)) 
+    dlg.CenterOnParent()
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    return ans
+
+def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',col1len=999):
+    '''Simple code to display tabular information in a scrolled wx.Dialog 
+    window.
+
+    Lines ending with a colon (:) are centered across all columns 
+    and have a grey background. 
+    Lines beginning and ending with '**' are also are centered 
+    across all columns and are given a yellow background
+    All other lines have columns split by tab (\\t) characters. 
+
+    :param wx.Frame parent: parent window 
+    :param str txt: text to be displayed
+    :param int width: lateral of window in pixels (defaults to 600)
+    :param int height: vertical dimension of window in pixels (defaults to 400)
+    :param str header: title to be placed on window
+    '''
+    
+    dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width-20, height))
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
+
+    cols = 1
+    for i,line in enumerate(txt.split('\n')):
+        cols = max(cols,line.count('\t')+1)
+
+    txtSizer = wx.GridBagSizer()
+    for i,line in enumerate(txt.split('\n')):
+        if line.strip().endswith(':'):
+            st = wx.StaticText(spanel,wx.ID_ANY,line,style=wx.ALIGN_CENTER)
+            txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
+            continue
+        elif line.strip().startswith('**') and line.strip().endswith('**'):
+            st = wx.StaticText(spanel,wx.ID_ANY,line)
+            st.SetBackgroundColour(DULL_YELLOW)
+            txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
+            continue
+        items = line.split('\t')
+        for col in range(cols):
+            if col < len(items):
+                item = items[col].strip()
+            else:
+                item = ''
+            t = item[:]
+            s = ''
+            #if len(t) > col1len: GSASIIpath.IPyBreak()
+            while col == 0 and len(t) > col1len:
+                b = -1
+                for sym in (') ',' * ',' + ',' - '):
+                    if sym in t[:col1len]:
+                        b = max(b,t.rfind(sym,0,col1len)+len(sym))
+                s += t[:b] + '\n\t'
+                t = t[b:]
+            s += t
+            st = wx.StaticText(spanel,wx.ID_ANY,s)
+            if col == 0: st.Wrap(600)
+            st.SetBackgroundColour(wx.WHITE)
+            txtSizer.Add(st,pos=(i,col),flag=wx.EXPAND)
+        txtSizer.AddGrowableRow(i)
+    txtSizer.AddGrowableCol(1)
+    spanel.SetSizer(txtSizer)
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
     btn = wx.Button(dlg, wx.ID_CLOSE) 
     btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
     btnsizer.Add(btn)
@@ -2456,7 +2543,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info'):
     dlg.CenterOnParent()
     dlg.ShowModal()
     dlg.Destroy()
-
+    
 ################################################################################
 class PickTwoDialog(wx.Dialog):
     '''This does not seem to be in use
@@ -7657,10 +7744,18 @@ def ChooseOrigin(G2frame,rd):
         return None
 
 if __name__ == '__main__':
-    app = wx.PySimpleApp()
+    app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
+    warnmsg = '\nsome info\non a few lines\nand one more'
+    choices = [wx.ID_YES,wx.ID_NO]
+    ans = ShowScrolledInfo(header='Constraint Warning',
+                    txt='Warning noted after last constraint edit:\n'+warnmsg+
+                    '\n\nKeep this change?',
+                    buttonlist=choices,parent=frm,height=250)
+    print(ans, choices)
+    import sys; sys.exit()
     
     #======================================================================
     # test Grid with GridFractionEditor

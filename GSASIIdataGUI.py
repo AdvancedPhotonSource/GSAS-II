@@ -7796,9 +7796,17 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     G2frame.GPXtree.AppendItem(parent=item,text=name)
                 if name not in data:
                     data[name] = {}
-#end patch            
-            G2frame.dataWindow.GetSizer().Add(
-                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
+#end patch
+            if len(G2frame.GetPhaseNames()) == 1: # why force choice of a phase if there is only one?
+                item, cookie = G2frame.GPXtree.GetFirstChild(item)
+                phaseName = G2frame.GPXtree.GetItemText(item)
+                if phaseName not in data:
+                    data[phaseName] = {}
+                G2restG.UpdateRestraints(G2frame,data,phaseName)
+            else:
+                G2frame.GPXtree.Expand(item)
+                G2frame.dataWindow.GetSizer().Add(
+                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
         elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase'):
             #import imp
             #imp.reload(G2ddG)

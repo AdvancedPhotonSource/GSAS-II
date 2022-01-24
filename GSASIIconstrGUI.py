@@ -738,7 +738,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 print (G2mv.VarRemapShow([],True))
             return False
         elif warnmsg:
-            print ('Unexpected contraint warning:\n'+warnmsg)
+            print ('Warning after constraint addition:\n'+warnmsg)
+            ans = G2G.ShowScrolledInfo(header='Constraint Warning',
+                    txt='Warning noted after adding constraint:\n'+warnmsg+
+                '\n\nKeep this addition?',
+                buttonlist=[wx.ID_YES,wx.ID_NO],parent=G2frame,height=250)
+            if ans == wx.ID_NO: return False
         return True
 
     def WarnConstraintLimit():
@@ -776,7 +781,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 print (G2mv.VarRemapShow([],True))
             return False
         elif warnmsg:
-            print ('Unexpected contraint warning:\n'+warnmsg)
+            print ('Warning after constraint edit:\n'+warnmsg)
+            ans = G2G.ShowScrolledInfo(header='Constraint Warning',
+                    txt='Warning noted after last constraint edit:\n'+warnmsg+
+                    '\n\nKeep this change?',
+                    buttonlist=[wx.ID_YES,wx.ID_NO],parent=G2frame,height=250)
+            if ans == wx.ID_NO: return False
         return True
              
     def PageSelection(page):
@@ -839,7 +849,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
-        wx.CallAfter(OnPageChanged,None)
+        #wx.CallAfter(OnPageChanged,None)
+        wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True)
         
     def OnAddEquivalence(event):
         '''add an Equivalence constraint'''
@@ -944,7 +955,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
         WarnConstraintLimit()
-        wx.CallAfter(OnPageChanged,None)
+#        wx.CallAfter(OnPageChanged,None)
+        wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True)
                         
     def FindNeighbors(phase,FrstName,AtNames):
         General = phase['General']
@@ -1044,7 +1056,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         WarnConstraintLimit()
-        wx.CallAfter(OnPageChanged,None)
+#        wx.CallAfter(OnPageChanged,None)
+        wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True)
                         
     def MakeConstraintsSizer(name,panel):
         '''Creates a sizer displaying all of the constraints entered of
@@ -1169,7 +1182,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         if hlptxt:
                             helptext += '\n\n'+ hlptxt
                     if item[-3]:
-                        typeString = '(NEWVAR) ' + str(item[-3]) + ' = '
+                        typeString = str(item[-3]) + ' ='
+                        if note: note += ', '
+                        note += '(NEW VAR)'
                     else:
                         typeString = 'New Variable = '
                     #print 'refine',item[-2]
@@ -1265,7 +1280,10 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))
-            constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString),0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            if typeString.strip().endswith('='):
+                constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString,style=wx.ALIGN_RIGHT),0,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,1)
+            else:
+                constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString,style=wx.ALIGN_CENTER),0,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,1)
             #if badVar: eqString[-1] += ' -- Error: variable removed'
             #if note: eqString[-1] += '  (' + note + ')'
             if len(eqString) > 1:
@@ -1281,11 +1299,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             constSizer.Add(Eq,1,WACV)
             constSizer.Add((3,3))
             if note:
-                Eq = wx.StaticText(panel,wx.ID_ANY,note)
+                Eq = wx.StaticText(panel,wx.ID_ANY,note,
+                                             style=wx.ALIGN_CENTER)
                 if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
             else:
                 Eq = (-1,-1)
-            constSizer.Add(Eq,1,WACV,3)
+            constSizer.Add(Eq,1,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,3)
         if panel.delBtn.checkboxList:
             panel.delBtn.Enable(True)
         else:
@@ -1315,7 +1334,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 varname = str(data[name][Id][-3])
             else:
                 varname = ""
-            lbl = 'Enter value for each term in constraint; sum = new variable'
+            lbl = 'Enter multiplier for each parameter in the New Var expression'
             dlg = ConstraintDialog(G2frame,constType,lbl,items,
                 varname=varname,varyflag=data[name][Id][-2])
         elif data[name][Id][-1] == 'c':
@@ -1386,15 +1405,17 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             btn.Bind(wx.EVT_BUTTON,lambda event:
-                         G2G.ShowScrolledInfo(panel,
-                        '*** Constraints after processing ***\n'+G2mv.VarRemapShow(),
-                         header='Generated constraints'))
+                         G2G.ShowScrolledColText(panel,
+                        '*** Constraints after processing ***'+G2mv.VarRemapShow(linelen=999),
+                         header='Generated constraints',col1len=80))
             panel.delBtn = wx.Button(panel, wx.ID_ANY, 'Delete selected')
             butSizer.Add(panel.delBtn,0,wx.ALIGN_CENTER_VERTICAL)
             panel.delBtn.Bind(wx.EVT_BUTTON,OnConstDel)
             panel.delBtn.checkboxList = []
+            butSizer.Add((-1,-1),1,wx.EXPAND,1)
+            butSizer.Add(G2G.HelpButton(panel,helpIndex='Constraints'))
+            Siz.Add(butSizer,0,wx.EXPAND)
             if G2frame.testSeqRefineMode():
-                Siz.Add(butSizer)
                 butSizer = wx.BoxSizer(wx.HORIZONTAL)
                 butSizer.Add(wx.StaticText(panel,wx.ID_ANY,'  Sequential Ref. Settings.  Wildcard use: '),0,WACV)
                 btn = G2G.EnumSelector(panel, data, '_seqmode',
@@ -1408,7 +1429,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         list(seqHistList),list(range(len(seqHistList))),
                         lambda x: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True))
                 butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-            Siz.Add(butSizer)
+                Siz.Add(butSizer,0)
             G2G.HorizontalLine(Siz,panel)
 #            Siz.Add((5,5),0)
         Siz.Add(MakeConstraintsSizer(typ,panel),1,wx.EXPAND)

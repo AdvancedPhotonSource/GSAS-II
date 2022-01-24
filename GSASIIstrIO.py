@@ -1313,7 +1313,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 else:
                     if symHold is not None: #variable is held due to symmetry
                         symHold.append(name)
-                    G2mv.StoreHold(name)
+                    G2mv.StoreHold(name,'In rigid body')
         for equiv in equivs:
             if len(equivs[equiv]) > 1:
                 name = equivs[equiv][0][0]
@@ -1480,7 +1480,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         else:
                             if symHold is not None: #variable is held due to symmetry
                                 symHold.append(names[j])
-                            G2mv.StoreHold(names[j])
+                            G2mv.StoreHold(names[j],'Fixed by symmetry')
                     for equiv in equivs:
                         if len(equivs[equiv]) > 1:
                             name = equivs[equiv][0][0]

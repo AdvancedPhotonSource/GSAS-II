@@ -341,14 +341,14 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
             for varid,[var,val,norm,G2mode] in enumerate(zip(
                     ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] )):
                 try:
-                    ISO['modeDispl'][varid]  = val/norm
-                    value = G2py3.FormatSigFigs(val/norm)
+                    value = G2mth.ValEsd(val/norm,-0.001)
                     item = str(G2mode).replace('::','::nv-')
                     item1 = ISO['G2VarList'][varid].varname()      #case where constraint has only single term
                     if item in sigDict:
+                        ISO['modeDispl'][varid]  = val/norm
                         value = G2mth.ValEsd(val/norm,sigDict[item]/norm)
                     elif item1 in sigDict:
-                        value = G2mth.ValEsd(val/norm,-0.001)+' *not in refined constraints'
+                        value = G2mth.ValEsd(val/norm,-0.001)
                 except TypeError:
                     value = '?'
                 pFile.write(fmt.format(var,value)+'\n')

@@ -348,7 +348,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                     if item in sigDict:
                         value = G2mth.ValEsd(val/norm,sigDict[item]/norm)
                     elif item1 in sigDict:
-                        value = G2mth.ValEsd(val/norm,sigDict[item1]/norm)+' *not in refined constraints'
+                        value = G2mth.ValEsd(val/norm,-0.001)+' *not in refined constraints'
                 except TypeError:
                     value = '?'
                 pFile.write(fmt.format(var,value)+'\n')

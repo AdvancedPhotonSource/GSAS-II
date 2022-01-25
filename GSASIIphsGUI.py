@@ -6381,7 +6381,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         PDFfile[1][item][0] = newParms[parms[item]][0]
                 parmDict = copy.deepcopy(newParms)
                 parmDict.update({'Temperature':PDFfile[1]['Temp']})
-                varyList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in RMCPdict['Parms']]
+                parmKeys = [int(item) for item in RMCPdict['Parms']]
+                parmKeys.sort()
+                varyList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in parmKeys]               
                 result = np.array(list(newParms.values())).T
                 SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
                     'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}

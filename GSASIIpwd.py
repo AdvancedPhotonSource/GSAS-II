@@ -3240,18 +3240,18 @@ pf = PdfFit()
             if it > 1 and item:
                 itms = item.split('@')
                 for itm in itms[1:]:
-                    itnum = itm[:2]
+                    itnum = int(itm[:2])
                     if it < 6:
                         rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
                         if itnum not in used:
-                            parms[itnum] = [AtomVar['@%s'%itnum],names[it-2].split('.')[1]]
+                            parms[itnum] = [AtomVar['@%d'%itnum],names[it-2].split('.')[1]]
                             used.append(itnum)
                     else:
                         uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
                         for i in range(3):
                             rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
                             if itnum not in used:
-                                parms[itnum] = [AtomVar['@%s'%itnum],uijs[i].split('.')[1]]
+                                parms[itnum] = [AtomVar['@%d'%itnum],uijs[i].split('.')[1]]
                                 used.append(itnum)
                             
     if 'sequential' in RMCPdict['refinement']:
@@ -3260,7 +3260,7 @@ pf = PdfFit()
 # set parameter values
         RMCPdict['Parms'] = parms
         for iprm in parms:
-            rundata += 'pf.setpar(%s,%.6f)\n'%(iprm,parms[iprm][0])
+            rundata += 'pf.setpar(%d,%.6f)\n'%(iprm,parms[iprm][0])
                         
 # Refine & Save results ---------------------------------------------------------------    
     rundata += 'pf.refine()\n'

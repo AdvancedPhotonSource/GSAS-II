@@ -6993,7 +6993,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         lines=False,names=['G(R) obs','G(R) calc','diff',])
             
         
-#### ISODISTORT results tab ###############################################################################
+#--- ISODISTORT results tab ###############################################################################
 
     def UpdateISODISTORT(Scroll=0):
         ''' Setup ISODISTORT and present the results. Allow selection of a distortion model for PDFfit or
@@ -7197,58 +7197,105 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 FindBondsDraw(data)                
                 G2plt.PlotStructure(G2frame,data)
                 UpdateISODISTORT()
-            
+
+            def OnSetZero(event):
+                '''Reset all distortion mode values to 0'''
+                ISOdata['modeDispl'] = [0.0 for i in ISOdata['ISOmodeDispl']]
+                err = G2mth.ApplyModeDisp(data)
+                if err:
+                    G2G.G2MessageBox(G2frame,'Do Draw atoms first')               
+                FindBondsDraw(data)                
+                G2plt.PlotStructure(G2frame,data)
+                UpdateISODISTORT()
+
+            def OnSaveModes(event):
+                '''Set initial distortion mode values to displayed values'''
+                ISOdata['ISOmodeDispl'] = copy.deepcopy(ISOdata['modeDispl'])
+                UpdateISODISTORT()
+
+                
+                
+            #### displayModes code starts here          
             ConstrData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Constraints'))
             pId = data['ranId']
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.BoxSizer(wx.VERTICAL)   
-            topSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
-            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for %s:'%data['General']['Name']))
-            lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
-            lineSizer.Add(wx.StaticText(ISODIST,label=' Adjust magnitude of distortion modes (-2 to +2):  '),0,WACV)
-            reset = wx.Button(ISODIST,label='Reset modes')
-            reset.Bind(wx.EVT_BUTTON,OnReset)
-            lineSizer.Add(reset,0,WACV)
-            topSizer.Add(lineSizer)
-            slideSizer = wx.FlexGridSizer(0,5,0,0)
-            slideSizer.AddGrowableCol(3,1)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for phase %s'%data['General']['Name']),0,wx.BOTTOM,5)
+            topSizer.Add((-1,-1),1,wx.EXPAND,1)
+            topSizer.Add(G2G.HelpButton(ISODIST,helpIndex=G2frame.dataWindow.helpKey),0,wx.ALIGN_TOP)
+            mainSizer.Add(topSizer,0,wx.EXPAND)
+            
+            mainSizer.Add(wx.StaticText(ISODIST,label=
+u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
+ display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom 
+ positions shown in the Plot Window are changed to reflect the display mode values. The 
+ range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
+            mainSizer.Add((-1,10))
+            slideSizer = wx.FlexGridSizer(0,4,0,0)
+            #slideSizer.AddGrowableCol(3,1)
             modeDisp = ISOdata['modeDispl']
             idsp = 0
+            slideSizer.Add(wx.StaticText(ISODIST,label='Isodistort mode name'),0,wx.ALIGN_CENTER)
+            slideSizer.Add(wx.StaticText(ISODIST,label='Initial value'))
+            slideSizer.Add(wx.StaticText(ISODIST,label='Display value'),0,wx.ALIGN_CENTER)
+            slideSizer.Add(wx.StaticText(ISODIST,label='Refine?'))
+            isoDict = {i.name:j for (i,j) in zip(data['ISODISTORT']['G2ModeList'],data['ISODISTORT']['IsoModeList'])}
             for item in ConstrData['Phase']:
-                if pId != item[-3].phase:
+                if item[-1] != 'f': continue # only want new vars
+                if item[-3] is None: continue # unnamed new var is not ISO
+                try:
+                    if pId != item[-3].phase: continue # at present only ISO modes are associated with a phase
+                except AttributeError:
                     continue
-                slideSizer.Add(wx.StaticText(ISODIST,label=item[-3].name),0,WACV)
-                slideSizer.Add(wx.StaticText(ISODIST,label=' %.5g '%ISOdata['ISOmodeDispl'][idsp]),0,WACV)
+                if  item[-3].name not in isoDict: continue
+                isoName = isoDict[item[-3].name]
+                slideSizer.Add(wx.StaticText(ISODIST,label=isoName),0,WACV)
+                slideSizer.Add(wx.StaticText(ISODIST,label=' %.5g '%ISOdata['ISOmodeDispl'][idsp],
+                                                 style=wx.ALIGN_CENTER_HORIZONTAL),0,WACV|wx.EXPAND)
+                lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
                 dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(75,20),OnLeave=OnDispVal)
-                slideSizer.Add(dispVal,0,WACV)
+                lineSizer.Add(dispVal,0,WACV)
                 displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,value=int(modeDisp[idsp]*1000))
                 displ.Bind(wx.EVT_SLIDER, OnDispl)
                 Indx[displ.GetId()] = [idsp,dispVal]
                 Indx[dispVal.GetId()] = [idsp,displ]
-                slideSizer.Add(displ,1,wx.EXPAND|wx.RIGHT)
-                refDispl = wx.CheckBox(ISODIST,label=' Refine?')
+                lineSizer.Add(displ)
+                slideSizer.Add(lineSizer)
+                refDispl = wx.CheckBox(ISODIST)
                 refDispl.SetValue(item[-2])
                 refDispl.Bind(wx.EVT_CHECKBOX,OnRefDispl)
                 Indx[refDispl.GetId()] = [idsp,item]
-                slideSizer.Add(refDispl,0,WACV)
+                slideSizer.Add(refDispl,0,WACV|wx.EXPAND|wx.LEFT,15)
                 idsp += 1
             slideSizer.SetMinSize(wx.Size(450,10))
-            topSizer.Add(slideSizer)
-            mainSizer.Add(topSizer)
+            mainSizer.Add(slideSizer)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            reset = wx.Button(ISODIST,label='Reset modes to initial values')
+            reset.Bind(wx.EVT_BUTTON,OnReset)
+            lineSizer.Add(reset,0,WACV)
+            reset = wx.Button(ISODIST,label='Set all modes to zero')
+            reset.Bind(wx.EVT_BUTTON,OnSetZero)
+            lineSizer.Add(reset,0,wx.ALL,10)
+            reset = wx.Button(ISODIST,label='Save displayed mode values')
+            reset.Bind(wx.EVT_BUTTON,OnSaveModes)
+            lineSizer.Add(reset,0,WACV)
+            mainSizer.Add(lineSizer,0,wx.TOP,5)
+            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite),0,wx.TOP,10)
+            mainSizer.Layout()
             SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
         
+        #### UpdateISODISTORT code starts here
         Indx = {}      
         ISOdata = data['ISODISTORT']
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,'rundata' in ISOdata)
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,('G2VarList' in ISOdata) 
             or ('G2OccVarList' in ISOdata))
-        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,('G2VarList' in ISOdata)
-#           or ('G2OccVarList' in data['ISODISTORT'])
-                                                   )
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,('G2VarList' in ISOdata))
+
         ISOcite = ''' For use of ISODISTORT, please cite:
-  H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-  B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
-  Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
+   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
+   B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for 
+   Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
   '''
         if ISODIST.GetSizer():
             ISODIST.GetSizer().Clear(True)
@@ -14128,7 +14175,7 @@ of the crystal structure.
         G2frame.Raise()
         return
         
-    # UpdatePhaseData execution starts here
+    #### UpdatePhaseData execution starts here
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}

@@ -155,15 +155,26 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
         elif rows and calltyp == 'single':
             name = histNames[rows[0]]       #only does 1st one selected
-            if not name.startswith('PWDR'): return 
-            pickId = G2frame.PickId
-            G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
-            G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
-            G2frame.PickId = pickId
+            if name.startswith('PWDR'):
+                pickId = G2frame.PickId
+                G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+                G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+                G2frame.PickId = pickId
+            elif name.startswith('PDF'):
+                pickId = G2frame.PickId
+                G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+                data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PickId,'PDF Controls'))
+                G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+                G2frame.PickId = pickId                
+            else:
+                return
         elif rows:
             name = histNames[rows[0]]       #only does 1st one selected
-            if data.get('covMatrix',[]):
-                G2plt.PlotCovariance(G2frame,data[name])
+            if name.startswith('PWDR'):
+                if data.get('covMatrix',[]):
+                    G2plt.PlotCovariance(G2frame,data[name])
+            elif name.startswith('PDF'):
+                print('make structure plot')
         else:
             G2frame.ErrorDialog(
                 'Select row or columns',

@@ -2528,7 +2528,7 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
             st.SetBackgroundColour(wx.WHITE)
             txtSizer.Add(st,pos=(i,col),flag=wx.EXPAND)
         txtSizer.AddGrowableRow(i)
-    txtSizer.AddGrowableCol(1)
+    txtSizer.AddGrowableCol(0)
     spanel.SetSizer(txtSizer)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
     btn = wx.Button(dlg, wx.ID_CLOSE) 

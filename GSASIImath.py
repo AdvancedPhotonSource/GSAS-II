@@ -842,40 +842,49 @@ def GetAtomFracByID(pId,parmDict,AtLookup,indx):
 #            U6 = Atom[cia+2:cia+8]
     
 
-def ApplySeqData(data,seqData):
+def ApplySeqData(data,seqData,PF2=False):
     '''Applies result from seq. refinement to drawing atom positions & Uijs
+    
+    :param dict data: GSAS-II phase data structure
+    :param: dict seqData: GSAS-II sequential refinement results structure
+    :param bool PF2: if True then seqData is from a sequential run of PDFfit2
+    
+    :returns: list drawAtoms: revised Draw Atoms list
     '''
-    generalData = data['General']
-    SGData = generalData['SGData']
     cx,ct,cs,cia = getAtomPtrs(data)
     drawingData = data['Drawing']
     dcx,dct,dcs,dci = getAtomPtrs(data,True)
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
-    pId = data['pId']
-    pfx = '%d::'%(pId)
-    parmDict = seqData['parmDict']
-    for ia,atom in enumerate(atoms):
-        dxyz = np.array([parmDict[pfx+'dAx:'+str(ia)],parmDict[pfx+'dAy:'+str(ia)],parmDict[pfx+'dAz:'+str(ia)]])
-        if atom[cia] == 'A':
-            atuij = np.array([parmDict[pfx+'AU11:'+str(ia)],parmDict[pfx+'AU22:'+str(ia)],parmDict[pfx+'AU33:'+str(ia)],
-                parmDict[pfx+'AU12:'+str(ia)],parmDict[pfx+'AU13:'+str(ia)],parmDict[pfx+'AU23:'+str(ia)]])
-        else:
-            atuiso = parmDict[pfx+'AUiso:'+str(ia)]
-        atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3])+dxyz)[0]
-        indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
-        for ind in indx:
-            drawatom = drawAtoms[ind]
-            opr = drawatom[dcs-1]
-            #how do I handle Sfrac? - fade the atoms?
-            if atom[cia] == 'A':                    
-                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz,atuij)
-                drawatom[dcx:dcx+3] = X
-                drawatom[dci-6:dci] = U
+    parmDict = copy.deepcopy(seqData['parmDict'])
+    if PF2:
+        print(parmDict)
+        SGData = data['RMC']['PDFfit']['SGData']
+    else:
+        SGData = data['General']['SGData']
+        pId = data['pId']
+        pfx = '%d::'%(pId)
+        for ia,atom in enumerate(atoms):
+            dxyz = np.array([parmDict[pfx+'dAx:'+str(ia)],parmDict[pfx+'dAy:'+str(ia)],parmDict[pfx+'dAz:'+str(ia)]])
+            if atom[cia] == 'A':
+                atuij = np.array([parmDict[pfx+'AU11:'+str(ia)],parmDict[pfx+'AU22:'+str(ia)],parmDict[pfx+'AU33:'+str(ia)],
+                    parmDict[pfx+'AU12:'+str(ia)],parmDict[pfx+'AU13:'+str(ia)],parmDict[pfx+'AU23:'+str(ia)]])
             else:
-                X = G2spc.ApplyStringOps(opr,SGData,atxyz)
-                drawatom[dcx:dcx+3] = X
-                drawatom[dci-7] = atuiso
+                atuiso = parmDict[pfx+'AUiso:'+str(ia)]
+            atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3])+dxyz)[0]
+            indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+            for ind in indx:
+                drawatom = drawAtoms[ind]
+                opr = drawatom[dcs-1]
+                #how do I handle Sfrac? - fade the atoms?
+                if atom[cia] == 'A':                    
+                    X,U = G2spc.ApplyStringOps(opr,SGData,atxyz,atuij)
+                    drawatom[dcx:dcx+3] = X
+                    drawatom[dci-6:dci] = U
+                else:
+                    X = G2spc.ApplyStringOps(opr,SGData,atxyz)
+                    drawatom[dcx:dcx+3] = X
+                    drawatom[dci-7] = atuiso
     return drawAtoms
     
 def FindNeighbors(phase,FrstName,AtNames,notName=''):

@@ -753,8 +753,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             return False,'Unable to interpret multiplier(s): '+msg
       
         try:
-            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
-                                                                          SeqHist=hId)
+            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
             G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:

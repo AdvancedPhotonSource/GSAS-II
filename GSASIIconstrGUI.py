@@ -1080,22 +1080,17 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     varMean = G2obj.fmtVarDescr(var)
                     helptext = "Prevents variable: "+ var + " ("+ varMean + ")\nfrom being changed"
                     ch = G2G.HelpButton(panel,helptext)
-                    Sizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
-                    Sizer.Add(wx.StaticText(panel,wx.ID_ANY,'FIXED'),
-                              0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,2)
-                    Sizer.Add(wx.StaticText(panel,wx.ID_ANY,var),
-                              0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT)
+                    Sizer.Add(ch)
+                    Sizer.Add(wx.StaticText(panel,label='FIXED'),0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,2)
+                    Sizer.Add(wx.StaticText(panel,label=var),0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT)
             else:
-                Sizer1.Add(wx.StaticText(panel,wx.ID_ANY,
-                    'No holds generated'))
+                Sizer1.Add(wx.StaticText(panel,label='No holds generated'))
             Sizer1.Add((-1,10))
             symGen,SymErr,SymHelp = G2mv.GetSymEquiv(seqmode,seqhistnum)
             if len(symGen) == 0:
-                Sizer1.Add(wx.StaticText(panel,wx.ID_ANY,
-                    'No equivalences generated'))
+                Sizer1.Add(wx.StaticText(panel,label='No equivalences generated'))
                 return Sizer1
-            Sizer1.Add(wx.StaticText(panel,wx.ID_ANY,
-                'Equivalences generated based on cell/space group input'))
+            Sizer1.Add(wx.StaticText(panel,label='Equivalences generated based on cell/space group input'))
             Sizer1.Add((-1,5))
             Sizer = wx.FlexGridSizer(0,5,0,0)
             Sizer1.Add(Sizer)
@@ -1111,11 +1106,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     Sizer.Add((-1,-1))
                 Sizer.Add(wx.StaticText(panel,wx.ID_ANY,'EQUIV'),
                     0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,2)
-                Sizer.Add(wx.StaticText(panel,wx.ID_ANY,sym),
-                                  0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
+                Sizer.Add(wx.StaticText(panel,wx.ID_ANY,sym),0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
                 if note:
-                    Sizer.Add(wx.StaticText(panel,wx.ID_ANY,note),
-                                  0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
+                    Sizer.Add(wx.StaticText(panel,wx.ID_ANY,note),0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
                 else:
                     Sizer.Add((-1,-1))
                 Sizer.Add((-1,-1))
@@ -1141,9 +1134,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 eqString[-1] =  var +'   '
                 helptext = "Prevents variable:\n"+ var + " ("+ varMean + ")\nfrom being changed"
             elif item[-1] == 'f' or item[-1] == 'e' or item[-1] == 'c': # not true on original-style (2011?) constraints
-                constEdit = wx.Button(panel,wx.ID_ANY,'Edit',style=wx.BU_EXACTFIT)
+                constEdit = wx.Button(panel,label='Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
-                constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)            # edit button
+                constSizer.Add(constEdit)            # edit button
                 Indx[constEdit.GetId()] = [Id,name]
                 if item[-1] == 'f':
                     helptext = "A new variable"
@@ -1211,7 +1204,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                         helptext += explain
-                    typeString = 'CONST'
+                    typeString = 'CONST '
                     eqString[-1] += ' = '+str(item[-3])
                 elif item[-1] == 'e' and len(item[:-3]) == 2:
                     if item[0][0] == 0: item[0][0] = 1.0
@@ -1228,7 +1221,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     eqString[-1] += '{:} = {:}'.format(var1,var)
                     if m != 1:
                         eqString[-1] += ' / ' + str(m)
-                    typeString = 'EQUIV'
+                    typeString = 'EQUIV '
                 elif item[-1] == 'e':
                     helptext = "The following variable:"
                     normval = item[0][0]
@@ -1255,7 +1248,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                             eqString[-1] += '{:.3g}*{:} '.format(m,var)
                         helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
                     eqString[-1] += ' = {:} '.format(indepterm)
-                    typeString = 'EQUIV'
+                    typeString = 'EQUIV '
                 else:
                     print ('Unexpected constraint'+item)
                 
@@ -1268,43 +1261,42 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 helptext += warnmsg
             if helptext:
                 ch = G2G.HelpButton(panel,helptext)
-                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+                constSizer.Add(ch)
             else:
                 constSizer.Add((-1,-1))
             constDel = wx.CheckBox(panel,label='sel ')
-            constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1) # delete selection
+            constSizer.Add(constDel) # delete selection
             panel.delBtn.checkboxList.append([constDel,Id,name])
             if refineflag:
                 refresh = lambda event: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True)
                 ch = G2G.G2CheckBox(panel,'vary ',item,-2,OnChange=refresh)
-                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+                constSizer.Add(ch)
             else:
                 constSizer.Add((-1,-1))
             if typeString.strip().endswith('='):
-                constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString,style=wx.ALIGN_RIGHT),0,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,1)
+                constSizer.Add(wx.StaticText(panel,label=typeString),0,wx.EXPAND,1)
             else:
-                constSizer.Add(wx.StaticText(panel,wx.ID_ANY,typeString,style=wx.ALIGN_CENTER),0,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,1)
+                constSizer.Add(wx.StaticText(panel,label=typeString),0,wx.EXPAND,1)
             #if badVar: eqString[-1] += ' -- Error: variable removed'
             #if note: eqString[-1] += '  (' + note + ')'
             if len(eqString) > 1:
                 Eq = wx.BoxSizer(wx.VERTICAL)
                 for s in eqString:
-                    line = wx.StaticText(panel,wx.ID_ANY,s)
+                    line = wx.StaticText(panel,label=s)
                     if problemItem: line.SetBackgroundColour(wx.YELLOW)
                     Eq.Add(line,0)
                 Eq.Add((-1,4))
             else:
-                Eq = wx.StaticText(panel,wx.ID_ANY,eqString[0])
+                Eq = wx.StaticText(panel,label=eqString[0])
                 if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
-            constSizer.Add(Eq,1,WACV)
+            constSizer.Add(Eq)
             constSizer.Add((3,3))
             if note:
-                Eq = wx.StaticText(panel,wx.ID_ANY,note,
-                                             style=wx.ALIGN_CENTER)
+                Eq = wx.StaticText(panel,label=note,style=WACV)
                 if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
             else:
                 Eq = (-1,-1)
-            constSizer.Add(Eq,1,wx.EXPAND|wx.ALIGN_CENTER_VERTICAL,3)
+            constSizer.Add(Eq,1,wx.EXPAND,3)
         if panel.delBtn.checkboxList:
             panel.delBtn.Enable(True)
         else:
@@ -4017,15 +4009,13 @@ def ShowIsoModes(G2frame,phase):
                 l1 = ''
                 if j > 0 and k < 0:
                     k = -k
-                    l1 = '\n-'
+                    l1 = '-'
                 elif j > 0:
-                    l1 += '\n+'
+                    l1 += ' +'
                 if np.isclose(k,1):
-                    l += '{:} {:4g} * {:}'.format(
-                        l1, n, ISO['IsoModeList'][j])
+                    l += '{:} {:4g} * {:}'.format(l1, n, ISO['G2ModeList'][j])
                 else:
-                    l += '{:} {:3g} * {:4g} * {:}'.format(
-                        l1, k, n, ISO['IsoModeList'][j])               
+                    l += '{:} {:3g} * {:4g} * {:}'.format(l1, k, n, ISO['G2ModeList'][j])               
             crdExp[lbl] = l
 
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT modes and displacements',#size=(630,400),
@@ -4035,15 +4025,11 @@ def ShowIsoModes(G2frame,phase):
         'ISODISTORT modes and displacements in phase '+str(data['General'].get('Name','?'))))
     # ISODISTORT displacive modes
     if 'G2VarList' in ISO:
-        panel1 = wxscroll.ScrolledPanel(
-            dlg, wx.ID_ANY,#size=(100,200),
-            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        panel1 = wxscroll.ScrolledPanel(dlg, style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
         subSizer1 = wx.FlexGridSizer(cols=5,hgap=5,vgap=2)
-        panel2 = wxscroll.ScrolledPanel(
-            dlg, wx.ID_ANY,#size=(100,200),
-            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        panel2 = wxscroll.ScrolledPanel(dlg, style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
         subSizer2 = wx.FlexGridSizer(cols=6,hgap=5,vgap=2)
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'ISODISTORT\nvariable'),0,wx.ALIGN_CENTER)
+        subSizer1.Add(wx.StaticText(panel1,label='ISODISTORT\nvariable'),0,wx.ALIGN_CENTER)
         subSizer1.Add((8,-1)) # spacer
         subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'GSAS-II\nequiv.'),0,wx.ALIGN_CENTER)
         subSizer1.Add((8,-1)) # spacer
@@ -4067,7 +4053,7 @@ def ShowIsoModes(G2frame,phase):
             subSizer1.Add((-1,-1)) # spacer
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(G2var)),0,WACV)
             subSizer1.Add((-1,-1)) # spacer
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]),0,wx.TOP,7)
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]),0,WACV)
             
         for (isomode,G2mode) in zip(ISO['IsoModeList'],ISO['G2ModeList']):
             if str(G2mode) in constrDict:

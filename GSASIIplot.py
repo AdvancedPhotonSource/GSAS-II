@@ -9039,6 +9039,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Draw('key down',Fade)
             else:
                 SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
+                PF2 = False
+                if not SeqId:
+                    SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential PDFfit2 results')
+                    PF2 = True
                 if SeqId:
                     Seqdata = G2frame.GPXtree.GetItemPyData(SeqId)
                     histNames = Seqdata['histNames']
@@ -9053,18 +9057,22 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     pId = data['pId']
                     SGData = generalData['SGData']
                     pfx = str(pId)+'::'
-                    phfx = '%d:%d:'%(pId,G2frame.seq)
                     seqData = Seqdata[histNames[G2frame.seq]]
                     parmDict = seqData['parmDict']
-                    cellA = G2lat.cellDijFill(pfx,phfx,SGData,parmDict)
                     global cell, Vol, Amat, Bmat, A4mat, B4mat
+                    if PF2:
+                        SGData = data['RMC']['PDFfit']['SGData']
+                        cellA = G2lat.cell2A(G2pwd.GetSeqCell(SGData,parmDict))
+                    else:
+                        phfx = '%d:%d:'%(pId,G2frame.seq)
+                        cellA = G2lat.cellDijFill(pfx,phfx,SGData,parmDict)
                     cell = G2lat.A2cell(cellA)
                     Vol = G2lat.calc_V(cellA)
                     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
                     Gmat,gmat = G2lat.cell2Gmat(cell)
                     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
                     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-                    data['Drawing']['Atoms'] = G2mth.ApplySeqData(data,seqData)
+                    data['Drawing']['Atoms'] = G2mth.ApplySeqData(data,seqData,PF2)
                     SetDrawAtomsText(data['Drawing']['Atoms'])
                     G2phG.FindBondsDrawCell(data,cell)           #rebuild bonds & polygons
                     Draw('key down')                    

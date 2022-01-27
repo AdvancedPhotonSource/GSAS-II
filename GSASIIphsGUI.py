@@ -6313,7 +6313,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         if 'sequential' in RMCPdict['refinement']:
             Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
             if Id:
-                SeqResult = G2frame.GPXtree.GetItemPyData(Id)
+                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
             else:
                 SeqResult = {}
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
@@ -6355,10 +6355,16 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                                 parms[item] = '%d'%Np
                     elif '#parameters' in line:
                         startParms = RMCPdict['Parms']
-                        if newParms and RMCPdict['SeqCopy']:
-                            startParms = newParms
-                        for iprm in startParms:
-                            newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                        if newParms or RMCPdict['SeqCopy']:
+                            if newParms:
+                                startParms = newParms
+                            for iprm in startParms:
+                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                        elif not RMCPdict['SeqCopy'] and SeqResult:
+                            startParms = saveSeqResult[Item[1]]['parmDict']
+                            for iprm in startParms:
+                                if not iprm.startswith('Temp'):
+                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
                     else:
                         newlines += line
                 rfile= open('Seq_PDFfit.py','w')
@@ -6394,13 +6400,13 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])
                 PDFctrl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'))
                 XYobs = PDFctrl['G(R)'][1]
-                XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
+                if XYobs.shape[0] < 4:
+                    XYobs = np.concatenate((XYobs,np.zeros_like(XYobs)),axis=0)
                 ibeg = np.searchsorted( XYobs[0],XYcalc[0][0])
                 ifin = ibeg+XYcalc.shape[1]
                 XYobs[2][ibeg:ifin] = XYcalc[1]
                 XYobs[3] = XYobs[1]-XYobs[2]
                 PDFctrl['G(R)'][1] = XYobs
-                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Controls'),PDFctrl)
                 SeqResult['histNames'].append(Item[1])
                 GoOn = pgbar.Update(itm,newmsg='PDF G(R) done = %d'%(itm))
                 if not GoOn[0]:
@@ -6995,7 +7001,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         lines=False,names=['G(R) obs','G(R) calc','diff',])
             
         
-#--- ISODISTORT results tab ###############################################################################
+#### ISODISTORT tab ###############################################################################
 
     def UpdateISODISTORT(Scroll=0):
         ''' Setup ISODISTORT and present the results. Allow selection of a distortion model for PDFfit or
@@ -7226,6 +7232,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             topSizer.Add((-1,-1),1,wx.EXPAND,1)
             topSizer.Add(G2G.HelpButton(ISODIST,helpIndex=G2frame.dataWindow.helpKey),0,wx.ALIGN_TOP)
             mainSizer.Add(topSizer,0,wx.EXPAND)
+            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite),0,wx.TOP,10)
             
             mainSizer.Add(wx.StaticText(ISODIST,label=
 u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
@@ -7237,9 +7244,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             #slideSizer.AddGrowableCol(3,1)
             modeDisp = ISOdata['modeDispl']
             idsp = 0
-            slideSizer.Add(wx.StaticText(ISODIST,label='Isodistort mode name'),0,wx.ALIGN_CENTER)
-            slideSizer.Add(wx.StaticText(ISODIST,label='Initial value'))
-            slideSizer.Add(wx.StaticText(ISODIST,label='Display value'),0,wx.ALIGN_CENTER)
+            slideSizer.Add(wx.StaticText(ISODIST,label='Name'),0,wx.ALIGN_CENTER)
+            slideSizer.Add(wx.StaticText(ISODIST,label='Save value'))
+            slideSizer.Add(wx.StaticText(ISODIST,label='Value'),0,wx.ALIGN_CENTER)
             slideSizer.Add(wx.StaticText(ISODIST,label='Refine?'))
             isoDict = {i.name:j for (i,j) in zip(data['ISODISTORT']['G2ModeList'],data['ISODISTORT']['IsoModeList'])}
             for item in ConstrData['Phase']:
@@ -7250,14 +7257,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 except AttributeError:
                     continue
                 if  item[-3].name not in isoDict: continue
-                isoName = isoDict[item[-3].name]
+                isoName = item[-3].varname().split('::')[1]
                 slideSizer.Add(wx.StaticText(ISODIST,label=isoName),0,WACV)
                 slideSizer.Add(wx.StaticText(ISODIST,label=' %.5g '%ISOdata['ISOmodeDispl'][idsp],
-                                                 style=wx.ALIGN_CENTER_HORIZONTAL),0,WACV|wx.EXPAND)
+                    style=wx.ALIGN_CENTER_HORIZONTAL),0,WACV|wx.EXPAND)
                 lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
                 dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(75,20),OnLeave=OnDispVal)
                 lineSizer.Add(dispVal,0,WACV)
-                displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,value=int(modeDisp[idsp]*1000))
+                displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,
+                    value=int(modeDisp[idsp]*1000),size=(250,20))
                 displ.Bind(wx.EVT_SLIDER, OnDispl)
                 Indx[displ.GetId()] = [idsp,dispVal]
                 Indx[dispVal.GetId()] = [idsp,displ]
@@ -7269,20 +7277,19 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Indx[refDispl.GetId()] = [idsp,item]
                 slideSizer.Add(refDispl,0,WACV|wx.EXPAND|wx.LEFT,15)
                 idsp += 1
-            slideSizer.SetMinSize(wx.Size(450,10))
+            slideSizer.SetMinSize(wx.Size(650,10))
             mainSizer.Add(slideSizer)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
-            reset = wx.Button(ISODIST,label='Reset modes to initial values')
+            reset = wx.Button(ISODIST,label='Reset modes to save values')
             reset.Bind(wx.EVT_BUTTON,OnReset)
             lineSizer.Add(reset,0,WACV)
             reset = wx.Button(ISODIST,label='Set all modes to zero')
             reset.Bind(wx.EVT_BUTTON,OnSetZero)
             lineSizer.Add(reset,0,wx.ALL,10)
-            reset = wx.Button(ISODIST,label='Save displayed mode values')
+            reset = wx.Button(ISODIST,label='Save mode values')
             reset.Bind(wx.EVT_BUTTON,OnSaveModes)
             lineSizer.Add(reset,0,WACV)
             mainSizer.Add(lineSizer,0,wx.TOP,5)
-            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite),0,wx.TOP,10)
             mainSizer.Layout()
             SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
         

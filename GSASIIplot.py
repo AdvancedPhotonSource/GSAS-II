@@ -9066,6 +9066,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         phfx = '%d:%d:'%(pId,G2frame.seq)
                         cellA = G2lat.cellDijFill(pfx,phfx,SGData,parmDict)
+                        if cellA is None:   #happens if no D11 in parmDict
+                            cellA = G2lat.cell2A(data['General']['Cell'][1:7])
                     cell = G2lat.A2cell(cellA)
                     Vol = G2lat.calc_V(cellA)
                     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse

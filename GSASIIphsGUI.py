@@ -7217,11 +7217,18 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 UpdateISODISTORT()
 
             def OnSaveModes(event):
-                '''Set initial distortion mode values to displayed values'''
+                '''Set saved distortion mode values to displayed values'''
+                dlg = wx.MessageDialog(G2frame,'Are you sure you want to replace the saved mode values?',
+                    'Confirm replace',wx.YES|wx.NO)
+                try:
+                    dlg.CenterOnParent()
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result != wx.ID_YES: return
                 ISOdata['ISOmodeDispl'] = copy.deepcopy(ISOdata['modeDispl'])
+                G2plt.PlotStructure(G2frame,data)
                 UpdateISODISTORT()
-
-                
                 
             #### displayModes code starts here          
             ConstrData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Constraints'))

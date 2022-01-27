@@ -163,8 +163,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             elif name.startswith('PDF'):
                 pickId = G2frame.PickId
                 G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
-                data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PickId,'PDF Controls'))
-                G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+                PFdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PickId,'PDF Controls'))
+                G2plt.PlotISFG(G2frame,PFdata,plotType='G(R)')
                 G2frame.PickId = pickId                
             else:
                 return

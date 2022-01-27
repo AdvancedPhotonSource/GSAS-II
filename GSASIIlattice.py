@@ -220,6 +220,8 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
 
     :returns: A,sigA where each is a list of six terms with the A terms 
     '''
+    if pfx+'D11' not in parmDict:
+        return None
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
              parmDict[pfx+'A2']+parmDict[phfx+'D33'],

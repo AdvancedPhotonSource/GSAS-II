@@ -6418,7 +6418,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
             G2frame.GPXtree.SelectItem(Id)
 
-        else:
+        else: #normal
             if sys.platform.lower().startswith('win'):
                 Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
                 Proc.wait()     #for it to finish before continuing on
@@ -7248,7 +7248,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
             mainSizer.Add((-1,10))
             slideSizer = wx.FlexGridSizer(0,4,0,0)
-            #slideSizer.AddGrowableCol(3,1)
             modeDisp = ISOdata['modeDispl']
             idsp = 0
             slideSizer.Add(wx.StaticText(ISODIST,label='Name'),0,wx.ALIGN_CENTER)

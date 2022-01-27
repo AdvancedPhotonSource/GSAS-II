@@ -858,8 +858,29 @@ def ApplySeqData(data,seqData,PF2=False):
     drawAtoms = drawingData['Atoms']
     parmDict = copy.deepcopy(seqData['parmDict'])
     if PF2:
-        print(parmDict)
-        SGData = data['RMC']['PDFfit']['SGData']
+        PDFData = data['RMC']['PDFfit']
+        SGData = data['General']['SGData']
+        AtmConstr = PDFData['AtomConstr']
+        for ia,atom in enumerate(atoms):
+            atxyz = atom[cx:cx+3]
+            for ix in [0,1,2]:
+                item =  AtmConstr[ia][ix+2]
+                if '@' in item:
+                    Ids = [itm[:2] for itm in item.split('@')[1:]]
+                    for Id in Ids:
+                        item = item.replace('@'+Id,str(parmDict[Id][0]))
+                    atxyz[ix] = eval(item)
+            if '@' in AtmConstr[ia][6]:
+                itm = AtmConstr[ia][6].split('@')[:2][1]
+                atuij = np.array([parmDict[itm][0],parmDict[itm][0],parmDict[itm][0],0.0,0.0,0.0])
+            indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+            for ind in indx:
+                drawatom = drawAtoms[ind]
+                opr = drawatom[dcs-1]
+                #how do I handle Sfrac? - fade the atoms?
+                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz,atuij)
+                drawatom[dcx:dcx+3] = X
+                drawatom[dci-6:dci] = U
     else:
         SGData = data['General']['SGData']
         pId = data['pId']

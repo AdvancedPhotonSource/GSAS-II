@@ -2061,6 +2061,34 @@ def DoCalibInst(IndexPeaks,Inst):
     InstPrint(Inst,sigDict)
     return True
 
+def getHeaderInfo(FitPgm,dataType):
+    '''Provide parameter name, label name and formatting information for the 
+    contents of the peak table and where used in DoPeakFit
+    '''
+    names = ['pos','int']
+    lnames = ['position','intensity']
+    if FitPgm == 'LaueFringe':
+        names += ['sig','gam','cells']
+        lnames += ['sigma','gamma','cells']
+        fmt = ["%10.5f","%10.3f","%10.3f","%10.3f","%10.3f"]
+    elif 'C' in dataType:
+        names += ['sig','gam']
+        lnames += ['sigma','gamma']
+        fmt = ["%10.5f","%10.1f","%10.3f","%10.3f"]
+    elif 'T' in dataType:
+        names += ['alp','bet','sig','gam']
+        lnames += ['alpha','beta','sigma','gamma']
+        fmt = ["%10.2f","%10.4f","%8.3f","%8.5f","%10.3f","%10.3f"]
+    elif 'E' in dataType:
+        names += ['sig']
+        lnames += ['sigma']
+        fmt = ["%10.5f","%10.1f","%8.3f"]
+    else: # 'B'
+        names += ['alp','bet','sig','gam']
+        lnames += ['alpha','beta','sigma','gamma']
+        fmt = ["%10.5f","%10.1f","%8.2f","%8.4f","%10.3f","%10.3f"]
+    return names, fmt, lnames
+
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,wtFactor=1.0,dlg=None,noFit=False):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
@@ -2248,12 +2276,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         peakNames = []
         peakVary = []
         peakVals = []
-        if 'C' in dataType:
-            names = ['pos','int','sig','gam']
-        elif 'E' in dataType:
-            names = ['pos','int','sig']
-        else:   #'T' and 'B'
-            names = ['pos','int','alp','bet','sig','gam']
+        names,_,_ = getHeaderInfo(FitPgm,dataType)
         for i,peak in enumerate(Peaks):
             for j,name in enumerate(names):
                 peakVals.append(peak[2*j])
@@ -2264,12 +2287,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return dict(zip(peakNames,peakVals)),peakVary
                 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
-        if 'C' in Inst['Type'][0]:
-            names = ['pos','int','sig','gam']
-        elif 'E' in Inst['Type'][0]:
-            names = ['pos','int','sig']
-        else:   #'T' & 'B'
-            names = ['pos','int','alp','bet','sig','gam']
+        names,_,_ = getHeaderInfo(FitPgm,Inst['Type'][0])
         for i,peak in enumerate(Peaks):
             pos = parmDict['pos'+str(i)]
             if 'difC' in Inst:
@@ -2303,12 +2321,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         
     def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
         print ('Peak coefficients:')
-        if 'C' in dataType:
-            names = ['pos','int','sig','gam']
-        elif 'E' in dataType:
-            names = ['pos','int','sig']
-        else:   #'T' & 'B'
-            names = ['pos','int','alp','bet','sig','gam']            
+        names,fmt,_ = getHeaderInfo(FitPgm,dataType)
         head = 13*' '
         for name in names:
             if name in ['alp','bet']:
@@ -2317,14 +2330,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 head += name.center(10)+'esd'.center(10)
         head += 'bins'.center(8)
         print (head)
-        if 'C' in dataType:
-            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
-        elif 'E' in dataType:
-            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f"}
-        elif 'T' in dataType:
-            ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%8.3f",'bet':"%8.5f",'sig':"%10.3f",'gam':"%10.3f"}
-        else: #'B'
-            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'alp':"%8.2f",'bet':"%8.4f",'sig':"%10.3f",'gam':"%10.3f"}
+        ptfmt = dict(zip(names,fmt))
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
             for j in range(len(names)):
@@ -3469,7 +3475,7 @@ def writeCurrentStatus(ENGINE,statFP,plotF):
     fp.close()
 
 def calcRmax(ENGINE):
-    'from Bachir, works for non-othorhombic'
+    'from Bachir, works for non-orthorhombic cells'
     a,b,c = ENGINE.basisVectors
     lens = []
     ts    = np.linalg.norm(np.cross(a,b))/2
@@ -3564,7 +3570,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             rundata += '    ENGINE.add_constraints([SofQ])\n'
         else:
             print('What is this?')
-    rundata += '    ENGINE.add_constraints(DistanceConstraint(defaultLowerDistance={}))\n'.format(RMCPdict['min Contact'])
+    minDists = ''
     if BondList:
         rundata += '''    B_CONSTRAINT   = BondConstraint()
     ENGINE.add_constraints(B_CONSTRAINT)
@@ -3575,13 +3581,16 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             d1,d2 = BondList[pair]
             if d1 == 0: continue
             if d2 == 0:
-                print('Ignoring min distance without maximum')
-                #rundata += '            ("element","{}","{}",{}),\n'.format(
-                #                        e1.strip(),e2.strip(),d1)
+                minDists += '("element","{}","{}",{}),'.format(e1.strip(),e2.strip(),d1)
             else:
                 rundata += '            ("element","{}","{}",{},{}),\n'.format(
                                         e1.strip(),e2.strip(),d1,d2)
         rundata += '             ])\n'
+    rundata += '    D_CONSTRAINT = DistanceConstraint(defaultLowerDistance={})\n'.format(RMCPdict['min Contact'])
+    if minDists:
+        rundata += "    D_CONSTRAINT.set_pairs_definition( {'inter':[" + minDists + "]})\n"
+    rundata += '    ENGINE.add_constraints(D_CONSTRAINT)\n'
+    
     if AngleList:
         rundata += '''    A_CONSTRAINT   = BondsAngleConstraint()
     ENGINE.add_constraints(A_CONSTRAINT)

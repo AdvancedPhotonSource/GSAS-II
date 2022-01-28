@@ -430,7 +430,7 @@ def GetHistsLikeSelected(G2frame):
         hLam = 1
     else:
         hLam = 0
-    sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
+#    sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
 #    hGeom = sample.get('Type')
     hstName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     hPrefix = hstName.split()[0]+' '
@@ -439,13 +439,14 @@ def GetHistsLikeSelected(G2frame):
     while item:
         name = G2frame.GPXtree.GetItemText(item)
         if name.startswith(hPrefix) and name != hstName:
-            cGeom,cType,cLam, = '?','?',-1
+            cType,cLam, = '?',-1
             subitem, subcookie = G2frame.GPXtree.GetFirstChild(item)
             while subitem:
                 subname = G2frame.GPXtree.GetItemText(subitem)
                 if subname == 'Sample Parameters':
-                    sample = G2frame.GPXtree.GetItemPyData(subitem)
-#                    cGeom = sample.get('Type')
+                    # sample = G2frame.GPXtree.GetItemPyData(subitem)
+                    # cGeom = sample.get('Type')
+                    pass
                 elif subname == 'Instrument Parameters':
                     inst,inst2 = G2frame.GPXtree.GetItemPyData(subitem)
                     cType = inst['Type'][0]
@@ -947,11 +948,14 @@ def UpdatePeakGrid(G2frame, data):
        for r in range(reflGrid.GetNumberRows()):
            for c in range(reflGrid.GetNumberCols()):
                if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
-                   if float(reflGrid.GetCellValue(r,c)) < 0.:
-                       reflGrid.SetCellBackgroundColour(r,c,wx.RED)
-                   else:
-                       reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
-                                                  
+                   try:
+                       if float(reflGrid.GetCellValue(r,c)) < 0.:
+                           reflGrid.SetCellBackgroundColour(r,c,wx.RED)
+                       else:
+                           reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
+                   except:
+                        pass
+                    
     def KeyEditPeakGrid(event):
         '''Respond to pressing a key to act on selection of a row, column or cell
         in the Peak List table
@@ -1083,6 +1087,7 @@ def UpdatePeakGrid(G2frame, data):
     def updateMe(*args):
         'Redraw the peak listings after the mode changes'
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
+#        wx.CallLater(100,RefreshPeakGrid,None)
 
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
@@ -1092,7 +1097,7 @@ def UpdatePeakGrid(G2frame, data):
         OnPeakFit(FitPgm,noFit=True)
         
     #======================================================================
-    # beginning of UpdatePeakGrid init
+    #### beginning of UpdatePeakGrid
     #======================================================================
 #    data['FitPgm'] = data.get('FitPgm',0)
     G2frame.GetStatusBar().SetStatusText('Global refine: select refine column & press Y or N',1)
@@ -1126,41 +1131,15 @@ def UpdatePeakGrid(G2frame, data):
     PatternId = G2frame.PatternId
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
     for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
-#    if data.get('FitPgm',0) == 1:
-#        colLabels = ['position','refine','intensity','refine','cells','refine']
-#        Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-#            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
-#            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-#        # TODO: note gamma values can still be set as refined
-#    elif 'C' in Inst['Type'][0]:
-    if 'C' in Inst['Type'][0]:
-        colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine']
-        Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-    elif 'E' in Inst['Type'][0]:
-        colLabels = ['position','refine','intensity','refine','sigma','refine']
-        Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-    else:
-        colLabels = ['position','refine','intensity','refine','alpha','refine',
-            'beta','refine','sigma','refine','gamma','refine']
-        if 'T' in Inst['Type'][0]:
-            Types = [wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-        else:  #'B'
-            Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
-                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+    colLabels = []
+    Types = []
+    for _,f,l in zip(*G2pwd.getHeaderInfo(
+        ('LSQ','LaueFringe')[data.get('FitPgm',0)],Inst['Type'][0])):
+        colLabels.append(l)
+        colLabels.append('refine')
+        Types.append(wg.GRID_VALUE_FLOAT + 
+                         f.replace('%',':').replace('f','').replace('.',','))
+        Types.append(wg.GRID_VALUE_BOOL)
     T = []
     for peak in data['peaks']:
         T.append(peak[0])
@@ -1171,6 +1150,13 @@ def UpdatePeakGrid(G2frame, data):
     X = []
     for key in T: X.append(D[key])
     data['peaks'] = X
+    # pad peak table, if needed
+    for j in range(len(data['peaks'])):
+        for i in range(len(data['peaks'][j]),len(colLabels)):
+            if colLabels[i] == 'refine':
+                data['peaks'][j].append(False)
+            else:
+                data['peaks'][j].append(1.0)
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)

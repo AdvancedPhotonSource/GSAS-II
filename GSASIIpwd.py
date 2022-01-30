@@ -3298,26 +3298,27 @@ def GetSeqCell(SGData,parmDict):
     '''
     try:
         if SGData['SGLaue'] in ['m3', 'm3m']:
-            return [parmDict['11'][0],parmDict['11'][0],parmDict['11'][0],90.,90.,90.]
+            cell = [parmDict['11'][0],parmDict['11'][0],parmDict['11'][0],90.,90.,90.]
         elif SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:
-            return [parmDict['11'][0],parmDict['11'][0],parmDict['12'][0],90.,90.,90.]
+            cell = [parmDict['11'][0],parmDict['11'][0],parmDict['12'][0],90.,90.,90.]
         elif SGData['SGLaue'] in ['3R','3mR']:
-            return [parmDict['11'][0],parmDict['11'][0],parmDict['11'][0],
+            cell = [parmDict['11'][0],parmDict['11'][0],parmDict['11'][0],
                 parmDict['12'][0],parmDict['12'][0],parmDict['12'][0]]
         elif SGData['SGLaue'] == 'mmm':
-            return [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,90.,90.]
+            cell = [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,90.,90.]
         elif SGData['SGLaue'] == '2/m':
             if SGData['SGUniq'] == 'a':
-                return [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],parmDict['14'][0],90.,90.]
+                cell = [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],parmDict['14'][0],90.,90.]
             elif SGData['SGUniq'] == 'b':
-                return [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,parmDict['14'][0],90.]
+                cell = [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,parmDict['14'][0],90.]
             elif SGData['SGUniq'] == 'c':
-                return [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,90.,parmDict['14'][0]]
+                cell = [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],90.,90.,parmDict['14'][0]]
         else:
-            return [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],
+            cell = [parmDict['11'][0],parmDict['12'][0],parmDict['13'][0],
                 parmDict['14'][0],parmDict['15'][0],parmDict['16'][0]]
-    except IndexError:
-        return None
+        return G2lat.cell2A(cell)
+    except KeyError:
+         return None
     
 def UpdatePDFfit(Phase,RMCPdict):
     ''' Updates various PDFfit parameters held in GSAS-II

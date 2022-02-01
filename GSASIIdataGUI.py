@@ -6594,21 +6594,17 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         # Phase/ ISODISTORT tab
+        G2G.Define_wxId('wxID_ISODISTORT','wxID_ISODNEWPHASE','wxID_SHOWISO1','wxID_SHOWISOMODES','wxID_ISOPDFFIT')
         self.ISODData = wx.MenuBar()
         self.PrefillDataMenu(self.ISODData)
         self.ISODData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.ISODDataEdit = wx.Menu(title='')
         self.ISODData.Append(menu=self.ISODDataEdit, title='Operations')
-        G2G.Define_wxId('wxID_ISODISTORT')
-        self.ISODDataEdit.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','Run ISODISTORT to find displacement modes')
-        G2G.Define_wxId('wxID_ISODNEWPHASE')
+        self.ISODDataEdit.Append(G2G.wxID_ISODISTORT,'Run ISODISTORT','To find displacement modes')
         self.ISODDataEdit.Append(G2G.wxID_ISODNEWPHASE,'Make CIF file','From ISODISTORT selection')
-        G2G.Define_wxId('wxID_SHOWISO1')
-        self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show modes',
-                'Show ISODISTORT mode values for current phase')
-        G2G.Define_wxId('wxID_SHOWISOMODES')
-        self.ISODDataEdit.Append(G2G.wxID_SHOWISOMODES,'Show relationships',
-                'Show how ISODISTORT modes are defined in current phase')
+        self.ISODDataEdit.Append(G2G.wxID_ISOPDFFIT,'Make PDFfit phase','From current ISODISTORT phase')
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISO1,'Show modes','And values From ISODISTORT')
+        self.ISODDataEdit.Append(G2G.wxID_SHOWISOMODES,'Show relationships','For ISODISTORT')
         self.PostfillDataMenu()
 
         # Phase / Layer tab 

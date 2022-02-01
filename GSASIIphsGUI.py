@@ -6030,14 +6030,52 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                             atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
                             wx.MessageBox('ERROR - atom constraints must be blank or have "@n" with n >= 20',
                                 style=wx.ICON_ERROR)
+                            
+                def OnUisoRefine(event):
+                    RMCPdict['UisoRefine'] = uiso.GetValue()
+                    nextP = 80
+                    oType = ''
+                    oName = ''
+                    for atom in RMCPdict['AtomConstr']:
+                        if RMCPdict['UisoRefine'] == 'No':
+                            atom[6] = ''
+                        elif 'same' in RMCPdict['UisoRefine']:
+                            atom[6] = '@81'
+                            RMCPdict['AtomVar']['@81'] = 0.005
+                        elif 'type' in RMCPdict['UisoRefine']:
+                            if atom[1] != oType:
+                                oType = atom[1]
+                                nextP += 1
+                            atom[6] = '@%d'%nextP
+                            RMCPdict['AtomVar']['@%d'%nextP] = 0.005
+                        elif 'parent' in RMCPdict['UisoRefine']:
+                            if atom[0] != oName:
+                                oName = atom[0]
+                                nextP += 1
+                            atom[6] = '@%d'%nextP
+                            RMCPdict['AtomVar']['@%d'%nextP] = 0.005
+                    wx.CallAfter(UpdateRMC)
                 
                 atmSizer = wx.BoxSizer(wx.VERTICAL)
                 atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=20 && "@n" should be at end'))
+                uisoSizer = wx.BoxSizer(wx.HORIZONTAL)
+                uisoSizer.Add(wx.StaticText(G2frame.FRMC,label=' Refine Uiso? '),0,WACV)
+                uiso = wx.ComboBox(G2frame.FRMC,choices=['No','by type','by parent name','all same'],style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                uiso.SetValue(RMCPdict['UisoRefine'])
+                uiso.Bind(wx.EVT_COMBOBOX,OnUisoRefine)
+                uisoSizer.Add(uiso,0,WACV)
+                atmSizer.Add(uisoSizer)
 
                 table = [item[1:] for item in RMCPdict['AtomConstr']]
+                addCol = False
+                if len(RMCPdict['AtomConstr'][0]) > 6:
+                    addCol = True
                 colLabels = ['Type','x constraint','y constraint','z  constraint','frac constr','Uiso constr']
                 rowLabels = [item[0] for item in RMCPdict['AtomConstr']]
                 Types = 6*[wg.GRID_VALUE_STRING,]
+                if addCol:
+                    colLabels += ['sym opr',]
+                    Types = 7*[wg.GRID_VALUE_STRING,]                    
                 atmTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
                 atmGrid = G2G.GSGrid(G2frame.FRMC)
                 atmGrid.SetTable(atmTable, True,useFracEdit=False)
@@ -6097,6 +6135,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 RMCPdict['SeqReverse'] = False
             if 'AtomVar' not in RMCPdict:
                 RMCPdict['AtomVar'] = {}
+            if 'UisoRefine' not in RMCPdict:
+                RMCPdict['UisoRefine'] = 'No'
 #end patch
             Atoms = data['Atoms']
             cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
@@ -6153,8 +6193,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
-        if G2frame.FRMC.GetSizer():
-            G2frame.FRMC.GetSizer().Clear(True)
+        try:
+            if G2frame.FRMC.GetSizer():
+                G2frame.FRMC.GetSizer().Clear(True)
+        except: #wxAssertionError from C++
+            pass
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         runFile = ' '
@@ -6279,6 +6322,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
     def RunPDFfit(event):
         generalData = data['General']
+        ISOdict = data['ISODISTORT']
         PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
         if not PDFfit_exec:
             wx.MessageBox(''' PDFfit2 is currently not available for this platform. 
@@ -6317,6 +6361,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             else:
                 SeqResult = {}
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
+            G2Names = [item.name for item in ISOdict['G2ModeList']]
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
             SeqResult['histNames'] = []         #this clears the previous seq. result!
             SeqNames = []
@@ -6389,7 +6434,14 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 parmDict.update({'Temperature':PDFfile[1]['Temp']})
                 parmKeys = [int(item) for item in RMCPdict['Parms']]
                 parmKeys.sort()
-                varyList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in parmKeys]               
+                tempList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in parmKeys]
+                atParms = [str(i+21) for i in range(len(G2Names))]
+                varyList = []
+                for item in tempList:
+                    pid = item.split('-')[0]
+                    if pid in atParms:
+                        item = '%s-%s'%(pid,G2Names[int(pid)-21])
+                    varyList.append(item)
                 result = np.array(list(newParms.values())).T
                 SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
                     'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
@@ -7239,7 +7291,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             topSizer.Add((-1,-1),1,wx.EXPAND,1)
             topSizer.Add(G2G.HelpButton(ISODIST,helpIndex=G2frame.dataWindow.helpKey),0,wx.ALIGN_TOP)
             mainSizer.Add(topSizer,0,wx.EXPAND)
-            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite),0,wx.TOP,10)
+            if SGLaue not in ['mmm','2/m','-1']:
+                mainSizer.Add(wx.StaticText(ISODIST,label=' NB: ISODISTORT distortion mode symmetry is too high to be used in PDFfit'))
+            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
             
             mainSizer.Add(wx.StaticText(ISODIST,label=
 u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
@@ -7302,7 +7356,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         #### UpdateISODISTORT code starts here
         Indx = {}      
         ISOdata = data['ISODISTORT']
+        SGLaue = data['General']['SGData']['SGLaue']
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,'rundata' in ISOdata)
+        G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISOPDFFIT,(('G2VarList' in ISOdata) and (SGLaue in ['mmm','2/m','-1'])))
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISO1,('G2VarList' in ISOdata) 
             or ('G2OccVarList' in ISOdata))
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,('G2VarList' in ISOdata))
@@ -7369,7 +7425,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         elif 'rundata' in data['ISODISTORT']:
             G2G.G2MessageBox(G2frame,'Need to select an ISODISTORTdistortion model first before creating a CIF')
         else:
-            G2G.G2MessageBox(G2frame,'ERROR - need to run ISODISTORT first - see General/Compute menu')        
+            G2G.G2MessageBox(G2frame,'ERROR - need to run ISODISTORT first - see General/Compute menu') 
+            
+    def OnNewPDFfitPhase(event):
+        ''' Make new phase for PDFfit using ISODISTORT mode definitions as constraints
+        '''
+        newPhase = G2pwd.ISO2PDFfit(data)
+        phaseName = newPhase['General']['Name']            
+        sub = G2frame.GPXtree.AppendItem(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+        G2frame.GPXtree.SetItemPyData(sub,newPhase)
+        G2frame.GPXtree.SelectItem(sub)
           
 #### DIFFax Layer Data page ################################################################################
     def UpdateLayerData(Scroll=0):
@@ -7926,8 +7991,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             layerNames = [layer['Name'] for layer in Layers['Layers']]
         G2frame.GetStatusBar().SetStatusText('',1)
         layerData = G2frame.layerData
-        # if layerData.GetSizer():
-        #     layerData.GetSizer().Clear(True)
+        try:
+            if layerData.GetSizer():
+                layerData.GetSizer().Clear(True)
+        except:
+            pass
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.VERTICAL)   
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
@@ -14117,6 +14185,7 @@ of the crystal structure.
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.ISODData)
         G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)
         G2frame.Bind(wx.EVT_MENU, OnNewISOPhase, id=G2G.wxID_ISODNEWPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnNewPDFfitPhase, id=G2G.wxID_ISOPDFFIT)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_SHOWISO1)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoModes, id=G2G.wxID_SHOWISOMODES)
         # MC/SA

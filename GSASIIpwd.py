@@ -3729,6 +3729,67 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
             DBv = DBxV[iB,i]/DBx[iB,i]
             bondAngles.append(npacosd(np.sum(DAv*DBv)))
     return np.array(bondAngles)
+
+def ISO2PDFfit(Phase):
+    ''' Creates new phase structure to be used for PDFfit from an ISODISTORT mode displacement phase.
+    It builds the distortion mode parameters to be used as PDFfit variables for atom displacements from 
+    the original parent positions as transformed to the child cell wiht symmetry defined from ISODISTORT.
+    
+    :param Phase: dict GSAS-II Phase structure; must contain ISODISTORT dict. NB: not accessed otherwise
+    
+    :returns: dict: GSAS-II Phase structure; will contain ['RMC']['PDFfit'] dict
+    '''
+    
+    Trans = np.eye(3)
+    Uvec = np.zeros(3)
+    Vvec = np.zeros(3)
+    Phase = copy.deepcopy(Phase)
+    Atoms = Phase['Atoms']
+    parentXYZ = Phase['ISODISTORT']['G2parentCoords']           #starting point for mode displacements
+    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    for iat,atom in enumerate(Atoms):
+        atom[cx:cx+3] = parentXYZ[iat]
+    SGData = copy.deepcopy(Phase['General']['SGData'])
+    SGOps = SGData['SGOps']
+    newPhase = copy.deepcopy(Phase)
+    newPhase['ranId'] = rand.randint(0,sys.maxsize)
+    newPhase['General']['Name'] += '_PDFfit'
+    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]    #this is for filled unit cell
+    newPhase,atCodes = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
+    newPhase['Histograms'] = {}
+    newPhase['Drawing'] = []
+    Atoms = newPhase['Atoms']
+    RMCPdict = newPhase['RMC']['PDFfit']
+    ISOdict = newPhase['ISODISTORT']
+    RMCPdict['AtomConstr'] = []
+    RMCPdict['SGData'] = copy.deepcopy(SGData)      #this is from the ISODISTORT child; defines PDFfit constraints
+    Norms = ISOdict['NormList']
+    ModeMatrix = ISOdict['Mode2VarMatrix']
+    RMCPdict['AtomVar'] = {'@%d'%(itm+21):val for itm,val in enumerate(ISOdict['modeDispl'])}
+    for iatm,[atom,atcode] in enumerate(zip(Atoms,atCodes)):
+        pid,opid = [int(item) for item in atcode.split(':')]
+        atmConstr = [atom[ct-1],atom[ct],'','','','','',atcode]
+        for ip,pname in enumerate(['%s_d%s'%(atom[ct-1],x) for x in ['x','y','z']]):
+            try:
+                conStr = ''
+                if Atoms[iatm][cx+ip]:
+                    conStr += '%.5f'%Atoms[iatm][cx+ip]
+                pid = ISOdict['IsoVarList'].index(pname)
+                consVec = ModeMatrix[pid]
+                for ic,citm in enumerate(consVec):      #NB: this assumes orthorhombic or lower symmetry
+                    if opid < 0:                        
+                        citm *= -SGOps[100-opid%100-1][0][ip][ip]   #remove centering, if any
+                    else:
+                        citm *= SGOps[opid%100-1][0][ip][ip]
+                    if citm > 0.:
+                        conStr += '+%.5f*@%d'%(citm*Norms[ic],ic+21)
+                    elif citm < 0.:
+                        conStr += '%.5f*@%d'%(citm*Norms[ic],ic+21)
+                atmConstr[ip+2] = conStr
+            except ValueError:
+                atmConstr[ip+2] = ''
+        RMCPdict['AtomConstr'].append(atmConstr)
+    return newPhase
     
 #### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):

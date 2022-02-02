@@ -2306,6 +2306,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(Temps),ytics,-1)
+            imgAx.set_yticks(ytics)
             ylabs = [np.where(0<=i ,Temps[int(i)],' ') for i in ytics]
             imgAx.set_yticklabels(ylabs)            
         xpos = event.xdata
@@ -3834,6 +3835,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.TforYaxis:
             imgAx = Page.Img.axes
             ytics = imgAx.get_yticks()
+            # ytics = np.where(ytics<len(Temps),ytics,-1)
+            # imgAx.set_yticks(ytics)
             ylabs = [Temps[int(i)] for i in ytics[:-1]]
             imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Page.Img)
@@ -7166,8 +7169,7 @@ def PlotCovariance(G2frame,Data):
     def OnMotion(event):
         if event.button:
             ytics = imgAx.get_yticks()
-            ytics = np.where(ytics<len(Page.varyList),ytics,-1)
-            ylabs = [np.where(0<=i ,Page.varyList[int(i)],' ') for i in ytics]
+            ylabs = [np.where(0<=i ,Page.varyList[int(i)],' ') for i in ytics[:-1]]
             imgAx.set_yticklabels(ylabs)            
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
@@ -7215,6 +7217,7 @@ def PlotCovariance(G2frame,Data):
                           vmin=-1.,vmax=1.)
         imgAx = Img.axes
         ytics = imgAx.get_yticks()
+        ytics = np.where(ytics<len(Page.varyList),ytics,-1)
         ylabs = [str(Page.varyList[int(i)]) for i in ytics[:-1]]
         imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Img)

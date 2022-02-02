@@ -2679,8 +2679,6 @@ def UpdateSampleGrid(G2frame,data):
         for name in ['FreePrm1','FreePrm2','FreePrm3']:
             freeNames[Controls[name]] = name
             Names.append(Controls[name])
-        #import imp
-        #imp.reload(G2G)
         dlg = G2G.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
             'Select columns',Comments,Names,np.array(newItems).T)
         try:
@@ -2701,12 +2699,18 @@ def UpdateSampleGrid(G2frame,data):
         for i,name in enumerate(colNames):
             if name != ' ':
                 colIds[name] = i
-        for hist in histList:
+        for ih,hist in enumerate(histList):
             name = hist.split()[1]  #this is file name
             newItems = {}
             for item in colIds:
                 key = freeNames.get(item,item)
-                newItems[key] = float(dataDict[name][colIds[item]])
+                try:
+                    newItems[key] = float(dataDict[name][colIds[item]])
+                except KeyError:
+                    try:
+                        newItems[key] = float(dataDict['{:}'.format(ih+1)])
+                    except KeyError:
+                        break
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
             sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
             sampleData.update(newItems)        
@@ -2883,6 +2887,8 @@ def UpdateSampleGrid(G2frame,data):
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
                     sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     for name in copyNames:
+                        if name not in sampleData:
+                            sampleData[name] = [0.0,False]                    
                         sampleData[name][1] = copy.copy(flagDict[name])
         finally:
             dlg.Destroy()

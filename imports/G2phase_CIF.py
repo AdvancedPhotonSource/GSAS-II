@@ -410,22 +410,22 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 anisokeys = []
                 anisolabels = []
             if Super:
-                occFloop = None
+#                occFloop = None
                 occCloop = None
-                occFdict = {}
+#                occFdict = {}
                 occCdict = {}
-                displSloop = None
+#                displSloop = None
                 displFloop = None
                 MagFloop = None
-                displSdict = {}
+#                displSdict = {}
                 displFdict = {}
                 MagFdict = {}
                 UijFloop = None
                 UijFdict = {}
                 #occupancy modulation
-                if blk.get('_atom_site_occ_Fourier_atom_site_label'):
-                    occFloop = blk.GetLoop('_atom_site_occ_Fourier_atom_site_label')
-                    occFdict = dict(occFloop.items())
+#                if blk.get('_atom_site_occ_Fourier_atom_site_label'):
+#                    occFloop = blk.GetLoop('_atom_site_occ_Fourier_atom_site_label')
+#                    occFdict = dict(occFloop.items())
                 if blk.get('_atom_site_occ_special_func_atom_site_label'):  #Crenel (i.e. Block Wave) occ
                     occCloop = blk.GetLoop('_atom_site_occ_special_func_atom_site_label')
                     occCdict = dict(occCloop.items())
@@ -433,9 +433,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if blk.get('_atom_site_displace_Fourier_atom_site_label'):
                     displFloop = blk.GetLoop('_atom_site_displace_Fourier_atom_site_label')
                     displFdict = dict(displFloop.items())                            
-                if blk.get('_atom_site_displace_special_func_atom_site_label'): #sawtooth
-                    displSloop = blk.GetLoop('_atom_site_displace_special_func_atom_site_label')
-                    displSdict = dict(displSloop.items())
+#                if blk.get('_atom_site_displace_special_func_atom_site_label'): #sawtooth
+#                    displSloop = blk.GetLoop('_atom_site_displace_special_func_atom_site_label')
+#                    displSdict = dict(displSloop.items())
                 #U modulation
                 if blk.get('_atom_site_U_Fourier_atom_site_label'):
                     UijFloop = blk.GetLoop('_atom_site_U_Fourier_atom_site_label')
@@ -736,13 +736,17 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if '+' in exp:
                     val = exp.split('+')[0].strip()
                     val = G2p3.FormulaEval(val)
-                    if val is None:
-                        self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
-                        error = True
-                        continue
-                    ParentCoordinates[albl][i] = val
+                elif '-' in exp:
+                    val = exp.split('-')[0].strip()
+                    val = G2p3.FormulaEval(val)
                 else:
-                    ParentCoordinates[albl][i] = G2p3.FormulaEval(exp)
+                    val = G2p3.FormulaEval(exp)
+                if val is None:
+                    self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
+                    error = True
+                    continue
+                else:
+                    ParentCoordinates[albl][i] = val
             if error:
                 print (self.warnings)
                 raise Exception("Error decoding variable labels")

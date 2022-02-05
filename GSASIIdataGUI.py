@@ -381,10 +381,14 @@ should generate warnings or error messages.
   versions that are known to have bugs. One should select an older or 
   newer version of the package. 
 * ``versionDict['tooNewWarn']`` is a dict with module versions that have not 
-  been tested but have changes that lead us to believe that errors are 
-  likely to happen. 
+  been tested but raise concerns that problems may occur. 
 
 **Packages/versions to be avoided**
+
+* Python:
+
+ * We know of problems with Python <2.7 and <3.6. 
+ * A problem has been noted with wx4.0.7.post2 with Python 3.10 that we can't yet duplicate (2/4/22). 
 
 * wxPython:
 
@@ -417,7 +421,7 @@ versionDict['tooOldWarn'] = {'wx': '2.'}
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {'wx':'4.2'}
+versionDict['tooNewWarn'] = {'wx':'4.2','python':'3.10'}
 'module versions newer than what we have tested & where problems are suspected'
 
 def ShowVersions():
@@ -431,7 +435,10 @@ def ShowVersions():
     import GSASIIpath
     # print (versions)
     print ("Python module versions loaded:")
-    print ("  Python:     %s from %s"%(sys.version.split()[0],sys.executable))
+    print ("  Python:     {} from {}".format(sys.version.split()[0],sys.executable))
+    if compareVersions(platform.python_version(),
+                        versionDict['tooNewWarn']['python']) >= 0:
+        print (22*' '+"-- This version of Python is too new for testing")
     Image = None
     version = '?'
     versionDict['errors'] = ''
@@ -454,7 +461,7 @@ def ShowVersions():
         if s in versionDict['tooNewWarn']:
             match = compareVersions(m.__version__,versionDict['tooNewWarn'][s])
             if match >= 0:
-                msg = "version is too new and could cause problems"
+                msg = "version is too new and has not been tested"
                 warn = True
         if s in versionDict['badVersionWarn']:
             for v in versionDict['badVersionWarn'][s]:
@@ -614,10 +621,14 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
         finally:
             dlg.Destroy()
         sys.exit()
-    elif platform.python_version()[:3] not in ['2.7','3.6','3.7','3.8','3.9']:
-        dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
-                'Python version error',  wx.OK)
+    elif platform.python_version_tuple()[0] == '2' and int(platform.python_version_tuple()[1]) < 7: 
+        msg = 'GSAS-II works best with Python version 3.7 or later.\nThis version is way too old: '+sys.version.split()[0]
+    elif platform.python_version_tuple()[0] == '3' and int(platform.python_version_tuple()[1]) < 6: 
+        msg = 'GSAS-II works best with Python version 3.7 or later.\nThis version is too old: '+sys.version.split()[0]
+    else:
+        msg = ''
+    if msg:
+        dlg = wx.MessageDialog(None, msg, 'Python version error',  wx.OK)
         try:
             dlg.ShowModal()
         finally:

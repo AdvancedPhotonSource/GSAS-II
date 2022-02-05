@@ -1430,7 +1430,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         panel.SetSize(Size)
-        panel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        panel.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
         panel.Show()
 
     def OnPageChanged(event,selectTab=None):
@@ -2291,7 +2291,7 @@ unselected atoms appear much darker than selected atoms.
             Size[0] += 40
             Size[1] = max(Size[1],G2frame.GetSize()[1]-200) + 20
             RBImpPnl.SetSize(Size)
-            RBImp.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            RBImp.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
             RBImp.Scroll(0,0)
 
         def Page2():
@@ -2586,7 +2586,7 @@ create a Vector or Residue rigid body.
             Size[0] += 40
             Size[1] = max(Size[1],G2frame.GetSize()[1]-200) + 20
             RBImpPnl.SetSize(Size)
-            RBImp.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            RBImp.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
             RBImp.Scroll(0,0)
 
         def GetCoords(atmsel):
@@ -3335,7 +3335,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         VectorRB.SetSize(Size)
-        VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        VectorRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
         G2frame.dataWindow.SendSizeEvent()
         
         VectorRBDisplay.Show()
@@ -3760,7 +3760,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         ResidueRB.SetSize(Size)
-        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        ResidueRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
         G2frame.dataWindow.SendSizeEvent()
         
         ResidueRBDisplay.Show()

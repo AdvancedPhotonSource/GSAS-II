@@ -233,7 +233,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         self.warnings += 'No space group name was found in the CIF.'
                         return False
                 else:
-                    SpGrp = SpGrp.replace('_','')
+                    SpGrp = SpGrp.replace('_','').split('(')[0]
                     SpGrp = G2spc.fullHM2shortHM(SpGrp)
                     self.Phase['General']['Type'] = 'nuclear'
 #process space group symbol

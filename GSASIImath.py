@@ -2228,10 +2228,13 @@ def ApplyModeDisp(data):
         drawAtoms = drawingData['Atoms']
         for iat,atom in enumerate(atoms):
             atxyz = coords[iat]
+            SytSym = G2spc.SytSym(atxyz,SGData)[0]
+            CSIX = G2spc.GetCSxinel(SytSym)
             displ = np.zeros(3)
             for ip,parm in enumerate(parNames[iat]):
                 if parm in vardict:
                     displ[ip] = vardict[parm]
+            displ = G2spc.AtomDxSymFix(displ,SytSym,CSIX)
             atom[cx:cx+3] = atxyz+displ
             indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
             for ind in indx:

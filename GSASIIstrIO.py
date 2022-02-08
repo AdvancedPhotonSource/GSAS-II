@@ -1298,7 +1298,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
         Sytsym = G2spc.SytSym(RB['Orig'][0],SGData)[0]
-        xId,xCoef = G2spc.GetCSxinel(Sytsym) # gen origin site sym 
+        xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym 
         equivs = {1:[],2:[],3:[]}
         for i in range(3):
             name = pfxRB+pstr[i]+':'+str(iRB)+':'+rbid
@@ -1463,11 +1463,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     phaseVary.append(pfx+'Afrac:'+str(i))
                 if 'X' in at[ct+1]:
                     try:    #patch for sytsym name changes
-                        xId,xCoef = G2spc.GetCSxinel(at[cs])
+                        xId,xCoef = G2spc.GetCSxinel(at[cs])[:2]
                     except KeyError:
                         Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
                         at[cs] = Sytsym
-                        xId,xCoef = G2spc.GetCSxinel(at[cs])
+                        xId,xCoef = G2spc.GetCSxinel(at[cs])[:2]
                     names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
                     equivs = {1:[],2:[],3:[]}
                     for j in range(3):

@@ -2186,6 +2186,8 @@ def UpdateInstrumentGrid(G2frame,data):
             instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
+            if 'Source' not in instData:
+                instData['Source'] = ['','']
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
                 instData.update(copyData)
             else:

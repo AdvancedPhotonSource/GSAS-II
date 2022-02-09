@@ -2364,10 +2364,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 dsp = G2lat.Pos2dsp(Parms,xpos)
                 q = 2.*np.pi/dsp
             if G2frame.Contour: #PWDR only
-                if 'T' in Parms['Type'][0]:
-                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos),PlotList[int(ypos)][-1]),1)
-                else:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos),PlotList[int(ypos)][-1]),1)
+                try:
+                    if 'T' in Parms['Type'][0]:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1]),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1]),1)
+                except IndexError:
+                    pass
             else:
                 if 'T' in Parms['Type'][0]:
                     if Page.plotStyle['sqrtPlot']:
@@ -3514,21 +3517,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                     picker=True,pickradius=3.))
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:            
-            if lenX == len(X):
-                ContourY.append(N)
-                if G2frame.SubBack:
-                    ContourZ.append(Y)
-                else:
-                    ContourZ.append(Y)
-                if 'C' in ParmList[0]['Type'][0]:        
-                    ContourX = X
-                else: #'T'OF
-                    ContourX = range(lenX)
-                Nseq += 1
-                if G2frame.TforYaxis:
-                    Plot.set_ylabel('Temperature',fontsize=14)
-                else:
-                    Plot.set_ylabel('Data sequence',fontsize=14)
+            if len(X) == lenX :
+                ContourZ.append(Y)
+            elif len(X) < lenX:
+                Yext = np.ones(lenX)*Y[-1]
+                Yext[:len(X)] = Y
+                ContourZ.append(Yext)
+            else:
+                ContourZ.append(Y[:len(X)])
+            ContourY.append(N)
+            if 'C' in ParmList[0]['Type'][0]:        
+                ContourX = X
+            else: #'T'OF
+                ContourX = range(lenX)
+            Nseq += 1
+            if G2frame.TforYaxis:
+                Plot.set_ylabel('Temperature',fontsize=14)
+            else:
+                Plot.set_ylabel('Data sequence',fontsize=14)
         else:
             if not G2frame.plusPlot:
                 pP = ''
@@ -3831,10 +3837,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.Contour:
         time0 = time.time()
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Page.Img = Plot.imshow(ContourZ,cmap=acolor,
-                    vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
-                    interpolation=G2frame.Interpolate, 
-            extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
+        Page.Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
+            interpolation=G2frame.Interpolate,extent=[ContourX[0],ContourX[-1],ContourY[0]-.5,ContourY[-1]+.5],
+            aspect='auto',origin='lower')
         if G2frame.TforYaxis:
             imgAx = Page.Img.axes
             ytics = imgAx.get_yticks()
@@ -3878,7 +3883,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
-            G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)-1.))
+            G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)))
         if 'PWDR' in plottype:
             Plot.set_xlim(G2frame.xylim[0])
             Plot.set_ylim(G2frame.xylim[1])

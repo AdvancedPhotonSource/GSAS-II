@@ -1468,7 +1468,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 varyNames += ['%d::dA%s:%d'%(pId,ip,bId) for ip in ['x','y','z']]
                 VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
                 esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
-#                GSASIIpath.IPyBreak()
             elif 'Angle' in expr:
                 derivs = G2mth.CalcAngleDeriv(obj.angle_dict,obj.angle_atoms, parmDict)
                 pId = obj.angle_dict['pId']

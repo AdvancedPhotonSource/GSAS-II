@@ -2037,6 +2037,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
        G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
+    global PlotList
     def PublishPlot(event):
         msg = ""
         if 'PWDR' not in plottype:
@@ -2281,6 +2282,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
     def OnMotion(event):
         'Update the status line with info based on the mouse position'
+        global PlotList
         SetCursor(Page)
         # excluded region animation
         if Page.excludeMode and Page.savedplot:
@@ -2363,9 +2365,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 q = 2.*np.pi/dsp
             if G2frame.Contour: #PWDR only
                 if 'T' in Parms['Type'][0]:
-                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos),PlotList[int(ypos)][-1]),1)
                 else:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos),PlotList[int(ypos)][-1]),1)
             else:
                 if 'T' in Parms['Type'][0]:
                     if Page.plotStyle['sqrtPlot']:
@@ -2952,7 +2954,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         changePlotSettings(G2frame,Plot)
         
     def refPlotUpdate(Histograms,cycle=None,restore=False):
-        '''called to update an existing plot during a Rietveld fit
+        '''called to update an existing plot during a Rietveld fit; it only updates the curves, 
+        not the reflection marks or the legend
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
@@ -9969,12 +9972,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     def Draw(caller='',Fade=[],NPkey=False):
         #reinitialize geometry stuff - needed after tab change
         global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
-        cell = generalData['Cell'][1:7]
-        Vol = generalData['Cell'][7:8][0]
-        Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
-        Gmat,gmat = G2lat.cell2Gmat(cell)
-        A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-        B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        if 'key down' not in caller:
+            cell = generalData['Cell'][1:7]
+            Vol = generalData['Cell'][7:8][0]
+            Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+            Gmat,gmat = G2lat.cell2Gmat(cell)
+            A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+            B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         vdWRadii = generalData['vdWRadii']
         BondRadii = generalData['BondRadii']
         mapData = generalData['Map']

@@ -3025,6 +3025,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             Plot.set_title(Title)
         Page.canvas.draw()
+        
     def incCptn(string):
         '''Adds a underscore to "hide" a MPL object from the legend if 
         obsInCaption is False
@@ -3124,8 +3125,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 plottingItem = histoList[0]
                 Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
                 G2frame.GPXtree.SelectItem(Id)
-                wx.CallAfter(PlotPatterns,G2frame,newPlot,plotType,None,
-                     extraKeys,refineMode)
+                PlotPatterns(G2frame,newPlot,plotType,None,extraKeys,refineMode)
+                # wx.CallAfter(PlotPatterns,G2frame,newPlot,plotType,None,
+                #      extraKeys,refineMode)
                 return
     #=====================================================================================
     if not new:

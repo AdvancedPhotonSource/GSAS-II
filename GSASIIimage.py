@@ -35,6 +35,7 @@ import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
 #import GSASIImath as G2mth
 import GSASIIfiles as G2fil
+import ImageCalibrants as calFile
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -824,7 +825,60 @@ def MakeFrameMask(data,frame):
             else:
                 tam[iBeg:iFin,jBeg:jFin] = True
     return tam.T
-    
+
+def CalcRings(G2frame,ImageZ,data,masks):
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    data['rings'] = []
+    data['ellipses'] = []
+    if not data['calibrant']:
+        G2fil.G2Print ('warning: no calibration material selected')
+        return    
+    skip = data['calibskip']
+    dmin = data['calibdmin']
+    if data['calibrant'] not in calFile.Calibrants:
+        G2fil.G2Print('Warning: %s not in local copy of image calibrants file'%data['calibrant'])
+        return
+    calibrant = calFile.Calibrants[data['calibrant']]
+    Bravais,SGs,Cells = calibrant[:3]
+    HKL = []
+    for bravais,sg,cell in zip(Bravais,SGs,Cells):
+        A = G2lat.cell2A(cell)
+        if sg:
+            SGData = G2spc.SpcGroup(sg)[1]
+            hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
+            HKL += list(hkl)
+        else:
+            hkl = G2lat.GenHBravais(dmin,bravais,A)
+            HKL += list(hkl)
+    if len(calibrant) > 5:
+        absent = calibrant[5]
+    else:
+        absent = ()
+    HKL = G2lat.sortHKLd(HKL,True,False)
+    wave = data['wavelength']
+    frame = masks['Frames']
+    tam = ma.make_mask_none(ImageZ.shape)
+    if frame:
+        tam = ma.mask_or(tam,MakeFrameMask(data,frame))
+    for iH,H in enumerate(HKL):
+        if debug:   print (H) 
+        dsp = H[3]
+        tth = 2.0*asind(wave/(2.*dsp))
+        if tth+abs(data['tilt']) > 90.:
+            G2fil.G2Print ('next line is a hyperbola - search stopped')
+            break
+        ellipse = GetEllipse(dsp,data)
+        if iH not in absent and iH >= skip:
+            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+        else:
+            Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+        if Ring:
+            if iH not in absent and iH >= skip:
+                data['rings'].append(np.array(Ring))
+        data['ellipses'].append(copy.deepcopy(ellipse+('r',)))    
+   
 def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     '''Called to repeat the calibration on an image, usually called after
     calibration is done initially to improve the fit.
@@ -837,7 +891,6 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
       (with an array of x, y, and d-space values) if getRingsOnly is True
       or an empty list, in case of an error
     '''
-    import ImageCalibrants as calFile
     if not getRingsOnly:
         G2fil.G2Print ('Image recalibration:')
     time0 = time.time()
@@ -936,7 +989,6 @@ def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.
     '''
-    import ImageCalibrants as calFile
     G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']

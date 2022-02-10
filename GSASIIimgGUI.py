@@ -360,6 +360,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
         if Id: G2frame.GPXtree.SelectItem(Id)
+        
+    def OnCalcRings(event):
+        '''Use existing calibration values to compute rings & display them
+        '''
+        G2img.CalcRings(G2frame,G2frame.ImageZ,data,masks)
+        G2plt.PlotExposedImage(G2frame,event=None)
+        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
 
     def OnDistRecalib(event):
         '''Assemble rings & calibration input for a series of images with
@@ -1592,6 +1599,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnCalibrate, id=G2G.wxID_IMCALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2G.wxID_IMRECALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibAll, id=G2G.wxID_IMRECALIBALL)
+    G2frame.Bind(wx.EVT_MENU, OnCalcRings, id=G2G.wxID_CALCRINGS)
     G2frame.Bind(wx.EVT_MENU, OnDistRecalib, id=G2G.wxID_IMDISTRECALIB)
     G2frame.Bind(wx.EVT_MENU, OnClearCalib, id=G2G.wxID_IMCLEARCALIB)
 #    if data.get('calibrant'):

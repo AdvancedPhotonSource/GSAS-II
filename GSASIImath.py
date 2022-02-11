@@ -223,6 +223,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         G2fil.G2Print('\nouch #0 unable to evaluate initial objective function\nCheck for an invalid parameter value',mode='error')
         G2fil.G2Print('Use Calculate/"View LS parms" to list all parameter values\n',mode='warn')
         G2fil.G2Print('Error message: '+Msg.msg,mode='warn')
+        if GSASIIpath.GetConfigValue('debug'):
+            import traceback
+            print(traceback.format_exc())
         raise G2obj.G2Exception('HessianLSQ -- ouch #0: look for invalid parameter (see console)')
     chisq00 = np.sum(M2**2) # starting Chi**2
     Nobs = len(M2)

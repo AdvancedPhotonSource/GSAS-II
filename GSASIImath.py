@@ -1011,10 +1011,11 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     AtTypes = General['AtomTypes']
-    Radii = np.array(General['BondRadii'])
+    Radii = copy.copy(np.array(General['BondRadii']))
     try:
         DisAglCtls = General['DisAglCtls']    
         radiusFactor = DisAglCtls['Factors'][0]
+        Radii = DisAglCtls['BondRadii']
     except:
         radiusFactor = 0.85
     AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']
@@ -1032,24 +1033,24 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     for xyz in XYZ:
         results.append(G2spc.GenAtom(xyz,SGData,False,Move=False))
     for iA,result in enumerate(results):
-        if iA != Orig:                
-            for [Txyz,Top,Tunit,Spn] in result:
-                Dx = np.array([Txyz-Oxyz+unit for unit in Units])
-                dx = np.inner(Dx,Amat)
-                dist = np.sqrt(np.sum(dx**2,axis=1))
-                IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))
-                for iU in IndB[0]:
-                    if AtNames[iA%len(AtNames)] != notName:
-                        unit = Units[iU]
-                        if np.any(unit):
-                            Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
-                        else:
-                            Topstr = ' +(%4d)'%(Top)
+        for [Txyz,Top,Tunit,Spn] in result:
+            Dx = np.array([Txyz-Oxyz+unit for unit in Units])
+            dx = np.inner(Dx,Amat)
+            dist = np.sqrt(np.sum(dx**2,axis=1))
+            IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))
+            for iU in IndB[0]:
+                if dist[iU] < 0.001: continue
+                if AtNames[iA%len(AtNames)] != notName:
+                    unit = Units[iU]
+                    if np.any(unit):
+                        Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
+                    else:
+                        Topstr = ' +(%4d)'%(Top)
                         if Short:
                             Neigh.append([AtNames[iA%len(AtNames)],dist[iU],True])
                         else:
                             Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
-                        Ids.append(Atoms[iA][cia+8])
+                            Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
     
 def calcBond(A,Ax,Bx,MTCU):

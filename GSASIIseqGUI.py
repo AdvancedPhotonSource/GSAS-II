@@ -485,7 +485,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         obj = None
         dlg = G2exG.BondDialog(
             G2frame.dataDisplay,Phases,PSvarDict,
-            header='Select a Bond here',
             VarLabel = "New Bond")
         if dlg.ShowModal() == wx.ID_OK:
             pName,Oatom,Tatom = dlg.GetSelection()

@@ -25,6 +25,7 @@ Default expressions are read from file DefaultExpressions.txt using
 from __future__ import division, print_function
 import re
 import platform
+import copy
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
@@ -705,8 +706,8 @@ class BondDialog(wx.Dialog):
     Use existing bond & esd calculate routines
     '''
     def __init__(self, parent, Phases, parmDict, exprObj=None,
-                 header='Enter restraint expression here',
-                 wintitle='Expression Editor',
+                 header='Select a bond for table',
+                 wintitle='Select bond',
                  VarLabel=None,depVarDict=None,
                  ExtraButton=None,usedVars=[]):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
@@ -716,14 +717,23 @@ class BondDialog(wx.Dialog):
         self.parmDict = parmDict
         self.header = header
         self.pName = list(Phases.keys())[0]
-        DisAglCtls = {}
-        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
-        if dlg.ShowModal() == wx.ID_OK:
-            Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
-        dlg.Destroy()
         self.Oatom = ''
         self.Tatom = ''
-        self.Draw()
+        if 'DisAglCtls' not in self.Phases[self.pName]['General']:
+            self.OnSetRadii(None)
+        else:
+            self.Draw()
+        
+    def OnSetRadii(self,event):
+        if 'DisAglCtls' in self.Phases[self.pName]['General']:
+            DisAglCtls = copy.deepcopy(self.Phases[self.pName]['General']['DisAglCtls'])
+        else:
+            DisAglCtls = {}
+        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+        dlg.Destroy()
+        wx.CallAfter(self.Draw)
         
     def Draw(self):
         
@@ -731,12 +741,10 @@ class BondDialog(wx.Dialog):
             Obj = event.GetEventObject()
             self.pName = Obj.GetValue()
             self.Oatom = ''
-            DisAglCtls = {}
-            dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
-            if dlg.ShowModal() == wx.ID_OK:
-                self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
-            dlg.Destroy()
-            wx.CallAfter(self.Draw)
+            if 'DisAglCtls' not in self.Phases[self.pName]['General']:
+                self.OnSetRadii(None)
+            else:
+                wx.CallAfter(self.Draw)
             
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
@@ -759,6 +767,10 @@ class BondDialog(wx.Dialog):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         phase.Bind(wx.EVT_COMBOBOX,OnPhase)
         phaseSizer.Add(phase,0,WACV)
+        phaseSizer.Add((5,-1))
+        radii = wx.Button(self.panel,label='Set search radii')
+        radii.Bind(wx.EVT_BUTTON,self.OnSetRadii)
+        phaseSizer.Add(radii,0,WACV)
         mainSizer.Add(phaseSizer)
         Phase = self.Phases[self.pName]
         cx,ct = Phase['General']['AtomPtrs'][:2]
@@ -766,18 +778,20 @@ class BondDialog(wx.Dialog):
         aNames = [atom[ct-1] for atom in Atoms]
         atomSizer = wx.BoxSizer(wx.HORIZONTAL)
         atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom: '),0,WACV)
+        if not self.Oatom and len(aNames) > 0: # select an atom so distances get computed
+            self.Oatom = aNames[0]
         origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
         atomSizer.Add(origAtom,0,WACV)
         atomSizer.Add(wx.StaticText(self.panel,label=' distance to: '),0,WACV)
         neigh = []
+        bNames = []
         if self.Oatom:
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
-        bNames = ['',]
         if neigh:
             bNames = [item[0]+' d=%.3f'%(item[2]) for item in neigh[0]]
-        targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=bNames,
+        targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=['']+bNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)
         atomSizer.Add(targAtom,0,WACV)
@@ -825,8 +839,8 @@ class AngleDialog(wx.Dialog):
     Use existing angle & esd calculate routines
     '''
     def __init__(self, parent, Phases, parmDict, exprObj=None,
-                 header='Enter restraint expression here',
-                 wintitle='Expression Editor',
+                 header='Select an angle for table',
+                 wintitle='Select angle',
                  VarLabel=None,depVarDict=None,
                  ExtraButton=None,usedVars=[]):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 

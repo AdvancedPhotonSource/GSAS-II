@@ -5676,8 +5676,8 @@ class GSASII(wx.Frame):
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
-                    if self.G2plotNB.plotList:
-                        self.G2plotNB.clear()
+#                    if self.G2plotNB.plotList:
+#                        self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()

@@ -1046,11 +1046,11 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
                         Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
                     else:
                         Topstr = ' +(%4d)'%(Top)
-                        if Short:
-                            Neigh.append([AtNames[iA%len(AtNames)],dist[iU],True])
-                        else:
-                            Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
-                            Ids.append(Atoms[iA][cia+8])
+                    if Short:
+                        Neigh.append([AtNames[iA%len(AtNames)],dist[iU],True])
+                    else:
+                        Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
+                    Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
     
 def calcBond(A,Ax,Bx,MTCU):

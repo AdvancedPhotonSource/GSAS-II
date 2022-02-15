@@ -3946,6 +3946,7 @@ class DisAglDialog(wx.Dialog):
         self.panel = None
         self._default(data,self.default)
         self.Draw(self.data)
+        self.CenterOnParent()
                 
     def _default(self,data,default):
         '''Set starting values for the search values, either from

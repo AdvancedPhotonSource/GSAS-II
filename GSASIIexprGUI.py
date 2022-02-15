@@ -713,6 +713,7 @@ class BondDialog(wx.Dialog):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.parent = parent
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
@@ -729,14 +730,14 @@ class BondDialog(wx.Dialog):
             DisAglCtls = copy.deepcopy(self.Phases[self.pName]['General']['DisAglCtls'])
         else:
             DisAglCtls = {}
-        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        dlg = G2G.DisAglDialog(self.parent,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
         if dlg.ShowModal() == wx.ID_OK:
             self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
         wx.CallAfter(self.Draw)
         
     def Draw(self):
-        
+        'paints the distance dialog window'
         def OnPhase(event):
             Obj = event.GetEventObject()
             self.pName = Obj.GetValue()
@@ -759,7 +760,7 @@ class BondDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0)
+        mainSizer.Add(wx.StaticText(self.panel,label=self.header))
         pNames = list(self.Phases.keys())
         phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
         phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
@@ -767,7 +768,7 @@ class BondDialog(wx.Dialog):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         phase.Bind(wx.EVT_COMBOBOX,OnPhase)
         phaseSizer.Add(phase,0,WACV)
-        phaseSizer.Add((5,-1))
+        phaseSizer.Add((15,-1))
         radii = wx.Button(self.panel,label='Set search radii')
         radii.Bind(wx.EVT_BUTTON,self.OnSetRadii)
         phaseSizer.Add(radii,0,WACV)
@@ -791,16 +792,18 @@ class BondDialog(wx.Dialog):
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
         if neigh:
             bNames = [item[0]+' d=%.3f'%(item[2]) for item in neigh[0]]
-        targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=['']+bNames,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)
-        atomSizer.Add(targAtom,0,WACV)
-        
+        if bNames:
+            targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=['']+bNames,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)
+        else:
+            targAtom = wx.StaticText(self.panel,label='(none in search range)')
+        atomSizer.Add(targAtom,0,WACV)            
         mainSizer.Add(atomSizer)
-
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        OkBtn.Enable(bool(self.Tatom))
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
         cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -814,6 +817,7 @@ class BondDialog(wx.Dialog):
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
         self.Fit()
+        self.CenterOnParent()
 
     def GetSelection(self):
         return self.pName,self.Oatom,self.Tatom
@@ -846,31 +850,39 @@ class AngleDialog(wx.Dialog):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.parent = parent
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
         self.pName = list(Phases.keys())[0]
-        DisAglCtls = {}
-        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
-        if dlg.ShowModal() == wx.ID_OK:
-            Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
-        dlg.Destroy()
         self.Oatom = ''
         self.Tatoms = ''
-        self.Draw()
+        if 'DisAglCtls' not in self.Phases[self.pName]['General']:
+            self.OnSetRadii(None)
+        else:
+            self.Draw()
 
-    def Draw(self):
+    def OnSetRadii(self,event):
+        if 'DisAglCtls' in self.Phases[self.pName]['General']:
+            DisAglCtls = copy.deepcopy(self.Phases[self.pName]['General']['DisAglCtls'])
+        else:
+            DisAglCtls = {}
+        dlg = G2G.DisAglDialog(self.parent,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+        dlg.Destroy()
+        wx.CallAfter(self.Draw)
         
+    def Draw(self):
+        'paints the angle dialog window'
         def OnPhase(event):
             Obj = event.GetEventObject()
             self.pName = Obj.GetValue()
             self.Oatom = ''
-            DisAglCtls = {}
-            dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
-            if dlg.ShowModal() == wx.ID_OK:
-                self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
-            dlg.Destroy()
-            wx.CallAfter(self.Draw)
+            if 'DisAglCtls' not in self.Phases[self.pName]['General']:
+                self.OnSetRadii(None)
+            else:
+                wx.CallAfter(self.Draw)
             
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
@@ -885,7 +897,7 @@ class AngleDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=self.header))
         pNames = list(self.Phases.keys())
         phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
         phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
@@ -893,6 +905,10 @@ class AngleDialog(wx.Dialog):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         phase.Bind(wx.EVT_COMBOBOX,OnPhase)
         phaseSizer.Add(phase,0,WACV)
+        phaseSizer.Add((15,-1))
+        radii = wx.Button(self.panel,label='Set search radii')
+        radii.Bind(wx.EVT_BUTTON,self.OnSetRadii)
+        phaseSizer.Add(radii,0,WACV)
         mainSizer.Add(phaseSizer)
         Phase = self.Phases[self.pName]
         cx,ct = Phase['General']['AtomPtrs'][:2]
@@ -900,28 +916,35 @@ class AngleDialog(wx.Dialog):
         aNames = [atom[ct-1] for atom in Atoms]
         atomSizer = wx.BoxSizer(wx.HORIZONTAL)
         atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom (O in A-O-B): '),0,WACV)
+        if not self.Oatom and len(aNames) > 0: # select an atom so angles get computed
+            self.Oatom = aNames[0]
         origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
         atomSizer.Add(origAtom,0,WACV)        
         mainSizer.Add(atomSizer)
+        atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+        atomSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
         neigh = []
+        bNames = []
         if self.Oatom:
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)[0]
-            mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0)
-            bNames = ['',]
-            if neigh:
-                for iA,aName in enumerate(neigh):
-                    for cName in neigh[iA+1:]:
-                        bNames.append('%s;%s'%(aName[0].replace(' ',''),cName[0].replace(' ','')))
-                targAtoms = wx.ComboBox(self.panel,value=self.Tatoms,choices=bNames,
+        if neigh:
+            for iA,aName in enumerate(neigh):
+                for cName in neigh[iA+1:]:
+                    bNames.append('%s;%s'%(aName[0].replace(' ',''),cName[0].replace(' ','')))
+        if bNames:
+            targAtoms = wx.ComboBox(self.panel,value=self.Tatoms,choices=['']+bNames,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                targAtoms.Bind(wx.EVT_COMBOBOX,OnTargAtoms)
-                mainSizer.Add(targAtoms,0)
-
+            targAtoms.Bind(wx.EVT_COMBOBOX,OnTargAtoms)
+        else:
+            targAtoms = wx.StaticText(self.panel,label='(none in search range)')
+        atomSizer.Add(targAtoms,0,WACV)
+        mainSizer.Add(atomSizer)
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        OkBtn.Enable(bool(self.Tatoms))
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
         cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -935,6 +958,7 @@ class AngleDialog(wx.Dialog):
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
         self.Fit()
+        self.CenterOnParent()
 
     def GetSelection(self):
         return self.pName,self.Oatom,self.Tatoms

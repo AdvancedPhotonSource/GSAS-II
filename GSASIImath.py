@@ -999,7 +999,17 @@ def FindTetrahedron(results):
     A,V = Q2AVdeg(QQ)
     return bond,std,meanDisp,stdDisp,A,V,vecDisp
     
-def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
+def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,
+                     searchType='Bond'):
+    '''Find neighboring atoms
+    Uses Bond search criteria unless searchType is set to non-default
+    '''
+    if searchType == 'Bond':
+        skey = 'BondRadii'
+        sindex = 0
+    else:
+        skey = 'AngleRadii'
+        sindex = 1
     General = phase['General']
     cx,ct,cs,cia = getAtomPtrs(phase)
     Atoms = phase['Atoms']
@@ -1011,11 +1021,11 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False):
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     AtTypes = General['AtomTypes']
-    Radii = copy.copy(np.array(General['BondRadii']))
+    Radii = copy.copy(np.array(General[skey]))
     try:
         DisAglCtls = General['DisAglCtls']    
-        radiusFactor = DisAglCtls['Factors'][0]
-        Radii = DisAglCtls['BondRadii']
+        radiusFactor = DisAglCtls['Factors'][sindex]
+        Radii = DisAglCtls[skey]
     except:
         radiusFactor = 0.85
     AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']

@@ -928,7 +928,8 @@ class AngleDialog(wx.Dialog):
         neigh = []
         bNames = []
         if self.Oatom:
-            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)[0]
+            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames,
+                                           searchType='Angle')[0]
         if neigh:
             for iA,aName in enumerate(neigh):
                 for cName in neigh[iA+1:]:
@@ -937,9 +938,16 @@ class AngleDialog(wx.Dialog):
             targAtoms = wx.ComboBox(self.panel,value=self.Tatoms,choices=['']+bNames,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
             targAtoms.Bind(wx.EVT_COMBOBOX,OnTargAtoms)
+            atomSizer.Add(targAtoms,0,WACV)
+            if self.Tatoms:
+                aobj = G2obj.makeAngleObj(self.Phases[self.pName],self.Oatom,self.Tatoms)
+                calcobj = G2obj.ExpressionCalcObj(aobj)
+                calcobj.UpdateDict(self.parmDict)
+                atomSizer.Add(wx.StaticText(self.panel,
+                    label=' = {:.2f} deg'.format(calcobj.EvalExpression())),
+                                                0,WACV)
         else:
-            targAtoms = wx.StaticText(self.panel,label='(none in search range)')
-        atomSizer.Add(targAtoms,0,WACV)
+            atomSizer.Add(wx.StaticText(self.panel,label='(none in search range)'))
         mainSizer.Add(atomSizer)
 
         OkBtn = wx.Button(self.panel,-1,"Ok")

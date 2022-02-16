@@ -3367,6 +3367,38 @@ class ExpressionCalcObj(object):
             val = np.sum(val)
         return val
 
+def makeAngleObj(Phase,Oatom,Tatoms):
+    General = Phase['General']
+    cx,ct = General['AtomPtrs'][:2]
+    pId = Phase['pId']
+    SGData = General['SGData']
+    Atoms = Phase['Atoms']
+    aNames = [atom[ct-1] for atom in Atoms]
+    tIds = []
+    symNos = []
+    cellNos = []
+    oId = aNames.index(Oatom)
+    for Tatom in Tatoms.split(';'):
+        sB = Tatom.find('(')+1
+        symNo = 0
+        if sB:
+            sF = Tatom.find(')')
+            symNo = int(Tatom[sB:sF])
+        symNos.append(symNo)
+        cellNo = [0,0,0]
+        cB = Tatom.find('[')
+        if cB>0:
+            cF = Tatom.find(']')+1
+            cellNo = eval(Tatom[cB:cF])
+        cellNos.append(cellNo)
+        tIds.append(aNames.index(Tatom.split('+')[0]))
+    # create an expression object
+    obj = ExpressionObj()
+    obj.expression = 'Angle(%s,%s,\n%s)'%(Tatoms[0],Oatom,Tatoms[1])
+    obj.angle_dict = {'pId':pId,'SGData':SGData,'symNo':symNos,'cellNo':cellNos}
+    obj.angle_atoms = [oId,tIds]
+    return obj
+
 class G2Exception(Exception):
     'A generic GSAS-II exception class'
     def __init__(self,msg):

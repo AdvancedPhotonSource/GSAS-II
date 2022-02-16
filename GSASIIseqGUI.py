@@ -530,37 +530,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if dlg.ShowModal() == wx.ID_OK:
             pName,Oatom,Tatoms = dlg.GetSelection()
             if Tatoms:
-                Phase = Phases[pName]
-                General = Phase['General']
-                cx,ct = General['AtomPtrs'][:2]
-                pId = Phase['pId']
-                SGData = General['SGData']
-                Atoms = Phase['Atoms']
-                aNames = [atom[ct-1] for atom in Atoms]
-                tIds = []
-                symNos = []
-                cellNos = []
-                oId = aNames.index(Oatom)
-                Tatoms = Tatoms.split(';')
-                for Tatom in Tatoms:
-                    sB = Tatom.find('(')+1
-                    symNo = 0
-                    if sB:
-                        sF = Tatom.find(')')
-                        symNo = int(Tatom[sB:sF])
-                    symNos.append(symNo)
-                    cellNo = [0,0,0]
-                    cB = Tatom.find('[')
-                    if cB>0:
-                        cF = Tatom.find(']')+1
-                        cellNo = eval(Tatom[cB:cF])
-                    cellNos.append(cellNo)
-                    tIds.append(aNames.index(Tatom.split('+')[0]))
-                # create an expression object
-                obj = G2obj.ExpressionObj()
-                obj.expression = 'Angle(%s,%s,\n%s)'%(Tatoms[0],Oatom,Tatoms[1])
-                obj.angle_dict = {'pId':pId,'SGData':SGData,'symNo':symNos,'cellNo':cellNos}
-                obj.angle_atoms = [oId,tIds]
+                obj = G2obj.makeAngleObj(Phases[pName],Oatom,Tatoms)
         else: 
             dlg.Destroy()
             return

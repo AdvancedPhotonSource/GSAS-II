@@ -308,7 +308,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
     '''Global refinement -- refines to minimize against all histograms. 
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
@@ -325,6 +325,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     parmDict = {}
     G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
+    Controls['newLeBail'] = newLeBail
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)
@@ -413,7 +414,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
-            G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
+#            G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
+            G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
             covData['depSig'] = G2stIO.PhFrExtPOSig
@@ -572,11 +574,9 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs'])) # no variables
 
-        covData = {'variables':0,'varyList':[],'sig':[],'Rvals':Rvals,
-                       'varyListStart':[],
-                       'covMatrix':np.zeros([0,0]),'title':GPXfile,
-                       #'newAtomDict':newAtomDict,'newCellDict':newCellDict,
-                       'freshCOV':True}
+        covData = {'variables':0,'varyList':[],'sig':[],'Rvals':Rvals,'varyListStart':[],
+            'covMatrix':np.zeros([0,0]),'title':GPXfile,'freshCOV':True}
+          # ??  'newAtomDict':newAtomDict,'newCellDict':newCellDict,
         
         G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
         G2fil.G2Print (' ***** LeBail fit completed *****')
@@ -629,10 +629,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     Controls = G2stIO.GetControls(GPXfile)
     preFrozenCount = 0
     for h in Controls['parmFrozen']:
-        if h == 'FrozenList': continue
+        if h == 'FrozenList':
+            continue
         preFrozenCount += len(Controls['parmFrozen'][h])    
-    G2stIO.ShowControls(Controls,printFile,SeqRef=True,
-                            preFrozenCount=preFrozenCount)
+    G2stIO.ShowControls(Controls,printFile,SeqRef=True,preFrozenCount=preFrozenCount)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -647,9 +647,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     G2mv.InitVars()
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,
-         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,
-                                    Print=False,pFile=printFile,seqRef=True)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave) = \
+        G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqRef=True)
     for item in phaseVary:
         if '::A0' in item:
             G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
@@ -677,10 +676,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-             FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
-                 Phases,restraintDict,rbIds,
-                 Print=False,pFile=printFile,seqRef=True)
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave) = \
+            G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqRef=True)
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -693,8 +690,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['maxSSwave'] = maxSSwave
         if histogram not in Histograms:
             G2fil.G2Print("Error: not found!")
-            raise G2obj.G2Exception("refining with invalid histogram {}".
-                                        format(histogram))
+            raise G2obj.G2Exception("refining with invalid histogram {}".format(histogram))
         hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}
@@ -873,6 +869,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             SeqResult[histogram] = histRefData
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+            G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,Controls['parmFrozen'])

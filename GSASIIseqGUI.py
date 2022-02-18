@@ -17,50 +17,27 @@ data editing panel.
 '''
 from __future__ import division, print_function
 import platform
-#import time
-#import math
-#import random as ran
 import copy
-#import sys
-#import os
-#import inspect
-
-#import re
 import numpy as np
 import numpy.ma as ma
-#import scipy as sp
 import scipy.optimize as so
 try:
     import wx
     import wx.grid as wg
-#    import wx.lib.scrolledpanel as wxscroll
 except ImportError:
     pass
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
-#import GSASIIfiles as G2fil
 import GSASIIdataGUI as G2gd
 import GSASIIstrIO as G2stIO
 import GSASIIlattice as G2lat
 import GSASIIplot as G2plt
-#import GSASIIpwdGUI as G2pdG
-#import GSASIIimgGUI as G2imG
-#import GSASIIphsGUI as G2phG
-#import GSASIIspc as G2spc
 import GSASIImapvars as G2mv
-#import GSASIIconstrGUI as G2cnstG
-#import GSASIIrestrGUI as G2restG
 import GSASIIobj as G2obj
 import GSASIIexprGUI as G2exG
-#import GSASIIlog as log
 import GSASIIctrlGUI as G2G
-#import GSASIIElem as G2elem
-#import GSASIIpwd as G2pwd
-#import GSASIIstrMain as G2stMn
-#import defaultIparms as dI
-#import GSASIIfpaGUI as G2fpa
 
 #####  Display of Sequential Results ##########################################
 def UpdateSeqResults(G2frame,data,prevSize=None):
@@ -138,22 +115,34 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         plotName = plotSpCharFix(plotName)
         return plotName,G2frame.colList[col],G2frame.colSigs[col]
             
-    def PlotSelectedColRow(calltyp=''):
-        '''Called to plot a selected column or row by clicking or 
-        double-clicking on a row or column label. N.B. This is called 
+    def PlotSelectedColRow(calltyp='',event=None):
+        '''Called to plot a selected column or row by clicking
+        on a row or column label. N.B. This is called for LB click
         after the event is processed so that the column or row has been
-        selected.
+        selected. For RB clicks, the event is processed here
 
-        :param str calltyp: ='single'/'double', specifies if this was 
-          a single- or double-click, where a single click on row 
-          plots histogram; Double click on row plots V-C matrix; 
-          Single or double click on column: plots values in column
+        :param str calltyp: ='left'/'right', specifies if this was 
+          a left- or right-click, where a left click on row 
+          plots histogram; Right click on row plots V-C matrix; 
+          Left or right click on column: plots values in column
+        :param obj event: from  wx.EVT_GRID_LABEL_RIGHT_CLICK
         '''
-        cols = G2frame.dataDisplay.GetSelectedCols()
-        rows = G2frame.dataDisplay.GetSelectedRows()
-        if cols:
+        rows = []
+        cols = []
+        if calltyp == 'left':
+            cols = G2frame.dataDisplay.GetSelectedCols()
+            rows = G2frame.dataDisplay.GetSelectedRows()
+        elif calltyp == 'right':
+            r,c = event.GetRow(),event.GetCol()
+            if r > -1:
+                rows = [r,]
+            elif c > -1:
+                cols =  [c,]
+        if cols and calltyp == 'left':
             G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
-        elif rows and calltyp == 'single':
+        elif cols and calltyp == 'right':
+            SetLabelString(cols[0])  #only the 1st one selected!
+        elif rows and calltyp == 'left':
             name = histNames[rows[0]]       #only does 1st one selected
             if name.startswith('PWDR'):
                 pickId = G2frame.PickId
@@ -168,10 +157,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.PickId = pickId                
             else:
                 return
-        elif rows:
+        elif rows and calltyp == 'right':
             name = histNames[rows[0]]       #only does 1st one selected
             if name.startswith('PWDR'):
-                if data.get('covMatrix',[]):
+                if len(data[name].get('covMatrix',[])):
                     G2plt.PlotCovariance(G2frame,data[name])
             elif name.startswith('PDF'):
                 print('make structure plot')
@@ -181,20 +170,33 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
                 )
         
-    def PlotSSelect(event):
-        'Called by a single click on a row or column label. '
+    def SetLabelString(col):
+        '''Define or edit the label for a column in the table, to be used
+        as a tooltip and for plotting
+        '''
+        if col < 0 or col > len(colLabels):
+            return
+        var = colLabels[col]
+        lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
+        head = u'Set a new name for variable {} (column {})'.format(var,col)
+        dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
+                                 head,lbl,size=(400,-1))
+        if dlg.Show():
+            variableLabels[var] = dlg.GetValue()
+            dlg.Destroy()
+            wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
+        else:
+            dlg.Destroy()
+
+    def PlotLeftSelect(event):
+        'Called by a left MB click on a row or column label. '
         event.Skip()
-        wx.CallAfter(PlotSelectedColRow,'single')
+        wx.CallAfter(PlotSelectedColRow,'left')
         
-    def PlotSelect(event):
-        'Called by a double-click on a row or column label'
-        event.Skip()
-        wx.CallAfter(PlotSelectedColRow,'double')
+    def PlotRightSelect(event):
+        'Called by a right MB click on a row or column label'
+        PlotSelectedColRow('right',event)
         
-    def OnKeyUp(event):
-        event.Skip()
-        wx.CallAfter(PlotSelectedColRow,'single')
-            
     def OnPlotSelSeq(event):
         'plot the selected columns or row from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
@@ -542,6 +544,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def UpdateParmDict(parmDict):
         '''generate the atom positions and the direct & reciprocal cell values,
         because they might be needed to evaluate the pseudovar
+        #TODO - effect of ISO modes?
         '''
         Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
                          ['A'+str(i) for i in range(6)])
@@ -849,25 +852,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         var = colLabels[col]
         return variableLabels.get(var,G2obj.fmtVarDescr(var))
         
-    def SetLabelString(event):
-        '''Define or edit the label for a column in the table, to be used
-        as a tooltip and for plotting
-        '''
-        col = event.GetCol()
-        if col < 0 or col > len(colLabels):
-            return
-        var = colLabels[col]
-        lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
-        head = u'Set a new name for variable {} (column {})'.format(var,col)
-        dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
-                                 head,lbl,size=(400,-1))
-        if dlg.Show():
-            variableLabels[var] = dlg.GetValue()
-            dlg.Destroy()
-            wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
-        else:
-            dlg.Destroy()
-
     def DoSequentialExport(event):
         '''Event handler for all Sequential Export menu items
         '''
@@ -907,6 +891,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         If no histogram is selected (or more than one), ask the user to make a selection.
 
         Loosely based on :func:`GSASIIstrIO.SetPhaseData`
+        #TODO effect of ISO modes?
         '''
         rows = G2frame.dataDisplay.GetSelectedRows()
         if len(rows) == 1:
@@ -937,7 +922,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             cell[7] = G2lat.calc_V(A)
             textureData = General['SH Texture']    
             if textureData['Order']:
-#                SHtextureSig = {}
                 for name in ['omega','chi','phi']:
                     aname = pfx+'SH '+name
                     textureData['Sample '+name][1] = parmDict[aname]
@@ -1079,7 +1063,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         histNames = [name for name in data['histNames'] if name in data]
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    G2frame.GetStatusBar().SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance",1)
+    G2frame.GetStatusBar().SetStatusText("Select column to export; LMB/RMB column to plot data/change label; LMB/RMB on row for PWDR/Covariance plot",1)
     sampleParms = GetSampleParms()
 
     # make dict of varied atom coords keyed by absolute position
@@ -1142,7 +1126,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_SAVESEQCSV)
     G2frame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=G2G.wxID_PLOTSEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnAveSelSeq, id=G2G.wxID_AVESEQSEL)
-    #G2frame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=G2G.wxID_ORGSEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnSelectUpdate, id=G2G.wxID_UPDATESEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnEditSelectPhaseVars, id=G2G.wxID_EDITSEQSELPHASE)
     G2frame.Bind(wx.EVT_MENU, onSelectSeqVars, id=G2G.wxID_ORGSEQINC)
@@ -1322,14 +1305,20 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if posdict[h].get(i) in lbl: continue
                 if lbl != "": lbl += '/'
                 lbl += posdict[h].get(i)
+                
+        if 'nv-' in lbl:
+            newlbl = lbl.replace('::nv-','::')
+            if newlbl in parmDict:  #the ISO name w/o 'nv-' should be there
+                lbl = newlbl
         colLabels.append(lbl)
     Types += varcols*[wg.GRID_VALUE_FLOAT,]
     vals = []
     esds = []
     varsellist = None        # will be a list of variable names in the order they are selected to appear
     # tabulate values for each hist, leaving None for blank columns
-    for name in histNames:
+    for ih,name in enumerate(histNames):
         if name in posdict:
+            parmDict = data[name]['parmDict']
             varsellist = [posdict[name].get(i) for i in range(varcols)]
             # translate variable names to how they will be used in the headings
             vs = [striphist(v,'*') for v in data[name]['varyList']]
@@ -1338,6 +1327,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
+        #replace mode displacement shift with value; esd applies to both
+        for ip,pname in enumerate(data[name]['varyList']):  
+            if '::nv-' in pname:
+                vals[ih][ip] = parmDict[pname.replace('::nv-','::')]
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
     G2frame.colList += zip(*vals)
     G2frame.colSigs += zip(*esds)
@@ -1419,11 +1412,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for seqnum,name in enumerate(histNames):
             sigs = data[name]['sig']
             G2mv.InitVars()
-            parmDict = data[name].get('parmDict')
+#            parmDict = data[name].get('parmDict')
+            parmDict = data[name]['parmDict']
             constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
             groups,parmlist,constrDict,fixedList,ihst = constraintInfo
             varyList = data[name]['varyList']
-            parmDict = data[name]['parmDict']
             msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
             if msg:
                 print('Unable to interpret multiplier(s) for',name,':',msg)
@@ -1545,11 +1538,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
     else:
         G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-#    G2frame.dataDisplay.Bind(wx.EVT_KEY_UP,OnKeyUp)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
-#    G2frame.dataDisplay.Bind(wg.EVT_GRID_SELECT_CELL,PlotSSelect)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotLeftSelect)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, PlotRightSelect)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)

@@ -7178,9 +7178,15 @@ def PlotCovariance(G2frame,Data):
 
     def OnMotion(event):
         if event.button:
-            ytics = imgAx.get_yticks()
-            ylabs = [np.where(0<=i ,Page.varyList[int(i)],' ') for i in ytics[:-1]]
-            imgAx.set_yticklabels(ylabs)            
+            ylim = imgAx.get_ylim()
+            yBeg,yFin = max(0,int(ylim[0])),min(nVar,int(ylim[1])+1)
+            step = int((ylim[1]-ylim[0])//8)
+            if step:
+                imgAx.set_yticks(np.arange(nVar)[yBeg:yFin:step])
+                imgAx.set_yticklabels(Page.varyList[yBeg:yFin:step])
+            else:
+                imgAx.set_yticks(np.arange(nVar)[yBeg:yFin])
+                imgAx.set_yticklabels(Page.varyList[yBeg:yFin])
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
@@ -7208,6 +7214,8 @@ def PlotCovariance(G2frame,Data):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
     Page.varyList = Data['varyList']
+    nVar = len(Page.varyList)
+    step = max(1,int(nVar//8))
     Page.values = Data['variables']
     covMatrix = Data['covMatrix']
     Page.sig = np.sqrt(np.diag(covMatrix))
@@ -7224,12 +7232,14 @@ def PlotCovariance(G2frame,Data):
     if Page.varyList:
         acolor = mpl.cm.get_cmap(G2frame.VcovColor)
         Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
-                          vmin=-1.,vmax=1.)
+            vmin=-1.,vmax=1.)   #,extent=[0.5,nVar+.5,0.5,nVar+.5])
         imgAx = Img.axes
-        ytics = imgAx.get_yticks()
-        ytics = np.where(ytics<len(Page.varyList),ytics,-1)
-        ylabs = [str(Page.varyList[int(i)]) for i in ytics[:-1]]
-        imgAx.set_yticklabels(ylabs)
+        if step:
+            imgAx.set_yticks(np.arange(nVar)[::step])
+            imgAx.set_yticklabels(Page.varyList[::step])
+        else:
+            imgAx.set_yticks(np.arange(nVar))
+            imgAx.set_yticklabels(Page.varyList)
         Page.figure.colorbar(Img)
         Plot.set_title('V-Cov matrix'+title)
         Plot.set_xlabel('Variable number')

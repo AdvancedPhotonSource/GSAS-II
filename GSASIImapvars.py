@@ -2459,7 +2459,8 @@ def Map2Dict(parmDict,varyList):
     for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
         if multarr is None: continue
         # evaluate constraints in the forward direction
-        z = zip(mapvars,np.dot(multarr,np.array([parmDict[var] for var in varlist])))
+        A = np.array([parmDict[var] for var in varlist])
+        z = zip(mapvars,np.dot(multarr,A))
         # add/replace in parameter dict
         parmDict.update([i for i in z if type(i[0]) is not float])
     global saveVaryList
@@ -2482,9 +2483,9 @@ def Dict2Map(parmDict):
             if GSASIIpath.GetConfigValue('debug'): 
                 print('Why does this constraint have None for invmultarr?',varlist,mapvars)
             continue
-        valslist = [parmDict.get(var,var) for var in mapvars]
+        valslist = np.array([parmDict.get(var,var) for var in mapvars])
         #for v,val in zip(varlist,np.dot(invmultarr,np.array(valslist))): print(v,val) # shows what is being set
-        parmDict.update(zip(varlist,np.dot(invmultarr,np.array(valslist))))
+        parmDict.update(zip(varlist,np.dot(invmultarr,valslist)))
         
 #======================================================================
 # internal routines follow (these routines are unlikely to be called

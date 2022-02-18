@@ -393,8 +393,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
             Phases, RestraintDict=None, rbIds=rbIds, Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     # get Hist and HAP info
-    hapVary, hapDict, controlDict = G2stIO.GetHistogramPhaseData(
-            Phases, Histograms, Print=False, resetRefList=False)
+    hapVary, hapDict, controlDict = G2stIO.GetHistogramPhaseData(Phases, Histograms, Print=False, resetRefList=False)
     parmDict.update(hapDict)
     histVary, histDict, controlDict = G2stIO.GetHistogramData(Histograms, Print=False)
     parmDict.update(histDict)

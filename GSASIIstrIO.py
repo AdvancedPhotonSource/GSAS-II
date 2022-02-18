@@ -2408,6 +2408,80 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
                 textureData,RestraintDict[phase],pFile)
                     
+def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
+    '''Prints the values for the ISODISTORT modes into the project's
+    .lst file after a refinement.
+    '''
+    for phase in Phases:
+        if 'ISODISTORT' not in Phases[phase]: continue
+        data = Phases[phase]
+        ISO = data['ISODISTORT']
+        atNames = [atom[0] for atom in data['Atoms']]
+                       
+        if 'G2VarList' in ISO:
+            deltaList = []
+            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+                dvar = gv.varname()
+                var = dvar.replace('::dA','::A')
+                atnum = atNames.index(Ilbl[:Ilbl.rfind('_')])
+                v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = ISO['G2parentCoords'][atnum][['dx','dy','dz'].index(v)]
+                if var in parmDict:
+                    cval = parmDict[var]
+                else:
+                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaList.append(cval-pval)
+            modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+            
+            if pFile:
+                pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
+            l = str(max([len(i) for i in ISO['IsoModeList']])+3)
+            fmt = '  {:'+l+'}{}'
+            for varid,[var,val,norm,G2mode] in enumerate(zip(
+                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] )):
+                try:
+                    value = G2mth.ValEsd(val/norm,-0.001)
+                    item = str(G2mode).replace('::','::nv-')
+                    parmDict[str(G2mode)] = val/norm
+                    if item in sigDict:
+                        ISO['modeDispl'][varid]  = val/norm
+                        value = G2mth.ValEsd(val/norm,sigDict[item]/norm)
+                        sigDict[str(G2mode)] = sigDict[item]/norm
+                except TypeError:
+                    value = '?'
+                if pFile:
+                    pFile.write(fmt.format(var,value)+'\n')
+                
+        if 'G2OccVarList' in ISO:       #untested - probably wrong
+            deltaOccList = []
+            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+                var = gv.varname()
+                albl = Ilbl[:Ilbl.rfind('_')]
+                pval = ISO['BaseOcc'][albl]
+                if var in parmDict:
+                    cval = parmDict[var]
+                else:
+                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaOccList.append(cval-pval)
+            modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
+            
+            if pFile:
+                pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
+            l = str(max([len(i) for i in ISO['OccModeList']])+3)
+            fmt = '  {:'+l+'}{}'
+            for var,val,norm,G2mode in zip(
+                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
+                try:
+                    value = G2py3.FormatSigFigs(val/norm)
+                    if str(G2mode) in sigDict:
+                        value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
+                except TypeError:
+                    value = '?'
+                if pFile:
+                    pFile.write(fmt.format(var,value)+'\n')
+    
 ################################################################################
 ##### Histogram & Phase data
 ################################################################################        

@@ -1479,8 +1479,7 @@ class ExportBaseclass(object):
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave =  G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False)
         self.parmDict.update(phaseDict)
-        hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(
-            Phases,Histograms,Print=False,resetRefList=False)
+        hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
         self.parmDict.update(hapDict)
         histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
         self.parmDict.update(histDict)

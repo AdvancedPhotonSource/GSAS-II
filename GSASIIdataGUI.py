@@ -770,10 +770,6 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-        # item = parent.Append(wx.ID_ANY,'&Le Bail fit\tCTRL+B','Fit Le Bail intensities only')
-        # item.Enable(state)
-        # self.Refine.append(item)
-        # self.Bind(wx.EVT_MENU, self.OnLeBail, id=item.GetId())
 
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
@@ -5338,13 +5334,10 @@ class GSASII(wx.Frame):
         '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return
-        if Controls.get('newLeBail',False):
-            G2G.G2MessageBox(self,'Doing a zero cycle Le Bail refinement first','Le Bail Refinement')            
-            self.OnLeBail(event)
+        
         if G2cnstG.CheckAllScalePhaseFractions(self):
             return # can be slow for sequential fits, skip
         self.OnFileSave(event)
@@ -5356,7 +5349,19 @@ class GSASII(wx.Frame):
             print ('\nError message(s):\n',errmsg)
             self.ErrorDialog('Error in constraints',errmsg)
             return
-        
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        if Controls.get('newLeBail',False):
+            dlgtxt = '''Do Le Bail refinement of intensities first?
+    recommended after major parameter changes'''
+            dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
+            result = wx.ID_NO
+            try:
+                result = dlgb.ShowModal()
+            finally:
+                dlgb.Destroy()
+            if result == wx.ID_YES:
+                self.OnLeBail(event)
+            Controls['newLeBail'] = False
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
         Size = dlg.GetSize()
@@ -5371,7 +5376,7 @@ class GSASII(wx.Frame):
         else:
             refPlotUpdate = None
         try:
-            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate,newLeBail=Controls.get('newLeBail',False))
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -5424,11 +5429,6 @@ class GSASII(wx.Frame):
             
     def OnLeBail(self,event):
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        # seqList = self.testSeqRefineMode()
-        # if seqList:
-        #     self.ErrorDialog('Not for Sequential Fits',
-        #         'This command is not yet implemented for sequential fitting')
-        #     return
         self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
@@ -5452,7 +5452,7 @@ class GSASII(wx.Frame):
             refPlotUpdate = None
 
         try:
-            OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
+            OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -5461,8 +5461,7 @@ class GSASII(wx.Frame):
             rtext = 'Le Bail-only fit done. '
             Rwp = Rvals.get('Rwp')
             if 'GOF' in Rvals:
-                txt = 'Final Reduced Chi^2: {:.3f}\n'.format(
-                    Rvals['GOF']**2,rChi2initial)
+                txt = 'Final Reduced Chi^2: {:.3f}\n'.format(Rvals['GOF']**2)+rChi2initial
                 text += txt
                 rtext += txt
             text += '\nLoad new result & continue refinement?'
@@ -5472,8 +5471,6 @@ class GSASII(wx.Frame):
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.reloadFromGPX(rtext)
-                    Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-                    Controls['newLeBail'] = False
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
@@ -5565,10 +5562,6 @@ class GSASII(wx.Frame):
         '''
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         seqList = self.testSeqRefineMode()
-        # if not seqList:
-        #     self.OnRefine(event)
-        #     return
-        #plotHist = self.GPXtree.GetItemText(self.PatternId)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -5630,14 +5623,6 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
             if result == wx.ID_NO: return
         self.GPXtree.SaveExposedItems()        
-        dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
-            parent=self)            
-        Size = dlg.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        dlg.CenterOnParent()
-        dlg.Show()
         # find 1st histogram to be refined
         if 'Seq Data' in Controls: 
             histNames = Controls['Seq Data']
@@ -5645,17 +5630,36 @@ class GSASII(wx.Frame):
             histNames = G2stIO.GetHistogramNames(self.GSASprojectfile,['PWDR',])
         if Controls.get('Reverse Seq'):
             histNames.reverse()
+        if Controls['newLeBail']:
+            dlgtxt = '''Do Le Bail refinement of intensities first?
+    recommended after major parameter changes'''
+            dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
+            result = wx.ID_NO
+            try:
+                result = dlgb.ShowModal()
+            finally:
+                dlgb.Destroy()
+            if result == wx.ID_YES:
+                self.OnLeBail(event)
         # select it
+        dlgp = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
+            parent=self)            
+        Size = dlgp.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            dlgp.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        dlgp.CenterOnParent()
+        dlgp.Show()
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
         try:
-            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg,refPlotUpdate) #Msg is Rvals dict if Ok=True
+            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlgp,refPlotUpdate) #Msg is Rvals dict if Ok=True
         finally:
-            dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
-            dlg.Destroy()
+            dlgp.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
+            dlgp.Destroy()
         if OK:
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
             text = 'Detailed results are in ' + lst + '.lst\n'
@@ -5676,8 +5680,8 @@ class GSASII(wx.Frame):
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
-#                    if self.G2plotNB.plotList:
-#                        self.G2plotNB.clear()
+                    # if self.G2plotNB.plotList:
+                    #     self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
@@ -6019,7 +6023,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # Sequential results
         G2G.Define_wxId('wxID_RENAMESEQSEL', 'wxID_SAVESEQSEL', 'wxID_SAVESEQCSV', 'wxID_SAVESEQSELCSV', 'wxID_PLOTSEQSEL',
-          'wxID_ORGSEQSEL', 'wxID_ADDSEQVAR', 'wxID_DELSEQVAR', 'wxID_EDITSEQVAR', 'wxID_COPYPARFIT', 'wxID_AVESEQSEL','wxID_SELECTUSE',
+          'wxID_ADDSEQVAR', 'wxID_DELSEQVAR', 'wxID_EDITSEQVAR', 'wxID_COPYPARFIT', 'wxID_AVESEQSEL','wxID_SELECTUSE',
           'wxID_ADDPARFIT', 'wxID_DELPARFIT', 'wxID_EDITPARFIT', 'wxID_DOPARFIT', 'wxID_ADDSEQDIST', 'wxID_ADDSEQANGLE', 'wxID_ORGSEQINC',)
         self.SequentialMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SequentialMenu)
@@ -6049,8 +6053,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialFile.AppendSeparator()       
         self.SequentialFile.Append(G2G.wxID_SAVESEQCSV,'Save all as CSV',
             'Save all sequential refinement results as a CSV spreadsheet file')
-#        self.SequentialFile.Append(id=G2G.wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
-#            help='Reorganize variables where variables change')
         self.SequentialPvars = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
         self.SequentialPvars.Append(G2G.wxID_ADDSEQVAR,'Add Formula','Add a new custom pseudo-variable')

@@ -1888,14 +1888,14 @@ def UpdateInstrumentGrid(G2frame,data):
         return good
         
     def updateData(inst,ref):
-        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
+        Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[0]
-        for item in data:
+        for item in Data:
             try:
-                data[item] = [data[item][0],inst[item],ref[item]]
+                Data[item] = [Data[item][0],inst[item],ref[item]]
             except KeyError:
                 try:
-                    data[item] = [data[item][0],inst[item]]
+                    Data[item] = [Data[item][0],inst[item]]
                 except KeyError:
                     pass        #skip 'Polariz.' for N-data
     
@@ -2196,11 +2196,12 @@ def UpdateInstrumentGrid(G2frame,data):
     def AfterChange(invalid,value,tc):
         if invalid: return
         updateData(insVal,insRef)
+        G2plt.PlotPeakWidths(G2frame)
         
     def NewProfile(invalid,value,tc):
         if invalid: return
-        updateData(insVal,insRef)
         G2plt.PlotPeakWidths(G2frame)
+        updateData(insVal,insRef)
         
     def OnItemRef(event):
         Obj = event.GetEventObject()

@@ -6392,9 +6392,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
         data = G2mth.setPeakparms(Parms,Parms2,T,Z)
         ds = T/difC
         Q = 2.*np.pi/ds
-        for did in [4,6,8,10]:
-            if np.any(data[did] < 0.):
-                negWarn = True
+        # for did in [4,6,8,10]:
+        #     if np.any(data[did] < 0.):
+        #         negWarn = True
         A = data[4]
         B = data[6]
         S = 1.17741*np.sqrt(data[8])/T
@@ -6487,9 +6487,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-        for did in [isig,igam]:
-            if np.any(data[did] < 0.):
-                negWarn = True
+        # for did in [isig,igam]:
+        #     if np.any(data[did] < 0.):
+        #         negWarn = True
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn

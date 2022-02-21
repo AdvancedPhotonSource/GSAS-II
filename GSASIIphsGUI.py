@@ -7301,13 +7301,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
  positions shown in the Plot Window are changed to reflect the display mode values. The 
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
             mainSizer.Add((-1,10))
-            slideSizer = wx.FlexGridSizer(0,4,0,0)
+            slideSizer = wx.FlexGridSizer(0,5,0,0)
             modeDisp = ISOdata['modeDispl']
             idsp = 0
             slideSizer.Add(wx.StaticText(ISODIST,label='Name'),0,wx.ALIGN_CENTER)
             slideSizer.Add(wx.StaticText(ISODIST,label='Save value'))
             slideSizer.Add(wx.StaticText(ISODIST,label='Value'),0,wx.ALIGN_CENTER)
-            slideSizer.Add(wx.StaticText(ISODIST,label='Refine?'))
+            slideSizer.Add(wx.StaticText(ISODIST,label='Refine?'),0,wx.ALIGN_CENTER)
+            slideSizer.Add(wx.StaticText(ISODIST,label='Atom displacements'),0,wx.EXPAND|wx.LEFT,15)
             isoDict = {i.name:j for (i,j) in zip(data['ISODISTORT']['G2ModeList'],data['ISODISTORT']['IsoModeList'])}
             for item in ConstrData['Phase']:
                 if item[-1] != 'f': continue # only want new vars
@@ -7335,7 +7336,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 refDispl.SetValue(item[-2])
                 refDispl.Bind(wx.EVT_CHECKBOX,OnRefDispl)
                 Indx[refDispl.GetId()] = [idsp,item]
-                slideSizer.Add(refDispl,0,WACV|wx.EXPAND|wx.LEFT,15)
+                slideSizer.Add(refDispl,0,WACV|wx.EXPAND|wx.LEFT,15)                
+                slideSizer.Add(wx.StaticText(ISODIST,label=', '.join(ModeDispList[idsp])),0,wx.EXPAND|wx.LEFT,15)
                 idsp += 1
             slideSizer.SetMinSize(wx.Size(650,10))
             mainSizer.Add(slideSizer)
@@ -7377,6 +7379,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 #             if 'modeDispl' not in ISOdata:
 #                 ISOdata['modeDispl'] = np.zeros(len(ISOdata['G2ModeList']))
 # #end patch
+            ModeDispList = G2pwd.GetAtmDispList(ISOdata)
             displayModes()
             return
         

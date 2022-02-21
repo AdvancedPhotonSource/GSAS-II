@@ -3790,7 +3790,20 @@ def ISO2PDFfit(Phase):
                 atmConstr[ip+2] = ''
         RMCPdict['AtomConstr'].append(atmConstr)
     return newPhase
-    
+
+def GetAtmDispList(ISOdata):
+    atmDispList = []
+    MT = ISOdata['Mode2VarMatrix'].T
+    DispList = ISOdata['IsoVarList']
+    N = len(DispList)
+    for I in range(N):
+        vary = []
+        for i in range(N):
+            if MT[I,i]:
+                vary.append(DispList[i])
+        atmDispList.append(vary)
+    return atmDispList
+
 #### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))

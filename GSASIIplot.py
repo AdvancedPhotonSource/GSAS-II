@@ -6447,8 +6447,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 2.*np.pi*X*npsind(tth/2.)/12.3986
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-        if np.any(data[isig] < 0.):
-            negWarn = True
+        # if np.any(data[isig] < 0.):
+        #     negWarn = True
         s = np.sqrt(data[isig])   #var -> sig(radians)
         Y = sq8ln2*s/X
         Plot.plot(Q,Y,color='r',label='Gaussian')

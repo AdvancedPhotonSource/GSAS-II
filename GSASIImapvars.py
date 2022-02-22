@@ -959,7 +959,8 @@ def GroupConstraints(constrDict):
         ParmList.append(varlist)
     return groups,ParmList
 
-def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None):
+def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
+                        seqHistNum=None,raiseException=False):
     '''Takes a list of relationship entries that have been stored by 
     :func:`ProcessConstraints` into lists ``constrDict`` and ``fixedList``
 
@@ -992,9 +993,11 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
     :param dict parmDict: a dict containing all parameters defined in current
       refinement.
 
-    :param int SeqHist: number of current histogram, when used in a sequential
-      refinement. None (default) otherwise. Wildcard parameter names are
-      set to the current histogram, when found if not None.
+    :param int seqHistNum: the hId number of the current histogram in a sequential
+      fit. None (default) otherwise. 
+      
+    :param bool raiseException: When True, generation of an error causes
+       an exception to be raised (used in sequential fits)
 
     :returns: errmsg,warning,groups,parmlist
 
@@ -1035,19 +1038,18 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
     warning = '' # save informational text messages here.
 
     # Process the equivalences; If there are conflicting parameters, move them into constraints
-    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict)
+    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict,seqHistNum=seqHistNum)
     
     # find parameters used in constraint equations & new var assignments (all are dependent)
     global constrVarList 
     constrVarList = []
-    for cdict in constrDict:
-        constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
 
     # look through "Constr" and "New Var" constraints looking for zero multipliers and
     # Hold, Unvaried & Undefined parameters
     skipList = []
     invalidParms = []
     for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
+        constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
         valid = 0          # count of good parameters
         # error reporting
         zeroList = []      # parameters with zero multipliers
@@ -1064,7 +1066,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
                 if var not in dropList: dropList.append(var)
             elif var in holdParmList:   # hold invalid in New Var, drop from constraint eqn
                 holdList.append(var)
-                if fixVal is None:
+                if fixVal is None:   # hold in a newvar is not allowed
                     problem = True
                 else:
                     if var not in dropList: dropList.append(var)
@@ -1075,19 +1077,23 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
             elif parmDict is not None and var not in parmDict: # not defined, constraint will not be used
                 if var not in undefinedVars: undefinedVars.append(var)
                 notDefList.append(var)
-                if ':dAx:' in var or ':dAy:' in var or ':dAz:' in var: # coordinates from undefined atoms 
-                    if fixVal is None:
-                        problem = True  # invalid in New Var
+                if seqHistNum is None:
+                    if ':dAx:' in var or ':dAy:' in var or ':dAz:' in var: # coordinates from undefined atoms 
+                        if fixVal is None:
+                            problem = True  # invalid in New Var
+                        else:
+                            if var not in dropList: dropList.append(var) # ignore in constraint eqn
                     else:
-                        if var not in dropList: dropList.append(var) # ignore in constraint eqn
-                else:
-                    problem = True
+                        problem = True
             elif var not in varyList and fixVal is not None:  # unvaried, constraint eq. only
                 if var not in unvariedParmsList: unvariedParmsList.append(var)
                 noVaryList.append(var)
                 dropList.append(var)
             else:
                 valid += 1
+        if seqHistNum is not None and len(notDefList) > 0 and valid == 0:
+            # for sequential ref can quietly ignore constraints with all undefined vars
+            notDefList = []
         for l,m in ((zeroList,"have zero multipliers"), # show warning
                       (holdList,'set as "Hold"'),
                       (noVaryList,"not varied"),
@@ -1100,7 +1106,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
                     msg += v
                 warn(msg,cdict,fixVal)
         if valid == 0: # no valid entries
-            warn('Ignoring constraint, no valid entries',cdict)
+            if seqHistNum is None: warn('Ignoring constraint, no valid entries',cdict)
             skipList.append(cnum)
         elif problem: # mix of valid & refined and undefined items, cannot use this
             if cdict.get('_vary',True): # true for constr eq & varied New Var
@@ -1243,7 +1249,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
         indParmList.append(maplist)
         symGenList.append(False)
             
-    if errmsg and SeqHist is not None:
+    if errmsg and raiseException:
         print (' *** ERROR in constraint definitions! ***')
         print (errmsg)
         if warning:
@@ -1274,7 +1280,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
     #     print(60*'=')
     return errmsg,warning,groups,parmlist # saved for sequential fits
     
-def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None):
+def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=None):
     '''Process equivalence constraints, looking for conflicts such as 
     where a parameter is used in both an equivalence and a constraint expression
     or where chaining is done (A->B and B->C). 
@@ -1290,6 +1296,8 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None):
        than a constant.
     :param dict parmDict: a dict containing defined parameters and their values. Used to find 
        equivalences where a parameter is has been removed from a refinement. 
+    :param int seqHistNum: the hId number of the current histogram in a sequential
+      fit. None (default) otherwise. 
 
     :returns: warning messages about changes that need to be made to equivalences 
     '''
@@ -1390,7 +1398,11 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None):
                     if cnum not in convertList: convertList.append(cnum)
             if msg:
                 warnEqv('Converting to "Constr"',cnum)
-            
+            if warninfo['msg'] and seqHistNum is not None:
+                # sequential fit -- print the recasts but don't stop with a warning
+                print(warninfo['msg'])
+                warninfo = {'msg':'', 'shown':-1}
+                
     global unvariedParmsList
     unvariedParmsList = []  # parameters in equivalences that are not varied
     # scan equivalences: look for holds
@@ -1439,6 +1451,9 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None):
                     if i != 0: msg += ", "
                     msg += var
                     StoreHold(var,'Equiv fixed')
+            elif seqHistNum is not None: # don't need to warn for sequential fit
+                removeList.append(cnum)
+                continue
             else:
                 msg = 'No parameters varied '
             msg += "\nand ignoring equivalence"

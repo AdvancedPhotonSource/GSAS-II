@@ -1330,7 +1330,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         #replace mode displacement shift with value; esd applies to both
         for ip,pname in enumerate(data[name]['varyList']):  
             if '::nv-' in pname:
-                vals[ih][ip] = parmDict[pname.replace('::nv-','::')]
+                vals[ih][ip] = parmDict.get(pname.replace('::nv-','::'))
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
     G2frame.colList += zip(*vals)
     G2frame.colSigs += zip(*esds)
@@ -1360,10 +1360,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # add refined atom parameters to table
     colLabels += sorted(atomLookup.keys())
     for parm in sorted(atomLookup):
-        G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
+        aprm = atomLookup[parm]
+        G2frame.colList += [[data[name]['newAtomDict'].get(aprm,(None,None))[1]
+                                 for name in histNames]]
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-        if atomLookup[parm] in data[histNames[0]]['varyList']:
-            col = data[histNames[0]]['varyList'].index(atomLookup[parm])
+        if aprm in data[histNames[0]]['varyList']:
+            col = data[histNames[0]]['varyList'].index(aprm)
             G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
         else:
             G2frame.colSigs += [None]
@@ -1421,7 +1423,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if msg:
                 print('Unable to interpret multiplier(s) for',name,':',msg)
                 continue
-            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                                     seqHistNum=ihst,raiseException=False)
             if 'Dist' in expr:
                 derivs = G2mth.CalcDistDeriv(obj.distance_dict,obj.distance_atoms, parmDict)
                 pId = obj.distance_dict['pId']

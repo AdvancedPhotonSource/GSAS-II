@@ -647,8 +647,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     G2mv.InitVars()
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave) = \
-        G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqRef=True)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
+     FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
+             Phases,restraintDict,rbIds,Print=False,pFile=printFile,
+             seqHistName='All')
     for item in phaseVary:
         if '::A0' in item:
             G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
@@ -676,8 +678,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave) = \
-            G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqRef=True)
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
+         FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
+             Phases,restraintDict,rbIds,Print=False,pFile=printFile,
+             seqHistName=histogram)
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -749,7 +753,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             return False,'Unable to interpret multiplier(s): '+msg
       
         try:
-            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
+            errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                                                                      seqHistNum=hId,raiseException=True)
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
             G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:

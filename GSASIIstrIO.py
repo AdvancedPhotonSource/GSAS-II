@@ -170,18 +170,22 @@ def ReadConstraints(GPXfile, seqHist=None):
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
     return constrDict,fixedList
     
-def ReadCheckConstraints(GPXfile, seqHist=None):
+def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     '''Load constraints and related info and return any error or warning messages
     This is done from the GPX file rather than the tree.
 
     :param str GPXfile: specifies the path to a .gpx file.
     :param str seqHist: specifies a histogram to be loaded for 
       a sequential refinement. If None (default) all are loaded.
+    :param dict Histograms: output from :func:`GetUsedHistogramsAndPhases`,
+      can optionally be supplied to save time for sequential refinements
+    :param dict Phases: output from :func:`GetUsedHistogramsAndPhases`, can 
+      optionally be supplied to save time for sequential refinements
     '''
-    # init constraints
-    G2mv.InitVars()    
+    G2mv.InitVars()    # init constraints
     # get variables
-    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
+    if Histograms is None or Phases is None:
+        Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         return 'Error: No phases or no histograms in phases!',''
     if not Histograms:
@@ -200,7 +204,8 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     parmDict.update(rbDict)
     (Natoms, atomIndx, phaseVary, phaseDict, pawleyLookup, FFtables,
          BLtables, MFtables, maxSSwave) = GetPhaseData(
-             Phases, RestraintDict=None, rbIds=rbIds, Print=False) # generates atom symmetry constraints
+             Phases, RestraintDict=None, seqHistName=seqHist,
+             rbIds=rbIds, Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     parmDict.update(hapDict)
@@ -210,7 +215,8 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
     if msg:
         return 'Unable to interpret multiplier(s): '+msg,''
-    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
+                                                              seqHistNum=hId)
     G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     return errmsg, warnmsg
     
@@ -321,6 +327,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                        
         if 'G2VarList' in ISO:
             deltaList = []
+            notfound = []
             for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
@@ -330,9 +337,22 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 if var in parmDict:
                     cval = parmDict[var]
                 else:
-                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
-                    return
+                    notfound.append(var)
+                    continue
                 deltaList.append(cval-pval)
+            if notfound:
+                msg = 'PrintISOmodes warning: Atom parameters '
+                for i,v in enumerate(notfound):
+                    if i == len(notfound)-1:
+                        msg += ' & '
+                    elif i != 0:
+                        msg += ', '
+                    msg += v
+                print(msg,'not found')
+                print('  skipping computation for modes:')
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
+                    print('     ',i,'({})'.format(j))
+                continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
             
             pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
@@ -352,6 +372,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
+            notfound = []
             for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
                 var = gv.varname()
                 albl = Ilbl[:Ilbl.rfind('_')]
@@ -359,9 +380,23 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 if var in parmDict:
                     cval = parmDict[var]
                 else:
-                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
-                    return
+                    notfound.append(var)
+                    continue
                 deltaOccList.append(cval-pval)
+            if notfound:
+                msg = 'PrintISOmodes warning: Atom parameters '
+                for i,v in enumerate(notfound):
+                    if i == len(notfound)-1:
+                        msg += ' & '
+                    elif i != 0:
+                        msg += ', '
+                    msg += v
+                print(msg,'not found')
+                print('  skipping computation for modes:')
+                for i,j in zip(ISO['OccVarList'],ISO['G2OccVarList']):
+                    print('     ',i,'({})'.format(j))
+                continue
+                
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
             
             pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
@@ -1062,10 +1097,27 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
 ##### Phase data
 ################################################################################                    
 def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
-                 seqRef=False,symHold=None):
+                 seqHistName=None,symHold=None):
     '''Setup the phase information for a structural refinement, used for 
     regular and sequential refinements, optionally printing information 
     to the .lst file (if Print is True)
+
+    :param dict PhaseData: the contents of the Phase tree item (may be read from
+      .gpx file) with information on all phases
+    :param dict RestraintDict: an optional dict with restraint information
+    :param dict rbIds: an optional dict with rigid body information
+    :param bool Print: a flag that determines if information will be formatted and 
+      printed to the .lst file
+    :param file pFile: a file object (created by open) where print information is sent
+      when Print is True
+    :param str seqHistName: will be None, except for sequential fits. For sequential
+      fits, this can be the name of the current histogram or 'All'. If a histogram
+      name is supplied, only the phases used in the current histogram are loaded.
+      If 'All' is specified, all phases are loaded (used for error checking).
+    :param list symHold: if not None (None is the default) the names of parameters
+       held due to symmetry are placed in this list
+    :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
+        FFtables,BLtables,MFtables,maxSSwave (see code for details). 
     '''
             
     def PrintFFtable(FFtable):
@@ -1390,6 +1442,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
     atomIndx = {}
     for name in PhaseData:
+        if seqHistName is not None and seqHistName != 'All': # sequential: load only used phases
+            if seqHistName not in PhaseData[name]['Histograms']: continue
+            if not PhaseData[name]['Histograms'][seqHistName]['Use']: continue
         General = PhaseData[name]['General']
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
@@ -1583,7 +1638,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                             G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
             textureData = General['SH Texture']
-            if textureData['Order'] and not seqRef:
+            if textureData['Order'] and seqHistName is not None:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
                 phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
                 for item in ['omega','chi','phi']:
@@ -1631,7 +1686,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 if len(SSGtext):    #if superstructure
                     pFile.write('\n Modulation vector: mV0 = %.4f mV1 = %.4f mV2 = %.4f max mod. index = %d Refine? %s\n'%
                         (Vec[0],Vec[1],Vec[2],maxH,vRef))
-                if not seqRef:
+                if seqHistName is not None:
                     PrintTexture(textureData)
                 if name in RestraintDict:
                     PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
@@ -2420,6 +2475,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                        
         if 'G2VarList' in ISO:
             deltaList = []
+            notfound = []
             for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
@@ -2429,9 +2485,22 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                 if var in parmDict:
                     cval = parmDict[var]
                 else:
-                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
-                    return
+                    notfound.append(var)
+                    continue
                 deltaList.append(cval-pval)
+            if notfound:
+                msg = 'SetISOmodes warning: Atom parameters '
+                for i,v in enumerate(notfound):
+                    if i == len(notfound)-1:
+                        msg += ' & '
+                    elif i != 0:
+                        msg += ', '
+                    msg += v
+                print(msg,'not found')
+                print('  skipping computation for modes:')
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
+                    print('     ',i,'({})'.format(j))
+                continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
             
             if pFile:
@@ -2455,6 +2524,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                 
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
+            notfound = []
             for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
                 var = gv.varname()
                 albl = Ilbl[:Ilbl.rfind('_')]
@@ -2462,9 +2532,22 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                 if var in parmDict:
                     cval = parmDict[var]
                 else:
-                    print('PrintISOmodes Error: Atom not found',"No value found for parameter "+str(var))
-                    return
+                    notfound.append(var)
+                    continue
                 deltaOccList.append(cval-pval)
+            if notfound:
+                msg = 'SetISOmodes warning: Atom parameters '
+                for i,v in enumerate(notfound):
+                    if i == len(notfound)-1:
+                        msg += ' & '
+                    elif i != 0:
+                        msg += ', '
+                    msg += v
+                print(msg,'not found')
+                print('  skipping computation for modes:')
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
+                    print('     ',i,'({})'.format(j))
+                continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
             
             if pFile:

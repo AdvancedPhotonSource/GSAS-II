@@ -5586,8 +5586,10 @@ class GSASII(wx.Frame):
         self.OnFileSave(event)
         allerrors = {}
         allwarnings = {}
+        Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(self.GSASprojectfile)
         for h in seqList: # check constraints are OK for each histogram to be processed
-            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,h)
+            errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
+                                                          h,Histograms,Phases)
             if warnmsg or errmsg:
                 print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
             if warnmsg:

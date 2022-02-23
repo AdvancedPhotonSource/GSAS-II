@@ -4287,6 +4287,7 @@ class GSASII(wx.Frame):
         dlg = G2G.G2SingleChoiceDialog(self,
                                            'Select previous project to open',
                                            'Select project',sellist)
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             dlg.Destroy()
@@ -6034,11 +6035,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialFile.Append(G2G.wxID_SELECTUSE,'Set used...',
             'Dialog to select rows for plots/equation fitting')
         G2G.Define_wxId('wxID_UPDATESEQSEL')
-        self.SequentialFile.Append(G2G.wxID_UPDATESEQSEL,'Update phase from selected',
+        self.SequentialFile.Append(G2G.wxID_UPDATESEQSEL,'Update phase from row',
             'Update phase information from selected row')
         G2G.Define_wxId('wxID_EDITSEQSELPHASE')
-        self.SequentialFile.Append(G2G.wxID_EDITSEQSELPHASE,'Edit phase parameters in selected',
-            'Edit phase information from selected row')
+        self.SequentialFile.Append(G2G.wxID_EDITSEQSELPHASE,'Set phase vals',
+            'Edit phase parameter vals in selected rows')
         self.SequentialFile.AppendSeparator()
         self.SequentialFile.Append(G2G.wxID_PLOTSEQSEL,'Plot selected cols',
             'Plot selected sequential refinement columns')

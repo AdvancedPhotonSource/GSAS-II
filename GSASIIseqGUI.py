@@ -1148,15 +1148,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
 
-    # scan for locations where the variables change
-    VaryListChanges = [] # histograms where there is a change
     combinedVaryList = []
-    firstValueDict = {}
-    vallookup = {}
-    posdict = {}
-    prevVaryList = []
-    foundNames = []
+    firstValueDict = {}  # first value for each parameter; used for pseudo vars GUI 
+    foundHistNames = []    # histograms to be used in sequential table
+    maxPWL = 5             # number of Pawley vars to show
     missing = 0
+    # scan through histograms to see what are available and to make a 
+    # list of all varied parameters; also create a dict that has the 
     for i,name in enumerate(histNames):
         if name not in data:
             if missing < 5:
@@ -1165,8 +1163,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 print (' Warning: more are missing')
             missing += 1
             continue
-        foundNames.append(name)
-        maxPWL = 5
+        foundHistNames.append(name)
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
             svar = striphist(var,'*') # wild-carded
             if 'PWL' in svar:
@@ -1176,9 +1173,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # add variables to list as they appear
                 combinedVaryList.append(svar)
                 firstValueDict[svar] = (val,sig)
+    if missing:
+        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
+    combinedVaryList.sort()
+    histNames = foundHistNames
+    prevVaryList = []
+    posdict = {}    # defines position for each entry in table; for inner
+                    # dict key is column number & value is parameter name 
+    for i,name in enumerate(histNames):
         if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
             prevVaryList = data[name]['varyList']
-            vallookup[name] = dict(zip(data[name]['varyList'],data[name]['variables']))
             posdict[name] = {}
             for var in data[name]['varyList']:
                 svar = striphist(var,'*')
@@ -1186,15 +1190,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     if int(svar.split(':')[-1]) > maxPWL:
                         continue
                 posdict[name][combinedVaryList.index(svar)] = svar
-            VaryListChanges.append(name)
-    if missing:
-        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
-    #if len(VaryListChanges) > 1:
-    #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
-    #else:
-    #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,False)
     ####--  build up the data table by columns -----------------------------------------------
-    histNames = foundNames
     nRows = len(histNames)
     G2frame.colList = [list(range(nRows))]
     if len(data.get('Use',[])) != nRows:
@@ -1293,44 +1289,37 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     cellESDs += [[None for i in uniqCellIndx[pId]]+[None]]
             G2frame.colList += zip(*cells)
             G2frame.colSigs += zip(*cellESDs)
-    # sort out the variables in their selected order
-    varcols = 0
-    for d in posdict.values():
-        varcols = max(varcols,max(d.keys())+1)
-    # get labels for each column
-    for i in range(varcols):
-        lbl = ''
-        for h in VaryListChanges:
-            if posdict[h].get(i):
-                if posdict[h].get(i) in lbl: continue
-                if lbl != "": lbl += '/'
-                lbl += posdict[h].get(i)
-                
+
+    # get ISODISTORT labels
+    ISOlist = []
+    for phase in Phases:
+        ISOlist += [i.varname() for i in Phases[phase]['ISODISTORT']['G2ModeList']
+                       if i.varname() not in ISOlist]
+    # set labels for columns of data table
+    for i,lbl in enumerate(combinedVaryList):
         if 'nv-' in lbl:
-            newlbl = lbl.replace('::nv-','::')
-            if newlbl in parmDict:  #the ISO name w/o 'nv-' should be there
-                lbl = newlbl
+            nlbl = lbl.replace('::nv-','::')
+            if nlbl in ISOlist:
+                lbl = nlbl
         colLabels.append(lbl)
-    Types += varcols*[wg.GRID_VALUE_FLOAT,]
+    Types += len(combinedVaryList)*[wg.GRID_VALUE_FLOAT,]
     vals = []
     esds = []
     varsellist = None        # will be a list of variable names in the order they are selected to appear
     # tabulate values for each hist, leaving None for blank columns
     for ih,name in enumerate(histNames):
-        if name in posdict:
-            parmDict = data[name]['parmDict']
-            varsellist = [posdict[name].get(i) for i in range(varcols)]
-            # translate variable names to how they will be used in the headings
-            vs = [striphist(v,'*') for v in data[name]['varyList']]
-            # determine the index for each column (or None) in the data[]['variables'] and ['sig'] lists
-            sellist = [vs.index(v) if v is not None else None for v in varsellist]
-            #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
+        varsellist = [posdict[name].get(i) for i in range(len(combinedVaryList))]
+        # translate variable names to how they will be used in the headings
+        vs = [striphist(v,'*') for v in data[name]['varyList']]
+        # determine the index for each column (or None) in the data[]['variables'] and ['sig'] lists
+        sellist = [vs.index(v) if v is not None else None for v in varsellist]
+        #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         #replace mode displacement shift with value; esd applies to both
         for ip,pname in enumerate(data[name]['varyList']):  
             if '::nv-' in pname:
-                vals[ih][ip] = parmDict.get(pname.replace('::nv-','::'))
+                vals[ih][ip] = data[name]['parmDict'].get(pname.replace('::nv-','::'))
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
     G2frame.colList += zip(*vals)
     G2frame.colSigs += zip(*esds)

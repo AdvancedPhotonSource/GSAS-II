@@ -396,7 +396,6 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 for i,j in zip(ISO['OccVarList'],ISO['G2OccVarList']):
                     print('     ',i,'({})'.format(j))
                 continue
-                
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
             
             pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
@@ -2464,8 +2463,15 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 textureData,RestraintDict[phase],pFile)
                     
 def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
-    '''Prints the values for the ISODISTORT modes into the project's
-    .lst file after a refinement.
+    '''After a refinement, sets the values for the ISODISTORT modes into 
+    the parameter and s.u. dicts. 
+    Also, in the case of a non-sequential refinement, prints them into 
+    the project's .lst file.
+
+    :param dict parmDict: parameter dict
+    :param dict sigDict: s.u. (uncertainty) dict
+    :param dict Phases: Phase info from tree/.gpx
+    :param file pFile: file for .lst info or None (None for sequential fits)
     '''
     for phase in Phases:
         if 'ISODISTORT' not in Phases[phase]: continue
@@ -2488,7 +2494,8 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     notfound.append(var)
                     continue
                 deltaList.append(cval-pval)
-            if notfound:
+                
+            if notfound and pFile:
                 msg = 'SetISOmodes warning: Atom parameters '
                 for i,v in enumerate(notfound):
                     if i == len(notfound)-1:
@@ -2501,10 +2508,14 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                 for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
                     print('     ',i,'({})'.format(j))
                 continue
+            elif notfound:
+                continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
             
             if pFile:
-                pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
+                pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(
+                    data['General'].get('Name','')))
+                
             l = str(max([len(i) for i in ISO['IsoModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for varid,[var,val,norm,G2mode] in enumerate(zip(
@@ -2535,7 +2546,8 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     notfound.append(var)
                     continue
                 deltaOccList.append(cval-pval)
-            if notfound:
+            
+            if notfound and pFile:
                 msg = 'SetISOmodes warning: Atom parameters '
                 for i,v in enumerate(notfound):
                     if i == len(notfound)-1:
@@ -2547,6 +2559,8 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                 print('  skipping computation for modes:')
                 for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
                     print('     ',i,'({})'.format(j))
+                continue
+            elif notfound:
                 continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
             

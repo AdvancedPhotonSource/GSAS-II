@@ -1066,31 +1066,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.GetStatusBar().SetStatusText("Select column to export; LMB/RMB column to plot data/change label; LMB/RMB on row for PWDR/Covariance plot",1)
     sampleParms = GetSampleParms()
 
-    # make dict of varied atom coords keyed by absolute position
-    newAtomDict = data[histNames[0]].get('newAtomDict',{}) # dict with atom positions; relative & absolute
-    # Possible error: the next might need to be data[histNames[0]]['varyList']
-    # error will arise if there constraints on coordinates?
-    atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in data['varyList']}
-    
-    # make dict of varied cell parameters equivalents
-    ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
-    Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
-    # N.B. These Dij vars are missing a histogram #
-    newCellDict = {}
-    for name in histNames:
-        if name in data and 'newCellDict' in data[name]:
-            newCellDict.update(data[name]['newCellDict'])
-    cellAlist = []
-    for item in newCellDict:
-        cellAlist.append(newCellDict[item][0])
-        if item in data.get('varyList',[]):
-            ESDlookup[newCellDict[item][0]] = item
-            Dlookup[item] = newCellDict[item][0]
-    # add coordinate equivalents to lookup table
-    for parm in atomLookup:
-        Dlookup[atomLookup[parm]] = parm
-        ESDlookup[parm] = atomLookup[parm]
-
     # get unit cell & symmetry for all phases & initial stuff for later use
     RecpCellTerms = {}
     SGdata = {}
@@ -1148,7 +1123,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
 
-    combinedVaryList = []
+    combinedVaryList = []  # list of all varied parameters ; used for column headings
+    atomsVaryList = {}     # dict of atom coords varied in any histogram, includes dependent params
+                           # key is atom param name, value is esd parm name
     firstValueDict = {}  # first value for each parameter; used for pseudo vars GUI 
     foundHistNames = []    # histograms to be used in sequential table
     maxPWL = 5             # number of Pawley vars to show
@@ -1173,6 +1150,30 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # add variables to list as they appear
                 combinedVaryList.append(svar)
                 firstValueDict[svar] = (val,sig)
+            if '::dA' in var: 
+                atomsVaryList[var.replace('::dA','::A')] = var
+            atomsVaryList.update({i.replace('::dA','::A'):i 
+                                  for i in data[name]['depParmDict'] 
+                                  if '::dA' in i})
+
+    # make dict of varied cell parameters equivalents
+    ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
+    Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
+    # N.B. These Dij vars are missing a histogram #
+    newCellDict = {}
+    for name in histNames:
+        if name in data and 'newCellDict' in data[name]:
+            newCellDict.update(data[name]['newCellDict'])
+    cellAlist = []
+    for item in newCellDict:
+        cellAlist.append(newCellDict[item][0])
+        if item in data.get('varyList',[]):
+            ESDlookup[newCellDict[item][0]] = item
+            Dlookup[item] = newCellDict[item][0]
+    # add coordinate equivalents to lookup table
+    for parm in atomsVaryList:
+        Dlookup[atomsVaryList[parm]] = parm
+        ESDlookup[parm] = atomsVaryList[parm]
     if missing:
         print (' Warning: Total of %d data sets missing from sequential results'%(missing))
     combinedVaryList.sort()
@@ -1293,14 +1294,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # get ISODISTORT labels
     ISOlist = []
     for phase in Phases:
-        ISOlist += [i.varname() for i in Phases[phase]['ISODISTORT']['G2ModeList']
+        ISOlist += [i.varname() for i in Phases[phase]['ISODISTORT'].get('G2ModeList',[])
                        if i.varname() not in ISOlist]
     # set labels for columns of data table
+    ISOcols = {}  # ISODISTORT modes
     for i,lbl in enumerate(combinedVaryList):
         if 'nv-' in lbl:
             nlbl = lbl.replace('::nv-','::')
             if nlbl in ISOlist:
                 lbl = nlbl
+                ISOcols[lbl] = i
         colLabels.append(lbl)
     Types += len(combinedVaryList)*[wg.GRID_VALUE_FLOAT,]
     vals = []
@@ -1317,48 +1320,60 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         #replace mode displacement shift with value; esd applies to both
-        for ip,pname in enumerate(data[name]['varyList']):  
-            if '::nv-' in pname:
-                vals[ih][ip] = data[name]['parmDict'].get(pname.replace('::nv-','::'))
+        for pname in ISOcols:
+            if pname in data[name]['parmDict']:
+                vals[ih][ISOcols[pname]] = data[name]['parmDict'][pname]
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
     G2frame.colList += zip(*vals)
     G2frame.colSigs += zip(*esds)
-    # tabulate constrained variables, removing histogram numbers if needed
-    # from parameter label
+
+    # add refined atom parameters to table
+    for parm in sorted(atomsVaryList):
+        vals = []
+        sigs = []
+        aprm = atomsVaryList[parm]
+        for name in histNames:
+            if aprm in data[name]['varyList']:
+                i = data[name]['parmDict'][parm]
+                j = data[name]['sig'][data[name]['varyList'].index(aprm)]
+            elif aprm in data[name]['depParmDict']:
+                i = data[name]['parmDict'][parm]
+                j = data[name]['depParmDict'][aprm][1]
+            else:
+                i = j = None
+            vals.append(i)
+            sigs.append(j)
+        colLabels.append(parm)
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+        G2frame.colSigs += [sigs]
+        G2frame.colList += [vals]
+            
+    # tabulate dependent parameters from constraints, removing histogram numbers from
+    # parm label, if needed. Add the dependent variables to the table
     depValDict = {}
-    depSigDict = {}
     for name in histNames:
         for var in data[name].get('depParmDict',{}):
+            if '::dA' in var: continue
             val,sig = data[name]['depParmDict'][var]
             svar = striphist(var,'*')
             if svar not in depValDict:
-               depValDict[svar] = [val]
-               depSigDict[svar] = [sig]
+               depValDict[svar] = {}
+            depValDict[svar][name] = (val,sig)
+    for svar in sorted(depValDict):
+        vals = []
+        sigs = []
+        for name in histNames:
+            if name in depValDict[svar]:
+                i,j = depValDict[svar][name]
             else:
-               depValDict[svar].append(val)
-               depSigDict[svar].append(sig)
-    
-    # add the dependent constrained variables to the table
-    for var in sorted(depValDict):
-        if len(depValDict[var]) != len(histNames): continue
-        colLabels.append(var)
+                i = j = None
+            vals.append(i)
+            sigs.append(j)
+        colLabels.append(svar)
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-        G2frame.colSigs += [depSigDict[var]]
-        G2frame.colList += [depValDict[var]]
-
-    # add refined atom parameters to table
-    colLabels += sorted(atomLookup.keys())
-    for parm in sorted(atomLookup):
-        aprm = atomLookup[parm]
-        G2frame.colList += [[data[name]['newAtomDict'].get(aprm,(None,None))[1]
-                                 for name in histNames]]
-        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-        if aprm in data[histNames[0]]['varyList']:
-            col = data[histNames[0]]['varyList'].index(aprm)
-            G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
-        else:
-            G2frame.colSigs += [None]
-            
+        G2frame.colSigs += [sigs]
+        G2frame.colList += [vals]
+        
     # compute and add weight fractions to table if varied
     for phase in Phases:
         var = str(Phases[phase]['pId'])+':*:Scale'
@@ -1440,10 +1455,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 else:
                     esdList.append(np.sqrt(
                         np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
-            PSvarDict = parmDict.copy()
-            PSvarDict.update(sampleDict[name])
-            UpdateParmDict(PSvarDict)
-            calcobj.UpdateDict(PSvarDict)
+            psDict = parmDict.copy()
+            psDict.update(sampleDict[name])
+            UpdateParmDict(psDict)
+            calcobj.UpdateDict(psDict)
             valList.append(calcobj.EvalExpression())
 #            if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:
@@ -1495,6 +1510,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for l in reversed(range(len(colLabels))):
         if colLabels[l] in G2frame.SeqTblHideList:
             del colLabels[l]
+            del Types[l]
             del G2frame.colList[l]
             del G2frame.colSigs[l]
             if deltaChiCol == l:

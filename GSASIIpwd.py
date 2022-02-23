@@ -3335,7 +3335,7 @@ def UpdatePDFfit(Phase,RMCPdict):
         rstr.close()
         header = [line[:-1].split(' ',1) for line in lines[:7]]
         resdict = dict(header)
-        for item in ['scale','sharp','cell']:
+        for item in ['sharp','cell']:
             resdict[item] = [float(val) for val in resdict[item].split(',')]
         General['Cell'][1:7] = resdict['cell']
         for inam,name in enumerate(['delta2','delta1','sratio']):
@@ -3361,7 +3361,7 @@ def UpdatePDFfit(Phase,RMCPdict):
             atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
             atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
             atmBeg += 6
-            
+                        
     fName = 'Sequential_PDFfit.res'
     if RMCPdict['refinement'] == 'normal':
         fName = General['Name']+'-PDFfit.res'
@@ -3373,6 +3373,19 @@ def UpdatePDFfit(Phase,RMCPdict):
     res.close()
     Ibeg = False
     resline = ''
+    XNdata = {'Xdata':RMCPdict['Xdata'],'Ndata':RMCPdict['Ndata']}
+    for line in lines:
+        if 'Radiation' in line and 'X-Rays' in line:
+            dkey = 'Xdata'
+        if 'Radiation' in line and'Neutrons' in line:
+            dkey = 'Ndata'
+        if 'Qdamp' in line and '(' in line:
+            XNdata[dkey]['qdamp'][0] = float(line.split()[4])
+        if 'Qbroad' in line and '(' in line:
+            XNdata[dkey]['qbroad'][0] = float(line.split()[4])
+        if 'Scale' in line and '(' in line:
+            XNdata[dkey]['dscale'][0] = float(line.split()[3])
+        
     for iline,line in enumerate(lines):
         if 'Refinement parameters' in line:
             Ibeg = True
@@ -3391,6 +3404,7 @@ def UpdatePDFfit(Phase,RMCPdict):
     results = ['@'+result.lstrip() for result in results]
     results = [item.split() for item in results]
     if RMCPdict['refinement'] == 'normal':
+        RMCPdict.update(XNdata)
         results = dict([[item[0][:-1],float(item[1])] for item in results if item[0][:-1] in RMCPdict['AtomVar']])
         RMCPdict['AtomVar'].update(results)
         return None

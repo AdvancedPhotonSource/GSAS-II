@@ -694,7 +694,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # values and sigs for current value of dependent var
                 if row[indx] is None: continue
                 calcobj.depVal = row[indx]
-                calcobj.depSig = G2frame.colSigs[indx][j]
+                if G2frame.colSigs[indx]:
+                    calcobj.depSig = G2frame.colSigs[indx][j]
+                else:
+                    calcobj.depSig = 1.
                 calcObjList.append(calcobj)
         # varied parameters
         varyList = varyValueDict.keys()
@@ -939,7 +942,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 for i,refl in enumerate(pawleyRef):
                     key = pfx+'PWLref:'+str(i)
                     refl[ik] = parmDict[key]
-#                    if key in sigDict:  #TODO: error here sigDict not defined. What was intended
+#                    if key in sigDict:  #TODO: error here sigDict not defined. What was intended?
 #                        refl[ik+1] = sigDict[key]
 #                    else:
 #                        refl[ik+1] = 0
@@ -1126,7 +1129,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     combinedVaryList = []  # list of all varied parameters ; used for column headings
     atomsVaryList = {}     # dict of atom coords varied in any histogram, includes dependent params
                            # key is atom param name, value is esd parm name
-    firstValueDict = {}  # first value for each parameter; used for pseudo vars GUI 
+    firstValueDict = {}    # first value for each parameter; used to create VarDict for parametric fit pseudo vars GUI 
     foundHistNames = []    # histograms to be used in sequential table
     maxPWL = 5             # number of Pawley vars to show
     missing = 0
@@ -1447,9 +1450,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
                 esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
             else:
-                derivs = np.array(
+                derivs = np.array(  # TODO: this needs to be reworked
                     [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
                      for var,ESD in zip(varyList,sigs)])
+                # needs work: calls calcobj.SetupCalc each call time
+                # integrate into G2obj.ExpressionCalcObj
                 if None in list(derivs):
                     esdList.append(None)
                 else:
@@ -1469,19 +1474,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT+':10,5']
     #---- table build done -------------------------------------------------------------
 
-    # Make dict needed for creating & editing pseudovars (PSvarDict).
-    
-    name = histNames[0]
-    parmDict = data[name].get('parmDict',{})
-    PSvarDict = parmDict.copy()
+    # Make PSvarDict, needed for creating & editing pseudovars
+    # contains 1st value for each parameter in parmDict 
+    PSvarDict = {}
     PSvarDict.update(sampleParms)
+
+    for name in histNames:
+        parmDict = data[name].get('parmDict',{})
+        PSvarDict.update({i:parmDict[i] for i in parmDict if i not in PSvarDict})
     UpdateParmDict(PSvarDict)
-    # Also dicts of variables 
-    # for Parametric fitting from the data table
-    parmDict = dict(zip(colLabels,list(zip(*G2frame.colList))[0])) # scratch dict w/all values in table
-    parmDict.update({var:val for var,val in newCellDict.values()}) #  add varied reciprocal cell terms
-    del parmDict['Use']
-    name = histNames[0]
 
     # remove selected items from table
     saveColLabels = colLabels[:]
@@ -1490,8 +1491,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
     #******************************************************************************
-    # create a set of values for example evaluation of pseudovars and 
-    # this does not work for refinements that have differing numbers of variables.
+    # create a set of values for example evaluation of parametric equation fitting
     VarDict = {}
     for i,var in enumerate(colLabels):
         if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue

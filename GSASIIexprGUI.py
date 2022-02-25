@@ -262,10 +262,12 @@ class ExpressionDialog(wx.Dialog):
             self.ExtraBtn = None
         bSizer.Add((1,1), 1, wx.ALL|wx.EXPAND, 0)
         self.OKbtn = wx.Button(self, wx.ID_OK)
+        self.OKbtn.Bind(wx.EVT_BUTTON,lambda event: self.EndModal(wx.ID_OK))
         self.OKbtn.SetDefault()
         self.OKbtn.Disable()
         btnsizer.AddButton(self.OKbtn)
         btn = wx.Button(self, wx.ID_CANCEL)
+        btn.Bind(wx.EVT_BUTTON,lambda event: self.EndModal(wx.ID_CANCEL))
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         bSizer.Add(btnsizer, 0, WACV|wx.ALL, 5)
@@ -492,8 +494,8 @@ class ExpressionDialog(wx.Dialog):
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in wildList]
         dlg = G2G.G2SingleChoiceDialog(
-            self,'Select GSAS-II variable for '+str(var)+':',
-            'Select variable',
+            self,'Select GSAS-II parameter for variable "'+str(var)+'":',
+            'Select parameter',
             varListlbl,monoFont=True)
         dlg.SetSize((625,250))
         dlg.CenterOnParent()
@@ -683,7 +685,8 @@ class ExpressionDialog(wx.Dialog):
                 depVal = '; Variable "' + self.dependentVar + '" = ' + str(
                     self.depVarDict.get(self.dependentVar,'?')
                     )
-            self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
+            self.setEvalResult("Expression evaluates to: "+str(s)+depVal+
+                                   " with first defined values")
             self.OKbtn.Enable()
             if self.ExtraBtn: self.ExtraBtn.Enable()
         finally:  

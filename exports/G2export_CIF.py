@@ -3854,6 +3854,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.Write(' ')
             self.Write(70*'#')
             WriteCIFitem(self.fp, 'data_'+phaseOnly.replace(' ','_'))
+            WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                             str(GSASIIpath.GetVersionNumber()))
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             if self.Phases[phaseOnly]['General']['Type'] == 'macromolecular':
@@ -3878,6 +3880,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.Write(70*'#')
             #phasenam = self.Phases.keys()[0]
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
+            WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                             str(GSASIIpath.GetVersionNumber()))
             if hist.startswith("PWDR") and MM:
                 WritePowderDataMM(hist)
             elif hist.startswith("PWDR"):
@@ -4081,6 +4085,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             hist = self.histnam[0]
             self.CIFname = hist[5:40].replace(' ','')
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
+            WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                             str(GSASIIpath.GetVersionNumber()))
             if hist.startswith("PWDR") and MM:
                 WritePowderDataMM(hist)
             elif hist.startswith("PWDR"):
@@ -4094,6 +4100,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             #### Full (data & phase) single block CIF =============================
             #======================================================================
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
+            WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                             str(GSASIIpath.GetVersionNumber()))
             if phasenam is None: # if not already selected, select the first phase (should be one)
                 phasenam = self.Phases.keys()[0]
             #print 'phasenam',phasenam
@@ -4156,6 +4164,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 step = 1
                 dlg.Update(step,"Exporting overall section")
                 WriteCIFitem(self.fp, '\ndata_'+self.CIFname+'_publ')
+                WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                                str(GSASIIpath.GetVersionNumber()))
                 WriteAudit()
                 WriteCIFitem(self.fp, '_pd_block_id',
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
@@ -4377,6 +4387,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 step = 1
                 dlg.Update(step,"Exporting overall section")
                 WriteCIFitem(self.fp, '\ndata_'+self.CIFname+'_publ')
+                WriteCIFitem(self.fp, '_gsas_GSASII_version',
+                                str(GSASIIpath.GetVersionNumber()))
                 WriteAudit()
                 WriteCIFitem(self.fp, '_pd_block_id',
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +

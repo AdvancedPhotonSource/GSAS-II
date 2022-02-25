@@ -3302,7 +3302,10 @@ class ExpressionCalcObj(object):
             elif '*' in varname:
                 varlist = LookupWildCard(varname,list(parmDict.keys()))
                 if len(varlist) == 0:
-                    raise Exception("No variables match "+str(v))
+                    self.exprDict[v] = None
+                    self.lblLookup[v] = varname # needed?
+                    self.exprDict.update(self.fxnpkgdict) # needed?
+                    return
                 for var in varlist:
                     self.lblLookup[var] = v
                 if parmsInList:
@@ -3362,6 +3365,8 @@ class ExpressionCalcObj(object):
         try:
             val = eval(self.compiledExpr,globals(),self.exprDict)
         except TypeError:
+            val = None
+        except NameError:
             val = None
         if not np.isscalar(val):
             val = np.sum(val)

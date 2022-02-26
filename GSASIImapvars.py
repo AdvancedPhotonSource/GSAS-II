@@ -1226,7 +1226,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     maplist.append(varname)
                     varyList.append(varname)
                 else:
-                    maplist.append(fixedList[rel])
+                    maplist.append(fixedList[i])
         else:   # ------------------------- groups with new var assignments, vary only NV's w/flags set
             for i,rel in enumerate(group):
                 if fixedList[rel] is None:

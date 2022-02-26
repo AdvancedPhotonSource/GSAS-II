@@ -3779,7 +3779,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if peak[2]:
                     if Page.plotStyle['qPlot']:
                         Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    if Page.plotStyle['dPlot']:
+                    elif Page.plotStyle['dPlot']:
                         Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
                     else:
                         Plot.axvline(peak[0],color='b')
@@ -3789,7 +3789,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     clr = 'g'
                 if Page.plotStyle['qPlot']:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
-                if Page.plotStyle['dPlot']:
+                elif Page.plotStyle['dPlot']:
                     Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=1.5)

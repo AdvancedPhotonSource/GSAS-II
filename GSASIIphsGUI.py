@@ -5047,7 +5047,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     wx.CallAfter(UpdateRMC)
                 
                 def OnSetColVal(event):
-                    parms = {'Rmin':[0.0,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],
+                    parms = {'Rmin':[0.01,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],
                         'qdamp':[0.0,0.5],'qbroad':[0.0,0.1],'Temp':300}
                     c =  event.GetCol()
                     if c >= 0:
@@ -5186,14 +5186,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     scaleref.Bind(wx.EVT_CHECKBOX,OnRef)
                     fileSizer.Add(scaleref,0,WACV)
                     fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Qdamp '),0,WACV)
-                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qdamp'],0,xmin=0.001,xmax=1.0),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qdamp'],0,xmin=0.0,xmax=1.0),0,WACV)
                     qdampref = wx.CheckBox(G2frame.FRMC,label='refine')
                     qdampref.SetValue(RMCPdict[Name]['qdamp'][1])
                     Indx[qdampref.GetId()] = [Name,'qdamp']
                     qdampref.Bind(wx.EVT_CHECKBOX,OnRef)
                     fileSizer.Add(qdampref,0,WACV)
                     fileSizer.Add(wx.StaticText(G2frame.FRMC,label=' Qbroad '),0,WACV)
-                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qbroad'],0,xmin=0.001,xmax=1.0),0,WACV)
+                    fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[Name]['qbroad'],0,xmin=0.0,xmax=1.0),0,WACV)
                     qbroadref = wx.CheckBox(G2frame.FRMC,label='refine')
                     qbroadref.SetValue(RMCPdict[Name]['qbroad'][1])
                     Indx[qbroadref.GetId()] = [Name,'qbroad']
@@ -5960,8 +5960,8 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                     wx.CallAfter(UpdateRMC)
                     
                 parmSizer = wx.FlexGridSizer(3,6,5,5)
-                Names = ['delta1','delta2','sratio','spdiameter']
-                Names2 = ['stepcut','rcut']
+                Names = ['delta1','delta2','sratio','rcut','spdiameter']
+                Names2 = ['stepcut',]
                 for name in Names:
                     
                     def OnRefine(event):
@@ -5970,11 +5970,13 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         RMCPdict[name][1] = not RMCPdict[name][1]
                         
                     if name == 'spdiameter' and RMCPdict.get('shape','sphere') != 'sphere':
-                        parmSizer.Add((5,5))
-                        parmSizer.Add((5,5))
-                        parmSizer.Add((5,5))
+                        pass
                     else:
                         parmSizer.Add(wx.StaticText(G2frame.FRMC,label=name),0,WACV)
+                        if name == 'rcut':
+                            parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,name,xmin=0.,size=(70,25)),0,WACV)
+                            parmSizer.Add((5,5))
+                            continue
                         parmSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict[name],0,xmin=0.,size=(70,25)),0,WACV)
                         refine = wx.CheckBox(G2frame.FRMC,label='Refine')
                         refine.SetValue(RMCPdict[name][1])
@@ -6099,7 +6101,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             mainSizer.Add(subSizer)
             mainSizer.Add((5,5))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
-'''"PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals", 
+'''"PDFfit2 and PDFgui: computer programs for studying nanostructures in crystals", 
 C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen && 
 S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter 
 (2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219'''))

@@ -6353,6 +6353,29 @@ class SelectConfigSetting(wx.Dialog):
         self.vars[var][1] = self.vars[var][0]
         self.OnChange()
         wx.CallAfter(self.OnSelection)
+
+################################################################################
+class RefinementProgress(wx.ProgressDialog):
+    '''Defines a wrapper to place around wx.ProgressDialog to be used for 
+    showing refinement progress. At some point a better progress window should be
+    created that keeps useful info on the screen such as some starting and  
+    current fit metrics, but for now all this adds is window defaults 
+    and a wx.Yield call during progress update calls.
+    '''
+    def __init__(self, title='Residual', message='All data Rw =',
+                     maximum=101.0, parent=None,
+                     style=wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT):
+        super(self.__class__,self).__init__(title, message, maximum, parent, style)
+        Size = self.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            self.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        self.CenterOnParent()
+        self.Show()
+        
+    def Update(self,value, newmsg=""):
+        wx.GetApp().Yield()
+        #print('wx Yield called')
+        return super(self.__class__,self).Update(value, newmsg)
         
 ################################################################################
 class downdate(wx.Dialog):

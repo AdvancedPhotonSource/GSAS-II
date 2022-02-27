@@ -5363,12 +5363,13 @@ class GSASII(wx.Frame):
             if result == wx.ID_YES:
                 self.OnLeBail(event)
             Controls['newLeBail'] = False
-        dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
-        Size = dlg.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        dlg.CenterOnParent()
+        dlg = G2G.RefinementProgress(parent=self)
+        # dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
+        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
+        # Size = dlg.GetSize()
+        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        # dlg.CenterOnParent()
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
@@ -5438,12 +5439,13 @@ class GSASII(wx.Frame):
         except:
             rChi2initial = '?'
         
-        dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
-        Size = dlg.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        dlg.CenterOnParent()
+        dlg = G2G.RefinementProgress(parent=self)
+        # dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
+        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
+        # Size = dlg.GetSize()
+        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        # dlg.CenterOnParent()
         #dlg.Raise() # dangerous
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
@@ -5645,14 +5647,16 @@ class GSASII(wx.Frame):
             if result == wx.ID_YES:
                 self.OnLeBail(event)
         # select it
-        dlgp = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
-            parent=self)            
-        Size = dlgp.GetSize()
-        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-            dlgp.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        dlgp.CenterOnParent()
-        dlgp.Show()
+        dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',
+                                          parent=self)
+        # dlgp = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
+        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
+        #     parent=self)            
+        # Size = dlgp.GetSize()
+        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+        #     dlgp.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        # dlgp.CenterOnParent()
+        # dlgp.Show()
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating

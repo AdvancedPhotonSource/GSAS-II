@@ -7071,7 +7071,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                     style=wx.FD_OPEN ,wildcard='cif file(*.cif)|*.cif')
                 if dlg.ShowModal() == wx.ID_OK:
                     fName = dlg.GetFilename()
-                    ISOdata['ParentCIF'] = fName
+                    fDir = dlg.GetDirectory()
+                    ISOdata['ParentCIF'] = os.path.join(fDir,fName)
                     dlg.Destroy()
                 else:
                     dlg.Destroy()
@@ -7092,7 +7093,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                     style=wx.FD_OPEN ,wildcard='cif file(*.cif)|*.cif')
                 if dlg.ShowModal() == wx.ID_OK:
                     fName = dlg.GetFilename()
-                    ISOdata['ChildCIF'] = fName
+                    fDir = dlg.GetDirectory()
+                    ISOdata['ChildCIF'] = os.path.join(fDir,fName)
                     dlg.Destroy()
                 else:
                     dlg.Destroy()
@@ -7106,7 +7108,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT setup controls:'))
             parentSizer = wx.BoxSizer(wx.HORIZONTAL)
             parentSizer.Add(wx.StaticText(ISODIST,label=' Parent cif file:'),0,WACV)
-            parentCif = wx.Button(ISODIST,label=ISOdata['ParentCIF'],size=(200,24))
+            parentCif = wx.Button(ISODIST,label=ISOdata['ParentCIF'],size=(300,24))
             parentCif.Bind(wx.EVT_BUTTON,OnParentCif)
             parentSizer.Add(parentCif,0,WACV)
             if 'Use this phase' not in ISOdata['ChildCIF'] and 'Use this phase' not in ISOdata['ParentCIF']:
@@ -7130,7 +7132,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if ISOdata['ISOmethod'] == 4:
                 childSizer = wx.BoxSizer(wx.HORIZONTAL)
                 childSizer.Add(wx.StaticText(ISODIST,label=' Child cif file:'),0,WACV)
-                childCif = wx.Button(ISODIST,label=ISOdata['ChildCIF'],size=(200,24))
+                childCif = wx.Button(ISODIST,label=ISOdata['ChildCIF'],size=(300,24))
                 childCif.Bind(wx.EVT_BUTTON,OnChildCif)
                 childSizer.Add(childCif,0,WACV)
                 if 'Use this phase' not in ISOdata['ChildCIF'] and 'Use this phase' not in ISOdata['ParentCIF']:
@@ -7408,6 +7410,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         #3 asks for transformation matrix & space group of child structure
         #4 asks for cif file of child structure
         '''
+ 
+        if not G2frame.GSASprojectfile:     #force a project save to establish location of output cif file
+            G2frame.OnFileSaveas(event)
+ 
         radio,rundata = ISO.GetISODISTORT(data)
         if radio:
             data['ISODISTORT']['radio'] = radio

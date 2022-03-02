@@ -3330,6 +3330,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         if pfx+'Scale' in PhFrExtPOSig:
                             wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
                             sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                            # Add weight fractions and sigmas to depsig dictionary, for later use - per Conrad Gillard for wt./phase fr output #### check?
+                            PhFrExtPOSig[pfx + 'WeightScale'] = wtFr
+                            PhFrExtPOSig[pfx + 'WeightScaleSig'] = sigwtFr
                             pFile.write(' Phase fraction  : %10.5g, sig %10.5g Weight fraction  : %8.5f, sig %10.5f\n'%
                                 (hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr))
                         if pfx+'Extinction' in PhFrExtPOSig:

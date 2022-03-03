@@ -33,6 +33,8 @@ Class or function name             Description
                                    choice is selected
 :class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
                                    wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
+:class:`G2SpinWidget`              A customized combination of a wx.SpinButton and a validated 
+                                   wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
 :class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
                                    columns may be ignored.
 :class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
@@ -1116,6 +1118,70 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
                 nDig=(10,int(0.9+np.log10(iscale))),OnLeave=onValSet,
                 xmin=xmin,xmax=xmax,typeHint=float)
     hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+    return hSizer
+
+def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
+                       onChange=None,onChangeArgs=[],hsize=35):
+    '''A customized combination of a wx.SpinButton and a validated 
+    wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
+    a the spin button or text entry to set a value within a range.
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the TextCtrl. Can be None.
+
+    :param dict/list loc: the dict or list with the initial value to be
+      placed in the TextCtrl.
+
+    :param int/str key: the dict key or the list index for the value to be
+      edited by the TextCtrl. The ``loc[key]`` element must exist and should 
+      have a float or int value. It will be forced to an integer initial value 
+      between xmin and xmax.
+      
+    :param str label: A label to be placed to the left of the entry widget. 
+
+    :param int xmin: the minimum allowed valid value. If None it is ignored.
+
+    :param int xmax: the maximum allowed valid value. If None it is ignored.
+
+    :param callable onChange: function to call when value is changed.
+       Default is None where nothing will be called. 
+       
+    :param list onChangeArgs: arguments to be passed to onChange function 
+       when called.
+
+    :param int hsize: length of TextCtrl in pixels. Defaults to 35.
+
+    :returns: returns a wx.BoxSizer containing the widgets
+    '''
+
+    def _onSpin(event):
+        Obj = event.GetEventObject()
+        loc[key] += Obj.GetValue()  # +1 or -1
+        if xmin is not None and loc[key] < xmin:
+            loc[key] = xmin
+        if xmax is not None and loc[key] > xmax:
+            loc[key] = xmax
+        wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
+        Obj.SetValue(0)
+        if onChange: onChange(*onChangeArgs)
+    def _onValSet(*args,**kwargs):
+        if onChange: onChange(*onChangeArgs)
+    if xmin is not None:
+        loc[key] = max(xmin,loc[key])
+    if xmax is not None:
+        loc[key] = min(xmax,loc[key])
+    hSizer = wx.BoxSizer(wx.HORIZONTAL)
+    if label: 
+        hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,
+                       wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    spin = wx.SpinButton(parent,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+    spin.SetRange(-1,1)
+    spin.Bind(wx.EVT_SPIN, _onSpin)
+    loc[key] = int(loc[key]+0.5)
+    vEntry = ValidatedTxtCtrl(parent,loc,key,OnLeave=_onValSet,
+                xmin=xmin,xmax=xmax,typeHint=int,size=(hsize,-1))
+    hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+    hSizer.Add(spin,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     return hSizer
 
 ################################################################################

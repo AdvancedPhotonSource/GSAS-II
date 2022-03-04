@@ -1252,7 +1252,7 @@ class EnumSelector(wx.ComboBox):
       
       The default for :data:`values` is to use the same list as
       specified for :data:`choices`.
-    :param function onChange: an optional routine that will be called
+    :param function OnChange: an optional routine that will be called
       when the  
       :class:`~wxpython.ComboBox` can be specified.
     :param (other): additional keyword arguments accepted by

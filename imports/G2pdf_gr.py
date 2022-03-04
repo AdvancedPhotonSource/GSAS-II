@@ -92,7 +92,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         self.pdfentry[0] = filename
         self.pdfentry[2] = 1 # xy file only has one bank
         self.idstring = ospath.basename(filename)
-
+        filepointer.close()
         return True
 
 class txt_PDFReaderClass(G2obj.ImportPDFData):
@@ -162,7 +162,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         self.pdfentry[0] = filename
         self.pdfentry[2] = 1 # xy file only has one bank
         self.idstring = ospath.basename(filename)
-
+        filepointer.close()
         return True
 
 class txt_PDFReaderClassG(G2obj.ImportPDFData):
@@ -225,6 +225,6 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
         self.pdfentry[0] = filename
         self.pdfentry[2] = 1 # xy file only has one bank
         self.idstring = ospath.basename(filename)
-
+        filepointer.close()
         return True
 

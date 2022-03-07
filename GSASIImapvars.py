@@ -1199,7 +1199,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
 
         # scan through current group looking for new var assignments
         hasNewVar = False
-        for i,rel in enumerate(group): 
+        for rel in group:
             if fixedList[rel] is None: 
                 hasNewVar = True # there a New Var relationship in this group
                 break
@@ -1226,7 +1226,8 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     maplist.append(varname)
                     varyList.append(varname)
                 else:
-                    maplist.append(fixedList[i])
+                    rel = group[i]
+                    maplist.append(fixedList[rel])
         else:   # ------------------------- groups with new var assignments, vary only NV's w/flags set
             for i,rel in enumerate(group):
                 if fixedList[rel] is None:
@@ -2130,7 +2131,7 @@ def ComputeDepESD(covMatrix,varyList,allvars=True):
     '''
     sigmaDict = {}
     for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
-        if multarr is None and not allvars: continue # probably not needed
+        if multarr is None and not allvars: continue # allvars=False: ignore equivalences
         varied = 0
         # get the v-covar matrix for independent parameters 
         vcov = np.zeros((len(mapvars),len(mapvars)))

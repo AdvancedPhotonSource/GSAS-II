@@ -736,6 +736,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Delete plots','Delete selected plots')
         self.Bind(wx.EVT_MENU, self.OnPlotDelete, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'Delete sequential result entries','')
+        self.Bind(wx.EVT_MENU, self.OnDeleteSequential, id=item.GetId())
         expandmenu = wx.Menu()
         item = parent.AppendSubMenu(expandmenu,'Expand tree items',  
             'Expand items of type in GSAS-II data tree')
@@ -4270,6 +4272,41 @@ class GSASII(wx.Frame):
                         self.G2plotNB.Delete(plotNames[i])
             finally:
                 dlg.Destroy()
+                
+    def OnDeleteSequential(self,event):
+        ''' Delete any sequential results table. Called by the Data/Delete sequential results menu
+        '''
+        selItem = self.GPXtree.GetSelection()
+        SeqList = []
+        DelList = []
+        item, cookie = self.GPXtree.GetFirstChild(self.root)
+        while item:
+            name = self.GPXtree.GetItemText(item)
+            if 'Sequential' in name:
+                SeqList.append(name)
+            item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        if not len(SeqList):
+            G2G.G2MessageBox(self,'No tree items to be deleted','Nothing to delete')
+            return
+        dlg = G2G.G2MultiChoiceDialog(self, 'Which sequential results to delete?', 'Delete seq resulta', SeqList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+        finally:
+            dlg.Destroy()
+        DelList = [SeqList[i] for i in result]
+        if not len(DelList):
+            G2G.G2MessageBox(self,'No tree items selected','Nothing deleted')
+            return
+        item, cookie = self.GPXtree.GetFirstChild(self.root)
+        while item:
+            itemName = self.GPXtree.GetItemText(item)
+            if itemName in DelList:
+                self.GPXtree.Delete(item)
+                if item == selItem: selItem = self.root
+            item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        SelectDataTreeItem(self,selItem)
+        self.GPXtree.UpdateSelection()
 
     def OnFileReopen(self, event):
         files = GSASIIpath.GetConfigValue('previous_GPX_files')

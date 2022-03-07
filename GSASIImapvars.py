@@ -1763,7 +1763,7 @@ def EvaluateMultipliers(constList,*dicts):
     well as normal Python functions, such as "2*np.cos(0::Ax:2/2.)"
     
     :param list constList: a list of dicts containing constraint expressions
-    :param \*dicts: one or more dicts containing GSAS-II parameters and their values 
+    :param \\*dicts: one or more dicts containing GSAS-II parameters and their values 
        can be specified
     :returns: an empty string if there were no errors, or an error message listing
        the strings that could not be converted.
@@ -1865,12 +1865,13 @@ def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
             s1 = ' name  :'
             s2 = ' value :'
             s3 = ' sig   :'
-        s1 += '%15s' % (name)
-        s2 += '%15.5f' % (val)
+        wdt = len(name)+1
+        s1 += ('%15s' % (name)).rjust(wdt)
+        s2 += ('%15.5f' % (val)).center(wdt)
         if esd is None:
-            s3 += '%15s' % ('n/a')
+            s3 += ('%15s' % ('n/a')).center(wdt)
         else:
-            s3 += '%15.5f' % (esd)
+            s3 += ('%15.5f' % (esd)).center(wdt)
 
 def getConstrError(constrLst,seqmode,seqhst):
     '''This is used to display error messages for constraints and 

@@ -965,7 +965,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             yb = bakInt(ma.getdata(xdata))
         sumBk[0] = np.sum(yb)
 #Debye function
-    if pfx+'difC' in parmDict or 'E' in parmDict[pfx+'Type']:
+    if pfx+'difC' in parmDict or 'E' in dataType:
         ff = 1.
     else:        
         try:
@@ -3283,6 +3283,7 @@ pf = PdfFit()
         
     rundata += 'pf.save_struct(1, "%s")\n'%(fName+'.rstr')
     rundata += 'pf.save_res("%s")\n'%(fName+'.res')
+    rundata += 'pf.save_pdf(1, "%s")\n'%(fName+'.fgr')
  
     if 'sequential' in RMCPdict['refinement']:
         rfile = open('Seq_PDFfit_template.py','w')
@@ -3361,10 +3362,8 @@ def UpdatePDFfit(Phase,RMCPdict):
             atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
             atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
             atmBeg += 6
-                        
-    fName = 'Sequential_PDFfit.res'
-    if RMCPdict['refinement'] == 'normal':
-        fName = General['Name']+'-PDFfit.res'
+    else:                    
+        fName = 'Sequential_PDFfit.res'
     try:
         res = open(fName.replace(' ','_'),'r')
     except FileNotFoundError:

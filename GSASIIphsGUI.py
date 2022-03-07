@@ -6449,7 +6449,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 SeqResult[PDFfile[0]] = {'variables':result[0],'varyList':varyList,'sig':result[1],'Rvals':{'Rwp':Rwp,},
                     'covMatrix':[],'title':PDFfile[0],'parmDict':parmDict}
                 
-                pfile = open('Sequential_PDFfit%s.fgr'%(PDFfile[1]['Type'][0])) # X or N
+                pfile = open('Sequential_PDFfit.fgr')
                 XYcalc = np.loadtxt(pfile).T[:2]
                 pfile.close()
                 pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PDFfile[0])

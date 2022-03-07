@@ -1055,8 +1055,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if not Histograms and not Phases:   #PDF histogrms not PWDR
-        histNames = [name[1] for name in data['histNames']]
+    if not len(Histograms) and not len(Phases):   #PDF or IMG histogrms not PWDR
+        histNames = [name for name in data['histNames']]
         Controls = {}
     else:        
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
@@ -1155,9 +1155,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 firstValueDict[svar] = (val,sig)
             if '::dA' in var: 
                 atomsVaryList[var.replace('::dA','::A')] = var
-            atomsVaryList.update({i.replace('::dA','::A'):i 
-                                  for i in data[name]['depParmDict'] 
-                                  if '::dA' in i})
+                atomsVaryList.update({i.replace('::dA','::A'):i for i in data[name]['depParmDict'] if '::dA' in i})
 
     # make dict of varied cell parameters equivalents
     ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
@@ -1181,12 +1179,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         print (' Warning: Total of %d data sets missing from sequential results'%(missing))
     combinedVaryList.sort()
     histNames = foundHistNames
-    prevVaryList = []
+    # prevVaryList = []
     posdict = {}    # defines position for each entry in table; for inner
                     # dict key is column number & value is parameter name 
     for i,name in enumerate(histNames):
-        if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
-            prevVaryList = data[name]['varyList']
+        # if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
+        #     prevVaryList = data[name]['varyList']
             posdict[name] = {}
             for var in data[name]['varyList']:
                 svar = striphist(var,'*')

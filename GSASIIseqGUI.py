@@ -569,14 +569,22 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for i in phaselist:
             pId = int(i)
             # apply cell symmetry
-            A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],parmDict,zeroDict[pId])
-            # convert to direct cell & add the unique terms to the dictionary
-            for i,val in enumerate(G2lat.A2cell(A)):
-                if i in uniqCellIndx[pId]:
-                    lbl = str(pId)+'::'+G2lat.cellUlbl[i]
-                    parmDict[lbl] = val
-            lbl = str(pId)+'::'+'Vol'
-            parmDict[lbl] = G2lat.calc_V(A)
+            try:
+                A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],parmDict,zeroDict[pId])
+                # convert to direct cell & add the unique terms to the dictionary
+                try:
+                    dcell = G2lat.A2cell(A)
+                except:
+                    print('phase',pId,'Invalid cell tensor',A)
+                    dcell = (1.,1.,1.,0.,0.,0.)
+                for i,val in enumerate(dcell):
+                    if i in uniqCellIndx[pId]:
+                        lbl = str(pId)+'::'+G2lat.cellUlbl[i]
+                        parmDict[lbl] = val
+                lbl = str(pId)+'::'+'Vol'
+                parmDict[lbl] = G2lat.calc_V(A)
+            except KeyError:
+                pass
         return parmDict
 
     def EvalPSvarDeriv(calcobj,parmDict,sampleDict,var,ESD):
@@ -622,14 +630,17 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             for i in phaselist:
                 pId = int(i)
                 # apply cell symmetry
-                A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],VparmDict,zeroDict[pId])
-                # convert to direct cell & add the unique terms to the dictionary
-                for i,val in enumerate(G2lat.A2cell(A)):
-                    if i in uniqCellIndx[pId]:
-                        lbl = str(pId)+'::'+G2lat.cellUlbl[i]
-                        VparmDict[lbl] = val
-                lbl = str(pId)+'::'+'Vol'
-                VparmDict[lbl] = G2lat.calc_V(A)
+                try:
+                    A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],VparmDict,zeroDict[pId])
+                    # convert to direct cell & add the unique terms to the dictionary
+                    for i,val in enumerate(G2lat.A2cell(A)):
+                        if i in uniqCellIndx[pId]:
+                            lbl = str(pId)+'::'+G2lat.cellUlbl[i]
+                            VparmDict[lbl] = val
+                    lbl = str(pId)+'::'+'Vol'
+                    VparmDict[lbl] = G2lat.calc_V(A)
+                except KeyError:
+                    pass
             # dict should be fully updated, use it & calculate
             calcobj.SetupCalc(VparmDict)
             results.append(calcobj.EvalExpression())

@@ -3120,14 +3120,12 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     General = Phase['General']
     fName = General['Name']+'-PDFfit.stru'
     fName = fName.replace(' ','_')
+    if 'sequential' in RMCPdict['refinement']:
+        fName = 'Sequential_PDFfit.stru'
     fatm = open(fName,'w')
     fatm.write('title  structure of '+General['Name']+'\n')
     fatm.write('format pdffit\n')
     fatm.write('scale   1.000000\n')    #fixed
-    # if RMCPdict['shape'] == 'sphere':
-    #     sharp = '%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0])
-    # else:
-    #     sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'])
     sharp = '%10.6f,%10.6f,%10.6f,%10.6f\n'%(RMCPdict['delta2'][0],RMCPdict['delta1'][0],RMCPdict['sratio'][0],RMCPdict['rcut'])
     fatm.write('sharp '+sharp)
     shape = ''
@@ -3192,6 +3190,7 @@ pf = PdfFit()
     Nd = 0
     Np = 0
     parms = {}
+    parmNames = {}
     if 'sequential' in RMCPdict['refinement']:
         Np = 3
         rundata += '#sequential data here\n'
@@ -3212,20 +3211,25 @@ pf = PdfFit()
                 if RMCPdict[dType][item][1]:
                     Np += 1
                     rundata += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
-                    parms[Np] = [RMCPdict[dType][item][0],item]
+                    parms[Np] = RMCPdict[dType][item][0]
+                    parmNames[Np] = item
     fName = General['Name']+'-PDFfit.stru'
     fName = fName.replace(' ','_')
+    if 'sequential' in RMCPdict['refinement']:
+        fName = 'Sequential_PDFfit.stru'
     Np = 9
     rundata += "pf.read_struct('%s')\n"%(fName)
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1
             rundata += 'pf.constrain(pf.%s,"@%d")\n'%(item,Np)
-            parms[Np] = [RMCPdict[item][0],item]
+            parms[Np] = RMCPdict[item][0]
+            parmNames[Np] = item
     if 'sphere' in RMCPdict['shape'][0] and RMCPdict['spdiameter'][1]:
         Np += 1
         rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
-        parms[Np] = [RMCPdict['spdiameter'][0],'spdiameter']
+        parms[Np] = RMCPdict['spdiameter'][0]
+        parmNames[Np] = 'spdiameter'
     
     if RMCPdict['cellref']:
         cellconst = GetCellConstr(RMCPdict['SGData'])
@@ -3235,7 +3239,8 @@ pf = PdfFit()
             if cellconst[ic]:
                 rundata += 'pf.constrain(pf.lat(%d), "@%d")\n'%(ic+1,Np+cellconst[ic])
                 if cellconst[ic] not in used:
-                    parms[Np+cellconst[ic]] = [Cell[ic],cellNames[ic]]
+                    parms[Np+cellconst[ic]] = Cell[ic]
+                    parmNames[Np+cellconst[ic]] = cellNames[ic]
                 used.append(cellconst[ic])
 #Atom constraints here ------------------------------------------------------- 
     AtomVar = RMCPdict['AtomVar']
@@ -3250,45 +3255,46 @@ pf = PdfFit()
                     if it < 6:
                         rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
                         if itnum not in used:
-                            parms[itnum] = [AtomVar['@%d'%itnum],names[it-2].split('.')[1]]
+                            parms[itnum] = AtomVar['@%d'%itnum]
+                            parmNames[itnum] = names[it-2].split('.')[1]
                             used.append(itnum)
                     else:
                         uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
                         for i in range(3):
                             rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
                             if itnum not in used:
-                                parms[itnum] = [AtomVar['@%d'%itnum],uijs[i].split('.')[1]]
+                                parms[itnum] = AtomVar['@%d'%itnum]
+                                parmNames[itnum] = uijs[i].split('.')[1]
                                 used.append(itnum)
                             
     if 'sequential' in RMCPdict['refinement']:
         rundata += '#parameters here\n'
+        RMCPdict['Parms'] = parms           #{'n':val,...}
+        RMCPdict['ParmNames'] = parmNames   #{'n':name,...}
     else:        
 # set parameter values
-        RMCPdict['Parms'] = parms
         for iprm in parms:
-            rundata += 'pf.setpar(%d,%.6f)\n'%(iprm,parms[iprm][0])
+            rundata += 'pf.setpar(%d,%.6f)\n'%(iprm,parms[iprm])
                         
-# Refine & Save results ---------------------------------------------------------------    
+# Save results ---------------------------------------------------------------    
     rundata += 'pf.refine()\n'
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit'
+        rfile = open('Seq_PDFfit_template.py','w')
+        rundata += 'pf.save_pdf(1, "%s")\n'%(fName+'.fgr')
     else:
         fName = General['Name'].replace(' ','_')+'-PDFfit'
-    Nd = 0    
-    for file in RMCPdict['files']:
-        if 'Select' in RMCPdict['files'][file][0]:
-            continue
-        Nd += 1
-        rundata += 'pf.save_pdf(%d, "%s")\n'%(Nd,fName+file[0]+'.fgr')
+        rfile = open(fName+'.py','w')
+        Nd = 0    
+        for file in RMCPdict['files']:
+            if 'Select' in RMCPdict['files'][file][0]:      #skip unselected
+                continue
+            Nd += 1
+            rundata += 'pf.save_pdf(%d, "%s")\n'%(Nd,fName+file[0]+'.fgr')
         
     rundata += 'pf.save_struct(1, "%s")\n'%(fName+'.rstr')
     rundata += 'pf.save_res("%s")\n'%(fName+'.res')
-    rundata += 'pf.save_pdf(1, "%s")\n'%(fName+'.fgr')
  
-    if 'sequential' in RMCPdict['refinement']:
-        rfile = open('Seq_PDFfit_template.py','w')
-    else:
-        rfile = open(fName+'.py','w')
     rfile.writelines(rundata)
     rfile.close()
     
@@ -3362,6 +3368,7 @@ def UpdatePDFfit(Phase,RMCPdict):
             atom[ci+2:ci+5] = [float(Uiistr[0]),float(Uiistr[1]),float(Uiistr[2])]
             atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
             atmBeg += 6
+        fName = General['Name']+'-PDFfit.res'
     else:                    
         fName = 'Sequential_PDFfit.res'
     try:
@@ -3402,13 +3409,28 @@ def UpdatePDFfit(Phase,RMCPdict):
     results = resline.replace('(','').split(')')[:-1]
     results = ['@'+result.lstrip() for result in results]
     results = [item.split() for item in results]
+    RMCPdict['Parms'] = dict([[item[0][1:-1],float(item[1])] for item in results])      #{'n':val,...}
     if RMCPdict['refinement'] == 'normal':
+        fName = General['Name']+'-PDFfit.py'
+        py = open(fName.replace(' ','_'),'r')
+        pylines = py.readlines()
+        py.close()
+        py = open(fName.replace(' ','_'),'w')
+        newpy = []
+        for pyline in pylines:
+            if 'setpar' in pyline:
+                parm = pyline.split('(')[1].split(',')[0]
+                newpy.append('pf.setpar(%s,%.5f)\n'%(parm,RMCPdict['Parms'][parm]))
+            else:
+                newpy.append(pyline)
+        py.writelines(newpy)
+        py.close()
         RMCPdict.update(XNdata)
         results = dict([[item[0][:-1],float(item[1])] for item in results if item[0][:-1] in RMCPdict['AtomVar']])
         RMCPdict['AtomVar'].update(results)
         return None
     else:   #sequential
-        newParms = dict([[item[0][1:-1],[float(item[1]),float(item[2])]] for item in results])
+        newParms = dict([[item[0][1:-1],[float(item[1]),float(item[2])]] for item in results])  #{'n':[val,esd],...}
         return newParms,Rwp
         
 def MakefullrmcRun(pName,Phase,RMCPdict):

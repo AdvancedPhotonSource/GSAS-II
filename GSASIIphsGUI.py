@@ -6348,6 +6348,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         if sys.platform.lower().startswith('win'):
             batch = open('pdffit2.bat','w')
             batch.write(PDFfit_exec+' '+rname+'\n')
+            # batch.write('pause')
             if 'normal' in RMCPdict['refinement']:
                 batch.write('pause')
             batch.close()
@@ -6401,13 +6402,21 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                                 Np += 1
                                 newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
                                 parms[item] = '%d'%Np
+                                newParms[parms[item]] = PDFfile[1][item][0]
                     elif '#parameters' in line:
                         startParms = RMCPdict['Parms']
                         if newParms or RMCPdict['SeqCopy']:
                             if newParms:
                                 startParms = newParms
                             for iprm in startParms:
-                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                                if int(iprm) > 9:
+                                    break
+                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm])
+                            for iprm in RMCPdict['Parms']:
+                                if isinstance(RMCPdict['Parms'][iprm],float):
+                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm])
+                                else:
+                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm][0])
                         elif not RMCPdict['SeqCopy'] and SeqResult:
                             startParms = saveSeqResult[Item[1]]['parmDict']
                             for iprm in startParms:
@@ -6418,6 +6427,13 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 rfile= open('Seq_PDFfit.py','w')
                 rfile.writelines(newlines)
                 rfile.close()
+                fName = 'Sequential_PDFfit'     #clean out old PDFfit output files
+                if os.path.isfile(fName+'.res'):
+                    os.remove(fName+'.res')
+                if os.path.isfile(fName+'.rstr'):
+                    os.remove(fName+'.rstr')
+                if os.path.isfile(fName+'.fgr'):
+                    os.remove(fName+'.fgr')
 
                 if sys.platform.lower().startswith('win'):
                     Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
@@ -6430,6 +6446,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                         Proc.wait()
 
                 newParms,Rwp =  G2pwd.UpdatePDFfit(data,RMCPdict)
+                if isinstance(newParms,str):
+                    wx.MessageBox('Singular matrix in PDFfit',caption='PDFfit2 failed',style=wx.ICON_INFORMATION)
+                    break
                 for item in ['dscale','qdamp','qbroad']:
                     if PDFfile[1][item][1]:
                         PDFfile[1][item][0] = newParms[parms[item]][0]
@@ -6437,7 +6456,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 parmDict.update({'Temperature':PDFfile[1]['Temp']})
                 parmKeys = [int(item) for item in RMCPdict['Parms']]
                 parmKeys.sort()
-                tempList = ['%s-%s'%(item,RMCPdict['Parms'][item][1]) for item in parmKeys]
+                tempList = ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in RMCPdict['ParmNames']]
                 atParms = [str(i+21) for i in range(len(G2Names))]
                 varyList = []
                 for item in tempList:
@@ -6474,6 +6493,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             G2frame.GPXtree.SelectItem(Id)
 
         else: #normal
+            #remove any old PDFfit output files
+            fName = generalData['Name'].replace(' ','_')+'-PDFfit'
+            if os.path.isfile(fName+'.res'):
+                os.remove(fName+'.res')
+            if os.path.isfile(fName+'.rstr'):
+                os.remove(fName+'.rstr')
+            if os.path.isfile(fName+'N.fgr'):
+                os.remove(fName+'N.fgr')
+            if os.path.isfile(fName+'X.fgr'):
+                os.remove(fName+'X.fgr')
+
             if sys.platform.lower().startswith('win'):
                 Proc = subp.Popen('pdffit2.bat',creationflags=subp.CREATE_NEW_CONSOLE)
                 Proc.wait()     #for it to finish before continuing on
@@ -6492,7 +6522,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             finally:
                 dlg.Destroy()
             if result == wx.ID_YES:
-                RMCPdict = data['RMC']['PDFfit']
                 Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
                 if Error:
                     wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)

@@ -6429,8 +6429,9 @@ class RefinementProgress(wx.ProgressDialog):
     and a wx.Yield call during progress update calls.
     '''
     def __init__(self, title='Residual', message='All data Rw =',
-                     maximum=101.0, parent=None,
-                     style=wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT):
+                     maximum=101.0, parent=None, style=None):
+        if style is None:
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT
         super(self.__class__,self).__init__(title, message, maximum, parent, style)
         Size = self.GetSize()
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0

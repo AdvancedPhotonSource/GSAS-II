@@ -368,11 +368,11 @@ separated into separate storage.
      and :data:`symGenList`).
      For each equivalence:
 
-     * a list with one entry, the name of the independent parameter is placed in :data:`~GSASIImapvars.indParmList`;
-     * a list with one or more parameter name is placed in :data:`~GSASIImapvars.dependentParmList`;
-     * the value None is added to :data:`~GSASIImapvars.arrayList`;
-     * a list of multipliers for each dependent variable is placed in :data:`~GSASIImapvars.invarrayList`
-     * an entry of either True or False is placed in :data:`~GSASIImapvars.symGenList`, where True indicates that the entry has been generated from symmetry.
+     * a list with one entry, the name of the independent parameter is placed in :data:`indParmList`;
+     * a list with one or more parameter name is placed in :data:`dependentParmList`;
+     * the value None is added to :data:`arrayList`;
+     * a list of multipliers for each dependent variable is placed in :data:`invarrayList`
+     * an entry of either True or False is placed in :data:`symGenList`, where True indicates that the entry has been generated from symmetry.
 
 The output from :func:`ProcessConstraints` will have the form as below, 
 where the first entry is a "Const" and the second is a "New Var". 
@@ -538,13 +538,13 @@ unless a name was specified for the
 
 Finally the parameters used as input to the constraint are placed in 
 this module's globals
-:data:`~GSASIImapvars.dependentParmList` and the constraint matrix is 
-placed in into  :data:`~GSASIImapvars.arrayList`. This can be used to compute 
+:data:`dependentParmList` and the constraint matrix is 
+placed in into  :data:`arrayList`. This can be used to compute 
 the initial values for "New Var" parameters. The inverse of the 
-constraint matrix is placed in :data:`~GSASIImapvars.invarrayList` and a list 
+constraint matrix is placed in :data:`invarrayList` and a list 
 of the "New Var" parameters and a list of the fixed values (as str's) 
-is placed in :data:`~GSASIImapvars.indParmList`. 
-Finally the appropriate entry in :data:`~GSASIImapvars.symGenList` is set to 
+is placed in :data:`indParmList`. 
+Finally the appropriate entry in :data:`symGenList` is set to 
 False to indicate that this is not a symmetry generated constraint. 
 
 .. _CheckEquivalences:
@@ -717,12 +717,19 @@ in these variables is related to a group of constraints.
                                  Unlikely to be accessed outside this module.
                                  Initialized in :func:`InitVars`; set in :func:`StoreHold`.
 
-:data:`dependentVars`            a list of dependent variables in equivalences, compiled 
-                                 from (:data:`dependentParmList`).
-                                 Used within :func:`GetDependentVars`.
+:data:`constrParms`              dict with lists of variables in equivalences, 
+                                 constraint equations and new var expressions.
+                                 Used within :func:`GetIndependentVars`,
+                                 and :func:`GetDependentVars`. 
+                                 Best if not referenced outside this module. 
+                                 Contains elements:
 
-:data:`independentVars`          a list of dependent variables in equivalences.
-                                 Used within :func:`GetIndependentVars`.
+                                 * 'dep-equiv': dependent parameters set by equivalences
+                                 * 'dep-constr': dependent parameters set by 
+                                   constraint equations or new var expressions
+                                 * 'indep-equiv': dependent parameters used in equivalences
+                                 * 'indep-constr': dependent parameters created from 
+                                   constraint equations or new var expressions
 
 :data:`saveVaryList`             a list of the varied parameters used when constraints 
                                  were last processed.
@@ -833,13 +840,10 @@ holdParmType = {}
 '''The reason why a parameter has been marked as "Hold". 
 Initialized in :func:`InitVars`; set in :func:`StoreHold`.
 '''
-dependentVars = []
-'''A list of dependent variables in equivalences, compiled from (:data:`dependentParmList`).
-Used within :func:`GetDependentVars`
-'''
-independentVars = []
-'''A list of dependent variables in equivalences, compiled from (:data:`indParmList`).
-Used within :func:`GetIndependentVars`
+constrParms = {'indep-equiv':[], 'indep-constr':[], 'dep-equiv':[], 'dep-constr':[]}
+'''A dict with parameters in equivalences, compiled from 
+(:data:`dependentParmList`) and (:data:`indParmList`).
+Used within :func:`GetIndependentVars` and :func:`GetDependentVars`.
 '''
 saveVaryList = []
 '''A list of the varied parameters that was last supplied when constraints were
@@ -1031,9 +1035,6 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     global saveVaryList
     saveVaryList = copy.copy(varyList)
     
-    global dependentVars # List of dependent and independent variables for all constraints
-    global independentVars
-
     errmsg = ''  # save error messages here. If non-blank, constraints cannot be used.
     warning = '' # save informational text messages here.
 
@@ -1261,14 +1262,22 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
         return errmsg,warning,None,None
 
     # Make list of dependent and independent variables for all constraints
-    dependentVars = []
-    independentVars = []
-    for varlist,mapvars in zip(dependentParmList,indParmList):  # process all constraints
+    constrParms['dep-equiv'] = []
+    constrParms['dep-constr'] = []
+    constrParms['indep-equiv'] = []
+    constrParms['indep-constr'] = []
+    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):  # process all constraints
         for mv in mapvars:
-            if type(mv) is float: continue
-            if mv not in independentVars: independentVars.append(mv)
+            if type(mv) is float or type(mv) is int: continue
+            if multarr is None and mv not in constrParms['indep-equiv']: 
+                constrParms['indep-equiv'].append(mv)
+            elif mv not in constrParms['indep-constr']: 
+                constrParms['indep-constr'].append(mv)
         for mv in varlist:
-            if mv not in dependentVars: dependentVars.append(mv)
+            if multarr is None and mv not in constrParms['dep-equiv']: 
+                constrParms['dep-equiv'].append(mv)
+            elif mv not in constrParms['dep-constr']:
+                constrParms['dep-constr'].append(mv)
             StoreHold(mv,'dependent param')
     saveVaryList = copy.copy(varyList)  # save varyList so it can be used within module
 
@@ -1817,15 +1826,22 @@ def EvaluateMultipliers(constList,*dicts):
         invarrayList[i] = np.array(repList)
     return problemList
 
-def GetDependentVars():
+def GetDependentVars(opt=None):
     '''Return a list of dependent variables: e.g. parameters that are
     constrained in terms of other parameters
 
+    :param str opt: type of dependent variables. 
+       'equiv': from equivalences,
+       'constr': from constraints 
+       None (default): all
     :returns: a list of parameter names
-
     '''
-    global dependentVars
-    return dependentVars
+    if opt == 'equiv':
+        return constrParms['dep-equiv']
+    elif opt == 'constr':
+        return constrParms['dep-constr']
+    else:
+        return constrParms['dep-equiv']+constrParms['dep-constr']
 
 def GetIndependentVars():
     '''Return a list of independent variables: e.g. parameters that are
@@ -1834,44 +1850,7 @@ def GetIndependentVars():
     :returns: a list of parameter names
 
     '''
-    global independentVars
-    return independentVars
-
-def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
-    '''Print the values and uncertainties on the independent parameters'''
-    global dependentParmList,arrayList,invarrayList,indParmList
-    printlist = []
-    mvs = GetIndependentVars()
-    for i,name in enumerate(mvs):
-        if PrintAll or name in varyList:
-            sig = sigDict.get(name)
-            printlist.append([name,parmDict[name],sig])
-    if len(printlist) == 0: return
-    s1 = ''
-    s2 = ''
-    s3 = ''
-    pFile.write(130*'-'+'\n')
-    pFile.write("Parameters generated by constraints\n")
-    printlist.append(3*[None])
-    for name,val,esd in printlist:
-        if len(s1) > 120 or name is None:
-            pFile.write(''+'\n')
-            pFile.write(s1+'\n')
-            pFile.write(s2+'\n')
-            pFile.write(s3+'\n')
-            s1 = ''
-            if name is None: break
-        if s1 == "":
-            s1 = ' name  :'
-            s2 = ' value :'
-            s3 = ' sig   :'
-        wdt = len(name)+1
-        s1 += ('%15s' % (name)).rjust(wdt)
-        s2 += ('%15.5f' % (val)).center(wdt)
-        if esd is None:
-            s3 += ('%15s' % ('n/a')).center(wdt)
-        else:
-            s3 += ('%15.5f' % (esd)).center(wdt)
+    return constrParms['indep-equiv']+constrParms['indep-constr']
 
 def getConstrError(constrLst,seqmode,seqhst):
     '''This is used to display error messages for constraints and 
@@ -2213,13 +2192,14 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     if varyList is None:
         varyList = saveVaryList
     s = ''
-    if len(dependentVars) > 0:
+    depVars = constrParms['dep-equiv']+constrParms['dep-constr']
+    if len(depVars) > 0:
         s += '\nDependent parameters, determined by constraints (also set as Hold):\n'
-        for v in sorted(dependentVars):
+        for v in sorted(depVars):
             s += '    ' + v + '\n'
     first = True
     for v in sorted(holdParmList):
-        if v in dependentVars: continue
+        if v in depVars: continue
         if v in holdParmType: v += '\t'+holdParmType[v]
         if first:
             s += '\nParameters set as Hold:\n'

@@ -595,8 +595,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     calcobj = G2obj.ExpressionCalcObj(eq)
                     parmlist = list(eq.assgnVars.values()) # parameters used in this expression
                     for parm in parmlist: # expand list if any parms are determined by constraints
-                        if parm in G2mv.dependentVars:
-                            parmlist += G2mv.independentVars
+                        if parm in G2mv.GetDependentVars():
+                            parmlist += G2mv.GetIndependentVars()
                             break
                     for ind,var in enumerate(varyList):
                         drv = 0

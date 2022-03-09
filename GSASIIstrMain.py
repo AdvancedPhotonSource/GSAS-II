@@ -410,11 +410,10 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
-            G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
+            G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
-#            G2stIO.PrintISOmodes(printFile,Phases,parmDict,sigDict)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)

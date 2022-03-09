@@ -1251,7 +1251,7 @@ The information in ``.Phase['ISODISTORT']`` is used in :func:`GSASIIconstrGUI.Sh
 values, the latter with s.u. values. This can be called from the Constraints and Phase/Atoms tree items. 
 
 Before each refinement, constraints are processed as :ref:`described elsewhere <Constraints_processing>`. After a refinement
-is complete, :func:`GSASIImapvars.PrintIndependentVars` shows the shifts and s.u.'s on the refined modes, 
+is complete, :func:`GSASIIstrIO.PrintIndependentVars` shows the shifts and s.u.'s on the refined modes, 
 using GSAS-II values, but :func:`GSASIIstrIO.PrintISOmodes` prints the ISODISTORT modes as computed in the web site.
 
 

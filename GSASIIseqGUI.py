@@ -576,7 +576,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     dcell = G2lat.A2cell(A)
                 except:
                     print('phase',pId,'Invalid cell tensor',A)
-                    dcell = (1.,1.,1.,0.,0.,0.)
+                    raise ValueError('Invalid cell tensor in phase '+str(pId))
                 for i,val in enumerate(dcell):
                     if i in uniqCellIndx[pId]:
                         lbl = str(pId)+'::'+G2lat.cellUlbl[i]
@@ -1471,7 +1471,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
             psDict = parmDict.copy()
             psDict.update(sampleDict[name])
-            UpdateParmDict(psDict)
+            try:
+                UpdateParmDict(psDict)
+            except:
+                print('UpdateParmDict error on histogram',name)
             calcobj.UpdateDict(psDict)
             valList.append(calcobj.EvalExpression())
 #            if calcobj.su is not None: esdList[-1] = calcobj.su
@@ -1490,8 +1493,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     for name in histNames:
         parmDict = data[name].get('parmDict',{})
-        PSvarDict.update({i:parmDict[i] for i in parmDict if i not in PSvarDict})
-    UpdateParmDict(PSvarDict)
+        newdict = {i:parmDict[i] for i in parmDict if i not in PSvarDict})
+        if newdict:
+            PSvarDict.update(newdict)
+            try:
+                UpdateParmDict(PSvarDict)
+            except:
+                print('UpdateParmDict error on histogram',name)
+                print('update =',newdict)
 
     # remove selected items from table
     saveColLabels = colLabels[:]

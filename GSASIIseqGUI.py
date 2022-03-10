@@ -1493,7 +1493,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     for name in histNames:
         parmDict = data[name].get('parmDict',{})
-        newdict = {i:parmDict[i] for i in parmDict if i not in PSvarDict})
+        newdict = {i:parmDict[i] for i in parmDict if i not in PSvarDict}
         if newdict:
             PSvarDict.update(newdict)
             try:

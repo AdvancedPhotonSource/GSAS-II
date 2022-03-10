@@ -6402,7 +6402,13 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                                 Np += 1
                                 newlines += 'pf.constrain(pf.%s(),"@%d")\n'%(item,Np)
                                 parms[item] = '%d'%Np
-                                newParms[parms[item]] = PDFfile[1][item][0]
+                                if itm and RMCPdict['SeqCopy']:
+                                    newParms[parms[item]] = RMCPdict['Parms'][parms[item]]
+                                else:
+                                    if not itm and 'result' not in PDFfile[1]:
+                                        newParms[parms[item]] = PDFfile[1][item][0]
+                                    else:
+                                        newParms[parms[item]] = PDFfile[1]['result'][parms[item]][0]
                     elif '#parameters' in line:
                         startParms = RMCPdict['Parms']
                         if newParms or RMCPdict['SeqCopy']:
@@ -6412,16 +6418,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                                 if int(iprm) > 9:
                                     break
                                 newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm])
+                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
                             for iprm in RMCPdict['Parms']:
                                 if isinstance(RMCPdict['Parms'][iprm],float):
                                     newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm])
                                 else:
                                     newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,RMCPdict['Parms'][iprm][0])
-                        elif not RMCPdict['SeqCopy'] and SeqResult:
-                            startParms = saveSeqResult[Item[1]]['parmDict']
+                        elif not RMCPdict['SeqCopy']:
+                            startParms = PDFfile[1]['result']
                             for iprm in startParms:
-                                if not iprm.startswith('Temp'):
-                                    newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                                newlines += 'pf.setpar(%s,%.6f)\n'%(iprm,startParms[iprm][0])
+                            print('Begin dscale: %d %.4f'%(itm,startParms['1']))
                     else:
                         newlines += line
                 rfile= open('Seq_PDFfit.py','w')
@@ -6452,12 +6459,14 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 for item in ['dscale','qdamp','qbroad']:
                     if PDFfile[1][item][1]:
                         PDFfile[1][item][0] = newParms[parms[item]][0]
+                PDFfile[1]['result'] = copy.deepcopy(newParms)
                 parmDict = copy.deepcopy(newParms)
                 parmDict.update({'Temperature':PDFfile[1]['Temp']})
                 parmKeys = [int(item) for item in RMCPdict['Parms']]
                 parmKeys.sort()
                 tempList = ['%s-%s'%(parms[item],item) for item in parms]       #these come first
                 tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in RMCPdict['ParmNames']]
+                print('result dscale: ',parmDict['1'],' Rw: ',Rwp)
                 atParms = [str(i+21) for i in range(len(G2Names))]
                 varyList = []
                 for item in tempList:

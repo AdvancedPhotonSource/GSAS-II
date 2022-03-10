@@ -2191,7 +2191,10 @@ def UpdateInstrumentGrid(G2frame,data):
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
                 instData.update(copyData)
             else:
-                print (item+' not copied - instrument parameters not commensurate')
+                if len(data) != len(instData):
+                    print (item+' not copied - %d instrument parameters do not match source # %d'%(len(instData),len(data)))
+                else:
+                    print (item+' not copied - instrument type %s does not match source type %s'%(instData['Type'][0],instType))
                          
     def AfterChange(invalid,value,tc):
         if invalid: return

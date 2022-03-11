@@ -4467,3 +4467,66 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
     return M
+
+def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
+    '''Compute mass fractions and their uncertainties for all 
+    phases in a histogram. Computed using the covariance matrix, 
+    along with the derivatives for the mass fraction equations. 
+
+    :param list varyList: list of varied parameters 
+    :param np.array covMatrix: covariance matrix, order of rows and columns
+       must match varyList
+    :param dict Phases: data structure (from tree or .gpx) with all 
+       phase information
+    :param str hist: name of selected histogram
+    :param int hId: number of current histogram
+    :returns: valDict,sigDict which contain the mass fraction values and 
+        sigmas, keyed by "ph:h:WgtFrac"
+    '''
+    # Compute mass normalizer & assemble list of refined PF terms
+    wtSum = 0.0
+    refList = []
+    for phase in Phases:
+        if Phases[phase]['General']['Type'] == 'magnetic': continue
+        if hist not in Phases[phase]['Histograms']: continue
+        if not Phases[phase]['Histograms'][hist]['Use']: continue
+        mass = Phases[phase]['General']['Mass']
+        phFr = Phases[phase]['Histograms'][hist]['Scale'][0]
+        wtSum += mass*phFr
+        # Is this PF refined?
+        pId = Phases[phase]['pId']
+        var = "{}:{}:Scale".format(pId,hId)
+        if var in varyList: # yes, save it
+            indx = varyList.index(var)
+            refList.append((pId,indx,mass))
+            '''for each refined term:
+                 * the phase Id,
+                 * position in covariance matrix,
+                 * unit cell mass
+            '''
+    valDict = {}
+    sigDict = {}
+    for phase in Phases:
+        if Phases[phase]['General']['Type'] == 'magnetic': continue
+        if hist not in Phases[phase]['Histograms']: continue
+        if not Phases[phase]['Histograms'][hist]['Use']: continue
+        pId_j = Phases[phase]['pId']
+        mass_j = Phases[phase]['General']['Mass']
+        phFr_j = Phases[phase]['Histograms'][hist]['Scale'][0]
+        vec = []
+        for pId_i,indx,mass_i in refList:
+            if pId_i ==  pId_j:
+                deriv = (mass_j/wtSum) - (mass_j**2 * phFr_j/wtSum**2)
+            else:
+                deriv = -mass_j* mass_i * phFr_j/wtSum**2
+            vec.append(deriv)
+        # create a small v-covar matrix with just the parameters used here
+        vcov = np.zeros((len(refList),len(refList)))
+        for  i1,(_,iv1,_) in enumerate(refList):
+            for  i2,(_,iv2,_) in enumerate(refList):
+                vcov[i1][i2] = covMatrix[iv1][iv2]
+        vec = np.array(vec)
+        var = "{}:{}:WgtFrac".format(pId_j,hId)
+        valDict[var] = mass_j * phFr_j / wtSum
+        sigDict[var] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
+    return valDict,sigDict

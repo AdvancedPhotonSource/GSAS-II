@@ -776,7 +776,9 @@ class GSASII(wx.Frame):
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Absorb','x-ray absorption')
-        self.Bind(wx.EVT_MENU, self.OnRunAbsorb, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Run PlotXNFF','Plot X-ray, neutron & magnetic form factors')
+        self.Bind(wx.EVT_MENU, self.OnRunPlotXNFF, id=item.GetId())
 
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
@@ -5752,6 +5754,11 @@ class GSASII(wx.Frame):
         import Absorb
         self.absorb = Absorb.Absorb(self)
         self.absorb.Show()
+        
+    def OnRunPlotXNFF(self,evnt):
+        import PlotXNFF
+        self.plotXNFF = PlotXNFF.PlotXNFF(self)
+        self.plotXNFF.Show()
         
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
         'Display an error message'

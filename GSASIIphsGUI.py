@@ -6462,10 +6462,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 PDFfile[1]['result'] = copy.deepcopy(newParms)
                 parmDict = copy.deepcopy(newParms)
                 parmDict.update({'Temperature':PDFfile[1]['Temp']})
-                parmKeys = [int(item) for item in RMCPdict['Parms']]
-                parmKeys.sort()
                 tempList = ['%s-%s'%(parms[item],item) for item in parms]       #these come first
-                tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in RMCPdict['ParmNames']]
+                parmkeys = [int(item) for item in RMCPdict['ParmNames']]
+                parmkeys.sort()
+                tempList += ['%s-%s'%(item,RMCPdict['ParmNames'][item]) for item in parmkeys]
                 print('result dscale: ',parmDict['1'],' Rw: ',Rwp)
                 atParms = [str(i+21) for i in range(len(G2Names))]
                 varyList = []

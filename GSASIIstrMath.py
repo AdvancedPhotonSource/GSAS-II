@@ -3599,14 +3599,15 @@ def getPowderProfileDerv(args):
         if prc == 0 and 'Debye' in name:
             Id = int(name.split(';')[-1])
             parm = name[:int(name.rindex(';'))]
-            ip = names.index(parm)
-            dMdv[varylist.index(name)] += dMddb[3*Id+ip]
+            if parm in names:       #skips if bkg fxn not in current histogram
+                ip = names.index(parm)
+                dMdv[varylist.index(name)] += dMddb[3*Id+ip]
     names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
     for name in varylist:
         if prc == 0 and 'BkPk' in name:
             parm,Id = name.split(';')
             Id = int(Id)
-            if parm in names:
+            if parm in names:       #skips if bkg fxn not in current histogram
                 ip = names.index(parm)
                 dMdv[varylist.index(name)] += dMdpk[4*Id+ip]
     if hfx+'BF mult' in varylist:

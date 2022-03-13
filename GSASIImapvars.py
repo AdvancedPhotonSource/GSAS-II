@@ -2225,12 +2225,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 j = 0
                 for v,m in zip(varlist,invmultarr):
                     if debug: print ('v,m[0]: ',v,m[0])
-                    if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
                     if j > 0: s1 += ' & '
                     j += 1
                     s1 += str(v)
                     if m != 1:
-                        s1 += " / " + str(m[0])
+                        s1 += " / " + '{:.4f}'.format(m[0])
+                    #if len(s1.split('\n')[-1]) > 70: 
+                    #    s1 = ' \n          &'.join(s1.rsplit('&',1))
                 if symFlag:
                     symOut += s1 + '\n'
                 else:
@@ -2317,6 +2318,33 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
         s += lineDict[key] + '\n'
     return s
 
+def getInvConstraintEq(var,varyList):
+    '''For a dependent variable, find the constraint that 
+    defines the dependent variable in terms of varied independent variables.
+    This works for constraint equations (via new var or generated parameters)
+    or equivalences. For equivalences the result will lists of length 1
+    
+    :param str var: named of refined variable (e.g. 0:0:Scale)
+    :param list varyList: list of refined variables
+    :returns: vList,mList where vList is a list of variables and 
+      mList is a list of multipliers for that variable (floats)
+    '''
+    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
+        if var not in varlist: continue
+        i = varlist.index(var)
+        print(var,i)
+        vList = []
+        mList = []
+        for m,v in zip(invmultarr[i,:],mapvars):
+            if v not in varyList: continue
+            if m == 0: continue
+            if v == 0: continue
+            vList.append(v)
+            mList.append(m)
+        return vList,mList
+    if GSASIIpath.GetConfigValue('debug'): print('getInvConstraintEq: not found: ',var)
+    return [],[]   # unexpected -- not an independent parameter
+    
 def GetSymEquiv(seqmode,seqhistnum):
     '''Return the automatically generated (equivalence) relationships.
 

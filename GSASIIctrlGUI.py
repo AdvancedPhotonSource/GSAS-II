@@ -2564,11 +2564,11 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     txtSizer = wx.GridBagSizer()
     for i,line in enumerate(txt.split('\n')):
         if line.strip().endswith(':'):
-            st = wx.StaticText(spanel,wx.ID_ANY,line,style=wx.ALIGN_CENTER)
+            st = wx.StaticText(spanel,wx.ID_ANY,line)
             txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
             continue
         elif line.strip().startswith('**') and line.strip().endswith('**'):
-            st = wx.StaticText(spanel,wx.ID_ANY,line)
+            st = wx.StaticText(spanel,wx.ID_ANY,line,style=wx.ALIGN_CENTER)
             st.SetBackgroundColour(DULL_YELLOW)
             txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
             continue
@@ -2583,17 +2583,19 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
             #if len(t) > col1len: GSASIIpath.IPyBreak()
             while col == 0 and len(t) > col1len:
                 b = -1
-                for sym in (') ',' * ',' + ',' - '):
-                    if sym in t[:col1len]:
-                        b = max(b,t.rfind(sym,0,col1len)+len(sym))
-                s += t[:b] + '\n\t'
-                t = t[b:]
+                for sym in (') ',' * ',' + ',' - ',' && '):
+                    b = max(b, t.rfind(sym,0,col1len))
+                if b > 20:
+                    s += t[:b+1] 
+                    t = '\n\t' + t[b+1:]
+                    continue
+                break
             s += t
             st = wx.StaticText(spanel,wx.ID_ANY,s)
-            if col == 0: st.Wrap(600)
+            if col == 0: st.Wrap(650)  # last resort...
             st.SetBackgroundColour(wx.WHITE)
             txtSizer.Add(st,pos=(i,col),flag=wx.EXPAND)
-        txtSizer.AddGrowableRow(i)
+        #txtSizer.AddGrowableRow(i)
     txtSizer.AddGrowableCol(0)  #to fill screen
     spanel.SetSizer(txtSizer)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)

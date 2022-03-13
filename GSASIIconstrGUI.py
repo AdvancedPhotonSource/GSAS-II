@@ -1395,9 +1395,10 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn.Enable(len(warnmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
+            txt = G2mv.VarRemapShow(linelen=999).replace('&','&&')
             btn.Bind(wx.EVT_BUTTON,lambda event:
                          G2G.ShowScrolledColText(panel,
-                        '*** Constraints after processing ***'+G2mv.VarRemapShow(linelen=999),
+                        '*** Constraints after processing ***'+txt,
                          header='Generated constraints',col1len=80))
             panel.delBtn = wx.Button(panel, wx.ID_ANY, 'Delete selected')
             butSizer.Add(panel.delBtn,0,wx.ALIGN_CENTER_VERTICAL)

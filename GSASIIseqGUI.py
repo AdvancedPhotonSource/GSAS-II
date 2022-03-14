@@ -18,6 +18,7 @@ data editing panel.
 from __future__ import division, print_function
 import platform
 import copy
+import re
 import numpy as np
 import numpy.ma as ma
 import scipy.optimize as so
@@ -1144,6 +1145,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     foundHistNames = []    # histograms to be used in sequential table
     maxPWL = 5             # number of Pawley vars to show
     missing = 0
+    newCellDict = {}
+    PSvarDict = {} # contains 1st value for each parameter in parmDict 
+                   # needed for creating & editing pseudovars
+    PSvarDict.update(sampleParms)
+
     # scan through histograms to see what are available and to make a 
     # list of all varied parameters; also create a dict that has the 
     for i,name in enumerate(histNames):
@@ -1167,15 +1173,19 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if '::dA' in var: 
                 atomsVaryList[var.replace('::dA','::A')] = var
                 atomsVaryList.update({i.replace('::dA','::A'):i for i in data[name]['depParmDict'] if '::dA' in i})
+        # get all refined cell terms
+        newCellDict.update(data[name].get('newCellDict',{})) # N.B. These Dij vars are missing a histogram #
+        # make sure 1st reference to each parm is in PseudoVar dict
+        tmp = copy.deepcopy(data[name].get('parmDict',{}))
+        tmp.update(PSvarDict)
+        PSvarDict = tmp
+   
+    if missing:
+        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
 
     # make dict of varied cell parameters equivalents
     ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
     Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
-    # N.B. These Dij vars are missing a histogram #
-    newCellDict = {}
-    for name in histNames:
-        if name in data and 'newCellDict' in data[name]:
-            newCellDict.update(data[name]['newCellDict'])
     cellAlist = []
     for item in newCellDict:
         cellAlist.append(newCellDict[item][0])
@@ -1186,8 +1196,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for parm in atomsVaryList:
         Dlookup[atomsVaryList[parm]] = parm
         ESDlookup[parm] = atomsVaryList[parm]
-    if missing:
-        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
     combinedVaryList.sort()
     histNames = foundHistNames
     # prevVaryList = []
@@ -1273,9 +1281,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     Dvar = str(pId)+':'+str(hId)+':'+j
                     # apply Dij value if non-zero
                     if Dvar in data[name]['parmDict']:
-                        parmDict = data[name]['parmDict']
-                        if parmDict[Dvar] != 0.0:
-                            A[i] += parmDict[Dvar]
+                        if data[name]['parmDict'][Dvar] != 0.0:
+                            A[i] += data[name]['parmDict'][Dvar]
                     # override with fit result if is Dij varied
                     if var in cellAlist:
                         try:
@@ -1297,6 +1304,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if name in Phases[phaseLookup[pId]]['Histograms']:
                     cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
                     cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
+                    # add in direct cell terms to PseudoVar dict
+                    tmp = dict(zip([pfx+G2lat.cellUlbl[i] for i in uniqCellIndx[pId]]+[pfx+'Vol'],
+                                     [c[i] for i in uniqCellIndx[pId]]+[vol]))
+                    tmp.update(PSvarDict)
+                    PSvarDict = tmp
                 else:
                     cells += [[None for i in uniqCellIndx[pId]]+[None]]
                     cellESDs += [[None for i in uniqCellIndx[pId]]+[None]]
@@ -1422,6 +1434,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colSigs += [sigwtFrList]
                 
     # evaluate Pseudovars, their ESDs and add them to grid
+    # this should be reworked so that the eval dict is created once and as noted below
     for expr in data['SeqPseudoVars']:
         obj = data['SeqPseudoVars'][expr]
         calcobj = G2obj.ExpressionCalcObj(obj)
@@ -1486,23 +1499,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT+':10,5']
     #---- table build done -------------------------------------------------------------
 
-    # Make PSvarDict, needed for creating & editing pseudovars
-    # contains 1st value for each parameter in parmDict 
-    PSvarDict = {}
-    PSvarDict.update(sampleParms)
+    # clean up the PseudoVars dict by reomving dA[xyz] & Dij
+    remDij =   re.compile('[0-9]+:[0-9]*:D[123][123]')
+    remdAxyz = re.compile('[0-9]+::dA[xyz]:[0-9]+')
+    PSvarDict = {i:PSvarDict[i] for i in PSvarDict if not (remDij.match(i) or remdAxyz.match(i))}
 
-    for name in histNames:
-        parmDict = data[name].get('parmDict',{})
-        newdict = {i:parmDict[i] for i in parmDict if i not in PSvarDict}
-        if newdict:
-            PSvarDict.update(newdict)
-            try:
-                UpdateParmDict(PSvarDict)
-            except:
-                print('UpdateParmDict error on histogram',name)
-                print('update =',newdict)
-
-    # remove selected items from table
+    # remove selected columns from table
     saveColLabels = colLabels[:]
     if G2frame.SeqTblHideList is None:      #set default hides
         G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item]

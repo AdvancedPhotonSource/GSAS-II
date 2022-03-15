@@ -322,11 +322,11 @@ class TransformDialog(wx.Dialog):
         self.Trans = Trans
         self.Uvec = Uvec
         self.Vvec = Vvec
-        self.oldSpGrp = phase['General']['SGData']['SpGrp']
-        self.oldSGdata = phase['General']['SGData']
+        self.oldSpGrp = copy.deepcopy(phase['General']['SGData']['SpGrp'])
+        self.oldSGdata = copy.deepcopy(phase['General']['SGData'])
         self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
         self.SGData = G2spc.SpcGroup(self.newSpGrp)[1]
-        self.oldCell = phase['General']['Cell'][1:8]
+        self.oldCell = copy.deepcopy(phase['General']['Cell'][1:8])
         self.newCell = self.Phase['General']['Cell'][1:8]
         self.Common = 'abc'
         self.ifMag = ifMag
@@ -5394,7 +5394,7 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             generalData = data['General']
             cx,ct,cs,cia = generalData['AtomPtrs']
             atomData = data['Atoms']
-            atNames = [atom[ct-1] for atom in atomData]
+            # atNames = [atom[ct-1] for atom in atomData]
             # ifP1 = False
             # if generalData['SGData']['SpGrp'] == 'P 1':
             #     ifP1 = True                
@@ -6032,6 +6032,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                             atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
                             wx.MessageBox('ERROR - atom constraints must be blank or have "@n" with n >= 20',
                                 style=wx.ICON_ERROR)
+                        wx.CallAfter(UpdateRMC)
                             
                 def OnUisoRefine(event):
                     RMCPdict['UisoRefine'] = uiso.GetValue()
@@ -6146,6 +6147,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             if not RMCPdict['AtomConstr']:
                 for atom in Atoms:
                     RMCPdict['AtomConstr'].append([atom[ct-1],atom[ct],'','','','',''])
+            else:       #update name/type changes
+                for iatm,atom in enumerate(Atoms):
+                    RMCPdict['AtomConstr'][iatm][:2] = atom[ct-1:ct+1]
                 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0)
             mainSizer.Add(GetMetaSizer(RMCPdict,['title','date','temperature','doping']),0)
@@ -6203,6 +6207,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             pass
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if not len(data['Atoms']):
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - RMC not available for display'))
+            return mainSizer            
         runFile = ' '
         choice = ['RMCProfile','fullrmc','PDFfit']
         RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
@@ -6320,8 +6327,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             RMCPdict = data['RMC']['PDFfit']
             G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
             fname = G2pwd.MakePDFfitRunFile(data,RMCPdict)
-            print(fname+ ' written')
-            print('PDFfit file build completed')
+            if fname is None:
+                wx.MessageDialog(G2frame,'ERROR: failure to setup PDFfit; check console','PDFfit setup failure',wx.ICON_ERROR).ShowModal()
+            else:    
+                print(fname+ ' written')
+                print('PDFfit file build completed')
             
     def RunPDFfit(event):
         generalData = data['General']

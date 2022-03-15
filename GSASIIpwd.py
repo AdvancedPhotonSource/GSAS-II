@@ -3135,7 +3135,7 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
         shape = 'stepcut, %10.6f\n'%RMCPdict['stepcut']
     if shape:
         fatm.write('shape  '+shape)
-    fatm.write('spcgr   %s\n'%General['SGData']['SpGrp'].replace(' ',''))
+    fatm.write('spcgr   %s\n'%RMCPdict['SGData']['SpGrp'].replace(' ',''))
     cell = General['Cell'][1:7]
     fatm.write('cell  %10.6f,%10.6f,%10.6f,%10.6f,%10.6f,%10.6f\n'%(
         cell[0],cell[1],cell[2],cell[3],cell[4],cell[5]))
@@ -3225,7 +3225,7 @@ pf = PdfFit()
             rundata += 'pf.constrain(pf.%s,"@%d")\n'%(item,Np)
             parms[Np] = RMCPdict[item][0]
             parmNames[Np] = item
-    if 'sphere' in RMCPdict['shape'][0] and RMCPdict['spdiameter'][1]:
+    if 'sphere' in RMCPdict['shape'] and RMCPdict['spdiameter'][1]:
         Np += 1
         rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
         parms[Np] = RMCPdict['spdiameter'][0]
@@ -3250,10 +3250,17 @@ pf = PdfFit()
             names = ['pf.x(%d)'%(iat+1),'pf.y(%d)'%(iat+1),'pf.z(%d)'%(iat+1),'pf.occ(%d)'%(iat+1)]
             if it > 1 and item:
                 itms = item.split('@')
+                once = False
                 for itm in itms[1:]:
-                    itnum = int(itm[:2])
+                    try:
+                        itnum = int(itm[:2])
+                    except ValueError:
+                        print(' *** ERROR - invalid string in atom constraint %s ***'%(item))
+                        return None
                     if it < 6:
-                        rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
+                        if not once:
+                            rundata += 'pf.constrain(%s,"%s")\n'%(names[it-2],item)
+                            once = True
                         if itnum not in used:
                             parms[itnum] = AtomVar['@%d'%itnum]
                             parmNames[itnum] = names[it-2].split('.')[1]
@@ -3346,12 +3353,12 @@ def UpdatePDFfit(Phase,RMCPdict):
             resdict[item] = [float(val) for val in resdict[item].split(',')]
         General['Cell'][1:7] = resdict['cell']
         for inam,name in enumerate(['delta2','delta1','sratio']):
-            RMCPdict[name][0] = resdict['sharp'][inam]
+            RMCPdict[name][0] = float(resdict['sharp'][inam])
         if 'shape' in resdict:
             if 'sphere' in resdict['shape']:
-                RMCPdict['spdiameter'][0] = resdict['shape'][-1]
+                RMCPdict['spdiameter'][0] = float(resdict['shape'].split()[-1])
             else:
-                RMCPdict['stepcut'][0] = resdict['shape'][-1]
+                RMCPdict['stepcut'][0] = float(resdict['shape'][-1])
         cx,ct,cs,ci = G2mth.getAtomPtrs(Phase)      
         Atoms = Phase['Atoms']
         atmBeg = 0

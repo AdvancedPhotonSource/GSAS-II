@@ -776,7 +776,7 @@ class GSASII(wx.Frame):
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Absorb','x-ray absorption')
-        self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.OnRunAbsorb, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run PlotXNFF','Plot X-ray, neutron & magnetic form factors')
         self.Bind(wx.EVT_MENU, self.OnRunPlotXNFF, id=item.GetId())
 

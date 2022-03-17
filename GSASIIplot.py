@@ -8990,7 +8990,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
-        elif key in ['M',]and generalData['Modulated']:  #make a movie file
+        elif key in ['M',] and generalData['Modulated']:  #make a movie file
             try:
                 import imageio
             except ImportError:

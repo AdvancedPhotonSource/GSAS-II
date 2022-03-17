@@ -39,6 +39,7 @@ import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
+import GSASIIstrMath as G2stMth
 import GSASIIfiles as G2fil
 import GSASIIpy3 as G2py3
 
@@ -3046,8 +3047,10 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 
     return hapVary,hapDict,controlDict
     
-def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=True,pFile=None):
-    'needs a doc string'
+def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=True,pFile=None,
+                              covMatrix=[],varyList=[]):
+    '''Updates parmDict with HAP results from refinement and prints a summary if Print is True
+    '''
     
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
@@ -3220,13 +3223,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
         
-    global PhFrExtPOSig
+    # global PhFrExtPOSig # this is not used externally anymore. Remove?
     PhFrExtPOSig = {}
     SizeMuStrSig = {}
     ScalExtSig = {}
     BabSig = {}
     TwinFrSig = {}
-    wtFrSum = {}
+    # wtFrSum = {}
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
         General = Phases[phase]['General']
@@ -3246,8 +3249,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
             pfx = str(pId)+':'+str(hId)+':'
-            if hId not in wtFrSum:
-                wtFrSum[hId] = 0.
+            # if hId not in wtFrSum:
+            #     wtFrSum[hId] = 0.
             if 'PWDR' in histogram:
                 inst = Histogram['Instrument Parameters'][0]    #TODO - grab table here if present
                 if 'E' not in inst['Type'][0]:
@@ -3256,7 +3259,6 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
                             PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
-                    wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
                     if hapData['Pref.Ori.'][0] == 'MD':
                         hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
                         if pfx+'MD' in sigDict and not parmDict[pfx+'LeBail']:
@@ -3338,6 +3340,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         except KeyError:
                             break
                     hapData['Twins'][0][1][0] = 1.-sumTwFr
+    # HAP parameters updated, now compute derived quantities
+    for hist in Phases[phase]['Histograms']:
+        try:
+            Histogram = Histograms[hist]
+        except KeyError: #skip if histogram not included e.g. in a sequential refinement
+            continue
+        vDict,sDict = G2stMth.calcMassFracs(varyList,covMatrix,
+                                Phases,hist,Histograms[hist]['hId'])
+        parmDict.update(vDict)
+        sigDict.update(sDict)
 
     if Print:
         for phase in Phases:
@@ -3373,11 +3385,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     elif 'E' not in Inst['Type'][0]:
                         if pfx+'Scale' in PhFrExtPOSig:
-                            wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
-                            sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
-                            # Add weight fractions and sigmas to depsig dictionary, for later use - per Conrad Gillard for wt./phase fr output #### check?
-                            PhFrExtPOSig[pfx + 'WeightScale'] = wtFr
-                            PhFrExtPOSig[pfx + 'WeightScaleSig'] = sigwtFr
+                            var = pfx + 'WgtFrac'
+                            wtFr = parmDict.get(var,0)
+                            sigwtFr = sigDict.get(var,0)
                             pFile.write(' Phase fraction  : %10.5g, sig %10.5g Weight fraction  : %8.5f, sig %10.5f\n'%
                                 (hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr))
                         if pfx+'Extinction' in PhFrExtPOSig:

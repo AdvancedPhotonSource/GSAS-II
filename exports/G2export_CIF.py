@@ -368,33 +368,26 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
 
     # compute and add weight fractions to table if varied
     for phase in Phases:
-        var = str(Phases[phase]['pId'])+':*:Scale'
-        if var not in combinedVaryList+list(depValDict.keys()): continue
+        pId = Phases[phase]['pId']
+        var = str(pId)+':*:Scale'
+        if var not in combinedVaryList+list(depValDict.keys()): continue   
         wtFrList = []
         sigwtFrList = []
         for i,name in enumerate(histNames):
+            skip = False
             if name not in Phases[phase]['Histograms']:
-                wtFrList.append(None)
-                sigwtFrList.append(0.0)
-                continue
+                skip = True
             elif not Phases[phase]['Histograms'][name]['Use']:
+                skip = True
+            hId = Histograms[name]['hId']
+            var = str(pId)+':'+str(hId)+':WgtFrac'
+            if var not in seqData[name]['depParmDict']: skip = True
+            if skip:
                 wtFrList.append(None)
                 sigwtFrList.append(0.0)
                 continue
-            wtFrSum = 0.
-            for phase1 in Phases:
-                if name not in Phases[phase1]['Histograms']: continue
-                if not Phases[phase1]['Histograms'][name]['Use']: continue
-                wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
-            var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
-            wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum
+            wtFr,sig = seqData[name]['depParmDict'][var]
             wtFrList.append(wtFr)
-            if var in seqData[name]['varyList']:
-                sig = seqData[name]['sig'][seqData[name]['varyList'].index(var)]*wtFr/Phases[phase]['Histograms'][name]['Scale'][0]
-            elif var in seqData[name].get('depParmDict',{}):
-                _,sig = seqData[name]['depParmDict'][var]
-            else:
-                sig = 0.0
             sigwtFrList.append(sig)
         p = phaseLookup[Phases[phase]['pId']]
         tblLabels.append(p + ' Wgt Frac')
@@ -2240,7 +2233,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             without too much work. Note also that G2stMn.RetDistAngle is pretty slow for 
             sequential fits, since it is called so many times. 
             '''
-            #breakpoint()
             Atoms = phasedict['Atoms']
             generalData = phasedict['General']
             parmDict = seqData[histname]['parmDict']
@@ -2832,26 +2824,26 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  '\n   _pd_phase_id' +
                                  '\n   _pd_phase_block_id' +
                                  '\n   _pd_phase_mass_%')
-                    wtFrSum = 0.
+                    hId = self.Histograms[histlbl]['hId']
                     for phasenam in phasebyhistDict.get(histlbl):
-                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
-                        General = self.Phases[phasenam]['General']
-                        wtFrSum += hapData['Scale'][0]*General['Mass']
-
-                    for phasenam in phasebyhistDict.get(histlbl):
-                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
-                        General = self.Phases[phasenam]['General']
-                        wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum
-                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
-                        if pfx+'Scale' in self.sigDict:
-                            sig = self.sigDict[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                        pId = self.Phases[phasenam]['pId']
+                        var = str(pId)+':'+str(hId)+':WgtFrac'
+                        if self.seqData is None and 'depSigDict' in self.OverallParms['Covariance']:
+                            depDict = self.OverallParms['Covariance']['depSigDict']
+                        elif self.seqData is not None and 'depParmDict' in self.seqData[histlbl]:
+                            depDict = self.seqData[histlbl]['depParmDict']
                         else:
-                            sig = -0.0001
+                            depDict = {}
+                        if var in depDict:
+                            wtFr,sig = depDict[var]
+                            wgtstr = G2mth.ValEsd(wtFr,sig)
+                        else:                                
+                            wgtstr = '?'
                         WriteCIFitem(self.fp,
                             '  '+
                             str(self.Phases[phasenam]['pId']) +
                             '  '+datablockidDict[phasenam]+
-                            '  '+G2mth.ValEsd(wtFr,sig)
+                            '  '+wgtstr
                             )
                     WriteCIFitem(self.fp, 'loop_' +
                                  '\n   _gsas_proc_phase_R_F_factor' +
@@ -3127,26 +3119,26 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  '\n   _pd_phase_id' +
                                  '\n   _pd_phase_block_id' +
                                  '\n   _pd_phase_mass_%')
-                    wtFrSum = 0.
+                    hId = self.Histograms[histlbl]['hId']
                     for phasenam in phasebyhistDict.get(histlbl):
-                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
-                        General = self.Phases[phasenam]['General']
-                        wtFrSum += hapData['Scale'][0]*General['Mass']
-
-                    for phasenam in phasebyhistDict.get(histlbl):
-                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
-                        General = self.Phases[phasenam]['General']
-                        wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum
-                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
-                        if pfx+'Scale' in self.sigDict:
-                            sig = self.sigDict[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                        pId = self.Phases[phasenam]['pId']
+                        var = str(pId)+':'+str(hId)+':WgtFrac'
+                        if self.seqData is None and 'depSigDict' in self.OverallParms['Covariance']:
+                            depDict = self.OverallParms['Covariance']['depSigDict']
+                        elif self.seqData is not None and 'depSigDict' in self.seqData[histlbl]:
+                            depDict = self.seqData[histlbl]['depParmDict']
                         else:
-                            sig = -0.0001
+                            depDict = {}
+                        if var in depDict:
+                            wtFr,sig = depDict[var]
+                            wgtstr = G2mth.ValEsd(wtFr,sig)
+                        else:                                
+                            wgtstr = '?'
                         WriteCIFitem(self.fp,
                             '  '+
                             str(self.Phases[phasenam]['pId']) +
                             '  '+datablockidDict[phasenam]+
-                            '  '+G2mth.ValEsd(wtFr,sig)
+                            '  '+wgtstr
                             )
                     WriteCIFitem(self.fp, 'loop_' +
                                  '\n   _gsas_proc_phase_R_F_factor' +
@@ -4294,15 +4286,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                     if not phaseWithHist:
                         WriteCIFitem(self.fp, '\n# POINTERS TO PHASE BLOCKS')
                         phaseBlockName = {}
-
-                        wtFrSum = 0.
-                        for j,phasenam in enumerate(sorted(self.Phases.keys())):
-                            if hist not in self.Phases[phasenam]['Histograms']: continue
-                            if not self.Phases[phasenam]['Histograms'][hist]['Use']: continue
-                            phFrac = self.Phases[phasenam]['Histograms'][hist]['Scale'][0]
-                            phFracKey = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':Scale'
-                            phFrac = self.seqData[hist]['parmDict'].get(phFracKey,phFrac)
-                            wtFrSum += phFrac * self.Phases[phasenam]['General']['Mass']
                         WriteCIFitem(self.fp, 'loop_ _pd_phase_id _pd_phase_block_id _pd_phase_mass_%')
                         for j,phasenam in enumerate(sorted(self.Phases.keys())):
                             pId = self.Phases[phasenam]['pId']
@@ -4313,19 +4296,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                             else:
                                 s = PutInCol(phasenam,20)
                             phaseBlockName[pId] = datablockidDict[hist]+'_p'+str(j+1)
-                            phFrac = self.Phases[phasenam]['Histograms'][hist]['Scale'][0]
-                            phFracKey = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':Scale'
-                            phFrac = self.seqData[hist]['parmDict'].get(phFracKey,phFrac)
-                            wtFr = phFrac * self.Phases[phasenam]['General']['Mass'] / wtFrSum
-                            if phFracKey in self.seqData[hist]['varyList']:
-                                sig = self.seqData[hist]['sig'][self.seqData[hist]['varyList'].index(phFracKey)]
-                                sig *= self.Phases[phasenam]['General']['Mass'] / wtFrSum
-                            elif phFracKey in self.seqData[hist]['depParmDict']:
-                                sig = self.seqData[hist]['depParmDict'][phFracKey][1]
-                                sig *= self.Phases[phasenam]['General']['Mass'] / wtFrSum
-                            else:
-                                sig = -0.0001
-                            WriteCIFitem(self.fp, "  "+ s + " " + phaseBlockName[pId] + "  " + G2mth.ValEsd(wtFr,sig))
+                            var = str(pId)+':'+str(hId)+':WgtFrac'
+                            if var in self.seqData[hist].get('depParmDict',{}):
+                                wtFr,sig = self.seqData[hist]['depParmDict'][var]
+                                wgtstr = G2mth.ValEsd(wtFr,sig)
+                            else:                                
+                                wgtstr = '?'
+                            WriteCIFitem(self.fp, "  "+ s + " " + phaseBlockName[pId] + "  " + wgtstr)
                             datablockidDict[phasenam] = phaseBlockName[pId]
                         PP = FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
                         PP += '\n'

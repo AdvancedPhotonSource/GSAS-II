@@ -959,7 +959,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 #                    else:
 #                        refl[ik+1] = 0
                 continue
-            General['Mass'] = 0.
             cx,ct,cs,cia = General['AtomPtrs']
             for i,at in enumerate(Atoms):
                 names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
@@ -977,7 +976,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     for ind in range(cx+4,cx+7):
                         at[ind] = parmDict[names[ind]]
                 ind = General['AtomTypes'].index(at[ct])
-                General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
                 if General.get('Modulated',False):
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
@@ -1177,6 +1175,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         newCellDict.update(data[name].get('newCellDict',{})) # N.B. These Dij vars are missing a histogram #
         # make sure 1st reference to each parm is in PseudoVar dict
         tmp = copy.deepcopy(data[name].get('parmDict',{}))
+        tmp = {striphist(var,'*'):tmp[var] for var in tmp}  # replace histogram #s with "*"
         tmp.update(PSvarDict)
         PSvarDict = tmp
    
@@ -1397,42 +1396,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
         G2frame.colSigs += [sigs]
         G2frame.colList += [vals]
-        
-    # compute and add weight fractions to table if varied
-    for phase in Phases:
-        var = str(Phases[phase]['pId'])+':*:Scale'
-        if var not in combinedVaryList+list(depValDict.keys()): continue
-        wtFrList = []
-        sigwtFrList = []
-        for i,name in enumerate(histNames):
-            if name not in Phases[phase]['Histograms']:
-                wtFrList.append(None)
-                sigwtFrList.append(0.0)
-                continue
-            elif not Phases[phase]['Histograms'][name]['Use']:
-                wtFrList.append(None)
-                sigwtFrList.append(0.0)
-                continue
-            wtFrSum = 0.
-            for phase1 in Phases:
-                if name not in Phases[phase1]['Histograms']: continue
-                if not Phases[phase1]['Histograms'][name]['Use']: continue
-                wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
-            var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
-            wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum
-            wtFrList.append(wtFr)
-            if var in data[name]['varyList']:
-                sig = data[name]['sig'][data[name]['varyList'].index(var)]*Phases[phase]['General']['Mass']/wtFrSum
-            elif var in data[name].get('depParmDict',{}):
-                sig = data[name]['depParmDict'][var][1]*Phases[phase]['General']['Mass']/wtFrSum
-            else:
-                sig = 0.0
-            sigwtFrList.append(sig)
-        colLabels.append(str(Phases[phase]['pId'])+':*:WgtFrac')
-        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-        G2frame.colList += [wtFrList]
-        G2frame.colSigs += [sigwtFrList]
-                
+
     # evaluate Pseudovars, their ESDs and add them to grid
     # this should be reworked so that the eval dict is created once and as noted below
     for expr in data['SeqPseudoVars']:

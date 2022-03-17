@@ -2125,7 +2125,7 @@ def ComputeDepESD(covMatrix,varyList,allvars=True):
                 vcov[i1][i2] = covMatrix[iv1][iv2]
         # vec is the vector that multiplies each of the independent values
         for i,(v,vec) in enumerate(zip(varlist,invmultarr)):
-            if i == varied: break
+            if i == varied and not allvars: break
             sigmaDict[v] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
     return sigmaDict
 
@@ -2332,7 +2332,6 @@ def getInvConstraintEq(var,varyList):
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         if var not in varlist: continue
         i = varlist.index(var)
-        print(var,i)
         vList = []
         mList = []
         for m,v in zip(invmultarr[i,:],mapvars):

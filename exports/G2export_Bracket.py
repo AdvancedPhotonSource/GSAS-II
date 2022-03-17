@@ -89,10 +89,13 @@ class Exportbracket(G2IO.ExportBaseclass):
                         phasefrac = phasedict[1]['Histograms'][hist_name]['Scale'][0]
 
                         # Extract weight fraction and uncertainty
-                        weight_frac = self.OverallParms['Covariance']['depSig'][
-                            str(phase_num) + ':' + str(hist_num) + ':WeightScale']
-                        weight_frac_unc = self.OverallParms['Covariance']['depSig'][
-                            str(phase_num) + ':' + str(hist_num) + ':WeightScaleSig']
+                        # weight_frac = self.OverallParms['Covariance']['depSig'][
+                        #     str(phase_num) + ':' + str(hist_num) + ':WeightScale']
+                        # weight_frac_unc = self.OverallParms['Covariance']['depSig'][
+                        #     str(phase_num) + ':' + str(hist_num) + ':WeightScaleSig']
+                        var = str(phase_num) + ':' + str(hist_num) + ':WgtFrac'
+                        depSigDict = self.OverallParms['Covariance'].get('depSigDict',{})
+                        weight_frac,weight_frac_unc = depSigDict.get(var,[0,None])
 
                         # Write phase + weight fractions in bracket notation to dictionary, to be exported as a CSV
                         # If there is more than one histogram, specify which one the fraction is based on

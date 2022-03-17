@@ -4485,48 +4485,51 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
     '''
     # Compute mass normalizer & assemble list of refined PF terms
     wtSum = 0.0
-    refList = []
+    mass = {}
+    phFr = {}
+    used = {}
     for phase in Phases:
         if Phases[phase]['General']['Type'] == 'magnetic': continue
         if hist not in Phases[phase]['Histograms']: continue
         if not Phases[phase]['Histograms'][hist]['Use']: continue
-        mass = Phases[phase]['General']['Mass']
-        phFr = Phases[phase]['Histograms'][hist]['Scale'][0]
-        wtSum += mass*phFr
-        # Is this PF refined?
         pId = Phases[phase]['pId']
+        mass[pId] = Phases[phase]['General']['Mass']
+        phFr[pId] = Phases[phase]['Histograms'][hist]['Scale'][0]
+        wtSum += mass[pId]*phFr[pId]
+        # Is this PF refined?
         var = "{}:{}:Scale".format(pId,hId)
         if var in varyList: # yes, save it
-            indx = varyList.index(var)
-            refList.append((pId,indx,mass))
-            '''for each refined term:
-                 * the phase Id,
-                 * position in covariance matrix,
-                 * unit cell mass
-            '''
+            used[varyList.index(var)] = pId
+        elif var in G2mv.GetDependentVars():
+            for v,m in zip(*G2mv.getInvConstraintEq(var,varyList)):
+                if v not in varyList: continue
+                i = varyList.index(v)
+                if i not in used: used[i] = {}
+                used[i][pId] = m
     valDict = {}
     sigDict = {}
-    for phase in Phases:
-        if Phases[phase]['General']['Type'] == 'magnetic': continue
-        if hist not in Phases[phase]['Histograms']: continue
-        if not Phases[phase]['Histograms'][hist]['Use']: continue
-        pId_j = Phases[phase]['pId']
-        mass_j = Phases[phase]['General']['Mass']
-        phFr_j = Phases[phase]['Histograms'][hist]['Scale'][0]
-        vec = []
-        for pId_i,indx,mass_i in refList:
-            if pId_i ==  pId_j:
-                deriv = (mass_j/wtSum) - (mass_j**2 * phFr_j/wtSum**2)
-            else:
-                deriv = -mass_j* mass_i * phFr_j/wtSum**2
-            vec.append(deriv)
-        # create a small v-covar matrix with just the parameters used here
-        vcov = np.zeros((len(refList),len(refList)))
-        for  i1,(_,iv1,_) in enumerate(refList):
-            for  i2,(_,iv2,_) in enumerate(refList):
-                vcov[i1][i2] = covMatrix[iv1][iv2]
-        vec = np.array(vec)
+    for phasej in Phases:
+        if Phases[phasej]['General']['Type'] == 'magnetic': continue
+        if hist not in Phases[phasej]['Histograms']: continue
+        if not Phases[phasej]['Histograms'][hist]['Use']: continue
+        pId_j = Phases[phasej]['pId']
         var = "{}:{}:WgtFrac".format(pId_j,hId)
-        valDict[var] = mass_j * phFr_j / wtSum
-        sigDict[var] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
+        valDict[var] = mass[pId_j] * phFr[pId_j] / wtSum
+        Avec = np.zeros(len(varyList))
+        for i in used:
+            if type(used[i]) is dict:
+                for pId_i in used[i]:
+                    if pId_i ==  pId_j:
+                        deriv = (mass[pId_j]/wtSum) - (mass[pId_j]**2 * phFr[pId_j]/wtSum**2)
+                    else:
+                        deriv = -mass[pId_j]* mass[pId_i] * phFr[pId_j]/wtSum**2
+                    Avec[i] +=  used[i][pId_i] * deriv # dot product
+            else:
+                pId_i = used[i]
+                if pId_i ==  pId_j:
+                    Avec[i] = (mass[pId_j]/wtSum) - (mass[pId_j]**2 * phFr[pId_j]/wtSum**2)
+                else:
+                    Avec[i] = -mass[pId_j]* mass[pId_i] * phFr[pId_j]/wtSum**2
+        sigDict[var] = np.sqrt(np.inner(Avec.T,np.inner(covMatrix,Avec)))
+    if len(valDict) == 1: return {},{}  # don't add where only a single phase is present
     return valDict,sigDict

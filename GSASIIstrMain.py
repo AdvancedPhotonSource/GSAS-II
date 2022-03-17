@@ -49,7 +49,7 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 ateln2 = 8.0*math.log(2.0)
 DEBUG = True
-PhFrExtPOSig = None
+#PhFrExtPOSig = None
 
 def ReportProblems(result,Rvals,varyList):
     '''Create a message based results from the refinement
@@ -393,6 +393,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
     Rvals = {}
+    histNames = list(Histograms.keys())
     try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histograms,Phases,restraintDict,
@@ -406,18 +407,20 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
                        'varyListStart':varyListStart,'Lastshft':Lastshft,
                        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
                        'newCellDict':newCellDict,'freshCOV':True}
-            # add the uncertainties into the esd dictionary (sigDict)
+            # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
-            # check for variables outside their allowed range, reset and freeze them
-            frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
             G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,pFile=printFile)
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
+                                         pFile=printFile,covMatrix=covMatrix,varyList=varyList)
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
-            covData['depSig'] = G2stIO.PhFrExtPOSig
+            # check for variables outside their allowed range, reset and freeze them
+            frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
+            # covData['depSig'] = G2stIO.PhFrExtPOSig  # created in G2stIO.SetHistogramData, no longer used?
+            covData['depSigDict'] = {i:(parmDict[i],sigDict[i]) for i in parmDict if i in sigDict}
             if len(frozen):
                 if 'msg' in Rvals:
                     Rvals['msg'] += '\n'
@@ -840,8 +843,25 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')
                 break
             sigDict = dict(zip(varyList,sig))
-            # the uncertainties for dependent constrained parms into the esd dict
+            # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
+
+            newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
+            newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
+            SeqResult[histogram] = {
+                'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                'varyListStart':varyListStart,'Lastshft':Lastshft,
+                'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
+                'newCellDict':newCellDict,'depParmDict':{},
+                'constraintInfo':constraintInfo,
+                'parmDict':parmDict,
+                }
+            G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
+#            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)   # TODO: why is this not called? Do rigid body prms get updated?
+            G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,
+                                         pFile=printFile,covMatrix=covMatrix,varyList=varyList)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
             # check for variables outside their allowed range, reset and freeze them
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             msg = None
@@ -859,24 +879,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                    result[0][i] = parmDict[p]
                    sig[i] = -0.1
             # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
-            depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i in sigDict and i not in varyList}
-            newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
-            newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
-            histRefData = {
-                'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                'varyListStart':varyListStart,'Lastshft':Lastshft,
-                'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
-                'newCellDict':newCellDict,'depParmDict':depParmDict,
-                'constraintInfo':constraintInfo,
-                'parmDict':parmDict,
-                }
-            SeqResult[histogram] = histRefData
-            G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-#            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
-            G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile,seq=True)
-            G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,Controls['parmFrozen'])
+            SeqResult[histogram]['depParmDict'] = {i:(parmDict[i],sigDict[i]) for i in sigDict if i not in varyList}
+            
+            
+            G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,
+                                                  rigidbodyDict,SeqResult[histogram],Controls['parmFrozen'])
             if msg: 
                 printFile.write(msg+'\n')
             NewparmDict = {}

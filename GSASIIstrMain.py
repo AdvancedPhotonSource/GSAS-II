@@ -371,6 +371,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
         return False,{'msg':'Unable to interpret multiplier(s): '+msg}
     try:
         errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+        G2mv.normParms(parmDict)
         G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     except G2mv.ConstraintException:
         G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
@@ -393,7 +394,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
     Rvals = {}
-    histNames = list(Histograms.keys())
+    G2mv.Dict2Map(parmDict)  # impose constraints initially
+    
     try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histograms,Phases,restraintDict,
@@ -758,6 +760,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
                                                                       seqHistNum=hId,raiseException=True)
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
+            G2mv.normParms(parmDict)
             G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:
             G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent for histogram {}***'.format(hId))
@@ -824,6 +827,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
            printFile.write(
                ' The following refined variables have previously been frozen due to exceeding limits:\n\t{}\n'
                .format(s))
+        G2mv.Dict2Map(parmDict)  # impose constraints initially
         try:
             IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,

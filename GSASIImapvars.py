@@ -2489,6 +2489,28 @@ def Map2Dict(parmDict,varyList):
         parmDict.update([i for i in z if type(i[0]) is not float])
     global saveVaryList
     saveVaryList = copy.copy(varyList)
+    
+def normParms(parmDict):
+    '''Attempt to put parameters into the right ballpark by scaling to 
+    enforce constraint equations
+    '''
+    for varlist,mapvars,multarr,invmultarr in zip(
+            dependentParmList,indParmList,arrayList,invarrayList):
+        if multarr is None or invmultarr is None: continue # unexpected
+        for i,s in enumerate(mapvars):
+            try:
+                s = float(s)
+            except: 
+                continue
+            sumcons = 0.
+            for var,m in zip(varlist,multarr[i]):
+                if var not in parmDict: 
+                    print('normParms error: Parameter',var,'not in parmDict')
+                    break
+                sumcons += parmDict[var] * m
+            if sumcons != s and sumcons != 0 and s != 0:
+                for var in varlist:
+                    parmDict[var] *= s/sumcons  
             
 def Dict2Map(parmDict):
     '''Applies the constraints defined using :func:`StoreEquivalence`,

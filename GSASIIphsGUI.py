@@ -2323,7 +2323,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 vecSizer.Add(Ref,0,WACV)
             ssSizer.Add(vecSizer)
             return ssSizer
-            
+                       
         def PawleySizer():
             
             def OnPawleyRef(event):
@@ -2812,7 +2812,6 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
             
-
         mainSizer.Add(PawleySizer())
         G2G.HorizontalLine(mainSizer,General)
         
@@ -13271,33 +13270,61 @@ of the crystal structure.
         # FillPawleyReflectionsGrid executable starts here
         G2frame.GetStatusBar().SetStatusText('To delete a Pawley reflection: select row & press Delete',1)                        
         generalData = data['General']
-        if 'Pawley ref' in data:
-            PawleyPeaks = data['Pawley ref']                        
-            rowLabels = []
-            for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
-            if generalData['Modulated']:
-                colLabels = ['h','k','l','m','mul','d','refine','Fsq(hkl)','sig(Fsq)']
-                Types = 5*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
-                    2*[wg.GRID_VALUE_FLOAT+':10,2',]
-                pos = [6,7]
-            else:    
-                colLabels = ['h','k','l','mul','d','refine','Fsq(hkl)','sig(Fsq)']
-                Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
-                    2*[wg.GRID_VALUE_FLOAT+':10,2',]
-                pos = [5,6]
-            PawleyTable = G2G.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            G2frame.PawleyRefl.SetTable(PawleyTable, True)
-            G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
-            G2frame.PawleyRefl.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onRefineDClick)
-            for r in range(G2frame.PawleyRefl.GetNumberRows()):
-                for c in range(G2frame.PawleyRefl.GetNumberCols()):
-                    if c in pos:
-                        G2frame.PawleyRefl.SetReadOnly(r,c,isReadOnly=False)
-                    else:
-                        G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            G2frame.PawleyRefl.SetMargins(0,0)
-            G2frame.PawleyRefl.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.PawleyRefl)
+        if 'Pawley ref' not in data:
+            dlg = wx.MessageDialog(G2frame,
+                'Error: no "Pawley ref" entry in data structure. Is this an old .gpx file? If so, please create a new one.',
+                'Pawley entry not found')
+            try:
+                dlg.CenterOnParent()
+                dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            return
+        PawleyPeaks = data['Pawley ref']
+        if len(PawleyPeaks) == 0 or not generalData['doPawley']:
+            msg = ('Pawley refinement not yet set up. Use the "Pawley setup"'+
+                    ' and "Pawley create" menu commands to change this. '+
+                    '(Note settings also found on General tab).')
+            if not generalData['doPawley']:
+                msg += '\n\nCall Pawley setup?'
+            else:
+                msg += '\n\nCall Pawley create?'
+            dlg = wx.MessageDialog(G2frame,msg,'Pawley not setup',
+                                   wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                dlg.CenterOnParent()
+                result = dlg.ShowModal()
+                if result == wx.ID_YES and not generalData['doPawley']:
+                    wx.CallAfter(OnPawleySet,None)
+                elif result == wx.ID_YES:
+                    wx.CallAfter(OnPawleyLoad,None)
+            finally:
+                dlg.Destroy()
+        rowLabels = []
+        for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
+        if generalData['Modulated']:
+            colLabels = ['h','k','l','m','mul','d','refine','Fsq(hkl)','sig(Fsq)']
+            Types = 5*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
+                2*[wg.GRID_VALUE_FLOAT+':10,2',]
+            pos = [6,7]
+        else:    
+            colLabels = ['h','k','l','mul','d','refine','Fsq(hkl)','sig(Fsq)']
+            Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
+                2*[wg.GRID_VALUE_FLOAT+':10,2',]
+            pos = [5,6]
+        PawleyTable = G2G.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        G2frame.PawleyRefl.SetTable(PawleyTable, True)
+        G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+        G2frame.PawleyRefl.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onRefineDClick)
+        for r in range(G2frame.PawleyRefl.GetNumberRows()):
+            for c in range(G2frame.PawleyRefl.GetNumberCols()):
+                if c in pos:
+                    G2frame.PawleyRefl.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+        G2frame.PawleyRefl.SetMargins(0,0)
+        G2frame.PawleyRefl.AutoSizeColumns(False)
+        SetPhaseWindow(G2frame.PawleyRefl)
                     
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
@@ -13307,6 +13334,7 @@ of the crystal structure.
             pawlVal.Enable(generalData['doPawley'])
             pawlNegWt.Enable(generalData['doPawley'])
         generalData = data['General']
+        startPawley = generalData['doPawley']
         startDmin = generalData['Pawley dmin']
         genDlg = wx.Dialog(G2frame,title='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
@@ -13362,16 +13390,20 @@ of the crystal structure.
         res = genDlg.ShowModal()
         genDlg.Destroy()
 
-        if generalData['doPawley'] and res == wx.ID_OK and startDmin != generalData['Pawley dmin']:
-            dlg = wx.MessageDialog(G2frame,'Do you want to initialize the Pawley reflections with the new Dmin value?','Initialize Pawley?', 
+        if generalData['doPawley'] and res == wx.ID_OK and (
+                not startPawley or startDmin != generalData['Pawley dmin']):
+            dlg = wx.MessageDialog(G2frame,'Do you want to initialize the Pawley reflections with the settings?','Initialize Pawley?', 
                 wx.YES_NO | wx.ICON_QUESTION)
             try:
                 result = dlg.ShowModal()
                 if result == wx.ID_NO:
+                    wx.CallAfter(FillPawleyReflectionsGrid)
                     return
             finally:
                 dlg.Destroy()
             OnPawleyLoad(event)
+        else:
+            wx.CallAfter(FillPawleyReflectionsGrid)
             
     def OnPawleyLoad(event):
         generalData = data['General']

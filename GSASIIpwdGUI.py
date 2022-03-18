@@ -404,6 +404,11 @@ def SetDefaultSubstances():
         'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':1.0}}}
 
 def GetFileList(G2frame,fileType):
+    ''' Get list of file names containing a particular string
+    param: fileType str: any string within a file name
+    returns: list of file names from GSAS-II tree
+    Note routine of same name in GSASIIdataGUI; it has a skip option
+    '''
     fileList = []
     Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
     while Id:

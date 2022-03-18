@@ -120,6 +120,14 @@ commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
 
 def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
+    ''' Sets default values for various histogram parameters
+    param: str dType: 3 letter histogram type, e.g. 'PNT'
+    param: str histoName: histogram name as it aoears in tree
+    param: NShkl int: number of generalized mustrain coefficients - depends on symmetry
+    param: NDij int: number of hydrostatic strain coefficients - depends on symmetry
+    
+    returns dict: default data for histogram - found in data tab for phase/histogram 
+    '''
     if dType in ['SXC','SNC']:
         return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
@@ -336,8 +344,7 @@ def GUIpatches():
     sys.stderr = sys.stdout
 
 def convVersion(version):
-    '''Convert a version string ("x", "x.y", "x.y.z") into a series of 
-    ints. 
+    '''Convert a version string ("x", "x.y", "x.y.z") into a series of ints. 
 
     :returns: [i0, i1, i2] where None is used if a value is not specified 
        and 0 is used if a field cannot be parsed.
@@ -650,7 +657,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
 
-#### Create main frame (window) for GUI #######################################
+#### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items.
 
@@ -662,19 +669,6 @@ class GSASII(wx.Frame):
         '''
         log.InvokeMenuCommand(event.GetId(),self,event)
             
-#    def Bind(self,eventtype,handler,*args,**kwargs):
-#        '''Override the Bind function so that we can wrap calls that will be logged.
-#        
-#        N.B. This is a bit kludgy. Menu bindings with an id are wrapped and
-#        menu bindings with an object and no id are not. 
-#        '''
-#        if eventtype == wx.EVT_MENU and 'id' in kwargs:
-#            menulabels = log.SaveMenuCommand(kwargs['id'],self,handler)
-#            if menulabels:
-#                wx.Frame.Bind(self,eventtype,self.MenuBinding,*args,**kwargs)
-#                return
-#        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
-    
     def _Add_FileMenuItems(self, parent):
         '''Add items to File menu
         '''
@@ -713,11 +707,6 @@ class GSASII(wx.Frame):
     def _Add_DataMenuItems(self,parent):
         '''Add items to Data menu
         '''
-        # item = parent.Append(
-        #     help='',id=wx.ID_ANY,
-        #     kind=wx.ITEM_NORMAL,
-        #     text='Read image data...')
-        # self.Bind(wx.EVT_MENU, self.OnImageRead, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Sum or Average powder data','')
@@ -757,6 +746,8 @@ class GSASII(wx.Frame):
             self.Bind(wx.EVT_MENU,self.MoveTreeItems,id=item.GetId())
 
     def _Add_CalculateMenuItems(self,parent):
+        '''Add items to the Calculate menu
+        '''
         item = parent.Append(wx.ID_ANY,'Setup PDFs','Create PDF tree entries for selected powder patterns')
         self.MakePDF.append(item)
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
@@ -1831,8 +1822,9 @@ class GSASII(wx.Frame):
                     self.ErrorDialog('Read Error',
                                      u'Error opening/reading file {}'.format(instfile))
     def EnableRefineCommand(self):
+        '''Check that phases are connected to histograms - if so then Refine is enabled
+        '''
         haveData = False
-        # check for phases connected to histograms
         sub = GetGPXtreeItemId(self,self.root,'Phases')
         if sub: 
             item, cookie = self.GPXtree.GetFirstChild(sub)
@@ -1847,7 +1839,6 @@ class GSASII(wx.Frame):
         else:
             self.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,False)
             for item in self.Refine: item.Enable(False)
-
         
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item
@@ -2451,10 +2442,12 @@ class GSASII(wx.Frame):
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
-
+        Small angle data is presumed to be as QIE form for either x-rays or neutrons
         '''
         
         def GetSASDIparm(reader):
+            ''' Setup instrument parameters for small ang scattering data
+            '''
             parm = reader.instdict
             Iparm = {'Type':[parm['type'],parm['type'],0],'Lam':[parm['wave'],
                 parm['wave'],0],'Azimuth':[0.,0.,0]}           
@@ -2487,26 +2480,6 @@ class GSASII(wx.Frame):
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
             Iparm1,Iparm2 = GetSASDIparm(rd)
-#            if 'T' in Iparm1['Type'][0]:
-#                if not rd.clockWd and rd.GSAS:
-#                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
-#                cw = np.diff(rd.powderdata[0])
-#                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
-#                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-#                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
-#                if 'Itype' in Iparm2:
-#                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
-#                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
-#                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
-#                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
-#                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
-#                    var = 1./rd.powderdata[2][Ibeg:Ifin]
-#                    var += WYI*rd.powderdata[1]**2
-#                    var /= YI**2
-#                    rd.powderdata[2] = 1./var
-#                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
-#                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
-#                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.smallangledata[0])
             Tmax = max(rd.smallangledata[0])
             valuesdict = {
@@ -2562,10 +2535,12 @@ class GSASII(wx.Frame):
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
-
+        Reflectometry data is presumed to be in QIE form for x-rays of neutrons
         '''
         
         def GetREFDIparm(reader):
+            ''' Setup reflectometry data instrument parameters
+            '''
             parm = reader.instdict
             Iparm = {'Type':[parm['type'],parm['type'],0],'Lam':[parm['wave'],
                 parm['wave'],0],'Azimuth':[0.,0.,0]}           
@@ -2598,26 +2573,6 @@ class GSASII(wx.Frame):
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
             Iparm1,Iparm2 = GetREFDIparm(rd)
-#            if 'T' in Iparm1['Type'][0]:
-#                if not rd.clockWd and rd.GSAS:
-#                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
-#                cw = np.diff(rd.powderdata[0])
-#                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
-#                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-#                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
-#                if 'Itype' in Iparm2:
-#                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
-#                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
-#                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
-#                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
-#                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
-#                    var = 1./rd.powderdata[2][Ibeg:Ifin]
-#                    var += WYI*rd.powderdata[1]**2
-#                    var /= YI**2
-#                    rd.powderdata[2] = 1./var
-#                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
-#                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
-#                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.reflectometrydata[0])
             Tmax = max(rd.reflectometrydata[0])
             ifDQ = np.any(rd.reflectometrydata[5])
@@ -2680,7 +2635,6 @@ class GSASII(wx.Frame):
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
-
         '''
         
         # get a list of existing histograms
@@ -2733,6 +2687,8 @@ class GSASII(wx.Frame):
         return # success
     
     def AddToNotebook(self,text):
+        '''Add entry to Notebook tree item
+        '''
         Id =  GetGPXtreeItemId(self,self.root,'Notebook')
         data = self.GPXtree.GetItemPyData(Id)
         data.append('Notebook entry @ %s: %s'%(time.ctime(),text))    
@@ -3161,7 +3117,8 @@ class GSASII(wx.Frame):
                     
 #### init_vars ################################################################
     def init_vars(self):
-        # initialize default values for GSAS-II "global" variables (saved in main Frame)
+        ''' initialize default values for GSAS-II "global" variables (saved in main Frame)
+        '''
         self.oldFocus = None
         self.undofile = ''
         self.TreeItemDelete = False
@@ -3287,6 +3244,8 @@ class GSASII(wx.Frame):
             self.OnFileReopen(None)
             
     def GetTreeItemsList(self,item):
+        ''' returns a list of all GSAS-II tree items
+        '''
         return self.GPXtree._getTreeItemsList(item)
 
     # def OnSize(self,event):
@@ -4138,8 +4097,15 @@ class GSASII(wx.Frame):
                     self.GPXtree.GetItemPyData(self.PickId)[2] = name
             dlg.Destroy()
         
-    def GetFileList(self,fileType,skip=None):        #potentially useful?
-        'Appears unused. Note routine of same name in GSASIIpwdGUI'
+    def GetFileList(self,fileType,skip=None):        
+        ''' Get list of file names containing a particular string; can skip one of known GSAS-II id
+        param: fileType str: any string within a file name
+        param: skip int:default=None, a GSAS-II assigned id of a data item to skip in collecting the names
+        returns: list of file names from GSAS-II tree
+        returns: str name of file optionally skipped
+        Appears unused, but potentially useful. 
+        Note routine of same name in GSASIIpwdGUI; it does not have the skip option
+        '''
         fileList = []
         Source = ''
         Id, cookie = self.GPXtree.GetFirstChild(self.root)
@@ -4311,6 +4277,9 @@ class GSASII(wx.Frame):
         self.GPXtree.UpdateSelection()
 
     def OnFileReopen(self, event):
+        ''' Creates a dialog box showing previously opened GSAS-II projects & offers to open one
+        called by File/Reopen recent... menu item
+        '''
         files = GSASIIpath.GetConfigValue('previous_GPX_files')
         if not files:
             print('no previous projects found')
@@ -4323,9 +4292,8 @@ class GSASII(wx.Frame):
 #            else:
 #                sellist.append("not found: {}".format(f))
         
-        dlg = G2G.G2SingleChoiceDialog(self,
-                                           'Select previous project to open',
-                                           'Select project',sellist)
+        dlg = G2G.G2SingleChoiceDialog(self,'Select previous project to open',
+            'Select project',sellist)
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
@@ -4545,8 +4513,8 @@ class GSASII(wx.Frame):
         self.plotFrame.SetTitle("GSAS-II plots: "+projName)
 
     def OnFileSaveas(self, event):
-        '''Save the current project in response to the
-        File/Save as menu button
+        '''Save the current project with a new name in response to the
+        File/Save as menu button. The current project then has this new name
         '''
         if GSASIIpath.GetConfigValue('Starting_directory'):
             pth = GSASIIpath.GetConfigValue('Starting_directory')
@@ -4810,6 +4778,8 @@ class GSASII(wx.Frame):
         print('MTZ file %s written'%fName)
         
     def OnExportPeakList(self,event):
+        '''Exports a PWDR peak list as a text file
+        '''
         pth = G2G.GetExportPath(self)
         dlg = wx.FileDialog(self, 'Choose output peak list file name', pth, '', 
             '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -4872,6 +4842,8 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def OnExportHKL(self,event):
+        '''Exports a PWDR reflection list as a text file
+        '''
         pth = G2G.GetExportPath(self)
         dlg = wx.FileDialog(self, 'Choose output reflection list file name', pth, '', 
             '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -5371,7 +5343,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
         
     def OnRefine(self,event):
-        '''Perform a refinement or a sequential refinement (depending on controls setting)
+        '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
         if self.testSeqRefineMode():
@@ -5469,7 +5441,9 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Refinement error',Rvals['msg'])
             
     def OnLeBail(self,event):
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
+        either single or sequentially
+        '''
         self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
@@ -5479,13 +5453,6 @@ class GSASII(wx.Frame):
             rChi2initial = '?'
         
         dlg = G2G.RefinementProgress(parent=self)
-        # dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
-        # Size = dlg.GetSize()
-        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        # dlg.CenterOnParent()
-        #dlg.Raise() # dangerous
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
@@ -5686,16 +5653,7 @@ class GSASII(wx.Frame):
             if result == wx.ID_YES:
                 self.OnLeBail(event)
         # select it
-        dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',
-                                          parent=self)
-        # dlgp = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
-        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
-        #     parent=self)            
-        # Size = dlgp.GetSize()
-        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-        #     dlgp.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        # dlgp.CenterOnParent()
-        # dlgp.Show()
+        dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',parent=self)
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
@@ -5726,13 +5684,9 @@ class GSASII(wx.Frame):
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
-                    # if self.G2plotNB.plotList:
-                    #     self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
-                    #self.PatternId = GetGPXtreeItemId(self,self.root,plotHist)
-                    #SelectDataTreeItem(self,self.PatternId)
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
                     SelectDataTreeItem(self,sId)
                     self.GPXtree.SelectItem(sId)
@@ -5741,21 +5695,23 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
             
-#            self.SeqTblHideList = []
         else:
             self.ErrorDialog('Sequential refinement error',Msg)
             
     def OnRunFprime(self,event):
+        '''Run Fprime'''
         import fprime
         self.fprime = fprime.Fprime(self)
         self.fprime.Show()
         
     def OnRunAbsorb(self,event):
+        '''Run Absorb'''
         import Absorb
         self.absorb = Absorb.Absorb(self)
         self.absorb.Show()
         
     def OnRunPlotXNFF(self,evnt):
+        '''Run PlotXNFF'''
         import PlotXNFF
         self.plotXNFF = PlotXNFF.PlotXNFF(self)
         self.plotXNFF.Show()
@@ -5792,7 +5748,7 @@ class GSASII(wx.Frame):
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         G2IO.ExportSequentialFullCIF(self,data,Controls)
 
-# Data window side of main GUI ################################################
+#### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     '''Create the data item window as well as the menu. Note that 
     the same core menu items are used in all menus, but different items may be
@@ -5935,13 +5891,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             morehelpitems=[('&Tutorials','Tutorials'),])
         menu.Append(menu=HelpMenu,title='&Help')
 
+#### Menu definitions here
     def _initMenus(self):
         '''define all GSAS-II data window menus. 
         NB: argument order conforms to both classic & phoenix variants for wx.
         Do not use argument= for these as the argument names are different for classic & phoenix
         '''
         
-#        G2G.Define_wxId('wxID_MCRON', 'wxID_MCRLIST', 'wxID_MCRSAVE', 'wxID_MCRPLAY',)
 ##### GSAS-II Menu items
         # Main menu
         G2frame = self.GetTopLevelParent()
@@ -5999,13 +5955,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ConstraintEdit.Append(G2G.wxID_SHOWISO,'Show ISODISTORT modes',
                 'Show ISODISTORT mode values for all phases')
         self.ConstraintEdit.Enable(G2G.wxID_SHOWISO,False)
-        # for DEBUG only
-        #def OnShowISODISTORT(event):
-        #    import imp
-        #    imp.reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
-        #    G2cnstG.ShowIsoDistortCalc(G2frame)
-        #G2frame.Bind(wx.EVT_MENU, OnShowISODISTORT, id=G2G.wxID_SHOWISO)
-        # end DEBUG
         
         self.PostfillDataMenu()
 
@@ -6925,21 +6874,17 @@ def UpdateControls(G2frame,data):
             usedHistograms = list(set(usedHistograms))
             choices = [i for i in choices if i in usedHistograms]
             if len(choices) == 0:
-                G2G.G2MessageBox(G2frame,
-                                'No histograms in use found for a sequential fit.',
-                                'No Histograms')
+                G2G.G2MessageBox(G2frame,'No histograms in use found for a sequential fit.','No Histograms')
                 return
             sel = []
             try:
                 if 'Seq Data' in data:
-#                    for item in data['Seq Data']:
-#                        sel.append(choices.index(item))
                     sel = [choices.index(item) for item in data['Seq Data']]
             except ValueError:  #data changed somehow - start fresh
                 sel = []
             dlg = G2G.G2MultiChoiceDialog(G2frame,
-                        'Select datasets to include. Select no datasets to end sequential refinements.',
-                        'Sequential refinement selection',choices)
+                'Select datasets to include. Select no datasets to end sequential refinements.',
+                'Sequential refinement selection',choices)
             dlg.SetSelections(sel)
             names = []
             if dlg.ShowModal() == wx.ID_OK:
@@ -7243,10 +7188,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
         wx.CallAfter(UpdatePWHKPlot,G2frame,kind,item) # redisplay data screen
         
     def OnPlot1DHKL(event):
+        '''Plots a 1D stick diagram of reflection intensities'''
         refList = data[1]['RefList']
         G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
 
     def OnPlot3DHKL(event):
+        '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from single histogram'''
         refList = data[1]['RefList']
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
@@ -7259,6 +7206,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def OnPlotAll3DHKL(event):
+        '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from all SHKL histograms'''
         choices = GetGPXtreeDataNames(G2frame,['HKLF',])
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to plot',
             'Use data',choices)
@@ -7288,10 +7236,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
-    def OnToggleExt(event):
-        print('TBD')
-                  
     def OnMergeHKL(event):
+        '''Merge HKLF data sets to unique set according to Laue symmetry'''
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))
@@ -7391,6 +7337,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.GPXtree.SetItemPyData(Id,newData)
                    
     def OnErrorAnalysis(event):
+        '''Plots an "Abrams" plot - sorted delta/sig across data set. 
+        Should be straight line of slope 1 - never is'''
         G2plt.PlotDeltSig(G2frame,kind)
         
 #    def OnCompression(event):
@@ -7431,7 +7379,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
         data[0] = {'wtFactor':1.0}
 #    if kind == 'PWDR' and 'Compression' not in data[0]:
 #        data[0]['Compression'] = 1
-    #if isinstance(data[1],list) and kind == 'HKLF':
     if 'list' in str(type(data[1])) and kind == 'HKLF':
         RefData = {'RefList':[],'FF':[]}
         for ref in data[1]:
@@ -7455,7 +7402,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
     
     if G2frame.dataWindow:
         G2frame.dataWindow.ClearData()
-    #G2frame.dataWindow.GetSizer() # don't use this since may be wx.HORIZONTAL or wx.VERTICAL
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -7533,8 +7479,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         lenmag = len(data[0]['Magnification'])
         data[0]['Magnification'][1:] = sorted(data[0]['Magnification'][1:],key=lambda x: x[0])
         if lenmag > 1:
-            panel = wx.StaticBox(G2frame.dataWindow, wx.ID_ANY, 'Magnification regions',
-                                 style=wx.ALIGN_CENTER)
+            panel = wx.StaticBox(G2frame.dataWindow, wx.ID_ANY, 'Magnification regions',style=wx.ALIGN_CENTER)
             mSizer = wx.StaticBoxSizer(panel,wx.VERTICAL)
             magSizer = wx.FlexGridSizer(lenmag+1,3,0,0)
             Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -7778,7 +7723,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = ('\nResiduals after last refinement:          \n'+
+                text = ('\nResiduals after last refinement:                                       \n'+
                         '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(

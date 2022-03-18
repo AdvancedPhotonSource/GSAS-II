@@ -10625,6 +10625,48 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        # sanity check: should this project be fitting texture?
+        problem = False
+        msg = ''
+        if G2frame.testSeqRefineMode():
+            problem = True
+            msg = " This is not possible for sequential refinements."
+            h = []
+        else:
+            h,pd = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if len(h) == 1:
+            problem = True
+        if not problem:
+            unique = []
+            for i in h:
+                setting = [h[i]['Sample Parameters'][key] for key in ('Omega', 'Chi', 'Phi', 'Azimuth')]
+                if setting not in unique: unique.append(setting)
+            if len(unique) == 1:
+                problem = True
+                msg = " All your histograms have the same values for Omega, Chi, Phi and Azimuth.\n Texture fitting requires differing placements."
+            elif len(unique) == 2:
+                problem = True
+                msg = " You have only two unique settings for Omega, Chi, Phi and Azimuth.\n Texture fitting requires more differing placements."
+        if problem:
+            mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
+            ' Texture model fitting requires multiple datasets with differing sample/detector placements'))
+            if msg: 
+                mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,msg))
+            mainSizer.Add((-1,5))
+            mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
+            ' For structural fits that need preferred orientation corrections, fit terms in the Data tab.'))
+            SetPhaseWindow(Texture,mainSizer)
+            # patch 3/2022, if someone has already set this, allow them to see the
+            # controls
+            if textureData['Order'] or textureData['SH Coeff'][0]:
+                mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
+                '\n *** Fix old problems:\n Turn off refinement and/or set order to zero below.\n'))
+                pass
+            else:
+                return
+            # end patch (uncomment line below when removed)
+            #return
+        
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
         titleSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
         titleSizer.Add(wx.StaticText(Texture,-1,

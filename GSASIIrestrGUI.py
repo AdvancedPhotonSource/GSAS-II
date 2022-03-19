@@ -189,7 +189,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         '''Creates a parameter dict with variable names as keys and 
         numerical values (only)
         '''
-        G2cnstG.CheckAllScalePhaseFractions(G2frame)
+        G2cnstG.CheckAllScalePhaseFractions(G2frame,refine=False)
         try:
             parmDict,varyList = G2frame.MakeLSParmDict()
         except:

@@ -1690,10 +1690,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     #    print ('Generated constraints\n',G2mv.VarRemapShow())
         
 ###### check scale & phase fractions, create constraint if needed #############
-def CheckAllScalePhaseFractions(G2frame):
+def CheckAllScalePhaseFractions(G2frame,refine=True):
     '''Check if scale factor and all phase fractions are refined without a constraint
     for all used histograms, if so, offer the user a chance to create a constraint
     on the sum of phase fractions
+
+    :returns: False if refinement should be continued
     '''
     histograms, phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     cId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
@@ -1708,8 +1710,13 @@ def CheckAllScalePhaseFractions(G2frame):
     for i,(h,hist) in enumerate(problems):
         if i: msg += ', '
         msg += str(h)
-    msg += '. This is not recommended as it will produce an unstable refinement. Do you want to create constrain(s) on the sum of phase fractions to address this? (Press "No" to continue without)'
-    dlg = wx.MessageDialog(G2frame,msg,'Warning: Constraint Needed',wx.YES|wx.NO)
+    msg += '. This is not recommended as it will produce an unstable refinement. Do you want to create constrain(s) on the sum of phase fractions to address this?'
+    if refine:
+        msg += '\n\nRefinement may cause a significant shift in scaling, so it may be best to refine only a few other parameters (Press "No" to continue refinement without, "Cancel" to stop.)'
+        opts = wx.YES|wx.NO|wx.CANCEL
+    else:
+        opts = wx.YES|wx.NO
+    dlg = wx.MessageDialog(G2frame,msg,'Warning: Constraint Needed',opts)
     ans = dlg.ShowModal()
     dlg.Destroy()
     if ans == wx.ID_YES:
@@ -1726,9 +1733,11 @@ def CheckAllScalePhaseFractions(G2frame):
             Constraints['HAP'].append(constr+[1.0,None,'c'])
         wx.CallAfter(G2frame.GPXtree.SelectItem,cId) # should call SelectDataTreeItem
         UpdateConstraints(G2frame,Constraints,1,True) # repaint with HAP tab
-        return True
-    return False
-        
+        return False
+    elif ans == wx.ID_NO:
+        return False
+    return True
+
 def CheckScalePhaseFractions(G2frame,hist,histograms,phases,Constraints):
     '''Check if scale factor and all phase fractions are refined without a constraint
     for histogram hist, if so, offer the user a chance to create a constraint

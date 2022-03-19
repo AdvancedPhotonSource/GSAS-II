@@ -5288,7 +5288,7 @@ class GSASII(wx.Frame):
         This could potentially be sped up by loading only the histogram that is needed
         for a sequential fit. 
         '''
-        if G2cnstG.CheckAllScalePhaseFractions(self): return
+        if G2cnstG.CheckAllScalePhaseFractions(self,refine=False): return
         try:
             parmDict,varyList = self.MakeLSParmDict()
         except:

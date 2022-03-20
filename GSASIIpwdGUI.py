@@ -93,6 +93,7 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ################################################################################
 
 class SubCellsDialog(wx.Dialog):
+    'Display magnetic subcell space group information from selection in Unit Cells table of results from k-SUBGROUPSMAG'
     def __init__(self,parent,title,controls,SGData,items,phaseDict):
         wx.Dialog.__init__(self,parent,-1,title,
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -216,6 +217,7 @@ class SubCellsDialog(wx.Dialog):
 #        self.EndModal(wx.ID_OK)
 
 class RDFDialog(wx.Dialog):
+    'Display controls for generating RDF plot in Background'
     def __init__(self,parent):
         wx.Dialog.__init__(self,parent,-1,'Background radial distribution function',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -293,6 +295,12 @@ class RDFDialog(wx.Dialog):
 ################################################################################
 
 def GetFileBackground(G2frame,xye,background,scale=True):
+    ''' Select a background file to subtract from PWDR pattern
+    param: xye list [npts,6] of PWDR pattern
+    param: background PWDR file to be used as background
+    param: scale bool:=True if scale mult included in background & apply it
+    returns: list background to subtract
+    '''
     bxye = np.zeros(len(xye[1]))
     mult = 1.0
     if 'background PWDR' in background[1]:
@@ -595,6 +603,17 @@ def CopySelectedHistItems(G2frame):
                 ).update(copy.deepcopy(copyDict))
                          
 def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=100,maximal=False):
+    ''' Tests substructure magnetic atoms for magnetic site symmetry
+    param: phase GSAS-II phase object
+    param: magAtms list:magnetic atom objects
+    param: SGData dict: GSAS-II space group object
+    param: Uvec array: Translation U vector
+    param: Trans array: Transformation matrix
+    param: allmom bool: =True if all atoms must have moments allowed
+    params: maxequiv int:maximum number of atoms with moments to consider
+    param: maximal bool:=True if maximal subgroups only are allowed
+    returns: unique magnetic atoms (if any)
+    '''
     found = False
     anymom = False
     phase['Keep'] = False
@@ -629,6 +648,16 @@ def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=100,maximal=Fal
     return uAtms
 
 def TestAtoms(phase,magAtms,SGData,Uvec,Trans,maxequiv=100,maximal=False):
+    '''Tests atoms for substructure equivalents
+    param: phase GSAS-II phase object
+    param: magAtms list: atom objects
+    param: SGData dict: GSAS-II space group object
+    param: Uvec array: Translation U vector
+    param: Trans array: Transformation matrix
+    params: maxequiv int:maximum number of atoms with moments to consider
+    param: maximal bool:=True if maximal subgroups only are allowed
+    returns: unique atoms (if any)
+    '''
     phase['Keep'] = True
     invTrans = nl.inv(Trans)
     atCodes = []
@@ -657,6 +686,7 @@ def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
     def OnAutoSearch(event):
+        'Search pattern for possible peak positions'
         PatternId = G2frame.PatternId
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
@@ -696,6 +726,7 @@ def UpdatePeakGrid(G2frame, data):
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnCopyPeaks(event):
+        'Copy peaks to other histograms'
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
@@ -716,6 +747,7 @@ def UpdatePeakGrid(G2frame, data):
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
             
     def OnLoadPeaks(event):
+        'Load peak list from file'
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PWDR peaks list file', pth, '', 
             'PWDR peak list files (*.pkslst)|*.pkslst',wx.FD_OPEN)
@@ -742,6 +774,7 @@ def UpdatePeakGrid(G2frame, data):
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSavePeaks(event):
+        'Save peak to file suitable for OnLoadPeaks'
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PWDR peaks list file', pth, '', 
             'PWDR peak list files (*.pkslst)|*.pkslst',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -762,10 +795,12 @@ def UpdatePeakGrid(G2frame, data):
             dlg.Destroy()
     
     def OnUnDo(event):
+        'Undo a peak fit'
         DoUnDo()
         G2frame.dataWindow.UnDo.Enable(False)
         
     def DoUnDo():
+        'Undo a peak fit - reads a saved file from PeakFit'
         print ('Undo last refinement')
         file = open(G2frame.undofile,'rb')
         PatternId = G2frame.PatternId
@@ -782,6 +817,7 @@ def UpdatePeakGrid(G2frame, data):
         file.close()
         
     def SaveState():
+        'Saves result of a peaak fit for possible UnDo'
         G2frame.undofile = os.path.join(G2frame.dirname,'GSASII.save')
         file = open(G2frame.undofile,'wb')
         PatternId = G2frame.PatternId
@@ -791,6 +827,7 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
+        'Do a sequential peak fit across multiple histograms - peaks must be present in all'
         if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
             reflGrid.HideCellEditControl()
             reflGrid.DisableCellEditControl()
@@ -802,6 +839,7 @@ def UpdatePeakGrid(G2frame, data):
         wx.CallAfter(OnPeakFit,FitPgm)
         
     def OnOneCycle(event):
+        'Do a single cycle of peak fit refinement'
         if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
             reflGrid.HideCellEditControl()
             reflGrid.DisableCellEditControl()
@@ -811,6 +849,8 @@ def UpdatePeakGrid(G2frame, data):
         wx.CallAfter(OnPeakFit,FitPgm,oneCycle=True)
         
     def OnSeqPeakFit(event):
+        ''''Do a sequential peak fit across multiple histograms - peaks must be present in all.
+        results saved in Sequential peak fit results'''
         histList = G2gd.GetGPXtreeDataNames(G2frame,['PWDR',])
         od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Sequential peak fits',
@@ -882,6 +922,7 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.GPXtree.SelectItem(Id)
         
     def OnClearPeaks(event):
+        'Clear the Peak fit table'
         dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -892,6 +933,7 @@ def UpdatePeakGrid(G2frame, data):
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnPeakFit(FitPgm,oneCycle=False,noFit=False):
+        'Do peak fitting by least squares'
         SaveState()
         controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         if not controls:
@@ -909,12 +951,6 @@ def UpdatePeakGrid(G2frame, data):
         data = Pattern[1]
         wtFactor = Pattern[0]['wtFactor']
         bxye = GetFileBackground(G2frame,data,background,scale=False)
-#======================================================================
-#        print('Debug: reload G2pwd')  # TODO: remove me
-#        import imp
-#        imp.reload(G2pwd)
-#        # TODO: remove ^^^^
-#======================================================================
         if noFit:
             results = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
@@ -922,14 +958,9 @@ def UpdatePeakGrid(G2frame, data):
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0,
             parent=G2frame,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        # Size = dlg.GetSize()
-        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        #     dlg.CenterOnParent()
         results = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
         peaks['sigDict'] = results[0]
         text = 'Peak fit: Rwp=%.2f%% Nobs= %d Nparm= %d Npeaks= %d'%(results[3]['Rwp'],results[1][2]['fjac'].shape[1],len(results[0]),len(peaks['peaks']))
-#        dlg.Destroy()
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2frame.AddToNotebook(text)
@@ -937,6 +968,7 @@ def UpdatePeakGrid(G2frame, data):
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         
     def OnResetSigGam(event):
+        'Reset sig & gam values to instrument parameter values'
         PatternId = G2frame.PatternId
         Inst,Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
@@ -950,15 +982,16 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,newpeaks)
                 
     def setBackgroundColors():
-       for r in range(reflGrid.GetNumberRows()):
-           for c in range(reflGrid.GetNumberCols()):
-               if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
-                   try:
-                       if float(reflGrid.GetCellValue(r,c)) < 0.:
-                           reflGrid.SetCellBackgroundColour(r,c,wx.RED)
-                       else:
-                           reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
-                   except:
+        'Set background colors in peak list table; red if negative (nonsense), white if ok'
+        for r in range(reflGrid.GetNumberRows()):
+            for c in range(reflGrid.GetNumberCols()):
+                if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
+                    try:
+                        if float(reflGrid.GetCellValue(r,c)) < 0.:
+                            reflGrid.SetCellBackgroundColour(r,c,wx.RED)
+                        else:
+                            reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
+                    except:
                         pass
                     
     def KeyEditPeakGrid(event):
@@ -1052,14 +1085,6 @@ def UpdatePeakGrid(G2frame, data):
         '''
         SelectVars(range(reflGrid.GetNumberRows()))
 
-#    def onCellListSClick(event):
-#        '''Called when a peak is selected so that it can be highlighted in the plot
-#        '''
-#        event.Skip()
-#        c =  event.GetRow(),event.GetCol()
-#        if c < 0: # replot except whan a column is selected
-#            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
-#        
     def onCellListDClick(event):
         '''Called after a double-click on a cell label'''
         r,c =  event.GetRow(),event.GetCol()
@@ -1092,7 +1117,6 @@ def UpdatePeakGrid(G2frame, data):
     def updateMe(*args):
         'Redraw the peak listings after the mode changes'
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
-#        wx.CallLater(100,RefreshPeakGrid,None)
 
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
@@ -1173,12 +1197,8 @@ def UpdatePeakGrid(G2frame, data):
     setBackgroundColors()                         
     reflGrid.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshPeakGrid)
     reflGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-#    reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onCellListSClick)
-#    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onCellListSClick)
     reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
-#    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
     reflGrid.AutoSizeColumns(False)
-#    reflGrid.SetScrollRate(10,10)
     G2frame.reflGrid = reflGrid
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label='List of peaks to fit individually'),0,WACV)
@@ -1206,6 +1226,7 @@ def UpdateBackground(G2frame,data):
     '''respond to selection of PWDR background data tree item.
     '''
     def OnBackFlagCopy(event):
+        'Copy background refonement flags to other similar histograms'
         flag = data[0][1]
         backDict = data[-1]
         if backDict['nDebye']:
@@ -1248,6 +1269,7 @@ def UpdateBackground(G2frame,data):
                 backData[1]['background PWDR'] = ['',-1.,False]
             
     def OnBackCopy(event):
+        'Copy background functions/values to other similar histograms'
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
@@ -1269,6 +1291,7 @@ def UpdateBackground(G2frame,data):
             CalcBack(Id)
             
     def OnBackSave(event):
+        'Save background values to file'
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II background parameters file', pth, '', 
             'background parameter files (*.pwdrbck)|*.pwdrbck',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -1293,6 +1316,7 @@ def UpdateBackground(G2frame,data):
             dlg.Destroy()
         
     def OnBackLoad(event):
+        'load background values from file'
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II background parameters file', pth, '', 
@@ -1331,6 +1355,7 @@ def UpdateBackground(G2frame,data):
         wx.CallLater(100,UpdateBackground,G2frame,newback)
 
     def OnBkgFit(event):
+        'Fit background functions to fixed set of background points'
         
         def SetInstParms(Inst):
             dataType = Inst['Type'][0]
@@ -1419,6 +1444,7 @@ def UpdateBackground(G2frame,data):
         wx.CallLater(100,UpdateBackground,G2frame,data)
         
     def OnBkgClear(event):
+        'Clear fixed points from background'
         if 'FixedPoints' not in data[1]:
             return
         else:
@@ -1426,6 +1452,7 @@ def UpdateBackground(G2frame,data):
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
     
     def OnPeaksMove(event):
+        'Move a background peak'
         if not data[1]['nPeaks']:
             G2frame.ErrorDialog('Error','No peaks to move')
             return
@@ -1435,6 +1462,7 @@ def UpdateBackground(G2frame,data):
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
         
     def OnMakeRDF(event):
+        'Make a Radial Distribution Fuunction from the background - useful for selecting Debye background positions'
         dlg = RDFDialog(G2frame)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1777,6 +1805,7 @@ def UpdateBackground(G2frame,data):
        
 def UpdateLimitsGrid(G2frame, data,plottype):
     '''respond to selection of PWDR Limits data tree item.
+    Allows setting of limits and excluded regions in a PWDR data set
     '''
     def AfterChange(invalid,value,tc):
         if invalid: return
@@ -2234,7 +2263,6 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def RefineBox(item):
         'Define a refine checkbox with binding'
-        #wid = wx.CheckBox(G2frame.dataWindow,label=' Refine?  ')
         wid = wx.CheckBox(G2frame.dataWindow,label='')
         wid.SetValue(bool(insRef[item]))
         RefObj[wid.GetId()] = item
@@ -2242,6 +2270,7 @@ def UpdateInstrumentGrid(G2frame,data):
         return wid
 
     def OnLamPick(event):
+        'After selection of lab. x-ray source type'
         data['Source'][1] = lamType = event.GetEventObject().GetValue()
         if 'P' in insVal['Type']:
             insVal['Lam1'] = waves[lamType][0]
@@ -2249,13 +2278,7 @@ def UpdateInstrumentGrid(G2frame,data):
         elif 'S' in insVal['Type'] and 'synch' not in lamType:
             insVal['Lam'] = meanwaves[lamType]
         updateData(insVal,insRef)
-        i,j= wx.__version__.split('.')[0:2]
-        if int(i)+int(j)/10. > 2.8:
-            pass # repaint crashes wxpython 2.9
-            wx.CallLater(100, MakeParameterWindow)
-            #wx.CallAfter(MakeParameterWindow)
-        else:
-            wx.CallAfter(MakeParameterWindow)
+        wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 
     def MakeParameterWindow():
         'Displays the Instrument parameters in the dataWindow frame'
@@ -2441,9 +2464,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     nDig = (10,3)
                     if 'beta' in item:
                         nDig = (12,6)
-                    instSizer.Add(
-                            wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),
-                            0,WACV)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
                     itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     labelLst.append(item)
@@ -2453,8 +2474,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'PKS' in insVal['Type']:   #peak positions only
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
-                    0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append([key,1])
@@ -2475,8 +2495,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
-                    0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
@@ -2496,8 +2515,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 pass                                #for now
         elif insVal['Type'][0] in ['L','R',]:
             if 'C' in insVal['Type']:        
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
-                    0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
@@ -3048,15 +3066,13 @@ def UpdateSampleGrid(G2frame,data):
 
     if 'PWDR' in histName:
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-        nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),
-                    0,WACV)
+        nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),0,WACV)
         if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0] or 'E' in Inst['Type'][0]:
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]
-        histoType = G2G.G2ChoiceButton(G2frame.dataWindow,choices,
-                    strLoc=data,strKey='Type',
-                    onChoice=OnHistoChange)
+        histoType = G2G.G2ChoiceButton(G2frame.dataWindow,choices,strLoc=data,strKey='Type',
+            onChoice=OnHistoChange)
         nameSizer.Add(histoType)
         mainSizer.Add(nameSizer,0)
         mainSizer.Add((5,5),0)
@@ -3086,7 +3102,7 @@ def UpdateSampleGrid(G2frame,data):
     
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
         parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Controls,key,typeHint=str,
-                                        notBlank=False,OnLeave=SearchAllComments)
+            notBlank=False,OnLeave=SearchAllComments)
         parmSizer.Add(parmVal,1,wx.EXPAND)
         parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,key,typeHint=float)
         parmSizer.Add(parmVal,0,WACV)
@@ -3335,7 +3351,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnBravais(event):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
-#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
@@ -3938,6 +3953,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.Scroll(xscroll,yscroll)
         
     def RefreshMagCellsGrid(event):
+        'Display results from k-SUBGROUPSMAG in the Unit Cells tab & allow inspection of results'
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         r,c =  event.GetRow(),event.GetCol()
         rLab = magDisplay.GetRowLabelValue(r)

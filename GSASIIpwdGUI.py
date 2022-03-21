@@ -2254,7 +2254,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
         insVal.update({key:data[key][1] for key in instkeys})
         insRef.update({key:data[key][2] for key in instkeys})
-        wx.CallAfter(MakeParameterWindow)
+        wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
         
     def lblWdef(lbl,dec,val):
         'Label parameter showing the default value'
@@ -3314,6 +3314,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
         G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Index peaks list'),0,WACV)
+    # add help button to bring up help web page - at right side of window
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(G2frame.indxPeaks,0,wx.ALL|wx.EXPAND,1)
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()

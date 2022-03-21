@@ -1457,7 +1457,7 @@ class ExportBaseclass(object):
         
         self.G2frame.CheckNotebook()
         self.parmDict = {}
-        self.sigDict = {} # dict with s.u. values, currently used only for CIF exports
+        self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
         rigidbodyDict = {}
         covDict = {}
         consDict = {}
@@ -1530,7 +1530,10 @@ class ExportBaseclass(object):
         G2mv.Dict2Map(self.parmDict)   # add the constrained values to the parameter dictionary
         # and add their uncertainties into the esd dictionary (sigDict)
         if covDict.get('covMatrix') is not None:
-            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],allvars=False))
+            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],noSym=True))
+            if 'depSigDict' in self.OverallParms['Covariance']:
+                self.sigDict.update(
+                    {i:v[1] for i,v in self.OverallParms['Covariance']['depSigDict'].items()})
 
     def loadTree(self):
         '''Load the contents of the data tree into a set of dicts

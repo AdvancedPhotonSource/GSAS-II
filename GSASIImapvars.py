@@ -2095,23 +2095,22 @@ def getConstrError(constrLst,seqmode,seqhst):
             note = 'Parameter(s) removed'
     return False,msg,note
         
-def ComputeDepESD(covMatrix,varyList,allvars=True):
+def ComputeDepESD(covMatrix,varyList,noSym=False):
     '''Compute uncertainties for dependent parameters from independent ones
     returns a dictionary containing the esd values for dependent parameters
     
     :param np.array covMatrix: the full covariance matrix
     :param list varyList: the names of the variables matching the columns 
       and rows in covMatrix
-    :param bool allvars: When True (default) s.u. values for all parameters 
-      are placed in the returned dict. When False the number of s.u. values
-      attempts to match the number of refined degrees of freedom. The s.u.'s 
-      for dependent params from equivalences are not computed and 
-      the number of dependent params from new var and generated var
-      constraints matches the number of refined independent parameters. 
+    :param bool noSym: When True symmetry generated parameters are 
+      not included. Do this so that redundant s.u.'s eare not shown.
+      When False (default) s.u. values for all dependent 
+      parameters are placed in the returned dict. 
     '''
     sigmaDict = {}
-    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
-        if multarr is None and not allvars: continue # allvars=False: ignore equivalences
+    for varlist,mapvars,multarr,invmultarr,symgen in zip(
+            dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        if symgen and noSym: continue # skip symmetry generted 
         varied = 0
         # get the v-covar matrix for independent parameters 
         vcov = np.zeros((len(mapvars),len(mapvars)))
@@ -2125,7 +2124,8 @@ def ComputeDepESD(covMatrix,varyList,allvars=True):
                 vcov[i1][i2] = covMatrix[iv1][iv2]
         # vec is the vector that multiplies each of the independent values
         for i,(v,vec) in enumerate(zip(varlist,invmultarr)):
-            if i == varied and not allvars: break
+            #if i == varied: break # this limits the number of generated params
+            # to match the number varied. Not sure why I did this. 
             sigmaDict[v] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
     return sigmaDict
 

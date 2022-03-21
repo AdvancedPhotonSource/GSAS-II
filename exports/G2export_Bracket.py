@@ -79,34 +79,36 @@ class Exportbracket(G2IO.ExportBaseclass):
                         break
 
                 # Get phase and weight fractions uncertainties, if they have been refined
-                for hist_num in range(0, len(self.Histograms.keys())):
+                for hist_num,hist_name in enumerate(self.Histograms):
                     try:
                         # Get phase fraction uncertainty, if phase fractions have been refined
                         phasefrac_unc = self.sigDict[str(phase_num) + ':' + str(hist_num) + ':Scale']
                         # Get name of histogram associated with this phase, for later use
-                        hist_name = list(self.Histograms.keys())[hist_num]
+                        #hist_name = list(self.Histograms.keys())[hist_num]
                         # Extract phase fraction value
                         phasefrac = phasedict[1]['Histograms'][hist_name]['Scale'][0]
+                        # Write phase if there is more than one histogram, specify which one
+                        if len(self.Histograms) > 1:
+                            model_parameters[phasenam + " Phase Fraction in: " + hist_name] = (
+                                ValEsd(phasefrac, phasefrac_unc))
+                        # If there is only one histogram, no need to specify which histogram the fraction is based on
+                        else:
+                            model_parameters[phasenam + " Phase Fraction"] = ValEsd(phasefrac, phasefrac_unc)
+                    except:
+                        pass
 
-                        # Extract weight fraction and uncertainty
-                        # weight_frac = self.OverallParms['Covariance']['depSig'][
-                        #     str(phase_num) + ':' + str(hist_num) + ':WeightScale']
-                        # weight_frac_unc = self.OverallParms['Covariance']['depSig'][
-                        #     str(phase_num) + ':' + str(hist_num) + ':WeightScaleSig']
+                    try:
                         var = str(phase_num) + ':' + str(hist_num) + ':WgtFrac'
                         depSigDict = self.OverallParms['Covariance'].get('depSigDict',{})
                         weight_frac,weight_frac_unc = depSigDict.get(var,[0,None])
 
                         # Write phase + weight fractions in bracket notation to dictionary, to be exported as a CSV
                         # If there is more than one histogram, specify which one the fraction is based on
-                        if len(self.Histograms.keys()) > 1:
-                            model_parameters[phasenam + " Phase Fraction in: " + hist_name] =\
-                                ValEsd(phasefrac, phasefrac_unc)
-                            model_parameters[phasenam + " Weight Fraction in: " + hist_name] = \
-                                ValEsd(weight_frac, weight_frac_unc)
+                        if len(self.Histograms) > 1:
+                            model_parameters[phasenam + " Weight Fraction in: " + hist_name] = (
+                                ValEsd(weight_frac, weight_frac_unc))
                         # If there is only one histogram, no need to specify which histogram the fraction is based on
                         else:
-                            model_parameters[phasenam + " Phase Fraction"] = ValEsd(phasefrac, phasefrac_unc)
                             model_parameters[phasenam + " Weight Fraction"] = ValEsd(weight_frac, weight_frac_unc)
                     except:
                         pass
@@ -126,14 +128,14 @@ class Exportbracket(G2IO.ExportBaseclass):
                            MD_bracket = ValEsd(MD_ratio, MD_sig)
                            # Write MD ratio to dictionary to be exported
                            model_parameters[phasenam + " March Dollase Ratio"] = MD_bracket
-                        # Increment phase number counter
-                        phase_num += 1
                     except:
                         pass
+                # Increment phase number counter
+                phase_num += 1
 
 # Extract sample displacements, zero offset and D(ij)s (if refined)
-            for hist_num in range(0, len(self.Histograms.keys())):
-                hist_num = str(hist_num)
+            for i,hist_name in enumerate(self.Histograms):
+                hist_num = str(i)
                 # Extract zero offset, if refined
                 GetParamSig("", hist_num, ':Zero', "Zero Offset")
                 # Extract Bragg-Brentano sample displacement, if refined
@@ -143,29 +145,28 @@ class Exportbracket(G2IO.ExportBaseclass):
                 # Extract Debye-Scherrer sample Y displacement, if refined
                 GetParamSig("", hist_num, ':DisplaceY', "Sample Y Displacement (micron)")
                 # Extract hydrostatic strains, if refined
-                for phase_num in range(0, len(self.Phases.keys())):
-                    phase_name = list(self.Phases.keys())[phase_num]
+                for phase_num,phase_name in enumerate(self.Phases):
                     for d_i in range(1, 4):
                         for d_j in range(1, 4):
                             GetParamSig(str(phase_num), hist_num, ':D' + str(d_i) + str(d_j),
                                         phase_name + ' D' + str(d_i) + str(d_j))
 
                 # Extract atomic parameters, if refined
-                for phase_num in range(0, len(self.Phases.keys())):
-                    phase_name = list(self.Phases.keys())[phase_num]
-                    atom_list = list(self.Phases.values())[phase_num]["Atoms"]
-                    for atom_num in range(0, len(atom_list)):
+                for phase_num,phase_name in enumerate(self.Phases):
+                    # atom_list = list(self.Phases.values())[phase_num]["Atoms"]
+                    atom_list = self.Phases[phase_name]["Atoms"] #  same as above?
+                    for atom_num,atom in enumerate(atom_list):
                         # Extract isotropic thermal parameters, if refined
                         GetParamSig(str(phase_num), ':', 'AUiso:' + str(atom_num),
-                                    phase_name + ' ' + atom_list[atom_num][0] + ' Uiso')
+                                    phase_name + ' ' + atom[0] + ' Uiso')
                         # Extract anisotropic thermal parameters (Uijs), if refined
                         for Ui in range(1, 4):
                             for Uj in range(1, 4):
                                 GetParamSig(str(phase_num), ':', 'AU' + str(Ui) + str(Uj) + ':' + str(atom_num),
-                                            phase_name + ' ' + atom_list[atom_num][0] + ' U' + str(Ui) + str(Uj))
+                                            phase_name + ' ' + atom[0] + ' U' + str(Ui) + str(Uj))
                         # Extract fractional occupancies, if refined
                         GetParamSig(str(phase_num), ':', 'Afrac:' + str(atom_num),
-                                    phase_name + ' ' + atom_list[atom_num][0] + ' Occupancy')
+                                    phase_name + ' ' + atom[0] + ' Occupancy')
                         # Extract atom X Y Z, if refined
                         for atom_axis in ('x', 'y', 'z'):
                             variable_code = str(phase_num) + ':' + ':' + 'dA' + atom_axis + ':' + str(atom_num)
@@ -177,7 +178,7 @@ class Exportbracket(G2IO.ExportBaseclass):
                                 # Extract value
                                 atom_axis_val = list(self.Phases.values())[phase_num]["Atoms"][atom_num][ord(atom_axis)-117]
                                 # Convert to bracket notation and add to dictionary, which will be exported as a CSV
-                                model_parameters[phase_name + ' ' + atom_list[atom_num][0] + ' ' + atom_axis] = \
+                                model_parameters[phase_name + ' ' + atom[0] + ' ' + atom_axis] = \
                                     ValEsd(atom_axis_val, atom_axis_sig)
                             except: pass
 

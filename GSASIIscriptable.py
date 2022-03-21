@@ -5066,7 +5066,7 @@ class G2Phase(G2ObjectWrapper):
                            covDict.get('sig',[])))
 
         if covDict.get('covMatrix') is not None:
-            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],allvars=False))
+            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],noSym=True))
 
         with open(outputname, 'w') as fp:
             fp.write(' \n' + 70*'#' + '\n')

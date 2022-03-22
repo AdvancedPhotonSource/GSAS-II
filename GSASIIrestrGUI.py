@@ -1461,10 +1461,11 @@ def UpdateRestraints(G2frame,data,phaseName):
                     Volumes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-                for i in (G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
+                for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESRCHANGEVAL,G2G.wxID_RESTCHANGEESD):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+                G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
                     'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
                     %(chisq,chisq/len(volumeList))),0)

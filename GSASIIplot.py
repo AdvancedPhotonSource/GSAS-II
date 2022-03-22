@@ -9125,6 +9125,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Zmax = 1.
         if Add:
             Indx = GetSelectedAtoms()
+        if not getSelection():  #wrong place for doing this
+            return
         if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
             peakList = data['Map Peaks']
             for i,peak in enumerate(peakList):
@@ -9141,8 +9143,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     except:
                         SetSelectedAtoms(i,Add)
                         G2frame.G2plotNB.status.SetStatusText(
-                         '    Selected peak: {:.3f} @ ({:.3f},{:.3f},{:.3f})'
-                            .format(*peak[0:4]),1)
+                            '    Selected peak: {:.3f} @ ({:.3f},{:.3f},{:.3f})'.format(*peak[0:4]),1)
             return
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms

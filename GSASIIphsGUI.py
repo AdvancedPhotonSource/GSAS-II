@@ -8459,10 +8459,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 if Stype == 'Smag' and len(waveBlk):    #only allow one magnetic wave - keeps it simple for now
                     pass
                 else:
-                    waveAdd = wx.CheckBox(waveData,label='Add wave?   WaveType: ')
-                    waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
+                    waveAdd = wx.Button(waveData,label='Add wave?')
+                    waveAdd.Bind(wx.EVT_BUTTON, OnAddWave)
                     Indx[waveAdd.GetId()] = Stype
                     waveHead.Add(waveAdd,0,WACV)
+                    waveHead.Add(wx.StaticText(waveData,label='   WaveType: '),0,WACV)
                     waveType = wx.ComboBox(waveData,value=waveTyp,choices=waveTypes[Stype],
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     Indx[waveType.GetId()] = Stype

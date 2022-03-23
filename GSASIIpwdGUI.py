@@ -1125,6 +1125,12 @@ def UpdatePeakGrid(G2frame, data):
 #            FitPgm = 'LaueFringe'
         OnPeakFit(FitPgm,noFit=True)
         
+    def OnSetPeakWidMode(event):
+        '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 
+        sigma and gamma values are set from UVW & XY
+        '''
+        state = G2frame.dataWindow.setPeakMode.IsChecked()
+        G2pwd.setPeakInstPrmMode(state)
     #======================================================================
     #### beginning of UpdatePeakGrid
     #======================================================================
@@ -1143,6 +1149,7 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2G.wxID_SEQPEAKFIT)
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2G.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2G.wxID_RESETSIGGAM)
+    G2frame.Bind(wx.EVT_MENU, OnSetPeakWidMode, id=G2G.wxID_SETUNVARIEDWIDTHS)
     if data['peaks']:
         G2frame.dataWindow.AutoSearch.Enable(False)
         G2frame.dataWindow.PeakCopy.Enable(True)

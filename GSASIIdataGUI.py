@@ -6243,6 +6243,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PeakEdit.Append(G2G.wxID_CLEARPEAKS,'Clear peaks','Clear the peak list' )
         self.movePeak = self.PeakEdit.Append(wx.ID_ANY,'Move selected peak',
             'Select a peak in the table, then use this to move it with the mouse.')
+        G2G.Define_wxId('wxID_SETUNVARIEDWIDTHS')
+        self.setPeakMode = self.PeakEdit.Append(G2G.wxID_SETUNVARIEDWIDTHS,
+                'Gen unvaried widths',
+                'When unvaried, Generate sigma & gamma from UVWXY...',
+                kind=wx.ITEM_CHECK)
+        self.setPeakMode.Check(True)
+        
         self.PostfillDataMenu()
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)

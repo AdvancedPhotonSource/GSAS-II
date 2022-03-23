@@ -1380,7 +1380,8 @@ alpha,... etc) unless the individual parameter is refined. This allows the
 instrument parameters to be refined. When peakInstPrmMode=False, the instrument
 parameters are not used and cannot be refined. 
 The default is peakFitMode=True. This is changed only in 
-:func:`setPeakInstPrmMode`, which is called only from :mod:`GSASIIscriptable`.
+:func:`setPeakInstPrmMode`, which is called from :mod:`GSASIIscriptable`
+or GSASIIOnSetPeakWidMode ('Gen unvaried widths' menu item).
 '''
 
 def setPeakInstPrmMode(normal=True):
@@ -1388,7 +1389,6 @@ def setPeakInstPrmMode(normal=True):
     peak width parameters are computed from the instrument parameters
     unless the individual parameter is refined. If normal=False, 
     peak widths are used as supplied for each peak. 
-    At present this is called only in G2scriptable.
 
     Note that normal=True unless this routine is called. Also, 
     instrument parameters can only be refined with normal=True. 

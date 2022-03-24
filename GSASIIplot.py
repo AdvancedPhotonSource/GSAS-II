@@ -9329,36 +9329,36 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                G2frame.phaseDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Draw Atoms
             elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                G2frame.phaseDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
+                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Atoms
             elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
-                G2frame.phaseDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
+                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Atoms
                 
                     
     def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                G2frame.phaseDisplay.GetPage(page).SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
+                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
             elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                G2frame.phaseDisplay.GetPage(page).SelectRow(ind,Add)                  
+                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(ind,Add)                  
             elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
                 Id = drawAtoms[ind][-3]
                 for i,atom in enumerate(atomData):
                     if atom[-1] == Id:
-                        G2frame.phaseDisplay.GetPage(page).SelectRow(i,Add)      #this is the Atoms grid in Atoms
+                        G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(i,Add)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
         page = getSelection()
         Ind = []
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()      #this is the Atoms grid in Draw Atoms
             elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetSelectedRows()
+                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()
             elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
+                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()      #this is the Atoms grid in Atoms
             elif G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
                 if 'testRBObj' not in data: return []
                 Ind = data['testRBObj'].get('CRYhighLight',[])

@@ -2774,6 +2774,8 @@ def UpdatePhaseData(G2frame,Item,data):
             data['General']['SGData']['SGFixed'] = False
         if 'SGGray' not in data['General']['SGData']:
             data['General']['SGData']['SGGray'] = False
+        if 'Pawley ref' not in data:
+            data['Pawley ref'] = []
 #end patches
         if General.GetSizer():
             General.GetSizer().Clear(True)
@@ -3460,14 +3462,6 @@ def UpdatePhaseData(G2frame,Item,data):
             colM = 0
             if 'Mx' in colLabels:
                 colM = colLabels.index('Mx')
-#                atTypes = generalData['AtomTypes']
-#                Lande = generalData['Lande g']
-#                AtInfo = dict(zip(atTypes,Lande))
-            # next 3 lines do not seem to do anything. Removed 5/20/21 BHT
-            # attr = wx.grid.GridCellAttr()
-            # attr.IncRef()               #fix from Jim Hester
-            # attr.SetEditor(G2G.GridFractionEditor(Atoms))
-            #
             # loop over all cols in table, set cell editor for numerical items
             for c,t in enumerate(Types):
                 if not t.startswith(wg.GRID_VALUE_FLOAT): continue
@@ -3535,7 +3529,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             Atoms.AutoSizeColumns(False)
-            SetPhaseWindow(Atoms,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(AtomList,label='Atom parameters list for %s:'%generalData['Name']),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(AtomList,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,wx.EXPAND)
+            mainSizer.Add(Atoms)
+            SetPhaseWindow(AtomList,mainSizer,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
 
 #### FillAtomsGrid main code 
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -4504,6 +4505,12 @@ def UpdatePhaseData(G2frame,Item,data):
         def OnFileCheck(event):
             DysData['clear'] = fileCheck.GetValue()
         
+        cite = ''' For use of Dysnomia, please cite:
+      Dysnomia, a computer program for maximum-entropy method (MEM) 
+      analysis and its performance in the MEM-based pattern fitting,
+      K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
+      doi: https://doi.org/10.1017/S088571561300002X
+      '''
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         Map = generalData['Map']
@@ -4530,7 +4537,12 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'clear' not in DysData:
             DysData['clear'] = True
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(MEMData,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,wx.EXPAND)
+        mainSizer.Add(wx.StaticText(MEMData,label=cite))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
         lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
         OptMeth = wx.ComboBox(MEMData,-1,value=DysData['Optimize'],choices=['ZSPA','L-BFGS'],
@@ -4642,12 +4654,12 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return
-
-        wx.MessageBox(''' For use of Dysnomia, please cite:
+        cite = ''' For use of Dysnomia, please cite:
       Dysnomia, a computer program for maximum-entropy method (MEM) 
       analysis and its performance in the MEM-based pattern fitting,
       K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
-      doi: https://doi.org/10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1017/S088571561300002X'''
+        wx.MessageBox(cite,caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
         print('Run '+DYSNOMIA)        
         subp.call([DYSNOMIA,prfName])
@@ -8986,7 +8998,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        SetPhaseWindow(drawAtoms)
+                
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(drawAtomsList,label='Draw Atom list for %s:'%generalData['Name']),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(drawAtomsList,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,wx.EXPAND)
+        mainSizer.Add(drawAtoms)
+        SetPhaseWindow(drawAtomsList,mainSizer)
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
@@ -10648,30 +10668,26 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 problem = True
                 msg = " You have only two unique settings for Omega, Chi, Phi and Azimuth.\n Texture fitting requires more differing placements."
         if problem:
-            mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
-            ' Texture model fitting requires multiple datasets with differing sample/detector placements'))
+            mainSizer.Add(wx.StaticText(Texture,label=
+                ' NB: Texture model fitting generally requires multiple datasets with differing sample/detector placements'))
             if msg: 
-                mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,msg))
-            mainSizer.Add((-1,5))
-            mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
-            ' For structural fits that need preferred orientation corrections, fit terms in the Data tab.'))
+                mainSizer.Add(wx.StaticText(Texture,label=msg))
+            mainSizer.Add(wx.StaticText(Texture,label=
+            ' For structural fits that need preferred orientation corrections, use terms in the Data tab instead.'))
             SetPhaseWindow(Texture,mainSizer)
             # patch 3/2022, if someone has already set this, allow them to see the
             # controls
             if textureData['Order'] or textureData['SH Coeff'][0]:
                 mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
-                '\n *** Fix old problems:\n Turn off refinement and/or set order to zero below.\n'))
+                '\n *** To remove this texture:\n Turn off refinement and set order to zero below.\n'))
                 pass
-            else:
-                return
+            G2G.HorizontalLine(mainSizer,Texture)
             # end patch (uncomment line below when removed)
             #return
         
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        titleSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
-        titleSizer.Add(wx.StaticText(Texture,-1,
-            ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
-            0,WACV)
+        titleSizer.Add(wx.StaticText(Texture,label=' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
+        titleSizer.Add(wx.StaticText(Texture,label=' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),0,WACV)
         # add help button to bring up help web page - at right sede of window
         titleSizer.Add((-1,-1),1,wx.EXPAND)
         titleSizer.Add(G2G.HelpButton(Texture,helpIndex=G2frame.dataWindow.helpKey))
@@ -11530,11 +11546,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         nobody = True
         resSelect = None
         select = None
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             nobody = False
-            mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0)
-            mainSizer.Add((5,5),0)
+            topSizer.Add(wx.StaticText(RigidBodies,label='Residue rigid bodies:'),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(RigidBodies,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,wx.EXPAND)
             RBnames = []
             resVarLookup = []
             for irb,RBObj in enumerate(data['RBModels']['Residue']):
@@ -11567,10 +11585,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2plt.PlotStructure(G2frame,data)
             G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
+            topSizer.Add(wx.StaticText(RigidBodies,label='Vector rigid bodies:'),0,WACV)
+            if nobody:
+                topSizer.Add((-1,-1),1,wx.EXPAND)
+                topSizer.Add(G2G.HelpButton(RigidBodies,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,wx.EXPAND)
             nobody = False
-            mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)
-            mainSizer.Add((5,5),0)
             RBnames = []
             for RBObj in data['RBModels']['Vector']:
                 # patch
@@ -11599,7 +11619,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2plt.PlotStructure(G2frame,data)
             G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
         if nobody:
-            mainSizer.Add((5,5),0)
             msg = 'Define a rigid body with the "Rigid Bodies" tree entry before adding it to the phase here'
             if RBData.get('RBIds') is None:
                 pass
@@ -11607,8 +11626,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 pass
             else:
                 msg = 'No rigid bodies defined in phase. Use "Edit Body"/"Locate & Insert..."\ncommand to add them.'
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,msg),0)
-            mainSizer.Add((5,5),0)
+            topSizer.Add(wx.StaticText(RigidBodies,label=msg),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(RigidBodies,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,wx.EXPAND)
         SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
@@ -13271,16 +13292,6 @@ of the crystal structure.
         # FillPawleyReflectionsGrid executable starts here
         G2frame.GetStatusBar().SetStatusText('To delete a Pawley reflection: select row & press Delete',1)                        
         generalData = data['General']
-        if 'Pawley ref' not in data:
-            dlg = wx.MessageDialog(G2frame,
-                'Error: no "Pawley ref" entry in data structure. Is this an old .gpx file? If so, please create a new one.',
-                'Pawley entry not found')
-            try:
-                dlg.CenterOnParent()
-                dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            return
         PawleyPeaks = data['Pawley ref']
         if len(PawleyPeaks) == 0 or not generalData['doPawley']:
             msg = ('Pawley refinement not yet set up. Use the "Pawley setup"'+
@@ -13628,6 +13639,12 @@ of the crystal structure.
         # beginning of FillMapPeaksGrid()
         G2frame.GetStatusBar().SetStatusText('',1)
         if 'Map Peaks' in data:
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(MapPeakList,label='Fourier map peak positions for %s:'%data['General']['Name']),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(MapPeakList,helpIndex=G2frame.dataWindow.helpKey))
+            mainSizer.Add(topSizer,0,wx.EXPAND)
             G2frame.GetStatusBar().SetStatusText('Double click any column heading to sort',1)
             mapPeaks = data['Map Peaks']                        
             rowLabels = []
@@ -13642,7 +13659,8 @@ of the crystal structure.
                     MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             MapPeaks.SetMargins(0,0)
             MapPeaks.AutoSizeColumns(False)
-            SetPhaseWindow(MapPeaks)
+            mainSizer.Add(MapPeaks)
+            SetPhaseWindow(MapPeakList,mainSizer)
                     
     def OnPeaksMove(event):
         if 'Map Peaks' in data:
@@ -14433,10 +14451,10 @@ of the crystal structure.
         DData = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(DData,'Data')
         Pages.append('Data')
-    Atoms = G2G.GSGrid(G2frame.phaseDisplay)
-#    Atoms.SetScrollRate(0,0)
+    AtomList = wx.ScrolledWindow(G2frame.phaseDisplay)   
+    Atoms = G2G.GSGrid(AtomList)
     G2frame.phaseDisplay.gridList.append(Atoms)
-    G2frame.phaseDisplay.AddPage(Atoms,'Atoms')
+    G2frame.phaseDisplay.AddPage(AtomList,'Atoms')
     Pages.append('Atoms')
     if data['General']['Modulated']:
         G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
@@ -14449,10 +14467,10 @@ of the crystal structure.
     drawOptions = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')
-    drawAtoms = G2G.GSGrid(G2frame.phaseDisplay)
-#    drawAtoms.SetScrollRate(0,0)
+    drawAtomsList = wx.ScrolledWindow(G2frame.phaseDisplay)
+    drawAtoms = G2G.GSGrid(drawAtomsList)
     G2frame.phaseDisplay.gridList.append(drawAtoms)
-    G2frame.phaseDisplay.AddPage(drawAtoms,'Draw Atoms')
+    G2frame.phaseDisplay.AddPage(drawAtomsList,'Draw Atoms')
     Pages.append('Draw Atoms')
     
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
@@ -14463,10 +14481,10 @@ of the crystal structure.
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
         
-    MapPeaks = G2G.GSGrid(G2frame.phaseDisplay)
-#    MapPeaks.SetScrollRate(0,0)
+    MapPeakList = wx.ScrolledWindow(G2frame.phaseDisplay)   
+    MapPeaks = G2G.GSGrid(MapPeakList)
     G2frame.phaseDisplay.gridList.append(MapPeaks)    
-    G2frame.phaseDisplay.AddPage(MapPeaks,'Map peaks')
+    G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
     
     if data['General']['doDysnomia']:
         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)

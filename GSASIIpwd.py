@@ -4922,6 +4922,7 @@ def MEMupdateReflData(prfName,data,reflData):
     fba.readline()
     Nref = int(fba.readline()[:-1])
     fbalines = fba.readlines()
+    fba.close()
     for line in fbalines[:Nref]:
         info = line.split()
         h = int(info[0])

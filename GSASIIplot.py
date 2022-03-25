@@ -9135,8 +9135,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
                     Zmax = Z
-                    try:
-                        Indx.remove(i)
+                    try:        #to see if selection in previously selected (Indx)
+                        Indx.remove(i) #get exception if Indx doesn't exist or i not in Indx
                         ClearSelectedAtoms()
                         for Id in Indx:
                             SetSelectedAtoms(Id,Add)
@@ -9158,8 +9158,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             XY = [int(X),int(View[3]-Y)]
             if np.allclose(xy,XY,atol=10) and Z < Zmax:
                 Zmax = Z
-                try:
-                    Indx.remove(i)
+                try:        #to see if selection in previously selected (Indx)
+                    Indx.remove(i) #get exception if Indx doesn't exist or i not in Indx
                     ClearSelectedAtoms()
                     for Id in Indx:
                         SetSelectedAtoms(Id,Add)
@@ -9170,8 +9170,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         lbl = atom[ct-1]
                     lbl += ' ' + atom[cs]
-                    G2frame.G2plotNB.status.SetStatusText(
-                            '    Selected atom: {}'.format(lbl),1)
+                    G2frame.G2plotNB.status.SetStatusText('    Selected atom: {}'.format(lbl),1)
         return
                                        
     def OnMouseDown(event):

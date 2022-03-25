@@ -9328,37 +9328,44 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     def ClearSelectedAtoms():
         page = getSelection()
         if page:
-            if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Draw Atoms
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Atoms
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
-                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].ClearSelection()      #this is the Atoms grid in Atoms
-                
+            if G2frame.phaseDisplay.GetPageText(page) in (
+                    'Draw Atoms','Map peaks','Atoms'):
+                for widget in G2frame.phaseDisplay.GetPage(page).GetChildren():
+                    try:
+                        widget.ClearSelection()      # this is a grid
+                        break
+                    except AttributeError:
+                        pass                
                     
     def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
-            if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(ind,Add)                  
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
-                Id = drawAtoms[ind][-3]
-                for i,atom in enumerate(atomData):
-                    if atom[-1] == Id:
-                        G2frame.phaseDisplay.GetPage(page).GetChildren()[0].SelectRow(i,Add)      #this is the Atoms grid in Atoms
+            if G2frame.phaseDisplay.GetPageText(page) in (
+                    'Draw Atoms','Map peaks','Atoms'):
+                for widget in G2frame.phaseDisplay.GetPage(page).GetChildren():
+                    if hasattr(widget,'GetSelectedRows'): break
+                else:
+                    return
+                if G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
+                    Id = drawAtoms[ind][-3]
+                    for i,atom in enumerate(atomData):
+                        if atom[-1] == Id:
+                            widget.SelectRow(i,Add)      #this is the Atoms grid in Atoms
+                else:
+                    widget.SelectRow(ind,Add)      # this is a grid
                   
     def GetSelectedAtoms():
         page = getSelection()
         Ind = []
         if page:
-            if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()      #this is the Atoms grid in Draw Atoms
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()
-            elif G2frame.phaseDisplay.GetPageText(page) == 'Atoms':
-                Ind = G2frame.phaseDisplay.GetPage(page).GetChildren()[0].GetSelectedRows()      #this is the Atoms grid in Atoms
+            if G2frame.phaseDisplay.GetPageText(page) in (
+                    'Draw Atoms','Map peaks','Atoms'):
+                for widget in G2frame.phaseDisplay.GetPage(page).GetChildren():
+                    try:
+                        Ind = widget.GetSelectedRows()      # this is a grid
+                        break
+                    except AttributeError:
+                        pass
             elif G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
                 if 'testRBObj' not in data: return []
                 Ind = data['testRBObj'].get('CRYhighLight',[])

@@ -2432,10 +2432,15 @@ def UpdatePhaseData(G2frame,Item,data):
             line2Sizer.Add(cutOff,0,WACV)
             if len(Map['RefList']) and not generalData['Modulated']:
                 if all(['PWDR' in map for map in Map['RefList']]):
-                    Dysno = wx.CheckBox(General,-1,label=' Use Dysnomia (Max. Ent. Method)?')
+                    Dysno = wx.CheckBox(General,-1,label=' Use Dysnomia?')
                     Dysno.SetValue(generalData['doDysnomia'])
                     Dysno.Bind(wx.EVT_CHECKBOX,OnDysnomia)
                     line2Sizer.Add(Dysno,0,WACV)
+                    hlpText = '''Dysnomia uses the maximum entropy method 
+                    to compute intensities for unobserved reflections.
+                    '''
+                    hlp = G2G.HelpButton(General,hlpText)
+                    line2Sizer.Add(hlp,0,WACV)
             mapSizer.Add(line2Sizer,0)
             return mapSizer
                 
@@ -3528,6 +3533,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetReadOnly(row,colType,True)
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
+            oldSizer = AtomList.GetSizer()
+            if oldSizer: oldSizer.Clear()  # get rid of the old sizer, if repeated call
             Atoms.AutoSizeColumns(False)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8920,6 +8927,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
 #### UpdateDrawAtoms executable code starts here
         G2frame.GetStatusBar().SetStatusText('',1)
+        oldSizer = drawAtomsList.GetSizer()
+        if oldSizer: 
+            oldSizer.Clear()  # get rid of the old sizer, if repeated call
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -13291,6 +13301,8 @@ of the crystal structure.
             
         # FillPawleyReflectionsGrid executable starts here
         G2frame.GetStatusBar().SetStatusText('To delete a Pawley reflection: select row & press Delete',1)                        
+        oldSizer = PawleyRefList.GetSizer()
+        if oldSizer: oldSizer.Clear()
         generalData = data['General']
         PawleyPeaks = data['Pawley ref']
         if len(PawleyPeaks) == 0 or not generalData['doPawley']:
@@ -13645,6 +13657,8 @@ of the crystal structure.
             
         # beginning of FillMapPeaksGrid()
         G2frame.GetStatusBar().SetStatusText('',1)
+        oldSizer = MapPeakList.GetSizer()
+        if oldSizer: oldSizer.Clear()
         if 'Map Peaks' in data:
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.HORIZONTAL)

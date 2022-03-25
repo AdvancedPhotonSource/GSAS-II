@@ -2026,8 +2026,14 @@ def UpdateRigidBodies(G2frame,data):
         if 'Vector' in G2frame.rbBook.GetPageText(page):
             pass
         elif 'Residue' in G2frame.rbBook.GetPageText(page):
-            ImportResidueRB()
-            
+            try:
+                ImportResidueRB()
+            except Exception as msg:
+                print('Error reading .xyz file\n  Error msg:',msg)
+                if GSASIIpath.GetConfigValue('debug'): 
+                    import traceback
+                    print (traceback.format_exc())
+                    
     def OnSaveRigidBody(event):
         page = G2frame.rbBook.GetSelection()
         if 'Vector' in G2frame.rbBook.GetPageText(page):
@@ -3122,6 +3128,8 @@ create a Vector or Residue rigid body.
                 delRB.Bind(wx.EVT_BUTTON, OnDelRB)
                 Indx[delRB.GetId()] = rbid
                 nameSizer.Add(delRB,0,WACV)
+            nameSizer.Add((-1,-1),1,wx.EXPAND,1)
+            nameSizer.Add(G2G.HelpButton(VectorRBDisplay,helpIndex=G2frame.dataWindow.helpKey))
             return nameSizer
             
         def rbRefAtmSizer(rbid,rbData):
@@ -3186,7 +3194,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                         
             magSizer = wx.BoxSizer(wx.HORIZONTAL)
             magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),0,WACV)
-            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]))
+            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]),
+                                       style=wx.TE_PROCESS_ENTER)
             Indx[magValue.GetId()] = [rbid,imag]
             magValue.Bind(wx.EVT_TEXT_ENTER,OnRBVectorMag)
             magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
@@ -3324,7 +3333,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             return
         SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
         FillRefChoice(resRBsel,rbData)
-        VectorRBSizer.Add(rbNameSizer(resRBsel,rbData),0)
+        VectorRBSizer.Add(rbNameSizer(resRBsel,rbData),0,wx.EXPAND)
         VectorRBSizer.Add(rbRefAtmSizer(resRBsel,rbData),0)
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
         for imag,mag in enumerate(rbData['VectMag']):
@@ -3423,6 +3432,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     nameSizer.Add(stripH,0,WACV)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'  body type #'+
                                         str(data['RBIds']['Residue'].index(rbid))),0,WACV)
+            nameSizer.Add((-1,-1),1,wx.EXPAND,1)
+            nameSizer.Add(G2G.HelpButton(ResidueRBDisplay,helpIndex=G2frame.dataWindow.helpKey))
             return nameSizer
             
         def rbResidues(rbid,rbData):
@@ -3548,6 +3559,23 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
             atNames = rbData['atNames']
             rbRef = rbData['rbRef']
+            refHelpInfo = '''
+* The "Orientation Reference" control defines the Cartesian
+axes for rigid bodies with the three atoms, A, B and C. 
+The vector from B to A defines the x-axis and the y axis is placed 
+in the plane defined by B to A and C to A. A,B,C must not be collinear.
+ 
+%%* The origin is at A unless the "Center RB?" button is pressed.
+
+%%* The 'Cycle XYZ' button will permute the rigid body XYZ coordinates so
+XYZ --> ZXY. Repeat if needed.
+
+%%* The "Center RB?" button will shift the origin of the 
+rigid body to be the midpoint of all atoms in the body (not mass weighted).
+'''
+            hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
+            refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
+            refAtmSizer2 = None
             if rbData['rbRef'][3] or rbData['useCount']:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
                     'Orientation reference non-H atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
@@ -3565,35 +3593,22 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     Indx[refSel.GetId()] = [i,resGrid,len(RefObjs)]
                     refObj[i] = refSel
                     refAtmSizer.Add(refSel,0,WACV)
+                refAtmSizer.Add((50,-1))   # moves the help button out a bit
                 RefObjs.append(refObj)
+                refAtmSizer2 = wx.BoxSizer(wx.HORIZONTAL)
                 cycleXYZ = wx.Button(ResidueRBDisplay,label=' Cycle XYZ?')
                 cycleXYZ.Bind(wx.EVT_BUTTON,OnCycleXYZ)
                 Indx[cycleXYZ.GetId()] = resGrid
-                refAtmSizer.Add(cycleXYZ,0,WACV)
+                refAtmSizer2.Add(cycleXYZ,0,WACV)
                 if 'molCent' not in rbData: rbData['molCent'] = False           #patch
                 molcent = wx.Button(ResidueRBDisplay,label=' Center RB?')
                 molcent.Bind(wx.EVT_BUTTON,OnMolCent)
                 Indx[molcent.GetId()] = resGrid
-                refAtmSizer.Add(molcent,0,WACV)
-                refHelpInfo = '''
-* The "Orientation Reference" control defines the Cartesian
-axes for rigid bodies with the three atoms, A, B and C. 
-The vector from B to A defines the x-axis and the y axis is placed 
-in the plane defined by B to A and C to A. A,B,C must not be collinear.
- 
-%%* The origin is at A unless the "Center RB?" button is pressed.
-
-%%* The 'Cycle XYZ' button will permute the rigid body XYZ coordinates so
-XYZ --> ZXY. Repeat if needed.
-
-%%* The "Center RB?" button will shift the origin of the 
-rigid body to be the midpoint of all atoms in the body (not mass weighted).
-'''
-                hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
-                refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
+                refAtmSizer2.Add(molcent,0,WACV)
             
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            mainSizer.Add(refAtmSizer)
+            mainSizer.Add(refAtmSizer,0,wx.EXPAND)
+            if refAtmSizer2: mainSizer.Add(refAtmSizer2)
             mainSizer.Add(vecSizer)
             return mainSizer
             
@@ -3744,7 +3759,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             ResidueRBSizer.Add(selSizer,0)
         rbData = data['Residue'][resRBsel]
         FillRefChoice(resRBsel,rbData)
-        ResidueRBSizer.Add(rbNameSizer(resRBsel,rbData),0)
+        ResidueRBSizer.Add(rbNameSizer(resRBsel,rbData),0,wx.EXPAND)
         ResidueRBSizer.Add(rbResidues(resRBsel,rbData),0)
         if len(rbData['rbSeq']):
             ResidueRBSizer.Add((-1,15),0)
@@ -3769,7 +3784,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         ResidueRB.SetSize(Size)
-        ResidueRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
+        #ResidueRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1)) # dataframe already scrolls
         G2frame.dataWindow.SendSizeEvent()
         
         ResidueRBDisplay.Show()

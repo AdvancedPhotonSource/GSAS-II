@@ -127,7 +127,7 @@ def GetPowderPeaks(fileName):
             if len(item) == 1:
                 peaks.append([float(item[0]),1.0])
             elif len(item) > 1:
-                peaks.append([float(item[0]),float(item[0])])
+                peaks.append([float(item[0]),float(item[1])])
         S = File.readline()
     File.close()
     if Comments:

@@ -5552,6 +5552,7 @@ def UpdateSubstanceGrid(G2frame,data):
         return substSizer
             
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[2]
     wave = G2mth.getWave(Inst)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SubstanceMenu)
     G2frame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2G.wxID_LOADSUBSTANCE)    
@@ -5563,6 +5564,12 @@ def UpdateSubstanceGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2G.wxID_ELEMENTDELETE)
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample substances for %s:'%Name),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    print('Substance ',G2frame.dataWindow.helpKey)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(SubstSizer(),0)
     G2frame.dataWindow.SetDataSize()
 
@@ -6444,7 +6451,9 @@ def UpdateModelsGrid(G2frame,data):
     esdScale.Bind(wx.EVT_TEXT_ENTER,OnEsdScale)        
     esdScale.Bind(wx.EVT_KILL_FOCUS,OnEsdScale)
     topSizer.Add(esdScale,0,WACV)
-    mainSizer.Add(topSizer)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     if 'Size' in data['Current']:
         G2frame.dataWindow.SasSeqFit.Enable(False)
@@ -7013,7 +7022,11 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_MODELUNDO)
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name))
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Controls:'))
     mainSizer.Add(ControlSizer())
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)   

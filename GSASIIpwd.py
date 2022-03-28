@@ -1407,8 +1407,6 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
     yc = np.zeros_like(yb)
-    # cw = np.diff(xdata)
-    # cw = np.append(cw,cw[-1])
     if 'C' in dataType:
         shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
@@ -1605,8 +1603,6 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
             parm,Id = name.split(';')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMdpk[4*int(Id)+ip]
-    cw = np.diff(xdata)
-    cw = np.append(cw,cw[-1])
     if 'C' in dataType:
         shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
@@ -1780,8 +1776,8 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 dMdpk = np.zeros(shape=(7,len(xdata)))
                 dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
                 for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += cw[iBeg:iFin]*intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += cw[iBeg:iFin]*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
                 for parmName in ['pos','int','alp','bet','sig','gam']:
                     try:
@@ -1874,8 +1870,8 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 dMdpk = np.zeros(shape=(7,len(xdata)))
                 dMdipk = getdEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
                 for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += intens*cw[iBeg:iFin]*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += cw[iBeg:iFin]*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}
                 for parmName in ['pos','int','alp','bet','sig','gam']:
                     try:

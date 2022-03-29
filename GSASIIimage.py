@@ -595,59 +595,65 @@ def GetTthAzmDsp2(x,y,data): #expensive
     G = D/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return np.array([tth,azm,G,dsp])
     
-# def GetTthAzmDsp(x,y,data): #expensive
-#     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
-#     OK for ellipses & hyperbola.
+def GetTthAzmDsp(x,y,data): #expensive
+    '''Computes a 2theta, etc. from a detector position and calibration constants - checked
+    OK for ellipses & hyperbola.
 
-#     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-#        G is ? and dsp is the d-space
-#     '''
+    :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
+        G is ? and dsp is the d-space
+    '''
     
-#     def costth(xyz):
-#         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
-#         return np.dot(u,np.array([0.,0.,1.]))
+    def costth(xyz):
+        u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
+        return np.dot(u,np.array([0.,0.,1.]))
         
-# #zero detector 2-theta: tested with tilted images - perfect integrations
-#     wave = data['wavelength']
-#     dx = x-data['center'][0]
-#     dy = y-data['center'][1]
-#     tilt = data['tilt']
-#     dist = data['distance']/npcosd(tilt)    #sample-beam intersection point
-#     T = makeMat(tilt,0)
-#     R = makeMat(data['rotation'],2)
-#     MN = np.inner(R,np.inner(R,T))
-#     dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #correct for 45 deg tilt
-#     dxyz0 += np.array([0.,0.,dist])
-#     if data['DetDepth']:
-#         ctth0 = costth(dxyz0)
-#         tth0 = npacosd(ctth0)
-#         dzp = peneCorr(tth0,data['DetDepth'],dist)
-#         dxyz0[:,:,2] += dzp
-# #non zero detector 2-theta:
-#     if data['det2theta']:        
-#         tthMat = makeMat(data['det2theta'],1)
-#         dxyz = np.inner(dxyz0,tthMat.T)
-#     else:
-#         dxyz = dxyz0
-#     ctth = costth(dxyz)
-#     tth = npacosd(ctth)
-#     dsp = wave/(2.*npsind(tth/2.))
-#     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# # G-calculation        
-#     x0 = data['distance']*nptand(tilt)
-#     x0x = x0*npcosd(data['rotation'])
-#     x0y = x0*npsind(data['rotation'])
-#     distsq = data['distance']**2
-#     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-#     return [tth,azm,G,dsp]
+#zero detector 2-theta: tested with tilted images - perfect integrations
+    wave = data['wavelength']
+    dx = x-data['center'][0]
+    dy = y-data['center'][1]
+    tilt = data['tilt']
+    dist = data['distance']/npcosd(tilt)    #sample-beam intersection point
+    T = makeMat(tilt,0)
+    R = makeMat(data['rotation'],2)
+    MN = np.inner(R,np.inner(R,T))
+    dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #correct for 45 deg tilt
+    dxyz0 += np.array([0.,0.,dist])
+    if data['DetDepth']:
+        ctth0 = costth(dxyz0)
+        tth0 = npacosd(ctth0)
+        dzp = peneCorr(tth0,data['DetDepth'],dist)
+        dxyz0[:,:,2] += dzp
+#non zero detector 2-theta:
+    if data['det2theta']:        
+        tthMat = makeMat(data['det2theta'],1)
+        dxyz = np.inner(dxyz0,tthMat.T)
+    else:
+        dxyz = dxyz0
+    ctth = costth(dxyz)
+    tth = npacosd(ctth)
+    dsp = wave/(2.*npsind(tth/2.))
+    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
+# G-calculation        
+    x0 = data['distance']*nptand(tilt)
+    x0x = x0*npcosd(data['rotation'])
+    x0y = x0*npsind(data['rotation'])
+    distsq = data['distance']**2
+    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    return [tth,azm,G,dsp]
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
-    return GetTthAzmDsp2(x,y,data)[0]
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[0]
+    else:
+        return GetTthAzmDsp2(x,y,data)[0]
     
 def GetTthAzm(x,y,data):
     'Give 2-theta, azimuth values for detector x,y position; calibration info in data'
-    return GetTthAzmDsp2(x,y,data)[0:2]
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[0:2]
+    else:
+        return GetTthAzmDsp2(x,y,data)[0:2]
     
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
@@ -717,11 +723,17 @@ def GetTthAzmG(x,y,data):
 
 def GetDsp(x,y,data):
     'Give d-spacing value for detector x,y position; calibration info in data'
-    return GetTthAzmDsp2(x,y,data)[3]
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[3]
+    else:
+        return GetTthAzmDsp2(x,y,data)[3]
        
 def GetAzm(x,y,data):
     'Give azimuth value for detector x,y position; calibration info in data'
-    return GetTthAzmDsp2(x,y,data)[1]
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[1]
+    else:
+        return GetTthAzmDsp2(x,y,data)[1]
     
 def meanAzm(a,b):
     AZM = lambda a,b: npacosd(0.5*(npsind(2.*b)-npsind(2.*a))/(np.pi*(b-a)/180.))/2.
@@ -1209,7 +1221,10 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     TA = np.empty((4,nI,nJ))
-    TA[:3] = np.array(GetTthAzmG2(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
+    if data['det2theta']:
+        TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
+    else:
+        TA[:3] = np.array(GetTthAzmG2(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays

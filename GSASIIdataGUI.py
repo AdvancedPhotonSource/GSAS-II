@@ -6317,6 +6317,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.HideShow = self.ReflEdit.Append(G2G.wxID_SHOWHIDEEXTINCT,'Show/hide extinct reflections')
         self.PostfillDataMenu()
         
+        # SASD & REFD / Limits
+        G2G.Define_wxId('wxID_SASDLIMITCOPY', )
+        self.SASDLimitMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.SASDLimitMenu)
+        self.SASDLimitEdit = wx.Menu(title='')
+        self.SASDLimitMenu.Append(menu=self.SASDLimitEdit, title='Edit Limits')
+        self.SASDLimitEdit.Append(G2G.wxID_SASDLIMITCOPY,'Copy','Copy limits to other histograms')
+        self.PostfillDataMenu()
+            
         # SASD / Instrument Parameters
         G2G.Define_wxId('wxID_SASDINSTCOPY',)
         self.SASDInstMenu = wx.MenuBar()

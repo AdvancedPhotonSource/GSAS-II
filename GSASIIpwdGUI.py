@@ -1810,14 +1810,14 @@ def UpdateBackground(G2frame,data):
 #####  Limits
 ################################################################################           
        
-def UpdateLimitsGrid(G2frame, data,plottype):
+def UpdateLimitsGrid(G2frame, data,datatype):
     '''respond to selection of PWDR Limits data tree item.
     Allows setting of limits and excluded regions in a PWDR data set
     '''
     def AfterChange(invalid,value,tc):
         if invalid: return
-        plottype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
+        datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=datatype)  #unfortunately this resets the plot width
 
     def LimitSizer():
         limits = wx.FlexGridSizer(0,3,0,5)
@@ -1836,8 +1836,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             del(data[item+2])
-            G2plt.PlotPatterns(G2frame,newPlot=False,plotType=plottype)
-            wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
+            G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
+            wx.CallAfter(UpdateLimitsGrid,G2frame,data,datatype)
         
         Indx = {}
         excl = wx.FlexGridSizer(0,3,0,5)
@@ -1897,10 +1897,13 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         G2frame.dataWindow.SetDataSize()
 
     G2frame.ifGetExclude = False
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
-    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Limits')
-    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
-    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
+    if 'P' in datatype:                   #powder data menu commands
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
+        G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
+        G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
+    elif 'L' in datatype or 'R' in datatype:                   #SASD & REFD data menu commands
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDLimitMenu)
+        G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_SASDLIMITCOPY)
     Draw() 
     
 ################################################################################
@@ -2600,6 +2603,7 @@ def UpdateInstrumentGrid(G2frame,data):
 #                insRef['difB'] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.InstMenu)
         G2frame.GetStatusBar().SetStatusText('NB: Azimuth is used for polarization only',1)
         G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2G.wxID_INSTCALIB)
@@ -2610,7 +2614,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_INSTCOPY)
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2G.wxID_INSTFLAGCOPY)
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2G.wxID_INST1VAL)
-    elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD data menu commands
+    elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
     MakeParameterWindow()

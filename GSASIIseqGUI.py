@@ -1317,7 +1317,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # get ISODISTORT labels
     ISOlist = []
     for phase in Phases:
-        ISOlist += [i.varname() for i in Phases[phase]['ISODISTORT'].get('G2ModeList',[])
+        ISOlist += [i.varname() for i in Phases[phase].get('ISODISTORT',{}).get('G2ModeList',[])
                        if i.varname() not in ISOlist]
     # set labels for columns of data table
     ISOcols = {}  # ISODISTORT modes

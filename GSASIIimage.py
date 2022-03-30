@@ -567,6 +567,7 @@ def GetDetXYfromThAzm(Th,Azm,data):
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
+    Use only for detector 2-theta = 0
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
        G is ? and dsp is the d-space
@@ -598,6 +599,7 @@ def GetTthAzmDsp2(x,y,data): #expensive
 def GetTthAzmDsp(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
+    Use for detector 2-theta != 0.
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
         G is ? and dsp is the d-space
@@ -657,9 +659,8 @@ def GetTthAzm(x,y,data):
     
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
-     calibration info in data - only used in integration - old version
+     calibration info in data - only used in integration for detector 2-theta = 0
     '''
-    'Needs a doc string - checked OK for ellipses & hyperbola'
     tilt = data['tilt']
     dist = data['distance']/npcosd(tilt)
     MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
@@ -681,7 +682,7 @@ def GetTthAzmG2(x,y,data):
 
 def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
-     calibration info in data - only used in integration
+     calibration info in data - only used in integration for detector 2-theta != 0.
      checked OK for ellipses & hyperbola
      This is the slow step in image integration
      '''     
@@ -1210,8 +1211,12 @@ def ImageCalibrate(G2frame,data):
     return True
     
 def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
-    'Needs a doc string'
-    #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
+    '''transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
+    param: dict data: GSAS-II image data object
+    param: list iLim: boundary along x-pixels
+    param: list jLim: boundary along y-pixels
+    returns: array[4,nI,nJ] TA: 2-theta,azimuth, 2 geometric corrections
+    '''
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.

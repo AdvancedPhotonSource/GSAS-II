@@ -6560,6 +6560,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         for item in plotList:
             mId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             model = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,mId,'Models'))
+            if len(model['Layers']) == 2:   #see if any real layers defined; will be > 2
+                continue
             Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,mId,'Substances'))['Substances']       
             x,xr,y = G2pwd.makeSLDprofile(model,Substances)
             if od['value_1']:

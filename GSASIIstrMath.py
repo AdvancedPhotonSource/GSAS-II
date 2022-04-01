@@ -4490,6 +4490,7 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
     used = {}
     for phase in Phases:
         if Phases[phase]['General']['Type'] == 'magnetic': continue
+        if Phases[phase]['General']['doPawley']: continue
         if hist not in Phases[phase]['Histograms']: continue
         if not Phases[phase]['Histograms'][hist]['Use']: continue
         pId = Phases[phase]['pId']
@@ -4510,6 +4511,7 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
     sigDict = {}
     for phasej in Phases:
         if Phases[phasej]['General']['Type'] == 'magnetic': continue
+        if Phases[phase]['General']['doPawley']: continue
         if hist not in Phases[phasej]['Histograms']: continue
         if not Phases[phasej]['Histograms'][hist]['Use']: continue
         pId_j = Phases[phasej]['pId']

@@ -39,6 +39,7 @@ import GSASIImapvars as G2mv
 import GSASIIobj as G2obj
 import GSASIIexprGUI as G2exG
 import GSASIIctrlGUI as G2G
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################
 def UpdateSeqResults(G2frame,data,prevSize=None):
@@ -1510,7 +1511,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataWindow.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
     G2frame.dataDisplay.SetScrollRate(10,10)
-    G2frame.dataWindow.GetSizer().Add(G2frame.dataDisplay,1,wx.ALL|wx.EXPAND)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sequential results:'),0,WACV)
+    topSizer.Add((100,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer.Add(topSizer)
+    mainSizer.Add(G2frame.dataDisplay)
+    G2frame.dataWindow.GetSizer().Add(mainSizer)
     if histNames[0].startswith('PWDR'):
         #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
         rowLabels = [l[5:] for i,l in enumerate(histNames)]

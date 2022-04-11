@@ -155,6 +155,12 @@ import random as ran
 import webbrowser     # could postpone this for quicker startup
 import numpy as np
 
+import matplotlib as mpl
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+except ImportError:
+    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
+
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIdataGUI as G2gd
@@ -6431,7 +6437,8 @@ class RefinementProgress(wx.ProgressDialog):
     and a wx.Yield call during progress update calls.
     '''
     def __init__(self, title='Residual', message='All data Rw =',
-                     maximum=101.0, parent=None, style=None):
+                     maximum=101, parent=None, trialMode=False, seqLen=0,
+                     style=None):
         if style is None:
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT
         super(self.__class__,self).__init__(title, message, maximum, parent, style)
@@ -6444,8 +6451,365 @@ class RefinementProgress(wx.ProgressDialog):
     def Update(self,value, newmsg=""):
         wx.GetApp().Yield()
         #print('wx Yield called')
+        print('Update:',value,newmsg)
         return super(self.__class__,self).Update(value, newmsg)
         
+################################################################################
+fmtRw = lambda value: '{:.2f}'.format(float(value))
+class G2RefinementProgress(wx.Dialog):
+    '''Defines an replacement for wx.ProgressDialog to be used for 
+    showing refinement progress.
+
+    :param str title: string to place on border of window (default is 
+            'Refinement progress').
+    :param str message: initial string to place on top line of window.
+    :param int maximum: maximum value for progress gauge bar on bottom 
+       of window. 
+    :param wx.Frame parent: parent window for creation of this dialog
+    :param bool trialMode: Set to True for Levenberg-Marquardt fitting
+      where Rw may be computed several times for a single cycle.
+      Call :meth:`AdvanceCycle` when trialMode is True to indicate that a cycle
+      has been completed. Default is False.
+    :param int seqLen: Number of histograms in sequential fit. A value of 
+      zero (default) means that the fit is not a sequential fit.
+    :param int seqShow: Number of histograms to shown in a sequential fit (default 3)
+    :param int style: optional parameters that determine how the dialog is
+      is displayed.  
+    '''
+    def __init__(self, title='Refinement progress', message='All data Rw =',
+                     maximum=101, parent=None, trialMode=False,
+                     seqLen=0, seqShow=3,
+                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER):
+
+        self.trialRw = trialMode # used for Levenberg-Marquardt fitting
+        self.SeqLen = seqLen
+        self.seqShow = seqShow
+        if self.SeqLen:
+            self.maxCycle = self.SeqLen        
+        self.SeqCount = -1
+        self.rows = 4
+        if self.trialRw: self.rows = 5
+
+        super(self.__class__,self).__init__(parent, wx.ID_ANY, title,
+                                            style=style, size=(-1,-1))
+        self.Bind(wx.EVT_CLOSE, self._onClose)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.startTime = time.time()
+        self.abortStatus = False
+        self.SetSizer(mainSizer)
+        mainSizer.Add((-1,3))
+        self.msgLine1 = wx.StaticText(self,wx.ID_ANY,message)
+        mainSizer.Add(self.msgLine1)
+        mainSizer.Add((-1,3))
+        self.msgLine2 = wx.StaticText(self,wx.ID_ANY,'')
+        mainSizer.Add(self.msgLine2)
+
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        lblSizer = self._makeLabeledTable()   # make the Table for Rfactors in the RwPanel
+        vSizer.Add((-1,-1),1,wx.EXPAND,1)
+        vSizer.Add(lblSizer,0,wx.EXPAND)
+        vSizer.Add((-1,-1),1,wx.EXPAND,1)
+        hSizer.Add(vSizer,1,wx.EXPAND,1)
+        pltPanel = wx.Panel(self,size=(-1,-1))
+        self.figure = mpl.figure.Figure(dpi=100,figsize=(3,2))
+        self.figure.subplots_adjust(right=0.99,top=0.99)
+        Canvas(pltPanel, wx.ID_ANY, self.figure) # no need to save, get this from self.figure.canvas
+        self.plotaxis = self.figure.add_subplot()
+        hSizer.Add(pltPanel,0,wx.EXPAND,0)
+        mainSizer.Add(hSizer,1,wx.EXPAND,1)
+        mainSizer.Add((-1,5))
+
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        self.gaugemaximum = maximum
+        self.gauge = wx.Gauge(self,wx.ID_ANY,range=int(self.gaugemaximum))
+        self.gauge.SetValue(0)
+        vSizer.Add(self.gauge,1,wx.EXPAND,1)
+        vSizer.Add((-1,3))
+        tSizer = wx.BoxSizer(wx.HORIZONTAL)
+        tSizer.Add((-1,-1),1,wx.EXPAND,1)
+        tSizer.Add(wx.StaticText(self,wx.ID_ANY,'Elapsed time:  '))
+        self.elapsed = wx.StaticText(self,wx.ID_ANY,'0:00:00.0')
+        tSizer.Add(self.elapsed)
+        tSizer.Add((-1,-1),1,wx.EXPAND,1)
+        vSizer.Add(tSizer)
+        hSizer.Add(vSizer,1,wx.EXPAND,1)
+        hSizer.Add((10,-1))
+        btn = wx.Button(self, wx.ID_CLOSE,"Abort refinement") 
+        btn.Bind(wx.EVT_BUTTON,self._onClose)
+        hSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(hSizer,0,wx.EXPAND,5)
+
+        self.Labels.label[2].SetLabel('Start')
+        self.cycleLbl = self.Labels.label[3]
+        self.cycleLbl.SetLabel('Cycle ?')
+        if self.trialRw:
+            self.Labels.label[4].SetLabel('trial parms')
+        
+        self.Show()
+        self.Layout()
+        self.SetSizer(mainSizer)
+        mainSizer.Fit(self)
+        self.CenterOnParent()
+        self.SendSizeEvent()
+        
+        self.tblCols = {}
+        self.tblLbls = {}
+        self.fitVals = {}
+        self.trialVals = {} # used when self.trialRw is True
+        self.trialcount = 0
+        self.cols = 0
+        self.maxCycle = 10
+        self.curHist = None # number of current histogram (may be <0 for overall)
+        self.seqHist = None # number of current sequential histogram (never <0)
+        self.prevSeqHist = [] # previous sequential histograms that are still shown
+        self.plotted = []
+        self.histOff = {}
+        
+    def _onClose(self,event):
+        '''Respond to abort button or close of window
+        '''
+        self.abortStatus = True
+        self.Show(False)
+
+    def Destroy(self):
+        '''Destroy the window, but allow events to clear before doing so
+        '''
+        wx.CallAfter(wx.Dialog.Destroy,self)
+
+    def _makeLabeledTable(self):
+        '''Create two grid sizers, one with row labels and one scrolled.
+        Use _xferLabeledTable to make the row heights match.
+        '''        
+        lblSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.Labels = wx.GridBagSizer(2,2)
+        lblSizer.Add(self.Labels)
+        self.RwPanel = wx.lib.scrolledpanel.ScrolledPanel(self, wx.ID_ANY, size=(180, 130),
+                                 style = wx.SUNKEN_BORDER)
+        lblSizer.Add(self.RwPanel,1,wx.EXPAND,1)
+
+        self.Labels.label = {}
+        for i in range(self.rows):
+            self.Labels.label[i] = wx.StaticText(self,wx.ID_ANY,'',
+                                                style=wx.ALIGN_CENTER_VERTICAL)
+            self.Labels.Add(self.Labels.label[i],(i,0))
+        mainsizer = wx.BoxSizer(wx.VERTICAL)
+        tblsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.gridSiz = wx.GridBagSizer(2,2)
+        tblsizer.Add(self.gridSiz)
+        mainsizer.Add(tblsizer)
+        self.RwPanel.SetSizer(mainsizer)
+        self.RwPanel.SetAutoLayout(1)
+        self.RwPanel.SetupScrolling()
+        return lblSizer
+        
+    def _xferLabeledTable(self):
+        '''Matches the row sizes of the labels to the row heights in the table
+        '''
+        for i,h in enumerate(self.gridSiz.GetRowHeights()):
+            self.Labels.label[i].SetMinSize((-1,h))
+        self.Labels.Layout()
+        
+    def SetMaxCycle(self,value):
+        '''Set the maximum number of cycles or histograms (sequential fit). 
+        Used to scale settings so the gauge bar completes close to 100%.
+        Ignored for sequential refinements.
+        '''
+        if self.SeqLen: return
+        self.maxCycle = value
+        
+    def _AddTableColumn(self,label='',col=None):
+        'add a column to the Rfactor table'
+        if col is None:
+            self.cols += 1
+            col = self.cols
+        lbls = []
+        for i in range(self.rows-1):
+            lbls.append(wx.StaticText(self.RwPanel,wx.ID_ANY,'',
+                                          style=wx.ALIGN_CENTER))
+            self.gridSiz.Add(lbls[-1],(1+i,col))
+        return col,lbls
+        
+    def SetHistogram(self,nextHist,histLbl):
+        '''Set this before beginning processing of each histogram
+        '''
+        if nextHist is None:
+            self.curHist = None
+            self.msgLine1.SetLabel(histLbl)
+            return
+        if self.SeqLen:
+            self._SetSeqHistogram(nextHist,histLbl)
+            return
+        col = None
+        lbl = 'Hist {}'.format(nextHist)
+        if nextHist == -1:  # overall fit goes in the 1st column, if shown
+            col = 0
+            lbl = 'Overall'
+        elif nextHist == -2:  # Restraint Chi2 contribution goes in the last col
+            lbl = 'Restraints'
+            
+        if nextHist not in self.tblCols:
+            self.tblCols[nextHist],lbls = self._AddTableColumn(lbl,col)
+            self.tblLbls[nextHist] = lbls
+            self.tblLbls[nextHist][0].SetLabel(lbl)
+            self.fitVals[nextHist] = []
+        if nextHist >= 0:
+            self.msgLine1.SetLabel('Fitting '+histLbl)
+        self.curHist = nextHist
+
+    def _SetSeqHistogram(self,nextHist,histLbl):
+        '''Set this before beginning processing of each histogram in a sequential fit.
+        Advances the completion gauge.
+        '''
+        if nextHist == -1:  # overall fit is not shown
+            self.curHist = nextHist
+            return
+        elif nextHist == -2:  # Restraint Chi2 contribution goes in the 1st col
+            if nextHist not in self.tblCols:
+                self.tblCols[-2],lbls = self._AddTableColumn('Restraints',0)
+                self.tblLbls[-2] = lbls
+                self.tblLbls[-2][0].SetLabel('Restraints')
+                self.fitVals[-2] = []
+        elif self.seqHist != nextHist and nextHist >= 0:
+            if nextHist not in self.tblCols:
+                lbl = 'Hist {}'.format(nextHist)
+                self.tblCols[nextHist],lbls = self._AddTableColumn(lbl,None)
+                self.tblLbls[nextHist] = lbls
+                self.tblLbls[nextHist][0].SetLabel(lbl)
+                if len(self.prevSeqHist) < self.seqShow:
+                    self.prevSeqHist.append(nextHist)
+                else:
+                    del self.fitVals[self.prevSeqHist[0]]                
+                    del self.prevSeqHist[0]
+                    self.prevSeqHist.append(nextHist)
+            self.fitVals[nextHist] = []
+            if -2 in self.fitVals: self.fitVals[-2] = []
+            
+        if nextHist >= 0:
+            self.msgLine1.SetLabel('Fitting '+histLbl)
+        self.curHist = nextHist
+        if nextHist >= 0 and self.seqHist != nextHist:
+            self.seqHist = nextHist
+            self.SeqCount += 1
+            self.gauge.SetValue(int(min(self.gaugemaximum,
+                                100.*self.SeqCount/self.SeqLen)))
+
+    def _plotBar(self,h):
+        'plot a vertical bar for a histogram'
+        sym,lbl = self._getPlotSetting(h)
+        l = len(self.fitVals[h])
+        wid = 10.
+        if h < 0:
+            if h == -2 and -1 in self.fitVals:
+                self.histOff[h] = h/wid
+            else:
+                self.histOff[h] = -1/wid
+        else:
+            self.histOff[h] = len([i for i in self.plotted if i >= 0])/wid
+        self.plotaxis.bar(np.array(range(l))+self.histOff[h],self.fitVals[h],
+                              width=1/wid,label=lbl,color=sym)
+        self.plotted.append(h)
+        
+    def _getPlotSetting(self,h):
+        'determines how a plot is drawn'
+        if h == -1:
+            sym = "m" # magenta
+            lbl = 'o'
+        elif h == -2:
+            sym = "c" # cyan
+            lbl = 'r'
+        else:
+            symbols = ['b','r','g']
+            sym = symbols[h%3]
+            lbl = str(h)
+        return sym,lbl
+
+    def _SetCycleRw(self,value):
+        '''Used to process an Rwp value from the :meth:`Update` method. 
+        The value will be associated with the current histogram (as set
+        in :meth:`SetHistogram`). If this is the 1st supplied value for
+        that histogram, the value is set and displayed as as the starting 
+        Rwp. If :data`:self.trialRw` is False, the values are saved to a 
+        list specific to the current histogram, and are displayed and 
+        plotted. When :data`:self.trialRw` is True, the Rwp values are 
+        considered trial values and are only saved and plotted when 
+        :meth:`AdvanceCycle` is called. 
+        '''
+        if self.curHist in self.fitVals: 
+            cycle = len(self.fitVals[self.curHist])
+        else:
+            return
+        if not self.SeqLen:
+            self.gauge.SetValue(int(min(self.gaugemaximum,100.*cycle/self.maxCycle)))
+        self.cycleLbl.SetLabel('Cycle {:}'.format(cycle))
+        if cycle == 0:
+            self.tblLbls[self.curHist][1].SetLabel('{:8.3g}'.format(value))
+            self.RwPanel.SetupScrolling()
+            self._xferLabeledTable()
+        if not self.trialRw:  # show & plot current status here 
+            self.fitVals[self.curHist].append(value)
+            self.tblLbls[self.curHist][2].SetLabel('{:8.3g}'.format(value))
+            self.plotaxis.clear()
+            self.plotted = []
+            if self.SeqLen:
+                for h in self.fitVals:   # loop over all histograms but not all get plotted
+                    if h == -1: continue
+                    if h in self.prevSeqHist:
+                        self._plotBar(h)
+            else:
+                for h in self.fitVals:   # loop over all histograms but not all get plotted
+                    if h < 0 or h == self.curHist or len(self.fitVals) < 6 or (
+                        self.curHist < 0 and  h==0): # plot overall & restraints, or p to 5 histograms
+                        self._plotBar(h)
+            if self.plotted: self.plotaxis.legend(loc=3)
+            self.figure.canvas.draw()
+        else: # save as trial value
+            self.trialVals[self.curHist] = value
+            self.tblLbls[self.curHist][3].SetLabel('{:8.3g}'.format(value))
+            if self.curHist in self.plotted:
+                sym,lbl = self._getPlotSetting(self.curHist)
+                c = len(self.fitVals[self.curHist]) - 1 + self.histOff[self.curHist]
+                self.plotaxis.plot(c,value,'o'+sym)
+                self.figure.canvas.draw()
+            if (self.curHist ==-1 and -2 not in self.fitVals) or self.curHist == -2:
+                self.trialcount += 1
+        self.Layout() # in case sizes change
+        self.RwPanel.ScrollChildIntoView(self.tblLbls[self.curHist][1])
+
+    def AdvanceCycle(self,cycle=None):
+        '''Call this directly with Levenberg-Marquardt fitting after a 
+        cycle completes. 
+        Plots the results.
+        '''
+        self.plotaxis.clear()
+        self.trialcount = 0
+        self.plotted = []
+        for h,value in self.trialVals.items():
+            if h not in self.fitVals or h not in self.tblLbls: continue
+            self.fitVals[h].append(value)
+            self.tblLbls[h][2].SetLabel('{:8.3g}'.format(value))
+            self.tblLbls[h][3].SetLabel('')
+            if self.SeqLen or h < 3 or len(self.trialVals) < 6: # plot overall & restraints, or p to 5 histograms
+                self._plotBar(h)
+        if self.plotted: self.plotaxis.legend(loc=3)
+        self.figure.canvas.draw()
+
+    def Update(self, value=None, newmsg=""):
+        '''designed to work with calls intended for wx.ProgressDialog.Update
+        the value is assumed to be the current wR value for the histogram 
+        selected with SetHistogram and newmsg goes into the 2nd status line. 
+        '''
+        if self.curHist is not None and value != 101.:
+            self._SetCycleRw(value)
+        if newmsg:
+            self.msgLine2.SetLabel(newmsg) 
+        m,s = divmod(time.time()-self.startTime,60)
+        h,m = divmod(m,60)
+        self.elapsed.SetLabel('{:0d}:{:02d}:{:04.1f}'.format(int(h), int(m), s))
+        wx.GetApp().Yield()
+        return (not self.abortStatus, True)
+    
 ################################################################################
 class downdate(wx.Dialog):
     '''Dialog to allow a user to select a version of GSAS-II to install

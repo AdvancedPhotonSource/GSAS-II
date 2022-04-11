@@ -5372,15 +5372,15 @@ class GSASII(wx.Frame):
             finally:
                 dlgb.Destroy()
             if result == wx.ID_YES:
-                self.OnLeBail(event)
+                res = self.OnLeBail(event)
+                if res: return
             Controls['newLeBail'] = False
-        dlg = G2G.RefinementProgress(parent=self)
-        # dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-        #     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
-        # Size = dlg.GetSize()
-        # if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-        #     dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-        # dlg.CenterOnParent()
+        if GSASIIpath.GetConfigValue('G2RefinementWindow'):
+            trialMode = 'analytic Hessian' in Controls['deriv type']
+            dlg = G2G.G2RefinementProgress(parent=self,trialMode=trialMode)
+            dlg.SetMaxCycle(Controls['max cyc'])
+        else:
+            dlg = G2G.RefinementProgress(parent=self)
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
@@ -5452,7 +5452,16 @@ class GSASII(wx.Frame):
         except:
             rChi2initial = '?'
         
-        dlg = G2G.RefinementProgress(parent=self)
+        if GSASIIpath.GetConfigValue('G2RefinementWindow'):            
+            Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+            if (self.testSeqRefineMode()):
+                l = len(self.testSeqRefineMode())
+            else:
+                l = 0
+            dlg = G2G.G2RefinementProgress(parent=self,trialMode=False,
+                        seqLen=l,seqShow=10)
+        else:
+            dlg = G2G.RefinementProgress(parent=self)
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
@@ -5467,14 +5476,14 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if OK:
             text = ''
-            rtext = 'Le Bail-only fit done. '
+            rtext = 'LeBail-only fit done. '
             Rwp = Rvals.get('Rwp')
             if 'GOF' in Rvals:
                 txt = 'Final Reduced Chi^2: {:.3f}\n'.format(Rvals['GOF']**2)+rChi2initial
                 text += txt
                 rtext += txt
             text += '\nLoad new result & continue refinement?'
-            dlg2 = wx.MessageDialog(self,text,'Le Bail fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
+            dlg2 = wx.MessageDialog(self,text,'LeBail fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
@@ -5482,11 +5491,14 @@ class GSASII(wx.Frame):
                     self.reloadFromGPX(rtext)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
+                    return True
             finally:
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Le Bail error',Rvals['msg'])
-            
+            return True
+        return False
+
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
         refinemnt.) Done after events are completed to avoid crashes.
@@ -5641,7 +5653,7 @@ class GSASII(wx.Frame):
             histNames = G2stIO.GetHistogramNames(self.GSASprojectfile,['PWDR',])
         if Controls.get('Reverse Seq'):
             histNames.reverse()
-        if Controls['newLeBail']:
+        if Controls.get('newLeBail',False):
             dlgtxt = '''Do Le Bail refinement of intensities first?
     recommended after major parameter changes'''
             dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
@@ -5651,9 +5663,15 @@ class GSASII(wx.Frame):
             finally:
                 dlgb.Destroy()
             if result == wx.ID_YES:
-                self.OnLeBail(event)
+                res = self.OnLeBail(event)
+                if res: return
         # select it
-        dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',parent=self)
+        if GSASIIpath.GetConfigValue('G2RefinementWindow'):
+            trialMode = 'analytic Hessian' in Controls['deriv type']
+            dlgp = G2G.G2RefinementProgress(parent=self,trialMode=trialMode,
+                                              seqLen=len(histNames))
+        else:
+            dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',parent=self)
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
@@ -7759,6 +7777,21 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
             G2frame.dataWindow.GetSizer().Add(mainSizer)
             G2plt.PlotCovariance(G2frame,data)
+            #try:
+            # if True:
+            #     import imp
+            #     import phfrac
+            #     imp.reload(phfrac)
+            #     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            #     for histo in Histograms:
+            #         hId = Histograms[histo]['hId']
+            #         #phfrac.massFracs(data,Phases,histo,hId)
+            #         vDict,sDict = phfrac.calcMassFracs(
+            #             data['varyList'],data['covMatrix'],Phases,histo,hId)
+            #         for key in vDict:
+            #             print(key,vDict[key],sDict[key])
+            #except:
+            #    pass
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)
             #import imp
@@ -7907,6 +7940,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data = {'peaks':data,'sigDict':{}}
             G2frame.GPXtree.SetItemPyData(item,data)
 #end patch
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     import importlib as imp
+        #     imp.reload(G2pdG)
+        #     print('reloading G2pdG')
         G2pdG.UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Background':

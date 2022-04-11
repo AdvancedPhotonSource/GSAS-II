@@ -208,7 +208,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-        
+    dlg = None
+    if hasattr(args[-1],'Update'): dlg = args[-1]
+    if hasattr(dlg,'AdvanceCycle'): dlg.AdvanceCycle(-1)
+
     icycle = 0
     AmatAll = None # changed only if cycles > 0
     lamMax = lam = 0  #  start w/o Marquardt and add it in if needed
@@ -343,6 +346,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 lam /= 10. # drop lam on next cycle
                 break
         # complete current cycle
+        if hasattr(dlg,'AdvanceCycle'): dlg.AdvanceCycle(icycle)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
             if n-len(indices):

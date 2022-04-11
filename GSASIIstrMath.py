@@ -4125,6 +4125,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
+            if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(None,'Computing derivatives for '+histogram)
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
@@ -4185,6 +4186,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 dMdvh *= Wt*Dy
                 Vec = np.sum(dMdvh,axis=1)
         elif 'HKLF' in histogram[:4]:
+            if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(None,'Computing derivatives for '+histogram)
             Histogram = Histograms[histogram]
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
@@ -4242,6 +4244,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
+            if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(hId,histogram)
             hfx = ':%d:'%(hId)
             wtFactor = calcControls[hfx+'wtFactor']
             Limits = calcControls[hfx+'Limits']
@@ -4294,10 +4297,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(hId,histogram)
             Histogram['Residuals'] = {}
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
-            hId = Histogram['hId']
             hfx = ':%d:'%(hId)
             wtFactor = calcControls[hfx+'wtFactor']
             pfx = '%d::'%(Phase['pId'])
@@ -4448,6 +4452,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Histograms['Next'] = Next
     Rw = min(100.,np.sqrt(np.sum(M**2)/SumwYo)*100.)
     if dlg:
+        if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-1,'overall')
         GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))
         if type(GoOn) is tuple:
             if not GoOn[0]:
@@ -4464,8 +4469,10 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             if pWsum[name]:
                 print ('  Penalty function for %5d %8ss = %12.5g'%(pWnum[name],name,pWsum[name]))
         print ('Total penalty function: %12.5g on %d terms'%(pSum,len(pVals)))
+        if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-2,'Restraints')
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
+        GoOn = dlg.Update(100*pSum/np.sum(M**2),newmsg='Restraints')
     return M
 
 def calcMassFracs(varyList,covMatrix,Phases,hist,hId):

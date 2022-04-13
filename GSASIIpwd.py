@@ -1012,16 +1012,15 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
                 ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
-                yb[iBeg:iFin] += ybi
             elif 'T' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])[0]
-                yb[iBeg:iFin] += ybi
             elif 'B' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])[0]
-                yb[iBeg:iFin] += ybi
             elif 'E' in dataType:
                 ybi = pkI*getPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])[0]
-                yb[iBeg:iFin] += ybi
+            else:
+                raise Exception('dataType of {:} should not happen!'.format(dataType))
+            yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1       
         except KeyError:
@@ -2064,9 +2063,9 @@ def getHeaderInfo(FitPgm,dataType):
     names = ['pos','int']
     lnames = ['position','intensity']
     if FitPgm == 'LaueFringe':
-        names += ['sig','gam','cells']
-        lnames += ['sigma','gamma','cells']
-        fmt = ["%10.5f","%10.3f","%10.3f","%10.3f","%10.3f"]
+        names += ['damp','asym','sig','gam']
+        lnames += ['satellite\ndamping','satellite\nasym','sigma','gamma']
+        fmt = ["%10.5f","%10.2f","%10.3f","%10.3f","%10.3f","%10.3f"]
     elif 'C' in dataType:
         names += ['sig','gam']
         lnames += ['sigma','gamma']
@@ -2085,15 +2084,19 @@ def getHeaderInfo(FitPgm,dataType):
         fmt = ["%10.5f","%10.1f","%8.2f","%8.4f","%10.3f","%10.3f"]
     return names, fmt, lnames
 
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,wtFactor=1.0,dlg=None,noFit=False):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],
+                  oneCycle=False,controls=None,wtFactor=1.0,dlg=None,noFit=False):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
     :param str FitPgm: type of fit to perform. At present this is ignored.
-    :param list Peaks: a list of peaks. Each peak entry is a list with 8 values:
-      four values followed by a refine flag where the values are: position, intensity,
+    :param list Peaks: a list of peaks. Each peak entry is a list with paired values:
+      The number of pairs depends on the data type (see :func:`getHeaderInfo`). 
+      For CW data there are  
+      four values each followed by a refine flag where the values are: position, intensity,
       sigma (Gaussian width) and gamma (Lorentzian width). From the Histogram/"Peak List"
-      tree entry, dict item "peaks"
+      tree entry, dict item "peaks". For some types of fits, overall parameters are placed
+      in a dict entry. 
     :param list Background: describes the background. List with two items.
       Item 0 specifies a background model and coefficients. Item 1 is a dict.
       From the Histogram/Background tree entry.
@@ -2222,7 +2225,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
         
-    def GetInstParms(parmDict,Inst,varyList,Peaks):
+    def GetPkInstParms(parmDict,Inst,varyList):
         for name in Inst:
             Inst[name][1] = parmDict[name]
         iPeak = 0
@@ -2269,22 +2272,25 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (sigstr)
 
     def SetPeaksParms(dataType,Peaks):
-        peakNames = []
+        peakDict = {}
         peakVary = []
-        peakVals = []
         names,_,_ = getHeaderInfo(FitPgm,dataType)
         for i,peak in enumerate(Peaks):
+            if type(peak) is dict:
+                peakDict.update(peak)
+                continue
             for j,name in enumerate(names):
-                peakVals.append(peak[2*j])
                 parName = name+str(i)
-                peakNames.append(parName)
+                peakDict[parName] = peak[2*j]
                 if peak[2*j+1]:
                     peakVary.append(parName)
-        return dict(zip(peakNames,peakVals)),peakVary
+        return peakDict,peakVary
                 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         names,_,_ = getHeaderInfo(FitPgm,Inst['Type'][0])
         for i,peak in enumerate(Peaks):
+            if type(peak) is dict:
+                continue
             pos = parmDict['pos'+str(i)]
             if 'difC' in Inst:
                 dsp = pos/Inst['difC'][1]
@@ -2328,6 +2334,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (head)
         ptfmt = dict(zip(names,fmt))
         for i,peak in enumerate(Peaks):
+            if type(peak) is dict:
+                continue
             ptstr =  ':'
             for j in range(len(names)):
                 name = names[j]
@@ -2444,11 +2452,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     sigDict = dict(zip(varyList,sig))
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
-    GetInstParms(parmDict,Inst,varyList,Peaks)
+    GetPkInstParms(parmDict,Inst,varyList)
     if insVary: InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)
     binsperFWHM = []
     for peak in Peaks:
+        if type(peak) is dict:
+            continue
         FWHM = getFWHM(peak[0],Inst)
         try:
             xpk = x.searchsorted(peak[0])

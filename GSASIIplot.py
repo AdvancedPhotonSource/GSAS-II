@@ -6057,7 +6057,7 @@ def PlotStrain(G2frame,data,newPlot=False):
     NC = len(colors)
     for N,item in enumerate(data['d-zero']):
         Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,marker='+',color=colors[N%NC],picker=False)
+        Plot.plot(X,Y,marker='+',color=colors[N%NC],picker=False,linewidth=0)
         Y,X = np.array(item['ImtaCalc'])
         Plot.plot(X,Y,colors[N%NC],picker=False)
         Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],colors[5],dashes=(5,5))

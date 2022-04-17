@@ -51,7 +51,7 @@ try:
 except ImportError:
     print ('pydiffax is not available for this platform')
 import GSASIIfiles as G2fil
-import LaueFringe as LF
+#import LaueFringe as LF
     
 # trig functions in degrees
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -1408,48 +1408,49 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
     yc = np.zeros_like(yb)
-    if parmDict.get('LaueFringe',False):
-        if 'Lam1' in parmDict.keys():
-            lam = parmDict['Lam1']
-            lam2 = parmDict['Lam2']
-            Ka2 = True
-            lamRatio = 360*(lam2-lam)/(np.pi*lam)
-            kRatio = parmDict['I(L2)/I(L1)']
-        else:
-            lam = parmDict['Lam']
-            Ka2 = False
-        shol = 0
-        # loop over peaks
-        iPeak = -1
-        cells =  parmDict['ncell']
-        while True:
-            iPeak += 1
-            try:
-                pos = parmDict['pos'+str(iPeak)]
-                #tth = (pos-parmDict['Zero'])
-                intens = parmDict['int'+str(iPeak)]
-                damp =  parmDict['damp'+str(iPeak)]
-                asym =  parmDict['asym'+str(iPeak)]
-                sig =  parmDict['sig'+str(iPeak)]
-                gam =  parmDict['gam'+str(iPeak)]
-                fmin = 4 # for now make peaks 4 degrees wide
-                fmin = min(0.9*abs(xdata[-1] - xdata[0]),fmin) # unless the data range is smaller
-                iBeg = np.searchsorted(xdata,pos-fmin/2)
-                iFin = np.searchsorted(xdata,pos+fmin/2)
-                if not iBeg+iFin:       # skip peak below low limit
-                    continue
-                elif not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
-                    break
-                LF.LaueFringePeakCalc(xdata,yc,lam,pos,intens,damp,asym,sig,gam,shol,cells,fmin)
-                if Ka2:
-                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    iBeg = np.searchsorted(xdata,pos2-fmin)
-                    iFin = np.searchsorted(xdata,pos2+fmin)
-                    if iBeg-iFin:
-                        LF.LaueFringePeakCalc(xdata,yc,lam2,pos2,intens*kRatio,damp,asym,sig,gam,shol,cells,fmin)
-            except KeyError:        #no more peaks to process
-                return yb+yc
-    elif 'C' in dataType:
+    # if parmDict.get('LaueFringe',False):
+    #     if 'Lam1' in parmDict.keys():
+    #         lam = parmDict['Lam1']
+    #         lam2 = parmDict['Lam2']
+    #         Ka2 = True
+    #         lamRatio = 360*(lam2-lam)/(np.pi*lam)
+    #         kRatio = parmDict['I(L2)/I(L1)']
+    #     else:
+    #         lam = parmDict['Lam']
+    #         Ka2 = False
+    #     shol = 0
+    #     # loop over peaks
+    #     iPeak = -1
+    #     cells =  parmDict['ncell']
+    #     while True:
+    #         iPeak += 1
+    #         try:
+    #             pos = parmDict['pos'+str(iPeak)]
+    #             #tth = (pos-parmDict['Zero'])
+    #             intens = parmDict['int'+str(iPeak)]
+    #             damp =  parmDict['damp'+str(iPeak)]
+    #             asym =  parmDict['asym'+str(iPeak)]
+    #             sig =  parmDict['sig'+str(iPeak)]
+    #             gam =  parmDict['gam'+str(iPeak)]
+    #             fmin = 4 # for now make peaks 4 degrees wide
+    #             fmin = min(0.9*abs(xdata[-1] - xdata[0]),fmin) # unless the data range is smaller
+    #             iBeg = np.searchsorted(xdata,pos-fmin/2)
+    #             iFin = np.searchsorted(xdata,pos+fmin/2)
+    #             if not iBeg+iFin:       # skip peak below low limit
+    #                 continue
+    #             elif not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
+    #                 break
+    #             LF.LaueFringePeakCalc(xdata,yc,lam,pos,intens,damp,asym,sig,gam,shol,cells,fmin)
+    #             if Ka2:
+    #                 pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+    #                 iBeg = np.searchsorted(xdata,pos2-fmin)
+    #                 iFin = np.searchsorted(xdata,pos2+fmin)
+    #                 if iBeg-iFin:
+    #                     LF.LaueFringePeakCalc(xdata,yc,lam2,pos2,intens*kRatio,damp,asym,sig,gam,shol,cells,fmin)
+    #         except KeyError:        #no more peaks to process
+    #             return yb+yc
+    # elif 'C' in dataType:
+    if 'C' in dataType:
         shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
         if 'Lam1' in parmDict.keys():
@@ -1645,17 +1646,17 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
             parm,Id = name.split(';')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMdpk[4*int(Id)+ip]
-    if parmDict.get('LaueFringe',False):
-        for i,name in enumerate(varyList):
-            if not np.all(dMdv[i] == 0): continue
-            deltaParmDict = parmDict.copy()
-            delta = max(parmDict[name]/1e5,0.001)
-            deltaParmDict[name] += delta
-            intArrP = getPeakProfile(dataType,deltaParmDict,xdata,fixback,varyList,bakType)
-            deltaParmDict[name] -= 2*delta
-            intArrM = getPeakProfile(dataType,deltaParmDict,xdata,fixback,varyList,bakType)
-            dMdv[i] = 0.5 * (intArrP - intArrM) / delta
-        return dMdv
+    # if parmDict.get('LaueFringe',False):
+    #     for i,name in enumerate(varyList):
+    #         if not np.all(dMdv[i] == 0): continue
+    #         deltaParmDict = parmDict.copy()
+    #         delta = max(parmDict[name]/1e5,0.001)
+    #         deltaParmDict[name] += delta
+    #         intArrP = getPeakProfile(dataType,deltaParmDict,xdata,fixback,varyList,bakType)
+    #         deltaParmDict[name] -= 2*delta
+    #         intArrM = getPeakProfile(dataType,deltaParmDict,xdata,fixback,varyList,bakType)
+    #         dMdv[i] = 0.5 * (intArrP - intArrM) / delta
+    #     return dMdv
     if 'C' in dataType:
         shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
@@ -2465,33 +2466,27 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if v in varyList:
                 raise Exception('Instrumental profile terms cannot be varied '+
                                     'after setPeakInstPrmMode(False) is used')
-    fitFunc = errPeakProfile
-    dervFunc = devPeakProfile
     parmDict['LaueFringe'] = False
-    if FitPgm == 'LaueFringe':
-        #======================================================================
-        print('Debug: reload LaueFringe')  # TODO: remove me
-        import imp
-        imp.reload(LF)
-        # TODO: remove ^^^^
-        #======================================================================
-        for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',
-            'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
-            if v in varyList:
-                raise Exception('Instrumental profile terms cannot be varied '+
-                                    'in Laue Fringe fits')
-        parmDict['LaueFringe'] = True
-        #fitFunc = LF.errLaueFit
-        #dervFunc = None
-    elif 'analytic' not in controls.get('deriv type',''):
-        dervFunc = None
+    # if FitPgm == 'LaueFringe':
+    #     #======================================================================
+    #     print('Debug: reload LaueFringe')  # TODO: remove me
+    #     import imp
+    #     imp.reload(LF)
+    #     # TODO: remove ^^^^
+    #     #======================================================================
+    #     for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',
+    #         'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
+    #         if v in varyList:
+    #             raise Exception('Instrumental profile terms cannot be varied '+
+    #                                 'in Laue Fringe fits')
+    #     parmDict['LaueFringe'] = True
 
     while not noFit:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         Rvals = {}
         badVary = []
-        result = so.leastsq(fitFunc,values,Dfun=dervFunc,full_output=True,ftol=Ftol,col_deriv=True,
+        result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
                args=(x[xBeg:xFin],y[xBeg:xFin],fixback[xBeg:xFin],wtFactor*w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin    
@@ -2523,10 +2518,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 break
     if dlg: dlg.Destroy()
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin],fixback[xBeg:xFin])[0]
-    # if FitPgm == 'LaueFringe':
-    #     yc[xBeg:xFin] = LF.getLauePeakProfile(dataType,parmDict,x[xBeg:xFin],fixback[xBeg:xFin],varyList,bakType)
-    # else:
-    #     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],fixback[xBeg:xFin],varyList,bakType)
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],fixback[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     if noFit:

@@ -7940,10 +7940,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data = {'peaks':data,'sigDict':{}}
             G2frame.GPXtree.SetItemPyData(item,data)
 #end patch
-        if GSASIIpath.GetConfigValue('debug'):
-            import importlib as imp
-            imp.reload(G2pdG)
-            print('reloading G2pdG')
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     import importlib as imp
+        #     imp.reload(G2pdG)
+        #     print('reloading G2pdG')
         G2pdG.UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Background':

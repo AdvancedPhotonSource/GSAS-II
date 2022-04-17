@@ -1072,6 +1072,8 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
         return
+    if path2GSAS2 not in sys.path:
+        sys.path.insert(0,path2GSAS2)  # make sure current path is used
     binpath = None
     binprfx = GetBinaryPrefix()
     for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):

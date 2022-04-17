@@ -3384,12 +3384,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     if parmDict[pfx+'LeBail'] or 'E' in Inst['Type'][0]:
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     elif 'E' not in Inst['Type'][0]:
-                        if pfx+'Scale' in PhFrExtPOSig:
-                            var = pfx + 'WgtFrac'
+                        var = pfx + 'WgtFrac'
+                        if pfx+'Scale' in PhFrExtPOSig or var in sigDict:
                             wtFr = parmDict.get(var,0)
                             sigwtFr = sigDict.get(var,0)
                             pFile.write(' Phase fraction  : %10.5g, sig %10.5g Weight fraction  : %8.5f, sig %10.5f\n'%
-                                (hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr))
+                                (hapData['Scale'][0],PhFrExtPOSig.get(pfx+'Scale',0),wtFr,sigwtFr))
                         if pfx+'Extinction' in PhFrExtPOSig:
                             pFile.write(' Extinction coeff: %10.4f, sig %10.4f\n'%(hapData['Extinction'][0],PhFrExtPOSig[pfx+'Extinction']))
                         if hapData['Pref.Ori.'][0] == 'MD':

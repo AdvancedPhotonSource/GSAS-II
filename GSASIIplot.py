@@ -2024,6 +2024,17 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.HKL = []
     PlotPatterns(G2frame,newPlot,plotType)
 
+def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
+    if Page.plotStyle['qPlot']:
+        Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pick,pickradius=2.))
+    elif Page.plotStyle['dPlot']:
+        Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pick,pickradius=2.))
+    else:
+        Lines.append(Plot.axvline(pos,color=color,
+            picker=pick,pickradius=2.))
+        
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
@@ -3035,7 +3046,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             return '_'+string
 
-    #### beginning PlotPatterns execution
+    ###### beginning PlotPatterns execution
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
@@ -3714,17 +3725,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 Ni = N+1
                             else:
                                 Ni = N
-                            if Page.plotStyle['qPlot']:
-                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color='b',
-                                    picker=True,pickradius=2.))
-                            elif Page.plotStyle['dPlot']:
-                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color='b',
-                                    picker=True,pickradius=2.))
-                            else:
-                                Lines.append(Plot.axvline(item[0],color='b',
-                                    picker=True,pickradius=2.))
+                            plotVline(Page,Plot,Lines,Parms,item[0],'b',True)
                             if Ni == N+1:
                                 Lines[-1].set_lw(Lines[-1].get_lw()+1)
+                        data['LaueFringe'] = data.get('LaueFringe',{})
+                        for pos in data['LaueFringe'].get('satellites',[]):
+                            plotVline(Page,Plot,Lines,Parms,pos,'k',False)
                     if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.SetToolTipString(tip)

@@ -2891,7 +2891,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     if Phases[phase]['General']['Type'] != 'magnetic'and 'E' not in inst['Type'][0]:
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
-                if resetRefList and (not hapDict.get(phx+'LeBail') or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
+                if resetRefList and (not hapDict.get(pfx+'LeBail') or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
                     Scale = Histogram['Sample Parameters']['Scale'][0]      #for initializing reflection structure factors.
                     StartI = hapData['Scale'][0]*Scale
                     refList = []

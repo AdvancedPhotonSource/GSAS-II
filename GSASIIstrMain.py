@@ -731,7 +731,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 if parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
             for phase in Phases:
-                if Phases[phase]['Histograms'][histogram]['LeBail'] and lasthist:
+                if Phases[phase]['Histograms'][histogram].get('LeBail',False) and lasthist:
                     oldFsqs = Histograms[lasthist]['Reflection Lists'][phase]['RefList'].T[8:10]    #assume no superlattice!
                     newRefs = Histograms[histogram]['Reflection Lists'][phase]['RefList']
                     if len(newRefs) == len(oldFsqs.T):

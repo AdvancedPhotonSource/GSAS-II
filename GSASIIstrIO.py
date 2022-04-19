@@ -2870,7 +2870,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 if Print: 
                     pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                     pFile.write(135*'='+'\n')
-                    if hapDict[pfx+'LeBail']:
+                    if hapDict.get(pfx+'LeBail'):
                         pFile.write(' Perform LeBail extraction\n')                     
                     elif 'E' not in inst['Type'][0]:
                         pFile.write(' Phase fraction  : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
@@ -2891,7 +2891,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     if Phases[phase]['General']['Type'] != 'magnetic'and 'E' not in inst['Type'][0]:
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
-                if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
+                if resetRefList and (not hapDict.get(phx+'LeBail') or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
                     Scale = Histogram['Sample Parameters']['Scale'][0]      #for initializing reflection structure factors.
                     StartI = hapData['Scale'][0]*Scale
                     refList = []
@@ -3257,16 +3257,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])
                     for item in ['Scale','Extinction']:
                         hapData[item][0] = parmDict[pfx+item]
-                        if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
+                        if pfx+item in sigDict and not parmDict.get(pfx+'LeBail'):
                             PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                     if hapData['Pref.Ori.'][0] == 'MD':
                         hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                        if pfx+'MD' in sigDict and not parmDict[pfx+'LeBail']:
+                        if pfx+'MD' in sigDict and not parmDict.get(pfx+'LeBail'):
                             PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
                     else:                           #'SH' spherical harmonics
                         for item in hapData['Pref.Ori.'][5]:
                             hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
-                            if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
+                            if pfx+item in sigDict and not parmDict.get(pfx+'LeBail'):
                                 PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                     SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                         pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],pfx+'HStrain':{}})                  
@@ -3308,7 +3308,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 if Phases[phase]['General']['Type'] != 'magnetic' and 'E' not in inst['Type'][0]:
                     for name in ['BabA','BabU']:
                         hapData['Babinet'][name][0] = parmDict[pfx+name]
-                        if pfx+name in sigDict and not parmDict[pfx+'LeBail']:
+                        if pfx+name in sigDict and not parmDict.get(pfx+'LeBail'):
                             BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:
@@ -3381,7 +3381,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     pFile.write(' Durbin-Watson statistic = %.3f\n'%(Histogram['Residuals']['Durbin-Watson']))
                     pFile.write(' Bragg intensity sum = %.3g\n'%(Histogram['Residuals'][pfx+'sumInt']))
                     
-                    if parmDict[pfx+'LeBail'] or 'E' in Inst['Type'][0]:
+                    if parmDict.get(pfx+'LeBail') or 'E' in Inst['Type'][0]:
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     elif 'E' not in Inst['Type'][0]:
                         var = pfx + 'WgtFrac'
@@ -3403,7 +3403,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
                     if pfx+'LayerDisp' in SizeMuStrSig:
                         pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))            
-                    if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict[pfx+'LeBail'] and 'E' not in Inst['Type'][0]:
+                    if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict.get(pfx+'LeBail') and 'E' not in Inst['Type'][0]:
                         if len(BabSig):
                             PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     

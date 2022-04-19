@@ -3100,7 +3100,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: 
+                                if parmDict.get(phfx+'LeBail'): 
                                     refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
@@ -3116,7 +3116,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     nExcl += 1
                                 else:
                                     refDict['RefList'][irefl][8+im] = refl8im
-                                    if parmDict[phfx+'LeBail']:
+                                    if parmDict.get(phfx+'LeBail'):
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
                 elif 'T' in calcControls[hfx+'histType']:
                     for iref,refl in enumerate(refDict['RefList']):
@@ -3127,7 +3127,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: 
+                                if parmDict.get(phfx+'LeBail'): 
                                     refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
@@ -3143,7 +3143,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     nExcl += 1
                                 else:
                                     refDict['RefList'][irefl][8+im] = refl8im
-                                    if parmDict[phfx+'LeBail']:
+                                    if parmDict.get(phfx+'LeBail'):
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
                 elif 'E' in calcControls[hfx+'histType']:
                     for iref,refl in enumerate(refDict['RefList']):
@@ -3154,7 +3154,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: 
+                                if parmDict.get(phfx+'LeBail'): 
                                     refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
@@ -3170,7 +3170,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     nExcl += 1
                                 else:
                                     refDict['RefList'][irefl][8+im] = refl8im
-                                    if parmDict[phfx+'LeBail']:
+                                    if parmDict.get(phfx+'LeBail'):
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
                 elif 'B' in calcControls[hfx+'histType']:
                     for iref,refl in enumerate(refDict['RefList']):
@@ -3181,7 +3181,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             if type(icod) is tuple:
                                 refl[8+im] = icod[0]
                                 sumInt += icod[1]
-                                if parmDict[phfx+'LeBail']: 
+                                if parmDict.get(phfx+'LeBail'): 
                                     refl[9+im] = refl[8+im]
                             elif icod == -1:
                                 refl[3+im] *= -1
@@ -3197,7 +3197,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     nExcl += 1
                                 else:
                                     refDict['RefList'][irefl][8+im] = refl8im
-                                    if parmDict[phfx+'LeBail']:
+                                    if parmDict.get(phfx+'LeBail'):
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
                 if useMP: MPpool.terminate()
                 sumFo = 0.0
@@ -3330,7 +3330,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             raise G2obj.G2Exception('Error: '+msg+' See console.\nCheck for refinement of conflicting variables')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matrices
         Vst = np.sqrt(nl.det(G))    #V*
-        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+        if not Phase['General'].get('doPawley') and not parmDict.get(phfx+'LeBail'):
             if 'E' in calcControls[hfx+'histType']:
                 print('\n\n**** Error: EDX data not suitable for Rietveld refinement ****\n\n')
             else:
@@ -3647,7 +3647,7 @@ def getPowderProfileDerv(args):
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail'] and 'E' not in calcControls[hfx+'histType']:
+        if not Phase['General'].get('doPawley') and not parmDict.get(phfx+'LeBail') and 'E' not in calcControls[hfx+'histType']:
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
                 dFdvDict.update(SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict))
@@ -3910,7 +3910,7 @@ def getPowderProfileDerv(args):
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
-            if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail'] and 'E' not in calcControls[hfx+'histType']:
+            if not Phase['General'].get('doPawley') and not parmDict.get(phfx+'LeBail') and 'E' not in calcControls[hfx+'histType']:
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.

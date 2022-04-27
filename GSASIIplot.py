@@ -2027,13 +2027,13 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
 def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.))
+            picker=pick,pickradius=2.,linestyle='dotted'))
     elif Page.plotStyle['dPlot']:
         Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.))
+            picker=pick,pickradius=2.,linestyle='dotted'))
     else:
         Lines.append(Plot.axvline(pos,color=color,
-            picker=pick,pickradius=2.))
+            picker=pick,pickradius=2.,linestyle='dotted'))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False):

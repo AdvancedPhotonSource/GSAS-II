@@ -37,10 +37,12 @@ class csv_ReaderClass(G2obj.ImportPowderData):
         good = 0
         fp = open(filename,'r')
         for i,S in enumerate(fp):
+            if S.strip().startswith('#'): continue
             if i > 1000: break
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) >= 2:
                 for j,v in enumerate(vals):
+                    if len(v) == 0: continue
                     if j == 3: break
                     try:
                         float(v)
@@ -62,24 +64,41 @@ class csv_ReaderClass(G2obj.ImportPowderData):
         x = []
         y = []
         w = []
+        positions = [0,1,2]
         fp = open(filename,'r')
         for i,S in enumerate(fp):
+            if i <= 2 and 'x=' in S: # header entry specifying columns
+                for v in S.strip().replace(',',';').split(';'):
+                    if 'x=' in v:
+                        j = 0
+                    elif 'y=' in v:
+                        j = 1
+                    elif 'e=' in v:
+                        j = 2
+                    else:
+                        continue
+                    try:
+                        positions[j] = int(v.strip().split('=')[1])
+                    except:
+                        print('Error parsing: "'+S+'"')
+                print('positions=',positions)
+            if S.strip().startswith('#'): continue
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) < 2 and i > 0:
                 print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
                 continue
             try:
-                x.append(float(vals[0]))
-                f = float(vals[1])
+                x.append(float(vals[positions[0]]))
+                f = float(vals[positions[1]])
                 if f <= 0.0:
                     y.append(0.0)
                     w.append(0.0)
-                elif len(vals) == 3:
-                    y.append(float(vals[1]))
-                    w.append(1.0/float(vals[2])**2)
+                elif len(vals) > positions[2] and positions[2] >= 0:
+                    y.append(f)
+                    w.append(1.0/float(vals[positions[2]])**2)
                 else:
-                    y.append(float(vals[1]))
-                    w.append(1.0/float(vals[1]))
+                    y.append(f)
+                    w.append(1.0/f)
                 err = False
             except ValueError:
                 err = True

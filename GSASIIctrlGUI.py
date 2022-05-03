@@ -6451,7 +6451,7 @@ class RefinementProgress(wx.ProgressDialog):
     def Update(self,value, newmsg=""):
         wx.GetApp().Yield()
         #print('wx Yield called')
-        print('Update:',value,newmsg)
+        #print('Update:',value,newmsg)
         return super(self.__class__,self).Update(value, newmsg)
         
 ################################################################################

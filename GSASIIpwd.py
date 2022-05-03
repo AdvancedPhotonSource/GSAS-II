@@ -3158,11 +3158,16 @@ def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
     :returns: the full path to a python executable or None, if it was not found.
     '''
+    if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
+            GSASIIpath.GetConfigValue('pdffit2_exec')):
+        return GSASIIpath.GetConfigValue('pdffit2_exec')
     try:
-        sys.path.append('%s'%GSASIIpath.path2GSAS2) 
+        if GSASIIpath.path2GSAS2 not in sys.path:
+            sys.path.insert(0,GSASIIpath.path2GSAS2)
         from diffpy.pdffit2 import PdfFit
         return sys.executable
-    except:
+    except Exception as msg:
+        print('Error from PDFfit2 access:\n',msg)
         return None
     
 def GetPDFfitAtomVar(Phase,RMCPdict):

@@ -254,6 +254,12 @@ can be imported into the current Python and if not a executable named fullrmc*
 or in the system path.
 '''
 
+pdffit2_exec = None
+'''Defines the full path to a Python executable that has been configured 
+with the PDFfit2 (diffpy) package. If None (the default), GSAS-II will see 
+if PDFfit2 can be imported into the current Python.
+'''
+
 lastUpdateNotice = 0
 '''Defines the version number for the last update notice that has been 
 shown. This should not need to be changed manually.

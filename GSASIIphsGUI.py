@@ -6356,7 +6356,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         ISOdict = data['ISODISTORT']
         PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
         if not PDFfit_exec:
-            wx.MessageBox(''' PDFfit2 is currently not available for this platform. 
+            wx.MessageBox(''' PDFfit2 is not currently installed for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
             return
         RMCPdict = data['RMC']['PDFfit']

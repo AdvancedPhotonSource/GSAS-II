@@ -79,6 +79,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                         continue
                     try:
                         positions[j] = int(v.strip().split('=')[1])
+                        if j == 1: positions[2] = -1
                     except:
                         print('Error parsing: "'+S+'"')
                 print('positions=',positions)

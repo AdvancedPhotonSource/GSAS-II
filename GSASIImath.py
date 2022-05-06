@@ -4760,7 +4760,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getTOFsig(ins,dsp)
         gam = getTOFgamma(ins,dsp)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
-    elif 'C' in Parms['Type'][0]:
+    elif 'C' in Parms['Type'][0] or 'LF' in Parms['Type'][0]:
         for x in ['U','V','W','X','Y','Z']:
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
         if ifQ:                              #qplot - convert back to 2-theta

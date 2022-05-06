@@ -4627,7 +4627,7 @@ class GSASII(wx.Frame):
         G2G.SaveConfigVars(config)
         if self.G2plotNB:
             self.G2plotNB.Destroy()
-        if self.undofile:
+        if self.undofile and os.path.exists(self.undofile): 
             os.remove(self.undofile)
         sys.exit()
         
@@ -7943,6 +7943,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         # if GSASIIpath.GetConfigValue('debug'):
         #     import importlib as imp
         #     imp.reload(G2pdG)
+        #     imp.reload(G2pwd)
+        #     imp.reload(G2plt)
         #     print('reloading G2pdG')
         G2pdG.UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)

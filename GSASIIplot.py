@@ -3721,6 +3721,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             G2frame.reflGrid.GetSelectedRows()))
                         G2frame.dataWindow.movePeak.Enable(len(selectedPeaks) == 1) # allow peak move from table when one peak is selected
                         for i,item in enumerate(data['peaks']):
+                            if type(item) is dict: continue
                             if i in selectedPeaks:
                                 Ni = N+1
                             else:

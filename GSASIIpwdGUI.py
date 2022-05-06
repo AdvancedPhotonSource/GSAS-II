@@ -833,20 +833,14 @@ def UpdatePeakGrid(G2frame, data):
             reflGrid.DisableCellEditControl()
         if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can write in the same directory
             G2frame.OnFileSaveas(event)
-        FitPgm = 'LSQ'
-#        if data.get('FitPgm',0) == 1:
-#            FitPgm = 'LaueFringe'
-        wx.CallAfter(OnPeakFit,FitPgm)
+        wx.CallAfter(OnPeakFit)
         
     def OnOneCycle(event):
         'Do a single cycle of peak fit refinement'
         if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
             reflGrid.HideCellEditControl()
             reflGrid.DisableCellEditControl()
-        FitPgm = 'LSQ'
-#        if data.get('FitPgm',0) == 1:
-#            FitPgm = 'LaueFringe'
-        wx.CallAfter(OnPeakFit,FitPgm,oneCycle=True)
+        wx.CallAfter(OnPeakFit,oneCycle=True)
         
     def OnSeqPeakFit(event):
         ''''Do a sequential peak fit across multiple histograms - peaks must be present in all.
@@ -875,9 +869,6 @@ def UpdatePeakGrid(G2frame, data):
         controls = {'deriv type':'analytic','min dM/M':0.001,}
         print ('Peak Fitting with '+controls['deriv type']+' derivatives:')
         oneCycle = False
-        FitPgm = 'LSQ'
-#        if data.get('FitPgm',0) == 1:
-#            FitPgm = 'LaueFringe'
         prevVaryList = []
         peaks = None
         varyList = None
@@ -902,7 +893,7 @@ def UpdatePeakGrid(G2frame, data):
                 Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
                 data = Pattern[1]
                 fixback = GetFileBackground(G2frame,data,background,scale=False)
-                peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
+                peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(None,peaks['peaks'],
                     background,limits,inst,inst2,data,fixback,prevVaryList,oneCycle,controls)   #needs wtFactor after controls?
                 if len(result[0]) != len(fullvaryList):
                     dlg.Destroy()
@@ -932,13 +923,13 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,peaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
-    def OnPeakFit(FitPgm,oneCycle=False,noFit=False):
+    def OnPeakFit(oneCycle=False,noFit=False):
         'Do peak fitting by least squares'
         SaveState()
         controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         if not controls:
             controls = {'deriv type':'analytic','min dM/M':0.001,}     #fill in defaults if needed
-        print ('Peak Fitting with '+controls['deriv type']+' derivatives:')
+        #print ('Peak Fitting with '+controls['deriv type']+' derivatives:')
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks:
@@ -951,34 +942,37 @@ def UpdatePeakGrid(G2frame, data):
         data = Pattern[1]
         wtFactor = Pattern[0]['wtFactor']
         bxye = GetFileBackground(G2frame,data,background,scale=False)
-        overallInfo = []
-#         peaks['LaueFringe'] = peaks.get('LaueFringe',{})
-#         peaks['LaueFringe']['satellites'] = []
-#         import LaueFringe as LF
-#         lines = peaks['LaueFringe'].get('Show')
-#         if 'Laue' in FitPgm:
-#             overallInfo = [{'ncell':peaks['LaueFringe']['ncell']}] # add overall info
-#             if lines:
-#                 for i in peaks['peaks']:
-#                     pks = list(range(-lines,0)) + list(range(1,lines+1))
-#                     peaks['LaueFringe']['satellites'].extend(
-#                         LF.LaueSatellite(i[0],peaks['LaueFringe']['ncell'],pks))
-# #======================================================================
-#         print('Debug: reload G2pwd')  # TODO: remove me
-#         import imp
-#         imp.reload(G2pwd)
-#         imp.reload(G2plt)
-#         # TODO: remove ^^^^
-#======================================================================
+        overallInfo = {}
+        peaks['LaueFringe'] = peaks.get('LaueFringe',{})
+        peaks['LaueFringe']['satellites'] = []
+        lines = peaks['LaueFringe'].get('Show')
+        if 'LF' in inst['Type'][0]:
+            wave = G2mth.getWave(inst)
+            overallInfo = {'ncell':peaks['LaueFringe']['ncell'],
+                            'clat': peaks['LaueFringe']['clat'],
+                            'clat-ref': peaks['LaueFringe']['clat-ref']
+                               } # add overall info
+            if lines:
+                for i in peaks['peaks']:
+                    pks = list(range(-lines,0)) + list(range(1,lines+1))
+                    peaks['LaueFringe']['satellites'].extend(
+                        G2pwd.LaueSatellite(i[0],wave,peaks['LaueFringe']['clat'],peaks['LaueFringe']['ncell'],pks))
+        peaksplus = peaks['peaks'] + [overallInfo]
         if noFit:
-            results = G2pwd.DoPeakFit(FitPgm,peaks['peaks']+overallInfo,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
+            results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
             return
-        dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0,
-            parent=G2frame,
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        results = G2pwd.DoPeakFit(FitPgm,peaks['peaks']+overallInfo,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
+        try:
+            dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0,parent=G2frame,
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+            results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
+        finally:
+            dlg.Destroy()
+        if results is None:
+            return
         peaks['sigDict'] = results[0]
+        if 'LF' in inst['Type'][0] and 'clat' in overallInfo:
+            peaks['LaueFringe']['clat'] = overallInfo['clat']
         text = 'Peak fit: Rwp=%.2f%% Nobs= %d Nparm= %d Npeaks= %d'%(results[3]['Rwp'],results[1][2]['fjac'].shape[1],len(results[0]),len(peaks['peaks']))
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
@@ -1133,17 +1127,12 @@ def UpdatePeakGrid(G2frame, data):
                     for row in range(reflGrid.GetNumberRows()): data['peaks'][row][c]=False
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
 
-    def updateMe(*args):
-        'Redraw the peak listings after the mode changes'
-        wx.CallAfter(UpdatePeakGrid,G2frame,data)
-        wx.CallLater(100,RefreshPeakGrid,None)
-
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
-        FitPgm = 'LSQ'
-#        if data.get('FitPgm',0) == 1:
-#            FitPgm = 'LaueFringe'
-        OnPeakFit(FitPgm,noFit=True)
+        if 'LF' in Inst['Type'][0]:
+            for i in range(len(data['LFpeaks'])):
+                data['peaks'][i][2:] = data['LFpeaks'][i]
+        OnPeakFit(noFit=True)
         
     def OnSetPeakWidMode(event):
         '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 
@@ -1154,7 +1143,6 @@ def UpdatePeakGrid(G2frame, data):
     #======================================================================
     #### beginning of UpdatePeakGrid
     #======================================================================
-    data['FitPgm'] = data.get('FitPgm',0)
     G2frame.GetStatusBar().SetStatusText('Global refine: select refine column & press Y or N',1)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
@@ -1170,6 +1158,7 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2G.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2G.wxID_RESETSIGGAM)
     G2frame.Bind(wx.EVT_MENU, OnSetPeakWidMode, id=G2G.wxID_SETUNVARIEDWIDTHS)
+    OnSetPeakWidMode(None)
     if data['peaks']:
         G2frame.dataWindow.AutoSearch.Enable(False)
         G2frame.dataWindow.PeakCopy.Enable(True)
@@ -1189,13 +1178,14 @@ def UpdatePeakGrid(G2frame, data):
     for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
     colLabels = []
     Types = []
-    for _,f,l in zip(*G2pwd.getHeaderInfo(
-        ('LSQ','LaueFringe')[data.get('FitPgm',0)],Inst['Type'][0])):
+    for _,f,l in zip(*G2pwd.getHeaderInfo(Inst['Type'][0])):
         colLabels.append(l)
-        colLabels.append('refine')
-        Types.append(wg.GRID_VALUE_FLOAT + 
-                         f.replace('%',':').replace('f','').replace('.',','))
-        Types.append(wg.GRID_VALUE_BOOL)
+        if "d" in f:
+            Types.append(wg.GRID_VALUE_NUMBER)
+        else:
+            Types.append(wg.GRID_VALUE_FLOAT + f.replace('%',':').replace('f','').replace('.',','))
+            colLabels.append('refine')
+            Types.append(wg.GRID_VALUE_BOOL)
     T = []
     for peak in data['peaks']:
         T.append(peak[0])
@@ -1206,17 +1196,33 @@ def UpdatePeakGrid(G2frame, data):
     X = []
     for key in T: X.append(D[key])
     data['peaks'] = X
-    # pad peak table, if needed
-    for j in range(len(data['peaks'])):
-        for i in range(len(data['peaks'][j]),len(colLabels)):
-            if colLabels[i] == 'refine':
-                data['peaks'][j].append(False)
-            else:
-                data['peaks'][j].append(1.0)
+
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
-    G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    if 'LF' in Inst['Type'][0]:
+        data['LFpeaks'] = []
+        for i in range(len(data['peaks'])):
+            if len(data['peaks'][i]) == 8:  # need to extend the entry 
+                if 'Lam' in Inst:
+                    lam = Inst['Lam'][0]
+                else:
+                    lam = (Inst['Lam1'][0] + 
+                            Inst['I(L2)/I(L1)'][0] * Inst['Lam2'][0]) / (
+                                1 + Inst['I(L2)/I(L1)'][0])
+                if i == 0: 
+                    pos = data['peaks'][i][0]
+                    data['LaueFringe']['clat'] = 0.5 * lam / np.sin(pos*np.pi/360)
+                    l = 1
+                else:
+                    l = data['LaueFringe']['clat'] / (0.5 * lam / np.sin(data['peaks'][i][0]*np.pi/360))
+                    l = int(l + 0.5)
+                    data['peaks'][i][0] = 360 * np.arcsin(0.5 * lam / (data['LaueFringe']['clat']/l)) / np.pi
+                data['peaks'][i] += [0., False, 0., False, l, None]
+            data['LFpeaks'].append(data['peaks'][i][2:])
+        G2frame.PeakTable = G2G.Table(data['LFpeaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    else:
+        G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Peak List')
     G2frame.dataWindow.currentGrids = []
     reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
@@ -1233,33 +1239,33 @@ def UpdatePeakGrid(G2frame, data):
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    # if 'C' in Inst['Type'][0]:
-        # topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        # topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Fitting mode: '),0,WACV)
-        # pkType = G2G.G2ChoiceButton(G2frame.dataWindow,('Powder diffraction','Laue fringes'),
-        #             indLoc=data,indKey='FitPgm',
-        #             onChoice=updateMe)
-        # topSizer.Add(pkType,0,WACV)
-        # if data['FitPgm']:
-        #     topSizer.Add((15,-1))
-        #     if 'LaueFringe' not in data:
-        #         data['LaueFringe'] = {'ncell':20}
-        #     elif 'ncell' not in data['LaueFringe']:
-        #         data['LaueFringe']['ncell'] = 20
-        #     siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell',
-        #                                'Laue ncell',
-        #                                onChange=RefreshPeakGrid,onChangeArgs=[None])
-        #     topSizer.Add(siz,0,WACV)
-        #     data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
-        #     #ch = G2G.G2CheckBox(G2frame.dataWindow,' Show',data['LaueFringe'],'Show',
-        #     #                        OnChange=RefreshPeakGrid)
-        #     topSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
-        #     ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
-        #                             ['None','1','2','3','4','5','6'],list(range(7)),
-        #                             OnChange=RefreshPeakGrid)
-        #     topSizer.Add(ch,0,WACV)
-        #     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
-        # mainSizer.Add(topSizer)
+    if 'LF' in Inst['Type'][0]:
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Laue Fringe fitting'))
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Overall parms: c='),0,WACV)
+        data['LaueFringe'] = data.get('LaueFringe',{})
+        data['LaueFringe']['ncell'] = data['LaueFringe'].get('ncell',20)
+        data['LaueFringe']['clat'] =  data['LaueFringe'].get('clat',9.0)
+        data['LaueFringe']['clat-ref'] =  data['LaueFringe'].get('clat-ref',False)
+        data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'clat',
+                                    typeHint=float,nDig=(10,4),
+                                    OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        topSizer.Add(cVal,0,WACV)
+        cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
+        topSizer.Add(cRef,0,WACV)
+        topSizer.Add((15,-1))
+        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell',
+                                       'Laue ncell',
+                                       onChange=RefreshPeakGrid,onChangeArgs=[None])
+        topSizer.Add(siz,0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
+        ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
+                                    ['None','1','2','3','4','5','6'],list(range(7)),
+                                    OnChange=RefreshPeakGrid)
+        topSizer.Add(ch,0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
+        mainSizer.Add(topSizer)
     mainSizer.Add(reflGrid,0,wx.ALL,10)
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()

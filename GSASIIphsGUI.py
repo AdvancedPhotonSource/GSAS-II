@@ -3607,9 +3607,15 @@ def UpdatePhaseData(G2frame,Item,data):
         if SGData['SGPolax']:
             G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
         if 'phoenix' in wx.version():
+            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
             Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
         else:
+            Atoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
             Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
+        Atoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
+        Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
+        Atoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
+        Atoms.Unbind(wg.EVT_GRID_LABEL_RIGHT_CLICK)
         Atoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -8968,9 +8974,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
         if 'phoenix' in wx.version():
+            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
             drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
         else:
+            drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
             drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
+        drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
+        drawAtoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
+        drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -13301,38 +13312,24 @@ of the crystal structure.
             
         # FillPawleyReflectionsGrid executable starts here
         G2frame.GetStatusBar().SetStatusText('To delete a Pawley reflection: select row & press Delete',1)                        
-        # oldSizer = PawleyRefList.GetSizer()
-        # if oldSizer: oldSizer.Clear(True)
+        if G2frame.PawleyRefl in G2frame.phaseDisplay.gridList:
+            G2frame.phaseDisplay.gridList.remove(G2frame.PawleyRefl)
+        oldSizer = PawleyRefList.GetSizer()
+        if oldSizer: oldSizer.Clear(True)
         generalData = data['General']
         PawleyPeaks = data['Pawley ref']
-        # removed because it interfered with normal ops. & crashed GSAS-II
-        # if len(PawleyPeaks) == 0 or not generalData['doPawley']:
-        #     msg = ('Pawley refinement not yet set up. Use the "Pawley setup"'+
-        #             ' and "Pawley create" menu commands to change this. '+
-        #             '(Note settings also found on General tab).')
-        #     if not generalData['doPawley']:
-        #         msg += '\n\nCall Pawley setup?'
-        #     else:
-        #         msg += '\n\nCall Pawley create?'
-        #     dlg = wx.MessageDialog(G2frame,msg,'Pawley not setup',
-        #                            wx.YES_NO | wx.ICON_QUESTION)
-        #     try:
-        #         dlg.CenterOnParent()
-        #         result = dlg.ShowModal()
-        #         if result == wx.ID_YES and not generalData['doPawley']:
-        #             wx.CallAfter(OnPawleySet,None)
-        #         elif result == wx.ID_YES:
-        #             wx.CallAfter(OnPawleyLoad,None)
-        #     finally:
-        #         dlg.Destroy()
+
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(PawleyRefList,label='Pawley reflections for %s:'%generalData['Name']),0,WACV)
+        if len(PawleyPeaks) and generalData['doPawley']:            
+            topSizer.Add(wx.StaticText(PawleyRefList,label='Pawley reflections for %s:'%generalData['Name']),0,WACV)
+        else:
+            topSizer.Add(wx.StaticText(PawleyRefList,label='There are no Pawley reflections for %s:'%generalData['Name']),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(PawleyRefList,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(topSizer,0,wx.EXPAND)
         rowLabels = []
-        if len(PawleyPeaks):            
+        if len(PawleyPeaks) and generalData['doPawley']:
             for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
             if generalData['Modulated']:
                 colLabels = ['h','k','l','m','mul','d','refine','Fsq(hkl)','sig(Fsq)']
@@ -13345,8 +13342,11 @@ of the crystal structure.
                     2*[wg.GRID_VALUE_FLOAT+':10,2',]
                 pos = [5,6]
             PawleyTable = G2G.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)
             G2frame.PawleyRefl.SetTable(PawleyTable, True)
-            G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+            G2frame.PawleyRefl.Unbind(wx.EVT_KEY_DOWN)
+            G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)
+            G2frame.PawleyRefl.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
             G2frame.PawleyRefl.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onRefineDClick)
             for r in range(G2frame.PawleyRefl.GetNumberRows()):
                 for c in range(G2frame.PawleyRefl.GetNumberCols()):
@@ -13358,7 +13358,10 @@ of the crystal structure.
             G2frame.PawleyRefl.AutoSizeColumns(False)
             mainSizer.Add(G2frame.PawleyRefl)
         else:
-            mainSizer.Add(wx.StaticText(PawleyRefList,label=' There are no Pawley reflections'))
+            msg = ('\tPawley refinement has not yet been set up. Use the Operations->"Pawley setup"'+
+                       ' menu command to change this.\n\t'+
+                       '(If Pawley settings have already been set on the General tab, use Operations->"Pawley create").')
+            mainSizer.Add(wx.StaticText(PawleyRefList,label=msg))
         SetPhaseWindow(PawleyRefList,mainSizer)
                     
     def OnPawleySet(event):
@@ -13369,7 +13372,8 @@ of the crystal structure.
             pawlVal.Enable(generalData['doPawley'])
             pawlNegWt.Enable(generalData['doPawley'])
         generalData = data['General']
-        startPawley = generalData['doPawley']
+        prevPawleySetting = generalData['doPawley']
+        generalData['doPawley'] = True  # make Pawley extraction the default if we get here
         startDmin = generalData['Pawley dmin']
         genDlg = wx.Dialog(G2frame,title='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
@@ -13424,9 +13428,12 @@ of the crystal structure.
         genDlg.CenterOnParent()
         res = genDlg.ShowModal()
         genDlg.Destroy()
+        if res == wx.ID_NO: return
 
-        if generalData['doPawley'] and res == wx.ID_OK and (not startPawley or startDmin != generalData['Pawley dmin']):
-            dlg = wx.MessageDialog(G2frame,'Do you want to initialize the Pawley reflections with the settings?','Initialize Pawley?', 
+        # ask to generate the reflections if the extraction setting or dmin has changed
+        if generalData['doPawley'] and res == wx.ID_OK and (
+                not prevPawleySetting or startDmin != generalData['Pawley dmin']):
+            dlg = wx.MessageDialog(G2frame,'Do you want to generate the Pawley reflections with these settings? ("Pawley create" command)','Initialize Pawley?',
                 wx.YES_NO | wx.ICON_QUESTION)
             try:
                 result = dlg.ShowModal()
@@ -13677,6 +13684,7 @@ of the crystal structure.
             Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
             G2frame.MapPeaksTable = G2G.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             MapPeaks.SetTable(G2frame.MapPeaksTable, True)
+            MapPeaks.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
             MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             for r in range(MapPeaks.GetNumberRows()):
                 for c in range(MapPeaks.GetNumberCols()):
@@ -14535,9 +14543,10 @@ of the crystal structure.
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')
     PawleyRefList = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)
+    G2frame.PawleyRefl = None  # grid now created when needed
+#    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)  
 #    G2frame.PawleyRefl.SetScrollRate(0,0)
-    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
+#    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
     Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)

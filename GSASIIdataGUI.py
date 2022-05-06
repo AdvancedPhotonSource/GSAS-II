@@ -396,6 +396,9 @@ should generate warnings or error messages.
 
  * We know of problems with Python <2.7 and <3.6. 
  * A problem has been noted with wx4.0.7.post2 with Python 3.10 that we can't yet duplicate (2/4/22). 
+ * We anticipate that Python 3.10 will flag code that previously worked fine
+    with errors where we pass a floating point number to a wxpython routine that
+    expects a int value. 
 
 * wxPython:
 
@@ -445,8 +448,7 @@ def ShowVersions():
     print ("  Python:     {} from {}".format(sys.version.split()[0],sys.executable))
     if compareVersions(platform.python_version(),
                         versionDict['tooNewWarn']['python']) >= 0:
-        print (22*' '+"-- This version of Python is too new for testing")
-    Image = None
+        print (22*' '+"-- We are anticipating significant problems with this new version of Python. Please report them.")
     version = '?'
     versionDict['errors'] = ''
     warn = False
@@ -477,6 +479,7 @@ def ShowVersions():
                     warn = True
                     break
         print("  {:12s}{}  {}".format(s+':',m.__version__,msg))
+    Image = None
     try:
         from PIL import Image
     except ImportError:

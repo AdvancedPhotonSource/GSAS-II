@@ -1140,9 +1140,9 @@ def UpdatePeakGrid(G2frame, data):
         '''
         state = G2frame.dataWindow.setPeakMode.IsChecked()
         G2pwd.setPeakInstPrmMode(state)
+
     #======================================================================
     #### beginning of UpdatePeakGrid
-    #======================================================================
     G2frame.GetStatusBar().SetStatusText('Global refine: select refine column & press Y or N',1)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
@@ -1212,8 +1212,8 @@ def UpdatePeakGrid(G2frame, data):
                                 1 + Inst['I(L2)/I(L1)'][0])
                 if i == 0: 
                     pos = data['peaks'][i][0]
-                    data['LaueFringe']['clat'] = 0.5 * lam / np.sin(pos*np.pi/360)
-                    l = 1
+                    data['LaueFringe']['clat'] = data['LaueFringe']['lmin'] * 0.5 * lam / np.sin(pos*np.pi/360)
+                    l = data['LaueFringe']['lmin']
                 else:
                     l = data['LaueFringe']['clat'] / (0.5 * lam / np.sin(data['peaks'][i][0]*np.pi/360))
                     l = int(l + 0.5)
@@ -1246,6 +1246,7 @@ def UpdatePeakGrid(G2frame, data):
         data['LaueFringe'] = data.get('LaueFringe',{})
         data['LaueFringe']['ncell'] = data['LaueFringe'].get('ncell',20)
         data['LaueFringe']['clat'] =  data['LaueFringe'].get('clat',9.0)
+        data['LaueFringe']['lmin'] =  data['LaueFringe'].get('lmin',1)
         data['LaueFringe']['clat-ref'] =  data['LaueFringe'].get('clat-ref',False)
         data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
         cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'clat',
@@ -1255,10 +1256,15 @@ def UpdatePeakGrid(G2frame, data):
         cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
         topSizer.Add(cRef,0,WACV)
         topSizer.Add((15,-1))
+        siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin',
+                                       'l min')
+        topSizer.Add(siz,0,WACV)
+        topSizer.Add((15,-1))
         siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell',
                                        'Laue ncell',
                                        onChange=RefreshPeakGrid,onChangeArgs=[None])
         topSizer.Add(siz,0,WACV)
+        topSizer.Add((15,-1))
         topSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
         ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
                                     ['None','1','2','3','4','5','6'],list(range(7)),

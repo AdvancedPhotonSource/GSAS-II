@@ -1383,7 +1383,7 @@ instrument parameters to be refined. When peakInstPrmMode=False, the instrument
 parameters are not used and cannot be refined. 
 The default is peakFitMode=True. This is changed only in 
 :func:`setPeakInstPrmMode`, which is called from :mod:`GSASIIscriptable`
-or GSASIIOnSetPeakWidMode ('Gen unvaried widths' menu item).
+or GSASIIphsGUI.OnSetPeakWidMode ('Gen unvaried widths' menu item).
 '''
 
 def setPeakInstPrmMode(normal=True):
@@ -2337,6 +2337,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         print (sigstr)
 
     def SetPeaksParms(dataType,Peaks):
+        '''Set the contents of peakDict from list Peaks
+        '''
         peakDict = {}
         peakVary = []
         names,_,_ = getHeaderInfo(dataType)
@@ -2354,6 +2356,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return peakDict,peakVary
                 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
+        '''Put values into the Peaks list from the refinement results from inside
+        the parmDict array
+        '''
         off = 0
         if 'LF' in Inst['Type'][0]: 
             off = 2
@@ -2366,34 +2371,37 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             for j in range(len(names)):
                 parName = names[j]+str(i)
                 if parName in varyList or not peakInstPrmMode:
-                    peak[2*j+off] = parmDict[parName]                
+                    peak[2*j+off] = parmDict[parName]
+            if 'pos'+str(i) not in parmDict: continue
             pos = parmDict['pos'+str(i)]
             if 'LF' in Inst['Type'][0]: peak[0] = pos
             if 'difC' in Inst:
                 dsp = pos/Inst['difC'][1]
             for j in range(len(names)):
+                parName = names[j]+str(i)
+                if peak[2*j+off + 1] or not peakInstPrmMode: continue
                 if 'alp' in parName:
                     if 'T' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getTOFalpha(parmDict,dsp)
+                        peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
                     else: #'B'
-                        peak[2*j] = G2mth.getPinkalpha(parmDict,pos)
+                        peak[2*j+off] = G2mth.getPinkalpha(parmDict,pos)
                 elif 'bet' in parName:
                     if 'T' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getTOFbeta(parmDict,dsp)
+                        peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
                     else:   #'B'
-                        peak[2*j] = G2mth.getPinkbeta(parmDict,pos)
+                        peak[2*j+off] = G2mth.getPinkbeta(parmDict,pos)
                 elif 'sig' in parName:
                     if 'T' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getTOFsig(parmDict,dsp)
+                        peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)
                     elif 'E' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getEDsig(parmDict,pos)
+                        peak[2*j+off] = G2mth.getEDsig(parmDict,pos)
                     else:   #'C' & 'B'
-                        peak[2*j] = G2mth.getCWsig(parmDict,pos)
+                        peak[2*j+off] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
                     if 'T' in Inst['Type'][0]:
-                        peak[2*j] = G2mth.getTOFgamma(parmDict,dsp)
+                        peak[2*j+off] = G2mth.getTOFgamma(parmDict,dsp)
                     else:   #'C' & 'B'
-                        peak[2*j] = G2mth.getCWgam(parmDict,pos)
+                        peak[2*j+off] = G2mth.getCWgam(parmDict,pos)
                         
     def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
         if 'clat' in varyList:

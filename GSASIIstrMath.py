@@ -18,6 +18,7 @@ import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.stats as st
 import multiprocessing as mp
+import pickle
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
@@ -3273,6 +3274,20 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
         return alp,bet
 
+    # set up for save of phase partials if triggered in GSASIIdataGUI.OnRefinePartials
+    phasePartials = calcControls.get('PhasePartials',None)
+    def SavePartial(*args): pass
+    if phasePartials:
+        phPartialFile = phasePartials+'.partials'+str(Histogram['hId'])
+        phPartialFP = open(phPartialFile,'wb')  # create/overwrite a file
+        pickle.dump(x,phPartialFP)
+        phPartialFP.close()
+        print('Storing intensity by phase in',phPartialFile)
+        def SavePartial(phase,y):
+            phPartialFP = open(phPartialFile,'ab')  # append to file
+            pickle.dump(phase,phPartialFP)
+            pickle.dump(y,phPartialFP)
+            phPartialFP.close()
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -3344,6 +3359,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         # test to see if we are using multiprocessing here
         useMP,ncores = G2mp.InitMP()
         if len(refDict['RefList']) < 100: useMP = False        
+        if phasePartials:
+            useMP = False
+            ypartial = np.zeros_like(yb)
         if useMP: # multiprocessing: create a set of initialized Python processes
             MPpool = mp.Pool(ncores,G2mp.InitPwdrProfGlobals,[im,shl,x])
             profArgs = [[] for i in range(ncores)]
@@ -3386,6 +3404,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     fp = G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp   #>90% of time spent here
+                    if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
                 if Ka2:
                     pos2 = refl[5+im]+lamRatio*tand(refl[5+im]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
@@ -3402,6 +3421,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     else:
                         fp2 = G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
+                        if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2
+            if phasePartials: SavePartial(phase,ypartial)
         elif 'E' in calcControls[hfx+'histType']:
             
             for iref,refl in enumerate(refDict['RefList']):

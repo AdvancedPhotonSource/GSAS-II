@@ -766,7 +766,9 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-
+        # this could be disabled during sequential fits:
+        item = parent.Append(wx.ID_ANY,'Compute partials','Record the contribution from each phase')
+        self.Bind(wx.EVT_MENU, self.OnRefinePartials, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Absorb','x-ray absorption')
@@ -5349,6 +5351,7 @@ class GSASII(wx.Frame):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
+        self._cleanPartials()  # phase partials invalid after a refinement
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return
@@ -5447,6 +5450,7 @@ class GSASII(wx.Frame):
         '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
         either single or sequentially
         '''
+        self._cleanPartials()  # phase partials invalid after a refinement
         self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
@@ -5501,7 +5505,96 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Le Bail error',Rvals['msg'])
             return True
         return False
+    
+    def _cleanPartials(self):
+        '''Delete any partials created with :meth:`OnRefinePartials`; used
+        in GUI-based refinements, as the partials are no longer correct after 
+        any fit.
+        '''
+        PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0])
+        histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
+        for h in histograms:
+            if 'PWDR' not in h[:4]: continue
+            hId = histograms[h]['hId']
+            phPartialFile = PhasePartials+'.partials'+str(hId)
+            if os.path.exists(phPartialFile):
+                os.remove(phPartialFile)
+                print('file deleted:',phPartialFile)
 
+
+    def OnRefinePartials(self,event):
+        '''Computes and saves the intensities from each phase for each powder 
+        histogram. These inten
+        Do a 0 cycle fit with no variables to pickle intensities for each 
+        phase into a file.
+        Not for sequential fits.
+        Sets Controls['PhasePartials'] to a file name to trigger save of
+        info in :meth:`GSASIIstrMath.getPowderProfile` and then clear that. 
+        '''
+        if self.testSeqRefineMode():
+            G2G.G2MessageBox(self,
+                'Phase partials cannot be computed for seqiential fits'
+                'not allowed')
+            return
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        savCyc,Controls['max cyc'] = Controls['max cyc'],0
+        Controls['PhasePartials'] = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0])
+        self.OnFileSave(event)
+        dlg = G2G.RefinementProgress(parent=self)
+        self.SaveTreeSetting() # save the current tree selection
+        self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
+        
+        import pickle
+        
+        try:
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=None,newLeBail=False)
+        except Exception as msg:
+            print('Refinement failed with message',msg)
+            return True
+        finally:
+            dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
+            # assemble the arrays by histogram
+            
+        histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
+        for h in histograms:
+            if 'PWDR' not in h[:4]: continue
+            hId = histograms[h]['hId']
+            hfx = ':%d:'%(hId)
+            Limits = histograms[h]['Limits'][1]
+            x = histograms[h]['Data'][0]
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])+1
+            phPartialFile = Controls['PhasePartials']+'.partials'+str(hId)
+            fp = open(phPartialFile,'rb')
+            pickle.load(fp)   # skip over x values
+            valList = [x,histograms[h]['Data'][1],
+                           histograms[h]['Data'][2],histograms[h]['Data'][3],
+                           histograms[h]['Data'][4]]
+            lblList = ['x','obs','wgt','calc','background']
+            while True:
+                try:
+                    ph = pickle.load(fp)
+                    lblList.append(ph)
+                    ypartial = np.zeros_like(x)
+                    ypartial[xB:xF] = pickle.load(fp)
+                    valList.append(ypartial)
+                except EOFError:
+                    break
+            fp.close()
+            phPartialFile = Controls['PhasePartials']+'_part_'+str(histograms[h]['hId'])+'.csv'
+            fp = open(phPartialFile,'w')
+            fp.write(', '.join(lblList))
+            fp.write('\n')
+            for l in zip(*valList):
+                fp.write(', '.join([str(i) for i in l])+'\n')
+            fp.close()
+            print('File',phPartialFile,'written')
+        dlg.Destroy()
+        Controls['max cyc'] = savCyc
+        Controls['PhasePartials'] = None
+        self.OnFileSave(event)
+        return False
+    
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
         refinemnt.) Done after events are completed to avoid crashes.

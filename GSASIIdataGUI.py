@@ -766,8 +766,9 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-        # this could be disabled during sequential fits:
         item = parent.Append(wx.ID_ANY,'Compute partials','Record the contribution from each phase')
+        self.Refine.append(item)
+        item.Enable(state) # disabled during sequential fits
         self.Bind(wx.EVT_MENU, self.OnRefinePartials, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
@@ -808,8 +809,8 @@ class GSASII(wx.Frame):
             seqSetting = None
             
         for item in self.Refine:
-            if 'Le Bail' in item.GetItemLabel():
-                if seqSetting: item.Enable(False)
+            if 'Le Bail' in item.GetItemLabel() or 'partials' in item.GetItemLabel() :
+                item.Enable(not seqSetting)
             elif seqSetting:
                 item.SetItemLabel('Se&quential refine\tCtrl+R')    #might fail on old wx
             else:
@@ -2753,7 +2754,7 @@ class GSASII(wx.Frame):
         def OnSaveLog(event):
             defnam = os.path.splitext(os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
             dlg = wx.FileDialog(self,
-                'Choose an file to save past actions', '.', defnam, 
+                'Choose a file to save past actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
                 wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             dlg.CenterOnParent()
@@ -5511,15 +5512,10 @@ class GSASII(wx.Frame):
         in GUI-based refinements, as the partials are no longer correct after 
         any fit.
         '''
-        PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0])
-        histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
-        for h in histograms:
-            if 'PWDR' not in h[:4]: continue
-            hId = histograms[h]['hId']
-            phPartialFile = PhasePartials+'.partials'+str(hId)
-            if os.path.exists(phPartialFile):
-                os.remove(phPartialFile)
-                print('file deleted:',phPartialFile)
+        PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
+        if os.path.exists(PhasePartials):
+            os.remove(PhasePartials)
+            print('file deleted:',PhasePartials)
 
 
     def OnRefinePartials(self,event):
@@ -5531,65 +5527,114 @@ class GSASII(wx.Frame):
         Sets Controls['PhasePartials'] to a file name to trigger save of
         info in :meth:`GSASIIstrMath.getPowderProfile` and then clear that. 
         '''
-        if self.testSeqRefineMode():
+        if self.testSeqRefineMode():  # should not happen, as should not be enabled
             G2G.G2MessageBox(self,
-                'Phase partials cannot be computed for seqiential fits'
-                'not allowed')
+                'Phase partials cannot be computed for sequential fits',
+                'Sequential not allowed')
             return
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         savCyc,Controls['max cyc'] = Controls['max cyc'],0
-        Controls['PhasePartials'] = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0])
+        Controls['PhasePartials'] = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
         self.OnFileSave(event)
         dlg = G2G.RefinementProgress(parent=self)
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         
-        import pickle
-        
         try:
             OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=None,newLeBail=False)
         except Exception as msg:
             print('Refinement failed with message',msg)
+            Controls['max cyc'] = savCyc
+            Controls['PhasePartials'] = None
+            self.OnFileSave(event)
             return True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
-            # assemble the arrays by histogram
+        dlg.Destroy()
+
+        while True: # loop until we get a name or the user says no to export
+            dlg = wx.MessageDialog(self.GetTopLevelParent(),
+                'Export the partial intensities by phase as a comma-separated-variable file?',
+                caption='Export partials?',style=wx.YES_NO)
+            dlg.CenterOnParent()
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO:
+                Controls['max cyc'] = savCyc
+                Controls['PhasePartials'] = None
+                self.OnFileSave(event)
+                return
+
+            filename = None
+            defpath,defnam = os.path.split(os.path.abspath(
+                os.path.splitext(self.GSASprojectfile)[0]+'_part_N.csv'))
             
+            dlg = wx.FileDialog(self,
+                'Choose a file prefix to save the partials', defpath, defnam, 
+                'spreadsheet input (*.csv)|*.csv',wx.FD_SAVE)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    filename = os.path.splitext(dlg.GetPath())[0]   # drop extension
+                    if not filename.endswith('_part_N'):
+                        filename += '_part_N'
+                    break
+            finally:
+                dlg.Destroy()
+        # write the .csv file(s)
+        import pickle
         histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
-        for h in histograms:
-            if 'PWDR' not in h[:4]: continue
-            hId = histograms[h]['hId']
-            hfx = ':%d:'%(hId)
-            Limits = histograms[h]['Limits'][1]
-            x = histograms[h]['Data'][0]
-            xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])+1
-            phPartialFile = Controls['PhasePartials']+'.partials'+str(hId)
-            fp = open(phPartialFile,'rb')
-            pickle.load(fp)   # skip over x values
-            valList = [x,histograms[h]['Data'][1],
+        phPartialFile = Controls['PhasePartials']
+        fp = open(phPartialFile,'rb')
+        pickle.load(fp)   # skip over initial None
+        done = False
+        while not done:   # looping over histograms
+            valList = None
+            lblList = ['x','obs','wgt','calc','background']
+            try:
+                hId = pickle.load(fp)   # get histogram number
+                pickle.load(fp)   # skip over x values
+                pickle.load(fp)   # skip over bkg values
+                for h in histograms:
+                    if 'PWDR' not in h[:4]: continue
+                    if hId == histograms[h]['hId']: break
+                else:
+                    print('Error histogram',hId,'not found. This should not happen!')
+                    fp.close()
+                    Controls['max cyc'] = savCyc
+                    Controls['PhasePartials'] = None
+                    self.OnFileSave(event)
+                    return
+                Limits = histograms[h]['Limits'][1]
+                x = histograms[h]['Data'][0]
+                xB = np.searchsorted(x,Limits[0])
+                xF = np.searchsorted(x,Limits[1])+1
+                valList = [x,histograms[h]['Data'][1],
                            histograms[h]['Data'][2],histograms[h]['Data'][3],
                            histograms[h]['Data'][4]]
-            lblList = ['x','obs','wgt','calc','background']
-            while True:
-                try:
-                    ph = pickle.load(fp)
-                    lblList.append(ph)
+                while True: # read until we hit an EOF or a None
+                    phase = pickle.load(fp)   # get histogram number
+                    if phase is None: break
+                    lblList.append(phase)
                     ypartial = np.zeros_like(x)
                     ypartial[xB:xF] = pickle.load(fp)
                     valList.append(ypartial)
-                except EOFError:
-                    break
-            fp.close()
-            phPartialFile = Controls['PhasePartials']+'_part_'+str(histograms[h]['hId'])+'.csv'
-            fp = open(phPartialFile,'w')
-            fp.write(', '.join(lblList))
-            fp.write('\n')
-            for l in zip(*valList):
-                fp.write(', '.join([str(i) for i in l])+'\n')
-            fp.close()
-            print('File',phPartialFile,'written')
-        dlg.Destroy()
+            except EOFError:
+                done = True
+            if valList:
+                phPartialFile = filename.replace('_part_N',
+                                                 '_part_'+str(hId)+'.csv')
+                fp1 = open(phPartialFile,'w')
+                fp1.write(', '.join(lblList))
+                fp1.write('\n')
+                for l in zip(*valList):
+                    fp1.write(', '.join([str(i) for i in l])+'\n')
+                fp1.close()
+                print('File',phPartialFile,'written')
+
         Controls['max cyc'] = savCyc
         Controls['PhasePartials'] = None
         self.OnFileSave(event)

@@ -3274,20 +3274,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
         return alp,bet
 
-    # set up for save of phase partials if triggered in GSASIIdataGUI.OnRefinePartials
-    phasePartials = calcControls.get('PhasePartials',None)
-    def SavePartial(*args): pass
-    if phasePartials:
-        phPartialFile = phasePartials+'.partials'+str(Histogram['hId'])
-        phPartialFP = open(phPartialFile,'wb')  # create/overwrite a file
-        pickle.dump(x,phPartialFP)
-        phPartialFP.close()
-        print('Storing intensity by phase in',phPartialFile)
-        def SavePartial(phase,y):
-            phPartialFP = open(phPartialFile,'ab')  # append to file
-            pickle.dump(phase,phPartialFP)
-            pickle.dump(y,phPartialFP)
-            phPartialFP.close()
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -3296,6 +3282,20 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     yc = np.zeros_like(yb)
     cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
+    # set up for save of phase partials if triggered in GSASIIdataGUI.OnRefinePartials
+    phasePartials = calcControls.get('PhasePartials',None)
+    if phasePartials:
+        phPartialFP = open(phasePartials,'ab')  # create histogram header
+        pickle.dump(None,phPartialFP)
+        pickle.dump(hId,phPartialFP)
+        pickle.dump(x,phPartialFP)
+        pickle.dump(yb,phPartialFP)
+        phPartialFP.close()
+        def SavePartial(phase,y):
+            phPartialFP = open(phasePartials,'ab')  # append to file
+            pickle.dump(phase,phPartialFP)
+            pickle.dump(y,phPartialFP)
+            phPartialFP.close()
         
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -4261,6 +4261,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     #fixup Hatom positions here....
     histoList = list(Histograms.keys())
     histoList.sort()
+    phasePartials = calcControls.get('PhasePartials',None)
+    if phasePartials:
+        print('Storing intensity by phase in',phasePartials)
+        phPartialFP = open(phasePartials,'wb')  # create/clear partials file
+        phPartialFP.close()
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]

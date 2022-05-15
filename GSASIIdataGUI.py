@@ -17,6 +17,7 @@ data editing panel.
 '''
 from __future__ import division, print_function
 import platform
+import pickle
 import time
 import math
 import random as ran
@@ -5517,7 +5518,35 @@ class GSASII(wx.Frame):
             os.remove(PhasePartials)
             print('file deleted:',PhasePartials)
 
-
+    def LoadPartial(self,target_hId):
+        PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
+        if not os.path.exists(PhasePartials): return None,None,[]
+        fp = open(PhasePartials,'rb')
+        pickle.load(fp)   # skip over initial None
+        while True:   # loop until we find target histogram or hit end of file
+            yDict = {}
+            try:
+                hId = pickle.load(fp)   # get histogram number
+                if hId == target_hId:
+                    # found the target, read until we get a None or EOF
+                    x = pickle.load(fp)   
+                    yb = pickle.load(fp)
+                    while True: 
+                        phase = pickle.load(fp)
+                        if phase is None:
+                            fp.close()
+                            return  x, yb, yDict
+                        yDict[phase] = pickle.load(fp)
+                else:
+                    while pickle.load(fp) is not None:
+                        pass
+            except EOFError:
+                if yDict:
+                    fp.close()
+                    return  x, yb, yDict
+                # did not find the right histogram -- unexpected!
+                return None,None,[]             
+                
     def OnRefinePartials(self,event):
         '''Computes and saves the intensities from each phase for each powder 
         histogram. These inten
@@ -5585,7 +5614,6 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
         # write the .csv file(s)
-        import pickle
         histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
         phPartialFile = Controls['PhasePartials']
         fp = open(phPartialFile,'rb')
@@ -5616,7 +5644,7 @@ class GSASII(wx.Frame):
                            histograms[h]['Data'][2],histograms[h]['Data'][3],
                            histograms[h]['Data'][4]]
                 while True: # read until we hit an EOF or a None
-                    phase = pickle.load(fp)   # get histogram number
+                    phase = pickle.load(fp)   # get phase & then y vals
                     if phase is None: break
                     lblList.append(phase)
                     ypartial = np.zeros_like(x)

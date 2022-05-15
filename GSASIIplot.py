@@ -3420,8 +3420,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
             # recompute mask from excluded regions, in case they have changed
-            excls = limits[2:]
-            for excl in excls:
+            for excl in limits[2:]:
                 xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
             if not G2frame.Contour:
                 xye0 = ma.masked_outside(xye[0],limits[1][0],limits[1][1],copy=False)            #now mask for limits
@@ -3441,10 +3440,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             if not refineMode:
                 magLineList = data[0].get('Magnification',[])
-            if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
-                ('B' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
-                ('E' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
-                ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
+            if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or (
+                'B' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or (
+                'E' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or (
+                'T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
                 tcorner = 1
                 tpos = 1.0
                 halign = 'right'
@@ -3496,8 +3495,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 np.seterr(invalid=olderr['invalid'])
             elif Page.plotStyle.get('WgtDiagnostic',False):
                 Y = xye[1]*xye[2]       #Y-obs*wt
-            elif 'PWDR' in plottype and G2frame.SinglePlot and not \
-                (Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
+            elif 'PWDR' in plottype and G2frame.SinglePlot and not (
+                    Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                 Y = YI*multArray+NoffY*Ymax/100.0
             else:
                 Y = YI+NoffY*Ymax/100.0
@@ -3519,10 +3518,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
             elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
+            # plot limit lines
             Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),
                                     picker=True,pickradius=3.))    
             Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),
                                     picker=True,pickradius=3.)) 
+            # plot excluded region lines
             for i,item in enumerate(lims[1:]):
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),
                                     picker=True,pickradius=3.))    
@@ -3623,16 +3624,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 CalcLine = None
                 BackLine = None
                 DifLine = [None]
-                if 'PWDR' in plottype and Page.plotStyle['exclude'] and len(limits[2:]):
-                    Emask = ma.getmask(X)
-                    excls = limits[2:]
-                    for excl in excls:
+                if 'PWDR' in plottype and len(limits[2:]):   # compute mask for excluded regions
+                    Emask = copy.deepcopy(ma.getmask(X))
+                    for excl in limits[2:]:
                         Emask += ma.getmask(ma.masked_inside(xye[0],excl[0],excl[1],copy=False))
-                    Xum = ma.array(Xum,mask=Emask)
-                    X = ma.array(X,mask=Emask)
-                    Y = ma.array(Y,mask=Emask)
-                    Z = ma.array(Z,mask=Emask)
-                    W = ma.array(W,mask=Emask)
+                    if Page.plotStyle['exclude']:            # optionally apply mask
+                        Xum = ma.array(Xum,mask=Emask)
+                        X = ma.array(X,mask=Emask)
+                        Y = ma.array(Y,mask=Emask)
+                        Z = ma.array(Z,mask=Emask)
+                        W = ma.array(W,mask=Emask)
+                    D = ma.array(D,mask=Emask)              # difference plot is always masked
 
                 if G2frame.Weight:
                     Plot1.set_yscale("linear")                                                  
@@ -3641,8 +3643,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (Y-B-Z)*np.sqrt(wtFactor*xye[2])
                     else:
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
-                        if Page.plotStyle['exclude']:
-                            DZ = ma.array(DZ,mask=Emask)
+                        if 'PWDR' in plottype and len(limits[2:]):
+                            DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
                     DifLine = Plot1.plot(X,DZ,colors[3],
                         picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
@@ -3888,6 +3890,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     break
             Plot.plot(x,y,'rD',clip_on=Clip_on,picker=True,pickradius=10.)
+
+    # plot the partials. TODO: get partials to show up in publication plot
+    plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
+    if 'PWDR' in plottype and G2frame.SinglePlot:
+        x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])
+        if x is not None:
+            if Page.plotStyle['qPlot']:
+                x = 2.*np.pi/G2lat.Pos2dsp(Parms,x)
+            elif Page.plotStyle['dPlot']:
+                x = G2lat.Pos2dsp(Parms,x)
+            olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
+            for ph in ypList:
+                #ypList[ph] += yb    # looks better w/o adding background
+                if Page.plotStyle['sqrtPlot']:
+                    y = np.where(ypList[ph]>=0.,np.sqrt(ypList[ph]),-np.sqrt(-ypList[ph]))
+                else:
+                    y = ypList[ph]
+                Plot.plot(x,y,Page.phaseColors.get(ph,'k'),picker=False,
+                          label=ph,linewidth=2.5)
+                plotOpt['lineList'].append(ph)   # needed?
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
@@ -5038,7 +5060,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             if not plotOpt['legend'].get(lbl):
                 uselbl = '_'+lbl
             else:
-                uselbl = plotOpt['phaseLabels'][lbl]
+                uselbl = plotOpt['phaseLabels'].get(lbl,lbl)
             art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
                      lw=l.get_lw(),ls=l.get_ls(),label=uselbl,
                      marker=l.get_marker(),ms=siz,mew=mew,

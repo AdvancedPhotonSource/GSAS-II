@@ -2488,6 +2488,10 @@ class FlagSetDialog(wx.Dialog):
 ################################################################################
 def G2MessageBox(parent,msg,title='Error'):
     '''Simple code to display a error or warning message
+
+    TODO: replace wx.MessageDialog with one derived from wx.Dialog because
+    on most platforms wx.MessageDialog is a native widget and CentreOnParent
+    will not function. 
     '''
     dlg = wx.MessageDialog(parent,StripIndents(msg), title, wx.OK|wx.CENTRE)
     dlg.CentreOnParent()

@@ -73,6 +73,7 @@ npq2T = lambda Q,wave: 2.0*npasind(0.25*Q*wave/np.pi)
 ateln2 = 8.0*math.log(2.0)
 sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
+is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 #### Powder utilities ################################################################################
 def PhaseWtSum(G2frame,histo):
@@ -3163,7 +3164,6 @@ def findfullrmc():
     :returns: the full path to a python executable that is assumed to 
       have fullrmc installed or None, if it was not found.
     '''
-    is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     if GSASIIpath.GetConfigValue('fullrmc_exec') is not None and is_exe(
             GSASIIpath.GetConfigValue('fullrmc_exec')):
         return GSASIIpath.GetConfigValue('fullrmc_exec')
@@ -3188,22 +3188,44 @@ def findfullrmc():
         fl = glob.glob(lookfor)
         if len(fl) > 0:
             return os.path.abspath(sorted(fl)[0])
-        
+
 def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
-    :returns: the full path to a python executable or None, if it was not found.
+    :returns: two items: (1) the full path to a python executable or None, if 
+    it was not found and (2) path(s) to the PDFfit2 location(s) as a list.
+    
     '''
     if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
             GSASIIpath.GetConfigValue('pdffit2_exec')):
-        return GSASIIpath.GetConfigValue('pdffit2_exec')
+        return GSASIIpath.GetConfigValue('pdffit2_exec'),None
+    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
+    if not os.path.exists(pdffitloc):
+        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
+        return None,[]
+    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
     try:
-        if GSASIIpath.path2GSAS2 not in sys.path:
-            sys.path.insert(0,GSASIIpath.path2GSAS2)
         from diffpy.pdffit2 import PdfFit
-        return sys.executable
+        import diffpy
+        import inspect
+        pdffitloc = [os.path.dirname(os.path.dirname(inspect.getfile(diffpy)))]
+        # is this the original version of diffpy (w/pdffit2.py) 
+        try:
+            from diffpy.pdffit2 import pdffit2
+        except ImportError:
+            # or the GSAS-II version w/o; for this we need to find the binary's location
+            try:
+                import pdffit2     # added for GSAS-II to relocate binary file
+            except ImportError:
+                print('\nError: pdffit2 failed to load with this python\n')
+                return None,[]
+            except ModuleNotFoundError:
+                print('\nGSAS-II does not have a PDFfit2 module compatible\nwith this Python interpreter\n')
+                return None,[]
+            pdffitloc += [os.path.dirname(inspect.getfile(pdffit2))]
+        return sys.executable,pdffitloc
     except Exception as msg:
-        print('Error from PDFfit2 access:\n',msg)
-        return None
+        print('Error importing PDFfit2:\n',msg)
+        return None,[]
     
 def GetPDFfitAtomVar(Phase,RMCPdict):
     ''' Find dict of independent "@n" variables for PDFfit in atom constraints
@@ -3237,6 +3259,8 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     '''Make the PDFfit atoms file
     '''
     General = Phase['General']
+    if General['SGData']['SpGrp'] != 'P 1':
+        return 'Space group symmetry must be lowered to P 1 for PDFfit'
     fName = General['Name']+'-PDFfit.stru'
     fName = fName.replace(' ','_')
     if 'sequential' in RMCPdict['refinement']:
@@ -3297,15 +3321,18 @@ def MakePDFfitRunFile(Phase,RMCPdict):
         
     General = Phase['General']
     Cell = General['Cell'][1:7]
-    G2path = GSASIIpath.path2GSAS2
-    rundata = '''
-#!/usr/bin/env python
+    rundata = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('%s') 
-from diffpy.pdffit2 import PdfFit
-pf = PdfFit()
-'''%G2path
+'''
+    PDFfit_exe,PDFfit_path = findPDFfit()  # returns python loc and path(s) for pdffit
+    if not PDFfit_exe:
+        GSASIIpath.IPyBreak()
+        return None
+    for p in PDFfit_path:
+        rundata += "sys.path.append('{:}')\n".format(p)
+    rundata += 'from diffpy.pdffit2 import PdfFit\n'
+    rundata += 'pf = PdfFit()\n'
     Nd = 0
     Np = 0
     parms = {}
@@ -3314,16 +3341,18 @@ pf = PdfFit()
         Np = 3
         rundata += '#sequential data here\n'
     else:
-        for file in RMCPdict['files']:
-            if 'Select' in RMCPdict['files'][file][0]:
+        for fil in RMCPdict['files']:
+            filNam = RMCPdict['files'][fil][0]
+            if 'Select' in filNam:
                 continue
-            if 'Neutron' in file:
+            if 'Neutron' in fil:
                 Nd += 1
                 dType = 'Ndata'
             else:
                 Nd += 1
                 dType = 'Xdata'
-            rundata += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(RMCPdict['files'][file][0],dType[0],RMCPdict[dType]['qdamp'][0])
+            filNam = os.path.abspath(filNam)
+            rundata += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
             rundata += 'pf.setdata(%d)\n'%Nd
             rundata += 'pf.pdfrange(%d, %6.2f, %6.2f)\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
             for item in ['dscale','qdamp','qbroad']:
@@ -3337,7 +3366,7 @@ pf = PdfFit()
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit.stru'
     Np = 9
-    rundata += "pf.read_struct('%s')\n"%(fName)
+    rundata += "pf.read_struct('{:}')\n".format(os.path.abspath(fName))
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1

@@ -1,0 +1,3010 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2008-2016, Board of Trustees of Columbia University in
+the city of New York, all rights reserved.
+
+Copyright (C) 2006, 2007, Board of Trustees of Michigan State
+University, all rights reserved.
+ -->
+<!-- Created on March 4, 2016 by texi2html 5.0
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>PDFgui user guide, release 1.0, March 2016</title>
+
+<meta name="description" content="PDFgui user guide, release 1.0, March 2016">
+<meta name="keywords" content="PDFgui user guide, release 1.0, March 2016">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 5.0">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:pre}
+span.nolinebreak {white-space:pre}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+
+<h1>PDFgui user guide</h1>
+<h3 align="right">1.1 release</h3>
+<h3 align="right">March 2016</h3>
+<strong>C. L. Farrow, P. Juhás, J. W. Liu, D. Bryndin, E. S. Božin,</strong><br>
+<strong>J. Bloch, Th. Proffen, and S. J. L. Billinge</strong><br>
+
+
+
+<hr>
+<a name="acknowledgments"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[ &lt; ]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Acknowledgments"></a>
+<h2 class="heading">Acknowledgments</h2>
+<a name="index-acknowledgments"></a>
+<p>PDFgui was developed as part of the Distributed Analysis of Neutron Scattering
+Data (DANSE) project which is funded by NSF under DMR-0520547.  The PDFfit2
+development was funded by NSF under contract DMR-0304391.  The program is part
+of the DiffPy and DANSE open-source projects at Columbia University and is
+available subject to the conditions and terms laid out below. Several of the
+examples in the tutorial part were made possible and benefited from samples
+synthesized by J. F.  Mitchell, and from data collected and processed by M.
+Schmidt, P. G. Radaelli, and X. Qiu.
+If you use this program to do productive scientific research that leads
+to publication, we ask that you acknowledge use of the program by citing
+the following paper in your publication:
+</p>
+<blockquote>
+<p>C. L. Farrow, P. Juhás, J. W. Liu, D. Bryndin, E. S. Božin,
+J. Bloch, Th. Proffen and S. J. L. Billinge,
+<a href="http://stacks.iop.org/0953-8984/19/335219">PDFfit2 and PDFgui: computer programs for studying nanostructure in crystals</a>,
+<i>J.&nbsp;Phys.: Condens. Matter</i>, <b>19</b>, 335219 (2007)
+</p></blockquote>
+
+<p>Copyright &copy; 2008-2016, Board of Trustees of Columbia University in
+the city of New York, all rights reserved.
+</p>
+<p>Copyright &copy; 2006, 2007, Board of Trustees of Michigan State
+University, all rights reserved.
+</p><a name="index-copyright"></a>
+<p>For more information please visit <a href="http://www.diffpy.org">http://www.diffpy.org</a>
+or contact Prof. Simon Billinge at <a href="mailto:sb2896@columbia.edu">sb2896@columbia.edu</a>.
+</p>
+
+
+<a name="Preface"></a>
+<h1 class="majorheading">Preface</h1>
+<a name="Using-PDFgui-and-PDFfit2"></a>
+<h2 class="heading">Using PDFgui and PDFfit2</h2>
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+</p>
+
+<p>Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+</p>
+
+<p>Redistributions in binary form must reproduce the above copyright notice, this
+list of conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.
+</p>
+
+<p>Neither the names of COLUMBIA UNIVERSITY, MICHIGAN STATE UNIVERSITY nor the
+names of their contributors may be used to endorse or promote products derived
+from this software without specific prior written permission.
+</p>
+
+<a name="Disclaimer"></a>
+<h2 class="heading">Disclaimer</h2>
+
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+&quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</p>
+<a name="Top"></a>
+<a name="SEC_Top"></a>
+
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Introduction">1 Introduction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Quick-start">2 Quick start</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Examples-and-tutorials">3 Examples and tutorials</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Extras">4 Extras</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#PDFgui-reference-sheets">5 PDFgui reference sheets</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Index">Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+
+<hr size="6">
+<a name="Introduction"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFfit2" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Introduction-1"></a>
+<h1 class="chapter">1 Introduction</h1>
+<a name="index-introduction"></a>
+
+<p>PDFgui is a graphical interface built on the PDFfit2 engine, which is a program
+and programming library for real-space refinement of crystal structures based
+on the atomic pair distribution function (PDF) method.  PDFgui organizes fits
+and simplifies many data analysis tasks, such as configuring and plotting
+multiple fits. PDFfit2 is capable of fitting a theoretical three dimensional
+structure to atomic pair distribution function data and is ideal for nanoscale
+investigations. The fit system accounts for lattice constants, atomic positions
+and anisotropic atomic displacement parameters, correlated atomic motion, and
+experimental factors that may affect the data. The atomic positions and thermal
+coefficients can be constrained to follow symmetry requirements of an arbitrary
+space group. The PDFfit2 engine is written in C++ and accessible via Python,
+allowing it to inter-operate with other Python programs.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#PDFfit2">1.1 PDFfit2</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#PDFgui">1.2 PDFgui</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Availability">1.3 Availability</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Installation">1.4 Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#What-is-new">1.5 What is new</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Community">1.6 Community</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="PDFfit2"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDFfit2-1"></a>
+<h2 class="section">1.1 PDFfit2</h2>
+<a name="index-PDFfit2"></a>
+
+<p>PDFfit2 is a major upgrade to PDFfit, and inherits many of its
+features.  PDFfit is capable of fitting a theoretical three-dimensional
+structure to an experimentally determined PDF. It can simultaneously
+fit multiple structures, accounting for different structural phases
+in a material. PDFfit has a constraint system that allows expressing
+structure variables as simple functions of fitted parameters.  PDFfit
+structure variables include lattice constants, data and phase scale
+factors, atomic site occupation, anisotropic atomic displacement
+parameters (ADPs), and atomic vibrational correlations. PDFfit has a built-in
+FORTRAN-style command language that understands simple FOR loops and
+some built in arithmetic functions.
+</p>
+<p>The original PDFfit was written in FORTRAN-77, which imposes some
+limitations on the program. For example, it uses fixed-size arrays
+for internal storage. This precludes the analysis of structures with
+large cells without modifying the code. Though the constraint system
+is powerful, it requires that a constraint equation be accompanied
+by its first derivative. This places the burden of determining the
+derivatives on the user, which can introduce errors that lead to
+instability in the convergence. Furthermore, the code is monolithic,
+not easily extensible and hard to integrate with external programs.
+</p>
+<p>The primary focus of PDFfit2 development was to remedy the limitations of
+PDFfit while extending its functionality. The old PDFfit engine has been
+completely rewritten in C++, and many bugs have been fixed.  The new engine
+uses dynamic memory allocation so that the size of the structure or extent
+of the fit-range of the PDF is limited only by the physical memory available.
+The constraint system has also been upgraded. The program <i>automatically</i>
+computes the analytical derivatives of the constraints that are required by
+the minimization routine.  This simplifies user input and reduces the
+possibility of errors. In addition, new fitting parameters for handling
+dynamic atomic correlations and experimental resolution have been introduced
+as well.
+</p>
+<p>Instead of rewriting the PDFfit command interpreter, which is used
+to define the fitting problem and to control and run the refinement,
+its functions are carried out using the Python language
+(<a href="http://www.python.org">http://www.python.org</a>). Python is a powerful, cross-platform,
+open-source interpreted programming language (i.e., it does not need
+to be compiled to run, similar to scripting) that emphasizes
+object-oriented and modular design. PDFfit2 scripts written in
+Python syntax take the place of PDFfit macros and the Python
+interpreter can handle everything that the old interpreter could,
+and more. Using Python as an interpreter allows PDFfit2 to be
+combined with and enhanced by other Python libraries.  We make use
+of this capability with PDFgui as described below.
+</p>
+
+<hr>
+<a name="PDFgui"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFfit2" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Design-principles" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDFgui-1"></a>
+<h2 class="section">1.2 PDFgui</h2>
+<a name="index-PDFgui"></a>
+
+<p>The PDFfit2 engine can be used either directly from the Python command line, or
+as part of larger and more complex software applications. The first application
+built on PDFfit2 is PDFgui, a graphical environment for PDF fitting.
+</p>
+<hr>
+<a name="Design-principles"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Capabilities" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">1.2.1 Design principles</h3>
+
+<p>PDFgui has been designed to provide users with an easy-to-use yet powerful
+interface for fitting structure models to PDF data. It makes use of an
+object-oriented architecture, which makes it highly extensible and
+maintainable.  This allows for powerful usability features such as real-time
+plotting.  PDFgui has been designed with multitasking in mind.  It is
+multi-threaded so that the work being done by the PDFfit2 engine does not
+interfere with the tasks of the user interface.
+</p>
+<p>PDFgui is written in the Python programming language. Python features a relaxed
+and friendly syntax, supports &ldquo;write once, run anywhere&rdquo; portability, and has
+extensive libraries and modules for virtually every task. Software codes
+written in a variety of programming languages can be bound into Python, which
+allows them to be used together. Python is becoming a popular choice in the
+scientific computation community.
+</p>
+<p>PDFgui&rsquo;s interface is built using wxPython (<a href="http://www.wxPython.org">http://www.wxPython.org</a>), the
+Python package for wxWidgets, a mature cross-platform GUI library.  Graphical
+applications written in wxPython provide a look and feel native to the platform
+on which they are run.  PDFgui is designed to run on Windows, Mac OS, Linux,
+and all major Unix systems.
+</p>
+<hr>
+<a name="Capabilities"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Design-principles" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Availability" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">1.2.2 Capabilities</h3>
+
+<p>PDFgui contains all of the functionality of PDFfit2 along with additional
+enhancements for usability. Mundane tasks are handled by the program and
+difficult tasks are made simple. PDFgui can manage multiple fits at once.  Each
+fit can have multiple experimental data sets and structure models.  Fits in a
+sequence can call upon other fits for their starting parameters, and configured
+fits can be queued to run while the user is away. All the initial, final, and
+intermediate data are stored in a platform independent project file that can be
+loaded on any computer. All management tasks, such as fit creation,
+configuration, modification, and visualization, can be done through the
+graphical interface.
+</p>
+<p>PDFgui supports space group operations.  Users can define an asymmetric unit
+and let PDFgui expand it to a full cell with all symmetry related positions.
+PDFgui can also generate symmetry constraints for atom positions and atomic
+ADPs. Users just need to specify the space group, and the program will identify
+equivalent sites and generate constraint equations for their coordinates and
+temperature factors to keep the structure consistent with the symmetry
+requirements. This can be done either for all atoms in the structure or for an
+arbitrary subset - for example when it is known that only a certain species
+show a local distortion. The code for space group definitions was provided by
+the Python Macromolecular Library (mmLib,
+<a href="http://pymmlib.sourceforge.net">http://pymmlib.sourceforge.net</a>).  This was extened to include
+non-standard space groups using the Computational Crystallography Toolbox
+(cctbx, <a href="http://cctbx.sourceforge.net">http://cctbx.sourceforge.net</a>).  PDFgui also supports supercell
+expansion of a normal unit cell.
+</p>
+<p>PDFgui uses the matplotlib (<a href="http://matplotlib.org">http://matplotlib.org</a>) Python
+package for 2D plotting of data and results. Matplotlib has a friendly
+interface so the user can quickly and easily view the results of a fitting.
+PDFgui lets users plot data from a series of fits and plot it against selected
+meta-data (temperature, doping, etc.), plot the results of several fits in the
+same window, plot the PDF in real time as the fitting is running, plot the
+parameters or variables in real time as the refinement evolves, and save plots
+in common image formats or export the data to a text file.  PDFgui can be
+configured to use one of many structure visualization packages, such as AtomEye
+(<a href="http://li.mit.edu/A/Graphics/A/">http://li.mit.edu/A/Graphics/A/</a>) or PyMOL
+(<a href="http://www.pymol.org">http://www.pymol.org</a>).
+</p>
+<p>PDFgui supports built-in macros for advanced fits. For a set of experimental
+data from one system at different temperatures or doping levels, PDFgui can
+expand a template fit to a series of related fits.  Another PDFgui macro makes
+it easy to set up boxcar fits, where the same model is fit over different
+r-ranges of the PDF data.
+</p>
+<hr>
+<a name="Availability"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Capabilities" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Availability-1"></a>
+<h2 class="section">1.3 Availability</h2>
+<a name="index-availability"></a>
+
+<p>PDFfit2 and PDFgui are open source and distributed under a BSD license.  They
+run on Windows, Mac OS, Linux, and all major Unix systems. The source code is
+freely available. For more information please contact Professor Simon Billinge
+(<a href="mailto:sb2896@columbia.edu">sb2896@columbia.edu</a>) or consult the web-page
+<a href="http://www.diffpy.org">http://www.diffpy.org</a>. News of updates and releases will be posted at
+this website and on the diffpy-users group at
+<a href="https://groups.google.com/d/forum/diffpy-users">https://groups.google.com/d/forum/diffpy-users</a>.
+</p>
+<hr>
+<a name="Installation"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Availability" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation-for-Anaconda-Python" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Installation-1"></a>
+<h2 class="section">1.4 Installation</h2>
+<a name="index-installation"></a>
+
+<p>PDFgui is included as a part of DiffPy, a suite of Python and C++
+libraries for structure analysis from diffraction data.  For more
+information about DiffPy products visit the project homepage at
+<a href="http://www.diffpy.org">http://www.diffpy.org</a>.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Installation-for-Anaconda-Python">1.4.1 Installation for Anaconda Python</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Configuration-of-structure-viewer">1.4.2 Configuration of structure viewer</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Installation-from-sources">1.4.3 Installation from sources</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="Installation-for-Anaconda-Python"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Configuration-of-structure-viewer" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Installation-for-Anaconda-Python-1"></a>
+<h3 class="subsection">1.4.1 Installation for Anaconda Python</h3>
+
+<p>As of version 1.1 PDFgui is distributed as a pre-built package for
+<a href="https://www.continuum.io">Anaconda Python</a>.  This method makes it
+easier to distribute software updates and also results in the same
+installation procedure on all supported platforms.
+</p>
+<p>To install PDFgui, download and install Anaconda for Python 2.7 from
+<a href="https://www.continuum.io/downloads">https://www.continuum.io/downloads</a>.  When ready open a terminal
+application (or <i>Anaconda Command Prompt</i> on Windows) and use the
+<code>conda</code> package manager to install PDFgui from the &ldquo;diffpy&rdquo;
+channel of Anaconda packages
+</p>
+<div class="example">
+<pre class="example">conda config --add channels diffpy
+conda install diffpy.pdfgui
+</pre></div>
+
+<p>The first command instructs Anaconda system to always check the
+&ldquo;diffpy&rdquo; channel for any new software.  Such configuration
+allows to obtain PDFgui updates using
+</p>
+<div class="example">
+<pre class="example">conda update diffpy.pdfgui
+</pre></div>
+
+<p>It is however not strictly necessary to make the &ldquo;diffpy&rdquo;
+channel permanent.  The same effect can be accomplished by adding the
+&lsquo;<samp><span class="nolinebreak">--channel=diffpy</span></samp>&rsquo; option to either of
+<code>conda&nbsp;install</code> or <code>conda&nbsp;update</code> commands.
+</p>
+<p>After installation is complete PDFgui can be started from a terminal by
+entering <code>pdfgui</code> command or on Windows by using the DiffPy
+start menu.  PDFgui can be also started from the &ldquo;Launcher&rdquo; program
+that is included with Anaconda.  
+</p>
+<hr>
+<a name="Configuration-of-structure-viewer"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation-for-Anaconda-Python" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation-from-sources" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Configuration-of-structure-viewer-1"></a>
+<h3 class="subsection">1.4.2 Configuration of structure viewer</h3>
+<a name="index-visualization-setup"></a>
+
+<p>PDFgui can visualize 3D structures by displaying them with an external
+visualization program.  The visualization program needs to
+be specified together with a suitable structure format in the
+&ldquo;Edit&nbsp;→ Preferences&rdquo; menu in PDFgui.  The structure plotting
+feature has been tested with the following programs:
+</p>
+<dl compact="compact">
+<dt><em>AtomEye</em></dt>
+<dd><p>AtomEye structure viewer, XCFG format <br>
+<a href="http://li.mit.edu/A/Graphics/A/">http://li.mit.edu/A/Graphics/A/</a>
+</p>
+</dd>
+<dt><em>PyMOL</em></dt>
+<dd><p>PyMOL structure viewer, PDB format <br>
+<a href="http://www.pymol.org">http://www.pymol.org</a>
+</p></dd>
+</dl>
+
+<p><b>A note for AtomEye users:</b>
+<a name="index-AtomEye-viewer"></a>
+</p>
+<p>AtomEye requires its standard output is connected to a terminal.
+On Unix this happens when <code>pdfgui</code> is started from a terminal.
+However if you prefer to start PDFgui using a desktop shortcut or via
+&ldquo;Run Application&rdquo; dialog of the window manager, you need to put the
+following information to the &ldquo;Edit → Preferences&rdquo; menu of PDFgui.
+</p><div class="example">
+<pre class="example">Structure viewer executable: xterm
+Argument string: -iconic -e ATOMEYE %s
+Structure format: xcfg
+</pre></div>
+<p>In the above, ATOMEYE is the path to the ATOMEYE executable.
+</p>
+<p>For Cygwin users,
+the workaround is to launch the executable from a batch file.
+Batch files can only run in a command window on Windows and so
+AtomEye&rsquo;s requirements would be for sure satisfied.
+In addition the batch file can be used to adjust environment
+variables:
+</p><div class="example">
+<pre class="example">atomeye.bat
+------------------------------------------------------------------------
+set DISPLAY=localhost:0
+set PATH=C:\cygwin\bin;C:\cygwin\usr\X11R6\bin;C:\ATOMEYE_DIR;%PATH%
+start A.exe %*
+------------------------------------------------------------------------
+</pre></div>
+
+<p>Here <tt>ATOMEYE_DIR</tt> needs to be replaced with a proper path.  Make sure
+that the X-server application included with Cygwin is started.
+</p>
+<hr>
+<a name="Installation-from-sources"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Configuration-of-structure-viewer" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#What-is-new" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Installation-from-sources-1"></a>
+<h3 class="subsection">1.4.3 Installation from sources</h3>
+
+<a name="index-Git-repository"></a>
+<a name="index-development"></a>
+
+<p>PDFgui sources are available in a public
+<a href="https://git-scm.com">Git</a> repository at
+<a href="https://github.com/diffpy/diffpy.pdfgui">https://github.com/diffpy/diffpy.pdfgui</a>.
+Feel free to fork this project on GitHub and contribute.  To
+use the latest development version clone the Git repository
+to your computer and install it in a development mode so that sources
+are used directly rather than copied to a system location.  It is also
+recommended to uninstall the Anaconda package for PDFgui, so that
+there is no confusion as to what version is the active one.
+Here are the shell commands that would do it:
+</p>
+<div class="example">
+<pre class="example"># Install PDFgui together with software dependencies.
+conda install --channel=diffpy diffpy.pdfgui
+
+# Make room for the version from sources.  Keep dependencies installed.
+conda remove diffpy.pdfgui
+
+# Obtain a clone of the PDFgui Git repository.
+git clone https://github.com/diffpy/diffpy.pdfgui.git
+
+# Install PDFgui sources in a development mode.
+cd diffpy.pdfgui
+python setup.py develop
+</pre></div>
+
+<p>To verify that PDFgui is indeed loaded from the local source
+repository run
+</p>
+<div class="example">
+<pre class="example">python -m pydoc diffpy.pdfgui
+</pre></div>
+
+<p>and check the path displayed in the FILE section.  The application
+integrity can be verified by executing all builtin tests using
+</p>
+<div class="example">
+<pre class="example">python -m diffpy.pdfgui.tests.rundeps
+</pre></div>
+
+<p>Use <code>git pull</code> to bring your source directory into sync
+with the latest updates in the main repository.  It is recommend
+to afterwards do <code>`setup.py develop</code> again to refresh
+the version metadata associated with the program:
+</p>
+<div class="example">
+<pre class="example">git pull
+python setup.py develop
+</pre></div>
+
+<p>To revert PDFgui installation from the source-code installation
+back to the pre-built Anaconda package do
+</p>
+<div class="example">
+<pre class="example">pip uninstall diffpy.pdfgui
+conda install --channel=diffpy diffpy.pdfgui
+</pre></div>
+
+
+<hr>
+<a name="What-is-new"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installation-from-sources" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Community" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="What-is-new-1"></a>
+<h2 class="section">1.5 What is new</h2>
+<a name="index-versions"></a>
+<a name="index-whatisnew"></a>
+
+<a name="Version-1_002e1_002c-released-March-2016"></a>
+<h3 class="subheading">Version 1.1, released March 2016</h3>
+
+<p>Improvements and modifications since the last major release
+1.0-r3067 from April 2009.
+</p>
+<dl compact="compact">
+<dt><em>Anaconda installer</em></dt>
+<dd>
+<p>PDFgui is now distributed as a pre-built package for Anaconda Python.
+The program is available for all platforms supported by Anaconda, i.e.,
+for 32 and 64-bit Linux, Mac OS X, and for 32 and 64-bit Windows.
+</p>
+</dd>
+<dt><em>upgrade for recent GUI libraries</em></dt>
+<dd>
+<p>Source codes were updated to work with WX GUI toolkit 2.9 or later.
+Fixed blacked-out text fields on Mac OS X.  Fixed missing toolbar
+in plot-windows on Mac OS X.
+</p>
+</dd>
+<dt><em>select atoms menu</em></dt>
+<dd>
+<p>Added &ldquo;Select Atoms&rdquo; context menu to the Phase Configuration and Phase
+Constraints panels.  This selects atom rows by a range of indices
+or by atom type.  Added keyboard shortcut <kbd>/</kbd> for activating the
+atom-selection dialog.
+</p>
+</dd>
+<dt><em>small enhancements</em></dt>
+<dd>
+<p>Fixed problems with <i>r</i>-grid interpolation near data boundaries.  Allow
+use of CIF-defined space groups for symmetry constraints.  Use consistent
+numbering for parameters created by symmetry constraints.  Improved
+export data tool in plot windows to group <i>y</i>-arrays that are on
+the same <i>x</i> grid.  Enhanced supercell expansion to also adjust
+the coordinate constraints.
+</p>
+</dd>
+<dt><em>project moved to GitHub</em></dt>
+<dd>
+<p>PDFgui source repository was converted from subversion to a Git repository at
+<a href="https://github.com/diffpy/diffpy.pdfgui">https://github.com/diffpy/diffpy.pdfgui</a>.  Project now uses Git tags
+to define software release and version data.
+</p>
+</dd>
+<dt><em>Unicode support</em></dt>
+<dd>
+<p>Allow accented characters in project filenames and in folder paths
+where located.  Allow accented characters for naming the fit tree
+items.  Note that such projects are unlikely to work with older
+versions of PDFgui.  Fix failure to exit when there is some
+uncaught error in the at-exit cleanup functions.
+</p>
+</dd>
+<dt><em>PDFgui tests</em></dt>
+<dd>
+<p>PDFgui installation now includes built-in tests.  Added facility to
+test PDFgui and all its DiffPy components.  Implemented automated
+testing and generation of test coverage reports when sources on
+GitHub change.
+</p>
+</dd>
+<dt><em>bug fixes</em></dt>
+<dd><p>Quite a few.  Consult the code history at
+<a href="https://github.com/diffpy/diffpy.pdfgui/commits">https://github.com/diffpy/diffpy.pdfgui/commits</a>.
+</p>
+</dd>
+</dl>
+
+<a name="Version-1_002e0_002c-released-April-2009"></a>
+<h3 class="subheading">Version 1.0, released April 2009</h3>
+
+<p>This section describes improvements and modifications since the
+last beta-release 1.0b.1792 from December 2007.
+</p>
+<dl compact="compact">
+<dt><em>updates and installation</em></dt>
+<dd><p>PDFgui can be installed or updated
+with a simple run of the easy_install script.  easy_install
+checks our online code repository for any newer versions and takes
+care of their download and installation.  It can be also used to
+add future DiffPy components as they become available.  This should
+work for Linux, Mac and Windows.
+</p>
+</dd>
+<dt><em>Windows installer</em></dt>
+<dd><p>The updated Windows package includes full installation of
+Python 2.5 and script for code updates.  PDFgui
+can be installed under normal Python2.5 tree if it has the
+easy_install script.
+</p>
+</dd>
+<dt><em>particle shape correction stored with phase</em></dt>
+<dd><p>The previous release of PDFgui had
+spherical shape correction factors stored with PDF dataset.  The
+new layout is more logical and allows multi-phase refinements with
+separate shape corrections.
+</p>
+</dd>
+<dt><em>step shape factor</em></dt>
+<dd><p>Defined new shape factor that cuts off the
+simulated PDF at user defined r-limit.
+</p>
+</dd>
+<dt><em>cumulative Rw</em></dt>
+<dd><p>Implemented calculation of cumulative Rw
+and option to show it in PDFgui plot window.
+</p>
+</dd>
+<dt><em>project post-processing</em></dt>
+<dd><p>Implemented new module
+&lsquo;<samp>tui</samp>&rsquo; (text user interface) for simple access to the data
+in PDFgui project files.  The &lsquo;<samp>tui</samp>&rsquo; module can be used
+in easy-to-understand Python scripts for arbitrary data extraction
+or conversion.  It should be useful for project files with large
+temperature or compositional series of PDF refinements.
+</p>
+</dd>
+<dt><em>structure visualization</em></dt>
+<dd><p>PDFgui can now show structures with any external structure viewer,
+that accepts structure file as a command-line argument.
+</p>
+</dd>
+<dt><em>space group representations</em></dt>
+<dd><p>Added 249 space group
+representations in non-standard settings.  The new representations
+were generated using the
+<a href="http://cctbx.sourceforge.net">cctbx library</a> and helpful
+hints from Ralf W. Grosse-Kunstleve.
+</p>
+</dd>
+<dt><em>symmetry constraints</em></dt>
+<dd><p>Fixed issues with generation of
+symmetry requirements for the ADP tensors.
+</p>
+</dd>
+<dt><em>default ADP tensors</em></dt>
+<dd><p>PDF contributions are not counted for atoms that have
+ADP tensors <i>Uij</i> equal zero.  Atoms are now inserted with
+a non-zero <i>Uij</i> matrix.  Added warning when a phase
+loaded from file has atoms with zero ADPs.
+</p>
+</dd>
+<dt><em>temperature series macro</em></dt>
+<dd><p>The temperature series macro was broken for datasets at equal temperature
+or when temperature contained decimal point.  Improved file
+and temperature sorting in the temperature series dialog.
+</p>
+</dd>
+<dt><em>journal panel</em></dt>
+<dd><p>Fixed shortcut key handling and font size issues.
+</p>
+</dd>
+<dt><em>startup option &lsquo;<samp>--db-pdb</samp>&rsquo;</em></dt>
+<dd><p>The new command-line option starts Python debugger on
+PDFgui crash instead of displaying error report dialog.
+</p>
+</dd>
+<dt><em>grid interpolation</em></dt>
+<dd><p>Fixed problems with r-grid interpolation appearing due to round-off errors.
+</p>
+</dd>
+<dt><em>data load on Windows</em></dt>
+<dd><p>Windows version could not read PDF datasets with NaN (not-a-number)
+values in the dGr column, because NaN is not supported by the Windows
+C-library.  Added check for NaN-s before converting to float.
+</p>
+</dd>
+</dl>
+
+<hr>
+<a name="Community"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#What-is-new" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Introduction" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Community-1"></a>
+<h2 class="section">1.6 Community</h2>
+<a name="index-Community"></a>
+<a name="index-mail_002dlist"></a>
+<a name="index-user-groups"></a>
+
+<p>There are two Google groups for support and development of PDFgui and other
+DiffPy software.  Visit the links below for message archives or instructions on
+subscription and posting.
+</p>
+<dl compact="compact">
+<dt><em><b>diffpy-users</b> <a href="https://groups.google.com/d/forum/diffpy-users">https://groups.google.com/d/forum/diffpy-users</a></em></dt>
+<dd><p>Help on usage of PDFgui, PDFfit2 and other DiffPy packages.  This group should
+become a knowledge base of PDFgui user tips, tricks and troubleshooting.  Feel
+free to ask your question here.
+</p>
+</dd>
+<dt><em><b>diffpy-dev</b> <a href="https://groups.google.com/d/forum/diffpy-dev">https://groups.google.com/d/forum/diffpy-dev</a></em></dt>
+<dd><p>For discussions about development and changes of PDFgui, PDFfit2 and DiffPy
+library in general.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<a name="Quick-start"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Introduction" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Community" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-layout" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Quick-start-1"></a>
+<h1 class="chapter">2 Quick start</h1>
+<a name="index-quick-start"></a>
+
+<p>In this chapter the PDFgui layout is briefly described, followed by a simple
+tutorial example, spanning the GUI functionality and aimed at novice users.
+Users familiar with the basics can proceed to <a href="#Examples-and-tutorials">Examples and tutorials</a>, or
+use <a href="#PDFgui-reference-sheets">PDFgui reference sheets</a>.  All the files used in examples are
+available in the source distribution or can be downloaded from the DiffPy
+website.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#PDFgui-layout">2.1 PDFgui layout</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Simple-fit">2.2 Creating a simple fit using a preexisting structure file</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="PDFgui-layout"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Quick-start" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Simple-fit" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDFgui-layout-1"></a>
+<h2 class="section">2.1 PDFgui layout</h2>
+<a name="index-PDFgui-layout"></a>
+
+<p>Once PDFgui is invoked, a PDFgui window comes up. Its layout consists of a
+&ldquo;Menu Bar&rdquo;, a &ldquo;Tool Bar&rdquo;, and a set of four panes. The menu bar contains
+drop-down menus that provide various aspects of PDFgui functionality.  The tool
+bar features icons for commonly used operations: creating a new project,
+opening an existing project, saving a project, executing a refinement or
+calculation, stopping a refinement or calculation, and making a quick plot. The
+four panes consist of the &ldquo;Fit Tree&rdquo;, &ldquo;Plot Control&rdquo;, the&ldquo;Current Action&rdquo;
+pane, and the &ldquo;PDFfit2 Output&rdquo; panel.  These are all shown in <a href="#fig2_002d01">Figure 2.1</a>.
+</p>
+<p>The fit tree is used in setting up a fit protocol.  The plot control serves the
+user&rsquo;s needs for graphically displaying the fits, as well as various
+fit-related parameters. The content of the current action panel changes as the
+refinement is being set up. It is a functional panel through which the user
+configures the fit attributes, sets the fit constraints, reviews the fit
+settings, displays fitting results, and also carries out other setup steps. The
+progress of the PDFfit2 refinement engine is displayed in the PDFfit2 output
+panel. All panels except the current action panel are dockable windows that can
+be dragged across the screen, resized and arranged to accommodate the
+individual visual needs of the user. The window layout can also be controlled
+via the &ldquo;View&rdquo; drop-down menu on the menu bar. An important part of the PDFgui
+operativity is also conveniently available through mouse operations such as
+select and right-click.
+</p>
+<hr>
+<a name="Simple-fit"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Quick-start" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-layout" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Quick-start" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Creating-a-simple-fit-using-a-preexisting-structure-file"></a>
+<h2 class="section">2.2 Creating a simple fit using a preexisting structure file</h2>
+<a name="index-fit-configuration"></a>
+<a name="index-refinement-configuration"></a>
+
+<p>The purpose of this example is to familiarize the novice user with the PDFgui
+basics. The goal is to create a simple fit of Ni PDF from a preexisting
+structure file, associate a dataset with the refinement, configure and execute
+a refinement, and display the result. Files to be used in this exercise are
+<i>Ni.stru</i> and <i>Ni-xray.gr</i> (found in the tutorial directory). To start,
+invoke PDFgui by clicking on the icon on your desktop, selecting the program
+from your system&rsquo;s program menu, or by typing <code>pdfgui</code> in a terminal window.
+</p>
+<p>First a new fit needs to be established. In the fit tree right-click the mouse
+button, and select <b>New Fit</b>. This will generate a new fit called &ldquo;Fit 1&rdquo;
+in the fit tree. The name of the fit is highlighted and editable, so you need
+only to start typing to give the fit a new name. The current action panel will
+display the pages that will hold the fit and the results output.  Note that the
+same action could be achieved by selecting the <b>New Fit</b> option from the
+&ldquo;Fits&rdquo; drop-down menu on the menu bar.
+</p>
+<p>The next step in populating the fit tree is to load a structural model.  First,
+select the fit icon in the fit tree pane. Then, right-click the mouse, invoking a
+drop-down menu. Select <b>Insert Phase</b>, which will modify the current action
+panel. The same action could be performed from the &ldquo;Phases&rdquo; drop-down menu on
+the menu bar by selecting <b>New Phase</b>. In the current action panel options are
+offered to load a structure from a file or to generate it from scratch. In this
+exercise a preexisting structure file <i>Ni.stru</i> is to be loaded.
+</p>
+<div class="float"><a name="fig2_002d01"></a>
+<img src="images/fig2-01.png" alt="images/fig2-01">
+
+</div><p><strong>Figure 2.1: PDFgui window with fit tree and Plot Control panels to the left and
+current action panel to the right. The fit tree panel features the current fit
+and the loaded Ni structure which is selected. The current action panel displays
+phase configuration within the &ldquo;Configure&rdquo; tab.
+</strong>
+</p>
+<p><a href="#fig2_002d01">Figure 2.1</a> shows the PDFgui appearance at this stage of the exercise. The
+current action panel has three tabs, &ldquo;Configure&rdquo;, &ldquo;Constraints&rdquo;, and
+&ldquo;Results&rdquo; that could be selected using mouse.  These will be returned to
+later. The &ldquo;Configure&rdquo; panel displays configuration information from the
+structure file. The top portion contains lattice parameters, phase scale factor,
+and a set of parameters intended to be used to account for correlated atomic
+motion effects that typically sharpen the nearest neighbor PDF peak. These are
+<i>delta1</i>, <i>delta2</i>, <i>sratio</i>, and <i>rcut</i>. The <i>spdiameter</i> and
+<i>stepcut</i> parameters include scatterer size effects in the PDF. These
+parameters will be described later.  The bottom part of the panel contains
+standard unit cell content related information such as atomic species, their
+fractional coordinates, anisotropic ADPs, and site occupancies.
+</p>
+<p>The next step is to load an experimental data set to be fit. Selected the fit
+and right-click to bring up the context menu.  From the menu choose <b>Insert
+Data Set</b>.  The same action could be performed through the &ldquo;Data&rdquo; menu on the
+menu bar.  The current action panel changes accordingly, giving an option for a
+data set to be loaded from a file.  In this exercise Ni PDF data obtained using
+synchrotron x-ray radiation collected at 6-ID-D at the Advanced Photon Source
+is used. This is contained in a file <i>Ni-xray.gr</i>, which is to be loaded.
+Note that among the exercise files there is also a file  <i>Ni-neutron.gr</i>,
+obtained using neutron radiation at the GPPD diffractometer at the IPNS
+facility at the Argonne National Laboratory. Both x-ray and neutron datasets
+were collected at 300 K.
+</p>
+<div class="float"><a name="fig2_002d02"></a>
+<img src="images/fig2-02.png" alt="images/fig2-02">
+
+</div><p><strong>Figure 2.2: Appearance of a PDFgui window after a PDF dataset is loaded.  The Fit
+Tree panel features the current fit, loaded Ni structure, and loaded Ni PDF
+dataset, G(r), which is selected. The current action panel displays data set
+configuration within the &ldquo;Configure&rdquo; tab.
+</strong>
+</p>
+<p><a href="#fig2_002d02">Figure 2.2</a> shows the PDFgui appearance at this stage of the exercise. The
+&ldquo;Configure&rdquo; panel displays configuration information from the data file. It
+should be noted that depending on the software used to prepare the experimental
+PDF from the raw data, the file may (or may not) contain meta-data reflecting
+the experimental conditions and configuration. For example, software PDFgetX2
+and PDFgetN, which can be used to prepare PDFs from x-ray and neutron total
+scattering experiments respectively, supply meta-data in the header of the data
+file. PDFgui reads this information and fills the appropriate fields in the
+data set configuration panel.  Caution should be exercised by the user to
+verify that these data indeed correspond to the experimental conditions. In the
+present example, x-ray radiation is used, and so the x-ray selection is turned
+on for the scatterer type. The data range, fit range, data scale factor,
+maximum Q value used in Fourier transform to obtain the experimental PDF and
+the experiment specific parameters are displayed.  Parameters describing
+experimental resolution effects, Qdamp and Qbroad, and experimental conditions,
+such as temperature and doping (used for bookkeeping and for parametric plots)
+are also shown. If no meta-data are present in a data file, this information
+should be supplied by the user. Note also that the changes occurred at this
+stage in the plot control panel, allowing user to plot the data. This is
+achieved by selecting <i>r</i> in the X-choice box and <i>Gobs</i> (the observed
+G(r)) in the Y-list box and then pressing the &ldquo;Plot&rdquo; button.  Since no
+fitting has occurred so far, an attempt to plot calculated PDF profile or a
+difference yields a blank plot. The data can also be displayed by clicking the
+rightmost &ldquo;quick-plot&rdquo; button in the tool bar.
+</p>
+<div class="float"><a name="fig2_002d03"></a>
+<img src="images/fig2-03.png" alt="images/fig2-03">
+
+</div><p><strong>Figure 2.3: Adjusting data set related configuration.
+</strong>
+</p>
+<p>Having specified the initial structure to be refined, and the data set to be
+fit, we proceed to the refinement setup. First we adjust the initial parameters
+and variables, and set up the constraints. The adjustments and constraint setup
+are done on both the experimental data and the refined structure levels,
+toggling between the corresponding &ldquo;Configure&rdquo; and &ldquo;Constraints&rdquo; tabs. In
+the present example the data related setup will be done first.
+</p>
+<p>Click on the data set node (<i>Ni-xray.gr</i>) in the fit tree. In <a href="#fig2_002d03">Figure 2.3</a>
+the &ldquo;Data Set Configuration&rdquo; panel is shown. We will adjust the fitting
+range, as well as other parameters that reflect the experimental conditions.
+Since there is no physical information in the region of <i>r</i> below the nearest
+neighbor PDF peak position (as seen in the plot), and since this region is
+often affected by noise and experimental artifacts, it is wise to exclude it
+from fitting. We therefore set the value of the lower boundary of the fitting
+range to 1.7. (Note that the units are Angstroms). In addition, we set
+<i>Qdamp</i> parameter to a more realistic starting value of 0.08. This is an
+instrument-dependent parameter is typically obtained through a conventional
+calibration process at each PDF experiment using a standard sample such as Ni
+or Si. Next, we select the &ldquo;Constraints&rdquo; tab, and type <i>@1</i> into the
+&ldquo;Scale Factor&rdquo; edit box. This will assign refinement parameter 1 to the data
+scale factor.  Note that this is the syntax used for assigning the refinement
+parameters in PDFfit2 engine.  Similarly, assign parameter 2 to <i>Qdamp</i> by
+inserting <i>@2</i> into the appropriate edit box. This is illustrated in Figure
+<a href="#fig2_002d04">Figure 2.4</a>.
+</p>
+<div class="float"><a name="fig2_002d04"></a>
+<img src="images/fig2-04.png" alt="images/fig2-04">
+
+</div><p><strong>Figure 2.4: Setting up the refinement parameters and constraints.
+</strong>
+</p>
+<p>Further, we set constraints related to the structural model, by selecting the
+phase node (<i>Ni.stru</i>) on the fit tree, adjusting the initial parameter
+values if necessary (not done here), and proceeding to the &ldquo;Constraints&rdquo; tab.
+We note that the phase configuration was performed automatically when the
+structure file was loaded.  We assign the refinement parameter 3 to all three
+lattice constants, a, b, and c, reflecting the fact that the structure is
+cubic. Isotropic ADPs are assigned to all Ni atoms in the refined cell as
+refinement parameter 4.  This can conveniently be done by highlighting the
+&ldquo;u11&rdquo;, &ldquo;u22&rdquo; and &ldquo;u33&rdquo; cells for all four atoms, and typing <i>@4</i> and
+then pressing &ldquo;Enter&rdquo; on your keyboard. The outcome is shown in Figure
+<a href="#fig2_002d05">Figure 2.5</a>.
+</p>
+
+<div class="float"><a name="fig2_002d05"></a>
+<img src="images/fig2-05.png" alt="images/fig2-05">
+
+</div><p><strong>Figure 2.5: Setting up the refinement parameters and constraints.
+</strong>
+</p>
+<p>Note that constrained parameters cannot be adjusted on the &ldquo;Configuration&rdquo;
+panel since they are no longer independent.  It should also be noted that as a
+part of the PDFfit2 syntax a refinement parameter can also be defined as a math
+expression <i>f(@n1,@n2,@n3,...)</i> where <i>@n1</i> stands for fitted
+parameter, and <i>n1</i>, <i>n2</i>,... are arbitrary positive integers enumerating
+the parameters. This allows simple linking of related variables. For example,
+since cell lengths a, b, and c are all expressed as <i>@3</i>, the refined
+structure will remain cubic. Also note that the enumeration of the parameters
+can be arbitrary, enumeration does not have to follow any particular order. The
+quantities within a fit that are enumerated with the same number will be
+assigned the same parameter, hence caution should be exercised to avoid
+unintentional assignment of the same parameter to physically different
+quantities. Automatic parameter assignment (see further below) is done in such
+a way as to disallow for such situations to happen. If assignment is done in
+part manually, in particular for complex setups, it is recommended to verify
+that the parameter assignment is done correctly.
+</p>
+<div class="float"><a name="fig2_002d06"></a>
+<img src="images/fig2-06.png" alt="images/fig2-06">
+
+</div><p><strong>Figure 2.6: Reviewing the fit parameters and conditions.
+</strong>
+</p>
+<p>The setup for the present example is now completed. By selecting the fit node
+on the fit tree the current action window shows &ldquo;Parameters&rdquo; tab, which
+displays the used refinement parameters for review, <a href="#fig2_002d06">Figure 2.6</a>.  It shows
+the initial values, and allows for updates and for refinement parameters to be
+released or fixed depending on whether the corresponding &ldquo;Fixed&rdquo; box is
+unchecked or checked, respectively. The &ldquo;Refined&rdquo; column, which is currently
+empty, will be populated with the refined values of the parameters with the fit
+completes. If the initial parameter values are to be changed, using &ldquo;Apply
+parameters&rdquo; button will update the values of the parameters on all relevant
+&ldquo;Configuration&rdquo; panels. The refinement is executed by clicking the &ldquo;gear&rdquo;
+icon on the tool bar. The refinement can be stopped prematurely by clicking on
+the &ldquo;stop&rdquo; icon on the tool bar.  During the refinement the refinement
+progress will be directly reported in the PDFfit2 Output panel. This is
+illustrated in <a href="#fig2_002d07">Figure 2.7</a>.
+</p>
+<div class="float"><a name="fig2_002d07"></a>
+<img src="images/fig2-07.png" alt="images/fig2-07">
+
+</div><p><strong>Figure 2.7: While the refinement is running, the refinement progress is
+displayed in the PDFfit2 Output panel.
+</strong>
+</p>
+<p>After the fitting is completed, the fit summary is provided in the &ldquo;Results&rdquo;
+tab of the current action panel associated with the fit node.  Similarly, if
+the &ldquo;Results&rdquo; tab is displayed when <i>Ni.stru</i> or <i>Ni-xray.gr</i> are
+selected, values of all corresponding refined parameters for the converged
+model are displayed.
+</p>
+<p>If the fit results are acceptable, one or more refined values could be copied
+to become new initial parameters for possible further refinement, where
+appropriate. This is be done in the &ldquo;Parameters&rdquo; tab of the fit by
+highlighting refined parameters to be copied, right-clicking, and and selecting
+<b>Copy Refined To Initial</b>. This is illustrated in <a href="#fig2_002d08">Figure 2.8</a>. Note that
+you loose the original starting values when copying values in this way, which
+may make it difficult to reproduce the fit.
+</p>
+<div class="float"><a name="fig2_002d08"></a>
+<img src="images/fig2-08.png" alt="images/fig2-08">
+
+</div><p><strong>Figure 2.8: Updating the set of initial values of refined parameters.
+</strong>
+</p>
+<p>The fit can be displayed graphically by clicking at the &ldquo;quick plot&rdquo; icon on
+the tool bar. Alternatively, desired items to be displayed can be selected from
+the plot control and plotted on the screen. Depending on whether the structure
+or the data are selected on the fit tree, either refined structural parameters
+or the experiment related parameters and fit could be plotted.  An example of
+the fit display is shown in <a href="#fig2_002d09">Figure 2.9</a>, and a selected parameter plot vs
+iteration step in <a href="#fig2_002d10">Figure 2.10</a>. If the plotting window remains open while the
+fitting is in progress, the content will be updated after each fit iteration.
+</p>
+<div class="float"><a name="fig2_002d09"></a>
+<img src="images/fig2-09.png" alt="images/fig2-09">
+
+</div><p><strong>Figure 2.9: An example of PDFgui plotting capabilities: displaying a fit.
+</strong>
+</p>
+<div class="float"><a name="fig2_002d10"></a>
+<img src="images/fig2-10.png" alt="images/fig2-10">
+
+</div><p><strong>Figure 2.10: An example of PDFgui plotting capabilities: displaying a parameter.
+</strong>
+</p>
+<p>PDFgui is furnished with &ldquo;Journal&rdquo; capability, which can be found under the
+&ldquo;View&rdquo; menu, and represents a convenient way to archive project-related
+notes, as illustrated in <a href="#fig2_002d11">Figure 2.11</a>. These notes can be exported as a text
+file, or saved along with the entire project for future reference.
+</p>
+<div class="float"><a name="fig2_002d11"></a>
+<img src="images/fig2-11.png" alt="images/fig2-11">
+
+</div><p><strong>Figure 2.11: Using &ldquo;Journal&rdquo; feature can be a convenient way for taking notes.
+</strong>
+</p>
+<p>The project can be saved at any stage in its present configuration through
+choice of <b>Save Project as</b> or <b>Save Project</b> as appropriate from the
+&ldquo;File&rdquo; drop-down menu. The PDFgui project file has &ldquo;ddp&rdquo; extension.  In
+addition to saving a project, various parts of the project, both structure
+related and data related, can be exported to external files by making an
+appropriate selection from the &ldquo;Phases&rdquo; and &ldquo;Data&rdquo; drop-down menus.  The
+phases (starting or converged) can be saved in one of many formats. The model
+PDF profile can be exported through &ldquo;Data&rdquo; menu and will be saved as a
+five-column &ldquo;.fgr&rdquo; file. The first four columns are <i>r</i>, <i>G(r)</i>, <i>dr</i>,
+and <i>dG(r)</i>, and the fifth column is the difference curve between the data
+and the model. Note that the model PDF and the difference are only calculated
+within the user-specified fitting range.
+</p>
+
+<hr>
+<a name="Examples-and-tutorials"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Quick-start" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Simple-fit" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Symmetry-expansion" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Examples-and-tutorials-1"></a>
+<h1 class="chapter">3 Examples and tutorials</h1>
+<a name="index-examples"></a>
+<a name="index-tutorials"></a>
+
+<p>In this chapter we present series of examples and tutorials aimed at users
+already comfortable with the GUI, to provide training in advanced GUI features
+designed for most common modeling situations, such as building the structure
+from scratch, calculating the PDF based on a given structure, linking fits, and
+creating and executing a series of fits on a sequence of data sets.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Symmetry-expansion">3.1 Building structure model using crystal symmetry</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Calculating-PDF">3.2 Calculating PDF from a structure</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Sequential-fitting">3.3 Sequential fitting</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Nanoparticle-structure">3.4 Nanoparticle structure</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="Symmetry-expansion"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Calculating-PDF" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Building-structure-model-using-crystal-symmetry"></a>
+<h2 class="section">3.1 Building structure model using crystal symmetry</h2>
+<a name="index-create-new-structure"></a>
+<a name="index-symmetry-expansion"></a>
+
+
+<p>The purpose of this example is to demonstrate to the user the symmetry
+expansion capabilities of PDFgui. The goal is again to create a simple fit of
+Ni PDF, but this time from scratch rather than from a preexisting structure
+file. The focus will be on the symmetry expansion of the structure, and the
+steps that are described earlier in <a href="#Simple-fit">Creating a simple fit using a preexisting structure file</a> are left for the user to
+recreate. File to be used in this exercise is <i>Ni-xray.gr</i>. To start, invoke
+PDFgui.
+</p>
+<p>To begin, a new fit again needs to be established by right-clicking the mouse
+button on the fit tree pane, and selecting <b>New Fit</b>. This will generate a
+new fit called Fit 1 as in the previous example. The next step in populating
+the fitting tree is to introduce a structural model. This time a new phase will
+be added and the model built up from scratch. Select the fit icon in the Fit
+Tree pane. Then right-click the mouse and select <b>Insert Phase</b>, which will
+modify the current action panel. In the current action panel options are
+offered to load a structure from a file or to generate it from scratch. Select
+&ldquo;New&rdquo; to build up structure from scratch.  The Fit Tree will be populated
+with a new item &ldquo;New Phase&rdquo;. Rename this phase to &ldquo;Ni fcc&rdquo;. The current
+action panel now displays default phase configuration with &ldquo;dummy&rdquo; values and
+no atoms. Edit the lattice parameters and set them to reflect the symmetry, in
+this case set the lengths to 3.52 Angstroms and all the angles to 90 degrees.
+Pressing &ldquo;Tab&rdquo; on the keyboard will take you from one form-field to the next.
+To introduce new atoms right-click with your mouse onto <i>elem</i> tab in the
+Phase Constraints grid, and select desired number of atoms in the asymmetric
+unit via the dialog box that pops up. For the Ni case, select one row only.  A
+new row will then show up in the table and the name of the element will be
+highlighted. Type in <i>Ni</i> for the element name.  It is important that the
+element name is typed in correctly, as this is further used to search a
+database for the scattering characteristics of that site<a name="DOCF1" href="#FOOT1">(1)</a>.
+Further, highlight cells in the
+<i>u11</i>, <i>u22</i>, and <i>u33</i> columns and type in the initial value 0.0025.
+</p>
+
+<p>Now right-click with the mouse on the element name, and select &ldquo;Expand space
+group...&rdquo; option. A dialog box will appear, as shown in <a href="#fig3_002d01">Figure 3.1</a>,
+requesting space group information and the choice of origin. Choose &ldquo;Fm-3m&rdquo;
+in the choice box and hit enter. You can also type in the choice box &ldquo;Fm-3m&rdquo;
+or &ldquo;225&rdquo;, the space group number.  This will expand the unit cell to four Ni
+sites with the proper symmetry.
+</p>
+<div class="float"><a name="fig3_002d01"></a>
+<img src="images/fig3-01.png" alt="images/fig3-01">
+
+</div><p><strong>Figure 3.1: Expanding the unit cell using space group information.
+</strong>
+</p>
+<p>In order to set the symmetry constraints for the refinement, select
+&ldquo;Constraints&rdquo; tab, highlight all the atoms, and right-click to invoke a menu.
+Note that hitting &ldquo;Control&rdquo; and &ldquo;A&rdquo; simultaneously will select all the
+atoms if the grid is active. (If the fit tree is active, it will select all
+tree items). Click on &ldquo;Symmetry constraints...&rdquo;, and a dialog box will appear
+asking for the space group to be used and whether you want the positions and/or
+the thermal parameters to be constrained, as shown in <a href="#fig3_002d02">Figure 3.2</a>. The
+default is to use the space group used for expansion, and to constrain
+everything according to the symmetry. Since all the positions are special,
+these will not be refinable by symmetry, and the thermal parameters will be
+isotropic.  The program will assign parameters according to symmetry using
+default names that can be renamed and/or reassigned by the user. To be
+consistent with the naming from the first example, one could assign the lattice
+parameters as <i>@3</i> and the isotropic ADPs as <i>@4</i>. Note that parameters
+can be quickly renamed or consolidated in the &ldquo;Parameters&rdquo; panel of the fit
+node using the right-click menu. It is important to note that the table
+reflecting constraints is <i>the only place</i> that program refers to for the
+symmetry.  What is written there will be used, and if the table is tampered
+with, then the original symmetry obtained using symmetry expansion feature will
+<i>not</i> be preserved. Therefore, the expansion tool represents a convenience
+tool and nothing more than that. The remaining steps of this example are
+identical to these described in <a href="#Simple-fit">Creating a simple fit using a preexisting structure file</a>.
+</p>
+<div class="float"><a name="fig3_002d02"></a>
+<img src="images/fig3-02.png" alt="images/fig3-02">
+
+</div><p><strong>Figure 3.2: Setting up symmetry constraints to be used in a refinement.
+</strong>
+</p>
+<hr>
+<a name="Calculating-PDF"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Symmetry-expansion" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Calculating-PDF-from-a-structure"></a>
+<h2 class="section">3.2 Calculating PDF from a structure</h2>
+<a name="index-calculating-PDF"></a>
+
+<p>There is often a need for obtaining a calculated PDF profile for a given
+structure instead of performing a fit. In order to carry out a calculation, an
+underlying structure needs to be specified. This can either be loaded from a
+file or generated from scratch. Suppose that we have a Ni structure populating
+a fit tree using steps described in either <a href="#Simple-fit">Creating a simple fit using a preexisting structure file</a> or in <a href="#Symmetry-expansion">Building structure model using crystal symmetry</a>, and that we would like to calculate Ni PDF using neutron radiation.
+Highlight the Ni structure on fit tree. Either right-click and select <b>Insert
+Calculation</b> or select <b>New Calculation</b> from &ldquo;Calculation&rdquo; menu.  The
+current action panel will display information very similar to that when a data
+set is loaded, as shown in <a href="#fig3_002d03">Figure 3.3</a>.
+</p>
+<div class="float"><a name="fig3_002d03"></a>
+<img src="images/fig3-03.png" alt="images/fig3-03">
+
+</div><p><strong>Figure 3.3: An example of the calculation configuration panel.
+</strong>
+</p>
+<p>Now specify conditions to be used for the calculation, such as radiation type,
+calculation range and corresponding <i>r</i>-grid size, as well as instrument
+resolution and maximum momentum transfer parameters. For the later two, the
+default values of parameters could be used, or values could be specified that
+closely mimic the experimental conditions on some particular instrument of
+interest. After the conditions are set, the gear icon on the tool bar can be
+used to execute the calculation (or alternatively select <b>Run Selected
+Calculation</b> from the &ldquo;Calculations&rdquo; menu). For our exercise, select
+<i>Neutron</i> scatterer type.  To mimic the experimental data used earlier in the
+tutorial, select for example 0.01 for the <i>r</i>-grid size, and use 0.08 and
+25.0 for resolution and maximum momentum transfer parameters respectively.
+Execute the calculation and observe the result by clicking on the quick plot
+icon on the tool bar. To export the calculated PDF, use the <b>Export Selected
+Calculation</b> choice on the &ldquo;Calculations&rdquo; menu.
+</p>
+<hr>
+<a name="Sequential-fitting"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Calculating-PDF" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Multistage-fitting" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Sequential-fitting-1"></a>
+<h2 class="section">3.3 Sequential fitting</h2>
+<a name="index-sequential-fitting"></a>
+
+<p>In many practical situations there is a need to set a series of refinements
+that are linked in a sequence. In what follows we will describe multi-stage
+fitting capabilities of PDFgui, followed by description of three pre-made
+macros that implement sequential fitting: fitting of <i>r</i>-series on a single
+data set, temperature series on a set of data corresponding to various
+temperatures, and a doping series on a set of data corresponding to samples
+whose chemical content changes in some systematic way. These macros can be
+accessed from the menu bar, &ldquo;Fits&rdquo; menu, <b>Macros</b> selection on the
+drop-down menu.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Multistage-fitting">3.3.1 Multistage fitting</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#r_002dseries">3.3.2 Sequential fitting of incremental r-series</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Temperature-series">3.3.3 Sequential fitting of temperature series</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Doping-series">3.3.4 Sequential fitting of doping series</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Advanced-post_002dprocessing-of-sequential-refinement">3.3.5 Advanced post-processing of sequential refinement</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="Multistage-fitting"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#r_002dseries" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Multistage-fitting-1"></a>
+<h3 class="subsection">3.3.1 Multistage fitting</h3>
+<a name="index-multistage-fitting"></a>
+
+<p>Here we describe how to string together several fits. To begin, create a fit as
+explained earlier. We assume this fit is named &ldquo;Fit 1&rdquo;. The next step is to
+copy the fit. This is achieved by right-clicking on the fit node in the the fit
+tree, and selecting &ldquo;Copy&rdquo; option from the pop-up menu. Once this is done,
+the fit can be pasted by selecting either &ldquo;Paste Fit&rdquo; or &ldquo;Paste Linked Fit&rdquo;
+from the pop-up menu. We will link the fits manually for the sake of
+instruction, so select &ldquo;Paste Fit&rdquo;. (&ldquo;Paste Linked Fit&rdquo; will do all of what
+follows automatically.) Selecting &ldquo;Paste Fit&rdquo; will create &ldquo;Fit 1_copy&rdquo;, a
+copy of &ldquo;Fit 1&rdquo; in the fit, which has the. The next step is to link the fits.
+Select the new fit node on the fit tree. All aspects of the fit are duplicated
+in the new fit, but so far are not associated with the original fit.
+</p>
+<p>In the &ldquo;Parameters&rdquo; panel, select the entire &ldquo;Initial&rdquo; column. Type &ldquo;=Fit
+1&rdquo; and then press &ldquo;Enter&rdquo;. The &ldquo;Initial&rdquo; values of the parameters should
+now read &ldquo;=Fit 1:n&rdquo;, where <i>n</i> is the index of the parameter. This brings
+us to the linking syntax. A parameter in this fit can be linked to any other
+parameter in any other fit with &ldquo;=name:index&rdquo; syntax. Here, &ldquo;name&rdquo; is the
+name of another fit to which the link is made, and &ldquo;index&rdquo; is the index of a
+parameter in that fit.  If &ldquo;:index&rdquo; is omitted, it will default to the index
+of the parameter one is linking from. A linked parameter uses the refined value
+of the link as its <i>initial</i> value, or the initial value if the linked
+parameter is not yet refined.  An example of this is shown in <a href="#fig3_002d04">Figure 3.4</a>.
+</p>
+<div class="float"><a name="fig3_002d04"></a>
+<img src="images/fig3-04.png" alt="images/fig3-04">
+
+</div><p><strong>Figure 3.4: An example of linked fits. The output of a converged fit will
+be fed into the succeeding fit in the sequence as an input.
+</strong>
+</p>
+<p>Now that we have a linked fit, we can change it in some aspect. We could delete
+and replace the data set or phase, or we could or we can add parameter to see
+if we can improve the fit, without modifying the configuration of the original
+fit. Here we will add additional parameters to improve the fit.  If our Ni
+example was used and copied in this exercise, one can select <i>Ni.stru</i> phase
+of &ldquo;Fit 1_copy&rdquo; and introduce parameter <i>delta2</i> by inserting &ldquo;@5&rdquo; in
+the appropriate box of the &ldquo;Constraints&rdquo; tab of that phase. This is a
+quadratic atomic correlation factor, a parameter related to the correlated
+motion of atoms, and as such should help in sharpening up the nearest neighbor
+PDF peak in the model PDF profile. Highlight the fits on the fit tree by
+holding down &ldquo;Ctrl&rdquo; on the keyboard while selecting each in sequence.
+Alternately, select a single fit and hit &ldquo;Ctrl&rdquo;+&ldquo;Shift&rdquo;+&ldquo;A&rdquo;
+simultaneously on the keyboard. Once the fits are selected, run them by
+pressing the &ldquo;gear&rdquo; icon in the tool bar.  Only the highlighted fits will be
+executed. The fitting will proceed in stages, so the first fit is executed
+first, and, after it is converged, the second one. After the fitting of the
+sequence is over, you may plot the results in the same window by selecting both
+data set nodes.  Change the offset in the plotting window to 0 and plot
+<i>Gcalc</i> versus <i>r</i>.  Notable is a sharper nearest neighbor PDF peak in the
+second fit, improving the fit to the Ni data compared to the &ldquo;Fit 1&rdquo;
+achievement.
+</p>
+<p>We note here that there is also a linear atomic correlation factor <i>delta1</i>.
+This one is appropriate to use in cases of high temperature, while <i>delta2</i>
+is more appropriate for the case of low temperatures.  An alternative way to
+include the correlated motion effects on PDF is to introduce <i>sratio</i>
+parameter that defines low-<i>r</i> to high-<i>r</i> PDF peak ratio, and <i>rcut</i>
+limit needs to be specified that defines a cutoff distance. The two approaches
+of accounting for correlated motion should <i>not</i> be used simultaneously. See
+the PDFgui publication and references therein for a more thorough description
+of these parameters.
+</p>
+<hr>
+<a name="r_002dseries"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Multistage-fitting" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Temperature-series" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Sequential-fitting-of-incremental-r_002dseries"></a>
+<h3 class="subsection">3.3.2 Sequential fitting of incremental r-series</h3>
+<a name="index-sequential-fitting-1"></a>
+<a name="index-r_002dseries"></a>
+
+<p>In certain modeling situations the user could benefit from fitting a data set
+through a series of refinements that differ one from another by the
+corresponding fitting ranges. This could either be a case when upper
+<i>r</i>-limit is to be changed incrementally, or when a fixed width <i>r</i>-window
+is to be defined for a box-car fitting approach. An example of this when one
+wants to study the details of the local- to average-structure crossover in a
+complex material. PDFgui has a pre-written macro that automates the setup of
+this type of refinement.  We will illustrate these capabilities through a
+simple Ni example.
+</p>
+<p>Generate a complete fit, including a phase and a dataset, as explained in
+<a href="#Simple-fit">Creating a simple fit using a preexisting structure file</a>. Select the fit from the fit tree. From the &ldquo;Fits&rdquo; menu,
+select <b>Macros</b>, and choose &ldquo;r-Series&rdquo; option. The Current Action panel
+will display simple setting requirements, arranged in two rows of three dialog
+boxes each, that need to be filled with values to be specified by the user. An
+example of this is shown in Figure <a href="#fig3_002d05">Figure 3.5</a>.
+</p>
+<p>The first row deals with the increment setup of the upper <i>r</i> of the
+refinements. User should specify the first and the last fit maximum
+<i>r</i>-value, and corresponding step (increment), all in units of Angstroms. In
+the second row information is needed to specify the lower <i>r</i> refinement
+limit. Again, the user sets the first and the last value, and step. This allows
+for a box car of either fixed or variable width to be defined. If the second
+row is left  blank, the corresponding refinement series will be with
+incremental maximum <i>r</i> only, and fixed lower limit.  For the purpose of this
+exercise lets perform incremental fitting of Ni-data with 4 steps total, and
+fixed lower limit. To achieve this, type 5 for the first upper limit, 20 for
+the last upper limit, and the step of 5 Angstroms.  Leave the second row blank.
+Once this is done, make sure that the Ni fit, which in this situation serves as
+a template, is highlighted in the fit tree, and then click &ldquo;OK&rdquo; in the
+current action panel.  This will generate 4 new fits below the original fit,
+and these four fits will constitute your series, with desired incremental
+limits. Select all four of them and execute the refinement.  Once the sequence
+is done, you can review the results using the plot control.
+</p>
+<div class="float"><a name="fig3_002d05"></a>
+<img src="images/fig3-05.png" alt="images/fig3-05">
+
+</div><p><strong>Figure 3.5: Appearance of the setup panel for specifying an incremental r-series
+fit conditions.
+</strong>
+</p>
+<hr>
+<a name="Temperature-series"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#r_002dseries" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Doping-series" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Sequential-fitting-of-temperature-series"></a>
+<h3 class="subsection">3.3.3 Sequential fitting of temperature series</h3>
+<a name="index-sequential-fitting-2"></a>
+<a name="index-temperature-series"></a>
+
+<p>Frequently, one must handle a large number of data sets originating from a
+single sample collected at various temperatures. One of the common modeling
+schemes in such cases is to perform sequential fitting of such data series,
+which is known to yield well behaved modeling parameters.  PDFgui has a
+pre-written macro that allows for this modeling situation to be accommodated.
+</p>
+<p>We will describe the procedure using an example of a temperature series of data
+collected on LaMnO3 at various temperatures from 300 K to 1150 K at NPDF
+instrument at LANSCE at Los Alamos National Laboratory. This material exhibits
+Jahn-Teller (JT) order-disorder phase transition just above 700 K, where the
+long range orbital order is lost at high temperature, but the local JT
+distortion survives. The formal space group does not change at this transition.
+</p>
+<p>To begin, from the &ldquo;File&rdquo; menu use <b>Open Project</b> selection to open
+<i>lmo-template.dpp</i> project from the tutorial directory.  This project
+consists of a fit called <i>lmo-pbnm </i>, which will serve as a template and
+which contains <i>Pbnm</i> phase of LaMnO3 and a 300 K data set.  The fit
+refinement is set up to cover 1.7-19.5 Angstroms range, and all the parameter
+values are set to their converged values for this temperature.  The fit setup
+uses isotropic ADPs for all atomic sites.  In the same directory data
+corresponding to various temperatures exist, in particular <i>300K.gr</i>,
+<i>550K.gr</i>, <i>650K.gr</i>, <i>700K.gr</i>, <i>720K.gr</i>, <i>730K.gr</i>, <i>740K.gr</i>,
+<i>750K.gr</i>, <i>800K.gr</i>, <i>880K.gr</i>, <i>980K.gr</i>, <i>1050K.gr</i>, <i>1100K.gr</i>,
+and <i>1150K.gr</i>. We will establish a T-series fit sequence.  Select <b>Macros</b>
+from the &ldquo;Fit&rdquo; menu on the menu bar, and choose &ldquo;Temperature Series&rdquo;. The
+current action panel will reflect the selection.  A tool is provided that
+allows for data sets to be added. Click on &ldquo;Add&rdquo; button. Using &ldquo;Shift&rdquo; and
+mouse-select operation you should select all the data sets mentioned in the
+above list, except the 300 K one, as this is already in the template fit, and
+then press &ldquo;Open&rdquo;.  All the data sets will be loaded. Since the files contain
+meta-data, as mentioned earlier, the GUI is going to pick up temperature
+information from the files. User should verify that the information is correct.
+The data can be ordered by temperature by clicking the &ldquo;Temperature&rdquo; header.
+</p>
+<div class="float"><a name="fig3_002d06"></a>
+<img src="images/fig3-06.png" alt="images/fig3-06">
+
+</div><p><strong>Figure 3.6: Setting up a T-series sequential refinement for LaMnO3. Ordering
+by temperature will ensure that the fits are linked correctly.
+</strong>
+</p>
+<p>Order the data by temperature (<a href="#fig3_002d06">Figure 3.6</a>), as otherwise the series of fits
+that is to be automatically generated in the next step will be linked in an
+arbitrary way in which the data were loaded, rather than to reflect the
+scientific logic. There should be 13 data sets. Next, ensure that the template
+fit is selected on the fit tree. If this is the case, the &ldquo;OK&rdquo; button becomes
+clickable. Clicking on the &ldquo;OK&rdquo; button will generate a sequence of linked
+fits in the fit tree in the order of the temperature increase. Each fit is
+linked to the previous, except for the template fit for the 300 K data.
+Highlight all the fits in the fit tree to start the sequential refinement of
+the T-series. The results can then be displayed in Fit Control such that
+various converged fit parameters are plotted versus temperature.
+</p>
+<p>In terms of the science behind the LaMnO3 example, it is interesting to plot
+isotropic ADP of the oxygen at general position. Select all the phases on the
+fit tree by selecting one and then hitting the &ldquo;Control&rdquo;, &ldquo;Shift&rdquo; and &ldquo;A&rdquo;
+keys on your keyboard simultaneously.  This will select all the phases at once.
+On the plot control choose the temperature for <i>x</i> axis, and select the Uiso
+of O2 (for example atom 20) for the <i>y</i> axis.  Clicking &ldquo;Plot&rdquo; will display
+the plot of Uiso(20) vs T.
+</p>
+<div class="float"><a name="fig3_002d07"></a>
+<img src="images/fig3-07.png" alt="images/fig3-07">
+
+</div><p><strong>Figure 3.7: Displaying the refinement results as a function of external
+parameter: T-series refinement of LaMnO3, example of isotropic ADP of
+oxygen atom on general position in <i>Pbnm</i> setting. Notable are the offsets
+just above 700 K (Jahn-Teller transition), and at around 1000 K when sample
+converts from orthorhombic to rhombohedral symmetry.
+</strong>
+</p>
+<p>Despite quite high temperatures, an onset of the static offset above the
+transition temperature is clearly marked by this parameter, as apparent in
+<a href="#fig3_002d07">Figure 3.7</a>. Curious user could repeat the same T-series refinement
+restricting the refinement range upper limit to say 5-6 Angstroms and observe
+the outcome. The refinement sequence execution should be very quick in this
+case.
+</p>
+<hr>
+<a name="Doping-series"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Temperature-series" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Advanced-post_002dprocessing-of-sequential-refinement" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Sequential-fitting-of-doping-series"></a>
+<h3 class="subsection">3.3.4 Sequential fitting of doping series</h3>
+<a name="index-sequential-fitting-3"></a>
+<a name="index-doping-series"></a>
+
+<p>Fitting a series of PDF data that correspond to a set of samples with related
+chemistry, such as various doping series, represents another important
+sequential modeling aspect that is supported in PDFgui.
+</p>
+<p>We will describe the procedure using an example of a series of data collected
+on LaMnO3 and series of Ca-doped LaMnO3 samples with various Ca content from 0
+to 0.28 at GEM instrument at ISIS, UK. To begin, from the &ldquo;File&rdquo; menu use
+<b>Open Project</b> selection to open <i>lcmo-template.dpp</i> project from the
+tutorial directory, which has an initial setup for this exercise.  Note the
+letter <i>c</i> in the file name, in contrast to the name used in the previous
+example. This project consists of a fit called <i>lcmo-pbnm</i>, which will serve
+as a template and which contains <i>Pbnm</i> phase of LaMnO3 and a 10 K data set,
+<i>x000t010q35.gr</i>. The difference here with respect to the template used in
+the previous example is that Ca sites are introduced in the structure, but are
+assigned zero occupancy. However, existence of the Ca dopant species in the
+structure of the template is essential for the macro to operate. Also, upper
+limit used in Fourier transform for obtaining this set of data is 35 inverse
+Angstroms, in contrast to 32 inverse Angstroms in previous example. Since
+different instrument was used, the value of <i>Qdamp</i> is different than in
+previous example.
+</p>
+<div class="float"><a name="fig3_002d08"></a>
+<img src="images/fig3-08.png" alt="images/fig3-08">
+
+</div><p><strong>Figure 3.8: After loading of the Ca-doping data series of LaMnO3 system, proper
+doping assignment needs to be carried out, as the doping levels introspected
+from the file names in this example incorrectly reflect the scientific
+situation. Note that dopant atom has to be present in the template seed used
+to generate the linked sequence of fits.
+</strong>
+</p>
+<p>In the same directory data corresponding to various Ca contents exist,
+collected at 10 K temperature, in particular <i>x004t010q35.gr</i>,
+<i>x012t010q35.gr</i>, <i>x016t010q35.gr</i>, <i>x020t010q35.gr</i>, <i>x024t010q35.gr</i>,
+and <i>x028t010q35.gr</i>. It should be noted at this point that the data files do
+not contain any relevant meta-data in the file headers. However, the doping
+level is somehow encrypted into the file names. We will establish a doping
+series fit sequence. Select <b>Macros</b> from the &ldquo;Fit&rdquo; menu on the menu bar,
+and choose &ldquo;Doping Series&rdquo;. The current action panel will reflect the
+selection. The base element and dopant need to be specified. A tool is provided
+that allows for data sets to be added. Click on &ldquo;Add&rdquo; button.  Using
+&ldquo;Shift&rdquo; and mouse-select operation you should select all the data sets
+mentioned in the above list, and then press &ldquo;Open&rdquo; button.  All the data sets
+will be loaded. The GUI will introspect both the file names and files
+themselves in attempt to obtain the doping (or in previous example temperature)
+information. Since the files do not contain meta-data, as mentioned earlier,
+the GUI is going to pick up doping information from the file names. The user
+should verify that the information is correct. In this particular case the
+doping information will not be correctly picked up, as for example 004 from the
+name is meant to be 0.04 doping, and the GUI would try to interpret it as 4.0
+doping. Similarly 028 would be interpreted as 28.0, while it was intended to
+mean 0.28 doping. These values should be edited and fixed manually by clicking
+on the corresponding values and simply typing in the correct values (Figure
+<a href="#fig3_002d08">Figure 3.8</a>).  The data can be ordered by doping by clicking the header.
+After you are done with editing, order the data by doping, as otherwise the
+series of fits that is to be automatically generated in the next step will be
+linked in an arbitrary way in which the data were loaded, rather than to
+reflect the scientific logic. There should be 6 data sets (with the initial
+x=0.0 data set there will be 7 chained fits total after this setup is done).
+Next, ensure that the template fit is selected on the fit tree. If this is the
+case, the &ldquo;OK&rdquo; button becomes clickable.  Clicking on the &ldquo;OK&rdquo; button will
+generate a sequence of linked fits in the fit tree in the order of the Ca
+content increase. Highlight all the fits in the fit tree to start the
+sequential refinement of the doping series.
+</p>
+<div class="float"><a name="fig3_002d09"></a>
+<img src="images/fig3-09.png" alt="images/fig3-09">
+
+</div><p><strong>Figure 3.9: Sequence of refined parameters, such as lattice constants, can be
+plotted vs doping using PDFgui plotting facilities. Figure features lattice
+parameter <i>b</i> in <i>Pbnm</i> space group setting for series of Ca-doped LaMnO3
+samples for doping concentrations between 0 and 0.28 at 10 K temperature.
+</strong>
+</p>
+<p>After the convergence is achieved for all the fits in the fit tree, the results
+can be displayed graphically such that various converged fit parameters are
+plotted versus Ca content. An example is provided in Figure  <a href="#fig3_002d09">Figure 3.9</a>
+featuring one of the lattice parameters.
+</p>
+<hr>
+<a name="Advanced-post_002dprocessing-of-sequential-refinement"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Doping-series" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Sequential-fitting" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Nanoparticle-structure" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Advanced-post_002dprocessing-of-sequential-refinement-1"></a>
+<h3 class="subsection">3.3.5 Advanced post-processing of sequential refinement</h3>
+<a name="index-project-post_002dprocessing"></a>
+<a name="index-data-extraction"></a>
+<a name="index-tui-scripts"></a>
+
+<p>While PDFgui allows to collate data from a series of sequential
+refinements, there are many data query options that are not
+possible or very tedious with a GUI.  A particularly tedious task would
+be to extract bond lengths for every temperature refined in
+a large series.  The GUI could supply menus for these tasks,
+but there are just too many options to serve them all.  In fact,
+the GUI just does not seem to be suitable interface and things
+are much easier and more flexible to accomplish with Python scripts.
+</p>
+<p>The idea is to setup and run sequential refinement with PDFgui, but to
+do complicated data extractions with simple Python scripts.
+The PDFgui installation includes a &lsquo;<samp>tui</samp>&rsquo; (Text User Interface)
+module that allows simple access to the data in a PDFgui project.
+</p>
+<p>As a first example, let us assume that a converged sequential refinement
+from <a href="#Temperature-series">Sequential fitting of temperature series</a> has been saved under the same name as
+<i>lmo-template.ddp</i>.
+The following Python script extracts temperatures and refined
+values of the lattice parameter <i>c</i>
+</p><div class="example">
+<pre class="example"># python script
+from diffpy.pdfgui import tui             # import the tui library
+prj = tui.LoadProject('lmo-template.ddp') # read PDFgui project file
+temperatures = prj.getTemperatures()      # list of temperature values
+phases = prj.getPhases()                  # list of phase objects
+tcount = len(temperatures)                # number of temperature points
+
+for i in range(tcount):
+    Ti = temperatures[i]
+    # get the refined lattice parameter c
+    ci = phases[i].refined.lattice.c
+    print Ti, ci
+</pre></div>
+
+<p>Save the example above to a file, say &ldquo;lmo_refined_c.py&rdquo; and run
+it as
+</p><div class="example">
+<pre class="example">python lmo_refined_c.py
+</pre></div>
+<p>Note that the script cannot load the unmodified <i>lmo-template.ddp</i> file,
+because it does not have any refinement results.
+</p>
+
+<p>The tutorial directory contains an advanced script
+&ldquo;tui_mno_bond_lengths.py&rdquo;, which extracts the shortest
+Mn-O bond lengths from the same PDFgui project.  Please, see
+the comments in the script for detailed explanation.
+</p>
+<p>To learn more about the tui module and about the objects
+and functions that it returns, please see the API
+documentation for diffpy.pdfgui at
+<a href="http://docs.danse.us/diffraction/diffpy.pdfgui/">http://docs.danse.us/diffraction/diffpy.pdfgui/</a>.
+</p>
+<p>Feel free to ask at the
+<a href="https://groups.google.com/d/forum/diffpy-users">diffpy-users</a>
+group if you need help with data extracting scripts.
+</p>
+<hr>
+<a name="Nanoparticle-structure"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Advanced-post_002dprocessing-of-sequential-refinement" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Nanoparticle-structure-1"></a>
+<h2 class="section">3.4 Nanoparticle structure</h2>
+<a name="index-nanoparticle-structure"></a>
+<a name="index-nanoparticle-diameter"></a>
+
+<p>Determining the structure of a nanoparticle is notoriously difficult.
+Diffraction experiments on nanoparticle samples yield broad diffraction
+patterns that are hard to analyze using conventional crystallographic
+approaches.  The PDF analysis of nanoparticles is becoming increasingly common.
+The PDF of a nanoparticle features sharp peaks conveying structural
+information. The PDF signal gets damped at higher distances due to the
+diminished number of pairs in the nanoparticle structure that contribute to
+those distances. For certain simpler cases when nanoparticles can be assumed to
+have spherical shape, characteristic parameters such as nanoparticle diameter
+can be obtained.
+</p>
+<p>PDFgui is capable of modeling the effect of the finite nanoparticle size using
+a spherical shape factor. Relevant PDF parameter is <i>spdiameter</i> which is the
+diameter of the nanoparticle. This parameter is highly correlated with various
+other parameters one would like to refine, such as anisotropic ADPs, scale
+factors, correlated motion parameters and so on. The refinement procedure is
+therefore rather delicate and the solutions are not as robust as we are used to
+in cases of crystalline materials.
+</p>
+<p>To illustrate the program capabilities we present a case of CdSe nanoparticle
+approximately 3nm in size. It useful to have PDF data for a crystalline
+reference, where available/applicable. In this exercise we start from a
+prepared project file <i>CdSe-nano.ddp</i>. This project contains two fits: the
+first one is a bulk CdSe reference, and the other pertains to the CdSe
+nanoparticle. For consistency the PDFs of both bulk and nano samples were
+obtained using <i>Qmax</i> of 14 inverse Angstroms, although the bulk material PDF
+could have been processed using a higher value.  Synchrotron x-ray radiation
+was used to obtain the data at 300 K, based on an experiment carried out at
+6-ID-D at the Advanced Photon Source at Argonne National Laboratory.  The
+structure used for both data sets is wurtzite, space group P63mc. From
+calibrations on Ni standard <i>Qdamp</i> value of 0.0486 was obtained and is used
+here.
+</p>
+<p>We first carry out a refinement on the bulk reference. This is carried
+out over a range from 1.7 to 19.8 Angstroms, using 7 parameters: lattice
+parameters <i>a</i> and <i>c</i> (<i>@1</i> and <i>@2</i> respectively), selenium <i>z</i>
+fractional coordinate (<i>@11</i>), isotropic ADPs for Cd and Se (<i>@21</i> and
+<i>@23</i> respectively), the data scale factor (<i>@100</i>), and finally
+correlated motion related quadratic term coefficient <i>delta2</i> (<i>@200</i>).
+The converged fit results in parameter values that can be further used for
+reference when modeling the nanoparticle data. We note that while the fit is
+reasonable, the values of the isotropic ADPs are enlarged. The fit can be
+further improved if anisotropic ADPs are introduced, although the z-direction
+related components will remain enlarged due to the stacking disorder present in
+the structure. The referent value of 5.69 for <i>delta2</i> will be used as a
+starting value for the nanoparticle fit.
+</p>
+<p>In the nanoparticle refinement we will use the same starting values for all the
+parameters, except for <i>delta2</i> and the nanoparticle diameter,
+<i>spdiameter</i>.  The former is set to 5.69, and the later to 25 Angstroms. In
+other cases an approximate value of the spherical nanoparticle size is usually
+known, and it is the best to start from a reasonably good guess. Refining the
+nanoparticle data reveals nanoparticle diameter of approximately 30 Angstroms,
+as further illustrated in <a href="#fig3_002d10">Figure 3.10</a>. Enlarged values of isotropic ADPs are
+again observed, and the fit is reasonably good. Further improvements can be
+obtained by introducing anisotropic ADPs, where again values related to the
+z-direction will remain abnormally large most probably due to the stacking
+related disorder.  A detailed description of this system and successful
+PDF modeling can be found in this publication:
+<a href="http://link.aps.org/doi/10.1103/PhysRevB.76.115413">Quantitative size-dependent structure and strain determination of CdSe nanoparticles using atomic pair distribution function analysis</a>.
+</p>
+<div class="float"><a name="fig3_002d10"></a>
+<img src="images/fig3-10.png" alt="images/fig3-10">
+
+</div><p><strong>Figure 3.10: Fitting the structure of a nanoparticle: 3nm CdSe
+nanoparticle example.
+</strong>
+</p>
+<p>In general, a successful fitting scenario depends on particular details of a
+structural problem one is determined to solve. The problem of determining the
+structure of a nanoparticle remains difficult. PDFgui is not intended to
+necessarily provide <i>the</i> solution, it is rather a helpful tool in the
+process of determining new details and exploring the space of possible solution
+candidates, yielding success in some instances.
+</p>
+<hr>
+<a name="Extras"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples-and-tutorials" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Nanoparticle-structure" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDF-plotting" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Extras-1"></a>
+<h1 class="chapter">4 Extras</h1>
+<a name="index-extras"></a>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#PDF-plotting">4.1 PDF plotting</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Displaying-the-structure">4.2 Displaying the structure</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Advanced-usage-and-special-needs">4.3 Advanced usage and special needs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="PDF-plotting"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Extras" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Displaying-the-structure" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDF-plotting-1"></a>
+<h2 class="section">4.1 PDF plotting</h2>
+<a name="index-PDF-plotting"></a>
+
+<p>Plotting capabilities of PDFgui are provided through the plot control panel and
+the quick-plot icon on the tool bar. A quick-plot is created by selecting a
+node in the fit tree and then clicking the quick-plot icon in the tool bar. The
+same quick-plot can be created by middle-clicking on a node in the fit tree.
+</p>
+<p>The plot control allows for selection of <i>x</i> and <i>y</i> coordinates for
+plotting. The actual quantities that could be assigned to the coordinates is
+determined by selection of either Fit, or Phase, or Data on the fit tree. The
+choices for <i>x</i> and <i>y</i> coordinates varies depending on what is selected on
+the fit tree. Special options like index, temperature and doping are available
+as choices for <i>x</i> in cases of plotting multiple fit results from sequential
+fitting protocols. The plot window provides essential functionality such as
+zoom, pan, cursor coordinate tracking, and shifts.  Features such as saving,
+exporting and printing are also available. The principal intent of the plotting
+functionality is to allow quick access to the fitting results to enhance the
+scientific process. If data is selected on the fit tree, the user can plot
+various aspects of the PDF function, such as data, model and difference PDF
+profiles as a function of inter-atomic distance <i>r</i>.  If the fit or the phase
+are selected, then various parameters, both structural and internal can be
+plotted instead. Since several formal plotting examples were given through the
+tutorial exercise, and having simplicity of usage in mind, no other plotting
+examples are provided, hoping that the usage is sufficiently simple for users
+to master individually with ease. An example plot of Rw vs refinement step is
+shown in <a href="#fig4_002d01">Figure 4.1</a> for Ni example.
+</p>
+
+
+<div class="float"><a name="fig4_002d01"></a>
+<img src="images/fig4-01.png" alt="images/fig4-01">
+
+</div><p><strong>Figure 4.1: Plotting window featuring Rw vs refinement step for Ni example.
+The basic functionality for manipulating the plot is provided through icons
+on the tool bar of the plotting window.
+</strong>
+</p>
+<hr>
+<a name="Displaying-the-structure"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Extras" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDF-plotting" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Advanced-usage-and-special-needs" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Displaying-the-structure-1"></a>
+<h2 class="section">4.2 Displaying the structure</h2>
+<a name="index-displaying-the-structure"></a>
+<a name="index-structure-visualization"></a>
+
+<p>For those users with a structural visualizer available in their system
+configuration, PDFgui allows for initial or refined structures to be visualized
+by passing required structural information that program.  This is achieved by
+highlighting a desired phase on the fit tree, and then selecting <b>Plot
+Initial Structure</b> or <b>Plot Refined Structure</b> from the &ldquo;Phases&rdquo; drop-down
+menu. The quick-plot button (or middle-click) will also invoke the structure
+viewer with the refined structure, or initial structure if the refined
+structure does not yet exist. The control of the visualization is dependent on
+the viewer used. The viewer can set under the &ldquo;Edit-&gt;Preferences&rdquo; menu, see
+full details in <a href="#Configuration-of-structure-viewer">Configuration of structure viewer</a>.
+</p>
+
+<p>An example Ni structure visualization with AtomEye is shown in <a href="#fig4_002d02">Figure 4.2</a>.
+</p>
+<div class="float"><a name="fig4_002d02"></a>
+<img src="images/fig4-02.png" alt="images/fig4-02">
+
+</div><p><strong>Figure 4.2: Using AtomEye functionality (if installed on your system) for 3D
+visualization of the initial and refined PDF structures: example of Ni
+structure.
+</strong>
+</p>
+<hr>
+<a name="Advanced-usage-and-special-needs"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Extras" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Displaying-the-structure" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Extras" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Advanced-usage-and-special-needs-1"></a>
+<h2 class="section">4.3 Advanced usage and special needs</h2>
+<a name="index-advanced-usage"></a>
+<a name="index-special-needs"></a>
+
+<p>The PDFgui is designed to accommodate most common modeling situations. However,
+it does not encapsulate all the capabilities available within the modeling
+engine, such as calculation of differential PDFs, handling atoms with special
+scattering properties, etc. Advanced usage of PDFfit2 engine to resolve any
+such special modeling need that user may have is available through usage of
+Python scripts in the expert command line mode, similar to that featured in the
+PDFFIT program.  Handling these situations requires detailed knowledge of the
+PDFfit2 syntax based on Python, which is beyond the scope of this user guide
+and will be described elsewhere. Refer to the PDFfit2 API
+(<a href="http://www.diffpy.org/doc/pdffit2/">http://www.diffpy.org/doc/pdffit2/</a> and the diffpy-users
+group (<a href="https://groups.google.com/d/forum/diffpy-users">https://groups.google.com/d/forum/diffpy-users</a>) for help with PDFfit2
+scripting.
+</p>
+<hr>
+<a name="PDFgui-reference-sheets"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Extras" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Advanced-usage-and-special-needs" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-shortcut-keys" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDFgui-reference-sheets-1"></a>
+<h1 class="chapter">5 PDFgui reference sheets</h1>
+<a name="index-PDFgui-reference-sheets"></a>
+<a name="index-reference-sheets"></a>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#PDFgui-shortcut-keys">5.1 PDFgui shortcut keys</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Command-line-arguments">5.2 Command line arguments</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#List-of-PDFfit2-variables">5.3 List of PDFfit2 variables</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#PDF-peak-width">5.4 PDF peak width</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<a name="PDFgui-shortcut-keys"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Command-line-arguments" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDFgui-shortcut-keys-1"></a>
+<h2 class="section">5.1 PDFgui shortcut keys</h2>
+<a name="index-PDFgui-shortcut-keys"></a>
+<a name="index-shortcuts"></a>
+<a name="index-hot-keys"></a>
+
+
+<p><b>Fit tree</b>
+</p>
+<dl compact="compact">
+<dt><kbd>Ctrl+A</kbd></dt>
+<dd><p>Select all items in the fit tree.
+</p>
+</dd>
+<dt><kbd>Ctrl+Shift+A</kbd></dt>
+<dd><p>Once an object is selected on the fit tree, using this shortcut key will
+select all the objects on the tree that are of the same type. For example, if
+a single data set is selected on the tree, hitting this hot key will make all
+the data sets belonging to all the fits in the tree to become selected. This is
+particularly useful for simultaneously plotting various fit results across the
+fit tree.
+</p>
+</dd>
+<dt><kbd>Ctrl+C</kbd></dt>
+<dd><p>Copy selected item.
+</p>
+</dd>
+<dt><kbd>Ctrl+X</kbd></dt>
+<dd><p>Copy and delete selected item.
+</p>
+</dd>
+<dt><kbd>Ctrl+V</kbd></dt>
+<dd><p>Paste previously copied item. Note that this will only paste the item to a
+legal position in the tree. For example, a phase node cannot be pasted into an
+empty tree.
+</p>
+</dd>
+</dl>
+
+
+<p><b>Phase configuration grid</b>
+</p>
+<dl compact="compact">
+<dt><kbd>Ctrl+A</kbd></dt>
+<dd><p>Select all items.
+</p>
+</dd>
+<dt><kbd>/</kbd></dt>
+<dd><p>Extend existing selection by atom types or indices.
+</p>
+</dd>
+<dt><kbd>Delete</kbd></dt>
+<dd><p>Delete row. This will delete any wholly selected row.
+</p>
+</dd>
+<dt><kbd>Ctrl++</kbd></dt>
+<dd><p>Add an atom to the grid.
+</p>
+</dd>
+<dt><kbd>Ctrl+-</kbd></dt>
+<dd><p>Same as Delete.
+</p>
+</dd>
+</dl>
+
+
+<p><b>Phase constraints grid</b>
+</p>
+<dl compact="compact">
+<dt><kbd>Ctrl+A</kbd></dt>
+<dd><p>Select all items.
+</p>
+</dd>
+<dt><kbd>/</kbd></dt>
+<dd><p>Extend existing selection by atom types or indices.
+</p>
+</dd>
+<dt><kbd>Delete</kbd></dt>
+<dd><p>Delete contents of selected cells.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<a name="Command-line-arguments"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-shortcut-keys" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#List-of-PDFfit2-variables" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Command-line-arguments-1"></a>
+<h2 class="section">5.2 Command line arguments</h2>
+<a name="index-command-line-options"></a>
+<a name="index-startup-options"></a>
+<a name="index-pdfgui-arguments"></a>
+
+<p>PDFgui can be started with an existing project file if it is given
+as a command line argument.  If the project file cannot be loaded,
+the program terminates without starting the GUI an returns nonzero
+exit code.  In addition the <code>pdfgui</code> executable accepts the
+following command line options:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>-h, --help</samp>&rsquo;</dt>
+<dd><p>Show a brief usage information.
+</p>
+</dd>
+<dt>&lsquo;<samp>-V, --version</samp>&rsquo;</dt>
+<dd><p>Show program version.
+</p>
+</dd>
+</dl>
+
+
+<p><b>Debugging</b>
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>--db-noed</samp>&rsquo;</dt>
+<dd><p>Disable exception catching to error report dialog.  Unhandled
+exceptions should then result in program crash.
+</p>
+</dd>
+<dt>&lsquo;<samp>--db-nocf</samp>&rsquo;</dt>
+<dd><p>No confirmation - exit without asking to save modified project.
+</p>
+</dd>
+<dt>&lsquo;<samp>--db-pdb</samp>&rsquo;</dt>
+<dd><p>Start Python debugger for unhandled error exceptions instead
+of showing the error report dialog.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<a name="List-of-PDFfit2-variables"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Command-line-arguments" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#PDF-peak-width" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="List-of-PDFfit2-variables-1"></a>
+<h2 class="section">5.3 List of PDFfit2 variables</h2>
+<a name="index-PDFfit2-variables"></a>
+<a name="index-variables"></a>
+
+
+<p>The following is the list of PDFfit2 variables, including their default values
+in parentheses, and a brief description and a note, where appropriate.  Note
+that some of the variables used in PDFFIT are renamed in PDFfit2. The reference
+of these changes is provided for the convenience and orientation of those users
+that are used to the old naming scheme.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#New-variables">New variables</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Renamed-variables">Renamed variables</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Preserved-variables">Preserved variables</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<a name="New-variables"></a>
+<a name="New-variables-1"></a>
+<h3 class="subheading">New variables</h3>
+
+<dl>
+<dt><a name="index-spdiameter"></a>Phase: <strong>spdiameter</strong></dt>
+<dd><p>(float &Aring;, default 0 &Aring;) <br>
+<var>spdiameter</var> is a particle diameter for PDF shape damping function.
+Shape damping is not applied when <var>spdiameter</var> equals zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-stepcut"></a>Phase: <strong>stepcut</strong></dt>
+<dd><p>(float &Aring;, default 0 &Aring;) <br>
+The PDF is truncated to zero at r-values greater than <var>stepcut</var>, when
+positive.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-anisotropy"></a>Phase: <strong>anisotropy</strong><em>(n)</em></dt>
+<dd><p><b>anisotropy(n)</b>
+(bool, inferred from <var>uij(n)</var> values) <br>
+Flag for anisotropic thermal displacements of atom n.
+Setting of <var>anisotropy(n)</var> updates the <var>uij(n)</var>
+or <var>uisoequiv(n)</var> values.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-uisoequiv"></a>Phase: <strong>uisoequiv</strong><em>(n)</em></dt>
+<dd><p>(float &Aring;<em>^2</em>, calculated from <var>uij(n)</var> values) <br>
+Isotropic thermal displacement of atom n or equivalent displacement for
+anisotropic atom.  For anisotropic sites the setting of <var>uisoequiv(n)</var>
+scales values of the <var>uij(n)</var> elements.  <var>uisoequiv(n)</var> can be
+constrained only for isotropic atoms.
+</p></dd></dl>
+
+<a name="Renamed-variables"></a>
+<a name="Renamed-variables-1"></a>
+<h3 class="subheading">Renamed variables</h3>
+
+<dl>
+<dt><a name="index-dscale"></a>Dataset: <strong>dscale</strong></dt>
+<dd><p>(float unitless, <var>dsca[s]</var> in PDFFIT) <br>
+Scale factor for the selected dataset.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-qdamp"></a>Dataset: <strong>qdamp</strong></dt>
+<dd><p>(float &Aring;<em>^-1</em>, default 0 &Aring;<em>^-1</em>, <var>qsig</var> in PDFFIT) <br>
+PDF Gaussian dampening envelope due to limited Q-resolution.
+Not applied when equal to zero. The Gaussian envelope is of the form
+</p><p align="center"><img src="images/eq-01.png" alt="images/eq-01.png"></p></dd></dl>
+
+<dl>
+<dt><a name="index-qbroad"></a>Dataset: <strong>qbroad</strong></dt>
+<dd><p>(float &Aring;<em>^-1</em>, default 0 &Aring;<em>^-1</em>, <var>qalp</var> in PDFFIT) <br>
+PDF peak broadening from increased intensity noise at high Q.
+Not applied when equal zero.
+See the definition of the <a href="#PDF-peak-width">PDF peak width</a> for a detailed explanation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-uij"></a>Phase: <strong>uij</strong><em>(n)</em></dt>
+<dd><p>(float &Aring;<em>^2</em>, ij=(11, 22, 33, 12, 13, 23), <var>u[i,n]</var> in PDFFIT) <br>
+Elements of anisotropic displacement tensor of atom n.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-occ"></a>Phase: <strong>occ</strong><em>(n)</em></dt>
+<dd><p>(float unitless, <var>o[n]</var> in PDFFIT) <br>
+Occupancy of site n.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-pscale"></a>Phase: <strong>pscale</strong></dt>
+<dd><p>(float unitless, <var>csca[p]</var> in PDFFIT) <br>
+Scale factor of the current phase.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-delta1"></a>Phase: <strong>delta1</strong></dt>
+<dd><p>(float &Aring;, default 0 &Aring;, <var>gamm</var> in PDFFIT) <br>
+Coefficient for (1/r) contribution to the peak sharpening.
+See the definition of the <a href="#PDF-peak-width">PDF peak width</a> for a detailed explanation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-delta2"></a>Phase: <strong>delta2</strong></dt>
+<dd><p>(float &Aring;<em>^2</em>, default 0 &Aring;<em>^2</em>, <var>delt</var> in PDFFIT) <br>
+Coefficient for 1/r<em>^2</em> contribution to the peak sharpening.
+See the definition of the <a href="#PDF-peak-width">PDF peak width</a> for a detailed explanation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-sratio"></a>Phase: <strong>sratio</strong></dt>
+<dd><p>(float unitless, default 1, <var>srat</var> in PDFFIT) <br>
+Sigma ratio for bonded atoms.  Reduction factor for PDF peak width accounting
+for correlated motion of bonded atoms.
+</p></dd></dl>
+
+<a name="Preserved-variables"></a>
+<a name="Preserved-variables-1"></a>
+<h3 class="subheading">Preserved variables</h3>
+
+<dl>
+<dt><a name="index-qmax"></a>Dataset: <strong>qmax</strong></dt>
+<dd><p>(float &Aring;<em>^-1</em>, default 0 &Aring;) <br>
+<var>qmax</var> cutoff is an experimental parameter having fixed
+value determined during the PDF data processing in the Fourier
+transform step. Finite data range used in the Fourier transform
+is a source of termination ripples. Termination ripples are
+<i>not</i> applied in PDF calculation when <var>qmax</var> is set to zero. The
+effect is simulated using fast Fourier transformation (FFT).
+The original array of <i>G</i> values is first padded by the same number of zeros
+and then by more zeros to reach the next power of 2.  The padded
+<i>G</i> array is transformed by FFT and any coefficients <i>F</i> that correspond
+to <i>Q</i> values greater than <var>qmax</var> are reset to zero.  The adjusted
+coefficient array <i>F</i> is then transformed by inverse FFT back to <i>G&rsquo;</i>
+and cut out at the original length of <i>G</i>.  The imaginary components
+in <i>G&rsquo;</i> are ignored as they are only due to round-off errors.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-lat"></a>Phase: <strong>lat</strong><em>(i)</em></dt>
+<dd><p>(float &Aring; or degrees, i=1,2,...,6) <br>
+Lattice parameters a, b, c, alpha, beta, gamma of the current phase.
+Can be also used as lat(&rsquo;a&rsquo;) etc.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-x_0028n_0029_002c-y_0028n_0029_002c-z_0028n_0029"></a>Phase: <strong>x(n), y(n), z(n)</strong></dt>
+<dd><p>(float unitless) <br>
+Fractional coordinates for atom n.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-rcut"></a>Phase: <strong>rcut</strong></dt>
+<dd><p>(float &Aring;, default 0 &Aring;) <br>
+Radius cutoff for applying <var>sratio</var> sharpening factor.
+</p></dd></dl>
+
+<hr>
+<a name="PDF-peak-width"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#List-of-PDFfit2-variables" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="PDF-peak-width-1"></a>
+<h2 class="section">5.4 PDF peak width</h2>
+
+<p>The PDF peak width contains contributions from thermal and zero point
+displacements as well as static disorder. For large distances <i>r</i> the motion
+of the two contributing atoms is uncorrelated. For small distances, however,
+the motion can be strongly correlated leading to a sharpening of the first
+peak(s) in the observed PDF. PDFfit2 provides three different correction terms
+for the PDF peak width. The final width is given by
+</p><p align="center"><img src="images/eq-02.png" alt="images/eq-02.png"></p>
+<p>Here the primed sigma is the peak width without correlation, which is
+computed from the anisotropic displacement parameters.  The first two terms
+correct for the effects of correlated motion. Within the scope of the users
+guide, we just mention that the term <var>delta2/r<em>^2</em></var> describes the low
+temperature behavior, and term <var>delta1/r</var> describes the high temperature
+case. Since the two parameters are highly correlated, one will in practice
+choose which one to refine. The last term in the equation models the PDF peak
+broadening as a result of the Q resolution of the diffractometer. In many cases
+this term will only be significant for refinements over wider <i>r</i>-ranges.
+Note that the Q resolution also results in an exponential dampening of the PDF
+peaks which is modeled using the parameter <var>qdamp</var>.
+</p>
+<hr>
+<a name="Index"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#PDFgui-reference-sheets" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#PDF-peak-width" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt; ]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Index-1"></a>
+<h1 class="unnumbered">Index</h1>
+
+<table><tr><th valign="top">Jump to: &nbsp; </th><td><a class="summary-letter" href="#Index-1_cp_letter-A"><b>A</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-C"><b>C</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-D"><b>D</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-E"><b>E</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-F"><b>F</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-G"><b>G</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-H"><b>H</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-I"><b>I</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-M"><b>M</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-N"><b>N</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-P"><b>P</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-Q"><b>Q</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-R"><b>R</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-S"><b>S</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-T"><b>T</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-U"><b>U</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-V"><b>V</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-W"><b>W</b></a>
+ &nbsp; 
+</td></tr></table>
+<table class="index-cp" border="0">
+<tr><td></td><th align="left">Index Entry</th><td>&nbsp;</td><th align="left"> Section</th></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-A">A</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-acknowledgments">acknowledgments</a></td><td>&nbsp;</td><td valign="top"><a href="#Acknowledgments">Acknowledgments</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-advanced-usage">advanced usage</a></td><td>&nbsp;</td><td valign="top"><a href="#Advanced-usage-and-special-needs">4.3 Advanced usage and special needs</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-AtomEye-viewer">AtomEye viewer</a></td><td>&nbsp;</td><td valign="top"><a href="#Configuration-of-structure-viewer">1.4.2 Configuration of structure viewer</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-availability">availability</a></td><td>&nbsp;</td><td valign="top"><a href="#Availability">1.3 Availability</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-C">C</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-calculating-PDF">calculating PDF</a></td><td>&nbsp;</td><td valign="top"><a href="#Calculating-PDF">3.2 Calculating PDF from a structure</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-command-line-options">command line options</a></td><td>&nbsp;</td><td valign="top"><a href="#Command-line-arguments">5.2 Command line arguments</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-Community">Community</a></td><td>&nbsp;</td><td valign="top"><a href="#Community">1.6 Community</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-copyright">copyright</a></td><td>&nbsp;</td><td valign="top"><a href="#Acknowledgments">Acknowledgments</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-create-new-structure">create new structure</a></td><td>&nbsp;</td><td valign="top"><a href="#Symmetry-expansion">3.1 Building structure model using crystal symmetry</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-D">D</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-data-extraction">data extraction</a></td><td>&nbsp;</td><td valign="top"><a href="#Advanced-post_002dprocessing-of-sequential-refinement">3.3.5 Advanced post-processing of sequential refinement</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-development">development</a></td><td>&nbsp;</td><td valign="top"><a href="#Installation-from-sources">1.4.3 Installation from sources</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-displaying-the-structure">displaying the structure</a></td><td>&nbsp;</td><td valign="top"><a href="#Displaying-the-structure">4.2 Displaying the structure</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-doping-series">doping series</a></td><td>&nbsp;</td><td valign="top"><a href="#Doping-series">3.3.4 Sequential fitting of doping series</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-E">E</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-examples">examples</a></td><td>&nbsp;</td><td valign="top"><a href="#Examples-and-tutorials">3 Examples and tutorials</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-extras">extras</a></td><td>&nbsp;</td><td valign="top"><a href="#Extras">4 Extras</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-F">F</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-fit-configuration">fit configuration</a></td><td>&nbsp;</td><td valign="top"><a href="#Simple-fit">2.2 Creating a simple fit using a preexisting structure file</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-G">G</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-Git-repository">Git repository</a></td><td>&nbsp;</td><td valign="top"><a href="#Installation-from-sources">1.4.3 Installation from sources</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-H">H</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-hot-keys">hot keys</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-shortcut-keys">5.1 PDFgui shortcut keys</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-I">I</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-installation">installation</a></td><td>&nbsp;</td><td valign="top"><a href="#Installation">1.4 Installation</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-introduction">introduction</a></td><td>&nbsp;</td><td valign="top"><a href="#Introduction">1 Introduction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-isotope">isotope</a></td><td>&nbsp;</td><td valign="top"><a href="#SEC_Foot">Footnotes</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-M">M</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-mail_002dlist">mail-list</a></td><td>&nbsp;</td><td valign="top"><a href="#Community">1.6 Community</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-multistage-fitting">multistage fitting</a></td><td>&nbsp;</td><td valign="top"><a href="#Multistage-fitting">3.3.1 Multistage fitting</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-N">N</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nanoparticle-diameter">nanoparticle diameter</a></td><td>&nbsp;</td><td valign="top"><a href="#Nanoparticle-structure">3.4 Nanoparticle structure</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nanoparticle-structure">nanoparticle structure</a></td><td>&nbsp;</td><td valign="top"><a href="#Nanoparticle-structure">3.4 Nanoparticle structure</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-P">P</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDF-plotting">PDF plotting</a></td><td>&nbsp;</td><td valign="top"><a href="#PDF-plotting">4.1 PDF plotting</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFfit2">PDFfit2</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFfit2">1.1 PDFfit2</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFfit2-variables">PDFfit2 variables</a></td><td>&nbsp;</td><td valign="top"><a href="#List-of-PDFfit2-variables">5.3 List of PDFfit2 variables</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFgui">PDFgui</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui">1.2 PDFgui</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-pdfgui-arguments">pdfgui arguments</a></td><td>&nbsp;</td><td valign="top"><a href="#Command-line-arguments">5.2 Command line arguments</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFgui-layout">PDFgui layout</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-layout">2.1 PDFgui layout</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFgui-reference-sheets">PDFgui reference sheets</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-reference-sheets">5 PDFgui reference sheets</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-PDFgui-shortcut-keys">PDFgui shortcut keys</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-shortcut-keys">5.1 PDFgui shortcut keys</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-project-post_002dprocessing">project post-processing</a></td><td>&nbsp;</td><td valign="top"><a href="#Advanced-post_002dprocessing-of-sequential-refinement">3.3.5 Advanced post-processing of sequential refinement</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-Q">Q</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-quick-start">quick start</a></td><td>&nbsp;</td><td valign="top"><a href="#Quick-start">2 Quick start</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-R">R</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-r_002dseries">r-series</a></td><td>&nbsp;</td><td valign="top"><a href="#r_002dseries">3.3.2 Sequential fitting of incremental r-series</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-reference-sheets">reference sheets</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-reference-sheets">5 PDFgui reference sheets</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-refinement-configuration">refinement configuration</a></td><td>&nbsp;</td><td valign="top"><a href="#Simple-fit">2.2 Creating a simple fit using a preexisting structure file</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-S">S</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sequential-fitting">sequential fitting</a></td><td>&nbsp;</td><td valign="top"><a href="#Sequential-fitting">3.3 Sequential fitting</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sequential-fitting-1">sequential fitting</a></td><td>&nbsp;</td><td valign="top"><a href="#r_002dseries">3.3.2 Sequential fitting of incremental r-series</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sequential-fitting-2">sequential fitting</a></td><td>&nbsp;</td><td valign="top"><a href="#Temperature-series">3.3.3 Sequential fitting of temperature series</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sequential-fitting-3">sequential fitting</a></td><td>&nbsp;</td><td valign="top"><a href="#Doping-series">3.3.4 Sequential fitting of doping series</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-shortcuts">shortcuts</a></td><td>&nbsp;</td><td valign="top"><a href="#PDFgui-shortcut-keys">5.1 PDFgui shortcut keys</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-special-needs">special needs</a></td><td>&nbsp;</td><td valign="top"><a href="#Advanced-usage-and-special-needs">4.3 Advanced usage and special needs</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-startup-options">startup options</a></td><td>&nbsp;</td><td valign="top"><a href="#Command-line-arguments">5.2 Command line arguments</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-structure-visualization">structure visualization</a></td><td>&nbsp;</td><td valign="top"><a href="#Displaying-the-structure">4.2 Displaying the structure</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-symmetry-expansion">symmetry expansion</a></td><td>&nbsp;</td><td valign="top"><a href="#Symmetry-expansion">3.1 Building structure model using crystal symmetry</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-T">T</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-temperature-series">temperature series</a></td><td>&nbsp;</td><td valign="top"><a href="#Temperature-series">3.3.3 Sequential fitting of temperature series</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-tui-scripts">tui scripts</a></td><td>&nbsp;</td><td valign="top"><a href="#Advanced-post_002dprocessing-of-sequential-refinement">3.3.5 Advanced post-processing of sequential refinement</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-tutorials">tutorials</a></td><td>&nbsp;</td><td valign="top"><a href="#Examples-and-tutorials">3 Examples and tutorials</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-U">U</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-user-groups">user groups</a></td><td>&nbsp;</td><td valign="top"><a href="#Community">1.6 Community</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-V">V</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-variables">variables</a></td><td>&nbsp;</td><td valign="top"><a href="#List-of-PDFfit2-variables">5.3 List of PDFfit2 variables</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-versions">versions</a></td><td>&nbsp;</td><td valign="top"><a href="#What-is-new">1.5 What is new</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-visualization-setup">visualization setup</a></td><td>&nbsp;</td><td valign="top"><a href="#Configuration-of-structure-viewer">1.4.2 Configuration of structure viewer</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+<tr><th><a name="Index-1_cp_letter-W">W</a></th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-whatisnew">whatisnew</a></td><td>&nbsp;</td><td valign="top"><a href="#What-is-new">1.5 What is new</a></td></tr>
+<tr><td colspan="4"> <hr></td></tr>
+</table>
+<table><tr><th valign="top">Jump to: &nbsp; </th><td><a class="summary-letter" href="#Index-1_cp_letter-A"><b>A</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-C"><b>C</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-D"><b>D</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-E"><b>E</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-F"><b>F</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-G"><b>G</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-H"><b>H</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-I"><b>I</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-M"><b>M</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-N"><b>N</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-P"><b>P</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-Q"><b>Q</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-R"><b>R</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-S"><b>S</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-T"><b>T</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-U"><b>U</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-V"><b>V</b></a>
+ &nbsp; 
+<a class="summary-letter" href="#Index-1_cp_letter-W"><b>W</b></a>
+ &nbsp; 
+</td></tr></table>
+
+<hr size="6">
+<a name="SEC_Foot"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>Footnotes</h1>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+
+<a name="index-isotope"></a>
+<p>To enter a specific isotope, use the &ldquo;NucleonNumber-Symbol&rdquo; syntax,
+for example &ldquo;12-C&rdquo;.  Deuterium and tritium can be entered also as
+&ldquo;D&rdquo; and &ldquo;T&rdquo; in addition to the normal syntax &ldquo;2-H&rdquo; and &ldquo;3-H&rdquo;.
+</p><hr>
+<a name="SEC_Contents"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>Table of Contents</h1>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Introduction-1" href="#Introduction">1 Introduction</a>
+  <ul class="no-bullet">
+    <li><a name="toc-PDFfit2-1" href="#PDFfit2">1.1 PDFfit2</a></li>
+    <li><a name="toc-PDFgui-1" href="#PDFgui">1.2 PDFgui</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Design-principles" href="#Design-principles">1.2.1 Design principles</a></li>
+      <li><a name="toc-Capabilities" href="#Capabilities">1.2.2 Capabilities</a></li>
+    </ul></li>
+    <li><a name="toc-Availability-1" href="#Availability">1.3 Availability</a></li>
+    <li><a name="toc-Installation-1" href="#Installation">1.4 Installation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Installation-for-Anaconda-Python-1" href="#Installation-for-Anaconda-Python">1.4.1 Installation for Anaconda Python</a></li>
+      <li><a name="toc-Configuration-of-structure-viewer-1" href="#Configuration-of-structure-viewer">1.4.2 Configuration of structure viewer</a></li>
+      <li><a name="toc-Installation-from-sources-1" href="#Installation-from-sources">1.4.3 Installation from sources</a></li>
+    </ul></li>
+    <li><a name="toc-What-is-new-1" href="#What-is-new">1.5 What is new</a></li>
+    <li><a name="toc-Community-1" href="#Community">1.6 Community</a></li>
+  </ul></li>
+  <li><a name="toc-Quick-start-1" href="#Quick-start">2 Quick start</a>
+  <ul class="no-bullet">
+    <li><a name="toc-PDFgui-layout-1" href="#PDFgui-layout">2.1 PDFgui layout</a></li>
+    <li><a name="toc-Creating-a-simple-fit-using-a-preexisting-structure-file" href="#Simple-fit">2.2 Creating a simple fit using a preexisting structure file</a></li>
+  </ul></li>
+  <li><a name="toc-Examples-and-tutorials-1" href="#Examples-and-tutorials">3 Examples and tutorials</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Building-structure-model-using-crystal-symmetry" href="#Symmetry-expansion">3.1 Building structure model using crystal symmetry</a></li>
+    <li><a name="toc-Calculating-PDF-from-a-structure" href="#Calculating-PDF">3.2 Calculating PDF from a structure</a></li>
+    <li><a name="toc-Sequential-fitting-1" href="#Sequential-fitting">3.3 Sequential fitting</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Multistage-fitting-1" href="#Multistage-fitting">3.3.1 Multistage fitting</a></li>
+      <li><a name="toc-Sequential-fitting-of-incremental-r_002dseries" href="#r_002dseries">3.3.2 Sequential fitting of incremental r-series</a></li>
+      <li><a name="toc-Sequential-fitting-of-temperature-series" href="#Temperature-series">3.3.3 Sequential fitting of temperature series</a></li>
+      <li><a name="toc-Sequential-fitting-of-doping-series" href="#Doping-series">3.3.4 Sequential fitting of doping series</a></li>
+      <li><a name="toc-Advanced-post_002dprocessing-of-sequential-refinement-1" href="#Advanced-post_002dprocessing-of-sequential-refinement">3.3.5 Advanced post-processing of sequential refinement</a></li>
+    </ul></li>
+    <li><a name="toc-Nanoparticle-structure-1" href="#Nanoparticle-structure">3.4 Nanoparticle structure</a></li>
+  </ul></li>
+  <li><a name="toc-Extras-1" href="#Extras">4 Extras</a>
+  <ul class="no-bullet">
+    <li><a name="toc-PDF-plotting-1" href="#PDF-plotting">4.1 PDF plotting</a></li>
+    <li><a name="toc-Displaying-the-structure-1" href="#Displaying-the-structure">4.2 Displaying the structure</a></li>
+    <li><a name="toc-Advanced-usage-and-special-needs-1" href="#Advanced-usage-and-special-needs">4.3 Advanced usage and special needs</a></li>
+  </ul></li>
+  <li><a name="toc-PDFgui-reference-sheets-1" href="#PDFgui-reference-sheets">5 PDFgui reference sheets</a>
+  <ul class="no-bullet">
+    <li><a name="toc-PDFgui-shortcut-keys-1" href="#PDFgui-shortcut-keys">5.1 PDFgui shortcut keys</a></li>
+    <li><a name="toc-Command-line-arguments-1" href="#Command-line-arguments">5.2 Command line arguments</a></li>
+    <li><a name="toc-List-of-PDFfit2-variables-1" href="#List-of-PDFfit2-variables">5.3 List of PDFfit2 variables</a></li>
+    <li><a name="toc-PDF-peak-width-1" href="#PDF-peak-width">5.4 PDF peak width</a></li>
+  </ul></li>
+  <li><a name="toc-Index-1" href="#Index">Index</a></li>
+</ul>
+</div>
+<hr>
+<a name="SEC_About"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>About This Document</h1>
+
+<p>
+  This document was generated on <i>March 4, 2016</i> using <a href="http://www.nongnu.org/texi2html/"><i>texi2html 5.0</i></a>.
+</p>
+<p>
+  The buttons in the navigation panels have the following meaning:
+</p>
+<table border="1">
+  <tr>
+    <th> Button </th>
+    <th> Name </th>
+    <th> Go to </th>
+    <th> From 1.2.3 go to</th>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt;&lt; ] </td>
+    <td align="center">FastBack</td>
+    <td>Beginning of this chapter or previous chapter</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt; ] </td>
+    <td align="center">Back</td>
+    <td>Previous section in reading order</td>
+    <td>1.2.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ Up ] </td>
+    <td align="center">Up</td>
+    <td>Up section</td>
+    <td>1.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt; ] </td>
+    <td align="center">Forward</td>
+    <td>Next section in reading order</td>
+    <td>1.2.4</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt;&gt; ] </td>
+    <td align="center">FastForward</td>
+    <td>Next chapter</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td align="center"> [Top] </td>
+    <td align="center">Top</td>
+    <td>Cover (top) of document</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Contents] </td>
+    <td align="center">Contents</td>
+    <td>Table of contents</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Index] </td>
+    <td align="center">Index</td>
+    <td>Index</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [ ? ] </td>
+    <td align="center">About</td>
+    <td>About (help)</td>
+    <td> &nbsp; </td>
+  </tr>
+</table>
+
+<p>
+  where the <strong> Example </strong> assumes that the current position is at <strong> Subsubsection One-Two-Three </strong> of a document of the following structure:
+</p>
+
+<ul>
+  <li> 1. Section One
+    <ul>
+      <li>1.1 Subsection One-One
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.2 Subsection One-Two
+        <ul>
+          <li>1.2.1 Subsubsection One-Two-One</li>
+          <li>1.2.2 Subsubsection One-Two-Two</li>
+          <li>1.2.3 Subsubsection One-Two-Three &nbsp; &nbsp;
+            <strong>&lt;== Current Position </strong></li>
+          <li>1.2.4 Subsubsection One-Two-Four</li>
+        </ul>
+      </li>
+      <li>1.3 Subsection One-Three
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.4 Subsection One-Four</li>
+    </ul>
+  </li>
+</ul>
+
+<hr>
+<p>
+ <font size="-1">
+  This document was generated on <i>March 4, 2016</i> using <a href="http://www.nongnu.org/texi2html/"><i>texi2html 5.0</i></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

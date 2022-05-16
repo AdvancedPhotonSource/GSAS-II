@@ -6349,7 +6349,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 return
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['PDFfit']
-            G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
+            msg = G2pwd.MakePDFfitAtomsFile(data,RMCPdict)
+            if msg: 
+                G2G.G2MessageBox(G2frame,'ERROR: '+msg,'PDFfit setup failure')
+                return
             fname = G2pwd.MakePDFfitRunFile(data,RMCPdict)
             if fname is None:
                 wx.MessageDialog(G2frame,'ERROR: failure to setup PDFfit; check console','PDFfit setup failure',wx.ICON_ERROR).ShowModal()
@@ -6360,7 +6363,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     def RunPDFfit(event):
         generalData = data['General']
         ISOdict = data['ISODISTORT']
-        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python (not pdffit!)
+        PDFfit_exec,_ = G2pwd.findPDFfit()  #returns location of python with PDFfit installed and path(s) for  pdffit
         if not PDFfit_exec:
             wx.MessageBox(''' PDFfit2 is not currently installed for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)

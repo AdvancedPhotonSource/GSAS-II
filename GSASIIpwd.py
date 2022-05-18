@@ -3330,7 +3330,7 @@ import sys
         GSASIIpath.IPyBreak()
         return None
     for p in PDFfit_path:
-        rundata += "sys.path.append('{:}')\n".format(p)
+        rundata += "sys.path.append(r'{:}')\n".format(p)
     rundata += 'from diffpy.pdffit2 import PdfFit\n'
     rundata += 'pf = PdfFit()\n'
     Nd = 0
@@ -3352,7 +3352,7 @@ import sys
                 Nd += 1
                 dType = 'Xdata'
             filNam = os.path.abspath(filNam)
-            rundata += "pf.read_data('%s', '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
+            rundata += "pf.read_data(r'%s', '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
             rundata += 'pf.setdata(%d)\n'%Nd
             rundata += 'pf.pdfrange(%d, %6.2f, %6.2f)\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
             for item in ['dscale','qdamp','qbroad']:
@@ -3366,7 +3366,7 @@ import sys
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit.stru'
     Np = 9
-    rundata += "pf.read_struct('{:}')\n".format(os.path.abspath(fName))
+    rundata += "pf.read_struct(r'{:}')\n".format(os.path.abspath(fName))
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1

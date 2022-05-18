@@ -5653,8 +5653,7 @@ class GSASII(wx.Frame):
             except EOFError:
                 done = True
             if valList:
-                phPartialFile = filename.replace('_part_N',
-                                                 '_part_'+str(hId)+'.csv')
+                phPartialFile = filename.replace('_part_N','_part_'+str(hId)+'.csv')
                 fp1 = open(phPartialFile,'w')
                 fp1.write(', '.join(lblList))
                 fp1.write('\n')

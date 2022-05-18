@@ -298,7 +298,6 @@ def Write2csv(fil,dataItems,header=False):
             line += item
     fil.write(line+'\n')
 
-
 class _tabPlotWin(wx.Panel):    
     'Creates a basic tabbed plot window for GSAS-II graphics'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -308,7 +307,6 @@ class _tabPlotWin(wx.Panel):
         self.plotInvalid = False # valid
         self.plotRequiresRedraw = True # delete plot if not updated
         wx.Panel.__init__(self,parent,id=id,**kwargs)
-        
             
 class G2PlotMpl(_tabPlotWin):    
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
@@ -320,7 +318,8 @@ class G2PlotMpl(_tabPlotWin):
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
         self.toolbar.Realize()
-        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,'logPlot':False,'exclude':False}
+        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
+            'logPlot':False,'exclude':False,'partials':True}
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
@@ -367,7 +366,6 @@ class G2PlotOgl(_tabPlotWin):
             self.canvas.SetToolTip(wx.ToolTip(text))
         else:
             self.canvas.SetToolTipString(text)
-            
         
 class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
@@ -2178,6 +2176,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.Contour:
                 Page.plotStyle['qPlot'] = False
                 Page.plotStyle['dPlot'] = False
+        elif (event.key == 'p' and 'PWDR' in plottype and G2frame.SinglePlot):
+            Page.plotStyle['partials'] = not Page.plotStyle['partials']
         elif (event.key == 'e' and 'PWDR' in plottype and G2frame.SinglePlot and ifLimits
                   and not G2frame.Contour):
             Page.excludeMode = not Page.excludeMode
@@ -3238,6 +3238,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
                      'o: reset offset','f: select data',
                      '/: normalize']
+            else:
+                Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
@@ -3893,22 +3895,22 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
     # plot the partials. TODO: get partials to show up in publication plot
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
-    if 'PWDR' in plottype and G2frame.SinglePlot:
-        x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])
-        if x is not None:
+    if 'PWDR' in plottype and G2frame.SinglePlot and Page.plotStyle['partials'] and 'hId' in data[0]:
+        x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])            
+        if x is not None and len(ypList) > 1:
             if Page.plotStyle['qPlot']:
                 x = 2.*np.pi/G2lat.Pos2dsp(Parms,x)
             elif Page.plotStyle['dPlot']:
                 x = G2lat.Pos2dsp(Parms,x)
             olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
             for ph in ypList:
-                #ypList[ph] += yb    # looks better w/o adding background
-                if Page.plotStyle['sqrtPlot']:
-                    y = np.where(ypList[ph]>=0.,np.sqrt(ypList[ph]),-np.sqrt(-ypList[ph]))
-                else:
+                if G2frame.SubBack:
                     y = ypList[ph]
-                Plot.plot(x,y,Page.phaseColors.get(ph,'k'),picker=False,
-                          label=ph,linewidth=2.5)
+                else:
+                    y = ypList[ph]+yb
+                if Page.plotStyle['sqrtPlot']:
+                    y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
+                Plot.plot(x,y,Page.phaseColors.get(ph,'k'),picker=False,label=ph,linewidth=1.5,dashes=(5,5))
                 plotOpt['lineList'].append(ph)   # needed?
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)

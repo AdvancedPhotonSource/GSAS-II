@@ -3274,6 +3274,12 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
         return alp,bet
 
+    def SavePartial(phase,y):
+        phPartialFP = open(phasePartials,'ab')  # append to file
+        pickle.dump(phase,phPartialFP)
+        pickle.dump(y,phPartialFP)
+        phPartialFP.close()
+            
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -3284,19 +3290,20 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     cw = np.append(cw,cw[-1])
     # set up for save of phase partials if triggered in GSASIIdataGUI.OnRefinePartials
     phasePartials = calcControls.get('PhasePartials',None)
+    Nphase = len(Histogram['Reflection Lists'])     #partials made ony if Nphase > 1
     if phasePartials:
+        
         phPartialFP = open(phasePartials,'ab')  # create histogram header
         pickle.dump(None,phPartialFP)
         pickle.dump(hId,phPartialFP)
-        pickle.dump(x,phPartialFP)
-        pickle.dump(yb,phPartialFP)
+        if Nphase > 1:
+            pickle.dump(x,phPartialFP)
+            pickle.dump(yb,phPartialFP)
+        else:
+            pickle.dump(None,phPartialFP)
+            pickle.dump(None,phPartialFP)
         phPartialFP.close()
         
-        def SavePartial(phase,y):
-            phPartialFP = open(phasePartials,'ab')  # append to file
-            pickle.dump(phase,phPartialFP)
-            pickle.dump(y,phPartialFP)
-            phPartialFP.close()
         
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -3423,7 +3430,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         fp2 = G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
                         if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2
-            if phasePartials: SavePartial(phase,ypartial)
         elif 'E' in calcControls[hfx+'histType']:
             
             for iref,refl in enumerate(refDict['RefList']):
@@ -3462,7 +3468,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     fp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,.001,ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
-            if phasePartials: SavePartial(phase,ypartial)
             
         elif 'B' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
@@ -3508,7 +3513,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     #     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
-            if phasePartials: SavePartial(phase,ypartial)
             
         elif 'T' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
@@ -3549,7 +3553,13 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
-            if phasePartials: SavePartial(phase,ypartial)
+                    
+        if phasePartials:   #for all flavors of PWDR
+            if Nphase > 1:
+                SavePartial(phase,ypartial)
+            else:
+                SavePartial(phase,[])
+                
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
         if useMP and 'C' in calcControls[hfx+'histType']:
             for y in MPpool.imap_unordered(G2mp.ComputePwdrProfCW,profArgs):

@@ -3291,6 +3291,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         pickle.dump(x,phPartialFP)
         pickle.dump(yb,phPartialFP)
         phPartialFP.close()
+        
         def SavePartial(phase,y):
             phPartialFP = open(phasePartials,'ab')  # append to file
             pickle.dump(phase,phPartialFP)
@@ -3460,6 +3461,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     fp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,.001,ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[9+im]*fp
+                    if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+            if phasePartials: SavePartial(phase,ypartial)
             
         elif 'B' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
@@ -3504,6 +3507,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     # else:
                     #     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+                    if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+            if phasePartials: SavePartial(phase,ypartial)
+            
         elif 'T' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3542,6 +3548,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+                    if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+            if phasePartials: SavePartial(phase,ypartial)
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
         if useMP and 'C' in calcControls[hfx+'histType']:
             for y in MPpool.imap_unordered(G2mp.ComputePwdrProfCW,profArgs):

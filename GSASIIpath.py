@@ -1251,7 +1251,9 @@ tell application "Terminal"
 end tell
 '''.format(script)
     subprocess.Popen(["osascript","-e",osascript])
-    
+
+#======================================================================
+# conda/pip routines
 def findConda():
     '''Determines if GSAS-II has been installed as g2conda or gsas2full
     with conda located relative to this file. 
@@ -1323,6 +1325,122 @@ def runScript(cmds=[], wait=False, G2frame=None):
     else:
         if sys.platform != "win32": proc.wait()
         sys.exit()
+        
+def condaTest():
+    '''Returns True if it appears that Python is being run under Anaconda 
+    Python with conda present. Tests for conda environment vars and that 
+    the conda package is installed in the current environment.
+
+    :returns: True, if running under Conda
+    '''    
+    if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
+    # is the conda package available?
+    try:
+        import conda.cli.python_api
+    except:
+        print('You do not have the conda package installed in this environment',
+                  '\nConsider using the "conda install conda" command')
+        return False
+
+    # There is no foolproof way to check if someone activates conda
+    # but then calls a different Python using its path...
+    # ...If we are in the base environment then the conda Python 
+    # should be the same path as the one currently being run:
+    if os.environ['CONDA_DEFAULT_ENV'] == 'base':
+        try:
+            if os.path.samefile(os.environ['CONDA_PYTHON_EXE'],
+                                sys.executable): return True
+        except:
+            return False
+
+    # ...If not in the base environment, what we can do is check if the
+    # python we are running in shares the beginning part of its path with
+    # the one in the base installation:
+    return commonPath(os.environ['CONDA_PYTHON_EXE'],sys.executable)
+
+def condaInstall(packageList):
+    '''Installs one or more packages using the anaconda conda package
+    manager. Can be used to install multiple packages and optionally 
+    use channels.
+
+    :param list packageList: a list of strings with name(s) of packages
+      and optionally conda options. 
+      Examples:: 
+
+       packageList=['gsl']
+       packageList=['-c','conda-forge','wxpython']
+       packageList=['numpy','scipy','matplotlib']
+
+    :returns: None if the the command ran normally, or an error message
+      if it did not.
+    '''
+    import conda.cli.python_api
+    try:
+        (out, err, rc) = conda.cli.python_api.run_command(
+            conda.cli.python_api.Commands.INSTALL,packageList
+#    use_exception_handler=True#, stdout=sys.stdout, stderr=sys.stderr)
+            )
+        #print('rc=',rc)
+        print('Ran conda. output follows...')
+        print(70*'='+'\n'+out+'\n'+70*'=')
+        #print('err=',err)
+        if rc != 0: return str(out)
+    except Exception as msg:
+        print("Error occurred, see below\n",msg)  
+        return "error occurred"
+    return None
+    
+def fullsplit(fil,prev=None):
+    '''recursive routine to split all levels of directory names
+    '''
+    if prev is None: # first call: normalize and drop file name
+        fil = os.path.normcase(os.path.abspath(os.path.dirname(fil)))
+        prev = []
+    i,j = os.path.split(fil)
+    if j:
+        prev.insert(0,j)
+        out = fullsplit(i,prev)
+    else:
+        return [i]+prev
+    return out
+
+def commonPath(file1,file2):
+    '''Check if two files share the same path. Note that paths 
+    are considered the same if either file is in a subdirectory 
+    of the other, but not if they are in different subdirectories
+    /a/b/c/x.x and  /a/b/c/y.y share a path, as does  /a/b/c/d/y.y
+    but  /a/b/c/d/x.x and  /a/b/c/e/x.x do not.
+
+    :returns: True if the paths are common
+    '''
+
+    for i,j in zip(fullsplit(os.environ['CONDA_PYTHON_EXE']),
+               fullsplit(sys.executable)):
+        if i != j: return False
+    return True
+
+def pipInstall(packageList):
+    '''Installs one or more packages using the pip package installer.
+    Use of this should be avoided if conda can be used (see :func:`condaTest`
+    to test for conda). Can be used to install multiple packages together. 
+    One can use pip options, but this is probably not needed. 
+
+    :param list packageList: a list of strings with name(s) of packages
+      Examples:: 
+
+       packageList=['gsl']
+       packageList=['wxpython','matplotlib','scipy']
+       packageList=[r'\\Mac\Home\Scratch\wheels\pygsl-2.3.3-py3-none-any.whl']
+       packageList=['z:/Scratch/wheels/pygsl-2.3.3-py3-none-any.whl']
+
+    :returns: None if the the command ran normally, or an error message
+      if it did not.
+    '''
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install']+packageList)
+    except Exception as msg:
+        return msg
+    return None
     
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 

@@ -58,7 +58,33 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
 * svn: When using Anaconda we also encourage installation of the
   svn (subversion) conda package. This is not actually part of Python
   and can be installed directly into your system's configuration. It is used by
-  GSAS-II to download updates to our code.
+  GSAS-II to download updates to our code. This can be skipped if svn
+  is installed directly (easy Linux, but a bit harder on MacOS and
+  Windows).
+* conda: the conda package allows access to conda features from
+  inside Python. It will be used inceasingly by GSAS-II to
+  self-install software. The conda package is installed by default in
+  miniconda and anaconda but if you create an environment for GSAS-II
+  (`conda create -n <env> package-list...`), it will not be added
+  unless you request it specifically.  
+
+*Conda command*:
+  Here is a typical conda command used to install a GSAS-II compatible
+  Python interpreter::
+
+    conda install wxpython numpy scipy matplotlib pyopengl pillow h5py imageio svn -c conda-forge
+    
+  or to use a separate environment (here named ``g2python``), use::
+
+    conda install -n g2python wxpython numpy scipy matplotlib pyopengl pillow h5py imageio svn conda -c conda-forge
+
+Remember to activate using: ``<path>\Scripts\activate``  (windows); 
+``source <path>/bin/activate`` (Mac/Linux). Note that one should add
+``g2python`` (etc.) at the end if using a conda environment.
+
+Note that svn seems to be unsupported these days by Anaconda. For
+Linux and MacOS, use subversion in conda-forge rather than svn. No
+good solution yet for Windows.
 
 Scripting  Requirements
 -----------------------
@@ -129,12 +155,23 @@ with GSAS-II and must be installed separately:
 
   **fullrmc**
     A modern software toolkit for large-box PDF & S(Q) fitting. Use
-    version 5.0 or later. 
+    version 5.0 or later. The implementation for this is not
+    completed. 
 
   **Dysnomia**
     Computes enhanced Fourier maps with Maximum Entropy estimated
     extension of reflection sphere
 
+  **PDFfit2**
+  Small-box fitting of PDFs. This code is no longer supported, but is
+  still quite useful. It can be installed from conda into Python
+  versions up to Python 3.7, but is supplied for Windows within
+  GSAS-II for Python 3.7, 3.8 and 3.9 and for MacOS only with Python
+  3.7.
+
+  For other platforms/Python versions, it is probably best to use a
+  separate Python interpreter. 
+    
 Supported Platforms
 --------------------------------
 

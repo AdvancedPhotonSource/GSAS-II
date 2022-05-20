@@ -6483,7 +6483,7 @@ class G2RefinementProgress(wx.Dialog):
     def __init__(self, title='Refinement progress', message='All data Rw =',
                      maximum=101, parent=None, trialMode=False,
                      seqLen=0, seqShow=3,
-                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER):
+                     style=None):
 
         self.trialRw = trialMode # used for Levenberg-Marquardt fitting
         self.SeqLen = seqLen
@@ -6493,6 +6493,7 @@ class G2RefinementProgress(wx.Dialog):
         self.SeqCount = -1
         self.rows = 4
         if self.trialRw: self.rows = 5
+        if style is None: style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER
 
         super(self.__class__,self).__init__(parent, wx.ID_ANY, title,
                                             style=style, size=(-1,-1))

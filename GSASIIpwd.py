@@ -3323,8 +3323,10 @@ def MakePDFfitRunFile(Phase,RMCPdict):
     Cell = General['Cell'][1:7]
     rundata = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
-'''
+import sys,os
+datadir = r'{:}'
+pathWrap = lambda f: os.path.join(datadir,f)
+'''.format(os.path.abspath(os.getcwd()))
     PDFfit_exe,PDFfit_path = findPDFfit()  # returns python loc and path(s) for pdffit
     if not PDFfit_exe:
         GSASIIpath.IPyBreak()
@@ -3351,8 +3353,7 @@ import sys
             else:
                 Nd += 1
                 dType = 'Xdata'
-            filNam = os.path.abspath(filNam)
-            rundata += "pf.read_data(r'%s', '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
+            rundata += "pf.read_data(pathWrap(r'%s'), '%s', 30.0, %.4f)\n"%(filNam,dType[0],RMCPdict[dType]['qdamp'][0])
             rundata += 'pf.setdata(%d)\n'%Nd
             rundata += 'pf.pdfrange(%d, %6.2f, %6.2f)\n'%(Nd,RMCPdict[dType]['Fitrange'][0],RMCPdict[dType]['Fitrange'][1])
             for item in ['dscale','qdamp','qbroad']:
@@ -3366,7 +3367,7 @@ import sys
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit.stru'
     Np = 9
-    rundata += "pf.read_struct(r'{:}')\n".format(os.path.abspath(fName))
+    rundata += "pf.read_struct(pathWrap(r'{:}'))\n".format(fName)
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1
@@ -3436,7 +3437,7 @@ import sys
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit'
         rfile = open('Seq_PDFfit_template.py','w')
-        rundata += 'pf.save_pdf(1, "%s")\n'%(fName+'.fgr')
+        rundata += 'pf.save_pdf(1, pathWrap("%s"))\n'%(fName+'.fgr')
     else:
         fName = General['Name'].replace(' ','_')+'-PDFfit'
         rfile = open(fName+'.py','w')
@@ -3445,10 +3446,10 @@ import sys
             if 'Select' in RMCPdict['files'][file][0]:      #skip unselected
                 continue
             Nd += 1
-            rundata += 'pf.save_pdf(%d, "%s")\n'%(Nd,fName+file[0]+'.fgr')
+            rundata += 'pf.save_pdf(%d, pathWrap("%s"))\n'%(Nd,fName+file[0]+'.fgr')
         
-    rundata += 'pf.save_struct(1, "%s")\n'%(fName+'.rstr')
-    rundata += 'pf.save_res("%s")\n'%(fName+'.res')
+    rundata += 'pf.save_struct(1, pathWrap("%s"))\n'%(fName+'.rstr')
+    rundata += 'pf.save_res(pathWrap("%s"))\n'%(fName+'.res')
  
     rfile.writelines(rundata)
     rfile.close()

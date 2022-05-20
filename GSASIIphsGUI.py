@@ -102,6 +102,7 @@ else:
     GkDelta = chr(0x0394)
     Angstr = chr(0x00c5)   
 
+RMCmisc = {}
 #### phase class definitions ################################################################################
 class SymOpDialog(wx.Dialog):
     '''Class to select a symmetry operator
@@ -4940,7 +4941,8 @@ def UpdatePhaseData(G2frame,Item,data):
 
             def OnSeqReverse(event):
                 RMCPdict['SeqReverse'] = not RMCPdict['SeqReverse']
-
+                
+            # --- FileSizer starts here
             Indx = {}
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             if G2frame.RMCchoice == 'PDFfit':
@@ -6240,6 +6242,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
         mainSizer.Add(RMCsel,0)
+        RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
+        mainSizer.Add(RMCmisc['RMCnote'])
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         mainSizer.Add(wx.StaticText(G2frame.FRMC,
             label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step \n above to apply them before doing Operations/Execute'),0)
@@ -6258,7 +6262,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
-        if G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
+        if G2frame.RMCchoice == 'PDFfit' and not checkPDFfit(G2frame):
+            RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
+        elif G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
             dlg = wx.MessageDialog(G2frame,
                     'The fullrmc code is not installed or could not be'
                     ' located. Do you want help information on fullrmc?',
@@ -6384,6 +6390,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         print (' GSAS-II project saved')
         if sys.platform.lower().startswith('win'):
             batch = open('pdffit2.bat','w')
+            # TODO: should probably include an activate command here
             batch.write(PDFfit_exec+' '+rname+'\n')
             # batch.write('pause')
             if 'normal' in RMCPdict['refinement']:
@@ -6392,6 +6399,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         else:
             batch = open('pdffit2.sh','w')
             batch.write('#!/bin/bash\n')
+            # TODO: should probably include an activate command here
             batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
             batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
             batch.close()
@@ -14564,3 +14572,92 @@ of the crystal structure.
             G2frame.phaseDisplay.SetSelection(ind)
             return
     ChangePage(0)
+
+def checkPDFfit(G2frame):
+    '''Checks to see if PDFfit2 is available and can be imported. PDFfit2 can be installed 
+    in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
+    defined, no attempt is made to check that it actually runs. 
+    Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the 
+    install command. The fallback is to check if a .so/.pyd file has been supplied with 
+    GSAS-II. This requires that GSL (GNU Scientific Library) be installed. If the current 
+    Python is being run from conda, this will be loaded.
+
+    :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
+    '''
+    # if a separate Python interpreter has been specified, just use it, no checking
+    if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
+            GSASIIpath.GetConfigValue('pdffit2_exec')):
+        return True
+
+    # see if diffpy has been installed directly
+    try:
+        from diffpy.pdffit2 import PdfFit
+        return True
+    except:
+        pass
+
+    # See if if we can import the GSAS-II supplied PDFfit
+    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
+    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
+    try:
+        from diffpy.pdffit2 import PdfFit
+        #pf = PdfFit()
+        return True
+    except Exception as err:
+        pass
+        #print('Failed to import PDFfit2 with error\n:'+str(err))
+    
+    if not os.path.exists(pdffitloc):
+        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
+        return False
+    import glob
+    if not glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
+        msg = 'GSAS-II does not supply PDFfit2 for the version of Python that you are using'
+        G2G.G2MessageBox(G2frame,msg,'Need PDFfit2')
+        return False
+
+    # see if we can fix things so the GSAS-II version can be used
+    if not GSASIIpath.condaTest():
+        msg = ('PDFfit2 is not running with this Python installation. '+
+        'Since Python was not installed under conda you need to install this yourself. '+
+        'pip install diffpy.pdffit2" may do this for you. You will likely need to '+
+        'install the GSL (GNU Software Library).')
+        G2G.G2MessageBox(G2frame,msg,'No conda')
+        return False
+    # can we access conda?
+    try:
+        import conda.cli.python_api
+    except:
+        msg = ('You do not have the conda package installed in this '+
+                'environment so nothing can be installed.',
+                '\n\nConsider using the "conda install conda" command')
+        G2G.G2MessageBox(G2frame,msg,'conda import error')
+        return False
+    
+    if 'gsl' not in conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST,'gsl')[0].lower():
+        msg = ('The gsl (GNU Software Library), needed by PDFfit2, '+
+                   ' is not installed in this Python. Do you want to have this installed?')
+        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
+                                   style=wx.YES_NO|wx.ICON_QUESTION)
+        if dlg.ShowModal() != wx.ID_YES:
+            dlg.Destroy()
+            return False
+        dlg.Destroy()
+        wx.BeginBusyCursor()
+        print('Preparing to install gsl. This may take a few minutes...')
+        res = GSASIIpath.condaInstall(['gsl'])
+        wx.EndBusyCursor()
+        if res:
+            msg = 'Installation of the GSL package failed with error:\n' + str(res)
+            G2G.G2MessageBox(G2frame,msg,'Install GSL Error')
+            
+    # GSAS-II supplied version for PDFfit now runs?
+    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
+    try:
+        from diffpy.pdffit2 import PdfFit
+        #pf = PdfFit()
+    except Exception as err:
+        msg = 'Failed to import PDFfit2 with error\n:'+str(err)
+        G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
+        return False
+    return True

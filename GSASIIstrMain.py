@@ -252,7 +252,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         G2fil.G2Print('Bad parameter: '+varyList[ipvt-1],mode='warn')
             break
         IfOK = True
-        if not len(varyList):
+        if not len(varyList) or not result[2]['num cyc']:
             covMatrix = []
             break
         try:
@@ -402,47 +402,48 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
             refPlotUpdate=refPlotUpdate)
         if IfOK:
-            sigDict = dict(zip(varyList,sig))
-            newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
-            newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
-            covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                       'varyListStart':varyListStart,'Lastshft':Lastshft,
-                       'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
-                       'newCellDict':newCellDict,'freshCOV':True}
-            # add indirectly computed uncertainties into the esd dict
-            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
-            G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
-            G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
-            G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
-            G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
-                                         pFile=printFile,covMatrix=covMatrix,varyList=varyList)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
-            # check for variables outside their allowed range, reset and freeze them
-            frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
-            # covData['depSig'] = G2stIO.PhFrExtPOSig  # created in G2stIO.SetHistogramData, no longer used?
-            covData['depSigDict'] = {i:(parmDict[i],sigDict[i]) for i in parmDict if i in sigDict}
-            if len(frozen):
-                if 'msg' in Rvals:
-                    Rvals['msg'] += '\n'
-                else:
-                    Rvals['msg'] = ''
-                msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
-                    .format(len(frozen),len(parmFrozenList))
-                    )
-                G2fil.G2Print(msg)
-                Rvals['msg'] += msg
-            elif len(parmFrozenList):
-                if 'msg' in Rvals:
-                    Rvals['msg'] += '\n'
-                else:
-                    Rvals['msg'] = ''
-                msg = ('Note: a total of {} variable(s) are frozen due to refining outside limits'
-                    .format(len(parmFrozenList))
-                    )
-                G2fil.G2Print('Note: ',msg)
-                Rvals['msg'] += msg
+            if len(covMatrix):      #empty for zero cycle refinement
+                sigDict = dict(zip(varyList,sig))
+                newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
+                newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
+                covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                           'varyListStart':varyListStart,'Lastshft':Lastshft,
+                           'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
+                           'newCellDict':newCellDict,'freshCOV':True}
+                # add indirectly computed uncertainties into the esd dict
+                sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
+                G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
+                G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
+                G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+                G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
+                G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
+                G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
+                                             pFile=printFile,covMatrix=covMatrix,varyList=varyList)
+                G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
+                # check for variables outside their allowed range, reset and freeze them
+                frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
+                # covData['depSig'] = G2stIO.PhFrExtPOSig  # created in G2stIO.SetHistogramData, no longer used?
+                covData['depSigDict'] = {i:(parmDict[i],sigDict[i]) for i in parmDict if i in sigDict}
+                if len(frozen):
+                    if 'msg' in Rvals:
+                        Rvals['msg'] += '\n'
+                    else:
+                        Rvals['msg'] = ''
+                    msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
+                        .format(len(frozen),len(parmFrozenList))
+                        )
+                    G2fil.G2Print(msg)
+                    Rvals['msg'] += msg
+                elif len(parmFrozenList):
+                    if 'msg' in Rvals:
+                        Rvals['msg'] += '\n'
+                    else:
+                        Rvals['msg'] = ''
+                    msg = ('Note: a total of {} variable(s) are frozen due to refining outside limits'
+                        .format(len(parmFrozenList))
+                        )
+                    G2fil.G2Print('Note: ',msg)
+                    Rvals['msg'] += msg
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')

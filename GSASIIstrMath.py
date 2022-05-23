@@ -3304,7 +3304,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             pickle.dump(None,phPartialFP)
         phPartialFP.close()
         
-        
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
         Ka2 = False

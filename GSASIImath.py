@@ -382,6 +382,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         setSVDwarn(info,Amatlam,Nzeros,indices)
         return [x0,None,info]
     chisqf = np.sum(M**2) # ending chi**2
+    if not maxcyc:  #zero cycle calc exit here
+        info = {'num cyc':0,'fvec':M,'nfev':0,'lamMax':0,'SVD0':0,
+            'Converged':True, 'DelChi2':0., 'Xvec':XvecAll, 'chisq0':chisqf}
+        return [x0,None,info]
     psing_prev = [i for i in range(n) if i not in indices] # save dropped vars
     if AmatAll is None: # Save some time and use Hessian from the last refinement cycle
         Yvec,Amat = Hess(x0,*args)

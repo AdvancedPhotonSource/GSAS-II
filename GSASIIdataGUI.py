@@ -83,6 +83,7 @@ import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2stMn
+import GSASIIstrMath as G2stMth
 import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 import GSASIIseqGUI as G2seq
@@ -5563,6 +5564,7 @@ class GSASII(wx.Frame):
             return
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         savCyc,Controls['max cyc'] = Controls['max cyc'],0
+        saveDervtype,Controls['deriv type'] = Controls['deriv type'],'analytic Hessian'
         Controls['PhasePartials'] = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
         self.OnFileSave(event)
         dlg = G2G.RefinementProgress(parent=self)
@@ -5573,6 +5575,7 @@ class GSASII(wx.Frame):
             OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=None,newLeBail=False)
         except Exception as msg:
             print('Refinement failed with message',msg)
+            Controls['deriv type'] = saveDervtype
             Controls['max cyc'] = savCyc
             Controls['PhasePartials'] = None
             self.OnFileSave(event)
@@ -5592,6 +5595,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
             if result == wx.ID_NO:
+                Controls['deriv type'] = saveDervtype
                 Controls['max cyc'] = savCyc
                 Controls['PhasePartials'] = None
                 self.OnFileSave(event)
@@ -5632,6 +5636,7 @@ class GSASII(wx.Frame):
                 else:
                     print('Error histogram',hId,'not found. This should not happen!')
                     fp.close()
+                    Controls['deriv type'] = saveDervtype
                     Controls['max cyc'] = savCyc
                     Controls['PhasePartials'] = None
                     self.OnFileSave(event)
@@ -5662,6 +5667,7 @@ class GSASII(wx.Frame):
                 fp1.close()
                 print('File',phPartialFile,'written')
 
+        Controls['deriv type'] = saveDervtype
         Controls['max cyc'] = savCyc
         Controls['PhasePartials'] = None
         self.OnFileSave(event)

@@ -3329,10 +3329,10 @@ pathWrap = lambda f: os.path.join(datadir,f)
 '''.format(os.path.abspath(os.getcwd()))
     PDFfit_exe,PDFfit_path = findPDFfit()  # returns python loc and path(s) for pdffit
     if not PDFfit_exe:
-        GSASIIpath.IPyBreak()
-        return None
-    for p in PDFfit_path:
-        rundata += "sys.path.append(r'{:}')\n".format(p)
+        print('PDFfit2 is not found. Creating .sh file without paths.')
+    if PDFfit_path:
+        for p in PDFfit_path:
+            rundata += "sys.path.append(r'{:}')\n".format(p)
     rundata += 'from diffpy.pdffit2 import PdfFit\n'
     rundata += 'pf = PdfFit()\n'
     Nd = 0

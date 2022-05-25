@@ -60,7 +60,12 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   and can be installed directly into your system's configuration. It is used by
   GSAS-II to download updates to our code. This can be skipped if svn
   is installed directly (easy Linux, but a bit harder on MacOS and
-  Windows).
+  Windows). In conda-forge this package is called subversion, but at
+  present is only available for Linux.
+* pywin32 (windows only): this provides the win32com module that is
+  used to install GSAS-II on windows machines. GSAS-II can be used on
+  Windows without this, but the installation will offer less
+  integration into Windows. 
 * conda: the conda package allows access to conda features from
   inside Python. It will be used inceasingly by GSAS-II to
   self-install software. The conda package is installed by default in
@@ -72,12 +77,20 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   Here is a typical conda command used to install a GSAS-II compatible
   Python interpreter::
 
-    conda install wxpython numpy scipy matplotlib pyopengl pillow h5py imageio svn -c conda-forge
+    conda install python=3.9 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion -c conda-forge
     
-  or to use a separate environment (here named ``g2python``), use::
+  or to put a Python configured for GSAS-II into a separate conda
+  environment (here named ``g2python``, but any name can be used), use
+  command::
 
-    conda install -n g2python wxpython numpy scipy matplotlib pyopengl pillow h5py imageio svn conda -c conda-forge
+    conda create -n g2python python=3.9 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion -c conda-forge 
 
+Note that at present the subversion is only available for Linux, so
+that should be removed from the commands above. For windows add pywin32
+Also, while there is no
+reason why GSAS-II should not run with Python 3.10, we are not yet
+providing binaries for this. 
+   
 Remember to activate using: ``<path>\Scripts\activate``  (windows); 
 ``source <path>/bin/activate`` (Mac/Linux). Note that one should add
 ``g2python`` (etc.) at the end if using a conda environment.

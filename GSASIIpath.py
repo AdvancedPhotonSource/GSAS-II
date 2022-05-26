@@ -1439,7 +1439,7 @@ def pipInstall(packageList):
 
        packageList=['gsl']
        packageList=['wxpython','matplotlib','scipy']
-       packageList=[r'\\Mac\Home\Scratch\wheels\pygsl-2.3.3-py3-none-any.whl']
+       packageList=[r'\\Mac\\Home\\Scratch\\wheels\\pygsl-2.3.3-py3-none-any.whl']
        packageList=['z:/Scratch/wheels/pygsl-2.3.3-py3-none-any.whl']
 
     :returns: None if the the command ran normally, or an error message

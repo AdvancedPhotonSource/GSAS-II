@@ -3719,12 +3719,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
-                        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+                        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
                         selectedPeaks = list(set(
                             [row for row,col in G2frame.reflGrid.GetSelectedCells()] +
                             G2frame.reflGrid.GetSelectedRows()))
                         G2frame.dataWindow.movePeak.Enable(len(selectedPeaks) == 1) # allow peak move from table when one peak is selected
-                        for i,item in enumerate(data['peaks']):
+                        for i,item in enumerate(peaks['peaks']):
                             if type(item) is dict: continue
                             if i in selectedPeaks:
                                 Ni = N+1
@@ -3733,13 +3733,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             plotVline(Page,Plot,Lines,Parms,item[0],'b',True)
                             if Ni == N+1:
                                 Lines[-1].set_lw(Lines[-1].get_lw()+1)
-                        data['LaueFringe'] = data.get('LaueFringe',{})
-                        for pos in data['LaueFringe'].get('satellites',[]):
+                        peaks['LaueFringe'] = peaks.get('LaueFringe',{})
+                        for pos in peaks['LaueFringe'].get('satellites',[]):
                             plotVline(Page,Plot,Lines,Parms,pos,'k',False)
                     if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.SetToolTipString(tip)
-                        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))
+                        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))  # used anywhere?
                         
             else:   #not picked
                 ymax = 1.

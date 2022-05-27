@@ -1451,7 +1451,8 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 elif not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
                     break
                 #LF.plotme(fmin,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym)
-                LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin)
+                #LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,plot=(iPeak==0))
+                LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,plot=False)
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     iBeg = np.searchsorted(xdata,pos2-fmin)

@@ -83,12 +83,12 @@ import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2stMn
-import GSASIIstrMath as G2stMth
+#import GSASIIstrMath as G2stMth
 import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 import GSASIIseqGUI as G2seq
 import GSASIIddataGUI as G2ddG
-import GSASIIspc as G2spc
+#import GSASIIspc as G2spc
 
 try:
     wx.NewIdRef
@@ -772,6 +772,12 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         item.Enable(state) # disabled during sequential fits
         self.Bind(wx.EVT_MENU, self.OnRefinePartials, id=item.GetId())
+        
+        item = parent.Append(wx.ID_ANY,'Save partials as csv','Save the computed partials as a csv file')
+        self.Refine.append(item)
+        item.Enable(state) # disabled during sequential fits
+        self.Bind(wx.EVT_MENU, self.OnSavePartials, id=item.GetId())
+        
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run Absorb','x-ray absorption')
@@ -5463,7 +5469,7 @@ class GSASII(wx.Frame):
             rChi2initial = '?'
         
         if GSASIIpath.GetConfigValue('G2RefinementWindow'):            
-            Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+#            Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
             if (self.testSeqRefineMode()):
                 l = len(self.testSeqRefineMode())
             else:
@@ -5550,10 +5556,8 @@ class GSASII(wx.Frame):
                 
     def OnRefinePartials(self,event):
         '''Computes and saves the intensities from each phase for each powder 
-        histogram. These inten
-        Do a 0 cycle fit with no variables to pickle intensities for each 
-        phase into a file.
-        Not for sequential fits.
+        histogram. Do a 0 cycle fit with no variables to pickle intensities for each 
+        phase into a file. Not for sequential fits.
         Sets Controls['PhasePartials'] to a file name to trigger save of
         info in :meth:`GSASIIstrMath.getPowderProfile` and then clear that. 
         '''
@@ -5583,23 +5587,25 @@ class GSASII(wx.Frame):
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
         dlg.Destroy()
-
+        Controls['deriv type'] = saveDervtype
+        Controls['max cyc'] = savCyc
+        self.OnFileSave(event)
+    
+    def OnSavePartials(self,event):
+        ''' Saves partials as a csv file
+        '''
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        phPartialFile = Controls['PhasePartials']
+        try:
+            fp = open(phPartialFile,'rb')
+        except:
+            G2G.G2MessageBox(self,
+                'Phase partials cannot be saved - partials file does not exist',
+                'No partials file')
+            return
+        # savCyc,Controls['max cyc'] = Controls['max cyc'],0
+        # saveDervtype,Controls['deriv type'] = Controls['deriv type'],'analytic Hessian'
         while True: # loop until we get a name or the user says no to export
-            dlg = wx.MessageDialog(self.GetTopLevelParent(),
-                'Export the partial intensities by phase as a comma-separated-variable file?',
-                caption='Export partials?',style=wx.YES_NO)
-            dlg.CenterOnParent()
-            result = wx.ID_NO
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result == wx.ID_NO:
-                Controls['deriv type'] = saveDervtype
-                Controls['max cyc'] = savCyc
-                Controls['PhasePartials'] = None
-                self.OnFileSave(event)
-                return
 
             filename = None
             defpath,defnam = os.path.split(os.path.abspath(
@@ -5615,12 +5621,12 @@ class GSASII(wx.Frame):
                     if not filename.endswith('_part_N'):
                         filename += '_part_N'
                     break
+                else:
+                    return False
             finally:
                 dlg.Destroy()
         # write the .csv file(s)
         histograms,phases = self.GetUsedHistogramsAndPhasesfromTree()
-        phPartialFile = Controls['PhasePartials']
-        fp = open(phPartialFile,'rb')
         pickle.load(fp)   # skip over initial None
         done = False
         while not done:   # looping over histograms
@@ -5636,8 +5642,8 @@ class GSASII(wx.Frame):
                 else:
                     print('Error histogram',hId,'not found. This should not happen!')
                     fp.close()
-                    Controls['deriv type'] = saveDervtype
-                    Controls['max cyc'] = savCyc
+                    # Controls['deriv type'] = saveDervtype
+                    # Controls['max cyc'] = savCyc
                     Controls['PhasePartials'] = None
                     self.OnFileSave(event)
                     return
@@ -5653,8 +5659,13 @@ class GSASII(wx.Frame):
                     if phase is None: break
                     lblList.append(phase)
                     ypartial = np.zeros_like(x)
-                    ypartial[xB:xF] = pickle.load(fp)
-                    valList.append(ypartial)
+                    yp = pickle.load(fp)
+                    if len(yp):
+                        ypartial[xB:xF] = yp
+                        valList.append(ypartial)
+                    else:
+                        valList = None
+                        continue
             except EOFError:
                 done = True
             if valList:
@@ -5666,12 +5677,9 @@ class GSASII(wx.Frame):
                     fp1.write(', '.join([str(i) for i in l])+'\n')
                 fp1.close()
                 print('File',phPartialFile,'written')
-
-        Controls['deriv type'] = saveDervtype
-        Controls['max cyc'] = savCyc
-        Controls['PhasePartials'] = None
-        self.OnFileSave(event)
-        return False
+        fp.close()
+        print('Saving partials as csv files finished')
+        
     
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 

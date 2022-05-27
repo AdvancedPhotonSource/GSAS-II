@@ -180,6 +180,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
+            result[2]['num cyc'] = ncyc
             if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot after completion
         elif 'analytic Hessian' in Controls['deriv type']:
             Lamda = Controls.get('Marquardt',-3)
@@ -213,6 +214,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = 1
+            result[2]['num cyc'] = ncyc
             if len(varyList):
                 ncyc = int(result[2]['nfev']/len(varyList))
             if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot

@@ -254,7 +254,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         G2fil.G2Print('Bad parameter: '+varyList[ipvt-1],mode='warn')
             break
         IfOK = True
-        if not len(varyList) or not result[2]['num cyc']:
+        if not len(varyList) or not maxCyc:
             covMatrix = []
             break
         try:
@@ -267,8 +267,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
             else:
-                print('Maximum shift/esd = {:.3f} for all cycles'
-                          .format(Rvals['Max shft/sig']))
+                print('Maximum shift/esd = {:.3f} for all cycles'.format(Rvals['Max shft/sig']))
             # report on refinement issues. Result in Rvals['msg']
             ReportProblems(result,Rvals,varyList)
             break                   #refinement succeeded - finish up!

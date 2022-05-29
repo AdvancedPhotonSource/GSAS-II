@@ -847,11 +847,7 @@ class GSASII(wx.Frame):
             rdmsg = u'File '+ filename +u' is a binary file. Do you want to read this file?'
         # it would be better to use something that
         # would resize better, but this will do for now
-        dlg = wx.MessageDialog(
-            self, rdmsg,
-            'Is this the file you want?', 
-            wx.YES_NO | wx.ICON_QUESTION,
-            )
+        dlg = wx.MessageDialog(self, rdmsg,'Is this the file you want?',wx.YES_NO|wx.ICON_QUESTION)
         dlg.SetSize((700,300)) # does not resize on Mac
         result = wx.ID_NO
         try:
@@ -958,9 +954,8 @@ class GSASII(wx.Frame):
             typ = ' (type to be guessed)'
         else:
             typ = '( type '+readerlist[0].formatName+')'
-        filelist = G2G.GetImportFile(self,
-                    message="Choose "+label+" input file"+typ,
-                    defaultFile="",wildcard=choices,style=mode)
+        filelist = G2G.GetImportFile(self,message="Choose "+label+" input file"+typ,
+            defaultFile="",wildcard=choices,style=mode)
         rd_list = []
         filelist1 = []
         for filename in filelist:
@@ -5360,7 +5355,8 @@ class GSASII(wx.Frame):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
-        self._cleanPartials()  # phase partials invalid after a refinement
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        self._cleanPartials(Controls)  # phase partials invalid after a refinement
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return
@@ -5459,7 +5455,8 @@ class GSASII(wx.Frame):
         '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
         either single or sequentially
         '''
-        self._cleanPartials()  # phase partials invalid after a refinement
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        self._cleanPartials(Controls)  # phase partials invalid after a refinement
         self.OnFileSave(event)
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
@@ -5515,15 +5512,17 @@ class GSASII(wx.Frame):
             return True
         return False
     
-    def _cleanPartials(self):
+    def _cleanPartials(self,Controls):
         '''Delete any partials created with :meth:`OnRefinePartials`; used
         in GUI-based refinements, as the partials are no longer correct after 
         any fit.
+        Also clears the PhasePartials name from Controls
         '''
         PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
         if os.path.exists(PhasePartials):
             os.remove(PhasePartials)
             print('file deleted:',PhasePartials)
+        Controls['PhasePartials'] = None
 
     def LoadPartial(self,target_hId):
         PhasePartials = os.path.abspath(os.path.splitext(self.GSASprojectfile)[0]+'.partials')
@@ -5587,6 +5586,9 @@ class GSASII(wx.Frame):
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
         dlg.Destroy()
+        if OK:
+            G2G.G2MessageBox(self,'Phase partials computed; if necessary, press "P" on multiphase PWDR plot to view',
+                'Partials complete')            
         Controls['deriv type'] = saveDervtype
         Controls['max cyc'] = savCyc
         self.OnFileSave(event)

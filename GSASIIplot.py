@@ -9335,7 +9335,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 try:
                     panel[names.index('GridWindow')].Refresh()
                 except ValueError:  #different wx versions!
-                    panel[names.index('grid window')].Refresh()
+                    try:
+                        panel[names.index('grid window')].Refresh()
+                    except ValueError:
+                        pass
+                    
             
     def SetDrawAtomsText(drawAtoms):
         page = getSelection()
@@ -9353,7 +9357,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 try:
                     panel[names.index('GridWindow')].Refresh()
                 except ValueError:  #different wx versions!
-                    panel[names.index('grid window')].Refresh()
+                    try:
+                        panel[names.index('grid window')].Refresh()
+                    except ValueError:
+                        pass
             
     def ClearSelectedAtoms():
         page = getSelection()

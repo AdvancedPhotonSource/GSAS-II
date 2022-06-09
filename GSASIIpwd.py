@@ -3626,11 +3626,15 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
 import os,glob
 import time
 import pickle
+import types
 import numpy as np
+import fullrmc
 from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
 import fullrmc.Constraints.PairDistributionConstraints as fPDF
 from fullrmc.Constraints.StructureFactorConstraints import ReducedStructureFactorConstraint, StructureFactorConstraint
+from fullrmc.Constraints.RadialDistributionConstraints import RadialDistributionConstraint
+from fullrmc.Constraints.StructureFactorConstraints import NormalizedStructureFactorConstraint
 from fullrmc.Constraints.DistanceConstraints import DistanceConstraint
 from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
@@ -3733,7 +3737,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 #rundata += '    GR[1] *= 4 * np.pi * GR[0] * rho0 / sumCiBi2\n'
                 #rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
                 rundata += '    # G(r) as defined in RMCProfile\n'
-                rundata += '    GofR = fullrmc.Constraints.RadialDistributionConstraints.RadialDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
+                rundata += '    GofR = RadialDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
                 rundata += '    # This is G(r) as defined in PDFFIT\n'
                 rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
@@ -3751,7 +3755,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 #rundata += '    SOQ[1] *= 1 / sumCiBi2\n'
                 if filDat[4]:
                     rundata += '    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=calcRmax(ENGINE))\n'
-                rundata += '    SofQ = fullrmc.Constraints.StructureFactorConstraints.NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
+                rundata += '    SofQ = NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'%sfwt
             elif filDat[3] == 1:
                 rundata += '    # S(Q) as defined in PDFFIT\n'
                 rundata += '    SOQ[1] -= 1\n'
@@ -3818,6 +3822,14 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
         rundata += '            elif aN[g.indexes[0]]==AB[1]:\n'
         rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
         rundata += '            sProb = SwapGen[swaps][2]\n'
+    rundata += '''for c in ENGINE.constraints:
+    if hasattr(c, '_ExperimentalConstraint__adjustScaleFactor'):
+        def _constraint_copy_needs_lut(self):
+            result =  super(self.__class__, self)._constraint_copy_needs_lut(*args, **kwargs)
+            result['_ExperimentalConstraint__adjustScaleFactor'] = '_ExperimentalConstraint__adjustScaleFactor'
+            return result
+        c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
+'''
     rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
     # rundata += 'wtDict = {}\n'
     # for File in Files:

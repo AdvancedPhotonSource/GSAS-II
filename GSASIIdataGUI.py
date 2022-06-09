@@ -5461,7 +5461,7 @@ class GSASII(wx.Frame):
         item = GetGPXtreeItemId(self,self.root,'Covariance')
         covData = self.GPXtree.GetItemPyData(item)
         try:
-            rChi2initial = '{:.3f}'.format(covData['Rvals']['GOF']**2)
+            rChi2initial = 'GOF: {:.3f}'.format(covData['Rvals']['GOF']**2)
         except:
             rChi2initial = '?'
         
@@ -5492,7 +5492,7 @@ class GSASII(wx.Frame):
             rtext = 'LeBail-only fit done. '
             Rwp = Rvals.get('Rwp')
             if 'GOF' in Rvals:
-                txt = 'Final Reduced Chi^2: {:.3f}\n'.format(Rvals['GOF']**2)+rChi2initial
+                txt = 'Final Reduced Chi^2: {:.3g}\n'.format(Rvals['GOF']**2)+rChi2initial
                 text += txt
                 rtext += txt
             text += '\nLoad new result & continue refinement?'

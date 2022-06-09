@@ -176,6 +176,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Xtol = Controls['SVDtol']
         Factor = Controls['shift factor']
         if 'Jacobian' in Controls['deriv type']:
+            maxCyc = Controls.get('max cyc',1)
             result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -211,6 +212,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             if 'chisq0' in result[2] and chisq0 is None:
                 chisq0 = result[2]['chisq0']
         else:           #'numeric'
+            maxCyc = Controls.get('max cyc',1)
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = 1
@@ -581,7 +583,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs'])) # no variables
 
         covData = {'variables':0,'varyList':[],'sig':[],'Rvals':Rvals,'varyListStart':[],
-            'covMatrix':np.zeros([0,0]),'title':GPXfile,'freshCOV':True}
+            'covMatrix':None,'title':GPXfile,'freshCOV':True}   #np.zeros([0,0])?
           # ??  'newAtomDict':newAtomDict,'newCellDict':newCellDict,
         
         G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)

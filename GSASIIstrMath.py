@@ -1534,11 +1534,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms - Mmod matched drawing & Bilbao drawings
     
-        mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
-        if SGData['SGGray']:
-            mXYZ = np.hstack((mXYZ,mXYZ))
+        # mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
+        # if SGData['SGGray']:
+        #     mXYZ = np.hstack((mXYZ,mXYZ))
 
-        MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
+#        MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
+        mXYZ,MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod2(glTau,Xdata+dXdata,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
@@ -1651,6 +1652,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #intensity Halpern & Johnson
             fass = np.sum((facm-eM[:,nxs,:]*eDotFa[:,:,nxs])**2,axis=-1)    #Nref,Ntau
             fbss = np.sum((fbcm-eM[:,nxs,:]*eDotFb[:,:,nxs])**2,axis=-1)
+# gray *2
+            if SGData['SGGray']:
+                fass *= 2.
+                fbss *= 2.
 ## #do integration            
             fas = np.sum(fass*glWt[nxs,:],axis=1)
             fbs = np.sum(fbss*glWt[nxs,:],axis=1)
@@ -4267,7 +4272,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     :returns: an np array of differences between observed and computed diffraction values.
     '''
     Values2Dict(parmDict, varylist, values)
-    G2mv.Dict2Map(parmDict)
+    if len(varylist):   #skip if no variables; e.g. in a zero cycle LeBail refinement
+        G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)
     SumwYo = 0

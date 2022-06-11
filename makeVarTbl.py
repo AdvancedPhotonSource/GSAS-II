@@ -55,7 +55,7 @@ for line,r in enumerate(G2obj.reVarDesc): # loop over each entry in table
                 if termcount > 1:
                     sym = '\\ :math:`\\scriptstyle '+chr(regList[reg])+'_'+str(j)+'`\\ '
                 else:
-                    sym = '\\ :math:`\\tiny '+chr(regList[reg])+'`\\ '
+                    sym = '\\ :math:`\\scriptstyle '+chr(regList[reg])+'`\\ '
                 symList.append(sym) 
                 exmplList.append(exmplDig[regList[reg]])
                 if comment: comment += " and "
@@ -80,7 +80,7 @@ for line,r in enumerate(G2obj.reVarDesc): # loop over each entry in table
         if comment:
             out2 += "; where " + comment + ','
     elif parmName.endswith('(.*)') or parmName.endswith('.*'):
-        sym = '\\ :math:`\\tiny '+chr(74)+'`\\ '
+        sym = '\\ :math:`\\scriptstyle '+chr(74)+'`\\ '
         out1 = repTmp + ' (example: ``'+exmplTmp+'``)'
         comment += ' a number or string ('+sym+') is appended after the semicolon'
         parmName = parmName.replace('(.*)','').replace('.*','')

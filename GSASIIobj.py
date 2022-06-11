@@ -194,9 +194,13 @@ General         \\               (dict) Overall information for the phase
                                 (list with 8 items. All but first item are float.)
 
                                  0: cell refinement flag (True/False),
+
                                  1-3: a, b, c, (:math:`\\AA`)
+
                                  4-6: alpha, beta & gamma, (degrees)
+
                                  7: volume (:math:`\\AA^3`)
+
   \\         Color               (list of (r,b,g) triplets) Colors for atoms 
   \\         Compare             (dict) Polygon comparison parameters
   \\         Data plot type      (str) data plot type ('Mustrain', 'Size' or
@@ -277,9 +281,9 @@ Drawing         \\               (dict) Display parameters
 \\           vdwScale            (float) Multiplier of van der Waals radius for display of vdW spheres.
 \\           viewDir             (np.array with three floats) cartesian viewing direction 
 \\           viewPoint           (list of lists) First item in list is [x,y,z]
-                                 in fractional coordinates for the center of
-                                 the plot. Second item list of previous & current
-                                 atom number viewed (may be [0,0])
+                                in fractional coordinates for the center of
+                                the plot. Second item list of previous & current
+                                atom number viewed (may be [0,0])
 ISODISTORT      \\               (dict) contains controls for running ISODISTORT and results from it
 \\           ISOmethod           (int) ISODISTORT method (currently 1 or 4; 2 & 3 not implemented in GSAS-II)
 \\           ParentCIF           (str) parent cif file name for ISODISTORT method 4

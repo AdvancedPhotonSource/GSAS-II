@@ -7,8 +7,8 @@
 
    * - ``<var>``
      - usage
-   * - \ :math:`\tiny K`\  (example: ``a``)
-     - Lattice parameter, \ :math:`\tiny K`\ , from Ai and Djk; where \ :math:`\tiny K`\  is one of the characters a, b or c.
+   * - \ :math:`\scriptstyle K`\  (example: ``a``)
+     - Lattice parameter, \ :math:`\scriptstyle K`\ , from Ai and Djk; where \ :math:`\scriptstyle K`\  is one of the characters a, b or c.
    * - α
      - Lattice parameter, α, computed from both Ai and Djk.
    * - β
@@ -17,14 +17,14 @@
      - Lattice parameter, γ, computed from both Ai and Djk.
    * - Scale
      - Phase fraction (as p:h:Scale) or Histogram scale factor (as :h:Scale).
-   * - A\ :math:`\tiny I`\  (example: ``A0``)
-     - Reciprocal metric tensor component \ :math:`\tiny I`\ ; where \ :math:`\tiny I`\  is a digit between 0 and 5.
-   * - \ :math:`\tiny L`\ ol (example: ``vol``)
-     - Unit cell volume; where \ :math:`\tiny L`\  is one of the characters v or V.
-   * - dA\ :math:`\tiny M`\  (example: ``dAx``)
-     - Refined change to atomic coordinate, \ :math:`\tiny M`\ ; where \ :math:`\tiny M`\  is one of the characters x, y or z.
-   * - A\ :math:`\tiny M`\  (example: ``Ax``)
-     - Fractional atomic coordinate, \ :math:`\tiny M`\ ; where \ :math:`\tiny M`\  is one of the characters x, y or z.
+   * - A\ :math:`\scriptstyle I`\  (example: ``A0``)
+     - Reciprocal metric tensor component \ :math:`\scriptstyle I`\ ; where \ :math:`\scriptstyle I`\  is a digit between 0 and 5.
+   * - \ :math:`\scriptstyle L`\ ol (example: ``vol``)
+     - Unit cell volume; where \ :math:`\scriptstyle L`\  is one of the characters v or V.
+   * - dA\ :math:`\scriptstyle M`\  (example: ``dAx``)
+     - Refined change to atomic coordinate, \ :math:`\scriptstyle M`\ ; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
+   * - A\ :math:`\scriptstyle M`\  (example: ``Ax``)
+     - Fractional atomic coordinate, \ :math:`\scriptstyle M`\ ; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
    * - AUiso
      - Atomic isotropic displacement parameter.
    * - AU\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\  (example: ``AU11``)
@@ -33,32 +33,32 @@
      - Atomic site fraction parameter.
    * - Amul
      - Atomic site multiplicity value.
-   * - AM\ :math:`\tiny M`\  (example: ``AMx``)
-     - Atomic magnetic moment parameter, \ :math:`\tiny M`\ ; where \ :math:`\tiny M`\  is one of the characters x, y or z.
-   * - Back\ :math:`\tiny J`\  (example: ``Back11``)
-     - Background term #\ :math:`\tiny J`\ ; where \ :math:`\tiny J`\  is the background term number.
-   * - BkPkint;\ :math:`\tiny J`\  (example: ``BkPkint;11``)
-     - Background peak #\ :math:`\tiny J`\  intensity; where \ :math:`\tiny J`\  is the background peak number.
-   * - BkPkpos;\ :math:`\tiny J`\  (example: ``BkPkpos;11``)
-     - Background peak #\ :math:`\tiny J`\  position; where \ :math:`\tiny J`\  is the background peak number.
-   * - BkPksig;\ :math:`\tiny J`\  (example: ``BkPksig;11``)
-     - Background peak #\ :math:`\tiny J`\  Gaussian width; where \ :math:`\tiny J`\  is the background peak number.
-   * - BkPkgam;\ :math:`\tiny J`\  (example: ``BkPkgam;11``)
-     - Background peak #\ :math:`\tiny J`\  Cauchy width; where \ :math:`\tiny J`\  is the background peak number.
+   * - AM\ :math:`\scriptstyle M`\  (example: ``AMx``)
+     - Atomic magnetic moment parameter, \ :math:`\scriptstyle M`\ ; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
+   * - Back\ :math:`\scriptstyle J`\  (example: ``Back11``)
+     - Background term #\ :math:`\scriptstyle J`\ ; where \ :math:`\scriptstyle J`\  is the background term number.
+   * - BkPkint;\ :math:`\scriptstyle J`\  (example: ``BkPkint;11``)
+     - Background peak #\ :math:`\scriptstyle J`\  intensity; where \ :math:`\scriptstyle J`\  is the background peak number.
+   * - BkPkpos;\ :math:`\scriptstyle J`\  (example: ``BkPkpos;11``)
+     - Background peak #\ :math:`\scriptstyle J`\  position; where \ :math:`\scriptstyle J`\  is the background peak number.
+   * - BkPksig;\ :math:`\scriptstyle J`\  (example: ``BkPksig;11``)
+     - Background peak #\ :math:`\scriptstyle J`\  Gaussian width; where \ :math:`\scriptstyle J`\  is the background peak number.
+   * - BkPkgam;\ :math:`\scriptstyle J`\  (example: ``BkPkgam;11``)
+     - Background peak #\ :math:`\scriptstyle J`\  Cauchy width; where \ :math:`\scriptstyle J`\  is the background peak number.
    * - BF mult
      - Background file multiplier.
-   * - Bab\ :math:`\tiny O`\  (example: ``BabA``)
-     - Babinet solvent scattering coef. \ :math:`\tiny O`\ ; where \ :math:`\tiny O`\  is one of the characters A or U.
+   * - Bab\ :math:`\scriptstyle O`\  (example: ``BabA``)
+     - Babinet solvent scattering coef. \ :math:`\scriptstyle O`\ ; where \ :math:`\scriptstyle O`\  is one of the characters A or U.
    * - D\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\  (example: ``D11``)
      - Anisotropic strain coef. \ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - Extinction
      - Extinction coef.
    * - MD
      - March-Dollase coef.
-   * - Mustrain;\ :math:`\tiny J`\  (example: ``Mustrain;11``)
-     - Microstrain coefficient (delta Q/Q x 10**6); where \ :math:`\tiny J`\  can be i for isotropic or equatorial and a is axial (uniaxial broadening), a number for generalized (Stephens) broadening or mx for the Gaussian/Lorentzian mixing term (LGmix).
-   * - Size;\ :math:`\tiny J`\  (example: ``Size;11``)
-     - Crystallite size value (in microns); where \ :math:`\tiny J`\  can be i for isotropic or equatorial, and a is axial (uniaxial broadening), a number between 0 and 5 for ellipsoidal broadening or mx for the Gaussian/Lorentzian mixing term (LGmix).
+   * - Mustrain;\ :math:`\scriptstyle J`\  (example: ``Mustrain;11``)
+     - Microstrain coefficient (delta Q/Q x 10**6); where \ :math:`\scriptstyle J`\  can be i for isotropic or equatorial and a is axial (uniaxial broadening), a number for generalized (Stephens) broadening or mx for the Gaussian/Lorentzian mixing term (LGmix).
+   * - Size;\ :math:`\scriptstyle J`\  (example: ``Size;11``)
+     - Crystallite size value (in microns); where \ :math:`\scriptstyle J`\  can be i for isotropic or equatorial, and a is axial (uniaxial broadening), a number between 0 and 5 for ellipsoidal broadening or mx for the Gaussian/Lorentzian mixing term (LGmix).
    * - eA
      - Cubic mustrain value.
    * - Ep
@@ -77,8 +77,8 @@
      - Absorption coef.
    * - LayerDisp
      - Bragg-Brentano Layer displacement.
-   * - Displace\ :math:`\tiny P`\  (example: ``DisplaceX``)
-     - Debye-Scherrer sample displacement \ :math:`\tiny P`\ ; where \ :math:`\tiny P`\  is one of the characters X or Y.
+   * - Displace\ :math:`\scriptstyle P`\  (example: ``DisplaceX``)
+     - Debye-Scherrer sample displacement \ :math:`\scriptstyle P`\ ; where \ :math:`\scriptstyle P`\  is one of the characters X or Y.
    * - Lam
      - Wavelength.
    * - I(L2)\\/I(L1)
@@ -87,10 +87,10 @@
      - Polarization correction.
    * - SH/L
      - FCJ peak asymmetry correction.
-   * - \ :math:`\tiny Q`\  (example: ``U``)
-     - Gaussian instrument broadening \ :math:`\tiny Q`\ ; where \ :math:`\tiny Q`\  is one of the characters U, V or W.
-   * - \ :math:`\tiny R`\  (example: ``X``)
-     - Cauchy instrument broadening \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle Q`\  (example: ``U``)
+     - Gaussian instrument broadening \ :math:`\scriptstyle Q`\ ; where \ :math:`\scriptstyle Q`\  is one of the characters U, V or W.
+   * - \ :math:`\scriptstyle R`\  (example: ``X``)
+     - Cauchy instrument broadening \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
    * - Zero
      - Debye-Scherrer zero correction.
    * - Shift
@@ -107,23 +107,23 @@
      - Debye model radius.
    * - DebyeU
      - Debye model Uiso.
-   * - RBV\ :math:`\tiny J`\  (example: ``RBV11``)
+   * - RBV\ :math:`\scriptstyle J`\  (example: ``RBV11``)
      - Vector rigid body parameter.
-   * - RBVO\ :math:`\tiny S`\  (example: ``RBVOa``)
-     - Vector rigid body orientation parameter \ :math:`\tiny S`\ ; where \ :math:`\tiny S`\  is one of the characters a, i, j or k.
-   * - RBVP\ :math:`\tiny M`\  (example: ``RBVPx``)
-     - Vector rigid body \ :math:`\tiny M`\  position parameter; where \ :math:`\tiny M`\  is one of the characters x, y or z.
+   * - RBVO\ :math:`\scriptstyle S`\  (example: ``RBVOa``)
+     - Vector rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBVP\ :math:`\scriptstyle M`\  (example: ``RBVPx``)
+     - Vector rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
    * - RBVf
      - Vector rigid body site fraction.
    * - RBV\ :math:`\scriptstyle T_0`\ \ :math:`\scriptstyle U_0`\ \ :math:`\scriptstyle U_1`\  (example: ``RBVT11``)
      - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBVU
      - Residue rigid body group Uiso param.
-   * - RBRO\ :math:`\tiny S`\  (example: ``RBROa``)
-     - Residue rigid body orientation parameter \ :math:`\tiny S`\ ; where \ :math:`\tiny S`\  is one of the characters a, i, j or k.
-   * - RBRP\ :math:`\tiny M`\  (example: ``RBRPx``)
-     - Residue rigid body \ :math:`\tiny M`\  position parameter; where \ :math:`\tiny M`\  is one of the characters x, y or z.
-   * - RBRTr;\ :math:`\tiny J`\  (example: ``RBRTr;11``)
+   * - RBRO\ :math:`\scriptstyle S`\  (example: ``RBROa``)
+     - Residue rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBRP\ :math:`\scriptstyle M`\  (example: ``RBRPx``)
+     - Residue rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
+   * - RBRTr;\ :math:`\scriptstyle J`\  (example: ``RBRTr;11``)
      - Residue rigid body torsion parameter.
    * - RBRf
      - Residue rigid body site fraction.
@@ -131,12 +131,12 @@
      - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBRU
      - Residue rigid body group Uiso param.
-   * - constr\ :math:`\tiny G`\  (example: ``constr10``)
-     - Generated degree of freedom from constraint; where \ :math:`\tiny G`\  is one or more digits (0, 1,... 9).
+   * - constr\ :math:`\scriptstyle G`\  (example: ``constr10``)
+     - Generated degree of freedom from constraint; where \ :math:`\scriptstyle G`\  is one or more digits (0, 1,... 9).
    * - nv-(.+)
      - New variable assignment with name \1.
-   * - mV\ :math:`\tiny H`\  (example: ``mV0``)
-     - Modulation vector component \ :math:`\tiny H`\ ; where \ :math:`\tiny H`\  is the digits 0, 1, or 2.
+   * - mV\ :math:`\scriptstyle H`\  (example: ``mV0``)
+     - Modulation vector component \ :math:`\scriptstyle H`\ ; where \ :math:`\scriptstyle H`\  is the digits 0, 1, or 2.
    * - Fsin
      - Sin site fraction modulation.
    * - Fcos
@@ -149,20 +149,20 @@
      - ZigZag/Block min location.
    * - Tmax
      - ZigZag/Block max location.
-   * - \ :math:`\tiny R`\ max (example: ``Xmax``)
-     - ZigZag/Block max value for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
-   * - \ :math:`\tiny R`\ sin (example: ``Xsin``)
-     - Sin position wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
-   * - \ :math:`\tiny R`\ cos (example: ``Xcos``)
-     - Cos position wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle R`\ max (example: ``Xmax``)
+     - ZigZag/Block max value for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle R`\ sin (example: ``Xsin``)
+     - Sin position wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle R`\ cos (example: ``Xcos``)
+     - Cos position wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
    * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ sin (example: ``U11sin``)
      - Sin thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ cos (example: ``U11cos``)
      - Cos thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
-   * - M\ :math:`\tiny R`\ sin (example: ``MXsin``)
-     - Sin mag. moment wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
-   * - M\ :math:`\tiny R`\ cos (example: ``MXcos``)
-     - Cos mag. moment wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
+   * - M\ :math:`\scriptstyle R`\ sin (example: ``MXsin``)
+     - Sin mag. moment wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - M\ :math:`\scriptstyle R`\ cos (example: ``MXcos``)
+     - Cos mag. moment wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
    * - PDFpos
      - PDF peak position.
    * - PDFmag
@@ -231,21 +231,21 @@
      - phase weight fraction.
    * - alpha
      - TOF profile term.
-   * - alpha-\ :math:`\tiny W`\  (example: ``alpha-0``)
-     - Pink profile term; where \ :math:`\tiny W`\  is one of the characters 0 or 1.
-   * - beta-\ :math:`\tiny X`\  (example: ``beta-0``)
-     - TOF/Pink profile term; where \ :math:`\tiny X`\  is one of the characters 0, 1 or q.
-   * - sig-\ :math:`\tiny Y`\  (example: ``sig-0``)
-     - TOF profile term; where \ :math:`\tiny Y`\  is one of the characters 0, 1, 2 or q.
-   * - dif\ :math:`\tiny Z`\  (example: ``difA``)
-     - TOF to d-space calibration; where \ :math:`\tiny Z`\  is one of the characters A, B or C.
+   * - alpha-\ :math:`\scriptstyle W`\  (example: ``alpha-0``)
+     - Pink profile term; where \ :math:`\scriptstyle W`\  is one of the characters 0 or 1.
+   * - beta-\ :math:`\scriptstyle X`\  (example: ``beta-0``)
+     - TOF/Pink profile term; where \ :math:`\scriptstyle X`\  is one of the characters 0, 1 or q.
+   * - sig-\ :math:`\scriptstyle Y`\  (example: ``sig-0``)
+     - TOF profile term; where \ :math:`\scriptstyle Y`\  is one of the characters 0, 1, 2 or q.
+   * - dif\ :math:`\scriptstyle Z`\  (example: ``difA``)
+     - TOF to d-space calibration; where \ :math:`\scriptstyle Z`\  is one of the characters A, B or C.
    * - C\ :math:`\scriptstyle G_0`\ ,\ :math:`\scriptstyle G_1`\  (example: ``C10,10``)
      - spherical harmonics preferred orientation coef.; where \ :math:`\scriptstyle G_0`\  is one or more digits (0, 1,... 9) and \ :math:`\scriptstyle G_1`\  is one or more digits (0, 1,... 9).
    * - Pressure
      - Pressure level for measurement in MPa.
    * - Temperature
      - T value for measurement, K.
-   * - FreePrm\ :math:`\tiny N`\  (example: ``FreePrm1``)
-     - User defined measurement parameter \ :math:`\tiny N`\ ; where \ :math:`\tiny N`\  is one of the characters 1, 2 or 3.
+   * - FreePrm\ :math:`\scriptstyle N`\  (example: ``FreePrm1``)
+     - User defined measurement parameter \ :math:`\scriptstyle N`\ ; where \ :math:`\scriptstyle N`\  is one of the characters 1, 2 or 3.
    * - Gonio. radius
      - Distance from sample to detector, mm.

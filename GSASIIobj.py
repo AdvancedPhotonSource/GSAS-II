@@ -21,6 +21,25 @@ as provides misc. support routines.
 
    :math:`\\require{mediawiki-texvc}`
 
+
+.. _VarNames_table:
+
+.. index::
+   single: Parameter names
+   single: GSAS-II variable naming
+
+Variable names in GSAS-II
+----------------------------
+
+Parameter are named using the following pattern,
+``p:h:<var>:n``, where ``<var>`` is a variable name, as shown in the following table. Also,
+``p`` is the phase number, ``h`` is the histogram number, 
+and ``n`` is the atom parameter number
+If a parameter does not depend on a histogram, phase or atom, ``h``, ``p`` and/or ``n`` will be omitted, 
+so ``p::<var>:n``, ``:h:<var>`` and ``p:h:<var>`` are all valid names.
+
+.. include:: vars.rst
+
 .. _Constraints_table:
 
 .. index::
@@ -1946,24 +1965,24 @@ def CompileVarDesc():
     for key,value in {
         # derived or other sequential vars
         '([abc])$' : 'Lattice parameter, \\1, from Ai and Djk', # N.B. '$' prevents match if any characters follow
-        u'\u03B1' : u'Lattice parameter, \u03B1, from Ai and Djk',
-        u'\u03B2' : u'Lattice parameter, \u03B2, from Ai and Djk',
-        u'\u03B3' : u'Lattice parameter, \u03B3, from Ai and Djk',
+        u'\u03B1' : u'Lattice parameter, \u03B1, computed from both Ai and Djk',
+        u'\u03B2' : u'Lattice parameter, \u03B2, computed from both Ai and Djk',
+        u'\u03B3' : u'Lattice parameter, \u03B3, computed from both Ai and Djk',
         # ambiguous, alas:
-        'Scale' : 'Phase or Histogram scale factor',
+        'Scale' : 'Phase fraction (as p:h:Scale) or Histogram scale factor (as :h:Scale)',
         # Phase vars (p::<var>)
         'A([0-5])' : ('Reciprocal metric tensor component \\1',1e-5),
-        '[vV]ol' : 'Unit cell volume', # probably an error that both upper and lower case are used
+        '([vV]ol)' : 'Unit cell volume', # probably an error that both upper and lower case are used
         # Atom vars (p::<var>:a)
-        'dA([xyz])$' : ('change to atomic coordinate, \\1',1e-6),
-        'A([xyz])$' : '\\1 fractional atomic coordinate',
+        'dA([xyz])$' : ('Refined change to atomic coordinate, \\1',1e-6),
+        'A([xyz])$' : 'Fractional atomic coordinate, \\1',
         'AUiso':('Atomic isotropic displacement parameter',1e-4),
         'AU([123][123])':('Atomic anisotropic displacement parameter U\\1',1e-4),
         'Afrac': ('Atomic site fraction parameter',1e-5),
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Hist (:h:<var>) & Phase (HAP) vars (p:h:<var>)
-        'Back': 'Background term',
+        'Back(.*)': 'Background term #\\1',
         'BkPkint;(.*)':'Background peak #\\1 intensity',
         'BkPkpos;(.*)':'Background peak #\\1 position',
         'BkPksig;(.*)':'Background peak #\\1 Gaussian width',
@@ -1974,8 +1993,8 @@ def CompileVarDesc():
         'D([123][123])' : 'Anisotropic strain coef. \\1',
         'Extinction' : 'Extinction coef.',
         'MD' : 'March-Dollase coef.',
-        'Mustrain;.*' : 'Microstrain coef.',
-        'Size;.*' : 'Crystallite size value',
+        'Mustrain;.*' : 'Microstrain coefficient (delta Q/Q x 10**6)',
+        'Size;.*' : 'Crystallite size value (in microns)',
         'eA$' : 'Cubic mustrain value',
         'Ep$' : 'Primary extinction',
         'Es$' : 'Secondary type II extinction',
@@ -1989,7 +2008,7 @@ def CompileVarDesc():
         'Displace([XY])' : ('Debye-Scherrer sample displacement \\1',0.1),
         'Lam' : ('Wavelength',1e-6),
         'I\\(L2\\)\\/I\\(L1\\)' : ('Ka2/Ka1 intensity ratio',0.001),
-        'Polariz\\.' : ('Polarization correction',1e-3),
+        'Polariz.' : ('Polarization correction',1e-3),
         'SH/L' : ('FCJ peak asymmetry correction',1e-4),
         '([UVW])$' : ('Gaussian instrument broadening \\1',1e-5),
         '([XYZ])$' : ('Cauchy instrument broadening \\1',1e-5),
@@ -2066,10 +2085,10 @@ def CompileVarDesc():
         'int$': 'peak intensity',
         'WgtFrac':'phase weight fraction',
         'alpha':'TOF profile term',
-        'alpha-[01]':'Pink profile term',
-        'beta-[01q]':'TOF/Pink profile term',
-        'sig-[012q]':'TOF profile term',
-        'dif[ABC]':'TOF to d-space calibration',
+        'alpha-([01])':'Pink profile term',
+        'beta-([01q])':'TOF/Pink profile term',
+        'sig-([012q])':'TOF profile term',
+        'dif([ABC])':'TOF to d-space calibration',
         'C\\([0-9]*,[0-9]*\\)' : 'spherical harmonics preferred orientation coef.',
         'Pressure': 'Pressure level for measurement in MPa',
         'Temperature': 'T value for measurement, K',

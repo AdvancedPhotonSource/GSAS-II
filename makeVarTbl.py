@@ -53,7 +53,7 @@ for line,r in enumerate(G2obj.reVarDesc): # loop over each entry in table
                     exmplDig[nextChar] = reg[0]
                     nextChar += 1
                 if termcount > 1:
-                    sym = '\\ :math:`\\tiny '+chr(regList[reg])+'_'+str(j)+'`\\ '
+                    sym = '\\ :math:`\\scriptstyle '+chr(regList[reg])+'_'+str(j)+'`\\ '
                 else:
                     sym = '\\ :math:`\\tiny '+chr(regList[reg])+'`\\ '
                 symList.append(sym) 

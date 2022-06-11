@@ -27,8 +27,8 @@
      - Fractional atomic coordinate, \ :math:`\tiny M`\ ; where \ :math:`\tiny M`\  is one of the characters x, y or z.
    * - AUiso
      - Atomic isotropic displacement parameter.
-   * - AU\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\  (example: ``AU11``)
-     - Atomic anisotropic displacement parameter U\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ ; where \ :math:`\tiny N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\tiny N_1`\  is one of the characters 1, 2 or 3.
+   * - AU\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\  (example: ``AU11``)
+     - Atomic anisotropic displacement parameter U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - Afrac
      - Atomic site fraction parameter.
    * - Amul
@@ -49,8 +49,8 @@
      - Background file multiplier.
    * - Bab\ :math:`\tiny O`\  (example: ``BabA``)
      - Babinet solvent scattering coef. \ :math:`\tiny O`\ ; where \ :math:`\tiny O`\  is one of the characters A or U.
-   * - D\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\  (example: ``D11``)
-     - Anisotropic strain coef. \ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ ; where \ :math:`\tiny N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\tiny N_1`\  is one of the characters 1, 2 or 3.
+   * - D\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\  (example: ``D11``)
+     - Anisotropic strain coef. \ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - Extinction
      - Extinction coef.
    * - MD
@@ -115,8 +115,8 @@
      - Vector rigid body \ :math:`\tiny M`\  position parameter; where \ :math:`\tiny M`\  is one of the characters x, y or z.
    * - RBVf
      - Vector rigid body site fraction.
-   * - RBV\ :math:`\tiny T_0`\ \ :math:`\tiny U_0`\ \ :math:`\tiny U_1`\  (example: ``RBVT11``)
-     - Residue rigid body group disp. param.; where \ :math:`\tiny T_0`\  is one of the characters T, L or S and \ :math:`\tiny U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\tiny U_1`\  is one of the characters 1, 2, 3, A or B.
+   * - RBV\ :math:`\scriptstyle T_0`\ \ :math:`\scriptstyle U_0`\ \ :math:`\scriptstyle U_1`\  (example: ``RBVT11``)
+     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBVU
      - Residue rigid body group Uiso param.
    * - RBRO\ :math:`\tiny S`\  (example: ``RBROa``)
@@ -127,8 +127,8 @@
      - Residue rigid body torsion parameter.
    * - RBRf
      - Residue rigid body site fraction.
-   * - RBR\ :math:`\tiny T_0`\ \ :math:`\tiny U_0`\ \ :math:`\tiny U_1`\  (example: ``RBRT11``)
-     - Residue rigid body group disp. param.; where \ :math:`\tiny T_0`\  is one of the characters T, L or S and \ :math:`\tiny U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\tiny U_1`\  is one of the characters 1, 2, 3, A or B.
+   * - RBR\ :math:`\scriptstyle T_0`\ \ :math:`\scriptstyle U_0`\ \ :math:`\scriptstyle U_1`\  (example: ``RBRT11``)
+     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBRU
      - Residue rigid body group Uiso param.
    * - constr\ :math:`\tiny G`\  (example: ``constr10``)
@@ -155,10 +155,10 @@
      - Sin position wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
    * - \ :math:`\tiny R`\ cos (example: ``Xcos``)
      - Cos position wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
-   * - U\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ sin (example: ``U11sin``)
-     - Sin thermal wave for U\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ ; where \ :math:`\tiny N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\tiny N_1`\  is one of the characters 1, 2 or 3.
-   * - U\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ cos (example: ``U11cos``)
-     - Cos thermal wave for U\ :math:`\tiny N_0`\ \ :math:`\tiny N_1`\ ; where \ :math:`\tiny N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\tiny N_1`\  is one of the characters 1, 2 or 3.
+   * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ sin (example: ``U11sin``)
+     - Sin thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
+   * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ cos (example: ``U11cos``)
+     - Cos thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - M\ :math:`\tiny R`\ sin (example: ``MXsin``)
      - Sin mag. moment wave for \ :math:`\tiny R`\ ; where \ :math:`\tiny R`\  is one of the characters X, Y or Z.
    * - M\ :math:`\tiny R`\ cos (example: ``MXcos``)
@@ -217,8 +217,8 @@
      - Bragg peak sigma.
    * - PkGam
      - Bragg peak gamma.
-   * - e\ :math:`\tiny V_0`\ \ :math:`\tiny V_1`\  (example: ``e11``)
-     - strain tensor e\ :math:`\tiny V_0`\ \ :math:`\tiny V_1`\ ; where \ :math:`\tiny V_0`\  is one of the characters 1 or 2 and \ :math:`\tiny V_1`\  is one of the characters 1 or 2.
+   * - e\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle V_1`\  (example: ``e11``)
+     - strain tensor e\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle V_1`\ ; where \ :math:`\scriptstyle V_0`\  is one of the characters 1 or 2 and \ :math:`\scriptstyle V_1`\  is one of the characters 1 or 2.
    * - Dcalc
      - Calc. d-spacing.
    * - Back
@@ -239,8 +239,8 @@
      - TOF profile term; where \ :math:`\tiny Y`\  is one of the characters 0, 1, 2 or q.
    * - dif\ :math:`\tiny Z`\  (example: ``difA``)
      - TOF to d-space calibration; where \ :math:`\tiny Z`\  is one of the characters A, B or C.
-   * - C\ :math:`\tiny G_0`\ ,\ :math:`\tiny G_1`\  (example: ``C10,10``)
-     - spherical harmonics preferred orientation coef.; where \ :math:`\tiny G_0`\  is one or more digits (0, 1,... 9) and \ :math:`\tiny G_1`\  is one or more digits (0, 1,... 9).
+   * - C\ :math:`\scriptstyle G_0`\ ,\ :math:`\scriptstyle G_1`\  (example: ``C10,10``)
+     - spherical harmonics preferred orientation coef.; where \ :math:`\scriptstyle G_0`\  is one or more digits (0, 1,... 9) and \ :math:`\scriptstyle G_1`\  is one or more digits (0, 1,... 9).
    * - Pressure
      - Pressure level for measurement in MPa.
    * - Temperature

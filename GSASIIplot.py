@@ -2019,7 +2019,8 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     elif GSASIIpath.GetConfigValue('debug'):
         print('Possible PickId problem PickId=',G2frame.PickId)
     # for now I am not sure how to regenerate G2frame.HKL
-    G2frame.HKL = []
+    G2frame.HKL = []  # array of generated reflections
+    G2frame.Extinct = [] # array of extinct reflections
     PlotPatterns(G2frame,newPlot,plotType)
 
 def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
@@ -2411,7 +2412,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if pickIdText in ['Index Peak List','Unit Cells List',]:
                     indx = -2
                 # finds reflections within 1% of plot range in units of plot
-                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < dT/2.)] 
+                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < dT/2.)]
+                if len(G2frame.Extinct):
+                    G2frame.Extinct = np.array(G2frame.Extinct)
+                    f2 = G2frame.Extinct[np.where(np.fabs(G2frame.Extinct.T[indx]-xpos) < dT/2.)] 
+                    found = np.concatenate((found,f2))
                 if len(found):
                     if len(found[0]) > 6:   #SS reflections
                         fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
@@ -3798,6 +3803,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 clr = orange
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
+                if Page.plotStyle['qPlot']:
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                elif Page.plotStyle['dPlot']:
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                else:
+                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=1.5)
+            for hkl in G2frame.Extinct: # plot extinct reflections
+                clr = 'b'
                 if Page.plotStyle['qPlot']:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
                 elif Page.plotStyle['dPlot']:

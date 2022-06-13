@@ -3142,6 +3142,7 @@ class GSASII(wx.Frame):
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = []
+        self.Extinct = []
         self.Lines = []     # lines used for data limits & excluded regions
         self.MagLines = []  # lines used for plot magnification
         self.itemPicked = None
@@ -3409,6 +3410,7 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 for file_ajk in dlg.GetPaths():
                     self.HKL = []
+                    self.Extinct = []
                     self.powderfile = file_ajk
                     comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
                     Id = self.GPXtree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
@@ -4346,6 +4348,7 @@ class GSASII(wx.Frame):
             self.GPXtree.DeleteChildren(self.root)
             self.GSASprojectfile = ''
             self.HKL = []
+            self.Extinct = []
             if self.G2plotNB.plotList:
                 self.G2plotNB.clear()
             return True
@@ -4402,6 +4405,7 @@ class GSASII(wx.Frame):
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
         self.HKL = []
+        self.Extinct = []
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         while item:
             name = self.GPXtree.GetItemText(item)
@@ -4465,7 +4469,9 @@ class GSASII(wx.Frame):
                 self.GPXtree.SetItemText(self.root,'Project: ')
                 self.GPXtree.DeleteChildren(self.root)
                 self.dataWindow.ClearData()
-                if len(self.HKL): self.HKL = []
+                if len(self.HKL):
+                    self.HKL = []
+                    self.Extinct = []
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
                 self.SetTitleByGPX()
@@ -5690,6 +5696,7 @@ class GSASII(wx.Frame):
         '''
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = []
+        self.Extinct = []
         G2IO.ProjFileOpen(self,False)
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
@@ -5885,7 +5892,9 @@ class GSASII(wx.Frame):
                     if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
-                    if len(self.HKL): self.HKL = []
+                    if len(self.HKL):
+                        self.HKL = []
+                        self.Extinct = []
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()

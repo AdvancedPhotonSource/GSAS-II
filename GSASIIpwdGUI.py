@@ -3316,6 +3316,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             else:
                 dmin = G2lat.Pos2dsp(Inst,Limits[1][1])
             G2frame.HKL = []
+            G2frame.Extinct = []
             if ssopt.get('Use',False):
                 cell = controls[6:12]
                 A = G2lat.cell2A(cell)
@@ -3391,6 +3392,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
 #####  Unit cells
 ################################################################################
 
+cellDisplayOpts = {'showExtinct':False}
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
     '''    
@@ -3605,6 +3607,11 @@ def UpdateUnitCellsGrid(G2frame, data):
             pass
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+#    def OnUpdatePlot(event):
+#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+#        OnHklShow(event)
+        #G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
         
     def OnHklShow(event):
         PatternId = G2frame.PatternId
@@ -3636,6 +3643,15 @@ def UpdateUnitCellsGrid(G2frame, data):
                 M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
             G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+            G2frame.Extinct = []
+            if cellDisplayOpts['showExtinct']:  #  show extinct reflections
+                allpeaks = G2pwd.getHKLpeak(dmin,G2spc.SpcGroup('P 1')[1],A,Inst)
+                alreadyShown = G2frame.HKL[:,4].round(3)                
+                for peak in allpeaks: # show one reflection only if in a region with no others
+                    pos = peak[4].round(3) 
+                    if pos in alreadyShown: continue
+                    alreadyShown = np.append(alreadyShown,pos)
+                    G2frame.Extinct.append(peak)
             if len(peaks[0]):
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
                 M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
@@ -4512,7 +4528,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    #### UpdateIndexPeaksGrid code starts here
+    #### UpdateUnitCellsGrid code starts here
     G2frame.ifGetExclude = False
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
@@ -4663,9 +4679,25 @@ def UpdateUnitCellsGrid(G2frame, data):
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
     if 'E' not in Inst['Type'][0]:
+        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+        SSopt.SetValue(ssopt.get('Use',False))
+        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
+        littleSizer.Add(SSopt,0,WACV)
         if ssopt.get('Use',False):        #zero for super lattice doesn't work!
             controls[0] = False
         else:
+            littleSizer.Add(G2G.G2CheckBox(
+                G2frame.dataWindow,'Show Extinct',cellDisplayOpts,'showExtinct',
+                OnChange=OnHklShow),0,WACV)
+#                OnChange=OnUpdatePlot),0,WACV)
+        if 'N' in Inst['Type'][0]:
+            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
+            MagSel.SetValue('MagSpGrp' in SGData)
+            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
+            littleSizer.Add(MagSel,0,WACV)
+        if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
+            mainSizer.Add(littleSizer,0)
+            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
             zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
                                         xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
@@ -4674,15 +4706,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             zeroVar.SetValue(controls[0])
             zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
             littleSizer.Add(zeroVar,0,WACV)
-        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
-        SSopt.SetValue(ssopt.get('Use',False))
-        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
-        littleSizer.Add(SSopt,0,WACV)
-        if 'N' in Inst['Type'][0]:
-            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
-            MagSel.SetValue('MagSpGrp' in SGData)
-            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
-            littleSizer.Add(MagSel,0,WACV)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     if 'N' in Inst['Type'][0]:

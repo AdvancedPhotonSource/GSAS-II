@@ -3812,11 +3812,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             for hkl in G2frame.Extinct: # plot extinct reflections
                 clr = 'b'
                 if Page.plotStyle['qPlot']:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=3)
                 elif Page.plotStyle['dPlot']:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=3)
                 else:
-                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=3)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 

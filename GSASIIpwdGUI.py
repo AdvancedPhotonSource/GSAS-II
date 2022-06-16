@@ -3275,6 +3275,28 @@ def UpdateIndexPeaksGrid(G2frame, data):
         finally:
             dlg.Destroy()
         
+    def OnExportPreDICT(event):
+        'Place 2theta positions from Index Peak List into clipboard for cut-&-paste'
+        if wx.TheClipboard.Open():
+            txt = ''
+            c = 0
+            for refl in data[0]:
+                if refl[2]:
+                    c += 1
+                    txt += '{}\n'.format(refl[0])
+            wx.TheClipboard.SetData(wx.TextDataObject(txt))
+            wx.TheClipboard.Close()
+        else:
+            G2frame.ErrorDialog('Clipboard locked','Sorry, unable to access the clipboard, try again later. You might need to restart GSAS-II or reboot')
+            return
+        G2G.G2MessageBox(G2frame,
+                '{} reflection positions placed in clipboard. '.format(c)+
+                'In PreDICT open the DICVOL input. Update the number of '
+                'reflections (& wavelength if needed) in GUI. Then'
+                '  use paste to replace the reflections '
+                '(starting at line 6...) in the DICVOL input.',
+                'DICVOL input generated')
+
     def KeyEditPickGrid(event):
         colList = G2frame.indxPeaks.GetSelectedCols()
         data = G2frame.GPXtree.GetItemPyData(IndexId)
@@ -3300,6 +3322,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndPeaksMenu)
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2G.wxID_INDXRELOAD)
         G2frame.Bind(wx.EVT_MENU, OnSave, id=G2G.wxID_INDEXSAVE)
+        G2frame.Bind(wx.EVT_MENU, OnExportPreDICT, id=G2G.wxID_INDEXEXPORTDICVOL)
     G2frame.dataWindow.IndexPeaks.Enable(False)
     G2frame.IndexPeaksTable = []
     if len(data[0]):

@@ -1627,12 +1627,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
 #  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
             fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+    
+                (-MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+    
                 GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (MmodAR+H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+    
+                (MmodAR-H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+    
                 GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
@@ -4570,6 +4570,7 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
         if Phases[phase]['General']['doPawley']: continue
         if hist not in Phases[phasej]['Histograms']: continue
         if not Phases[phasej]['Histograms'][hist]['Use']: continue
+        if wtSum < 1.0: continue  #no atoms; probable LeBail
         pId_j = Phases[phasej]['pId']
         var = "{}:{}:WgtFrac".format(pId_j,hId)
         valDict[var] = mass[pId_j] * phFr[pId_j] / wtSum

@@ -2289,12 +2289,18 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         varied = False
         for i,mv in enumerate(varlist):
+            constrVal = 0    # offset to constraint from constant terms
             lineOut = '  {} = '.format(mv)
-            j = 0 
+            j = 0 # number of terms shown
             for m,v in zip(invmultarr[i,:],mapvars):
                 if m == 0: continue
                 if v == 0: continue
                 if v in varyList: varied = True
+                try:
+                    constrVal += m*v  # v is a constant; add to offset
+                    continue
+                except:
+                    pass
                 if m < 0:
                     lineOut += ' - '
                     m *= -1
@@ -2307,11 +2313,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 if m == 1:
                     lineOut += '{}'.format(v)
                 else:
-                    try:
-                        lineOut += '{:.4g}'.format(m*v)
-                    except:
-                        lineOut += '({:.4g} * {})'.format(m,v)
-            if j == 0: lineOut += '0'
+                    lineOut += '({:.4g} * {})'.format(m,v)
+            if constrVal < 0:
+                lineOut += ' - {:.4g}'.format(-constrVal)
+            elif constrVal > 0:
+                lineOut += ' + {:.4g}'.format(constrVal)
+            elif j == 0:
+                lineOut += '0'  # no terms, no constants: var fixed at zero
             if varied: lineOut += '\t *VARIED*'
             lineDict[mv] = lineOut
     for key in sorted(lineDict):
@@ -2581,13 +2589,13 @@ def _FillArray(sel,d,collist):
         for j,var in enumerate(collist):
             arr[i,j] = d[cnum].get(var,0)
     try:
-        _RowEchelon(m,copy.copy(arr),collist)
+        _RowEchelon(m,copy.copy(arr),collist[:])
     except:
         raise Exception('Initial constraints singular')
     for i in range(m,n):
         arr[i][i] = 1   # add a diagonal element
         try:
-            _RowEchelon(i+1,copy.copy(arr),collist)
+            _RowEchelon(i+1,copy.copy(arr),collist[:])
             continue
         except:
             pass
@@ -2595,13 +2603,13 @@ def _FillArray(sel,d,collist):
             if j == i: continue
             arr[i][j] = 1   # add another element
             try:
-                _RowEchelon(i+1,copy.copy(arr),collist)
+                _RowEchelon(i+1,copy.copy(arr),collist[:])
                 break
             except:
                 pass
             arr[i][j] = -1   # try a different valuefor this element
             try:
-                _RowEchelon(i+1,copy.copy(arr),collist)
+                _RowEchelon(i+1,copy.copy(arr),collist[:])
                 break
             except:
                 arr[i][j] = 0   # reset to add another element

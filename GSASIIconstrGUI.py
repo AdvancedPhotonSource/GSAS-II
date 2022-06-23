@@ -416,7 +416,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
-        G2mv.Map2Dict(parmDict,varyList)   # changes varyList
+        G2mv.Map2Dict(parmDict,varyList)   # changes parmDict & varyList
         # check for limits on dependent vars
         consVars = [i for i in reqVaryList if i not in varyList]
         impossible = set(

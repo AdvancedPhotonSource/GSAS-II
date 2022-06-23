@@ -1285,7 +1285,7 @@ def BestPlane(PlaneData):
 def do_refine(*args):
     'Called to run a refinement when this module is executed '
     starttime = time.time()
-    arg = sys.argv
+    #arg = sys.argv
     if len(args) >= 1:
         files = args
     elif len(sys.argv) > 1:
@@ -1294,7 +1294,7 @@ def do_refine(*args):
         G2fil.G2Print ('ERROR GSASIIstrMain.do_refine error - missing filename')
         G2fil.G2Print ('Use "python GSASIIstrMain.py f1.gpx [f2.gpx f3.gpx...]" to run')
         G2fil.G2Print ('or call GSASIIstrMain.do_refine directly')
-        exit()
+        sys.exit()
     for GPXfile in files:
         if not ospath.exists(GPXfile):
             G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist! Skipping.")

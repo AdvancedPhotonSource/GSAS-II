@@ -3156,39 +3156,33 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 def findfullrmc():
     '''Find where fullrmc is installed. Tries the following:
     
-         1. Returns the Config var 'fullrmc_exec', if defined. No check 
-            is done that the interpreter has fullrmc
-         2. The current Python interpreter if fullrmc can be imported 
-            and fullrmc is version 5+
-         3. The path is checked for a fullrmc image as named by Bachir
+         1. Returns the Config var 'fullrmc_exec', if defined. If an executable
+            is found at that location it is assumed to run and supply
+            fullrmc 5.0+
+         2. The path is checked for a fullrmc image as named by Bachir
 
     :returns: the full path to a python executable that is assumed to 
       have fullrmc installed or None, if it was not found.
     '''
-    if GSASIIpath.GetConfigValue('fullrmc_exec') is not None and is_exe(
-            GSASIIpath.GetConfigValue('fullrmc_exec')):
-        return GSASIIpath.GetConfigValue('fullrmc_exec')
-    try:
-        import fullrmc
-        if int(fullrmc.__version__.split('.')[0]) >= 5:
-            return sys.executable
-    except:
-        pass
+    fullrmc_exe = GSASIIpath.GetConfigValue('fullrmc_exec')
+    if fullrmc_exe is not None and is_exe(fullrmc_exe):
+        return fullrmc_exe
     pathlist = os.environ["PATH"].split(os.pathsep)
     for p in (GSASIIpath.path2GSAS2,GSASIIpath.binaryPath,os.getcwd(),
                   os.path.split(sys.executable)[0]):
-        if p not in pathlist: pathlist.insert(0,p)
+        if p not in pathlist: pathlist.append(p)
     import glob
     for p in pathlist:
-        if sys.platform == "darwin":
-            lookfor = "fullrmc*macOS*i386-64bit"
-        elif sys.platform == "win32":
-            lookfor = "fullrmc*.exe"
+        if sys.platform == "win32":
+            lookfor = "fullrmc5*.exe"
         else:
-            lookfor = "fullrmc*"
+            lookfor = "fullrmc5*64bit"
         fl = glob.glob(lookfor)
         if len(fl) > 0:
-            return os.path.abspath(sorted(fl)[0])
+            fullrmc_exe = os.path.abspath(sorted(fl)[0])
+            if GSASIIpath.GetConfigValue('debug'):
+                print('fullrmc found as',fullrmc_exe)
+            return fullrmc_exe
 
 def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
@@ -3628,6 +3622,7 @@ import time
 import pickle
 import types
 import numpy as np
+import matplotlib as mpl
 import fullrmc
 from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
@@ -3824,7 +3819,7 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
         rundata += '            sProb = SwapGen[swaps][2]\n'
     rundata += '''for c in ENGINE.constraints:
     if hasattr(c, '_ExperimentalConstraint__adjustScaleFactor'):
-        def _constraint_copy_needs_lut(self):
+        def _constraint_copy_needs_lut(self, *args, **kwargs):
             result =  super(self.__class__, self)._constraint_copy_needs_lut(*args, **kwargs)
             result['_ExperimentalConstraint__adjustScaleFactor'] = '_ExperimentalConstraint__adjustScaleFactor'
             return result

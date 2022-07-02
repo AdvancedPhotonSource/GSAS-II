@@ -4484,15 +4484,16 @@ def PeaksUnique(data,Ind,Sel,dlg):
 
 def AtomsCollect(data,Ind,Sel):
     '''Finds the symmetry set of atoms for those selected. Selects
-    the one closest to the selected part of the unit cell. 
-    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
-    GSASIIphsGUI.py,
+    the one closest to the selected part of the unit cell for the 
+    selected atoms
 
     :param data: the phase data structure
-    :param list Ind: list of selected peak indices
-    :param int Sel: selected part of unit to find atoms closest to
+    :param list Ind: list of selected atom indices
+    :param int Sel: an index with the selected plane or location in the
+      unit cell to find atoms closest to
 
-    :returns: the list of symmetry unique peaks from among those given in Ind
+    :returns: the list of unique atoms where selected atoms may have been 
+      replaced. Anisotropic Uij's are transformed
     '''        
     cx,ct,cs,ci = getAtomPtrs(data) 
     cent = np.ones(3)*.5     
@@ -4500,25 +4501,24 @@ def AtomsCollect(data,Ind,Sel):
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
     Atoms = copy.deepcopy(data['Atoms'])
-    Indx = [True for ind in Ind]
-    # scan through peaks, finding all peaks equivalent to peak ind
-    for ind in Ind:
-        if Indx[ind]:
-            xyz = Atoms[ind][cx:cx+3]
-            uij = Atoms[ind][ci+2:ci+8]
-            if Atoms[ind][ci] == 'A':
-                Equiv = list(G2spc.GenAtom(xyz,SGData,Uij=uij))
-                Uijs = np.array([x[1] for x in Equiv])
-            else:
-                Equiv = G2spc.GenAtom(xyz,SGData)
-            xyzs = np.array([x[0] for x in Equiv])
-            dzeros = np.sqrt(np.sum(np.inner(Amat,xyzs)**2,axis=0))
-            dcent = np.sqrt(np.sum(np.inner(Amat,xyzs-cent)**2,axis=0))
-            xyzs = np.hstack((xyzs,dzeros[:,nxs],dcent[:,nxs]))
-            cind = np.argmin(xyzs.T[Sel-1])
-            Atoms[ind][cx:cx+3] = xyzs[cind][:3]
-            if Atoms[ind][ci] == 'A':
-                Atoms[ind][ci+2:ci+8] = Uijs[cind]
+    for ind in Ind:     # scan through selected atoms
+        xyz = Atoms[ind][cx:cx+3]
+        uij = Atoms[ind][ci+2:ci+8]
+        if Atoms[ind][ci] == 'A':
+            Equiv = list(G2spc.GenAtom(xyz,SGData,Uij=uij))
+            Uijs = np.array([x[1] for x in Equiv])
+        else:
+            Equiv = G2spc.GenAtom(xyz,SGData)
+        xyzs = np.array([x[0] for x in Equiv])
+        if Sel == 4:  # for origin, move atom to x, y &/or z closest to origin
+            xyzs -= 1*(xyzs > .5)
+        dzeros = np.sqrt(np.sum(np.inner(Amat,xyzs)**2,axis=0))
+        dcent = np.sqrt(np.sum(np.inner(Amat,xyzs-cent)**2,axis=0))
+        xyzs = np.hstack((xyzs,dzeros[:,nxs],dcent[:,nxs]))
+        cind = np.argmin(xyzs.T[Sel-1])
+        Atoms[ind][cx:cx+3] = xyzs[cind][:3]
+        if Atoms[ind][ci] == 'A':
+            Atoms[ind][ci+2:ci+8] = Uijs[cind]
     return Atoms
 
 def DoWilsonStat(refList,Super,normEle,Inst):

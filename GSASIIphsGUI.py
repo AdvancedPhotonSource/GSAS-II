@@ -4701,10 +4701,13 @@ def UpdatePhaseData(G2frame,Item,data):
 #### RMC Data page ################################################################################
 # fullrmc stuff TODO:
 #  1) need to implement swapping in scripts
-#  2) need fullrmc installation instructions
+#  2) fullrmc docs/installation in files
+#     file:///Users/toby/G2/trunk/help/gsasII-phase.html#Phase-RMC
+#     file:///Users/toby/G2/trunk/help/gsasII.html#fullrmc
+#     sources/packages.rst.txt
 #  3) when GSASIIpwd.findfullrmc fails, should trigger message with link to above
 #  4) fullrmc tutorials
-#  5) better plotting when fullrmc in main Python image?
+#  5) G2pwd.findfullrmc: look at error msg & help link
 
     def UpdateRMC():
         ''' Present the controls for running fullrmc, RMCProfile or PDFfit
@@ -5236,7 +5239,7 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
 ''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with 
 Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 
-(2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
+(2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304; www.fullrmc.com
  '''))
             # if G2pwd.findfullrmc() is None:
             #     mainSizer.Add(wx.StaticText(G2frame.FRMC,
@@ -6623,7 +6626,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
       Modeling Package Enabled with Machine Learning 
       and Artificial Intelligence",
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
-      DOI: https://doi.org/10.1002/jcc.24304''','Please cite fullrmc')
+      DOI: https://doi.org/10.1002/jcc.24304
+
+      Note: A more advanced version of fullrmc can be found at www.fullrmc.com''',
+                             'Please cite fullrmc')
         ilog = 0
         while True:
             logname = '%s_%d.log'%(pName,ilog)

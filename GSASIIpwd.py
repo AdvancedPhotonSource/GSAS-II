@@ -2688,7 +2688,7 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
-        fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],-100.*inst[prms[2]][1],inst[prms[3]][1],0))
+        fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],100.*inst[prms[2]][1],inst[prms[3]][1],0))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))    
         fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))

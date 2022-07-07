@@ -922,6 +922,7 @@ Instrument Parameters       \\               (list) containing two dicts where t
                                             * 'SXC' for constant wavelength x-ray
                                             * 'SNC' for constant wavelength neutron
                                             * 'SNT' for time of flight neutron
+                                            * 'SEC' for constant wavelength electrons (e.g. micro-ED)
 \\                           InstrName       (str) A name for the instrument, used in preparing a CIF
 wtFactor                    \\               (float) A weighting factor to increase or decrease
                                             the leverage of data in the histogram.

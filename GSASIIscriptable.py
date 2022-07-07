@@ -1416,7 +1416,7 @@ def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     '''
-    if dType in ['SXC','SNC']:
+    if dType in ['SXC','SNC','SEC',]:
         return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
             'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,

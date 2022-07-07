@@ -130,7 +130,7 @@ def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
     
     returns dict: default data for histogram - found in data tab for phase/histogram 
     '''
-    if dType in ['SXC','SNC']:
+    if dType in ['SXC','SNC','SEC']:
         return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
             'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
@@ -777,6 +777,9 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         item.Enable(state) # disabled during sequential fits
         self.Bind(wx.EVT_MENU, self.OnSavePartials, id=item.GetId())
+        
+        item = parent.Append(wx.ID_ANY,'Cluster analysis','Do cluster analysis on selected PWDR files')
+        self.Bind(wx.EVT_MENU, self.OnClusterAnalysis, id=item.GetId())        
         
         item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
         self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
@@ -5688,11 +5691,29 @@ class GSASII(wx.Frame):
         fp.close()
         print('Saving partials as csv files finished')
         
+    def OnClusterAnalysis(self,event):
+        ''' Does cluster analysis calculations according to controls on selected PWDR entries
+        '''
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        ClusterData = Controls.get('Cluster Data',{'Files':[]})
+        if not len(ClusterData['Files']):
+            G2G.G2MessageBox(self,'No PWDR data selected for Cluster Analysis','No Cluster Analysis')
+            return
+         
+        #fill cluster analysis data matrix here 
+        
+        Id = GetGPXtreeItemId(self,self.root,'Cluster Analysis')
+        if not Id:
+            Id = self.GPXtree.AppendItem(self.root,text='Cluster Analysis')
+            self.GPXtree.SetItemPyData(Id,{})   #what should go in here by default?           
+            
+
+        
     
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
         refinemnt.) Done after events are completed to avoid crashes.
-        :param rtext str: string info from cller to be put in Notebook after reload
+        :param rtext str: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = []
@@ -6322,6 +6343,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialEx.Append(G2G.wxID_XPORTSEQCSV,'Save table as CSV',
             'Save all sequential refinement results as a CSV spreadsheet file')
         self.PostfillDataMenu()
+        
+        #Cluster analysis  - what do I need here?
+        self.ClusterAnalysisMenu = wx.MenuBar() 
+        self.PrefillDataMenu(self.ClusterAnalysisMenu,empty=True)
+        self.PostfillDataMenu(empty=True)
             
         # PWDR & SASD
         G2G.Define_wxId('wxID_PWDANALYSIS','wxID_PWDCOPY','wxID_PLOTCTRLCOPY','wxID_MERGEHKL',
@@ -7088,6 +7114,8 @@ def UpdateControls(G2frame,data):
         data['Marquardt'] = -3
     if 'newLeBail' not in data:
         data['newLeBail'] = False
+    if 'Cluster Data' not in data:
+        data['Cluster Data'] = {'Files':[],'DataMatrix':None,'Method':'Distances'}
     
     #end patch
 
@@ -7172,6 +7200,68 @@ def UpdateControls(G2frame,data):
             selSizer.Add(clrSeq,0,WACV)
             seqSizer.Add(selSizer,0)
         return seqSizer
+        
+    def ClusSizer():
+        
+        def OnSelectData(event):
+            choices = GetGPXtreeDataNames(G2frame,['PWDR',])
+            if len(choices) == 0:
+                G2G.G2MessageBox(G2frame,'No PWDR histograms found for cluster analysis.','No Histograms')
+                return
+            sel = []
+            try:
+                if 'Cluster Data' in data:
+                    sel = [choices.index(item) for item in data['Cluster Data']['Files']]
+            except ValueError:  #data changed somehow - start fresh
+                sel = []
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select datasets to include.',
+                'Cluster analysis data selection',choices)
+            dlg.SetSelections(sel)
+            names = []
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    names.append(choices[sel])
+                data['Cluster Data']['Files'] = names                
+            dlg.Destroy()
+            G2frame.SetTitleByGPX()
+            
+            wx.CallAfter(UpdateControls,G2frame,data)
+            
+        def OnClusterMethod(event):
+            dlg = wx.MessageDialog(G2frame,'Do you really want to clear the cluster data?','Clear cluster data matrix', 
+                wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+                if result == wx.ID_NO:
+                    return
+            finally:
+                dlg.Destroy()
+            ClusData['Method'] = method.GetValue()
+            ClusData['DataMatrix'] = None
+            
+        clusSizer = wx.BoxSizer(wx.VERTICAL)
+        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+        ClusData = data['Cluster Data']
+        if len(ClusData['Files']):
+            lbl = 'Cluster Analysis with '+str(len(ClusData['Files']))+' datasets'
+        else:
+            lbl = 'No data selected for Cluster Analysis'
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+        selSeqData = wx.Button(G2frame.dataWindow,label=' Select datasets')            
+        selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+        dataSizer.Add(selSeqData,0,WACV)
+        clusSizer.Add(dataSizer)
+        if len(ClusData['Files']):    
+            choice = ['Correlation Coeffs.','Distances','Angles',]
+            methsizer = wx.BoxSizer(wx.HORIZONTAL)
+            methsizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster analysis data method'),0,WACV)
+            method = wx.ComboBox(parent=G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            method.SetValue(ClusData['Method'])
+            method.Bind(wx.EVT_COMBOBOX, OnClusterMethod)
+            methsizer.Add(method,0,WACV)
+            clusSizer.Add(methsizer)
+        return clusSizer
         
     def LSSizer():        
         
@@ -7311,6 +7401,14 @@ def UpdateControls(G2frame,data):
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add(SeqSizer())
+    mainSizer.Add((5,15),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis Settings'),0,WACV)    
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)
+    mainSizer.Add(ClusSizer())
     mainSizer.Add((5,15),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8034,6 +8132,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
             G2frame.dataWindow.GetSizer().Add(
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
+        elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
+            G2frame.dataWindow.GetSizer().Add(
+                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Cluster Analysis Results:'))
         elif G2frame.GPXtree.GetItemText(item) == 'Restraints':
             data = G2frame.GPXtree.GetItemPyData(item)
 #patch - put phases in restraint tree

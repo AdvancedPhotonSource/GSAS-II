@@ -5118,17 +5118,41 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         xye = np.array(Pattern[1])
         xmin = np.searchsorted(xye[0],limits[0])
-        xmax = np.searchsorted(xye[0],limits[1])
+        xmax = np.searchsorted(xye[0],limits[1])+1  #to include last point
         DS = xye[5][xmin:xmax]*np.sqrt(wtFactor*xye[2][xmin:xmax])
+        Nobs = len(xye[0][xmin:xmax])
+        sumObs = np.sum(xye[1][xmin:xmax])
+        sumWobs = np.sum((xye[1][xmin:xmax]**2*xye[2][xmin:xmax]))
+        sumDelt = np.sum(np.abs((xye[1][xmin:xmax]-xye[3][xmin:xmax])))
+        sumWdelt = np.sum(((xye[1][xmin:xmax]-xye[3][xmin:xmax])**2*xye[2][xmin:xmax]))
+        print(' Nobs = %d, Rp = %.4f%%, Rwp = %.4f%%'%(Nobs,100.*sumDelt/sumObs,100.*np.sqrt(sumWdelt/sumWobs)))
     elif kind == 'HKLF':
         refl = Pattern[1]['RefList']
         im = 0
         if Pattern[1]['Super']:
             im = 1
         DS = []
+        sumF2obs = 0.0
+        sumFobs = 0.0
+        sumWobs = 0.0
+        sumDelt = 0.0
+        sum2Delt = 0.0
+        sumWdelt = 0.0
+        Nobs = 0
         for ref in refl:
             if ref[6+im] > 0.:
+                if ref[3+im] > 0:
+                    Nobs += 1
+                    w2 = 1./ref[6+im]
+                    sumFobs += np.sqrt(ref[5+im])
+                    sumF2obs += ref[5+im]
+                    sumWobs += (w2*ref[5+im])**2
+                    sumDelt += np.abs(np.sqrt(ref[5+im])-np.sqrt(ref[7+im]))
+                    sum2Delt += np.abs(ref[5+im]-ref[7+im])
+                    sumWdelt += (w2*(ref[5+im]-ref[7+im]))**2
                 DS.append((ref[5+im]-ref[7+im])/ref[6+im])
+        print(' Nobs = %d, RF = %.4f%%, RF2 = %.4f%%, wRF2 = %.4f%%'%(Nobs,
+            100.*sumDelt/sumFobs,100.*sum2Delt/sumF2obs,100.*np.sqrt(sumWdelt/sumWobs)))
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     DS.sort()
     EDS = np.zeros_like(DS)

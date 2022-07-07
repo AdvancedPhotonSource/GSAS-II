@@ -2297,6 +2297,17 @@ def UpdateInstrumentGrid(G2frame,data):
         updateData(insVal,insRef)
         G2plt.PlotPeakWidths(G2frame)
         
+    def AfterChangeEC(invalid,value,tc):    
+        '''for SEC data only; converts electrn energy in keV to wavelength
+        '''
+        if invalid: return
+        if value > 10.:
+            value *= 1000.      #keV -> eV
+            value = 12.2639/np.sqrt(value+value**2*0.97845e-6)
+            tc.SetValue(value)
+            insVal.update({'Lam':value})
+        updateData(insVal,insRef)
+        
     def NewProfile(invalid,value,tc):
         if invalid: return
         G2plt.PlotPeakWidths(G2frame)
@@ -2337,8 +2348,20 @@ def UpdateInstrumentGrid(G2frame,data):
         if 'P' in insVal['Type']:
             insVal['Lam1'] = waves[lamType][0]
             insVal['Lam2'] = waves[lamType][1]
-        elif 'S' in insVal['Type'] and 'synch' not in lamType:
-            insVal['Lam'] = meanwaves[lamType]
+        elif 'S' in insVal['Type']: #and 
+            try:
+                insVal['Lam'] = meanwaves[lamType]
+                data['Type'][0] = 'SXC'
+                insVal['Type'] = 'SXC'
+            except KeyError:
+                if 'synch' in lamType:
+                    insVal['Lam'] = 1.0  #typical?
+                    data['Type'][0] = 'SXC'
+                    insVal['Type'] = 'SXC'
+                elif 'micro' in lamType:
+                    insVal['Lam'] = 0.0251 # @200keV
+                    data['Type'][0] = 'SEC'
+                    insVal['Type'] = 'SEC'      #change to electron diffraction
         updateData(insVal,insRef)
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 
@@ -2351,6 +2374,8 @@ def UpdateInstrumentGrid(G2frame,data):
         if insVal['Bank'] == None:      #patch
             insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
+        if 'SEC' in insVal['Type']:
+            text += ' (NB: Enter microscope voltage in keV to get wavelength)'
         subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text),0,WACV)
         # add help button to bring up help web page - at right side of window
         subSizer.Add((-1,-1),1,wx.EXPAND)
@@ -2558,14 +2583,17 @@ def UpdateInstrumentGrid(G2frame,data):
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                if 'EC' in insVal['Type']:
+                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChangeEC)
+                else:
+                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                 # PATCH?: for now at least, Source is not saved anywhere before here
                 if 'Source' not in data: data['Source'] = ['CuKa','?']
-                choice = ['synchrotron','TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
+                choice = ['synchrotron','TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa','micro-ED']
                 lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                 waveSizer.Add(lamPick,0,WACV)

@@ -584,7 +584,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     valSizer =wx.BoxSizer(wx.HORIZONTAL)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
                     tbarVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Tbar',
-                        xmin=0.,nDig=(10,3),typeHint=float)
+                        xmin=0.,nDig=(10,6),typeHint=float)
                     valSizer.Add(tbarVal,0,WACV)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
                     cos2tm = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Cos2TM',

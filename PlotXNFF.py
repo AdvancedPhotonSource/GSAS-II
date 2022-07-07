@@ -59,6 +59,7 @@ class PlotXNFF(wx.Frame):
         PE = G2elG.PickElement(self.PlotFFPanel,oneOnly=True)
         if PE.ShowModal() == wx.ID_OK:
             self.xrayFFs = G2el.GetFormFactorCoeff(PE.Elem)
+            self.elecFFs = G2el.GetEFormFactorCoeff(PE.Elem)
             self.Elem = PE.Elem
             self.atmInfo = G2el.GetAtomInfo(PE.Elem)
             self.magFFs = G2el.GetMagFormFacCoeff(PE.Elem)
@@ -103,6 +104,16 @@ class PlotXNFF(wx.Frame):
             fplot.set_ylabel('form factor')
             
         def test3():
+            fplot = self.plotNB.add('Electron form factor').gca()
+            sq = np.linspace(0,2.,1000,True)
+            for El in self.elecFFs:
+                F = G2el.ScatFac(El, sq**2)
+                fplot.plot(sq,F,label=El['Symbol'])
+            fplot.legend(loc='best')
+            fplot.set_xlabel('sin-theta/lambda')
+            fplot.set_ylabel('form factor')
+            
+        def test4():
             fplot = self.plotNB.add('magnetic form factors').gca()
             sq = np.linspace(0,1.,1000,True)
             for El in self.magFFs:
@@ -117,8 +128,9 @@ class PlotXNFF(wx.Frame):
             self.plotNB.nb.DeletePage(0)
         test1()
         test2()
+        test3()
         if len(self.magFFs):
-            test3()
+            test4()
         
         self.plotNB.Show()
         

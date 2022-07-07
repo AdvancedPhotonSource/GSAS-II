@@ -754,6 +754,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])      # must be ops[0].T
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
+    EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
     Amat,Bmat = G2lat.Gmat2AB(G)
     Flack = 1.0
@@ -776,6 +777,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -785,6 +789,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dat = G2el.getBLvalues(BLtables)
         refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
+    elif 'SEC' in calcControls[hfx+'histType']:
+        dat = G2el.getFFvalues(EFtables,0.)
+        refDict['FF']['El'] = list(dat.keys())
+        refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            refDict['FF']['FF'].T[iel] = G2el.ScatFac(EFtables[El],SQ)        
     else:       #'X'
         dat = G2el.getFFvalues(FFtables,0.)
         refDict['FF']['El'] = list(dat.keys())
@@ -895,6 +905,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
@@ -1362,6 +1375,10 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
+        
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
@@ -1519,6 +1536,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     SSCen = SSGData['SSGCen']
     FFtables = calcControls['FFtables']
+    EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
     Flack = 1.0
@@ -1555,6 +1573,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata)).T
     bij = Mast*Uij
     blkSize = 48       #no. of reflections in a block
@@ -1568,6 +1589,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         for iel,El in enumerate(refDict['FF']['El']):
             if El in MFtables:
                 refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
+    elif 'SEC' in calcControls[hfx+'histType']:
+        dat = G2el.getFFvalues(EFtables,0.)
+        refDict['FF']['El'] = list(dat.keys())
+        refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            refDict['FF']['FF'].T[iel] = G2el.ScatFac(EFtables[El],SQ)        
     else:
         dat = G2el.getFFvalues(FFtables,0.)
         refDict['FF']['El'] = list(dat.keys())
@@ -1708,6 +1735,7 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
+    EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
     Flack = 1.0
@@ -1734,6 +1762,9 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata)).T
     bij = Mast*Uij
     blkSize = 32       #no. of reflections in a block
@@ -1748,6 +1779,12 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             for iel,El in enumerate(refDict['FF']['El']):
                 if El in MFtables:
                     refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
+        elif 'SEC' in calcControls[hfx+'histType']:
+            dat = G2el.getFFvalues(EFtables,0.)
+            refDict['FF']['El'] = list(dat.keys())
+            refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
+            for iel,El in enumerate(refDict['FF']['El']):
+                refDict['FF']['FF'].T[iel] = G2el.ScatFac(EFtables[El],SQ)        
         else:
             dat = G2el.getFFvalues(FFtables,0.)
             refDict['FF']['El'] = list(dat.keys())
@@ -1850,6 +1887,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
+    EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
@@ -1867,11 +1905,16 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata)).T
     bij = Mast*Uij
     if not len(refDict['FF']):
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
+        elif 'SEC' in calcControls[hfx+'histType']:
+            dat = G2el.getFFvalues(EFtables,0.)
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
         refDict['FF']['El'] = list(dat.keys())
@@ -2087,6 +2130,7 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
+    EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
     TwinLaw = np.array([[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],])
     TwDict = refDict.get('TwDict',{})           
@@ -2112,11 +2156,16 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    elif 'SEC' in calcControls[hfx+'histType']:
+        FP = np.zeros(len(Tdata))
+        FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata)).T
     bij = Mast*Uij
     if not len(refDict['FF']):
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
+        elif 'SEC' in calcControls[hfx+'histType']:
+            dat = G2el.getFFvalues(EFtables,0.)        
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
         refDict['FF']['El'] = list(dat.keys())
@@ -2292,8 +2341,8 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             cos2T = 1.0-2.*SQ*parmDict[hfx+'Lam']**2           #cos(2theta)
         else:   #'T'
             cos2T = 1.0-2.*SQ*ref[12+im]**2                       #cos(2theta)            
-        if 'SXC' in parmDict[hfx+'Type']:
-            AV = 7.9406e5/parmDict[pfx+'Vol']**2
+        if 'SXC' in parmDict[hfx+'Type'] or 'SEC' in parmDict[hfx+'Type']:
+            AV = 7.9406e5/parmDict[pfx+'Vol']**2    #is 7.9406e5 constant right for electroms?
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
             P12 = (calcControls[phfx+'Cos2TM']+cos2T**4)/(calcControls[phfx+'Cos2TM']+cos2T**2)
             PLZ = AV*P12*ref[9+im]*parmDict[hfx+'Lam']**2

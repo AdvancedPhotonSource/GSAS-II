@@ -48,6 +48,28 @@ def GetFormFactorCoeff(El):
         FF.update({'Symbol':Sy.upper()})
     return FormFactors
     
+def GetEFormFactorCoeff(El):
+    """Read electron form factor coefficients from `atomdata.py` file
+
+    :param str El: element 1-2 character symbol, case irrevelant
+    :return: `FormFactors`: list of form factor dictionaries
+    
+    Each electrn form factor dictionary is:
+    
+    * `Symbol`: 4 character element symbol (no valence)
+    * `Z`: atomic number
+    * `fa`: 5 A coefficients
+    * `fb`: 5 B coefficients
+    
+    """
+    
+    Els = El.capitalize().strip()
+    valences = [ky for ky in atmdata.ElecFF.keys() if Els == getElSym(ky)] #will only be one
+    FormFactors = [atmdata.ElecFF[val] for val in valences]
+    for Sy,FF in zip(valences,FormFactors):
+        FF.update({'Symbol':Sy.upper()})
+    return FormFactors
+    
 def GetFFtable(atomTypes):
     ''' returns a dictionary of form factor data for atom types found in atomTypes
 
@@ -58,6 +80,22 @@ def GetFFtable(atomTypes):
     FFtable = {}
     for El in atomTypes:
         FFs = GetFormFactorCoeff(getElSym(El))
+        for item in FFs:
+            if item['Symbol'] == El.upper():
+                FFtable[El] = item
+    return FFtable
+    
+def GetEFFtable(atomTypes):
+    ''' returns a dictionary of electron form factor data for atom types found in atomTypes
+    might not be needed?
+
+    :param list atomTypes: list of atom types
+    :return: FFtable, dictionary of form factor data; key is atom type
+
+    '''
+    FFtable = {}
+    for El in atomTypes:
+        FFs = GetEFormFactorCoeff(getElSym(El))
         for item in FFs:
             if item['Symbol'] == El.upper():
                 FFtable[El] = item
@@ -382,7 +420,7 @@ def ScatFac(El, SQ):
     fa = np.array(El['fa'])
     fb = np.array(El['fb'])
     t = -fb[:,np.newaxis]*SQ
-    return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
+    return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El.get('fc',0.0)
         
 def MagScatFac(El, SQ):
     """compute value of form factor

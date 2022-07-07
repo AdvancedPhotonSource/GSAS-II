@@ -204,10 +204,8 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     parmDict.update(rbDict)
-    (Natoms, atomIndx, phaseVary, phaseDict, pawleyLookup, FFtables,
-         BLtables, MFtables, maxSSwave) = GetPhaseData(
-             Phases, RestraintDict=None, seqHistName=seqHist,
-             rbIds=rbIds, Print=False) # generates atom symmetry constraints
+    (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+        GetPhaseData(Phases,RestraintDict=None,seqHistName=seqHist,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     parmDict.update(hapDict)
@@ -1167,6 +1165,17 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                 (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc']))
                 
+    def PrintEFtable(EFtable):
+        pFile.write('\n Electron scattering factors:\n')
+        pFile.write('   Symbol     fa                                                fb\n')
+        pFile.write(99*'-'+'\n')
+        for Ename in EFtable:
+            efdata = EFtable[Ename]
+            fa = efdata['fa']
+            fb = efdata['fb']
+            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fa[4],fb[0],fb[1],fb[2],fb[3],fb[4]))
+                
     def PrintMFtable(MFtable):
         pFile.write('\n <j0> Magnetic scattering factors:\n')
         pFile.write('   Symbol     mfa                                    mfb                                     mfc\n')
@@ -1470,6 +1479,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     phaseDict = {}
     pawleyLookup = {}
     FFtables = {}                   #scattering factors - xrays
+    EFtables = {}                   #scattering factors - electrons
     MFtables = {}                   #Mag. form factors
     BLtables = {}                   # neutrons
     Natoms = {}
@@ -1485,8 +1495,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
         FFtable = G2el.GetFFtable(General['AtomTypes'])
+        EFtable = G2el.GetEFFtable(General['AtomTypes'])
         BLtable = G2el.GetBLtable(General)
         FFtables.update(FFtable)
+        EFtables.update(EFtable)
         BLtables.update(BLtable)
         phaseDict[pfx+'isMag'] = False
         SGData = General['SGData']
@@ -1690,6 +1702,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write('\n Phase name: %s\n'%General['Name'])
                 pFile.write(135*'='+'\n')
                 PrintFFtable(FFtable)
+                PrintEFtable(EFtable)
                 PrintBLtable(BLtable)
                 if General['Type'] == 'magnetic':
                     PrintMFtable(MFtable)
@@ -1766,7 +1779,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave
+    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
     '''Returns the filled-out reciprocal cell (A) terms and their uncertainties
@@ -1922,7 +1935,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
 def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters
     
-    :param str pfx: prefix of form p\:\:
+    :param str pfx: prefix of form p\\:\\:
     :param SGdata: space group information
     :param list A: Reciprocal cell Ai terms
     :param dict covData: covariance tree item 
@@ -3692,11 +3705,13 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             pfx = ':'+str(hId)+':'
             controlDict[pfx+'wtFactor'] = Histogram['wtFactor']
             Inst = Histogram['Instrument Parameters'][0]
-            controlDict[pfx+'histType'] = Inst['Type'][0]
-            if 'X' in Inst['Type'][0]:
+            controlDict[pfx+'histType'] = Inst['Type'][1]
+            if 'X' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
                 controlDict[pfx+'keV'] = G2mth.wavekE(histDict[pfx+'Lam'])
-            elif 'NC' in Inst['Type'][0] or 'NB' in Inst['Type'][0]:                   
+            elif 'SEC' in Inst['Type'][1]:
+                histDict[pfx+'Lam'] = Inst['Lam'][1]
+            elif 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:                   
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
     
@@ -4085,7 +4100,7 @@ def WriteVecRBModel(RBModel,sigDict={},irb=None):
     return out
 
 atmPattrn = re.compile("::A[xyz]:")
-fmtSplit =  re.compile('%([0-9]+)\.([0-9]+)(.*)')
+fmtSplit =  re.compile('%([0-9]+)\\.([0-9]+)(.*)')
 def fmtESD(varname,SigDict,fmtcode,ndig=None,ndec=None):
     '''Format an uncertainty value as requested, but surround the 
     number by () if the parameter is set by an equivalence 

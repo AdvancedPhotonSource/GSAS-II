@@ -11,9 +11,8 @@
 *GSASIIseqGUI: Sequential Results GUI*
 ----------------------------------------
 
-Module that defines GUI routines and classes for the main GUI Frame (window)
-and the main routines that define the GSAS-II tree panel and much of the
-data editing panel. 
+Module that defines GUI routines and classes for the various sequential result GUI Frames (window)
+Also defines GUI routines for Cluster Analysis results 
 '''
 from __future__ import division, print_function
 import platform
@@ -44,8 +43,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 #####  Display of Sequential Results ##########################################
 def UpdateSeqResults(G2frame,data,prevSize=None):
     """
-    Called when the Sequential Results data tree entry is selected
-    to show results from a sequential refinement.
+    Called when any data tree entry is selected that has 'Sequential' in the name 
+    to show results from any sequential analysis.
     
     :param wx.Frame G2frame: main GSAS-II data tree windows
 
@@ -1558,3 +1557,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
     #G2frame.dataDisplay.Refresh() # shows colored text on mac
     G2frame.dataWindow.SetDataSize()
+    
+###############################################################################################################
+#UpdateClusterAnalysis: results
+###############################################################################################################
+    

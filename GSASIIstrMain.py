@@ -555,11 +555,12 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,
          maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
+    calcControls['EFtables'] = EFtables
     calcControls['BLtables'] = BLtables
     calcControls['MFtables'] = MFtables
     calcControls['maxSSwave'] = maxSSwave
@@ -656,10 +657,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     G2mv.InitVars()
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-     FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
-             Phases,restraintDict,rbIds,Print=False,pFile=printFile,
-             seqHistName='All')
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+        G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName='All')
     for item in phaseVary:
         if '::A0' in item:
             G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
@@ -687,10 +686,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-         FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
-             Phases,restraintDict,rbIds,Print=False,pFile=printFile,
-             seqHistName=histogram)
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,ELtables,BLtables,MFtables,maxSSwave) = \
+            G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName=histogram)
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -698,6 +695,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['atomIndx'] = atomIndx
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
+        calcControls['ELtables'] = ELtables
         calcControls['BLtables'] = BLtables
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave

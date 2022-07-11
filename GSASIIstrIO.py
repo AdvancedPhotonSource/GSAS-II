@@ -1151,7 +1151,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     :param list symHold: if not None (None is the default) the names of parameters
        held due to symmetry are placed in this list
     :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-        FFtables,BLtables,MFtables,maxSSwave (see code for details). 
+        FFtables,EFtables,BLtables,MFtables,maxSSwave (see code for details). 
     '''
             
     def PrintFFtable(FFtable):

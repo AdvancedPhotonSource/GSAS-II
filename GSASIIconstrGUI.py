@@ -388,9 +388,8 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
     rbIds = rigidbodyDict.get('RBIds', {'Vector': [], 'Residue': []})
     rbVary, rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict, Print=False)
     parmDict.update(rbDict)
-    (Natoms, atomIndx, phaseVary, phaseDict, pawleyLookup, FFtables,
-         BLtables, MFtables, maxSSwave) = G2stIO.GetPhaseData(
-            Phases, RestraintDict=None, rbIds=rbIds, Print=False) # generates atom symmetry constraints
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     # get Hist and HAP info
     hapVary, hapDict, controlDict = G2stIO.GetHistogramPhaseData(Phases, Histograms, Print=False, resetRefList=False)
@@ -1578,9 +1577,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
 
     # create a list of the phase variables
     symHolds = []
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,
-         MFtable,maxSSwave) = G2stIO.GetPhaseData(
-             Phases,rbIds=rbIds,Print=False,symHold=symHolds)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,BLtable,MFtable,maxSSwave) = \
+        G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False,symHold=symHolds)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in badPhaseParms:

@@ -1476,8 +1476,8 @@ class ExportBaseclass(object):
         rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         self.parmDict.update(rbDict)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave =  G2stIO.GetPhaseData(
-            Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave =  \
+            G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
         self.parmDict.update(phaseDict)
         hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
         self.parmDict.update(hapDict)
@@ -1513,8 +1513,8 @@ class ExportBaseclass(object):
             G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Rigid bodies'))
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
-            Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave = \
+            G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
         msg = G2mv.EvaluateMultipliers(constrDict,phaseDict)
         if msg:
             print('Unable to interpret multiplier(s): '+msg)

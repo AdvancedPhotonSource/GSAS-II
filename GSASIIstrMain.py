@@ -686,7 +686,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,ELtables,BLtables,MFtables,maxSSwave) = \
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
             G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName=histogram)
         ifPrint = False
         if dlg:
@@ -695,7 +695,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['atomIndx'] = atomIndx
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
-        calcControls['ELtables'] = ELtables
+        calcControls['EFtables'] = EFtables
         calcControls['BLtables'] = BLtables
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave

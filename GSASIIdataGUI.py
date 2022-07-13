@@ -5695,6 +5695,7 @@ class GSASII(wx.Frame):
     def OnClusterAnalysis(self,event):
         ''' Does cluster analysis calculations according to controls on selected PWDR entries
         '''
+        import scipy.spatial.distance as SSD
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         ClusterData = Controls.get('Cluster Data',{'Files':[]})
         if not len(ClusterData['Files']):
@@ -5723,7 +5724,8 @@ class GSASII(wx.Frame):
                 else:
                     CAmatrix[iname] = y[iBeg:iFin+1]
         except ValueError:
-            G2G.G2MessageBox(self,'Data arrays are mismatched in length \n or have different step sizes',
+            G2G.G2MessageBox(self,
+                'Data for %s is mismatched in length to those already processed or has different step size'%name,
                 'No Cluster Analysis possible')
             return
             
@@ -6380,7 +6382,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PWDR & SASD
         G2G.Define_wxId('wxID_PWDANALYSIS','wxID_PWDCOPY','wxID_PLOTCTRLCOPY','wxID_MERGEHKL',
-            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT','wxID_1DHKLSTICKPLOT',)            
+            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT','wxID_1DHKLSTICKPLOT','wxID_CSVFROMTABLE')            
         self.PWDRMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PWDRMenu)
         self.ErrorAnal = wx.Menu(title='')
@@ -6571,7 +6573,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MakeNewPhase.Enable(False)
         
         # PWDR / Reflection Lists
-        G2G.Define_wxId('wxID_SELECTPHASE','wxID_SHOWHIDEEXTINCT','wxID_WILSONSTAT' ) #some wxIDs defined above in PWDR & SASD
+        G2G.Define_wxId('wxID_SELECTPHASE','wxID_SHOWHIDEEXTINCT','wxID_WILSONSTAT','wxID_CSVFROMTABLE' ) #some wxIDs defined above in PWDR & SASD
         self.ReflMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ReflMenu)
         self.ReflEdit = wx.Menu(title='')
@@ -6580,6 +6582,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ReflEdit.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs in 1D')
         self.ReflEdit.Append(G2G.wxID_PWDHKLPLOT,'Plot HKLs','Plot HKLs in 2D')
         self.ReflEdit.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs in 3D')
+        self.ReflEdit.Append(G2G.wxID_CSVFROMTABLE,'Make csv file from table','Make csv file from table')
         self.ReflEdit.Append(G2G.wxID_WILSONSTAT,'Wilson statistics')
         self.HideShow = self.ReflEdit.Append(G2G.wxID_SHOWHIDEEXTINCT,'Show/hide extinct reflections')
         self.PostfillDataMenu()

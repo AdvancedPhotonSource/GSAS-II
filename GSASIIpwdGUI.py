@@ -5112,6 +5112,29 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2plt.PlotXY(G2frame,XY,labelX='sin$^2$%s/%s$^2$'%(GkTheta,Gklambda),
             labelY=r'ln(<|F$_o$|$^2$>/%sf$^2$)'%GkSigma,newPlot=True,Title='Wilson plot')
         
+    def OnMakeCSV(event):
+        '''Make csv file from displayed ref table.
+        '''
+        phaseName = G2frame.RefList
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose Reflection List csv file', pth, '', 
+            'Reflection List (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                filename = os.path.splitext(filename)[0]+'.csv'
+                File = open(filename,'w')
+                File.write('%s\n'%phaseName)
+                colLabels = [G2frame.PeakTable.GetColLabelValue(i) for i in range(G2frame.PeakTable.GetNumberCols())]
+                File.write('%s\n'%(','.join(colLabels)))
+                nRows = G2frame.PeakTable.GetNumberRows()
+                for i in range(nRows):
+                    refLine = G2frame.PeakTable.GetRowValues(i)
+                    strLine = ','.join([str(item) for item in refLine])
+                    File.write('%s\n'%strLine)
+                File.close()
+        finally:
+            dlg.Destroy()
         
     def MakeReflectionTable(phaseName):
         '''Returns a wx.grid table (G2G.Table) containing a list of all reflections
@@ -5241,9 +5264,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             im = data[phaseName].get('Super',0)
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
-            PeakTable = MakeReflectionTable(phaseName)
-            if not PeakTable: return
-            G2frame.refTable[phaseName].SetTable(PeakTable, True)
+            G2frame.PeakTable = MakeReflectionTable(phaseName)
+            if not G2frame.PeakTable: return
+            G2frame.refTable[phaseName].SetTable(G2frame.PeakTable, True)
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
@@ -5317,6 +5340,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnMakeCSV, id=G2G.wxID_CSVFROMTABLE)
         G2frame.Bind(wx.EVT_MENU, OnWilsonStat, id=G2G.wxID_WILSONSTAT)
         G2frame.dataWindow.SelectPhase.Enable(False)
             

@@ -2644,9 +2644,6 @@ def calcIncident(Iparm,xdata):
     WYI = np.where(WYI>0.,WYI,0.)
     return YI,WYI
 
-#### Cluster Analysis routines ###################################################################
-
-
 #### RMCutilities ################################################################################
 def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
     inst = PWDdata['Instrument Parameters'][0]

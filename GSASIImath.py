@@ -54,7 +54,7 @@ except TypeError:
 nxs = np.newaxis
     
 ################################################################################
-##### Hessian least-squares Levenberg-Marquardt routine
+#### Hessian least-squares Levenberg-Marquardt routine
 ################################################################################
 class G2NormException(Exception): pass
     
@@ -586,7 +586,7 @@ def getVCov(varyNames,varyList,covMatrix):
     return vcov
     
 ################################################################################
-##### Atom manipulations
+#### Atom manipulations
 ################################################################################
 
 def getAtomPtrs(data,draw=False):
@@ -1424,7 +1424,11 @@ def SetMolCent(model,RBData):
     cent = np.zeros(3)
     for i in centList:
         cent += Cart[i]
-    model['MolCent'][0] = cent/len(centList)    
+    model['MolCent'][0] = cent/len(centList) 
+    
+###############################################################################
+#### Various utilities
+###############################################################################
     
 def UpdateRBUIJ(Bmat,Cart,RBObj):
     '''default doc string
@@ -2387,7 +2391,7 @@ def BessIn(nmax,x):
         
     
 ################################################################################
-##### distance, angle, planes, torsion stuff 
+#### distance, angle, planes, torsion stuff 
 ################################################################################
 
 def CalcDist(distance_dict, distance_atoms, parmDict):
@@ -3245,7 +3249,7 @@ def ValEsd(value,esd=0,nTZ=False):
     return out
     
 ###############################################################################
-##### Protein validation - "ERRATV2" analysis
+#### Protein validation - "ERRATV2" analysis
 ###############################################################################
 
 def validProtein(Phase,old):
@@ -3428,7 +3432,7 @@ def validProtein(Phase,old):
     return resNames,chainProb,resIDs
     
 ################################################################################
-##### Texture fitting stuff
+#### Texture fitting stuff
 ################################################################################
 
 def FitTexture(General,Gangls,refData,keyList,pgbar):
@@ -3604,7 +3608,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     return None
     
 ################################################################################
-##### Fourier & charge flip stuff
+#### Fourier & charge flip stuff
 ################################################################################
 
 def adjHKLmax(SGData,Hmax):
@@ -4560,7 +4564,7 @@ def DoWilsonStat(refList,Super,normEle,Inst):
     return [np.mean(normE),np.mean(normE**2),np.mean(np.abs(-1.+normE**2))],[SQbins,np.log(E2bins),E2calc]
 
 ################################################################################
-##### single peak fitting profile fxn stuff
+#### single peak fitting profile fxn stuff
 ################################################################################
 
 def getCWsig(ins,pos):
@@ -4828,7 +4832,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     return XY
     
 ################################################################################
-##### MC/SA stuff
+#### MC/SA stuff
 ################################################################################
 
 #scipy/optimize/anneal.py code modified by R. Von Dreele 2013
@@ -5641,9 +5645,16 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     Result.append(varyList)
     return Result,tsum,nsum,rcov
 
+###############################################################################
+#### Cluster Analysis math
+###############################################################################
+import scipy.spatial.distance as SSD
+import scipy.cluster.hierarchy as SCH
+
+
         
 ################################################################################
-##### Quaternion stuff
+#### Quaternion stuff
 ################################################################################
 
 def prodQQ(QA,QB):

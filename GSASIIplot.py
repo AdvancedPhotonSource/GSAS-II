@@ -2472,10 +2472,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
     def onMovePeak(event):
         selectedPeaks = list(set([row for row,col in G2frame.phaseDisplay.GetSelectedCells()] +
-                                G2frame.phaseDisplay.GetSelectedRows()))
+            G2frame.phaseDisplay.GetSelectedRows()))
         if len(selectedPeaks) != 1:
             G2G.G2MessageBox(G2frame,'You must select one peak in the table first. # selected ='+
-                             str(len(selectedPeaks)),'Select one peak')
+                str(len(selectedPeaks)),'Select one peak')
             return
         G2frame.itemPicked = G2frame.Lines[selectedPeaks[0]+2] # 1st 2 lines are limits
         G2frame.G2plotNB.Parent.Raise()
@@ -2966,7 +2966,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         dlg.ShowModal()
         dlg.Destroy()
         applyLims(None) # apply limits
-        #GSASIIpath.IPyBreak()
         
     def onPlotFormat(event):
         '''Change the appearance of the current plot'''

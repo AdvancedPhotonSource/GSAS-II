@@ -6927,6 +6927,10 @@ def UpdateREFDModelsGrid(G2frame,data):
         def OnBackRef(event):
             data['FltBack'][1] = backref.GetValue()
             
+        def OnSliderMax(event):
+            data['slider max'] = float(slidermax.GetValue())
+            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
+            
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
@@ -6950,7 +6954,13 @@ def UpdateREFDModelsGrid(G2frame,data):
         backref = wx.CheckBox(G2frame.dataWindow,label=' Refine?  ')
         backref.SetValue(data['FltBack'][1])
         backref.Bind(wx.EVT_CHECKBOX, OnBackRef)
-        overall.Add(backref,0,WACV)        
+        overall.Add(backref,0,WACV)
+        overall.Add(wx.StaticText(G2frame.dataWindow,label=' Select slider range 0-'),0,WACV)
+        choice = ['1000','2000','5000','10000']
+        slidermax = wx.ComboBox(G2frame.dataWindow,value='%d'%data['slider max'],choices=choice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        slidermax.Bind(wx.EVT_COMBOBOX,OnSliderMax)
+        overall.Add(slidermax,0,WACV)
         return overall
         
     def LayerSizer():
@@ -6999,11 +7009,29 @@ def UpdateREFDModelsGrid(G2frame,data):
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
+            if tc and tc.GetId() in Indx:  #sets slider
+                Indx[tc.GetId()].SetValue(value)
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
-#            wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
+
+        def OnMoveParm(event):
+            Obj = event.GetEventObject()
+            ilay,parm,parmObj = Indx[Obj.GetId()]
+            move = Obj.GetValue()  # +1 or -1 
+            Obj.SetValue(0)
+            data['Layers'][ilay][parm][0] += move
+            parmObj.SetValue(data['Layers'][ilay][parm][0])
+            Recalculate(False,1.0,None)
+            
+        def OnParmSlider(event):
+            Obj = event.GetEventObject()
+            ilay,parmObj = Indx[Obj.GetId()]
+            value = Obj.GetValue()
+            data['Layers'][ilay]['Thick'][0] = value
+            parmObj.SetValue(data['Layers'][ilay]['Thick'][0])
+            Recalculate(False,1.0,None)
 
         Indx = {}                       
         layerSizer = wx.BoxSizer(wx.VERTICAL)
@@ -7088,16 +7116,33 @@ def UpdateREFDModelsGrid(G2frame,data):
                     parms= ['Rough','Thick']
                     if ilay == len(data['Layers'])-1:
                         parms = ['Rough',]
+                    if len(parms) > 1:
+                        slide = wx.BoxSizer(wx.HORIZONTAL)
+                        slide.Add(wx.StaticText(G2frame.dataWindow,label=' Layer thickness: '),0,WACV)
+                        parmSldr = wx.Slider(G2frame.dataWindow,minValue=0,maxValue=data['slider max'],value=data['Layers'][ilay]['Thick'][0])
+                        parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                        slide.Add(parmSldr,1,wx.EXPAND)
                     for parm in parms:
                         parmsline.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(names[parm])),0,WACV)
-                        parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay][parm],0,
-                            nDig=(10,2),OnLeave=Recalculate),0,WACV)
+                        parmval = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay][parm],0,nDig=(10,2),OnLeave=Recalculate)
+                        if parm =='Thick':
+                            Indx[parmval.GetId()] = parmSldr
+                        parmsline.Add(parmval,0,WACV)
+                        parmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(25,25))
+                        Indx[parmSpin.GetId()] = [ilay,parm,parmval]
+                        parmSpin.SetValue(0)
+                        parmSpin.SetRange(-1,1)
+                        parmSpin.Bind(wx.EVT_SPIN, OnMoveParm)
+                        parmsline.Add(parmSpin,0,WACV)
                         varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                         Indx[varBox.GetId()] = [ilay,parm]
                         varBox.SetValue(data['Layers'][ilay][parm][1])
                         varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
                         parmsline.Add(varBox,0,WACV)
                     layerSizer.Add(parmsline)
+                    if len(parms) > 1:
+                        Indx[parmSldr.GetId()] = [ilay,parmval] #parmval is always for Thick
+                        layerSizer.Add(slide,1,wx.EXPAND)
             if ilay < len(data['Layers'])-1:
                 newlayer = wx.BoxSizer(wx.HORIZONTAL)
                 insert = wx.Button(G2frame.dataWindow,label='Insert')
@@ -7164,6 +7209,9 @@ def UpdateREFDModelsGrid(G2frame,data):
     
     Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:3]
+    #patch
+    if 'slider max' not in data:
+        data['slider max'] = 2000.
     if 'ifDQ' not in ProfDict:
         ProfDict['ifDQ'] = np.any(Profile[5])
         data['dQ type'] = 'None'

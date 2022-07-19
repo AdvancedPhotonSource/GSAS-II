@@ -1561,4 +1561,70 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 ###############################################################################################################
 #UpdateClusterAnalysis: results
 ###############################################################################################################
+
+def UpdateClusterAnalysis(G2frame,data):
+    import scipy.spatial.distance as SSD
+    import scipy.cluster.hierarchy as SCH
     
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # Zsingle = SCH.single(data['ConDistMat'])
+    # SCH.dendrogram(Zsingle)
+    # plt.show()
+    # Zcomplete = SCH.complete(data['ConDistMat'])
+    # SCH.dendrogram(Zcomplete)
+    # plt.show()
+    
+    def OnLinkMethod(event):
+        data['LinkMethod'] = method.GetValue()
+        
+    def OnOptOrd(event):
+        data['Opt Order'] = not data['Opt Order']
+        
+    def OnCompute(event):
+        print('Do heirarchial clustering - TBD')
+    
+    Z = data['ConDistMat']
+    ZM = SSD.squareform(Z)
+    XY = np.mgrid[0:ZM.shape[0],0:ZM.shape[1]]
+   
+    G2plt.PlotXYZ(G2frame,XY,ZM,labelX='Data no.',labelY='Data No.',newPlot=False,Title=data['Method'],zrange=None,color=None,buttonHandler=None)
+
+    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5),0)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis tools: '),0,WACV)    
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)
+    mainSizer.Add((5,5),0)
+    hierSizer = wx.BoxSizer(wx.HORIZONTAL)
+    hierSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical clustering: Select linkage method: '),0,WACV)
+    choice = ['single','complete','average','weighted','centroid','median','ward',]
+    method = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    method.SetValue(data['LinkMethod'])
+    method.Bind(wx.EVT_COMBOBOX, OnLinkMethod)
+    hierSizer.Add(method,0,WACV)
+    optOrd = wx.CheckBox(G2frame.dataWindow,label=' Optimal order? ')
+    optOrd.Bind(wx.EVT_CHECKBOX,OnOptOrd)
+    optOrd.SetValue(data['Opt Order'])
+    hierSizer.Add(optOrd,0,WACV)
+    compute = wx.Button(G2frame.dataWindow,label='Compute')
+    compute.Bind(wx.EVT_BUTTON,OnCompute)
+    hierSizer.Add(compute,0,WACV)
+    mainSizer.Add(hierSizer)
+    
+    
+    
+    
+    bigSizer.Add(mainSizer)
+        
+    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Cluster Analysis'))
+    bigSizer.Layout()
+    bigSizer.FitInside(G2frame.dataWindow)
+    G2frame.dataWindow.SetSizer(bigSizer)
+    G2frame.dataWindow.SetDataSize()
+    G2frame.SendSizeEvent()
+
+

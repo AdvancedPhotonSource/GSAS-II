@@ -5728,18 +5728,17 @@ class GSASII(wx.Frame):
                 'Data for %s is mismatched in length to those already processed or has different step size'%name,
                 'No Cluster Analysis possible')
             return
-            
-        print(CAmatrix.shape)
-         
-        #fill cluster analysis data matrix here 
+        ClusterData['DataMatrix'] = CAmatrix
+        Ymat = SSD.pdist(CAmatrix,ClusterData['Method'])
         
         Id = GetGPXtreeItemId(self,self.root,'Cluster Analysis')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Cluster Analysis')
-            self.GPXtree.SetItemPyData(Id,{})   #what should go in here by default?           
-            
+        ClustDict = {'ConDistMat':Ymat}
+        ClustDict.update(ClusterData)
+        self.GPXtree.SetItemPyData(Id,ClustDict)   #what should go in here by default?                   
 
-        
+        self.GPXtree.SelectItem(Id)
     
     def reloadFromGPX(self,rtext=None):
         '''Deletes current data tree & reloads it from GPX file (after a 
@@ -7147,7 +7146,8 @@ def UpdateControls(G2frame,data):
     if 'newLeBail' not in data:
         data['newLeBail'] = False
     if 'Cluster Data' not in data:
-        data['Cluster Data'] = {'Files':[],'DataMatrix':None,'Method':'euclidean','Limits':[]}
+        data['Cluster Data'] = {'Files':[],'Method':'euclidean','Limits':[],'DataMatrix':None,'LinkMethod':'single',
+            'Opt Order':False}
     
     #end patch
 
@@ -7278,11 +7278,11 @@ def UpdateControls(G2frame,data):
                     names.append(choices[sel])
                 ClusData['Files'] = names 
                 limits = GetCaLimits(names)
-                ClusData['Limits'] = [limits,limits]
+                ClusData['Limits'] = [copy.copy(limits),limits]
+                ClusData['DataMatrix'] = None
                 
             dlg.Destroy()
             G2frame.SetTitleByGPX()
-
             
             wx.CallAfter(UpdateControls,G2frame,data)
             
@@ -7298,10 +7298,27 @@ def UpdateControls(G2frame,data):
             ClusData['Method'] = method.GetValue()
             ClusData['DataMatrix'] = None
             
+        def GetYMatSize():
+            nData = 0
+            for name in ClusData['Files']:
+                item = GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if 'PWDR' in name:
+                    x = G2frame.GPXtree.GetItemPyData(item)[1][0]
+                else:
+                    PDFControls = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+                    x = PDFControls['G(R)'][1][0]
+                iBeg = np.searchsorted(x,ClusData['Limits'][1][0])
+                iFin = np.searchsorted(x,ClusData['Limits'][1][1])+1
+                nData += (iFin-iBeg)
+            return nData
+            
         def CheckLimits(invalid,value,tc):
+            #TODO this needs a check on ultimate size of data array; loop over names & count points?
+
             if ClusData['Limits'][1][1] < ClusData['Limits'][1][0]:
                 ClusData['Limits'][1] = [ClusData['Limits'][1][1],ClusData['Limits'][1][0]]
-                wx.CallAfter(UpdateControls,G2frame,data)
+            wx.CallAfter(UpdateControls,G2frame,data)
+            
                 
         clusSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -7319,10 +7336,9 @@ def UpdateControls(G2frame,data):
         dataSizer.Add(selSeqData,0,WACV)
         clusSizer.Add(dataSizer)
         if len(ClusData['Files']):
+            print(' Cluster analysis data array size: %d'%GetYMatSize())
             choice = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine',  \
-                'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon', 'kulsinski',    \
-                'kulczynski1', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',    \
-                'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
+                'euclidean', 'jensenshannon', 'minkowski', 'seuclidean',  'sqeuclidean']
             methsizer = wx.BoxSizer(wx.HORIZONTAL)
             methsizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster analysis data method: '),0,WACV)
             method = wx.ComboBox(parent=G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -7337,7 +7353,7 @@ def UpdateControls(G2frame,data):
             limitSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,ClusData['Limits'][1],1,nDig=(10,3),
                 xmin=ClusData['Limits'][0][0],xmax=ClusData['Limits'][0][1],OnLeave=CheckLimits),0,WACV)
             clusSizer.Add(limitSizer)
-            clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='(Examine any %s plot for reasonable limits) '%Type),0,WACV)
+            clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='(Examine any %s plot for reasonable limits; any change will clear Cluster data matrix) '%Type),0,WACV)
         return clusSizer
         
     def LSSizer():        
@@ -8210,8 +8226,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.dataWindow.GetSizer().Add(
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
-            G2frame.dataWindow.GetSizer().Add(
-                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Cluster Analysis Results:'))
+            data = G2frame.GPXtree.GetItemPyData(item)
+            G2seq.UpdateClusterAnalysis(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Restraints':
             data = G2frame.GPXtree.GetItemPyData(item)
 #patch - put phases in restraint tree

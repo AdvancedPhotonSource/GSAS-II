@@ -4705,6 +4705,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #     file:///Users/toby/G2/trunk/help/gsasII-phase.html#Phase-RMC
 #     file:///Users/toby/G2/trunk/help/gsasII.html#fullrmc
 #     sources/packages.rst.txt
+# add files from https://drive.google.com/drive/folders/10hxmQviKoMaW9R4MxsaiDyPSretxr_P7 into binaries?
 #  3) when GSASIIpwd.findfullrmc fails, should trigger message with link to above
 #  4) fullrmc tutorials
 #  5) G2pwd.findfullrmc: look at error msg & help link
@@ -4781,7 +4782,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 atmChoice.Add(wx.StaticText(pnl,label='Isotope: '),0,WACV)
                 for iType in range(nTypes):
                     atId = RMCPdict['atSeq'][iType]
-                    atmChoice.Add(wx.StaticText(pnl,label=RMCPdict['Isotope'][atId]),0,WACV)
+                    try:
+                        lbl = RMCPdict['Isotope'][atId]
+                    except:
+                        lbl = '?'
+                    atmChoice.Add(wx.StaticText(pnl,label=lbl),0,WACV)
             return atmChoice
         
         def GetSwapSizer(RMCPdict):
@@ -6288,10 +6293,45 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
         if G2frame.RMCchoice == 'fullrmc':
+            RMCPdict = data['RMC']['fullrmc']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
-            RMCPdict = data['RMC']['fullrmc']
+            #--------- debug stuff 
+            # import imp
+            # imp.reload(G2pwd)
+            # grpDict = [[0] for i in data['Atoms']] # debug: all atoms in 1st group
+            # atomlist,coordlist = G2pwd.MakefullrmcSupercell(data,RMCPdict,grpDict)
+            # fil = os.path.join(os.path.split(G2frame.GSASprojectfile)[0],
+            #                        'testatoms.py')
+            # fp = open(fil,'w')
+            # fp.write('atomlist = [  # [element, label, grouplist]\n')
+            # for i in atomlist:
+            #     fp.write('  '+str(i)+',\n')
+            # fp.write(' ] # atomlist\n\n')
+            # fp.write('coordlist = [     # (sym#, cell#, atom#, [ortho coords],)\n')
+            # for i in coordlist:
+            #     fp.write('  '+str(i)+',\n')
+            # fp.write(' ] # coordlist\n')
+            # fp.write('cell = ' + str(data['General']['Cell'][1:7]) + '\n')
+            # fp.write('supercell = ' + str(RMCPdict['SuperCell']) + '\n')
+            # # compute bounding box coordinates
+            # bbox = []
+            # A,B = G2lat.cell2AB(data['General']['Cell'][1:7])
+            # for i in range(3):
+            #     for val in int(0.5-RMCPdict['SuperCell'][i]/2),int(1+RMCPdict['SuperCell'][0]/2):
+            #         fpos = [0,0,0]
+            #         fpos[i] = val
+            #         bbox.append(np.inner(A,fpos))
+            # fp.write('bboxlist = [     # orthogonal coordinate for supercell corners\n')
+            # for i in bbox:
+            #     fp.write('  '+str(list(i))+',\n')
+            # fp.write(' ] # bboxlist\n\n')
+            # fp.close()
+            # print('file',fil,'written with',len(coordlist),'atoms')
+            # #breakpoint()
+            # return
+            #--------- debug stuff 
             if RMCPdict['Swaps']:
                 wx.MessageDialog(G2frame, G2G.StripIndents(
                         '''GSAS-II does not yet fully support use of swapping in fullrmc. 

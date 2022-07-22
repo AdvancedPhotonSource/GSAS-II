@@ -3583,7 +3583,44 @@ def UpdatePDFfit(Phase,RMCPdict):
     else:   #sequential
         newParms = dict([[item[0][1:-1],[float(item[1]),float(item[2])]] for item in results])  #{'n':[val,esd],...}
         return newParms,Rwp
-        
+
+def MakefullrmcSupercell(Phase,RMCPdict,grpDict=[]):
+    '''Create a fullrmc supercell from GSAS-II
+
+    :param dict Phase: phase information from data tree
+    :param dict RMCPdict: fullrmc parameters from GUI
+    :param list grpDict: a list of lists where the inner list 
+      contains the atom numbers contained in each group. e.g. 
+      [[0,1,2,3,4],[5,6],[4,6]] creates three groups with 
+      atoms 0-4 in the first
+      atoms 5 & 6 in the second and
+      atoms 4 & 6 in the third. Note that it is fine that 
+      atom 4 appears in two groups. 
+    '''
+    #for i in (0,1): grpDict[i].append(1)    # debug: 1st & 2nd atoms in 2nd group
+    cell = Phase['General']['Cell'][1:7]
+    A,B = G2lat.cell2AB(cell)
+    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    SGData = Phase['General']['SGData']
+    atomlist = []
+    for i,atom in enumerate(Phase['Atoms']):
+        el = ''.join([i for i in atom[ct] if i.isalpha()])
+        atomlist.append([el, atom[ct-1], grpDict[i]])
+    # create a list of coordinates with symmetry & unit cell translation duplicates
+    coordlist = []
+    cellnum = -1
+    for a in range(int(0.5-RMCPdict['SuperCell'][0]/2),int(1+RMCPdict['SuperCell'][0]/2)):
+        for b in range(int(0.5-RMCPdict['SuperCell'][1]/2),int(1+RMCPdict['SuperCell'][1]/2)):
+            for c in range(int(0.5-RMCPdict['SuperCell'][2]/2),int(1+RMCPdict['SuperCell'][2]/2)):
+                cellnum += 1
+                for i,atom in enumerate(Phase['Atoms']):
+                    for item in G2spc.GenAtom(atom[cx:cx+3],SGData,Move=False):
+#                        if i == 0: print(item[0]+[a,b,c])
+                        xyzOrth = np.inner(A,item[0]+[a,b,c])
+                        #coordlist.append((i,list(xyzOrth),cellnum,list(item[0]+[a,b,c])))
+                        coordlist.append((item[1],cellnum,i,list(xyzOrth)))
+    return atomlist,coordlist
+
 def MakefullrmcRun(pName,Phase,RMCPdict):
     '''Creates a script to run fullrmc. Returns the name of the file that was 
     created. 

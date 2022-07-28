@@ -6456,7 +6456,7 @@ class RefinementProgress(wx.ProgressDialog):
         wx.GetApp().Yield()
         #print('wx Yield called')
         #print('Update:',value,newmsg)
-        return super(self.__class__,self).Update(value, newmsg)
+        return super(self.__class__,self).Update(int(value), newmsg)
         
 ################################################################################
 fmtRw = lambda value: '{:.2f}'.format(float(value))

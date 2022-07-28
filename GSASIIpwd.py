@@ -3178,12 +3178,47 @@ def findfullrmc():
             lookfor = "fullrmc5*.exe"
         else:
             lookfor = "fullrmc5*64bit"
-        fl = glob.glob(lookfor)
+        fl = glob.glob(os.path.join(p,lookfor))
         if len(fl) > 0:
             fullrmc_exe = os.path.abspath(sorted(fl)[0])
             if GSASIIpath.GetConfigValue('debug'):
                 print('fullrmc found as',fullrmc_exe)
             return fullrmc_exe
+
+def fullrmcDownload():
+    '''Downloads the fullrmc executable from Bachir's site to the current 
+    GSAS-II binary directory. 
+
+    Does some error checking. 
+    '''
+    import os
+    import requests
+    import platform
+    if platform.architecture()[0] != '64bit':
+        return "fullrmc is only available for 64 bit machines. This is 32 bit"
+    setXbit = True
+    if sys.platform == "darwin":
+        URL = "https://github.com/bachiraoun/fullrmc/raw/master/standalones/fullrmc500_3p8p6_macOS-10p16-x86_64-i386-64bit"
+    elif sys.platform == "win32":
+        setXbit = False
+        URL = "https://github.com/bachiraoun/fullrmc/raw/master/standalones/fullrmc500_3p8p10_Windows-10-10p0p19041-SP0.exe"
+    else:
+        if 'aarch' in platform.machine() or 'arm' in platform.machine():
+            return "Sorry, fullrmc is only available for Intel-compatible machines."
+        URL = "https://github.com/bachiraoun/fullrmc/raw/master/standalones/fullrmc500_3p8p5_Linux-4p19p121-linuxkit-x86_64-with-glibc2p29"
+    
+    GSASIIpath.SetBinaryPath()
+    fil = os.path.join(GSASIIpath.binaryPath,os.path.split(URL)[1])
+    print('Starting installation of fullrmc\nDownloading from',
+              'https://github.com/bachiraoun/fullrmc/tree/master/standalones',
+              '\nCreating '+fil,
+              '\nThis may take a while...')
+    open(fil, "wb").write(requests.get(URL).content)
+    print('...Download completed')
+    if setXbit: 
+        import stat
+        os.chmod(fil, os.stat(fil).st_mode | stat.S_IEXEC)
+    return ''
 
 def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
@@ -3585,7 +3620,7 @@ def UpdatePDFfit(Phase,RMCPdict):
         newParms = dict([[item[0][1:-1],[float(item[1]),float(item[2])]] for item in results])  #{'n':[val,esd],...}
         return newParms,Rwp
 
-def MakefullrmcSupercell(Phase,RMCPdict,grpDict=[]):
+def MakefullrmcSupercell(Phase,RMCPdict):
     '''Create a fullrmc supercell from GSAS-II
 
     :param dict Phase: phase information from data tree
@@ -3606,7 +3641,8 @@ def MakefullrmcSupercell(Phase,RMCPdict,grpDict=[]):
     atomlist = []
     for i,atom in enumerate(Phase['Atoms']):
         el = ''.join([i for i in atom[ct] if i.isalpha()])
-        atomlist.append([el, atom[ct-1], grpDict[i]])
+        grps = [j for j,g in enumerate(RMCPdict.get('Groups',[])) if i in g]
+        atomlist.append((el, atom[ct-1], grps))
     # create a list of coordinates with symmetry & unit cell translation duplicates
     coordlist = []
     cellnum = -1
@@ -3659,9 +3695,12 @@ import os,glob
 import time
 import pickle
 import types
+import copy
 import numpy as np
 import matplotlib as mpl
 import fullrmc
+from pdbparser import pdbparser
+from pdbparser.Utilities.Database import __ATOM__
 from fullrmc.Core import Collection
 from fullrmc.Engine import Engine
 import fullrmc.Constraints.PairDistributionConstraints as fPDF
@@ -3673,6 +3712,10 @@ from fullrmc.Constraints.BondConstraints import BondConstraint
 from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
 from fullrmc.Constraints.DihedralAngleConstraints import DihedralAngleConstraint
 from fullrmc.Generators.Swaps import SwapPositionsGenerator
+from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
+from fullrmc.Generators.Translations import TranslationGenerator
+from fullrmc.Generators.Rotations import RotationGenerator
+
 # utility routines
 def writeHeader(ENGINE,statFP):
     'header for stats file'
@@ -3715,6 +3758,47 @@ def calcRmax(ENGINE):
     ts = np.linalg.norm(np.cross(a,c))/2
     lens.extend( [ts/np.linalg.norm(a), ts/np.linalg.norm(c)] )
     return min(lens)
+
+def makepdb(atoms, coords, bbox=None):
+    'creates a supercell directly from atom info'
+    # used when ENGINE.build_crystal_set_pdb is not called
+    prevcell = None
+    rec = copy.copy(__ATOM__)
+    rec['residue_name'] = 'MOL'
+    records = []
+    seqNum  = 0
+    segId   = '0'
+    groups = {}
+    for symcell in set([(sym,cell) for sym,cell,atm,xyz in coords]):
+        seqNum += 1
+        if seqNum == 9999:
+            seqNum = 1
+            segId  = str(int(segId) + 1)
+        for i,(sym,cell,atm,(x,y,z)) in enumerate(coords):
+            if (sym,cell) != symcell: continue
+            rec   = copy.copy(rec)
+            for grp in atoms[atm][2]:
+                if (sym,cell) not in groups:
+                    groups[(sym,cell)] = {}
+                if grp not in groups[(sym,cell)]:
+                    groups[(sym,cell)][grp] = [len(records)]
+                else:
+                    groups[(sym,cell)][grp].append(len(records))
+            rec['coordinates_x']      = x
+            rec['coordinates_y']      = y
+            rec['coordinates_z']      = z
+            rec['element_symbol']     = atoms[atm][0]
+            rec['atom_name']          = atoms[atm][1]
+            rec['sequence_number']    = seqNum
+            rec['segment_identifier'] = segId
+            records.append(rec)
+    # create pdb
+    pdb = pdbparser()
+    pdb.records = records
+    if groups:
+        return pdb,[groups[j][i] for j in groups for i in groups[j]]
+    else:
+        return pdb,[]
 '''
     rundata += '''
 ### When True, erases an existing engine to provide a fresh start
@@ -3727,34 +3811,86 @@ time0 = time.time()
     
     rundata += '# setup structure\n'
     rundata += 'cell = ' + str(cell) + '\n'
-    rundata += "SymOpList = "+str([i.lower() for i in SymOpList]) + '\n'
-    rundata += 'atomList = ' + str(atomsList).replace('],','],\n  ') + '\n'
     rundata += 'supercell = ' + str(RMCPdict['SuperCell']) + '\n'
+    rundata += '\n# define structure info\n'
+    if RMCPdict.get('Groups',[]):
+        # compute bounding box coordinates
+        bbox = []
+        A,B = G2lat.cell2AB(cell)
+        for i in range(3):
+            for val in int(0.5-RMCPdict['SuperCell'][i]/2),int(1+RMCPdict['SuperCell'][0]/2):
+                fpos = [0,0,0]
+                fpos[i] = val
+                bbox.append(np.inner(A,fpos))
+        rundata += 'bboxlist = [     # orthogonal coordinate for supercell corners\n'
+        for i in bbox:
+            rundata += '  '+str(list(i))+',\n'
+        rundata += ' ] # bboxlist\n\n'
+        atomlist,coordlist = MakefullrmcSupercell(Phase,RMCPdict)
+        rundata += 'atomlist = [  # [element, label, grouplist]\n'
+        for i in atomlist:
+            rundata += '  '+str(i)+',\n'
+        rundata += ' ] # atomlist\n\n'
+        rundata += 'coordlist = [     # (sym#, cell#, atom#, [ortho coords],)\n'
+        for i in coordlist:
+            rundata += '  '+str(i)+',\n'
+        rundata += ' ] # coordlist\n'
+    else:
+        rundata += "SymOpList = "+str([i.lower() for i in SymOpList]) + '\n'
+        rundata += 'atomList = ' + str(atomsList).replace('],','],\n  ') + '\n'
 
     rundata += '\n# initialize engine\n'
     rundata += '''
 engineFileName = os.path.join(dirName, project + '.rmc')
 projectStats = os.path.join(dirName, project + '.stats')
 projectPlots = os.path.join(dirName, project + '.plots')
+projectXYZ = os.path.join(dirName, project + '.atoms')
 pdbFile = os.path.join(dirName, project + '_restart.pdb')
-# check Engine exists if so (and not FRESH_START) load it
-# otherwise build it 
+# check Engine exists if so (and not FRESH_START) load it otherwise build it 
 ENGINE = Engine(path=None)
 if not ENGINE.is_engine(engineFileName) or FRESH_START:
-    ## create structure
     ENGINE = Engine(path=engineFileName, freshStart=True)
+'''
+    if RMCPdict.get('Groups',[]):
+        rundata += '''
+    # create structure from GSAS-II constructed supercell
+    bbox = (np.array(bboxlist[1::2])-np.array(bboxlist[0::2])).flatten()
+    pdb,grouplist = makepdb(atomlist,coordlist,bbox)
+    ENGINE.set_pdb(pdb)
+    ENGINE.set_boundary_conditions(bbox)
+    if grouplist: ENGINE.set_groups(grouplist)
+'''
+        if RMCPdict.get('GroupMode',0) == 0:   # 'Rotate & Translate'
+            rundata += '''
+    for g in ENGINE.groups:
+        TMG = TranslationGenerator(amplitude=0.2) # create translation generator
+        if len(g) > 1:  # create rotation generator for groups with more than 1 atom
+            RMG = RotationGenerator(amplitude=2)
+            MG  = MoveGeneratorCollector(collection=[TMG,RMG],randomize=True)
+        else:
+            MG  = MoveGeneratorCollector(collection=[TMG],randomize=True)
+        g.set_move_generator( MG )
+'''
+        elif RMCPdict.get('GroupMode',0) == 1: # 'Rotate only'
+            rundata += '''
+    for g in ENGINE.groups:
+        if len(g) > 1:  # create rotation generator for groups with more than 1 atom
+            RMG = RotationGenerator(amplitude=2)
+            g.set_move_generator( RMG )
+'''
+        else:                                  # 'Translate only'
+            rundata += '        # translate only set by default'
+    else:
+        rundata += '''
+    # create structure, let fullrmc construct supercell
     ENGINE.build_crystal_set_pdb(symOps     = SymOpList,
                                  atoms      = atomList,
                                  unitcellBC = cell,
                                  supercell  = supercell)
+    ENGINE.set_groups_as_atoms()
 '''    
-    import atmdata
-    # rundata += '    # conversion factors (may be needed)\n'
-    # rundata += '    sumCiBi2 = 0.\n'
-    # for elem in Phase['General']['AtomTypes']:
-    #     rundata += '    Ci = ENGINE.numberOfAtomsPerElement["{}"]/len(ENGINE.allElements)\n'.format(elem)
-    #     rundata += '    sumCiBi2 += (Ci*{})**2\n'.format(atmdata.AtmBlens[elem+'_']['SL'][0])
     rundata += '    rho0 = len(ENGINE.allNames)/ENGINE.volume\n'
+    rundata += '\n    # "Constraints" (includes experimental data) setup\n'
     # settings that require a new Engine
     for File in Files:
         filDat = RMCPdict['files'][File]
@@ -3801,7 +3937,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         else:
             print('What is this?')
     minDists = ''
-    if BondList:
+    if BondList and RMCPdict.get('useBondConstraints',True):
         rundata += '''    B_CONSTRAINT   = BondConstraint()
     ENGINE.add_constraints(B_CONSTRAINT)
     B_CONSTRAINT.create_supercell_bonds(bondsDefinition=[
@@ -3863,7 +3999,7 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
             return result
         c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
 '''
-    rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
+#    rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
     # rundata += 'wtDict = {}\n'
     # for File in Files:
     #     filDat = RMCPdict['files'][File]
@@ -3877,6 +4013,7 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
     #     elif '(Q)' in File:
     #         typ = 'Struct'
     #     rundata += 'wtDict["{}-{}"] = {}\n'.format(typ,sfwt,filDat[1])
+    rundata += '\n# set PDF fitting range\n'
     rundata += 'for c in ENGINE.constraints:  # loop over predefined constraints\n'
     rundata += '    if type(c) is fPDF.PairDistributionConstraint:\n'
     # rundata += '        c.set_variance_squared(1./wtDict["Pair-"+c.weighting])\n'
@@ -3911,14 +4048,24 @@ else:
 '''
     rundata += 'steps = {}\n'.format(RMCPdict['Steps/cycle'])
     rundata += 'for _ in range({}):\n'.format(RMCPdict['Cycles'])
-    rundata += '    ENGINE.set_groups_as_atoms()\n'
     rundata += '    expected = ENGINE.generated+steps\n'
     
     rundata += '    ENGINE.run(restartPdb=pdbFile,numberOfSteps=steps, saveFrequency=steps)\n'
     rundata += '    writeCurrentStatus(ENGINE,statFP,projectPlots)\n'
-    rundata += '    if ENGINE.generated != expected: break # run was stopped\n'
-    rundata += 'statFP.close()\n'
-    rundata += 'print("ENGINE run time %.2f s"%(time.time()-time0))\n'
+    rundata += '    if ENGINE.generated != expected: break # run was stopped'
+    rundata += '''
+statFP.close()
+fp = open(projectXYZ,'w')  # save final atom positions
+fp.write('cell: {} {} {} {} {} {}\\n')
+fp.write('supercell: {} {} {}\\n')
+'''.format(*cell,*RMCPdict['SuperCell'])
+    rundata += '''# loop over atoms
+for n,e,(x,y,z) in zip(ENGINE.allNames,
+                       ENGINE.allElements,ENGINE.realCoordinates):
+    fp.write('{} {} {:.5f} {:.5f} {:.5f}\\n'.format(n,e,x,y,z))
+fp.close()
+print("ENGINE run time %.2f s"%(time.time()-time0))
+'''
     rfile = open(scrname,'w')
     rfile.writelines(rundata)
     rfile.close()

@@ -6381,7 +6381,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PWDR & SASD
         G2G.Define_wxId('wxID_PWDANALYSIS','wxID_PWDCOPY','wxID_PLOTCTRLCOPY','wxID_MERGEHKL',
-            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT','wxID_1DHKLSTICKPLOT','wxID_CSVFROMTABLE')            
+            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT','wxID_1DHKLSTICKPLOT')            
         self.PWDRMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PWDRMenu)
         self.ErrorAnal = wx.Menu(title='')
@@ -6878,7 +6878,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
-        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC','wxID_STOPRMC', )       
+        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC','wxID_STOPRMC',
+                            'wxID_ATOMSRMC', 'wxID_SUPERRMC')       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6886,8 +6887,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.FRMCMenu.Append(menu=self.FRMCDataEdit, title='Operations')
         self.FRMCDataEdit.Append(G2G.wxID_SETUPRMC,'Setup RMC','Setup new fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
-        self.FRMCDataEdit.Append(G2G.wxID_STOPRMC,'Stop run','Stop fullrmc run')
+        #self.FRMCDataEdit.Append(G2G.wxID_STOPRMC,'Stop run','Stop fullrmc run')
         self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'Plot','View fullrmc or RMCprofile results')
+        self.FRMCDataEdit.Append(G2G.wxID_SUPERRMC,'Load Supercell','Load fullrmc results as a supercell')
+        self.FRMCDataEdit.Append(G2G.wxID_ATOMSRMC,'Superimpose into cell','Load fullrmc results folded into original cell')
         self.PostfillDataMenu()
         
         # Phase/ ISODISTORT tab

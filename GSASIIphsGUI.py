@@ -4701,16 +4701,9 @@ def UpdatePhaseData(G2frame,Item,data):
 #### RMC Data page ################################################################################
 # fullrmc stuff TODO:
 #  1) need to implement swapping in scripts
-#  2) fullrmc docs/installation in files
-#     file:///Users/toby/G2/trunk/help/gsasII-phase.html#Phase-RMC
-#     file:///Users/toby/G2/trunk/help/gsasII.html#fullrmc
-#     sources/packages.rst.txt
-# add files from https://drive.google.com/drive/folders/10hxmQviKoMaW9R4MxsaiDyPSretxr_P7 into binaries?
-#  3) when GSASIIpwd.findfullrmc fails, should trigger message with link to above
-#  4) fullrmc tutorials
-#  5) G2pwd.findfullrmc: look at error msg & help link
+#  2) fullrmc tutorials
 
-    def UpdateRMC():
+    def UpdateRMC(event=None):
         ''' Present the controls for running fullrmc, RMCProfile or PDFfit
         '''
         global runFile
@@ -5253,6 +5246,8 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ATOMSRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SUPERRMC,True)
             #mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc big box starting pdb file preparation:'),0)
 
             # initialize fullrmc dictionary if needed
@@ -5498,17 +5493,27 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='Geometry constraints && restraints'),0)
             distBox = wx.BoxSizer(wx.HORIZONTAL)
-            distBox.Add(wx.StaticText(G2frame.FRMC,label=' Distance constraints, weight: :'),0,WACV)        
-            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
+            distBox.Add(wx.StaticText(G2frame.FRMC,label='Distance constraints'),0,WACV)
+            # weights removed for now
+            #distBox.Add(wx.StaticText(G2frame.FRMC,label=', distance weight:'),0,WACV)        
+            #distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Bond Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             distBox.Add(wx.StaticText(G2frame.FRMC,label=' min contact dist: '),0,WACV)
-            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',xmin=0.,xmax=4.,size=(50,25)),0,WACV)            
+            distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'min Contact',xmin=0.,xmax=4.,size=(50,25)),0,WACV)
+            
+            RMCPdict['useBondConstraints'] = RMCPdict.get('useBondConstraints',True)
+            distBox.Add(wx.StaticText(G2frame.FRMC,label='  Use bond constraints? '),0,WACV)
+            distBox.Add(G2G.G2CheckBox(G2frame.FRMC,'',RMCPdict,'useBondConstraints',OnChange=UpdateRMC),
+                            0,WACV)
             mainSizer.Add(distBox,0)
-            mainSizer.Add(GetPairSizer(G2frame.FRMC,RMCPdict),0)
-
-            mainSizer.Add((-1,10))
+            
+            if RMCPdict['useBondConstraints']:
+                mainSizer.Add(GetPairSizer(G2frame.FRMC,RMCPdict),0)
+                mainSizer.Add((-1,10))
             angBox = wx.BoxSizer(wx.HORIZONTAL)
-            angBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle restraints, weight: '),0,WACV)
-            angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
+            angBox.Add(wx.StaticText(G2frame.FRMC,label='A-B-C angle restraints'),0,WACV)
+            # weights removed for now
+            #angBox.Add(wx.StaticText(G2frame.FRMC,label=', angle weight:'),0,WACV)        
+            #angBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict,'Angle Weight',xmin=0.,xmax=100.,size=(50,25)),0,WACV)
             angBox.Add((20,-1))
             angAdd = wx.Button(G2frame.FRMC,label='Add',style=wx.BU_EXACTFIT)
             angAdd.Bind(wx.EVT_BUTTON,OnAddAngle)
@@ -5516,6 +5521,69 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
             mainSizer.Add(angBox,0)
             if len(RMCPdict['Angles']):
                 mainSizer.Add(GetAngleSizer(),0)
+            RMCPdict['Groups'] = RMCPdict.get('Groups',[])
+            def OnAddGroup(event):
+                index = len(RMCPdict['Groups'])
+                RMCPdict['Groups'].append([])
+                GroupEditor(index)
+            def OnDelGroup(event):
+                index = event.EventObject.index
+                del RMCPdict['Groups'][index]
+                wx.CallAfter(UpdateRMC)
+            def OnEdtGroup(event):
+                index = event.EventObject.index
+                GroupEditor(index)
+            def GroupEditor(index):
+                cx,ct,cs,cia = data['General']['AtomPtrs']
+                atomlbs = [a[ct-1] for a in data['Atoms']]
+                dlg = G2G.G2MultiChoiceDialog(G2frame.FRMC,'Atom Selector',
+                            'Select atoms to include in group',atomlbs,selected=RMCPdict['Groups'][index])
+                if dlg.ShowModal() == wx.ID_OK:
+                    RMCPdict['Groups'][index] = dlg.GetSelections()
+                dlg.Destroy()
+                #breakpoint()
+                if len(RMCPdict['Groups'][index]) == 0:
+                    del RMCPdict['Groups'][index]
+                wx.CallAfter(UpdateRMC)
+            if len(RMCPdict['Groups']) == 0:
+                grpAdd = wx.Button(G2frame.FRMC,label='Define atom group',style=wx.BU_EXACTFIT)
+                grpAdd.Bind(wx.EVT_BUTTON,OnAddGroup)
+                mainSizer.Add(grpAdd,0)
+            else:
+                grpBox = wx.BoxSizer(wx.HORIZONTAL)
+                grpBox.Add(wx.StaticText(G2frame.FRMC,label='Atom Groups:  '),0,WACV)        
+                grpAdd = wx.Button(G2frame.FRMC,label='Add group',style=wx.BU_EXACTFIT)
+                grpAdd.Bind(wx.EVT_BUTTON,OnAddGroup)
+                RMCPdict['GroupMode'] = RMCPdict.get('GroupMode',0)
+                grpBox.Add(grpAdd,0,WACV)
+                grpBox.Add(wx.StaticText(G2frame.FRMC,
+                            label='  Group refinement mode: '),0,WACV)        
+                grpBox.Add(G2G.EnumSelector(G2frame.FRMC,RMCPdict,'GroupMode',
+                        ('Rotate & Translate','Rotate only','Translate only'),
+                        [0,1,2]),0,WACV)
+                mainSizer.Add(grpBox,0)
+                for i,g in enumerate(RMCPdict['Groups']):
+                    grpBox = wx.BoxSizer(wx.HORIZONTAL)
+                    grpBox.Add((20,-1))
+                    grpBox.Add(wx.StaticText(G2frame.FRMC,label='Group #'+str(i+1)),0,WACV)        
+                    grpBox.Add((4,-1))
+                    grpdel = wx.Button(G2frame.FRMC,label='Del',style=wx.BU_EXACTFIT)
+                    grpdel.Bind(wx.EVT_BUTTON,OnDelGroup)
+                    grpdel.index = i
+                    grpBox.Add(grpdel,0,WACV)
+                    grpadd = wx.Button(G2frame.FRMC,label='Edit',style=wx.BU_EXACTFIT)
+                    grpadd.Bind(wx.EVT_BUTTON,OnEdtGroup)
+                    grpadd.index = i
+                    grpBox.Add(grpadd,0,WACV)
+                    msg = ' Contains atoms: '
+                    for i,n in enumerate(g):
+                        if i+1 == len(g):
+                            msg += ' && '
+                        elif i > 0:
+                            msg += ', '
+                        msg += str(i)
+                    grpBox.Add(wx.StaticText(G2frame.FRMC,label=msg),0,WACV)        
+                    mainSizer.Add(grpBox,0)
 
             # Torsions are difficult to implement. Need to be internal to a unit cell & named with fullrmc
             # atom labels. Leave this out, at least for now. 
@@ -6225,16 +6293,20 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             
 ####start of UpdateRMC            
         G2frame.GetStatusBar().SetStatusText('',1)
+        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ATOMSRMC,False)
+        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SUPERRMC,False)
         if G2frame.RMCchoice == 'RMCProfile':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
         elif G2frame.RMCchoice == 'fullrmc':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            #G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_STOPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_ATOMSRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SUPERRMC,True)
         try:
             if G2frame.FRMC.GetSizer():
                 G2frame.FRMC.GetSizer().Clear(True)
@@ -6247,15 +6319,19 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             return mainSizer            
         runFile = ' '
         choice = ['RMCProfile','fullrmc','PDFfit']
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
         RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
-        mainSizer.Add(RMCsel,0)
+        topSizer.Add(RMCsel,0)
+        topSizer.Add((20,0))
+        txt = wx.StaticText(G2frame.FRMC,
+            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
+        txt.Wrap(400)
+        topSizer.Add(txt,0)
+        mainSizer.Add(topSizer,0)
         RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
         mainSizer.Add(RMCmisc['RMCnote'])
-        G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-        mainSizer.Add(wx.StaticText(G2frame.FRMC,
-            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step \n above to apply them before doing Operations/Execute'),0)
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
@@ -6274,18 +6350,22 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         if G2frame.RMCchoice == 'PDFfit' and not checkPDFfit(G2frame):
             RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
         elif G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
-            dlg = wx.MessageDialog(G2frame,
-                    'The fullrmc code is not installed or could not be'
-                    ' located. Do you want help information on fullrmc?',
-                    'Install info',
-                    wx.YES|wx.NO)
+            msg = ('The fullrmc Python image is not found.'+
+                    ' Do you want it installed for you from '+
+        'https://github.com/bachiraoun/fullrmc/tree/master/standalones?'+
+                    '\n\n40-50 Mb (download times vary)')
+            dlg = wx.MessageDialog(G2frame,msg,'Install fullrmc',wx.YES|wx.NO)
             try:
                 dlg.CenterOnParent()
                 result = dlg.ShowModal()
             finally:
                 dlg.Destroy()
             if result == wx.ID_YES:
-                G2G.ShowHelp('fullrmc',G2frame)
+                wx.BeginBusyCursor()
+                res = G2pwd.fullrmcDownload()
+                wx.EndBusyCursor()
+            else:
+                RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
             return mainSizer
         
     def OnSetupRMC(event):
@@ -6297,52 +6377,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
             pName = pName.replace(' ','_')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
-            #--------- debug stuff 
-            # import imp
-            # imp.reload(G2pwd)
-            # grpDict = [[0] for i in data['Atoms']] # debug: all atoms in 1st group
-            # atomlist,coordlist = G2pwd.MakefullrmcSupercell(data,RMCPdict,grpDict)
-            # fil = os.path.join(os.path.split(G2frame.GSASprojectfile)[0],
-            #                        'testatoms.py')
-            # fp = open(fil,'w')
-            # fp.write('atomlist = [  # [element, label, grouplist]\n')
-            # for i in atomlist:
-            #     fp.write('  '+str(i)+',\n')
-            # fp.write(' ] # atomlist\n\n')
-            # fp.write('coordlist = [     # (sym#, cell#, atom#, [ortho coords],)\n')
-            # for i in coordlist:
-            #     fp.write('  '+str(i)+',\n')
-            # fp.write(' ] # coordlist\n')
-            # fp.write('cell = ' + str(data['General']['Cell'][1:7]) + '\n')
-            # fp.write('supercell = ' + str(RMCPdict['SuperCell']) + '\n')
-            # # compute bounding box coordinates
-            # bbox = []
-            # A,B = G2lat.cell2AB(data['General']['Cell'][1:7])
-            # for i in range(3):
-            #     for val in int(0.5-RMCPdict['SuperCell'][i]/2),int(1+RMCPdict['SuperCell'][0]/2):
-            #         fpos = [0,0,0]
-            #         fpos[i] = val
-            #         bbox.append(np.inner(A,fpos))
-            # fp.write('bboxlist = [     # orthogonal coordinate for supercell corners\n')
-            # for i in bbox:
-            #     fp.write('  '+str(list(i))+',\n')
-            # fp.write(' ] # bboxlist\n\n')
-            # fp.close()
-            # print('file',fil,'written with',len(coordlist),'atoms')
-            # #breakpoint()
-            # return
-            #--------- debug stuff 
             if RMCPdict['Swaps']:
                 wx.MessageDialog(G2frame, G2G.StripIndents(
                         '''GSAS-II does not yet fully support use of swapping in fullrmc. 
                         Edit the script by hand before using.''',True),
                         'No swaps yet',wx.OK).ShowModal()
-            # debug stuff
-            #if GSASIIpath.GetConfigValue('debug'):
-            #    print('reloading',G2pwd)
-            #    import imp
-            #    imp.reload(G2pwd)
-            # end debug stuff            
+            #--------- debug stuff 
+            # if GSASIIpath.GetConfigValue('debug'):
+            #     print('reloading',G2pwd)
+            #     import imp
+            #     imp.reload(G2pwd)
+            #--------- end debug stuff 
             rname = G2pwd.MakefullrmcRun(pName,data,RMCPdict)
             print('build of fullrmc file {} completed'.format(rname))
         elif G2frame.RMCchoice == 'RMCProfile':
@@ -6775,8 +6820,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         elif G2frame.RMCchoice == 'PDFfit':
             RunPDFfit(event)
             
-    def OnStopRMC(event):
-        pass
+    # def OnStopRMC(event):
     #     if G2frame.RMCchoice == 'fullrmc':
     #         generalData = data['General']
     #         pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
@@ -6793,6 +6837,69 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     #         except Exception as msg:
     #             print('failed, msg=',msg)
       
+    def OnLoadRMC(event):
+        '''Used to load the output from fullrmc with all atoms placed in the 
+        original cell
+        '''
+        fullrmcLoadPhase(super=False)
+    def OnLoadRMCsuper(event):
+        '''Used to load the output from fullrmc with atoms in the simulation 
+        supercell cell
+        '''
+        fullrmcLoadPhase(super=True)
+    def fullrmcLoadPhase(super):
+        '''Used to load the output from fullrmc. Creates a new phase, 
+        reads all atoms & converts coordinates to fractional. 
+        If super is False all atoms placed in the original cell. 
+
+        Called from :func:`OnLoadRMC` or :func:`OnLoadRMCsuper` from 
+        the RMC tab Operations menu commands 'Superimpose into cell' 
+        and 'Load Supercell'.
+        '''
+        if G2frame.RMCchoice != 'fullrmc':
+            print('fullrmcLoadPhase: How did this happen?')
+            return
+        # create a new phase
+        phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        phaseNameList = list(usedHistograms.keys()) # phase names in use
+        PhaseName = G2obj.MakeUniqueLabel(data['General']['Name']+'_fullrmc',phaseNameList)
+        psub = G2frame.GPXtree.AppendItem(parent=phId,text=PhaseName)
+        E,SGData = G2spc.SpcGroup('P 1')
+        G2frame.GPXtree.SetItemPyData(psub,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
+        newPhase = G2frame.GPXtree.GetItemPyData(psub)
+        # add a restraint tree entry
+        subr = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        G2frame.GPXtree.GetItemPyData(subr).update({PhaseName:{}})
+        # read in info from file
+        pName = (G2frame.GSASprojectfile.split('.')[0] + '-'
+                     + data['General']['Name'])
+        pName = pName.replace(' ','_')
+        with open(pName+'-fullrmc.atoms','r') as fp:
+            cell = [float(i) for i in fp.readline().split(':')[1].split()]
+            supercell = [int(i) for i in fp.readline().split(':')[1].split()]
+            if super:
+                for i in range(3): cell[i] *= supercell[i]
+            # set cell & volume
+            newPhase['General']['Cell'][1:7] = cell
+            newPhase['General']['Cell'][7] = G2lat.calc_V(G2lat.cell2A(cell))
+            A,B = G2lat.cell2AB(cell)
+            # add atoms
+            for line in fp:
+                Name,El,ox,oy,oz = line.split()
+                oxyz = [float(i) for i in (ox,oy,oz)]
+                if super:
+                    (x,y,z) = np.inner(B,oxyz)
+                else:
+                    (x,y,z),disp = G2spc.MoveToUnitCell(np.inner(B,oxyz))
+                atId = ran.randint(0,sys.maxsize)
+                newPhase['Atoms'].append([Name,El,'',x,y,z,1.,'1',1,'I',0.01,0,0,0,0,0,0,atId])
+
+        SetupGeneral()  # index elements
+        
+        #wx.CallAfter(G2frame.GPXtree.SelectItem,psub) # should call SelectDataT
+        #breakpoint()
+        
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
@@ -14426,7 +14533,9 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
         G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
         G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
-        G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
+        #G2frame.Bind(wx.EVT_MENU, OnStopRMC, id=G2G.wxID_STOPRMC)
+        G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_ATOMSRMC)
+        G2frame.Bind(wx.EVT_MENU, OnLoadRMCsuper, id=G2G.wxID_SUPERRMC)
         # ISODISTORT
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.ISODData)
         G2frame.Bind(wx.EVT_MENU, OnRunISODISTORT, id=G2G.wxID_ISODISTORT)

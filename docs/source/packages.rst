@@ -162,14 +162,24 @@ At the request of the program authors, these programs are not included
 with GSAS-II and must be installed separately:
 
   **RMCProfile**
-    Large-box PDF & S(Q) fitting. We have heard from users that V6.7.7
-    of RMCProfile is compatible with the input created by GSAS-II,
-    but not V6.7.9.
+    Large-box PDF & S(Q) fitting. The GSAS-II interface was originally
+    written for use with release 6.7.7 of RMCProfile, but updates have
+    been made for compatible with 6.7.9 as well.
+
+    RMCProfile must be downloaded by the user from
+    http://rmcprofile.org/Downloads or
+    https://rmcprofile.pages.ornl.gov/nav_pages/download/
 
   **fullrmc**
-    A modern software toolkit for large-box PDF & S(Q) fitting. Use
-    version 5.0 or later. The implementation for this is not
-    completed. 
+    A modern software framework for large-box PDF & S(Q) fitting. Note
+    that the GSAS-II implementation is not compatible with the last
+    open-source version of fullrmc, but rather the version 5.0 must be
+    used, which is distributed as a compiled versions for 64-bit
+    Intel-compatible processors running Windows, Linux and MacOS from
+    website
+    https://github.com/bachiraoun/fullrmc/tree/master/standalones. GSAS-II
+    will offer to install this software into the binary directory when the fullrmc
+    option is selected on the Phase/RMC tab. 
 
   **Dysnomia**
     Computes enhanced Fourier maps with Maximum Entropy estimated
@@ -183,7 +193,10 @@ with GSAS-II and must be installed separately:
   3.7.
 
   For other platforms/Python versions, it is probably best to use a
-  separate Python interpreter. 
+  separate Python interpreter. If GSAS-II is installed with the conda
+  package manager (the usual installation practice), the GUI will
+  offer the option to install PDFfit2 when the option is selected on
+  the Phase/RMC tab. 
     
 Supported Platforms
 --------------------------------

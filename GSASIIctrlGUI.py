@@ -6445,7 +6445,7 @@ class RefinementProgress(wx.ProgressDialog):
                      style=None):
         if style is None:
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT
-        super(self.__class__,self).__init__(title, message, maximum, parent, style)
+        super(self.__class__,self).__init__(title, message, int(maximum), parent, style)
         Size = self.GetSize()
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             self.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
@@ -6527,7 +6527,7 @@ class G2RefinementProgress(wx.Dialog):
 
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         vSizer = wx.BoxSizer(wx.VERTICAL)
-        self.gaugemaximum = maximum
+        self.gaugemaximum = int(maximum)
         self.gauge = wx.Gauge(self,wx.ID_ANY,range=int(self.gaugemaximum))
         self.gauge.SetValue(0)
         vSizer.Add(self.gauge,1,wx.EXPAND,1)

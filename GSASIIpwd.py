@@ -2647,6 +2647,7 @@ def calcIncident(Iparm,xdata):
 #### RMCutilities ################################################################################
 def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
     inst = PWDdata['Instrument Parameters'][0]
+    sample = PWDdata['Sample Parameters']
     Xsb = 0.
     Ysb = 0.
     if 'T' in inst['Type'][1]:
@@ -2658,19 +2659,19 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
                 Ysb = 1.e-6*difC*Mustrain[1][0]
         prms = ['Bank',
-                'difC','difA','Zero','2-theta',
-                'alpha','beta-0','beta-1',
-                'sig-0','sig-1','sig-2',
+                'difC','difA','Zero','2-theta','difB',
+                'alpha','beta-0','beta-1','beta-q',
+                'sig-0','sig-1','sig-2','sig-q',
                 'Z','X','Y']
         fname = Name+'.inst'
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
-        fl.write('%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
-        fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
-        fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
-        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Ysb,inst[prms[13]][1]+Xsb,0.0,0.0))
-        fl.write('\n\n\n')
+        fl.write('%19.11f%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1],inst[prms[5]][1],))
+        fl.write('%12.6e%14.6e%14.6e%14.6e\n'%(inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1],inst[prms[9]][1]))
+        fl.write('%12.6e%14.6e%14.6e%14.6e\n'%(inst[prms[10]][1],inst[prms[11]][1],inst[prms[12]][1],inst[prms[13]][1]))    
+        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[14]][1],inst[prms[15]][1]+Ysb,inst[prms[16]][1]+Xsb,0.0,0.0))
+        fl.write('%12.6e\n\n\n'%(sample['Absorption'][0]))
         fl.close()
     else:
         if useSamBrd[0]:
@@ -2692,7 +2693,7 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))    
         fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))
-        fl.write('\n\n\n')
+        fl.write('%12.6e\n\n\n'%(sample['Absorption'][0]))
         fl.close()
     return fname
     

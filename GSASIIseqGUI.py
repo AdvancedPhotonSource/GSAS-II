@@ -20,6 +20,7 @@ import copy
 import re
 import numpy as np
 import numpy.ma as ma
+import numpy.linalg as nl
 import scipy.optimize as so
 try:
     import wx
@@ -1562,59 +1563,287 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 #UpdateClusterAnalysis: results
 ###############################################################################################################
 
-def UpdateClusterAnalysis(G2frame,data):
+def UpdateClusterAnalysis(G2frame,ClusData):
     import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
+    import scipy.cluster.vq as SCV
+    global CLuZ
     
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # Zsingle = SCH.single(data['ConDistMat'])
-    # SCH.dendrogram(Zsingle)
-    # plt.show()
-    # Zcomplete = SCH.complete(data['ConDistMat'])
-    # SCH.dendrogram(Zcomplete)
-    # plt.show()
-    
-    def OnLinkMethod(event):
-        data['LinkMethod'] = method.GetValue()
         
-    def OnOptOrd(event):
-        data['Opt Order'] = not data['Opt Order']
+    def FileSizer():
         
-    def OnCompute(event):
-        print('Do heirarchial clustering - TBD')
+        def OnSelectData(event):
+            
+            def GetCaLimits(names):
+                ''' scan through data selected for cluster analysis to find highest lower & lowest upper limits
+                param: data dict: Cluster analysis info
+                '''
+                limits = [0.,1000.0]
+                for name in names:
+                    item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    if 'PWDR' in name:
+                        x = G2frame.GPXtree.GetItemPyData(item)[1][0]
+                    else:
+                        PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+                        x = PDFControls['G(R)'][1][0]
+                    limits = [max(np.min(x),limits[0]),min(np.max(x),limits[1])]
+                return limits                    
+                    
+            choices = G2gd.GetGPXtreeDataNames(G2frame,['PWDR','PDF '])
+            if len(choices) == 0:
+                G2G.G2MessageBox(G2frame,'No PWDR or PDF histograms found for cluster analysis.','No Histograms')
+                return
+            sel = []
+            try:
+                if 'Cluster Data' in ClusData:
+                    sel = [choices.index(item) for item in ClusData['Cluster Data']['Files']]
+            except ValueError:  #data changed somehow - start fresh
+                sel = []
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select datasets to include.\n PWDR or PDF',
+                'Cluster analysis data selection',choices)
+            dlg.SetSelections(sel)
+            names = []
+            Type = ''
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    if not Type:
+                        Type = choices[sel].split()[0]
+                    if Type != choices[sel].split()[0]:
+                        G2G.G2MessageBox(G2frame,'Histogram types not all the same; revise selection','Histogram type mismatch')
+                        return
+                    names.append(choices[sel])
+                ClusData['Files'] = names 
+                limits = GetCaLimits(names)
+                ClusData['Limits'] = [copy.copy(limits),limits]
+                ClusData['DataMatrix'] = []
+                ClusData['ConDistMat'] = []
+                ClusData['CLuZ'] = None
+                ClusData['codes'] = None
+                
+            dlg.Destroy()
+            G2frame.SetTitleByGPX()
+            
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+            
+        fileSizer = wx.BoxSizer(wx.HORIZONTAL)
+        Type = 'PWDR'
+        if len(ClusData['Files']):
+            if 'PDF' in ClusData['Files'][0]:
+                Type = 'PDF'
+            lbl = 'Cluster Analysis with %d %s datasets: '%(len(ClusData['Files']),Type)
+            ClusData['Type'] = Type
+        else:
+            lbl = 'No data selected for Cluster Analysis'
+        fileSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+        selSeqData = wx.Button(G2frame.dataWindow,label=' Select datasets')            
+        selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+        fileSizer.Add(selSeqData,0,WACV)
+        return fileSizer
     
-    Z = data['ConDistMat']
-    ZM = SSD.squareform(Z)
-    XY = np.mgrid[0:ZM.shape[0],0:ZM.shape[1]]
-   
-    G2plt.PlotXYZ(G2frame,XY,ZM,labelX='Data no.',labelY='Data No.',newPlot=False,Title=data['Method'],zrange=None,color=None,buttonHandler=None)
+    def LimitSizer():
+        
+        def CheckLimits(invalid,value,tc):
+            #TODO this needs a check on ultimate size of data array; loop over names & count points?
 
+            if ClusData['Limits'][1][1] < ClusData['Limits'][1][0]:
+                ClusData['Limits'][1] = [ClusData['Limits'][1][1],ClusData['Limits'][1][0]]
+            ClusData['DataMatrix'] = []
+            ClusData['ConDistMat'] = []
+            ClusData['CLuZ'] = None
+            
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+            
+        limitSizer = wx.BoxSizer(wx.HORIZONTAL)
+        limitSizer.Add(wx.StaticText(G2frame.dataWindow,label='Enter cluster analysis data limits: '),0,WACV)
+        limitSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,ClusData['Limits'][1],0,nDig=(10,3),
+            xmin=ClusData['Limits'][0][0],xmax=ClusData['Limits'][0][1],OnLeave=CheckLimits),0,WACV)
+        limitSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,ClusData['Limits'][1],1,nDig=(10,3),
+            xmin=ClusData['Limits'][0][0],xmax=ClusData['Limits'][0][1],OnLeave=CheckLimits),0,WACV)
+        return limitSizer
+    
+    def GetYMatSize():
+        nData = 0
+        for name in ClusData['Files']:
+            item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            if 'PWDR' in name:
+                x = G2frame.GPXtree.GetItemPyData(item)[1][0]
+            else:
+                PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+                x = PDFControls['G(R)'][1][0]
+            iBeg = np.searchsorted(x,ClusData['Limits'][1][0])
+            iFin = np.searchsorted(x,ClusData['Limits'][1][1])+1
+            nData += (iFin-iBeg)
+        return nData
+
+    def OnMakeArray(event):
+        Limits = ClusData['Limits'][1]
+        Start = True
+        nFiles = len(ClusData['Files'])
+        CAmatrix = []
+        try:
+            for iname,name in enumerate(ClusData['Files']):
+                item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if 'PWDR' in name:
+                    x = G2frame.GPXtree.GetItemPyData(item)[1][0]
+                    y = G2frame.GPXtree.GetItemPyData(item)[1][1]
+                else:
+                    PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+                    x = PDFControls['G(R)'][1][0]
+                    y = PDFControls['G(R)'][1][1]
+                iBeg = np.searchsorted(x,Limits[0])
+                iFin = np.searchsorted(x,Limits[1])
+                if Start:
+                    CAmatrix = np.empty((nFiles,iFin-iBeg+1))
+                    CAmatrix[iname] = y[iBeg:iFin+1]
+                    Start = False
+                else:
+                    CAmatrix[iname] = y[iBeg:iFin+1]
+        except ValueError:
+            G2G.G2MessageBox(G2frame,
+                'Data for %s is mismatched in length to those already processed or has different step size'%name,
+                'No Cluster Analysis possible')
+            return
+        ClusData['DataMatrix'] = CAmatrix
+        ClusData['ConDistMat'] = []
+        ClusData['CLuZ'] = None
+        wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+        
+    def MethodSizer():
+        
+        def OnClusterMethod(event):
+            ClusData['Method'] = method.GetValue()
+            ClusData['ConDistMat'] = []
+            ClusData['CLuZ'] = None
+            OnCompute(event)
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+            
+        def OnCompute(event):
+            ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'])
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+        
+        choice = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine',  \
+            'euclidean', 'jensenshannon', 'minkowski', 'seuclidean',  'sqeuclidean']
+        methsizer = wx.BoxSizer(wx.HORIZONTAL)
+        methsizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster analysis distance method: '),0,WACV)
+        method = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        method.SetValue(ClusData['Method'])
+        method.Bind(wx.EVT_COMBOBOX, OnClusterMethod)
+        methsizer.Add(method,0,WACV)
+        compute = wx.Button(G2frame.dataWindow,label='Compute distance matrix')
+        compute.Bind(wx.EVT_BUTTON,OnCompute)
+        methsizer.Add(compute,0,WACV)
+        return methsizer
+                
+    def HierSizer():
+        
+        def OnLinkMethod(event):
+            ClusData['LinkMethod'] = method.GetValue()
+            OnCompute(event)
+        
+        def OnOptOrd(event):
+            ClusData['Opt Order'] = not ClusData['Opt Order']
+            OnCompute(event)
+        
+        def OnCompute(event):
+            ClusData['CLuZ'] = SCH.linkage(ClusData['ConDistMat'],method=ClusData['LinkMethod'],optimal_ordering=ClusData['Opt Order'])
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+        
+        hierSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hierSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical clustering: Select linkage method: '),0,WACV)
+        choice = ['single','complete','average','weighted','centroid','median','ward',]
+        method = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        method.SetValue(ClusData['LinkMethod'])
+        method.Bind(wx.EVT_COMBOBOX, OnLinkMethod)
+        hierSizer.Add(method,0,WACV)
+        optOrd = wx.CheckBox(G2frame.dataWindow,label=' Optimal order? ')
+        optOrd.Bind(wx.EVT_CHECKBOX,OnOptOrd)
+        optOrd.SetValue(ClusData['Opt Order'])
+        hierSizer.Add(optOrd,0,WACV)
+        compute = wx.Button(G2frame.dataWindow,label='Compute')
+        compute.Bind(wx.EVT_BUTTON,OnCompute)
+        hierSizer.Add(compute,0,WACV)
+        return hierSizer
+    
+    def kmeanSizer():
+        
+        def OnClusNum(event):
+            ClusData['NumClust'] = int(numclust.GetValue())
+            OnCompute(event)
+            
+        def OnCompute(event):
+            whitMat = SCV.whiten(ClusData['DataMatrix'])
+            codebook,dist = SCV.kmeans(whitMat,ClusData['NumClust'])
+            ClusData['codes'],ClusData['dists'] = SCV.vq(whitMat,codebook)
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+                       
+        
+        kmeanssizer = wx.BoxSizer(wx.HORIZONTAL)
+        choice = [str(i) for i in range(2,16)]
+        kmeanssizer.Add(wx.StaticText(G2frame.dataWindow,label='K-means clustering: select number of clusters (2-15): '),0,WACV)
+        numclust = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        numclust.SetValue(str(ClusData['NumClust']))
+        numclust.Bind(wx.EVT_COMBOBOX,OnClusNum)
+        kmeanssizer.Add(numclust,0,WACV)
+        compute = wx.Button(G2frame.dataWindow,label='Compute')
+        compute.Bind(wx.EVT_BUTTON,OnCompute)
+        kmeanssizer.Add(compute)
+        return kmeanssizer
+            
+    G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis tools: '),0,WACV)    
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis: '),0,WACV)    
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
-    hierSizer = wx.BoxSizer(wx.HORIZONTAL)
-    hierSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical clustering: Select linkage method: '),0,WACV)
-    choice = ['single','complete','average','weighted','centroid','median','ward',]
-    method = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    method.SetValue(data['LinkMethod'])
-    method.Bind(wx.EVT_COMBOBOX, OnLinkMethod)
-    hierSizer.Add(method,0,WACV)
-    optOrd = wx.CheckBox(G2frame.dataWindow,label=' Optimal order? ')
-    optOrd.Bind(wx.EVT_CHECKBOX,OnOptOrd)
-    optOrd.SetValue(data['Opt Order'])
-    hierSizer.Add(optOrd,0,WACV)
-    compute = wx.Button(G2frame.dataWindow,label='Compute')
-    compute.Bind(wx.EVT_BUTTON,OnCompute)
-    hierSizer.Add(compute,0,WACV)
-    mainSizer.Add(hierSizer)
     
+    mainSizer.Add(FileSizer())
+    if len(ClusData['Files']):
+        mainSizer.Add(LimitSizer())
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis input data size: %d'%(GetYMatSize())))
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=
+            '(Examine any %s plot for reasonable limits; any change will clear Cluster data matrix) '%ClusData['Type']),0,WACV)
+        makeArray = wx.Button(G2frame.dataWindow,label='Make Cluster Analysis data array')
+        makeArray.Bind(wx.EVT_BUTTON,OnMakeArray)
+        mainSizer.Add(makeArray)
+        if len(ClusData['DataMatrix']):            
+
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Distance Cluster Analysis:'))
+            mainSizer.Add(MethodSizer())
+            if len(ClusData['ConDistMat']):
+                Y = ClusData['ConDistMat']
+                YM = SSD.squareform(Y)
+                U,s,VT = nl.svd(YM) #s are the Eigenvalues
+                ClusData['PCA'] = s
+                S = np.diag(s)
+                XYZ = np.dot(S[:3,:3],VT[:3,:])
+                if ClusData['CLuZ'] is not None:
+                    G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+                else:   
+                    G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+                G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical Cluster Analysis:'))
+                mainSizer.Add(HierSizer())
+                
+                G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='K-means Cluster Analysis:'))
+                mainSizer.Add(kmeanSizer())
+                if ClusData['codes'] is not None:
+                    kmeansres = wx.BoxSizer(wx.HORIZONTAL)
+                    # Bsumsq = np.zeros(ClusData['NumClust'])
+                    # Tsumsq = 0.0
+                    # for i in range(len(ClusData['Files'])):
+                    #     Bsumsq[ClusData['codes'][i]] += ClusData['dists'][i]**2
+                    #     Tsumsq += ClusData['dists'][i]**2
+                    kmeansres.Add(wx.StaticText(G2frame.dataWindow,label='K-means ave. dist = %.2f'%np.mean(ClusData['dists'])))
+                    mainSizer.Add(kmeansres)
+            
+            
     
     
     

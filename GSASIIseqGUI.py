@@ -1578,7 +1578,7 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 ''' scan through data selected for cluster analysis to find highest lower & lowest upper limits
                 param: data dict: Cluster analysis info
                 '''
-                limits = [0.,1000.0]
+                limits = [0.,1.e6]
                 for name in names:
                     item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     if 'PWDR' in name:
@@ -1620,6 +1620,7 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 ClusData['ConDistMat'] = []
                 ClusData['CLuZ'] = None
                 ClusData['codes'] = None
+                ClusData['plots'] = 'All'
                 
             dlg.Destroy()
             G2frame.SetTitleByGPX()
@@ -1789,7 +1790,13 @@ def UpdateClusterAnalysis(G2frame,ClusData):
         compute.Bind(wx.EVT_BUTTON,OnCompute)
         kmeanssizer.Add(compute)
         return kmeanssizer
+    
+    def OnPlotSel(event):
+        ClusData['plots'] = plotsel.GetValue()
+        G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
             
+    #patch
+    ClusData['plots'] = ClusData.get('plots','All')
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1813,7 +1820,7 @@ def UpdateClusterAnalysis(G2frame,ClusData):
         if len(ClusData['DataMatrix']):            
 
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Distance Cluster Analysis:'))
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Distance Cluster Analysis:'))
             mainSizer.Add(MethodSizer())
             if len(ClusData['ConDistMat']):
                 Y = ClusData['ConDistMat']
@@ -1822,10 +1829,7 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 ClusData['PCA'] = s
                 S = np.diag(s)
                 XYZ = np.dot(S[:3,:3],VT[:3,:])
-                if ClusData['CLuZ'] is not None:
-                    G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
-                else:   
-                    G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+                G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical Cluster Analysis:'))
                 mainSizer.Add(HierSizer())
@@ -1835,13 +1839,19 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 mainSizer.Add(kmeanSizer())
                 if ClusData['codes'] is not None:
                     kmeansres = wx.BoxSizer(wx.HORIZONTAL)
-                    # Bsumsq = np.zeros(ClusData['NumClust'])
-                    # Tsumsq = 0.0
-                    # for i in range(len(ClusData['Files'])):
-                    #     Bsumsq[ClusData['codes'][i]] += ClusData['dists'][i]**2
-                    #     Tsumsq += ClusData['dists'][i]**2
                     kmeansres.Add(wx.StaticText(G2frame.dataWindow,label='K-means ave. dist = %.2f'%np.mean(ClusData['dists'])))
                     mainSizer.Add(kmeansres)
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+            plotSizer = wx.BoxSizer(wx.HORIZONTAL)
+            plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
+            choice = ['All','Distances','Dendogram','3D PCA',]
+            plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            plotsel.SetValue(str(ClusData['plots']))
+            plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)
+            plotSizer.Add(plotsel,0,WACV)
+            mainSizer.Add(plotSizer)
+            
+            
             
             
     

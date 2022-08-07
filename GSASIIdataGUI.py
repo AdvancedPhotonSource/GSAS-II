@@ -5699,7 +5699,7 @@ class GSASII(wx.Frame):
         Id = GetGPXtreeItemId(self,self.root,'Cluster Analysis')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Cluster Analysis')
-            ClustDict = {'Files':[],'Method':'correlation','Limits':[],'DataMatrix':[],
+            ClustDict = {'Files':[],'Method':'correlation','Limits':[0.,100.],'DataMatrix':[],'plots':'All',
                 'LinkMethod':'average','Opt Order':False,'ConDistMat':[],'NumClust':2,'codes':None}
             self.GPXtree.SetItemPyData(Id,ClustDict)
         else:

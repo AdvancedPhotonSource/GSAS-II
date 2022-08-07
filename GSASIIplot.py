@@ -11567,45 +11567,45 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     
 #### Plot Cluster Analysis ####################################################
 
-def PlotDendogram(G2frame,CLuDict,CLuZ,newPlot=True):
+# def PlotDendogram(G2frame,CLuDict,CLuZ,newPlot=True):
     
-    import scipy.cluster.hierarchy as SCH
-    global Plot
-    def OnMotion(event):
-        xpos = event.xdata
-        if xpos:                                        #avoid out of frame mouse position
-            ypos = event.ydata
-            SetCursor(Page)
-            try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)                   
-            except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
-    xylim = []
-    Title = 'Cluster dendogram'
-    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
-    if not new:
-        if not newPlot:
-            xylim = copy.copy(lim)
-    else:
-        newPlot = True
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+#     import scipy.cluster.hierarchy as SCH
+#     global Plot
+#     def OnMotion(event):
+#         xpos = event.xdata
+#         if xpos:                                        #avoid out of frame mouse position
+#             ypos = event.ydata
+#             SetCursor(Page)
+#             try:
+#                 G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)                   
+#             except TypeError:
+#                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+#     xylim = []
+#     Title = 'Cluster dendogram'
+#     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
+#     if not new:
+#         if not newPlot:
+#             xylim = copy.copy(lim)
+#     else:
+#         newPlot = True
+#         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
-    Page.Choice = None
-    G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
-    Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
-    Plot.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=14)
-    Plot.set_ylabel(r''+'data set no.',fontsize=14)
+#     Page.Choice = None
+#     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
+#     Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
+#     Plot.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=14)
+#     Plot.set_ylabel(r''+'data set no.',fontsize=14)
     
-    CLR = SCH.dendrogram(CLuZ,orientation='right',ax=Plot)
+#     CLR = SCH.dendrogram(CLuZ,orientation='right',ax=Plot)
 
-    if not newPlot:
-        Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
-        Page.toolbar.push_current()
-        Page.ToolBarDraw()
-    else:
-        Page.canvas.draw()
+#     if not newPlot:
+#         Page.toolbar.push_current()
+#         Plot.set_xlim(xylim[0])
+#         Plot.set_ylim(xylim[1])
+#         Page.toolbar.push_current()
+#         Page.ToolBarDraw()
+#     else:
+#         Page.canvas.draw()
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName=None):
     ''' To plot cluster vectors 
@@ -11627,12 +11627,17 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName=None):
     def OnPick(event):
         ind = event.ind
         print(CLuDict['Files'][ind[0]])
-    
-    Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+            
+    Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan', 
+              'xkcd:magenta','xkcd:black','xkcd:pink','xkcd:brown',
+              'xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',
+              'xkcd:aqua','xkcd:blueberry','xkcd:bordeaux'] #need 15 colors!
     G2frame.G2plotNB.Delete(PlotName)       #A cluge: to avoid AccessExceptions on replot
-    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'mpl')
-    Plot.set_visible(False)         #hide old plot frame, will get replaced below
+    if CLuDict['plots'] == '3D PCA':
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'3d')
+    else:
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'mpl')
+    Plot.set_visible(True)
     if new:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
@@ -11641,38 +11646,61 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName=None):
     np.seterr(all='ignore')
         
     Imin = np.min(YM)
-    Imax = np.max(YM)           
-    if CLuDict['CLuZ'] is not None:
-        gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
-        ax1 = Page.figure.add_subplot(gs[0,0])
-        ax2 = Page.figure.add_subplot(gs[1,1],projection='3d')
-        ax3 = Page.figure.add_subplot(gs[0,1])
-        ax4 = Page.figure.add_subplot(gs[1,0])
-    else:
-        ax1 = Page.figure.add_subplot(211)
-        ax2 = Page.figure.add_subplot(212,projection='3d')
-        Page.figure.tight_layout()
-    Page.ImgObj = ax1.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
-    cax = inset_axes(ax1,width="5%",height="100%",loc='lower left',bbox_to_anchor=(1.05, 0., 1, 1),
-        bbox_transform=ax1.transAxes,borderpad=0)
-    Page.figure.colorbar(Page.ImgObj, cax=cax)
-    if CLuDict['codes'] is not None:
-        ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=[Colors[code] for code in CLuDict['codes']],picker=True)
-    else:
-        ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=Colors[0],picker=True)
-    ax1.set_title(Title+' distances')
-    ax1.set_xlabel('Data set',fontsize=12)
-    ax1.set_ylabel('Data set',fontsize=12)
-    ax2.set_xlabel('PCA axis-1',fontsize=12)
-    ax2.set_ylabel('PCA axis-2',fontsize=12)
-    ax2.set_zlabel('PCA axis-3',fontsize=12)
-    if CLuDict['CLuZ'] is not None:
-        CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
-        ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
-        ax3.set_xlabel(r''+'data set no.',fontsize=12)
-        ax3.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
-        ax4.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
-        ax4.set_xlabel('PCA index',fontsize=12)
-        ax4.set_ylabel('% of total',fontsize=12)
+    Imax = np.max(YM)
+    if CLuDict['plots'] == 'Distances':
+        Page.ImgObj = Plot.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
+        cax = inset_axes(Plot,width="5%",height="100%",loc='lower left',bbox_to_anchor=(1.05, 0., 1, 1),
+            bbox_transform=Plot.transAxes,borderpad=0)
+        Page.figure.colorbar(Page.ImgObj, cax=cax)
+        Plot.set_title(Title+' distances')
+        Plot.set_xlabel('Data set',fontsize=12)
+        Plot.set_ylabel('Data set',fontsize=12)
+    elif CLuDict['plots'] == 'Dendogram':
+        CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=Plot)
+        Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
+        Plot.set_xlabel(r''+'data set no.',fontsize=12)
+        Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
+    elif CLuDict['plots'] == '3D PCA':
+        if CLuDict['codes'] is not None:
+            Plot.scatter(XYZ[0],XYZ[1],XYZ[2],color=[Colors[code] for code in CLuDict['codes']],picker=True)
+        else:
+            Plot.scatter(XYZ[0],XYZ[1],XYZ[2],color=Colors[0],picker=True)
+        Plot.set_xlabel('PCA axis-1',fontsize=12)
+        Plot.set_ylabel('PCA axis-2',fontsize=12)
+        Plot.set_zlabel('PCA axis-3',fontsize=12)
+    else:          
+        Plot.set_visible(False)         #hide old plot frame, will get replaced below
+        if CLuDict['CLuZ'] is not None:
+            gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
+            ax1 = Page.figure.add_subplot(gs[0,0])
+            ax2 = Page.figure.add_subplot(gs[1,1],projection='3d')
+            ax3 = Page.figure.add_subplot(gs[0,1])
+            ax4 = Page.figure.add_subplot(gs[1,0])
+        else:
+            ax1 = Page.figure.add_subplot(211)
+            ax2 = Page.figure.add_subplot(212,projection='3d')
+            Page.figure.tight_layout()            
+        Page.ImgObj = ax1.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
+        cax = inset_axes(ax1,width="5%",height="100%",loc='lower left',bbox_to_anchor=(1.05, 0., 1, 1),
+            bbox_transform=ax1.transAxes,borderpad=0)
+        Page.figure.colorbar(Page.ImgObj, cax=cax)
+        ax1.set_title(Title+' distances')
+        ax1.set_xlabel('Data set',fontsize=12)
+        ax1.set_ylabel('Data set',fontsize=12)
+        if CLuDict['codes'] is not None:
+            ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=[Colors[code] for code in CLuDict['codes']],picker=True)
+        else:
+            ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=Colors[0],picker=True)
+        ax2.set_xlabel('PCA axis-1',fontsize=12)
+        ax2.set_ylabel('PCA axis-2',fontsize=12)
+        ax2.set_zlabel('PCA axis-3',fontsize=12)
+        if CLuDict['CLuZ'] is not None:
+            CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
+            ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
+            ax3.set_xlabel(r''+'data set no.',fontsize=12)
+            ax3.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
+            ax4.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
+            ax4.set_xlabel('PCA index',fontsize=12)
+            ax4.set_ylabel('% of total',fontsize=12)
     Page.canvas.draw()
         

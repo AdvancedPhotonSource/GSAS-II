@@ -857,7 +857,7 @@ def ApplySeqData(data,seqData,PF2=False):
     '''Applies result from seq. refinement to drawing atom positions & Uijs
     
     :param dict data: GSAS-II phase data structure
-    :param: dict seqData: GSAS-II sequential refinement results structure
+    :param dict seqData: GSAS-II sequential refinement results structure
     :param bool PF2: if True then seqData is from a sequential run of PDFfit2
     
     :returns: list drawAtoms: revised Draw Atoms list

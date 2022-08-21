@@ -3686,7 +3686,7 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
     restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
     rundata = ''
-    rundata += '#### fullrmc %s file; edit by hand if you so choose #####\n'%scrname
+    rundata += '## fullrmc %s file ##\n## OK to edit this by hand ##\n'%scrname
     rundata += '# created in '+__file__+" v"+filversion.split()[1]
     rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
@@ -3718,7 +3718,7 @@ from fullrmc.Generators.Rotations import RotationGenerator
 
 # utility routines
 def writeHeader(ENGINE,statFP):
-    'header for stats file'
+    """header for stats file"""
     statFP.write('generated-steps, total-error, ')
     for c in ENGINE.constraints:
         statFP.write(c.constraintName)
@@ -3727,7 +3727,7 @@ def writeHeader(ENGINE,statFP):
     statFP.flush()
     
 def writeCurrentStatus(ENGINE,statFP,plotF):
-    'line in stats file & current constraint plots'
+    """line in stats file & current constraint plots"""
     statFP.write(str(ENGINE.generated))
     statFP.write(', ')
     statFP.write(str(ENGINE.totalStandardError))
@@ -3748,7 +3748,7 @@ def writeCurrentStatus(ENGINE,statFP,plotF):
     fp.close()
 
 def calcRmax(ENGINE):
-    'from Bachir, works for non-orthorhombic cells'
+    """from Bachir, works for non-orthorhombic cells"""
     a,b,c = ENGINE.basisVectors
     lens = []
     ts    = np.linalg.norm(np.cross(a,b))/2
@@ -3758,9 +3758,10 @@ def calcRmax(ENGINE):
     ts = np.linalg.norm(np.cross(a,c))/2
     lens.extend( [ts/np.linalg.norm(a), ts/np.linalg.norm(c)] )
     return min(lens)
-
+'''
+    if RMCPdict.get('Groups',[]): rundata += '''
 def makepdb(atoms, coords, bbox=None):
-    'creates a supercell directly from atom info'
+    """creates a supercell directly from atom info"""
     # used when ENGINE.build_crystal_set_pdb is not called
     prevcell = None
     rec = copy.copy(__ATOM__)
@@ -3917,6 +3918,16 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 raise ValueError('Invalid G(r) type: '+str(filDat[3]))
             rundata += '    ENGINE.add_constraints([GofR])\n'
             rundata += '    GofR.set_limits((None, calcRmax(ENGINE)))\n'
+            if RMCPdict['addThermalBroadening']:
+                rundata += "    GofR.set_thermal_corrections({'defaultFactor': 0.001})\n"
+                rundata += "    GofR.thermalCorrections['factors'] = {\n"
+                RMCPdict['addThermalBroadening']
+                for atm1 in RMCPdict['aTypes']:
+                    for atm2 in RMCPdict['aTypes']:
+                        rundata += "         ('{}', '{}'): {},\n".format(
+                            atm1,atm2,
+                            (RMCPdict['ThermalU'].get(atm1,0.005)+                                           RMCPdict['ThermalU'].get(atm2,0.005))/2)
+                rundata += '    }\n'
         elif '(Q)' in File:
             rundata += '    SOQ = np.loadtxt(os.path.join(dirName,"%s")).T\n'%filDat[0]
             if filDat[3] == 0:

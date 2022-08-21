@@ -74,7 +74,7 @@ def GetImageZ(G2frame,data,newRange=False):
     '''Gets image & applies dark, background & flat background corrections. 
 
     :param wx.Frame G2frame: main GSAS-II frame
-    :param: dict data: Image Controls dictionary
+    :param dict data: Image Controls dictionary
 
     :returns: array sumImg: corrected image for background/dark/flat back
     '''

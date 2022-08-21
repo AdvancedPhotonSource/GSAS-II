@@ -5585,6 +5585,24 @@ Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem.
                     grpBox.Add(wx.StaticText(G2frame.FRMC,label=msg),0,WACV)        
                     mainSizer.Add(grpBox,0)
 
+            RMCPdict['addThermalBroadening'] = RMCPdict.get('addThermalBroadening',False)
+            mainSizer.Add((-1,5))
+            distBox = wx.BoxSizer(wx.HORIZONTAL)
+            distBox.Add(wx.StaticText(G2frame.FRMC,label=' Add thermal broadening? '),0,WACV)
+            distBox.Add(G2G.G2CheckBox(G2frame.FRMC,'',RMCPdict,'addThermalBroadening',OnChange=UpdateRMC),
+                            0,WACV)
+            if RMCPdict['addThermalBroadening']:
+                distBox.Add((15,-1))
+                distBox.Add(wx.StaticText(G2frame.FRMC,label='Uiso equiv.'),0,WACV)
+                RMCPdict['ThermalU'] = RMCPdict.get('ThermalU',{})
+                for atm in RMCPdict['aTypes']:
+                    RMCPdict['ThermalU'][atm] = RMCPdict['ThermalU'].get(atm,0.005)
+                    distBox.Add(wx.StaticText(G2frame.FRMC,label='  '+atm+':'),0,WACV)
+                    distBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['ThermalU'],atm,
+                                                xmin=0.0001,xmax=0.25,size=(50,25)),0,WACV)
+            mainSizer.Add(distBox,0)
+            if RMCPdict['addThermalBroadening']: mainSizer.Add((-1,5))
+                    
             # Torsions are difficult to implement. Need to be internal to a unit cell & named with fullrmc
             # atom labels. Leave this out, at least for now. 
             # torBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -6868,33 +6886,41 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         E,SGData = G2spc.SpcGroup('P 1')
         G2frame.GPXtree.SetItemPyData(psub,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
         newPhase = G2frame.GPXtree.GetItemPyData(psub)
-        # add a restraint tree entry
-        subr = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-        G2frame.GPXtree.GetItemPyData(subr).update({PhaseName:{}})
         # read in info from file
         pName = (G2frame.GSASprojectfile.split('.')[0] + '-'
                      + data['General']['Name'])
         pName = pName.replace(' ','_')
-        with open(pName+'-fullrmc.atoms','r') as fp:
-            cell = [float(i) for i in fp.readline().split(':')[1].split()]
-            supercell = [int(i) for i in fp.readline().split(':')[1].split()]
-            if super:
-                for i in range(3): cell[i] *= supercell[i]
-            # set cell & volume
-            newPhase['General']['Cell'][1:7] = cell
-            newPhase['General']['Cell'][7] = G2lat.calc_V(G2lat.cell2A(cell))
-            A,B = G2lat.cell2AB(cell)
-            # add atoms
-            for line in fp:
-                Name,El,ox,oy,oz = line.split()
-                oxyz = [float(i) for i in (ox,oy,oz)]
+        try:
+            with open(pName+'-fullrmc.atoms','r') as fp:
+                cell = [float(i) for i in fp.readline().split(':')[1].split()]
+                supercell = [int(i) for i in fp.readline().split(':')[1].split()]
                 if super:
-                    (x,y,z) = np.inner(B,oxyz)
-                else:
-                    (x,y,z),disp = G2spc.MoveToUnitCell(np.inner(B,oxyz))
-                atId = ran.randint(0,sys.maxsize)
-                newPhase['Atoms'].append([Name,El,'',x,y,z,1.,'1',1,'I',0.01,0,0,0,0,0,0,atId])
-
+                    for i in range(3): cell[i] *= supercell[i]
+                # set cell & volume
+                newPhase['General']['Cell'][1:7] = cell
+                newPhase['General']['Cell'][7] = G2lat.calc_V(G2lat.cell2A(cell))
+                A,B = G2lat.cell2AB(cell)
+                # add atoms
+                for line in fp:
+                    Name,El,ox,oy,oz = line.split()
+                    oxyz = [float(i) for i in (ox,oy,oz)]
+                    if super:
+                        (x,y,z) = np.inner(B,oxyz)
+                    else:
+                        (x,y,z),disp = G2spc.MoveToUnitCell(np.inner(B,oxyz))
+                    atId = ran.randint(0,sys.maxsize)
+                    newPhase['Atoms'].append([Name,El,'',x,y,z,1.,'1',1,'I',0.01,0,0,0,0,0,0,atId])
+        except:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to open or read file '+pName+'-fullrmc.atoms. '
+                    'Was a fullrmc run from the current .gpx file '
+                    'and for the current phase?',
+                    'Error on read')
+            G2frame.GPXtree.Delete(psub)
+            return
+        # add a restraint tree entry for new phase
+        subr = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        G2frame.GPXtree.GetItemPyData(subr).update({PhaseName:{}})
         SetupGeneral()  # index elements
         
         #wx.CallAfter(G2frame.GPXtree.SelectItem,psub) # should call SelectDataT

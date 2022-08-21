@@ -850,7 +850,7 @@ Data files are found in the
     import GSASIIscriptable as G2sc
     datadir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     PathWrap = lambda fil: os.path.join(datadir,fil)
-    gpx = G2sc.G2Project(filename='PbSO4sim.gpx') # create a project    
+    gpx = G2sc.G2Project(newgpx='PbSO4sim.gpx') # create a project    
     phase0 = gpx.add_phase(PathWrap("PbSO4-Wyckoff.cif"),
              phasename="PbSO4",fmthint='CIF') # add a phase to the project
     # add a simulated histogram and link it to the previous phase(s)
@@ -877,7 +877,7 @@ tutorial.
     import GSASIIscriptable as G2sc
     cifdir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     datadir = "/Users/toby/software/G2/Tutorials/TOF-CW Joint Refinement/data"
-    gpx = G2sc.G2Project(filename='/tmp/PbSO4simT.gpx') # create a project
+    gpx = G2sc.G2Project(newgpx='/tmp/PbSO4simT.gpx') # create a project
     phase0 = gpx.add_phase(os.path.join(cifdir,"PbSO4-Wyckoff.cif"),
              phasename="PbSO4",fmthint='CIF') # add a phase to the project
     hist1 = gpx.add_simulated_powder_histogram("PbSO4 simulation",
@@ -971,7 +971,7 @@ The data files are found in the
     datadir = "/tmp"
     PathWrap = lambda fil: os.path.join(datadir,fil)
 
-    gpx = G2sc.G2Project(filename=PathWrap('inttest.gpx'))
+    gpx = G2sc.G2Project(newgpx=PathWrap('inttest.gpx'))
     imlst = gpx.add_image(PathWrap('Si_free_dc800_1-00000.tif'),fmthint="TIF")
     imlst[0].loadControls(PathWrap('Si_free_dc800_1-00000.imctrl'))
     pwdrList = imlst[0].Integrate()
@@ -989,7 +989,7 @@ This example shows a computation similar to what is done in tutorial
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
 
-    gpx = G2sc.G2Project(filename='/tmp/img.gpx')
+    gpx = G2sc.G2Project(newgpx='/tmp/img.gpx')
     for f in glob.glob(PathWrap('*.tif')): 
         im = gpx.add_image(f,fmthint="TIF")
     # image parameter settings
@@ -1043,7 +1043,7 @@ The files used for this exercise are found in the
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
 
-    gpx = G2sc.G2Project(filename='/tmp/calib.gpx')
+    gpx = G2sc.G2Project(newgpx='/tmp/calib.gpx')
     for f in glob.glob(PathWrap('*.tif')): 
         im = gpx.add_image(f,fmthint="TIF")
     # starting image parameter settings
@@ -2017,10 +2017,11 @@ class G2Project(G2ObjectWrapper):
     :param str author: Author's name (not yet implemented)
     :param str newgpx: The filename the project should be saved to in
             the future. If both newgpx and gpxfile are present, the project is
-            loaded from the gpxfile, then when saved will be written to newgpx.
-    :param str filename: Name to be used to save the project. Has same function as
-            parameter newgpx (do not use both gpxfile and filename). Use of newgpx
-            is preferred over filename.
+            loaded from the file named by gpxfile and then when saved will 
+            be written to the file named by newgpx.
+    :param str filename: To be deprecated. Serves the same function as newgpx, 
+            which has a somewhat more clear name. 
+            (Do not specify both newgpx and filename). 
 
     There are two ways to initialize this object:
 
@@ -2060,6 +2061,8 @@ class G2Project(G2ObjectWrapper):
     def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
         if filename is not None and newgpx is not None:
             raise G2ScriptException('Do not use filename and newgpx together')
+        elif filename is not None:
+            G2fil.G2Print("Warning - recommending use of parameter newgpx rather than filename\n\twhen creating a G2Project")
         elif newgpx:
             filename = newgpx
         if not gpxfile:
@@ -5710,7 +5713,8 @@ class G2Phase(G2ObjectWrapper):
 
         Example: 
 
-        >>> sclEnt = p.getHAPentryList(0,'Scale')[0]                                    >>> sclEnt
+        >>> sclEnt = p.getHAPentryList(0,'Scale')[0]
+        >>> sclEnt
         [(['PWDR test Bank 1', 'Scale'], list, [1.0, False])]
         >>> p.getHAPentryValue(sclEnt[0])
         [1.0, False]
@@ -6236,7 +6240,7 @@ class G2Image(G2ObjectWrapper):
 
     Example use of G2Image:
 
-    >>> gpx = G2sc.G2Project(filename='itest.gpx')
+    >>> gpx = G2sc.G2Project(newgpx='itest.gpx')
     >>> imlst = gpx.add_image(idata,fmthint="TIF")
     >>> imlst[0].loadControls('stdSettings.imctrl')
     >>> imlst[0].setCalibrant('Si    SRM640c')

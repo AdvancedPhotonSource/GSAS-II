@@ -7233,25 +7233,29 @@ tutorialIndex = (
      '''Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data 
      via Monte Carlo/Simulated Annealing (MC/SA).'''],
      
-['Reverse Monte-Carlo Modeling'], #######################################################
+['PDF 1: RMCProfile Reverse Monte-Carlo PDF & S(Q) Modeling'], #######################################################
     ['RMCProfile-I', 'RMCProfile-I.htm','RMC Modeling with RMCProfile-I',
-     '''Big box modelling for real and reciprocal space diffraction data for SF6'''],
+     '''Big box modeling for real and reciprocal space diffraction data for SF6'''],
     ['RMCProfile-II', 'RMCProfile-II.htm','RMC Modeling with RMCProfile-II',
-     '''Big box modelling for real and reciprocal space diffraction data for SrTiO3'''],
+     '''Big box modeling for real and reciprocal space diffraction data for SrTiO3'''],
     ['RMCProfile-III', 'RMCProfile-III.htm','RMC Modeling with RMCProfile-III',
-     '''Combined x-ray/neutron big box modelling for real and reciprocal space diffraction data for GaPO4'''],
+     '''Combined x-ray/neutron big box modeling for real and reciprocal space diffraction data for GaPO4'''],
     ['RMCProfile-IV', 'RMCProfile-IV.htm','RMC Modeling with RMCProfile-IV',
-     '''x-ray big box modelling with potential energy restraints for real and reciprocal space diffraction data for GaPO4'''],
+     '''x-ray big box modeling with potential energy restraints for real and reciprocal space diffraction data for GaPO4'''],
     
-['Pair Distribution Function Modeling'], #######################################################
+['PDF 2: PDFfit Pair Distribution Function Modeling'], #######################################################
     ['PDFfit-I','PDFfit-I.htm','Small Box PDF modeling with PDFfit-I',
-     '''Small box modelling of G(r); introduction to PDFfit'''],
+     '''Small box modeling of G(r); introduction to PDFfit'''],
     ['PDFfit-II','PDFfit-II.htm','Small Box PDF modeling with PDFfit-II',
-     '''Small box modelling of G(r); using ISODISTORT mode analysis'''],
+     '''Small box modeling of G(r); using ISODISTORT mode analysis'''],
     ['PDFfit-III','PDFfit-III.htm','Sequential PDF fitting with PDFfit-III',
-     '''Small box modelling of G(r); sequential fitting of a temperature series of G(r)'''],
+     '''Small box modeling of G(r); sequential fitting of a temperature series of G(r)'''],
     ['PDFfit-IV','PDFfit-IV.htm','Nanoparticle PDF fitting with PDFfit-IV',
-     '''Small box modelling of G(r); fitting G(r) from nanoparticles'''],
+     '''Small box modeling of G(r); fitting G(r) from nanoparticles'''],
+
+['PDF 3: fullrmc Stochastic PDF & S(Q) Modeling'], #######################################################
+    ['fullrmc-SF6', 'fullrmc-SF6.html','RMC & Rigid Body Modeling with fullrmc',
+     '''Multiple approaches to big box modeling for real and reciprocal space diffraction data for SF6'''],
 
 ['Stacking Fault Modeling'], #######################################################
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',

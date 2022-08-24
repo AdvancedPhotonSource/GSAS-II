@@ -1567,9 +1567,15 @@ def UpdateClusterAnalysis(G2frame,ClusData):
     import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
     import scipy.cluster.vq as SCV
-    global CLuZ
-    
+    import sklearn.cluster as SKC    
         
+    SKLearnCite = '''If you use Scikit-Learn Cluster Analysis, please cite:
+    'Scikit-learn: Machine Learning in Python', Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V.,
+    Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J.,
+    Passos, A., Cournapeau, D., Brucher, M., Perrot, M. and Duchesnay, E., 
+    Journal of Machine Learning Research (2011) 12, 2825-2830.
+'''
+
     def FileSizer():
         
         def OnSelectData(event):
@@ -1827,9 +1833,10 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 YM = SSD.squareform(Y)
                 U,s,VT = nl.svd(YM) #s are the Eigenvalues
                 ClusData['PCA'] = s
+                s[3:] = 0.
                 S = np.diag(s)
-                XYZ = np.dot(S[:3,:3],VT[:3,:])
-                G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+                XYZ = np.dot(U,np.dot(S,VT))
+                G2plt.PlotClusterXYZ(G2frame,XYZ,XYZ[:3,:],ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical Cluster Analysis:'))
                 mainSizer.Add(HierSizer())
@@ -1844,12 +1851,19 @@ def UpdateClusterAnalysis(G2frame,ClusData):
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             plotSizer = wx.BoxSizer(wx.HORIZONTAL)
             plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
-            choice = ['All','Distances','Dendogram','3D PCA',]
+            if ClusData['CLuZ'] is None:
+                choice = ['All','Distances','3D PCA',]
+            else:
+                choice = ['All','Distances','Dendogram','3D PCA',]
             plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             plotsel.SetValue(str(ClusData['plots']))
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)
             plotSizer.Add(plotsel,0,WACV)
             mainSizer.Add(plotSizer)
+            
+        if ClusData['SKLearn']:
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
             
             
             

@@ -5696,15 +5696,26 @@ class GSASII(wx.Frame):
         ''' Setsup cluster analysis & make tree entry
         '''
         
+        try:
+            SKLearn = False
+            import sklearn.cluster
+            SKLearn = True
+        except:
+            res = GSASIIpath.condaInstall('scikit-learn')
+            if res:
+                msg = 'Installation of the sklearn package failed with error:\n' + str(res)
+                G2G.G2MessageBox(self,msg,'Install sklearn Error')
         Id = GetGPXtreeItemId(self,self.root,'Cluster Analysis')
         if not Id:
+                
             Id = self.GPXtree.AppendItem(self.root,text='Cluster Analysis')
             ClustDict = {'Files':[],'Method':'correlation','Limits':[0.,100.],'DataMatrix':[],'plots':'All',
                 'LinkMethod':'average','Opt Order':False,'ConDistMat':[],'NumClust':2,'codes':None}
             self.GPXtree.SetItemPyData(Id,ClustDict)
         else:
+            ClustDict = self.GPXtree.GetItemPyData(Id)
             print('Cluster Analysis exists - nothing done')                   
-
+        ClustDict['SKLearn'] = SKLearn
         self.GPXtree.SelectItem(Id)
     
     def reloadFromGPX(self,rtext=None):

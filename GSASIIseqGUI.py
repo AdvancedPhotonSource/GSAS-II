@@ -1563,7 +1563,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 #UpdateClusterAnalysis: results
 ###############################################################################################################
 
-def UpdateClusterAnalysis(G2frame,ClusData):
+def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
     import scipy.cluster.vq as SCV
@@ -1780,10 +1780,9 @@ def UpdateClusterAnalysis(G2frame,ClusData):
             
         def OnCompute(event):
             whitMat = SCV.whiten(ClusData['DataMatrix'])
-            codebook,dist = SCV.kmeans(whitMat,ClusData['NumClust'])
+            codebook,dist = SCV.kmeans2(whitMat,ClusData['NumClust'])   #use K-means++
             ClusData['codes'],ClusData['dists'] = SCV.vq(whitMat,codebook)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-                       
         
         kmeanssizer = wx.BoxSizer(wx.HORIZONTAL)
         choice = [str(i) for i in range(2,16)]
@@ -1800,16 +1799,103 @@ def UpdateClusterAnalysis(G2frame,ClusData):
     def OnPlotSel(event):
         ClusData['plots'] = plotsel.GetValue()
         G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+        
+    def ScikitSizer():
+        
+        def OnClusMethod(event):
+            ClusData['Scikit'] = clusMethod.GetValue()
+            OnCompute(event)
+        
+        def OnClusNum(event):
+            ClusData['NumClust'] = int(numclust.GetValue())
+            OnCompute(event)
+            
+        def OnCompute(event):
+            whitMat = SCV.whiten(ClusData['DataMatrix'])
+            if ClusData['Scikit'] == 'K-Means':
+                result = SKC.KMeans(n_clusters=ClusData['NumClust'],algorithm='elkan').fit(whitMat)
+                print('K-Means sum squared dist. to means %.2f'%result.inertia_)
+            elif ClusData['Scikit'] == 'Spectral clustering':
+                result = SKC.SpectralClustering(n_clusters=ClusData['NumClust']).fit(whitMat)
+            elif ClusData['Scikit'] == 'Mean-shift':
+                result = SKC.MeanShift().fit(whitMat)
+                print('Number of Mean-shift clusters found: %d'%(np.max(result.labels_)+1))
+            elif ClusData['Scikit'] == 'Affinity propagation':
+                result = SKC.AffinityPropagation(affinity='precomputed').fit(SSD.squareform(ClusData['ConDistMat']))
+                print('Number of Affinity propagation clusters found: %d'%(np.max(result.labels_)+1))
+            elif ClusData['Scikit'] == 'Agglomerative clustering':
+                result = SKC.AgglomerativeClustering(n_clusters=ClusData['NumClust'],
+                    affinity='precomputed',linkage='average').fit(SSD.squareform(ClusData['ConDistMat']))
+            
+            ClusData['codes'] = result.labels_
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+                               
+        scikitSizer = wx.BoxSizer(wx.VERTICAL)
+        scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
+        choice = ['K-Means','Affinity propagation','Mean-shift','Spectral clustering','Agglomerative clustering']
+        clusSizer = wx.BoxSizer(wx.HORIZONTAL)
+        clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select clusering method: '),0,WACV)
+        clusMethod = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        clusMethod.SetValue(ClusData['Scikit'])
+        clusMethod.Bind(wx.EVT_COMBOBOX,OnClusMethod)
+        clusSizer.Add(clusMethod,0,WACV)
+        if ClusData['Scikit'] in ['K-Means','Spectral clustering','Agglomerative clustering']:
+            nchoice = [str(i) for i in range(2,16)]
+            clusSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select number of clusters (2-15): '),0,WACV)
+            numclust = wx.ComboBox(G2frame.dataWindow,choices=nchoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            numclust.SetValue(str(ClusData['NumClust']))
+            numclust.Bind(wx.EVT_COMBOBOX,OnClusNum)
+            clusSizer.Add(numclust,0,WACV)
+        compute = wx.Button(G2frame.dataWindow,label='Compute')
+        compute.Bind(wx.EVT_BUTTON,OnCompute)
+        clusSizer.Add(compute)
+        scikitSizer.Add(clusSizer)
+        useTxt = '%s used the whitened data matrix'%ClusData['Scikit']
+        if ClusData['Scikit'] in ['Spectral clustering','Agglomerative clustering']:
+            useTxt = '%s used %s for distance method'%(ClusData['Scikit'],ClusData['Method'])
+        print(useTxt)
+        scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=useTxt))
+        return scikitSizer
+    
+    def memberSizer():
+        
+        def OnClusNum(event):
+            shoNum = int(numclust.GetValue())
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
+            
+        NClust = np.max(ClusData['codes'])
+        memSizer = wx.BoxSizer(wx.VERTICAL)
+        memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations:'))        
+        for i in range(NClust+1):
+            nPop= len(ClusData['codes'])-np.count_nonzero(ClusData['codes']-i)
+            memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster #%d has %d members'%(i,nPop)))        
+        headSizer = wx.BoxSizer(wx.HORIZONTAL)
+        headSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster to list members: '),0,WACV)        
+        choice = [str(i) for i in range(NClust+1)]
+        numclust = wx.ComboBox(G2frame.dataWindow,choices=choice,value=str(shoNum),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        numclust.Bind(wx.EVT_COMBOBOX,OnClusNum)
+        headSizer.Add(numclust,0,WACV)
+        memSizer.Add(headSizer)        
+        if shoNum >= 0:
+            memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Members of cluster %d:'%shoNum))
+            text = ''
+            for i,item in enumerate(ClusData['Files']):
+                if ClusData['codes'][i] == shoNum:
+                    text += '(%d) %s\n'%(i,item)
+            memSizer.Add(wx.StaticText(G2frame.dataWindow,label=text))        
+        return memSizer
             
     #patch
     ClusData['plots'] = ClusData.get('plots','All')
+    ClusData['Scikit'] = ClusData.get('Scikit','K-Means')
+    #end patch
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis: '),0,WACV)    
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Scipy Cluster Analysis: '),0,WACV)    
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
@@ -1829,14 +1915,13 @@ def UpdateClusterAnalysis(G2frame,ClusData):
             mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Distance Cluster Analysis:'))
             mainSizer.Add(MethodSizer())
             if len(ClusData['ConDistMat']):
-                Y = ClusData['ConDistMat']
-                YM = SSD.squareform(Y)
+                YM = SSD.squareform(ClusData['ConDistMat'])
                 U,s,VT = nl.svd(YM) #s are the Eigenvalues
                 ClusData['PCA'] = s
                 s[3:] = 0.
                 S = np.diag(s)
-                XYZ = np.dot(U,np.dot(S,VT))
-                G2plt.PlotClusterXYZ(G2frame,XYZ,XYZ[:3,:],ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+                XYZ = np.dot(S,VT)
+                G2plt.PlotClusterXYZ(G2frame,YM,XYZ[:3,:],ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical Cluster Analysis:'))
                 mainSizer.Add(HierSizer())
@@ -1844,10 +1929,13 @@ def UpdateClusterAnalysis(G2frame,ClusData):
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='K-means Cluster Analysis:'))
                 mainSizer.Add(kmeanSizer())
-                if ClusData['codes'] is not None:
+                if 'dists' in ClusData:
                     kmeansres = wx.BoxSizer(wx.HORIZONTAL)
                     kmeansres.Add(wx.StaticText(G2frame.dataWindow,label='K-means ave. dist = %.2f'%np.mean(ClusData['dists'])))
                     mainSizer.Add(kmeansres)
+            if ClusData['codes'] is not None:
+                G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+                mainSizer.Add(memberSizer())
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             plotSizer = wx.BoxSizer(wx.HORIZONTAL)
             plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
@@ -1861,16 +1949,16 @@ def UpdateClusterAnalysis(G2frame,ClusData):
             plotSizer.Add(plotsel,0,WACV)
             mainSizer.Add(plotSizer)
             
-        if ClusData['SKLearn']:
-            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
+            if ClusData['SKLearn'] and len(ClusData['ConDistMat']):
+                G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add((-1,-1),1,wx.EXPAND)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Scikit-Learn Cluster Analysis: '),0,WACV)    
+                subSizer.Add((-1,-1),1,wx.EXPAND)
+                mainSizer.Add(subSizer,0,wx.EXPAND)
+                mainSizer.Add(ScikitSizer())
             
-            
-            
-            
-    
-    
-    
+                
     bigSizer.Add(mainSizer)
         
     bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Cluster Analysis'))

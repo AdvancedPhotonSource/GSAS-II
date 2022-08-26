@@ -1806,7 +1806,7 @@ class GSASII(wx.Frame):
                 u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
                 pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
             if os.path.exists(lastIparmfile):
-                dlg.SetFilename(lastIparmfile)
+                dlg.SetFilename(os.path.split(lastIparmfile)[-1])
             if dlg.ShowModal() == wx.ID_OK:
                 instfile = dlg.GetPath()
             dlg.Destroy()
@@ -5710,7 +5710,7 @@ class GSASII(wx.Frame):
                 
             Id = self.GPXtree.AppendItem(self.root,text='Cluster Analysis')
             ClustDict = {'Files':[],'Method':'correlation','Limits':[0.,100.],'DataMatrix':[],'plots':'All',
-                'LinkMethod':'average','Opt Order':False,'ConDistMat':[],'NumClust':2,'codes':None}
+                'LinkMethod':'average','Opt Order':False,'ConDistMat':[],'NumClust':2,'codes':None,'Scikit':'K-Means'}
             self.GPXtree.SetItemPyData(Id,ClustDict)
         else:
             ClustDict = self.GPXtree.GetItemPyData(Id)

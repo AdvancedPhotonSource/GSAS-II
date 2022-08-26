@@ -11577,18 +11577,25 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     :param str PlotName: plot tab name
     '''
     import scipy.cluster.hierarchy as SCH
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes   
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes 
+    
+    global SetPick
+    SetPick = True
     def OnMotion(event):
-        
+        global SetPick
         if event.xdata and event.ydata:        
             G2frame.G2plotNB.status.SetStatusText('x=%.3f y=%.3f'%(event.xdata,event.ydata),1)
+            SetPick = True
             
     def OnPick(event):
-        line = event.artist
-        ind = int(line.get_label().split('tion')[1])
-        text = 'Data selected: %s'%(CLuDict['Files'][ind])
-        G2frame.G2plotNB.status.SetStatusText(text,1)
-        print(text)
+        global SetPick
+        if SetPick:
+            line = event.artist
+            ind = int(line.get_label().split('tion')[1])
+            text = 'PCA Data selected: (%d) %s'%(ind,CLuDict['Files'][ind])
+            G2frame.G2plotNB.status.SetStatusText(text,1)
+            SetPick = False
+            print(text)
             
     Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan', 
               'xkcd:magenta','xkcd:black','xkcd:pink','xkcd:brown',
@@ -11625,9 +11632,11 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
     elif CLuDict['plots'] == '3D PCA':
         if CLuDict['codes'] is not None:
-            Plot.scatter(XYZ[0],XYZ[1],XYZ[2],color=[Colors[code] for code in CLuDict['codes']],picker=True)
+            for ixyz,xyz in enumerate(XYZ.T):
+                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[CLuDict['codes'][ixyz]],picker=True)
         else:
-            Plot.scatter(XYZ[0],XYZ[1],XYZ[2],color=Colors[0],picker=True)
+            for ixyz,xyz in enumerate(XYZ.T):
+                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
         Plot.set_xlabel('PCA axis-1',fontsize=12)
         Plot.set_ylabel('PCA axis-2',fontsize=12)
         Plot.set_zlabel('PCA axis-3',fontsize=12)
@@ -11653,11 +11662,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         if CLuDict['codes'] is not None:
             for ixyz,xyz in enumerate(XYZ.T):
                 ax2.scatter(xyz[0],xyz[1],xyz[2],color=Colors[CLuDict['codes'][ixyz]],picker=True)
-#            ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=[Colors[code] for code in CLuDict['codes']],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 ax2.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
-#            ax2.scatter(XYZ[0],XYZ[1],XYZ[2],color=Colors[0],picker=True)
         ax2.set_xlabel('PCA axis-1',fontsize=12)
         ax2.set_ylabel('PCA axis-2',fontsize=12)
         ax2.set_zlabel('PCA axis-3',fontsize=12)

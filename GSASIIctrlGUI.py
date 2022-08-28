@@ -7268,9 +7268,9 @@ tutorialIndex = (
      '''This shows how to simulate some diffraction patterns from poorly ordered Georgia kaolinite (Al2Si2O5(OH)4) clay.'''],
 
 ['Powder diffractometer calibration'], #######################################################
-    ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
+    ['CWInstDemo', 'FindProfParamCW.htm',  'Create Instrument Parameter File: Determine Starting Profile from a Standard',
      '''This shows how to determine profile parameters by fitting individual peaks
-        with data collected on a standard using a lab diffractometer.'''],
+        with data collected on a standard using a lab diffractometer and then same them for reuse.'''],
     ['FPAfit', 'FPAfit.htm',  'Determining Profile Parameters with Fundamental Parameters',
      '''This shows how to determine profile parameters by fitting 
      peaks that are computed using the NIST Fundamental Parameters Python

@@ -1567,7 +1567,11 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
     import scipy.cluster.vq as SCV
-    import sklearn.cluster as SKC    
+    import sklearn.cluster as SKC
+    import sklearn.ensemble as SKE
+    import sklearn.covariance as SKCO
+    import sklearn.neighbors as SKN
+    import sklearn.svm as SKVM
         
     SKLearnCite = '''If you use Scikit-Learn Cluster Analysis, please cite:
     'Scikit-learn: Machine Learning in Python', Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V.,
@@ -1848,7 +1852,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             clusSizer.Add(numclust,0,WACV)
         compute = wx.Button(G2frame.dataWindow,label='Compute')
         compute.Bind(wx.EVT_BUTTON,OnCompute)
-        clusSizer.Add(compute)
+        clusSizer.Add(compute,0,WACV)
         scikitSizer.Add(clusSizer)
         useTxt = '%s used the whitened data matrix'%ClusData['Scikit']
         if ClusData['Scikit'] in ['Spectral clustering','Agglomerative clustering']:
@@ -1884,10 +1888,42 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                     text += '(%d) %s\n'%(i,item)
             memSizer.Add(wx.StaticText(G2frame.dataWindow,label=text))        
         return memSizer
+    
+    def outlierSizer():
+        
+        def OnOutSel(event):
+            ClusData['OutMethod'] = outsel.GetValue()
+            OnCompute(event)
+            
+        def OnCompute(event):
+            if ClusData['OutMethod'] == 'One-Class SVM':
+                ClusData['codes'] = SKVM.OneClassSVM().fit_predict(ClusData['DataMatrix'])
+            elif ClusData['OutMethod'] == 'Isolation Forest':
+                ClusData['codes'] = SKE.IsolationForest().fit_predict(ClusData['DataMatrix'])
+            elif ClusData['OutMethod'] == 'Local Outlier Factor':
+                ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
+        
+        outSizer = wx.BoxSizer(wx.VERTICAL)
+        outSizer.Add(wx.StaticText(G2frame.dataWindow,label='Outlier (bad data) analysis with Scikit-learn:'))
+        choice = ['One-Class SVM','Isolation Forest','Local Outlier Factor']
+        outline = wx.BoxSizer(wx.HORIZONTAL)
+        outline.Add(wx.StaticText(G2frame.dataWindow,label='Select method: '),0,WACV)
+        outsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        outsel.SetValue(ClusData['OutMethod'])
+        outsel.Bind(wx.EVT_COMBOBOX,OnOutSel)
+        outline.Add(outsel,0,WACV)
+        compute = wx.Button(G2frame.dataWindow,label='Compute')
+        compute.Bind(wx.EVT_BUTTON,OnCompute)
+        outline.Add(compute,0,WACV)
+        outSizer.Add(outline)
+        return outSizer
             
     #patch
+    ClusData['SKLearn'] = ClusData.get('SKLearn',False)
     ClusData['plots'] = ClusData.get('plots','All')
     ClusData['Scikit'] = ClusData.get('Scikit','K-Means')
+    ClusData['OutMethod'] = ClusData.get('OutMethod','Isolation Forest')
     #end patch
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1957,6 +1993,22 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 subSizer.Add((-1,-1),1,wx.EXPAND)
                 mainSizer.Add(subSizer,0,wx.EXPAND)
                 mainSizer.Add(ScikitSizer())
+                
+        if len(ClusData['DataMatrix']) > 15:
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+            mainSizer.Add(outlierSizer())
+            Nout = len(ClusData['codes'])-np.count_nonzero(ClusData['codes']+1)
+            if Nout > 0:
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='%d Probable outlier data found by %s:'%(Nout,ClusData['OutMethod'])))
+                text = ''
+                for i,item in enumerate(ClusData['Files']):
+                    if ClusData['codes'][i] < 0:
+                        text += '(%d) %s\n'%(i,item)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=text))        
+            else:
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='No outlier data found'))
+        
+    
             
                 
     bigSizer.Add(mainSizer)

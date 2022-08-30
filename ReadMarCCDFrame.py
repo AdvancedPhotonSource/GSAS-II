@@ -458,5 +458,6 @@ class marFrame():
                  curAttr != '__module__' and \
                  curAttr != 'outputHead' and \
                  curAttr != 'image' ):
-                myHead.append(" %s = %s" % (curAttr,getattr(self,curAttr)))
+                if '__' not in str(curAttr):
+                    myHead.append(" %s = %s" % (curAttr,getattr(self,curAttr)))
         return myHead

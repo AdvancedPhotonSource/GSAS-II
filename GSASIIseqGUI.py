@@ -1867,6 +1867,16 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             shoNum = int(numclust.GetValue())
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
             
+        def OnSelection(event):
+            name = cluslist.GetStringSelection()
+            item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            G2frame.PatternId = item
+            if 'PWDR' in name:
+                G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+            else: #PDF
+                data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+                G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+            
         NClust = np.max(ClusData['codes'])
         memSizer = wx.BoxSizer(wx.VERTICAL)
         memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations:'))        
@@ -1881,12 +1891,14 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         headSizer.Add(numclust,0,WACV)
         memSizer.Add(headSizer)        
         if shoNum >= 0:
-            memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Members of cluster %d:'%shoNum))
-            text = ''
+            memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Members of cluster %d (select to show data plot):'%shoNum))
+            ClusList = []
             for i,item in enumerate(ClusData['Files']):
-                if ClusData['codes'][i] == shoNum:
-                    text += '(%d) %s\n'%(i,item)
-            memSizer.Add(wx.StaticText(G2frame.dataWindow,label=text))        
+                 if ClusData['codes'][i] == shoNum:
+                     ClusList.append(item)               
+            cluslist = wx.ListBox(G2frame.dataWindow, choices=ClusList)
+            cluslist.Bind(wx.EVT_LISTBOX,OnSelection)
+            memSizer.Add(cluslist)
         return memSizer
     
     def outlierSizer():
@@ -1904,6 +1916,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
         
+            
         outSizer = wx.BoxSizer(wx.VERTICAL)
         outSizer.Add(wx.StaticText(G2frame.dataWindow,label='Outlier (bad data) analysis with Scikit-learn:'))
         choice = ['One-Class SVM','Isolation Forest','Local Outlier Factor']
@@ -1919,6 +1932,17 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         outSizer.Add(outline)
         return outSizer
             
+    def OnSelection(event):
+        name = outlist.GetStringSelection()
+        item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+        G2frame.PatternId = item
+        if 'PWDR' in name:
+            G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+        else:
+            data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
+            G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+
     #patch
     ClusData['SKLearn'] = ClusData.get('SKLearn',False)
     ClusData['plots'] = ClusData.get('plots','All')
@@ -1999,12 +2023,15 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             mainSizer.Add(outlierSizer())
             Nout = len(ClusData['codes'])-np.count_nonzero(ClusData['codes']+1)
             if Nout > 0:
-                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='%d Probable outlier data found by %s:'%(Nout,ClusData['OutMethod'])))
-                text = ''
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    label='%d Probable outlier data found by %s (select to show data plot):'%(Nout,ClusData['OutMethod'])))
+                OutList = []
                 for i,item in enumerate(ClusData['Files']):
-                    if ClusData['codes'][i] < 0:
-                        text += '(%d) %s\n'%(i,item)
-                mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=text))        
+                     if ClusData['codes'][i] < 0:
+                         OutList.append(item)               
+                outlist = wx.ListBox(G2frame.dataWindow, choices=OutList)
+                outlist.Bind(wx.EVT_LISTBOX,OnSelection)
+                mainSizer.Add(outlist)        
             else:
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='No outlier data found'))
         

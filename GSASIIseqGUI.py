@@ -1569,9 +1569,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     import scipy.cluster.vq as SCV
     import sklearn.cluster as SKC
     import sklearn.ensemble as SKE
-    import sklearn.covariance as SKCO
     import sklearn.neighbors as SKN
     import sklearn.svm as SKVM
+    import sklearn.metrics as SKM
         
     SKLearnCite = '''If you use Scikit-Learn Cluster Analysis, please cite:
     'Scikit-learn: Machine Learning in Python', Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V.,
@@ -1817,7 +1817,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         def OnCompute(event):
             whitMat = SCV.whiten(ClusData['DataMatrix'])
             if ClusData['Scikit'] == 'K-Means':
-                result = SKC.KMeans(n_clusters=ClusData['NumClust'],algorithm='elkan').fit(whitMat)
+                result = SKC.KMeans(n_clusters=ClusData['NumClust'],algorithm='elkan',init='k-means++').fit(whitMat)
                 print('K-Means sum squared dist. to means %.2f'%result.inertia_)
             elif ClusData['Scikit'] == 'Spectral clustering':
                 result = SKC.SpectralClustering(n_clusters=ClusData['NumClust']).fit(whitMat)
@@ -1832,7 +1832,21 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                     affinity='precomputed',linkage='average').fit(SSD.squareform(ClusData['ConDistMat']))
             
             ClusData['codes'] = result.labels_
+            ClusData['Metrics'] = Metrics(whitMat,result)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+            
+        def Metrics(whitMat,result):
+            if np.max(result.labels_) >= 1:
+                Scoeff = SKM.silhouette_score(whitMat,result.labels_,metric='euclidean')
+                print('Silhouette Coefficient: %.3f'%Scoeff)
+                CHcoeff = SKM.calinski_harabasz_score(whitMat,result.labels_)
+                print('Calinski-Harabasz index (Variance ratio): %.3f'%CHcoeff)
+                DBcoeff = SKM.davies_bouldin_score(whitMat,result.labels_)
+                print('Davies-Bouldin Index: %.3f'%DBcoeff)
+                return Scoeff,CHcoeff,DBcoeff
+            else:
+                print('number of clusters found must be > 1 for metrics to be determined')
+                return None
                                
         scikitSizer = wx.BoxSizer(wx.VERTICAL)
         scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
@@ -1857,8 +1871,11 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         useTxt = '%s used the whitened data matrix'%ClusData['Scikit']
         if ClusData['Scikit'] in ['Spectral clustering','Agglomerative clustering']:
             useTxt = '%s used %s for distance method'%(ClusData['Scikit'],ClusData['Method'])
-        print(useTxt)
         scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=useTxt))
+        if ClusData.get('Metrics',None) is not None:
+            metrics = ClusData['Metrics']
+            scikitSizer.Add(wx.StaticText(G2frame.dataWindow,
+                label='Metrics: Silhoutte: %.3f, Variance: %.3f, Davies-Bouldin: %.3f'%(metrics[0],metrics[1],metrics[2])))
         return scikitSizer
     
     def memberSizer():
@@ -1876,13 +1893,20 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             else: #PDF
                 data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
-            
+                
+        #need 15 colors; values adjusted to match xkcs/PCA plot colors. NB: RGB reverse order from xkcd values.    
+        Colors = [['xkcd:blue',0xff0000],['xkcd:red',0x0000ff],['xkcd:green',0x00a000],['xkcd:cyan',0xd0d000], 
+                  ['xkcd:magenta',0xa000a0],['xkcd:black',0x000000],['xkcd:pink',0xb469ff],['xkcd:brown',0x13458b],
+                  ['xkcd:teal',0x808000],['xkcd:orange',0x008cff],['xkcd:grey',0x808080],['xkcd:violet',0xe22b8a],
+                  ['xkcd:aqua',0xaaaa00],['xkcd:blueberry',0xcd5a6a],['xkcd:bordeaux',0x00008b]] 
         NClust = np.max(ClusData['codes'])
         memSizer = wx.BoxSizer(wx.VERTICAL)
-        memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations:'))        
+        memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations (colors refer to cluster colors in PCA plot):'))        
         for i in range(NClust+1):
             nPop= len(ClusData['codes'])-np.count_nonzero(ClusData['codes']-i)
-            memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster #%d has %d members'%(i,nPop)))        
+            txt = wx.StaticText(G2frame.dataWindow,label='Cluster #%d has %d members'%(i,nPop))
+            txt.SetForegroundColour(wx.Colour(Colors[i][1]))
+            memSizer.Add(txt)        
         headSizer = wx.BoxSizer(wx.HORIZONTAL)
         headSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster to list members: '),0,WACV)        
         choice = [str(i) for i in range(NClust+1)]
@@ -1897,6 +1921,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                  if ClusData['codes'][i] == shoNum:
                      ClusList.append(item)               
             cluslist = wx.ListBox(G2frame.dataWindow, choices=ClusList)
+            cluslist.SetForegroundColour(wx.Colour(Colors[shoNum][1]))
             cluslist.Bind(wx.EVT_LISTBOX,OnSelection)
             memSizer.Add(cluslist)
         return memSizer
@@ -1915,7 +1940,6 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             elif ClusData['OutMethod'] == 'Local Outlier Factor':
                 ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
-        
             
         outSizer = wx.BoxSizer(wx.VERTICAL)
         outSizer.Add(wx.StaticText(G2frame.dataWindow,label='Outlier (bad data) analysis with Scikit-learn:'))
@@ -2034,9 +2058,6 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 mainSizer.Add(outlist)        
             else:
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='No outlier data found'))
-        
-    
-            
                 
     bigSizer.Add(mainSizer)
         

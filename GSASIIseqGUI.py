@@ -1730,7 +1730,17 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
             
         def OnCompute(event):
-            ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'])
+            if 'minkowski' in ClusData['Method']:
+                ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'],p=int(ClusData['MinkP']))
+            else:
+                ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'])
+            wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
+            
+        def OnExponent(event):
+            ClusData['MinkP'] = minp.GetValue()
+            ClusData['ConDistMat'] = []
+            ClusData['CLuZ'] = None
+            OnCompute(event)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
         
         choice = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine',  \
@@ -1741,6 +1751,13 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         method.SetValue(ClusData['Method'])
         method.Bind(wx.EVT_COMBOBOX, OnClusterMethod)
         methsizer.Add(method,0,WACV)
+        if 'minkowski' in ClusData['Method']:
+            methsizer.Add(wx.StaticText(G2frame.dataWindow,label=' exponent: '),0,WACV)
+            choicep = ['1','2','3','4','10']
+            minp = wx.ComboBox(G2frame.dataWindow,choices=choicep,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            minp.SetValue(ClusData['MinkP'])
+            minp.Bind(wx.EVT_COMBOBOX, OnExponent)
+            methsizer.Add(minp,0,WACV)
         compute = wx.Button(G2frame.dataWindow,label='Compute distance matrix')
         compute.Bind(wx.EVT_BUTTON,OnCompute)
         methsizer.Add(compute,0,WACV)
@@ -1825,7 +1842,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 result = SKC.MeanShift().fit(whitMat)
                 print('Number of Mean-shift clusters found: %d'%(np.max(result.labels_)+1))
             elif ClusData['Scikit'] == 'Affinity propagation':
-                result = SKC.AffinityPropagation(affinity='precomputed').fit(SSD.squareform(ClusData['ConDistMat']))
+                result = SKC.AffinityPropagation(affinity='precomputed',damping=0.5).fit(SSD.squareform(ClusData['ConDistMat']))
                 print('Number of Affinity propagation clusters found: %d'%(np.max(result.labels_)+1))
             elif ClusData['Scikit'] == 'Agglomerative clustering':
                 result = SKC.AgglomerativeClustering(n_clusters=ClusData['NumClust'],
@@ -1852,7 +1869,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
         choice = ['K-Means','Affinity propagation','Mean-shift','Spectral clustering','Agglomerative clustering']
         clusSizer = wx.BoxSizer(wx.HORIZONTAL)
-        clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select clusering method: '),0,WACV)
+        clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select clustering method: '),0,WACV)
         clusMethod = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         clusMethod.SetValue(ClusData['Scikit'])
         clusMethod.Bind(wx.EVT_COMBOBOX,OnClusMethod)
@@ -1869,7 +1886,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         clusSizer.Add(compute,0,WACV)
         scikitSizer.Add(clusSizer)
         useTxt = '%s used the whitened data matrix'%ClusData['Scikit']
-        if ClusData['Scikit'] in ['Spectral clustering','Agglomerative clustering']:
+        if ClusData['Scikit'] in ['Agglomerative clustering','Affinity propagation']:
             useTxt = '%s used %s for distance method'%(ClusData['Scikit'],ClusData['Method'])
         scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=useTxt))
         if ClusData.get('Metrics',None) is not None:
@@ -1972,6 +1989,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     ClusData['plots'] = ClusData.get('plots','All')
     ClusData['Scikit'] = ClusData.get('Scikit','K-Means')
     ClusData['OutMethod'] = ClusData.get('OutMethod','Isolation Forest')
+    ClusData['MinkP'] = ClusData.get('MinkP','2')
     #end patch
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2026,7 +2044,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             if ClusData['CLuZ'] is None:
                 choice = ['All','Distances','3D PCA',]
             else:
-                choice = ['All','Distances','Dendogram','3D PCA',]
+                choice = ['All','Distances','Dendrogram','3D PCA',]
             plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             plotsel.SetValue(str(ClusData['plots']))
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)
@@ -2045,7 +2063,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         if len(ClusData['DataMatrix']) > 15:
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             mainSizer.Add(outlierSizer())
-            Nout = len(ClusData['codes'])-np.count_nonzero(ClusData['codes']+1)
+            Nout = 0
+            if ClusData['codes'] is not None:
+                Nout = len(ClusData['codes'])-np.count_nonzero(ClusData['codes']+1)
             if Nout > 0:
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,
                     label='%d Probable outlier data found by %s (select to show data plot):'%(Nout,ClusData['OutMethod'])))
@@ -2061,7 +2081,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 
     bigSizer.Add(mainSizer)
         
-    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Cluster Analysis'))
+    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)

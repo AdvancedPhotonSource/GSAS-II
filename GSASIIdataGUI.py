@@ -8082,6 +8082,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
             data = G2frame.GPXtree.GetItemPyData(item)
+            G2frame.dataWindow.helpKey = 'Cluster Analysis'
             G2seq.UpdateClusterAnalysis(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Restraints':
             data = G2frame.GPXtree.GetItemPyData(item)

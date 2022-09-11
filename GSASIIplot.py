@@ -11572,7 +11572,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param array YM: data matrix; plotted as contour
     :param array XYZ: array of 3D PCA coordinates; plotted as 3D scatter plot
-    ;param dict CLuDict: Cluster info; may have dendogram & Kmeans results
+    ;param dict CLuDict: Cluster info; may have dendrogram & Kmeans results
     :param str Title: plot title
     :param str PlotName: plot tab name
     '''
@@ -11615,7 +11615,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         
     Imin = np.min(YM)
     Imax = np.max(YM)
-    if CLuDict['CLuZ'] is None and CLuDict['plots'] == 'Dendogram':
+    if CLuDict['CLuZ'] is None and CLuDict['plots'] == 'Dendrogram':
         CLuDict['plots'] = 'All'
     if CLuDict['plots'] == 'Distances':
         Page.ImgObj = Plot.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
@@ -11625,7 +11625,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_title(Title+' distances')
         Plot.set_xlabel('Data set',fontsize=12)
         Plot.set_ylabel('Data set',fontsize=12)
-    elif CLuDict['plots'] == 'Dendogram':
+    elif CLuDict['plots'] == 'Dendrogram':
         CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=Plot)
         Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
         Plot.set_xlabel(r''+'data set no.',fontsize=12)
@@ -11671,8 +11671,8 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         if CLuDict['CLuZ'] is not None:
             CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
             ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
-            ax3.set_xlabel(r''+'data set no.',fontsize=12)
-            ax3.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
+            ax3.set_ylabel(r''+'data set no.',fontsize=12)
+            ax3.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=12)
             ax4.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
             ax4.set_xlabel('PCA index',fontsize=12)
             ax4.set_ylabel('% of total',fontsize=12)

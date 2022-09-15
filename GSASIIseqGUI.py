@@ -1567,11 +1567,14 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
     import scipy.cluster.vq as SCV
-    import sklearn.cluster as SKC
-    import sklearn.ensemble as SKE
-    import sklearn.neighbors as SKN
-    import sklearn.svm as SKVM
-    import sklearn.metrics as SKM
+    try:
+        import sklearn.cluster as SKC
+        import sklearn.ensemble as SKE
+        import sklearn.neighbors as SKN
+        import sklearn.svm as SKVM
+        import sklearn.metrics as SKM
+    except:
+        ClusData['SKLearn'] = False
         
     SKLearnCite = '''If you use Scikit-Learn Cluster Analysis, please cite:
     'Scikit-learn: Machine Learning in Python', Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V.,
@@ -2060,7 +2063,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 mainSizer.Add(subSizer,0,wx.EXPAND)
                 mainSizer.Add(ScikitSizer())
                 
-        if len(ClusData['DataMatrix']) > 15:
+        if ClusData['SKLearn'] and len(ClusData['DataMatrix']) > 15:
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             mainSizer.Add(outlierSizer())
             Nout = 0

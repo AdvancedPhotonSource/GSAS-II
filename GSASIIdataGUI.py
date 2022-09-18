@@ -5705,6 +5705,8 @@ class GSASII(wx.Frame):
             if res:
                 msg = 'Installation of the sklearn package failed with error:\n' + str(res)
                 G2G.G2MessageBox(self,msg,'Install sklearn Error')
+            else:
+                SKLearn = True
         Id = GetGPXtreeItemId(self,self.root,'Cluster Analysis')
         if not Id:
                 

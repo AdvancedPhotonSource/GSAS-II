@@ -1573,6 +1573,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         import sklearn.neighbors as SKN
         import sklearn.svm as SKVM
         import sklearn.metrics as SKM
+        ClusData['SKLearn'] = True
     except:
         ClusData['SKLearn'] = False
         

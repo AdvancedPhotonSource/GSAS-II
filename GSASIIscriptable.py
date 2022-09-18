@@ -2359,7 +2359,8 @@ class G2Project(G2ObjectWrapper):
         self.data[histname]['data'][0]['Dummy'] = True
         return self.histogram(histname)
     
-    def add_phase(self, phasefile, phasename=None, histograms=[], fmthint=None):
+    def add_phase(self, phasefile, phasename=None, histograms=[],
+                      fmthint=None, mag=False):
         """Loads a phase into the project from a .cif file
 
         :param str phasefile: The CIF file from which to import the phase.
@@ -2371,6 +2372,7 @@ class G2Project(G2ObjectWrapper):
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
+        :param bool mag: Set to True to read a magCIF
 
         :returns: A :class:`G2Phase` object representing the
             new phase.
@@ -2383,15 +2385,20 @@ class G2Project(G2ObjectWrapper):
         phasereaders = import_generic(phasefile, Readers['Phase'], fmthint=fmthint)
         phasereader = phasereaders[0]
         
-        phasename = phasename or phasereader.Phase['General']['Name']
+        if phasereader.MPhase and mag:
+            phObj = phasereader.MPhase
+        else:
+            phObj = phasereader.Phase
+            
+        phasename = phasename or phObj['General']['Name']
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
-        phasereader.Phase['General']['Name'] = phasename
+        phObj['General']['Name'] = phasename
 
         if 'Phases' not in self.data:
             self.data[u'Phases'] = { 'data': None }
         assert phasename not in self.data['Phases'], "phase names should be unique"
-        self.data['Phases'][phasename] = phasereader.Phase
+        self.data['Phases'][phasename] = phObj
 
         # process constraints, currently generated only from ISODISTORT CIFs
         if phasereader.Constraints:

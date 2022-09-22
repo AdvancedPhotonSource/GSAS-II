@@ -1132,7 +1132,8 @@ def UpdatePeakGrid(G2frame, data):
         if 'LF' in Inst['Type'][0]:
             for i in range(len(data['LFpeaks'])):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
-        OnPeakFit(noFit=True)
+        if data['peaks']:
+            OnPeakFit(noFit=True)
         
     def OnSetPeakWidMode(event):
         '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 

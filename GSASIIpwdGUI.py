@@ -1276,7 +1276,7 @@ def UpdatePeakGrid(G2frame, data):
     mainSizer.Add(reflGrid,0,wx.ALL,10)
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
-    RefreshPeakGrid(None)
+    #RefreshPeakGrid(None)
     
 ################################################################################
 #####  Background

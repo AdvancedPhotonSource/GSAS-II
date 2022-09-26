@@ -7340,7 +7340,10 @@ tutorialIndex = (
     ['PythonScript','CommandLine.htm','     Running a GSAS-II Refinement from the Command Line',
      '''This shows a unix script that duplicates the previous Python Scripting GSAS-II tutorial. '''],
     
-    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
+    ['ClusterAnalysis','Cluster and Outlier Analysis.htm', 'Cluster and Outlier Analysis',
+     '''This gives an example of using Cluster and Outlier Analysis with PWDR data.'''],
+    
+    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Exam'ple descriptive text'''],
     )
     
     # A catalog of GSAS-II tutorials with headings. This is the master list of GSAS-II tutorials and

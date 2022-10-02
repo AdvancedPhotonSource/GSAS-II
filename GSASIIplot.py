@@ -191,18 +191,13 @@ try:  # fails on doc build
     sq8ln2 = np.sqrt(8.0*np.log(2.0))
 except TypeError:
     pass
-if '2' in platform.python_version_tuple()[0]:
-    GkDelta = unichr(0x0394)
-    Gkrho = unichr(0x03C1)
-    super2 = unichr(0xb2)
-    Angstr = unichr(0x00c5)
-    Pwrm1 = unichr(0x207b)+unichr(0x0b9)
-else:
-    GkDelta = chr(0x0394)
-    Gkrho = chr(0x03C1)
-    super2 = chr(0xb2)
-    Angstr = chr(0x00c5)
-    Pwrm1 = chr(0x207b)+chr(0x0b9)
+if '2' not in platform.python_version_tuple()[0]:
+    unichr = chr
+GkDelta = unichr(0x0394)
+Gkrho = unichr(0x03C1)
+super2 = unichr(0xb2)
+Angstr = unichr(0x00c5)
+Pwrm1 = unichr(0x207b)+unichr(0x0b9)
 # misc global vars
 nxs = np.newaxis
 plotDebug = False
@@ -3800,14 +3795,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
                 clr = orange
+                dash = (3,3)
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
+                hklind = G2frame.PlotOpts.get('hklHighlight',0)
+                if hklind != 0:  # highlight selected classes of reflections
+                    if hkl[hklind-1] != 0:
+                        clr = 'b'
+                        dash = (5,2)
                 if Page.plotStyle['qPlot']:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=dash,lw=1.5)
                 elif Page.plotStyle['dPlot']:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=dash,lw=1.5)
                 else:
-                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=1.5)
+                    Plot.axvline(hkl[-2],color=clr,dashes=dash,lw=1.5)
             for hkl in G2frame.Extinct: # plot extinct reflections
                 clr = 'b'
                 if Page.plotStyle['qPlot']:
@@ -4313,7 +4314,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             pname = layr.obj.GetStrProp('plot{}.name'.format(pindex+1))
             layr.lt_exec('set {} -w 1000'.format(pname))
         
-        import itertools # delay this since not commonly called or needed
+        #import itertools # delay this since not commonly called or needed
 
         try:
             import originpro as op
@@ -4409,10 +4410,10 @@ in a cmd.exe window to do this.
                 lblList.append(lbl)
                 valueList.append([l.get_text(),l.get_position()[0]])
         # invert lists into columns, use iterator for all values
-        if hasattr(itertools,'zip_longest'): #Python 3+
-            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
-        else:
-            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
+        #if hasattr(itertools,'zip_longest'): #Python 3+
+        #    invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
+        #else:
+        #    invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
 
         # Start Origin instance
         if op and op.oext:

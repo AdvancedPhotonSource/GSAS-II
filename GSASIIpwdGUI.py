@@ -56,32 +56,21 @@ import G2shapes
 import SUBGROUPS as kSUB
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
-if '2' in platform.python_version_tuple()[0]:
-    GkDelta = unichr(0x0394)
-    GkSigma = unichr(0x03a3)
-    GkTheta = unichr(0x03f4)
-    Gklambda = unichr(0x03bb)
-    Pwr10 = unichr(0x0b9)+unichr(0x2070)
-    Pwr20 = unichr(0x0b2)+unichr(0x2070)
-    Pwrm1 = unichr(0x207b)+unichr(0x0b9)
-    Pwrm2 = unichr(0x207b)+unichr(0x0b2)
-    Pwrm6 = unichr(0x207b)+unichr(0x2076)
-    Pwrm4 = unichr(0x207b)+unichr(0x2074)
-    Angstr = unichr(0x00c5)
-    superMinusOne = unichr(0xaf)+unichr(0xb9)
-else:
-    GkDelta = chr(0x0394)
-    GkSigma = chr(0x03a3)
-    GkTheta = chr(0x03f4)
-    Gklambda = chr(0x03bb)
-    Pwr10 = chr(0x0b9)+chr(0x2070)
-    Pwr20 = chr(0x0b2)+chr(0x2070)
-    Pwrm1 = chr(0x207b)+chr(0x0b9)
-    Pwrm2 = chr(0x207b)+chr(0x0b2)
-    Pwrm6 = chr(0x207b)+chr(0x2076)
-    Pwrm4 = chr(0x207b)+chr(0x2074)
-    Angstr = chr(0x00c5)
-    superMinusOne = chr(0xaf)+chr(0xb9)
+if '2' not in platform.python_version_tuple()[0]:
+    unichr = chr
+GkDelta = unichr(0x0394)
+GkSigma = unichr(0x03a3)
+GkTheta = unichr(0x03f4)
+Gklambda = unichr(0x03bb)
+Pwr10 = unichr(0x0b9)+unichr(0x2070)
+Pwr20 = unichr(0x0b2)+unichr(0x2070)
+Pwrm1 = unichr(0x207b)+unichr(0x0b9)
+Pwrm2 = unichr(0x207b)+unichr(0x0b2)
+Pwrm6 = unichr(0x207b)+unichr(0x2076)
+Pwrm4 = unichr(0x207b)+unichr(0x2074)
+Angstr = unichr(0x00c5)
+superMinusOne = unichr(0xaf)+unichr(0xb9)
+notEq0 = unichr(0x2260)+'0'
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -3529,7 +3518,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'][1] = ypos
         vec = ssopt['ModVec']
         print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnFindOneMV(event):
@@ -3665,7 +3654,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        OnHklShow(event)
         #G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
         
-    def OnHklShow(event):
+    def OnHklShow(event=None):
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
@@ -3761,7 +3750,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         data = [controls,bravais,cells,dminx,ssopt,magcells]
         G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
@@ -3838,7 +3827,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
@@ -3863,7 +3852,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
 #        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefineCell(event):
@@ -4255,7 +4244,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             del SGData['MagSpGrp']
         ssopt['SGData'] = SGData
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
             
     def OnSpinOp(event):
@@ -4270,7 +4259,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
         SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
-        OnHklShow(None)
+        OnHklShow()
         
     def OnBNSlatt(event):
         Obj = event.GetEventObject()
@@ -4288,7 +4277,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
-        OnHklShow(None)
+        OnHklShow()
             
     def OnShowSpins(event):
         msg = 'Magnetic space group information'
@@ -4320,7 +4309,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 return
         finally:
             dlg.Destroy()
-        OnHklShow(None)
+        OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnLatSym(event):
@@ -4345,7 +4334,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             dlg.Destroy()    
             return
-        import SUBGROUPS as kSUB
+        #import SUBGROUPS as kSUB
         wx.BeginBusyCursor()
         wx.MessageBox(''' For use of PSEUDOLATTICE, please cite:
       Bilbao Crystallographic Server I: Databases and crystallographic computing programs,
@@ -4367,7 +4356,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnRunSubs(event):
-        import SUBGROUPS as kSUB
+        #import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroupsMag.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
@@ -4467,7 +4456,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnRunSubsMag(event):
-        import SUBGROUPS as kSUB
+        #import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroups.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
@@ -4713,6 +4702,16 @@ def UpdateUnitCellsGrid(G2frame, data):
     shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
     shiftSel.SetSelection(3)
     littleSizer.Add(shiftSel)
+    
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',
+                                      style=wx.ALIGN_RIGHT),0,WACV)
+    G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
+    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,
+                            [ 'None',] + [c+notEq0 for c in ('h','k','l')],
+                            indLoc=G2frame.PlotOpts,indKey='hklHighlight',
+                            onChoice=OnHklShow)
+    littleSizer.Add(Sel,0,WACV)
+    
     mainSizer.Add(littleSizer,0)
     
     mainSizer.Add((5,5),0)
@@ -4758,6 +4757,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             zeroVar.SetValue(controls[0])
             zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
             littleSizer.Add(zeroVar,0,WACV)
+            
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     if 'N' in Inst['Type'][0]:

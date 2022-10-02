@@ -3146,6 +3146,7 @@ class GSASII(wx.Frame):
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = []
         self.Extinct = []
+        self.PlotOpts = {}  # new place to put plotting options
         self.Lines = []     # lines used for data limits & excluded regions
         self.MagLines = []  # lines used for plot magnification
         self.itemPicked = None

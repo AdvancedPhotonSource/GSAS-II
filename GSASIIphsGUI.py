@@ -1184,7 +1184,34 @@ class AddHatomDialog(wx.Dialog):
 #     atNum = generalData['AtomTypes'].index(atom[ct])
 #     atomInfo[cs] = list(generalData['Color'][atNum])
 #     return atomInfo
-    
+
+def getPawleydRange(G2frame,data):
+    'find d-space range in used histograms'
+    fmtd = lambda d: '?' if d is None else '{:.5f}'.format(d)
+    dmaxAll = dminAll = None
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    nhist = 0
+    for item in data['Histograms']:
+        if 'PWDR' not in item: continue
+        if not data['Histograms'][item]['Use']: continue
+        nhist += 1
+        Inst = Histograms[item]['Instrument Parameters'][0]
+        dmax,dmin = [G2lat.Pos2dsp(Inst,t) for t in Histograms[item]['Limits'][1]]
+        if dmaxAll is None: 
+            dmaxAll = dmax
+        else:
+            dmaxAll = max(dmaxAll,dmax)
+        if dminAll is None: 
+            dminAll = dmin
+        else:
+            dminAll = min(dminAll,dmin)
+    # format data range
+    lbl ="   d-space range {} to {} {}-1 ({} histograms)".format(
+        fmtd(dminAll),fmtd(dmaxAll),Angstr,nhist)
+    if dmaxAll is None: dmaxAll = 100.
+    if dminAll is None: dminAll = 0.25
+    return dminAll,dmaxAll,nhist,lbl
+        
 def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False,ask=True):
     '''get selected atoms from table or ask user if none are selected
     
@@ -2327,29 +2354,38 @@ def UpdatePhaseData(G2frame,Item,data):
             return ssSizer
                        
         def PawleySizer():
-            
-            def OnPawleyRef(event):
-                generalData['doPawley'] = pawlRef.GetValue()
+            # find d-space range in used histograms
+            dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
             
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
-            pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
-            pawlRef.SetValue(generalData['doPawley'])
-            pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
+            if nhist == 0:  # no data, no Pawley
+                pawleySizer.Add(wx.StaticText(General,label='   no data'),0,WACV)
+                generalData['doPawley'] = False
+                return pawleySizer
+            # force limits on dmin & dmax
+            generalData['Pawley dmax'] = min(generalData['Pawley dmax'],dmax)
+            generalData['Pawley dmin'] = max(generalData['Pawley dmin'],dmin)
+
+            pawlRef = G2G.G2CheckBoxFrontLbl(General,' Do Pawley refinement?',
+                                         generalData,'doPawley')
             pawleySizer.Add(pawlRef,0,WACV)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
-            pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(65,25),
-                xmin=0.25,xmax=20.,nDig=(10,5))
+            pawleySizer.Add(wx.StaticText(General,label='  dmin: '),0,WACV)
+            pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(75,-1),
+                xmin=dmin,xmax=20.,nDig=(10,5))
             pawleySizer.Add(pawlMin,0,WACV)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmax: '),0,WACV)
-            pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(65,25),
-                xmin=2.0,xmax=100.,nDig=(10,5))
+            pawleySizer.Add(wx.StaticText(General,label='  dmax: '),0,WACV)
+            pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(75,-1),
+                xmin=2.0,xmax=dmax,nDig=(10,5))
             pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
-            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,25),
+            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,-1),
                 xmin=0.,xmax=1.,nDig=(10,3,'g'))
             pawleySizer.Add(pawlNegWt,0,WACV)
-            return pawleySizer
+            pawleyOuter = wx.BoxSizer(wx.VERTICAL)
+            pawleyOuter.Add(pawleySizer)
+            pawleyOuter.Add(wx.StaticText(General,label=lbl),0,wx.LEFT,120)
+            return pawleyOuter
             
         def MapSizer():
             
@@ -10158,7 +10194,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2frame.phaseDisplay.cameraSlider = cameraPos
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
             
-            ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping, '+Angstr+': ')
+            ZclipTxt = wx.StaticText(drawOptions,wx.ID_ANY,' Z clipping, '+Angstr+': ')
             slideSizer.Add(ZclipTxt,0,WACV)
             Zval = G2G.ValidatedTxtCtrl(drawOptions,ZclipVal,0,nDig=(10,2),xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
                     xmax=.99*drawingData['cameraPos'],size=valSize,OnLeave=OnZclipVal)
@@ -10169,11 +10205,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Zclip.Bind(wx.EVT_SLIDER, OnZclip)
             slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
             
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' Z step, '+Angstr+': '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Z step, '+Angstr+': '),0,WACV)
             Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0,size=valSize)
             slideSizer.Add(Zstep,0,WACV)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
-            MoveSizer.Add(wx.StaticText(drawOptions,-1,'   Press to step:'),0,WACV)
+            MoveSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'   Press to step:'),0,WACV)
             MoveZ = wx.SpinButton(drawOptions,style=wx.SP_HORIZONTAL,size=valSize)
             MoveZ.SetValue(0)
             MoveZ.SetRange(-1,1)
@@ -10181,14 +10217,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             MoveSizer.Add(MoveZ)
             slideSizer.Add(MoveSizer,1,wx.EXPAND|wx.RIGHT)
             
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' van der Waals scale: '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' van der Waals scale: '),0,WACV)
             vdwScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=1.0,size=valSize,OnLeave=OnVdWScaleTxt)
             slideSizer.Add(vdwScaleTxt,0,WACV)
             vdwScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
             vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
             slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
     
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' Ellipsoid probability, %: '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Ellipsoid probability, %: '),0,WACV)
             ellipseProbTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ellipseProb',nDig=(10,2),xmin=1,xmax=99,size=valSize,OnLeave=OnEllipseProbTxt)
             slideSizer.Add(ellipseProbTxt,0,WACV)
             ellipseProb = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
@@ -10196,14 +10232,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
             slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
     
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' Ball scale: '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Ball scale: '),0,WACV)
             ballScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ballScale',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBallScaleTxt)
             slideSizer.Add(ballScaleTxt,0,WACV)
             ballScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
             ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
             slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
             
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond radius, A: '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Bond radius, '+Angstr+': '),0,WACV)
             bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'bondRadius',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
             slideSizer.Add(bondRadiusTxt,0,WACV)
             bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']),minValue=1,maxValue=25)
@@ -10211,14 +10247,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
             
             if generalData['Type'] == 'magnetic':
-                slideSizer.Add(wx.StaticText(drawOptions,-1,' Mag. mom. mult.: '),0,WACV)
+                slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Mag. mom. mult.: '),0,WACV)
                 magMultTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'magMult',nDig=(10,2),xmin=0.1,xmax=5.,size=valSize,OnLeave=OnMagMultTxt)
                 slideSizer.Add(magMultTxt,0,WACV)
                 magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']),minValue=10,maxValue=500)
                 magMult.Bind(wx.EVT_SLIDER, OnMagMult)
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
                         
-            slideSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor: '),0,WACV)
+            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Bond search factor: '),0,WACV)
             slideSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',
                 nDig=(10,2),xmin=0.1,xmax=1.2,size=valSize,OnLeave=OnRadFactor),0,WACV)
 
@@ -13554,6 +13590,12 @@ of the crystal structure.
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
             mainSizer.Add(G2frame.PawleyRefl)
+            for r in range(G2frame.PawleyRefl.GetNumberRows()):
+                try:
+                    if float(G2frame.PawleyRefl.GetCellValue(r,6)) < 0:
+                        G2frame.PawleyRefl.SetCellBackgroundColour(r,6,wx.RED)
+                except:
+                    pass
         else:
             msg = ('\tPawley refinement has not yet been set up. Use the Operations->"Pawley setup"'+
                        ' menu command to change this.\n\t'+
@@ -13564,13 +13606,21 @@ of the crystal structure.
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
         '''
-        
         def DisablePawleyOpts(*args):
-            pawlVal.Enable(generalData['doPawley'])
-            pawlNegWt.Enable(generalData['doPawley'])
+            for c in controlsList:
+                c.Enable(generalData['doPawley'])
+
+        controlsList = []
+        dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
         generalData = data['General']
         prevPawleySetting = generalData['doPawley']
-        generalData['doPawley'] = True  # make Pawley extraction the default if we get here
+        generalData['doPawley'] = True  # make Pawley extraction the default if window is opened
+        if nhist == 0:  # no data, no Pawley (probably can't happen here)
+            generalData['doPawley'] = False
+        else:
+            # force limits on dmin & dmax
+            generalData['Pawley dmax'] = min(generalData['Pawley dmax'],dmax)
+            generalData['Pawley dmin'] = max(generalData['Pawley dmin'],dmin)   
         startDmin = generalData['Pawley dmin']
         genDlg = wx.Dialog(G2frame,title='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
@@ -13578,33 +13628,44 @@ of the crystal structure.
         mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,
             'Set Pawley Extraction Parameters for phase '+generalData.get('Name','?')))
         mainSizer.Add([5,10])
+        pawlRef = G2G.G2CheckBoxFrontLbl(genDlg,' Do Pawley refinement?: ',generalData,'doPawley',DisablePawleyOpts)
+        mainSizer.Add(pawlRef)
+        mainSizer.Add(wx.StaticText(genDlg,label=lbl),0,wx.BOTTOM,10)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-        pawleySizer.Add(wx.StaticText(genDlg,label=' Do Pawley refinement?: '),0,WACV)
-        pawlRef = G2G.G2CheckBox(genDlg,'',generalData,'doPawley',DisablePawleyOpts)
-        pawleySizer.Add(pawlRef,0,WACV)
-        mainSizer.Add(pawleySizer)
-        pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-        pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley dmin: '),0,WACV)
-        def d2Q(*a,**kw):
-            temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
-            pawlQVal.SetValue(temp['Qmax'])
+        pawleySizer.Add(wx.StaticText(genDlg,label='   Pawley dmin: '),0,WACV)
+        #def d2Q(*a,**kw):
+        #    temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
+        #    pawlQVal.SetValue(temp['Qmax'])
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
-            xmin=0.25,xmax=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
+            xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float)
+#            xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
+        controlsList.append(pawlVal)
         pawleySizer.Add(pawlVal,0,WACV)
-        pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
-        temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
-        def Q2D(*args,**kw):
-            generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
-            pawlVal.SetValue(generalData['Pawley dmin'])        
-        pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
-            xmin=0.314,xmax=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
-        pawleySizer.Add(pawlQVal,0,WACV)
+        #pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
+        #temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
+        #def Q2D(*args,**kw):
+        #    generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
+        #    pawlVal.SetValue(generalData['Pawley dmin'])        
+        #pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
+        #    xmin=0.314,xmax=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
+        #controlsList.append(pawlQVal)
+        #pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
+
+        pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+        pawleySizer.Add(wx.StaticText(genDlg,label='   Pawley dmax: '),0,WACV)
+        pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmax',
+            xmin=2.,xmax=dmax,nDig=(10,5),typeHint=float)
+        controlsList.append(pawlVal)
+        pawleySizer.Add(pawlVal,0,WACV)
+        mainSizer.Add(pawleySizer)
+        
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
         pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley neg. wt.: '),0,WACV)
         pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
             xmin=0.,xmax=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
+        controlsList.append(pawlNegWt)
         mainSizer.Add(pawleySizer)
 
         # make OK button
@@ -13639,7 +13700,7 @@ of the crystal structure.
                     return
             finally:
                 dlg.Destroy()
-            OnPawleyLoad(event)
+            wx.CallAfter(OnPawleyLoad,event)
         else:
             wx.CallAfter(FillPawleyReflectionsGrid)
             
@@ -13694,7 +13755,17 @@ of the crystal structure.
             finally:
                 wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks
-        FillPawleyReflectionsGrid()
+
+        dlg = wx.MessageDialog(G2frame,'Do you want to initialize Pawley reflection intensities? ("Pawley estimate" command)','Initialize Pawley?',
+                wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+            if result == wx.ID_NO:
+                wx.CallAfter(FillPawleyReflectionsGrid)
+                return
+        finally:
+                dlg.Destroy()
+        wx.CallAfter(OnPawleyEstimate,event)        
         
     def OnPawleyEstimate(event):
         #Algorithm thanks to James Hester

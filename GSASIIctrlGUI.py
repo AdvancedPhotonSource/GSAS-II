@@ -31,6 +31,8 @@ Class or function name             Description
                                    the initial value and saves the choice directly into a dict
                                    or list value. Optionally calls function when a
                                    choice is selected
+:func:`G2CheckBoxFrontLbl`         A version of :class:`G2CheckBox` that places the label
+                                   for the check box in front. Otherwise works the same. 
 :class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
                                    wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
 :class:`G2SpinWidget`              A customized combination of a wx.SpinButton and a validated 
@@ -1392,7 +1394,23 @@ class G2CheckBox(wx.CheckBox):
         self.loc[self.key] = self.GetValue()
         log.LogVarChange(self.loc,self.key)
         if self.OnChange: self.OnChange(event)
-                    
+
+def G2CheckBoxFrontLbl(parent,label,loc,key,OnChange=None):
+    '''A customized version of a CheckBox that automatically initializes
+    the control to a supplied list or dict entry and updates that
+    entry as the widget is used. Same as :class:`G2CheckBox` except the 
+    label is placed before the CheckBox and returns a sizer rather than the
+    G2CheckBox. 
+
+    If the CheckBox is needed, use Sizer.myCheckBox.
+    '''
+    Sizer = wx.BoxSizer(wx.HORIZONTAL)
+    Sizer.Add(wx.StaticText(parent,label=label),0,WACV)
+    checkBox = G2CheckBox(parent,'',loc,key,OnChange)
+    Sizer.Add(checkBox,0,WACV)
+    Sizer.myCheckBox = checkBox
+    return Sizer
+    
 #### Commonly used dialogs ################################################################################
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),

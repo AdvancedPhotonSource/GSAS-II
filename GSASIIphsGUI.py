@@ -1196,7 +1196,10 @@ def getPawleydRange(G2frame,data):
         if not data['Histograms'][item]['Use']: continue
         nhist += 1
         Inst = Histograms[item]['Instrument Parameters'][0]
-        dmax,dmin = [G2lat.Pos2dsp(Inst,t) for t in Histograms[item]['Limits'][1]]
+        if 'T' in Inst['Type'][1]:
+            dmin,dmax = [G2lat.Pos2dsp(Inst,t) for t in Histograms[item]['Limits'][1]]
+        else:    
+            dmax,dmin = [G2lat.Pos2dsp(Inst,t) for t in Histograms[item]['Limits'][1]]
         if dmaxAll is None: 
             dmaxAll = dmax
         else:
@@ -13625,8 +13628,7 @@ of the crystal structure.
         genDlg = wx.Dialog(G2frame,title='Set Pawley Parameters',
                     style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,
-            'Set Pawley Extraction Parameters for phase '+generalData.get('Name','?')))
+        mainSizer.Add(wx.StaticText(genDlg,label='Set Pawley Extraction Parameters for phase '+generalData['Name']))
         mainSizer.Add([5,10])
         pawlRef = G2G.G2CheckBoxFrontLbl(genDlg,' Do Pawley refinement?: ',generalData,'doPawley',DisablePawleyOpts)
         mainSizer.Add(pawlRef)

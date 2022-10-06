@@ -1558,7 +1558,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
 #        MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
         mXYZ,MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod2(glTau,Xdata+dXdata,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
-        
+        #expand Mmod over mag symm ops. --> GSSdata
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
             if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any

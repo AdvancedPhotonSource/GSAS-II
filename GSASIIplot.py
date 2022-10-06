@@ -52,6 +52,7 @@ plotting routine               action
 :func:`PlotRigidBody`         show rigid body structures as balls & sticks
 :func:`PlotLayers`            show layer structures as balls & sticks
 :func:`PlotFPAconvolutors`    plots the convolutors from Fundamental Parameters
+:func:'PlotClusterYYZ'plots the result of cluster analysis
 ============================  ===========================================================================
 
 These plotting routines place their graphics in the GSAS-II Plot Window, which contains a
@@ -11616,6 +11617,8 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         
     Imin = np.min(YM)
     Imax = np.max(YM)
+    Ndata = len(CLuDict['Files'])
+    neighD = [YM[i][i+1] for i in range(Ndata-1)]
     if CLuDict['CLuZ'] is None and CLuDict['plots'] == 'Dendrogram':
         CLuDict['plots'] = 'All'
     if CLuDict['plots'] == 'Distances':
@@ -11631,6 +11634,11 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
         Plot.set_xlabel(r''+'data set no.',fontsize=12)
         Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
+    elif CLuDict['plots'] == 'Diffs':
+        Plot.plot(neighD)
+        Plot.set_title('Distance to next data set')
+        Plot.set_xlabel('Data no.',fontsize=12)
+        Plot.set_ylabel('dist to next',fontsize=12)
     elif CLuDict['plots'] == '3D PCA':
         if CLuDict['codes'] is not None:
             for ixyz,xyz in enumerate(XYZ.T):
@@ -11643,16 +11651,11 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_zlabel('PCA axis-3',fontsize=12)
     else:          
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
-        if CLuDict['CLuZ'] is not None:
-            gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
-            ax1 = Page.figure.add_subplot(gs[0,0])
-            ax2 = Page.figure.add_subplot(gs[1,1],projection='3d')
-            ax3 = Page.figure.add_subplot(gs[0,1])
-            ax4 = Page.figure.add_subplot(gs[1,0])
-        else:
-            ax1 = Page.figure.add_subplot(211)
-            ax2 = Page.figure.add_subplot(212,projection='3d')
-            Page.figure.tight_layout()            
+        gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
+        ax1 = Page.figure.add_subplot(gs[0,0])
+        ax2 = Page.figure.add_subplot(gs[1,1],projection='3d')
+        ax3 = Page.figure.add_subplot(gs[0,1])
+        ax4 = Page.figure.add_subplot(gs[1,0])
         Page.ImgObj = ax1.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
         cax = inset_axes(ax1,width="5%",height="100%",loc='lower left',bbox_to_anchor=(1.05, 0., 1, 1),
             bbox_transform=ax1.transAxes,borderpad=0)
@@ -11669,13 +11672,17 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         ax2.set_xlabel('PCA axis-1',fontsize=12)
         ax2.set_ylabel('PCA axis-2',fontsize=12)
         ax2.set_zlabel('PCA axis-3',fontsize=12)
+        ax4.plot(neighD)
+        ax4.set_xlabel('Data no.',fontsize=12)
+        ax4.set_ylabel('dist to next',fontsize=12)
         if CLuDict['CLuZ'] is not None:
             CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
             ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
             ax3.set_ylabel(r''+'data set no.',fontsize=12)
             ax3.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=12)
-            ax4.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
-            ax4.set_xlabel('PCA index',fontsize=12)
-            ax4.set_ylabel('% of total',fontsize=12)
+        else:
+            ax3.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
+            ax3.set_xlabel('PCA index',fontsize=12)
+            ax3.set_ylabel('% of total',fontsize=12)
     Page.canvas.draw()
         

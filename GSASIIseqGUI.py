@@ -2046,9 +2046,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             plotSizer = wx.BoxSizer(wx.HORIZONTAL)
             plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
             if ClusData['CLuZ'] is None:
-                choice = ['All','Distances','3D PCA',]
+                choice = ['All','Distances','3D PCA','Diffs']
             else:
-                choice = ['All','Distances','Dendrogram','3D PCA',]
+                choice = ['All','Distances','Dendrogram','3D PCA','Diffs']
             plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             plotsel.SetValue(str(ClusData['plots']))
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)

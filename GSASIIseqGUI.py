@@ -1955,11 +1955,12 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             
         def OnCompute(event):
             if ClusData['OutMethod'] == 'One-Class SVM':
-                ClusData['codes'] = SKVM.OneClassSVM().fit_predict(ClusData['DataMatrix'])
+                ClusData['codes'] = SKVM.OneClassSVM().fit_predict(ClusData['DataMatrix'])  #codes = 1 or -1
             elif ClusData['OutMethod'] == 'Isolation Forest':
                 ClusData['codes'] = SKE.IsolationForest().fit_predict(ClusData['DataMatrix'])
             elif ClusData['OutMethod'] == 'Local Outlier Factor':
                 ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
+            ClusData['codes'] = np.where(ClusData['codes']>0,1,5)       #red(in) or black(out)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
             
         outSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2046,9 +2047,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             plotSizer = wx.BoxSizer(wx.HORIZONTAL)
             plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
             if ClusData['CLuZ'] is None:
-                choice = ['All','Distances','3D PCA','Diffs']
+                choice = ['All','Distances','3D PCA','2D PCA','Diffs']
             else:
-                choice = ['All','Distances','Dendrogram','3D PCA','Diffs']
+                choice = ['All','Distances','Dendrogram','2D PCA','3D PCA','Diffs']
             plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             plotsel.SetValue(str(ClusData['plots']))
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)

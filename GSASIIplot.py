@@ -11639,6 +11639,16 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_title('Distance to next data set')
         Plot.set_xlabel('Data no.',fontsize=12)
         Plot.set_ylabel('dist to next',fontsize=12)
+    elif CLuDict['plots'] == '2D PCA':
+        if CLuDict['codes'] is not None:
+            for ixyz,xyz in enumerate(XYZ.T):
+                Plot.scatter(xyz[0],xyz[1],color=Colors[CLuDict['codes'][ixyz]],picker=True)
+        else:
+            for ixyz,xyz in enumerate(XYZ.T):
+                Plot.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)
+        Plot.set_title('PCA display for %s distance method'%PlotName)
+        Plot.set_xlabel('PCA axis-1',fontsize=12)
+        Plot.set_ylabel('PCA axis-2',fontsize=12)
     elif CLuDict['plots'] == '3D PCA':
         if CLuDict['codes'] is not None:
             for ixyz,xyz in enumerate(XYZ.T):

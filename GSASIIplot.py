@@ -11663,7 +11663,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
         ax1 = Page.figure.add_subplot(gs[0,0])
-        ax2 = Page.figure.add_subplot(gs[1,1],projection='3d')
+        ax2 = Page.figure.add_subplot(gs[1,1])
         ax3 = Page.figure.add_subplot(gs[0,1])
         ax4 = Page.figure.add_subplot(gs[1,0])
         Page.ImgObj = ax1.imshow(YM,interpolation='nearest',vmin=Imin,vmax=Imax,origin='lower')
@@ -11675,13 +11675,12 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         ax1.set_ylabel('Data set',fontsize=12)
         if CLuDict['codes'] is not None:
             for ixyz,xyz in enumerate(XYZ.T):
-                ax2.scatter(xyz[0],xyz[1],xyz[2],color=Colors[CLuDict['codes'][ixyz]],picker=True)
+                ax2.scatter(xyz[0],xyz[1],color=Colors[CLuDict['codes'][ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
-                ax2.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
+                ax2.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)
         ax2.set_xlabel('PCA axis-1',fontsize=12)
         ax2.set_ylabel('PCA axis-2',fontsize=12)
-        ax2.set_zlabel('PCA axis-3',fontsize=12)
         ax4.plot(neighD)
         ax4.set_xlabel('Data no.',fontsize=12)
         ax4.set_ylabel('dist to next',fontsize=12)

@@ -11619,6 +11619,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     Imax = np.max(YM)
     Ndata = len(CLuDict['Files'])
     neighD = [YM[i][i+1] for i in range(Ndata-1)]
+    Codes = copy.copy(CLuDict['codes'])
+    if Codes is not None:
+        Codes = np.where(Codes<0,5,Codes)
     if CLuDict['CLuZ'] is None and CLuDict['plots'] == 'Dendrogram':
         CLuDict['plots'] = 'All'
     if CLuDict['plots'] == 'Distances':
@@ -11640,9 +11643,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_xlabel('Data no.',fontsize=12)
         Plot.set_ylabel('dist to next',fontsize=12)
     elif CLuDict['plots'] == '2D PCA':
-        if CLuDict['codes'] is not None:
+        if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
-                Plot.scatter(xyz[0],xyz[1],color=Colors[CLuDict['codes'][ixyz]],picker=True)
+                Plot.scatter(xyz[0],xyz[1],color=Colors[Codes[ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 Plot.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)
@@ -11650,9 +11653,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_xlabel('PCA axis-1',fontsize=12)
         Plot.set_ylabel('PCA axis-2',fontsize=12)
     elif CLuDict['plots'] == '3D PCA':
-        if CLuDict['codes'] is not None:
+        if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
-                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[CLuDict['codes'][ixyz]],picker=True)
+                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[Codes[ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
@@ -11673,9 +11676,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         ax1.set_title(Title+' distances')
         ax1.set_xlabel('Data set',fontsize=12)
         ax1.set_ylabel('Data set',fontsize=12)
-        if CLuDict['codes'] is not None:
+        if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
-                ax2.scatter(xyz[0],xyz[1],color=Colors[CLuDict['codes'][ixyz]],picker=True)
+                ax2.scatter(xyz[0],xyz[1],color=Colors[Codes[ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 ax2.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)

@@ -1960,7 +1960,6 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 ClusData['codes'] = SKE.IsolationForest().fit_predict(ClusData['DataMatrix'])
             elif ClusData['OutMethod'] == 'Local Outlier Factor':
                 ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
-            ClusData['codes'] = np.where(ClusData['codes']>0,1,5)       #red(in) or black(out)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
             
         outSizer = wx.BoxSizer(wx.VERTICAL)

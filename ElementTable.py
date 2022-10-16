@@ -125,6 +125,7 @@ ElTable = [
     ]
 
 MagElTable = [
+    (["O"],                                            15,1, "Oxygen",      NonMetcolor,     0.0042,(255,13,13)),
     (["Sc","Sc+1","Sc+2","Sc+3"],                       2,3, "Scandium",    Metcolor,        0.0410,(230,230,230)),
     (["Ti","Ti+2","Ti+3"],                              3,3, "Titanium",    Metcolor,        0.0460,(191,194,199)),
     (["V","V+1","V+2","V+3"],                           4,3, "Vanadium",    Metcolor,        0.0510,(166,166,171)),

@@ -15,10 +15,12 @@ Routine to read in powder data from a Bruker versions 1-3 .raw file
 '''
 
 from __future__ import division, print_function
+import os
 import os.path as ospath
 import struct as st
 import numpy as np
 import GSASIIobj as G2obj
+import GSASIIctrlGUI as G2G
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 class raw_ReaderClass(G2obj.ImportPowderData):
@@ -211,5 +213,67 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.close()
         else:
             return False
+            
+        return True
+
+class brml_ReaderClass(G2obj.ImportPowderData):
+    'Routines to import powder data from a zip Bruker .brml file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.brml',),
+            strictExtension=False,
+            formatName = 'Bruker brml',
+            longFormatName = 'Bruker .brml powder data file'
+            )
+        self.scriptable = True
+        self.data = None
+
+    def ContentsValidator(self, filename):
+        try:
+            import xmltodict as xml
+        except:
+            print('Attempting to conda install xmltodict - please wait')
+            res = GSASIIpath.condaInstall('xmltodict')
+            if res:
+                msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
+                G2G.G2MessageBox(self,msg,'Install xmltodict Error')
+                return False
+        import zipfile as ZF
+        
+        with ZF.ZipFile(filename, 'r') as zipObj:
+            zipObj.extract('Experiment0/RawData0.xml')
+        with open('Experiment0/RawData0.xml') as fd:
+            self.data = dict(xml.parse(fd.read()))
+            self.formatName = 'Bruker .brml file'
+        os.remove('Experiment0/RawData0.xml')
+        os.rmdir('Experiment0')
+        self.idstring = ospath.basename(filename) + ' Bank 1'
+        self.powderentry[0] = filename
+        self.comments = []
+        return True
+            
+    def Reader(self,filename, ParentFrame=None, **kwarg):
+        'Read a Bruker brml file'
+        print(filename)
+        nSteps = int(self.data['RawData']['DataRoutes']['DataRoute'][1]['ScanInformation']['MeasurementPoints'])
+        
+        x = np.zeros(nSteps, dtype=float)
+        y = np.zeros(nSteps, dtype=float)
+        w = np.zeros(nSteps, dtype=float) 
+        
+        effTime = float(self.data['RawData']['DataRoutes']['DataRoute'][1]['ScanInformation']['TimePerStepEffective'])
+        
+        # Extract 2-theta angle and counts from the XML document
+        i=0
+        while i < nSteps :
+            entry = self.data['RawData']['DataRoutes']['DataRoute'][1]['Datum'][i].split(',')
+            x[i] = float(entry[2])
+            y[i] = float(entry[4])*float(entry[0])/effTime
+            i = i + 1
+            
+        w = np.where(y>0,1/y,0.)
+        self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
+        
+        
             
         return True

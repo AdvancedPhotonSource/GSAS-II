@@ -486,24 +486,7 @@ class TransformDialog(wx.Dialog):
         common.Bind(wx.EVT_COMBOBOX,OnCommon)
         commonSizer.Add(common,0,WACV)
         transSizer.Add(commonSizer)
-        Trmat = wx.FlexGridSizer(4,6,0,0)
-        Trmat.Add((10,0),0)
-        Trmat.Add(wx.StaticText(self.panel,label='      M'),wx.ALIGN_CENTER)
-        Trmat.Add((10,0),0)
-        Trmat.Add((10,0),0)
-        Trmat.Add(wx.StaticText(self.panel,label='      U'),wx.ALIGN_CENTER)
-        Trmat.Add(wx.StaticText(self.panel,label='      V'),wx.ALIGN_CENTER)
-        
-        for iy,line in enumerate(self.Trans):
-            for ix,val in enumerate(line):
-                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
-                Trmat.Add(item)
-            Trmat.Add((25,0),0)
-            vec = G2G.ValidatedTxtCtrl(self.panel,self.Uvec,iy,nDig=(10,3),size=(65,25))
-            Trmat.Add(vec)
-            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vvec,iy,nDig=(10,3),size=(65,25))
-            Trmat.Add(vec)
-        transSizer.Add(Trmat)
+        transSizer.Add(G2G.XformMatrix(self.panel,self.Trans,self.Uvec,self.Vvec))
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
@@ -3043,6 +3026,9 @@ def UpdatePhaseData(G2frame,Item,data):
         wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
         
     def OnUseBilbao(event):
+        '''Select and apply a transformation matrix from the Bilbao web site 
+        to create a new phase
+        '''
         PatternName = data['magPhases']
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
@@ -3095,6 +3081,7 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['MagDmin'] = 1.0
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
+            newPhase['MagXform'] = (magchoice['Trans'],magchoice['Uvec'],vvec)
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,ifMag)
             Atoms = newPhase['Atoms']
             Atms = []

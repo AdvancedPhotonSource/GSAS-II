@@ -31,10 +31,12 @@ else:
     import pickle
 import copy
 import re
+interactive = False
 try:
     import wx
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
+    interactive = True
 except ImportError:
     # Avoid wx dependency for CLI
     class Placeholder(object):
@@ -58,7 +60,7 @@ import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO        
-import GSASIImapvars as G2mv
+#import GSASIImapvars as G2mv
 import GSASIIElem as G2el
 import GSASIIpy3 as G2py3
 
@@ -3219,16 +3221,16 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             WriteCIFitem(self.fp, '\n# STRUCTURE FACTOR TABLE')
             # compute maximum intensity reflection
-            Imax = 0
+            #Imax = 0
             phaselist = []
             for phasenam in histblk['Reflection Lists']:
-                try:
-                    scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
-                except KeyError: # reflection table from removed phase?
-                    continue
+                #try:
+                #    scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                #except KeyError: # reflection table from removed phase?
+                #    continue
                 phaselist.append(phasenam)
-                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
-                I100 = scale*refList.T[8]*refList.T[11]
+                #refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                #I100 = scale*refList.T[8]*refList.T[11]
                 #Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
                 #FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
                 #I100 = scale*FO2*Icorr
@@ -3260,11 +3262,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             dmax = None
             dmin = None
             for phasenam in phaselist:
-                scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
+                #scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
                 phaseid = self.Phases[phasenam]['pId']
                 refcount += len(histblk['Reflection Lists'][phasenam]['RefList'])
-                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
-                I100 = scale*refList.T[8]*refList.T[11]
+                #refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                #I100 = scale*refList.T[8]*refList.T[11]
                 for j,ref in enumerate(histblk['Reflection Lists'][phasenam]['RefList']):
                     if DEBUG:
                         print('DEBUG: skipping reflection list')
@@ -4576,6 +4578,164 @@ class ExportPhaseCIF(ExportCIF):
         # CIF-specific items
         self.author = ''
 
+    def mergeMag(self,G2frame,ChemPhase,MagPhase):
+        if not interactive: return   # if wx is not loaded then merge is not an option
+        dlg = wx.MessageDialog(self.G2frame,'Do you want to merge chemical and magentic phases?',
+            'Confirm phase merge',wx.YES|wx.NO)
+        try:
+            dlg.CenterOnParent()
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result != wx.ID_YES: return
+        dlg = wx.Dialog(G2frame,wx.ID_ANY,'Merge criteria',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        dlg.CenterOnParent()
+        import imp
+        imp.reload(G2G)
+        def onChange(*args,**kwargs):
+            #wx.CallAfter(showMergeMag)
+            wx.CallLater(100,showMergeMag)
+        def showMergeMag():
+            if dlg.GetSizer():
+                mainSizer = dlg.GetSizer()
+                mainSizer.Clear(True)
+            else:
+                mainSizer = wx.BoxSizer(wx.VERTICAL)
+                dlg.SetSizer(mainSizer)
+            mainSizer.Add(wx.StaticText(dlg,label=' Define transformation'),
+                              0,wx.ALIGN_CENTER)
+            mainSizer.Add(G2G.XformMatrix(dlg,Trans,Uvec,Vvec,OnLeave=onChange))
+            newCell = G2lat.TransformCell(self.Phases[ChemPhase]['General']['Cell'][1:7],Trans)
+            cellSizer = wx.GridBagSizer()
+            G2G.showUniqueCell(dlg,cellSizer,0,
+                                   self.Phases[ChemPhase]['General']['Cell'][1:],
+                                   self.Phases[ChemPhase]['General']['SGData'])
+            cellSizer.Add(wx.StaticText(dlg,label=' Chem cell '),(0,0))
+            G2G.showUniqueCell(dlg,cellSizer,1,
+                                   self.Phases[MagPhase]['General']['Cell'][1:],
+                                   self.Phases[MagPhase]['General']['SGData'])
+            cellSizer.Add(wx.StaticText(dlg,label=' Mag cell '),(1,0))
+            G2G.showUniqueCell(dlg,cellSizer,2,newCell)
+            cellSizer.Add(wx.StaticText(dlg,label=' Xform cell '),(2,0))
+            mainSizer.Add(cellSizer)
+            cellsSame = True
+            diff = 0.01
+            for i in range(6):
+                if i == 3: diff = 0.1
+                if abs(self.Phases[MagPhase]['General']['Cell'][i+1]-newCell[i]) > diff:
+                    cellsSame = False
+                    break
+                    
+            if cellsSame:
+                tmpPhase['Atoms'] = copy.deepcopy(self.Phases[ChemPhase]['Atoms'])
+                _,atCodes = G2lat.TransformPhase(self.Phases[ChemPhase],
+                                                        tmpPhase,Trans,Uvec,Vvec,False) # xforms atoms not cell
+                mainSizer.Add((0,15))
+                atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+                atomSubSizer = wx.BoxSizer(wx.VERTICAL)
+                atomSubSizer.Add(wx.StaticText(dlg,label='Magnetic phase contents'))
+                G2G.HorizontalLine(atomSubSizer,dlg)
+                atompnl = wxscroll.ScrolledPanel(dlg,size=(250,250))
+                atomBox = wx.FlexGridSizer(0, 4, 2, 2)  # rows, cols, vgap, hgap
+                for atom in self.Phases[MagPhase]['Atoms']:
+                    atomBox.Add(wx.StaticText(atompnl,label=atom[ctM-1]))
+                    for x in atom[cxM:cxM+3]:
+                        atomBox.Add(wx.StaticText(atompnl,label='{:.3f}'.format(x)))
+                atompnl.SetSizer(atomBox)
+                atompnl.SetAutoLayout(1)
+                atompnl.SetupScrolling()
+                atompnl.Layout()
+                atomSubSizer.Add(atompnl)
+                atomSizer.Add(atomSubSizer)
+                
+                cellsSame = False  # at least one atom must match
+                atomSubSizer = wx.BoxSizer(wx.VERTICAL)
+                atomSubSizer.Add(wx.StaticText(dlg,label='Chemical phase transformed'))
+                G2G.HorizontalLine(atomSubSizer,dlg)
+                atompnl = wxscroll.ScrolledPanel(dlg,size=(310,250))
+                atomBox = wx.FlexGridSizer(0, 5, 2, 2)  # rows, cols, vgap, hgap
+                for atom in tmpPhase['Atoms']:
+                    atomBox.Add(wx.StaticText(atompnl,label=atom[ctT-1]))
+                    for x in atom[cxT:cxT+3]:
+                        atomBox.Add(wx.StaticText(atompnl,label='{:.3f}'.format(x)))
+                    match = False
+                    for Matom in self.Phases[MagPhase]['Atoms']:
+                        if atom[ctT] == Matom[ctM]:
+                            for i in range(3):
+                                if abs(atom[cxT+i]-Matom[cxM+i]) > 0.005:
+                                    break
+                            else:
+                                cellsSame = True
+                                match = Matom[ctM-1]
+                                break
+                    if match:
+                        atomBox.Add(wx.StaticText(atompnl,label='  matches '+match))
+                    else:
+                        atomBox.Add((-1,-1))
+                atompnl.SetSizer(atomBox)
+                atompnl.SetAutoLayout(1)
+                atompnl.SetupScrolling()
+                atompnl.Layout()
+                atomSubSizer.Add(atompnl)
+                atomSizer.Add(atomSubSizer)                
+                mainSizer.Add(atomSizer)
+            mainSizer.Add((0,15))
+            OkBtn = wx.Button(dlg,wx.ID_ANY,"Merge phases")
+            OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+            OkBtn.Enable(cellsSame)
+            cancelBtn = wx.Button(dlg,wx.ID_ANY,"Cancel")
+            cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(cancelBtn)
+            btnSizer.Add((20,20),1)
+        
+            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            dlg.Fit()
+            wx.CallAfter(dlg.SendSizeEvent)
+
+        Trans = np.eye(3)
+        Uvec = np.zeros(3)
+        Vvec = np.zeros(3)
+        if 'MagXform' in self.Phases[MagPhase]:
+           Trans,Uvec,Vvec = self.Phases[MagPhase]['MagXform'] 
+        tmpPhase = copy.deepcopy(self.Phases[MagPhase])
+        cxM,ctM,csM,ciaM = self.Phases[MagPhase]['General']['AtomPtrs']
+        cxT,ctT,csT,ciaT = self.Phases[ChemPhase]['General']['AtomPtrs']
+        
+        showMergeMag()
+        
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return None
+        dlg.Destroy()
+        # restore atom type info from chemical phase but keep the mag cell & sym, etc. 
+        combinedPhase = copy.deepcopy(self.Phases[MagPhase])
+        combinedPhase['General'] = copy.deepcopy(self.Phases[ChemPhase]['General'])
+        combinedPhase['General']['Name'] += ' - merged'
+        for k in 'SGData','Cell','AtomPtrs','Lande g','MagDmin','Type':
+            if k not in self.Phases[MagPhase]['General']: continue
+            combinedPhase['General'][k] = copy.deepcopy(self.Phases[MagPhase]['General'][k])
+
+        for atom in tmpPhase['Atoms']:
+            for x in atom[cxT:cxT+3]:
+                match = False
+                for Matom in self.Phases[MagPhase]['Atoms']:
+                    if atom[ctT] == Matom[ctM]:
+                        for i in range(3):
+                            if abs(atom[cxT+i]-Matom[cxM+i]) > 0.005:
+                                break
+                        else:
+                            match = True
+                            break
+            if not match:  # add atom to merged phase
+                combinedPhase['Atoms'].append(atom[:cxT+4]+[0.,0.,0.]+atom[cxT+4:])                
+        return combinedPhase
+    
     def Exporter(self,event=None):
         # get a phase and file name
         # the export process starts here
@@ -4587,9 +4747,28 @@ class ExportPhaseCIF(ExportCIF):
         self.multiple = True
         self.currentExportType = 'phase'
         if self.ExportSelect('ask'): return
-        self.OpenFile()
+        self.OpenFile(delayOpen=True)
+        MagPhase = None
+        ChemPhase = None
+            
+        if len(self.phasenam) == 2:
+            for name in self.phasenam:
+                if self.Phases[name]['General']['Type'] == 'nuclear':
+                    ChemPhase = name
+                if self.Phases[name]['General']['Type'] == 'magnetic':
+                    MagPhase = name
+            if MagPhase and ChemPhase:
+                newPhase = self.mergeMag(self.G2frame,ChemPhase,MagPhase) 
+                if newPhase is not None:
+                    self.openDelayed()
+                    newName = ChemPhase + '_merged'
+                    self.Phases = {newName:newPhase}
+                    self._Exporter(event=event,phaseOnly=newName)
+                    self.CloseFile()
+                    return
         for name in self.phasenam:
-            self._Exporter(event=event,phaseOnly=name)  #TODO: repeat for magnetic phase
+            self.openDelayed()
+            self._Exporter(event=event,phaseOnly=name)
         self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):

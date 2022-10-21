@@ -6023,6 +6023,94 @@ def PhaseSelector(ChoiceList, ParentFrame=None,
     return BlockSelector(ChoiceList,ParentFrame,title,
         size,header)
 
+def XformMatrix(panel,Trans,Uvec,Vvec,OnLeave=None,OnLeaveArgs={}):
+    '''Display a transformation matrix and two vectors'''
+    Trmat = wx.FlexGridSizer(4,6,0,0)
+    Trmat.Add((10,0),0)
+    Trmat.Add(wx.StaticText(panel,label='      M'),wx.ALIGN_CENTER)
+    Trmat.Add((10,0),0)
+    Trmat.Add((10,0),0)
+    Trmat.Add(wx.StaticText(panel,label='      U'),wx.ALIGN_CENTER)
+    Trmat.Add(wx.StaticText(panel,label='      V'),wx.ALIGN_CENTER)
+        
+    for iy,line in enumerate(Trans):
+        for ix,val in enumerate(line):
+            item = ValidatedTxtCtrl(panel,Trans[iy],ix,nDig=(10,3),size=(65,25),
+                                    OnLeave=OnLeave,OnLeaveArgs=OnLeaveArgs)
+            Trmat.Add(item)
+        Trmat.Add((25,0),0)
+        vec = ValidatedTxtCtrl(panel,Uvec,iy,nDig=(10,3),size=(65,25),
+                                    OnLeave=OnLeave,OnLeaveArgs=OnLeaveArgs)
+        Trmat.Add(vec)
+        vec = ValidatedTxtCtrl(panel,Vvec,iy,nDig=(10,3),size=(65,25),
+                                    OnLeave=OnLeave,OnLeaveArgs=OnLeaveArgs)
+        Trmat.Add(vec)
+    return Trmat
+
+def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
+                       editAllowed=False,OnCellChange=None):
+    '''function to put cell values into a GridBagSizer. 
+    First column (#0) is reserved for labels etc. 
+    if editAllowed is True, values are placed in a wx.TextCtrl and if needed
+    two rows are used in the table.
+    '''
+    cellGUIlist = [
+        [['m3','m3m'],[" Unit cell: a = "],["{:.5f}"],[0]],
+        [['3R','3mR'],[" a = ",u" \u03B1 = "],["{:.5f}","{:.3f}"],[0,3]],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],[" a = "," c = "],
+             ["{:.5f}","{:.5f}"],[0,2]],
+        [['mmm'],[" a = "," b = "," c = "],["{:.5f}","{:.5f}","{:.5f}"],
+            [0,1,2]],
+        [['2/m'+'a'],[" a = "," b = "," c = ",u" \u03B1 = "],
+            ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,3]],
+        [['2/m'+'b'],[" a = "," b = "," c = ",u" \u03B2 = "],
+            ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,4]],
+        [['2/m'+'c'],[" a = "," b = "," c = ",u" \u03B3 = "],
+            ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,5]],
+        [['-1'],[" a = "," b = "," c = ",u" \u03B1 = ",u" \u03B2 = ",u" \u03B3 = "],
+             ["{:.5f}","{:.5f}","{:.5f}","{:.3f}","{:.3f}","{:.3f}"],[0,1,2,3,4,5]]
+        ]
+    VERY_LIGHT_GREY = wx.Colour(235,235,235)
+    cellList = []
+    if SGData is None:
+        laue = '-1'
+    else:
+        laue = SGData['SGLaue']
+        if laue == '2/m': laue += SGData['SGUniq']
+    for cellGUI in cellGUIlist:
+        if laue in cellGUI[0]:
+            useGUI = cellGUI
+            break
+    for txt,fmt,indx in zip(*useGUI[1:]):
+        col = 1+2*indx
+        cellrow = row
+        if editAllowed and indx > 2:
+            cellrow = row + 1
+            col = 1+2*(indx-3)
+        cellSizer.Add(wx.StaticText(frame,label=txt),(cellrow,col))
+        if editAllowed:
+            Fmt = (10,5)
+            if '.3' in fmt: Fmt = (10,3) 
+            cellVal = ValidatedTxtCtrl(frame,cell,indx,
+                    xmin=0.1,xmax=500.,nDig=Fmt,OnLeave=OnCellChange)
+            cellSizer.Add(cellVal,(cellrow,col+1))
+            cellList.append(cellVal.GetId())
+        else:
+            cellSizer.Add(wx.StaticText(frame,label=fmt.format(cell[indx])),(cellrow,col+1))
+    #volume
+    volCol = 13
+    if editAllowed: 
+        volCol = 8
+    cellSizer.Add(wx.StaticText(frame,label=' Vol = '),(row,volCol))
+    if editAllowed:
+        volVal = wx.TextCtrl(frame,value=('{:.2f}'.format(cell[6])),style=wx.TE_READONLY)
+        volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+        cellSizer.Add(volVal,(row,volCol+1))
+    else:
+        cellSizer.Add(wx.StaticText(frame,label='{:.2f}'.format(cell[6])),(row,volCol+1))
+    return cellrow,cellList
+
+
 ################################################################################
 # configuration routines (for editing config.py)
 def SaveGPXdirectory(path,write=True):

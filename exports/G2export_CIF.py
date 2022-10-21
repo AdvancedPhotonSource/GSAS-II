@@ -4606,26 +4606,30 @@ class ExportPhaseCIF(ExportCIF):
             mainSizer.Add(wx.StaticText(dlg,label=' Define transformation'),
                               0,wx.ALIGN_CENTER)
             mainSizer.Add(G2G.XformMatrix(dlg,Trans,Uvec,Vvec,OnLeave=onChange))
-            newCell = G2lat.TransformCell(self.Phases[ChemPhase]['General']['Cell'][1:7],Trans)
-            cellSizer = wx.GridBagSizer()
-            G2G.showUniqueCell(dlg,cellSizer,0,
-                                   self.Phases[ChemPhase]['General']['Cell'][1:],
-                                   self.Phases[ChemPhase]['General']['SGData'])
-            cellSizer.Add(wx.StaticText(dlg,label=' Chem cell '),(0,0))
-            G2G.showUniqueCell(dlg,cellSizer,1,
-                                   self.Phases[MagPhase]['General']['Cell'][1:],
-                                   self.Phases[MagPhase]['General']['SGData'])
-            cellSizer.Add(wx.StaticText(dlg,label=' Mag cell '),(1,0))
-            G2G.showUniqueCell(dlg,cellSizer,2,newCell)
-            cellSizer.Add(wx.StaticText(dlg,label=' Xform cell '),(2,0))
-            mainSizer.Add(cellSizer)
-            cellsSame = True
-            diff = 0.01
-            for i in range(6):
-                if i == 3: diff = 0.1
-                if abs(self.Phases[MagPhase]['General']['Cell'][i+1]-newCell[i]) > diff:
-                    cellsSame = False
-                    break
+            try:
+                newCell = G2lat.TransformCell(self.Phases[ChemPhase]['General']['Cell'][1:7],Trans)
+                cellSizer = wx.GridBagSizer()
+                G2G.showUniqueCell(dlg,cellSizer,0,
+                                       self.Phases[ChemPhase]['General']['Cell'][1:],
+                                       self.Phases[ChemPhase]['General']['SGData'])
+                cellSizer.Add(wx.StaticText(dlg,label=' Chem cell '),(0,0))
+                G2G.showUniqueCell(dlg,cellSizer,1,
+                                       self.Phases[MagPhase]['General']['Cell'][1:],
+                                       self.Phases[MagPhase]['General']['SGData'])
+                cellSizer.Add(wx.StaticText(dlg,label=' Mag cell '),(1,0))
+                G2G.showUniqueCell(dlg,cellSizer,2,newCell)
+                cellSizer.Add(wx.StaticText(dlg,label=' Xform cell '),(2,0))
+                mainSizer.Add(cellSizer)
+                cellsSame = True
+                diff = 0.01
+                for i in range(6):
+                    if i == 3: diff = 0.1
+                    if abs(self.Phases[MagPhase]['General']['Cell'][i+1]-newCell[i]) > diff:
+                        cellsSame = False
+                        break
+            except:
+                mainSizer.Add(wx.StaticText(dlg,label=' Computational error: singular matrix?'))
+                cellsSame = False
                     
             if cellsSame:
                 tmpPhase['Atoms'] = copy.deepcopy(self.Phases[ChemPhase]['Atoms'])

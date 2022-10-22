@@ -3088,6 +3088,8 @@ def UpdatePhaseData(G2frame,Item,data):
             AtCods = []
             atMxyz = []
             for ia,atom in enumerate(Atoms):
+                if atom[1] == 'O':       #skip "magnetic" O atoms
+                    continue
                 if ifMag and not len(G2elem.GetMFtable([atom[1],],[2.0,])):
                     continue
                 atom[0] += '_%d'%ia

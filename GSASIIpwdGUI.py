@@ -4467,7 +4467,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.MessageBox('Error: Problem with phase. Use Load Phase 1st.',
                     caption='k-SUBGROUPSMAG setup error: Phase loaded?',style=wx.ICON_EXCLAMATION)
             return
-        testAtoms = ['',]+[atom for atom in atoms if len(G2elem.GetMFtable([atom,],[2.0,]))]
+        testAtoms = ['',]+[atom for atom in atoms if (len(G2elem.GetMFtable([atom,],[2.0,])) and atom != 'O')]   #skip "magnetic" O atoms
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']

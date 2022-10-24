@@ -1,0 +1,422 @@
+C***********************************************************************
+C     
+C----- PROGRAM TO EXPAND A REDUCED CELL TO A CONVENTIONAL CELL
+C     
+	REAL DEGRAD
+	PARAMETER (DEGRAD = 57.295779)
+
+	REAL E(6), Q
+	real AZF,BZF,CZF,AALPD,ABETD,AGAMD
+	real UZ1,VZ1,WZ1,UZ2,VZ2,WZ2,UZ3,VZ3,WZ3
+	integer	icell
+      CHARACTER*1 ICENTER
+
+	INTEGER*2 UX1(44)/ 1, 1, 1, 1, 1, 0, 1,-1, 1, 1, 1, 1, 1, 1,
+	1	1,-1,-1, 0,-1, 0, 0, 0, 0, 1, 0, 1, 0,-1,1, 0, 1, 1, 
+	2	1,-1, 0, 1, 1,-1,-1, 0, 0,-1,-1, 1/
+	INTEGER*2 VX1(44) /-1,-1, 0,-1, 0, 1, 0,-1, 0, 1, 0, 0, 1, 1,
+	1	0,-1, 0,-1, 0, 1, 1, 1, 1, 2, 1, 0,-1, 0, 0, 1, 0, 0, 
+	2	0, 0,-1, 0, 0, 0,-2,-1,-1, 0,0, 0/
+	INTEGER*2 WX1(44) / 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	1	0, 0,-1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 
+	2	0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0/
+	INTEGER*2 UX2(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 1, 0, 0,-1,-1,
+	1	0, 1,-1, 1, 0, 0, 0, 0, 0, 0, 0,-1,-1,-1, 1, 0, 0, 0, 
+	2	0, 0,-1,-1, 1, 1,-1, 0, 0, 0,-1, 0/
+	INTEGER*2 VX2(44) / 1, 0, 1, 0, 1, 0, 1, 0, 1,-1, 1, 1, 1, 1,
+	1	1,-1,-1,-1,-1, 1, 0, 0,-1,-1,-1, 2, 0, 0,-2, 1, 1, 1, 
+	2	1, 0, 0, 0, 0, 2, 0, 1,-1,-1,-1, 1/
+	INTEGER*2 WX2(44) /-1, 1, 0, 1, 0, 1, 0,-1, 0, 0, 0, 0, 0, 0,
+	1	0, 0, 0,-1, 1,-1, 1, 1, 1, 1, 1, 0, 0, 2, 0,-2, 0, 0, 
+	2	0,-1, 0,-2, 0, 0, 0, 2, 0, 0,-2, 0/
+	INTEGER*2 UX3(44) /-1,-1, 0,-1, 0, 1, 0, 0,-1, 0, 0, 0, 0, 0,
+	1	1, 1, 0, 1,-1,-1, 1, 1, 1, 1, 1,-1, 1, 0, 0,-1, 0, 0, 
+	2	0, 0, 0, 0, 0, 0, 0,-1,-1, 1, 0, 0/
+	INTEGER*2 VX3(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 0, 0, 0, 0, 0,
+	1	1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,-1, 1, 0, 0, 0, 0, 
+	2	0,-1, 0, 1, 1, 0, 0, 0, 0, 1,-1, 0/
+	INTEGER*2 WX3(44) / 1,-1, 1,-1, 1, 0, 1,-1, 3,-1, 1, 1, 1, 1,
+	1	2, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 2,-1, 0,-1, 0, 1, 1, 
+	2	1, 0,-1, 0, 0,-1,-1, 0, 0, 2, 0, 1/
+C-----
+C-----SET THE INPUT AND OUTPUT UNIT NUMBERS
+!      DATA NTIN/3/
+      DATA NTOUT/6/
+C----------------------------------------------------------------------
+C     
+C-----SET APPROXIMATE ERROR WINDOW FOR ANGLES NEAR 90.00
+C     
+      DEL=0.05
+      Q=0.004
+C     
+C-----TRANSFER THE REDUCED CELL TO LOCAL VARIABLES
+C     
+!	OPEN(UNIT=0,STATUS='OLD')
+	READ(5,6900,END=800) AI, BI, CI, ALPI, BETI, GAMI
+6900	FORMAT(6F10.0)
+!	CLOSE(UNIT=0)
+	ARI = AI
+	BRI = BI
+	CRI = CI
+	ALPHR = ALPI
+	BETR = BETI
+	GAMR = GAMI
+C     
+C-----SET ANGLES OF 90.0+/-DEL TO 90.0
+C-----RESETTING THESE ANGLES IS PERFORMED IN ORDER THAT THE A*B DOT
+C-----PRODUCTS CALCULATE TO ZERO WHEN THE ANGLE IS 90.0 WITHIN
+C-----A REASONABLE ERROR.
+C     
+      IF(ALPHR.GT.90.0-DEL .AND. ALPHR.LT.90.0+DEL) ALPHR=90.0
+      IF(BETR .GT.90.0-DEL .AND. BETR .LT.90.0+DEL) BETR =90.0
+      IF(GAMR .GT.90.0-DEL .AND. GAMR .LT.90.0+DEL) GAMR =90.0
+
+      COSA=COS(ALPHR/DEGRAD)
+      COSB=COS(BETR/DEGRAD)
+      COSG=COS(GAMR/DEGRAD)
+      AQ=ABS(COSA)
+      BQ=ABS(COSB)
+      CQ=ABS(COSG)
+      E(1) = ARI**2
+      E(2) = BRI**2
+      E(3) = CRI**2
+      E(4) = COSA*BRI*CRI
+      E(5) = COSB*ARI*CRI
+      E(6) = COSG*ARI*BRI
+      CALL SYMTST(NTOUT, IWARN, ISEQ, Q, E,
+	1	ARI, BRI, CRI, ALPHR, BETR, GAMR)
+
+C     PICK OUT TRANSFORMATION MATRIX
+      L=ISEQ
+      UZ1=UX1(L)
+      VZ1=VX1(L)
+      WZ1=WX1(L)
+      UZ2=UX2(L)
+      VZ2=VX2(L)
+      WZ2=WX2(L)
+      UZ3=UX3(L)
+      VZ3=VX3(L)
+      WZ3=WX3(L)
+C     
+C-----SET ICENTER TO THE METRIC SYMMETRY BASED ON THE REDUCED CELL #
+C     
+	IF (ISEQ.EQ.1) THEN
+	  ICELL = 1
+	  ICENTER ='F'
+	ELSEIF (ISEQ.EQ.3) THEN
+	  ICELL = 1
+	  ICENTER ='P'
+	ELSEIF (ISEQ.EQ.5) THEN
+	  ICELL = 1
+	  ICENTER ='I'
+	ELSEIF (ISEQ.EQ.2.OR.ISEQ.EQ.4.OR.ISEQ.EQ.9.OR.ISEQ.EQ.24) THEN
+	  ICELL = 2
+	  ICENTER ='H'
+	ELSEIF (ISEQ.EQ.6.OR.ISEQ.EQ.7.OR.ISEQ.EQ.15.OR.ISEQ.EQ.18) THEN
+	  ICELL = 3
+	  ICENTER ='I'
+	ELSEIF (ISEQ.EQ.8.OR.ISEQ.EQ.19.OR.ISEQ.EQ.42) THEN
+	  ICELL = 5
+	  ICENTER ='I'
+	ELSEIF (ISEQ.EQ.10.OR.ISEQ.EQ.14.OR.ISEQ.EQ.20.OR.ISEQ.EQ.25
+	1	.OR.ISEQ.EQ.28.OR.ISEQ.EQ.29.OR.ISEQ.EQ.30.OR.
+	1	ISEQ.EQ.37.OR.ISEQ.EQ.39.OR.ISEQ.EQ.41) THEN
+	  ICELL = 6
+	  ICENTER ='C'
+	ELSEIF (ISEQ.EQ.11.OR.ISEQ.EQ.21) THEN
+	  ICELL = 3
+	  ICENTER ='P'
+	ELSEIF (ISEQ.EQ.12.OR.ISEQ.EQ.22) THEN
+	  ICELL = 4
+	  ICENTER ='P'
+	ELSEIF (ISEQ.EQ.13.OR.ISEQ.EQ.23.OR.ISEQ.EQ.36.OR.ISEQ.EQ.38
+	1	.OR.ISEQ.EQ.40) THEN
+	  ICELL = 5
+	  ICENTER ='C'
+	ELSEIF  (ISEQ.EQ.16.OR.ISEQ.EQ.26) THEN
+	  ICELL = 5
+	  ICENTER ='F'
+	ELSEIF (ISEQ.EQ.17.OR.ISEQ.EQ.27.OR.ISEQ.EQ.43) THEN
+	  ICELL = 6
+	  ICENTER ='I'
+	ELSEIF (ISEQ.EQ.31.OR.ISEQ.EQ.44) THEN
+	  ICELL = 7
+	  ICENTER ='P'
+	ELSEIF (ISEQ.EQ.32) THEN
+	  ICELL = 5
+	  ICENTER ='P'
+	ELSEIF (ISEQ.EQ.33.OR.ISEQ.EQ.34.OR.ISEQ.EQ.35) THEN
+	  ICELL = 6
+	  ICENTER ='P'
+	ENDIF
+C----------------------------------------------------------------------
+C     
+C-----RESET THE REDUCED CELL ANGLES TO THE TRUE VALUES NOW THAT THE
+C-----METRIC SYMMETRY HAS BEEN DETERMINED. 
+C     
+      AR=ALPI/DEGRAD
+      BR=BETI/DEGRAD
+      GR=GAMI/DEGRAD
+C     
+C----CALC. LENGTH OF A VECTOR(A)(BRAVAIS FINAL) SQRT(A DOT A)
+      CALL SYMDOT(UZ1,VZ1,WZ1,UZ1,VZ1,WZ1,ARI,BRI,CRI,AR,BR,GR,DOTAA)
+      AZF=SQRT(DOTAA)
+C     
+C-----CALC. LENGTH OF VECTOR(B)(BRAVAIS FINAL)SQRT(B DOT B)
+C     
+      CALL SYMDOT(UZ2,VZ2,WZ2,UZ2,VZ2,WZ2,ARI,BRI,CRI,AR,BR,GR,DOTBB)
+      BZF=SQRT(DOT BB)
+C     
+C----CALC. LENGTH OF VECTOR(C)(BRAVAIS FINAL) SQRT(C DOT C)
+C     
+      CALL SYMDOT(UZ3,VZ3,WZ3,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTCC)
+      CZF=SQRT(DOTCC)
+C     
+C-----CALC. ANGLE BETWEEN AZF AND BZF(ANGLE GAMMA)
+      CALL SYMDOT(UZ1,VZ1,WZ1,UZ2,VZ2,WZ2,ARI,BRI,CRI,AR,BR,GR,DOTAB)
+      COSG=DOTAB/(AZF*BZF)
+      AGAM=ACOS(COSG)
+      AGAMD=AGAM*DEGRAD
+C     
+C----CALC. ANGLE BETWEEN AZF AND CZF(ANGLE BETA)
+C     
+      CALL SYMDOT(UZ1,VZ1,WZ1,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTAC)
+      COSB=DOTAC/(AZF*CZF)
+      ABET=ACOS(COSB)
+      ABETD=ABET*DEGRAD
+C     
+C------CALC. ANGLE BETWEEN BZF AND CZF(ANGLE ALPHA)
+C     
+      CALL SYMDOT(UZ2,VZ2,WZ2,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTBC)
+      COSA=DOTBC/(BZF*CZF)
+      AALP=ACOS(COSA)
+      AALPD=AALP*DEGRAD
+
+!	OPEN(UNIT=10,STATUS='unknown',file='conventional.cell')
+	WRITE(*,6901) azf, bzf, czf, aalpd, abetd, agamd, ICELL, ICENTER
+6901	FORMAT(3F10.4,3F10.3,2X,I1,2X,A1)
+	WRITE(*,6902) UZ1, VZ1, WZ1, UZ2, VZ2, WZ2, UZ3, VZ3, WZ3
+6902	FORMAT(9F10.3)
+!	CLOSE(UNIT=10)
+ 800	CONTINUE
+	end
+C======================================================================
+      SUBROUTINE SYMTST(NTOUT, IWARN, ISEQ, Q, E, 
+	1	ARI, BRI, CRI, ALPHR, BETR, GAMR)
+
+	REAL E(6), Q
+
+C     
+C-----SYMTST TESTS FOR EQUALITY OF DOT PRODUCTS BASED ON DIFFERENCES
+C-----BEING SMALLER THAT A PRESET VALUE FOR THE RELATIVE ERROR IN A*A
+C-----B*B, C*C, B*C, A*C OR A*B.
+C     
+C-----THE RELATIVE ERROR Q IS SET TO 0.004 IN SUBROUTINE SYM
+C-----THE INCREMENT DQ INSURES THAT Q*E>0 NEAR 90 DEG
+C     
+C     
+	ISEQ=0
+      DQ=0.04
+      ISEQ=0
+C-----NEG INDICATES THE REDUCED FORM TYPE (- OR +)
+C-----DETERMINE REDUCED FORM TYPE (- OR +) BASED ON TRUE REDUCED CELL
+      NEG=1
+      IF(E(4).LT.Q.AND.E(5).LT.Q.AND.E(6).LE.Q) then
+	NEG=-1
+      elseIF(E(4).GT.Q.AND.E(5).GT.Q.AND.E(6).GE.Q) then
+	NEG=0
+      else	
+	NEG=-1
+	IF(ALPHR.LT.89.99.OR.BETR.LT.89.99.OR.GAMR.LT.89.99)NEG=0
+	IWARN=IWARN+1
+	WRITE(NTOUT,10)
+10	FORMAT(1H ,42H**WARNING**REDUCED FORM MAY NOT BE CORRECT)
+      endif
+C-----TEST FOR A=B=C ------------------------------------------------------
+      IF(ABS(E(1)-E(3)) .LT. Q*E(3)) THEN
+C     
+C-----REDUCED FORM WITH A=B=C    (NUMBERS 1 TO 8) -------------------------
+C     
+	IF(NEG.NE.-1) THEN
+	  X=E(1)/2.
+	  IF (ABS(E(4)-X).LT.(E(4)*Q+DQ).AND.ABS(E(5)-X).LT.(E(5)*Q+DQ)
+	1	.AND.ABS(E(6)-X).LT.(E(6)*Q+DQ)) THEN
+	    ISEQ=1
+	  ELSEIF (ABS(E(4)-E(5)).LT.(E(4)*Q+DQ).AND.ABS(E(5)-E(6)).LT.
+	1	(E(5)*Q+DQ)) THEN
+	    ISEQ=2
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ELSE
+	  Z=E(1)/3.
+	  IF ((ABS(E(4))+ABS(E(5))+ABS(E(6))).LT.(DQ*3.)) THEN
+	    ISEQ=3
+	  ELSEIF(ABS(E(4)+Z).LT.(ABS(E(4)*Q)+DQ)
+	1	.AND.ABS(E(5)+Z).LT.(ABS(E(5)*Q)+DQ)
+	1	.AND.ABS(E(6)+Z).LT.(ABS(E(6)*Q)+DQ)) THEN
+	    ISEQ=5
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ)
+	1	.AND.ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=4
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS((E(6)+E(1))/2.+E(4)).LT.(ABS(E(4)*Q)+DQ)) THEN
+	    ISEQ=6
+	  ELSEIF (ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	1	ABS((E(4)+E(1))/2.+E(5)).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=7
+	  ELSEIF (ABS(E(1)+E(4)+E(5)+E(6)).LT.(ABS(E(6)*Q)+DQ)) THEN
+	    ISEQ=8
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ENDIF
+      ENDIF
+C-----TEST FOR A=B --------------------------------------------------------
+      IF(ABS(E(1)-E(2)) .LT. Q*E(2)) THEN
+C     
+C-----REDUCED FORMS WITH A=B   (NUMBERS 9 TO 17) --------------------------
+C     
+	IF(NEG.NE.-1) THEN
+	  X=E(1)/2.
+	  IF(ABS(E(4)-X).LT.(E(4)*Q+DQ).AND.ABS(E(5)-X).LT.(E(5)*Q+DQ)
+	1	.AND.ABS(E(6)-X).LT.(E(6)*Q+DQ)) THEN
+	    ISEQ=9
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ)) THEN
+	    ISEQ=10
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ELSE
+	  X=E(1)/2.
+	  IF (ABS(E(4)+E(5)).LT.(DQ*2.).AND.
+	1	ABS(E(6)+X).LT.(ABS(E(6)*Q)+DQ)) THEN
+	    ISEQ=12
+	  ELSEIF ((ABS(E(4))+ABS(E(5))+ABS(E(6))).LT.(DQ*3.)) THEN
+	    ISEQ=11
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(4)+X).LT.(ABS(E(4)*Q)+DQ)) THEN
+	    ISEQ=15
+	  ELSEIF (ABS(E(4)+E(5)).LT.(DQ*2.)) THEN
+	    ISEQ=13
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(1)+2.*E(4)+E(6)).LT.(ABS(E(6)*Q)+DQ)) THEN
+	    ISEQ=16
+	  ELSEIF (ABS(E(1)+E(4)+E(5)+E(6)).LT.(ABS(E(6)*Q)+DQ)) THEN
+	    ISEQ=17
+	  ELSEIF (ABS(E(4)-E(5)).LT.(ABS(E(4)*Q)+DQ)) THEN
+	    ISEQ=14
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ENDIF
+      ENDIF
+C-----TEST FOR B=C ------------------------------------------------------
+      IF(ABS(E(2)-E(3)) .LT. Q*E(3) .and. 
+	1	ABS(BRI-CRI).LE.ABS(BRI*Q)) THEN
+C     
+C-----REDUCED FORMS WITH B=C    (NUMBERS 18 TO 25) ----------------------
+C     
+	IF(NEG.NE.-1) THEN
+	  X=E(1)/2.
+	  IF (ABS(E(4)-X/2.).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	2	ABS(E(5)-X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=18
+	  ELSEIF (ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	1	ABS(E(5)-X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=19
+	  ELSEIF (ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=20
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ELSEIF (ABS(BRI-CRI).LE.ABS(BRI*Q)) THEN
+	  Y=E(2)/2.
+	  IF (ABS(((E(2)-E(1)/3.)/2.)+E(4)).LT.(ABS(E(4)*Q)+DQ)
+	1	.AND.ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	2	ABS(E(5)+E(1)/3.).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=24
+	  ELSEIF (ABS(E(6)+E(5)).LT.(DQ*2.).AND.
+	1	ABS(E(4)+Y).LT.(ABS(E(4)*Q)+DQ)) THEN
+	    ISEQ=22
+	  ELSEIF ((ABS(E(4))+ABS(E(5))+ABS(E(6))).LT.(DQ*3.)) THEN
+	    ISEQ=21
+	  ELSEIF (ABS(E(6)+E(5)).LT.(DQ*2.)) THEN
+	    ISEQ=23
+	  ELSEIF (ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ)) THEN
+	    ISEQ=25
+	  ENDIF
+	  IF (ISEQ .NE. 0) RETURN
+	ENDIF
+      ENDIF
+C     
+C-----REDUCED FORMS WITH A.NE.B.NE.C   (NUMBERS 26 TO 44)
+C     
+      IF(NEG.NE.-1) THEN
+	X=E(1)/2.
+	Y=E(2)/2.
+	IF (ABS(E(4)-X/2.).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	2	ABS(E(5)-X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=26
+	ELSEIF (ABS(E(5)-E(6)).LT.(ABS(E(5)*Q)+DQ).AND.
+	1	ABS(E(5)-X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=27
+	ELSEIF (ABS(E(4)-E(6)/2.).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(5)-X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=28
+	ELSEIF (ABS(E(4)-E(5)/2.).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(6)-X).LT.(ABS(E(6)*Q)+DQ)) THEN
+	  ISEQ=29
+	ELSEIF (ABS(E(4)-Y).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(5)-E(6)/2.).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=30
+	ELSE
+	  ISEQ=31
+	ENDIF
+      ELSE
+	X=E(1)/2.
+	Y=E(2)/2.
+	IF ((ABS(E(4))+ABS(E(5))+ABS(E(6))).LT.(DQ*3.)) THEN
+	  ISEQ=32
+	ELSEIF (ABS(E(6)+E(4)).LT.(DQ*2.).AND.
+	1	ABS(E(5)+X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=36
+	ELSEIF (ABS(E(5)+E(4)).LT.(DQ*2.).AND.
+	1	ABS(E(6)+X).LT.(ABS(E(6)*Q)+DQ)) THEN
+	  ISEQ=38
+	ELSEIF (ABS(E(6)+E(5)).LT.(DQ*2.).AND.
+	1	ABS(E(4)+Y).LT.(ABS(E(4)*Q)+DQ)) THEN
+	  ISEQ=40
+	ELSEIF (ABS(E(6)).LT.DQ.AND.ABS(E(4)+Y).LT.(ABS(E(4)*Q)+DQ)
+	1	.AND.ABS(E(5)+X).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=42
+	ELSEIF (ABS(E(4)+E(6)).LT.(DQ*2.)) THEN
+	  ISEQ=33
+	ELSEIF (ABS(E(4)+E(5)).LT.(DQ*2.)) THEN
+	  ISEQ=34
+	ELSEIF (ABS(E(6)+E(5)).LT.(DQ*2.)) THEN
+	  ISEQ=35
+	ELSEIF (ABS(E(5)+X).LT.(ABS(E(5)*Q)+DQ).AND.ABS(E(6)).LT.DQ) THEN
+	  ISEQ=37
+	ELSEIF (ABS(E(6)+X).LT.(ABS(E(6)*Q)+DQ).AND.ABS(E(5)).LT.DQ) THEN
+	  ISEQ=39
+	ELSEIF (ABS(E(4)+Y).LT.(ABS(E(4)*Q)+DQ).AND.ABS(E(6)).LT.DQ) THEN
+	  ISEQ=41
+	ELSEIF (ABS(E(4)+(E(2)+E(6))/2.).LT.(ABS(E(4)*Q)+DQ).AND.
+	1	ABS(E(5)+(E(1)+E(6))/2.).LT.(ABS(E(5)*Q)+DQ)) THEN
+	  ISEQ=43
+	ELSE
+	  ISEQ=44
+	ENDIF
+      ENDIF
+      RETURN
+      END
+      SUBROUTINE SYMDOT(UZ1,VZ1,WZ1,UZ2,VZ2,WZ2,XI,YI,ZI,AR,BR,GR,DOTXY)
+C     
+C-----DOT PRODUCT SUBROUTINE(X DOT Y) WHERE
+C-----VECTOR X=(UZ1A+VZ1B+WZ1C)
+C-------VECTOR Y=UZ2A+VZ2B+WZ2C)
+C-------WHERE A B C ARE XI YI ZI,RESPECTIVELY
+      DOTXY=UZ1*UZ2*(XI**2)+VZ1*VZ2*(YI**2)+WZ1*WZ2*(ZI**2)
+     2+(WZ1*UZ2+UZ1*WZ2)*ZI*XI*COS(BR)
+     2+(WZ1*VZ2+VZ1*WZ2)*ZI*YI*COS(AR)
+     2+(UZ1*VZ2+VZ1*UZ2)*XI*YI*COS(GR)
+      RETURN
+      END

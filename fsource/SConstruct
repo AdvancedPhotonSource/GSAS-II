@@ -116,9 +116,11 @@ LDFLAGS = ''
 SDKROOT = ''
 tmpdir = None
 #==========================================================================================
+EXEsuffix = ''
 # configure platform dependent options here: 
 if sys.platform == "win32":
     F2PYsuffix = '.pyd'
+    EXEsuffix = '.exe'
     if G77path != "":
       FCompiler='g77'
     elif GFORTpath != "":
@@ -370,6 +372,20 @@ lib = Builder(generator = generate_lib, suffix = '.a',
                src_suffix = '.o')
 env.Append(BUILDERS = {'fort' : fort, 'lib' : lib},)
 
+# Define a builder to compile and copy NIST*LATTICE programs
+def generate_nist(source, target, env, for_signature):
+    #exe = os.path.splitext(str(source[0]))[0] + EXEsuffix
+    exe = target
+#    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o ' + exe
+    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET'
+    if sys.platform == "win32":
+        installcmd = "copy $TARGET " + InstallLoc
+    else:
+        installcmd = "cp $TARGET " + InstallLoc
+    return [cmd, installcmd]
+env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
+
+
 #==========================================================================================
 # Setup build Environment
 #    add compiler, f2py & python to path
@@ -387,9 +403,10 @@ if 'WINDIR' in os.environ: env['ENV']['WINDIR'] = os.environ['WINDIR']
 # finally ready to build something!
 # locate libraries to be built (subdirectories named *subs)
 liblist = []
+NISTlib = []
 for sub in glob.glob('*subs'):
     filelist = []
-    for file in glob.glob(os.path.join(sub,'*.for')):
+    for file in glob.glob(os.path.join(sub,'*.for'))+glob.glob(os.path.join(sub,'*.f')):
         #target = os.path.splitext(file)[0]+'.o'
         target = env.fort(file) # connect .o files to .for files
         #print ('Compile: ',file, target)
@@ -399,17 +416,28 @@ for sub in glob.glob('*subs'):
        lib = env.lib(sub, filelist)
     else:
        lib = Library(sub, filelist) # register library to be created
-    liblist.append(lib[0].name)
+    if 'NIST' in lib[0].name:
+       NISTlib = [lib[0].name]
+    else:	
+       liblist.append(lib[0].name)
     filename = str(lib[0])
+
+# NIST*LATTICE programs
+for src in 'LATTIC.f','convcell.f':
+    target = os.path.splitext(src)[0] + EXEsuffix
+    out = env.nist(target,src)
+    Clean(out, target)
+    Depends(target, NISTlib) # make sure library is rebuilt if old
+
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
+    #break # bail out early for testing
     target = os.path.splitext(src)[0] + F2PYsuffix # xxx.pyd or xxx.so
     out = env.f2py(target,src)
     Clean(out, Glob(os.path.splitext(src)[0] + "*" + F2PYsuffix)) # this picks up old- & new-style .pyd/.so names
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
-    #break # bail out early for testing
 #==========================================================================================
 # all done with setup, show the user the options and let scons do the work
 print (80*'=')

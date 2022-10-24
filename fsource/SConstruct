@@ -381,7 +381,7 @@ def generate_nist(source, target, env, for_signature):
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:
-        installcmd = "cp $TARGET " + InstallLoc
+        installcmd = "cp -p $TARGET " + InstallLoc
     return [cmd, installcmd]
 env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
 
@@ -422,13 +422,6 @@ for sub in glob.glob('*subs'):
        liblist.append(lib[0].name)
     filename = str(lib[0])
 
-# NIST*LATTICE programs
-for src in 'LATTIC.f','convcell.f':
-    target = os.path.splitext(src)[0] + EXEsuffix
-    out = env.nist(target,src)
-    Clean(out, target)
-    Depends(target, NISTlib) # make sure library is rebuilt if old
-
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
@@ -438,6 +431,13 @@ for src in glob.glob('*.for'):
     Clean(out, Glob(os.path.splitext(src)[0] + "*" + F2PYsuffix)) # this picks up old- & new-style .pyd/.so names
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
+
+# NIST*LATTICE programs
+for src in 'LATTIC.f','convcell.f':
+    target = os.path.splitext(src)[0] + EXEsuffix
+    out = env.nist(target,src)
+    Clean(out, target)
+    Depends(target, NISTlib) # make sure library is rebuilt if old    
 #==========================================================================================
 # all done with setup, show the user the options and let scons do the work
 print (80*'=')

@@ -4591,10 +4591,10 @@ class ExportPhaseCIF(ExportCIF):
         dlg = wx.Dialog(G2frame,wx.ID_ANY,'Merge criteria',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         dlg.CenterOnParent()
-        import imp
-        imp.reload(G2G)
+        # import imp
+        # print('reloading ',G2G)
+        # imp.reload(G2G)
         def onChange(*args,**kwargs):
-            #wx.CallAfter(showMergeMag)
             wx.CallLater(100,showMergeMag)
         def showMergeMag():
             if dlg.GetSizer():

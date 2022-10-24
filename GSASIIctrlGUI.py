@@ -6057,8 +6057,9 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
     cellGUIlist = [
         [['m3','m3m'],[" Unit cell: a = "],["{:.5f}"],[0]],
         [['3R','3mR'],[" a = ",u" \u03B1 = "],["{:.5f}","{:.3f}"],[0,3]],
-        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],[" a = "," c = "],
-             ["{:.5f}","{:.5f}"],[0,2]],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],
+             [" a = "," c = ",u" \u03B3 = "],
+             ["{:.5f}","{:.5f}","{:.3f}"],[0,2,-5]],
         [['mmm'],[" a = "," b = "," c = "],["{:.5f}","{:.5f}","{:.5f}"],
             [0,1,2]],
         [['2/m'+'a'],[" a = "," b = "," c = ",u" \u03B1 = "],
@@ -6082,13 +6083,13 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
             useGUI = cellGUI
             break
     for txt,fmt,indx in zip(*useGUI[1:]):
-        col = 1+2*indx
+        col = 1+2*abs(indx)
         cellrow = row
-        if editAllowed and indx > 2:
+        if editAllowed and abs(indx) > 2:
             cellrow = row + 1
-            col = 1+2*(indx-3)
+            col = 1+2*(abs(indx)-3)
         cellSizer.Add(wx.StaticText(frame,label=txt),(cellrow,col))
-        if editAllowed:
+        if editAllowed and indx >= 0:
             Fmt = (10,5)
             if '.3' in fmt: Fmt = (10,3) 
             cellVal = ValidatedTxtCtrl(frame,cell,indx,
@@ -6096,7 +6097,7 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
             cellSizer.Add(cellVal,(cellrow,col+1))
             cellList.append(cellVal.GetId())
         else:
-            cellSizer.Add(wx.StaticText(frame,label=fmt.format(cell[indx])),(cellrow,col+1))
+            cellSizer.Add(wx.StaticText(frame,label=fmt.format(cell[abs(indx)])),(cellrow,col+1))
     #volume
     volCol = 13
     if editAllowed: 

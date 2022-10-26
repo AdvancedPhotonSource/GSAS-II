@@ -238,19 +238,21 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
                 G2G.G2MessageBox(self,msg,'Install xmltodict Error')
                 return False
-        import zipfile as ZF
-        
-        with ZF.ZipFile(filename, 'r') as zipObj:
-            zipObj.extract('Experiment0/RawData0.xml')
-        with open('Experiment0/RawData0.xml') as fd:
-            self.data = dict(xml.parse(fd.read()))
-            self.formatName = 'Bruker .brml file'
-        os.remove('Experiment0/RawData0.xml')
-        os.rmdir('Experiment0')
-        self.idstring = ospath.basename(filename) + ' Bank 1'
-        self.powderentry[0] = filename
-        self.comments = []
-        return True
+        try:
+            import zipfile as ZF        
+            with ZF.ZipFile(filename, 'r') as zipObj:
+                zipObj.extract('Experiment0/RawData0.xml')
+            with open('Experiment0/RawData0.xml') as fd:
+                self.data = dict(xml.parse(fd.read()))
+                self.formatName = 'Bruker .brml file'
+            os.remove('Experiment0/RawData0.xml')
+            os.rmdir('Experiment0')
+            self.idstring = ospath.basename(filename) + ' Bank 1'
+            self.powderentry[0] = filename
+            self.comments = []
+            return True
+        except:
+            return False
             
     def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Bruker brml file'

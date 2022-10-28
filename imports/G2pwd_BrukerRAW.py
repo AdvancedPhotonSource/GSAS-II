@@ -257,18 +257,29 @@ class brml_ReaderClass(G2obj.ImportPowderData):
     def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Bruker brml file'
         print(filename)
-        nSteps = int(self.data['RawData']['DataRoutes']['DataRoute'][1]['ScanInformation']['MeasurementPoints'])
+        datano = 1
+        try:
+            nSteps = int(self.data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['MeasurementPoints'])
+        except KeyError:
+            datano = 0
+            nSteps = int(self.data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['MeasurementPoints'])
         
         x = np.zeros(nSteps, dtype=float)
         y = np.zeros(nSteps, dtype=float)
         w = np.zeros(nSteps, dtype=float) 
         
-        effTime = float(self.data['RawData']['DataRoutes']['DataRoute'][1]['ScanInformation']['TimePerStepEffective'])
+        if datano:
+            effTime = float(self.data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['TimePerStepEffective'])
+        else:
+            effTime = float(self.data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['TimePerStepEffective'])
         
         # Extract 2-theta angle and counts from the XML document
         i=0
         while i < nSteps :
-            entry = self.data['RawData']['DataRoutes']['DataRoute'][1]['Datum'][i].split(',')
+            if datano:
+                entry = self.data['RawData']['DataRoutes']['DataRoute'][datano]['Datum'][i].split(',')
+            else:
+                entry = self.data['RawData']['DataRoutes']['DataRoute']['Datum'][i].split(',')
             x[i] = float(entry[2])
             y[i] = float(entry[4])*float(entry[0])/effTime
             i = i + 1

@@ -3945,7 +3945,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnIndexPeaks(event):
         PatternId = G2frame.PatternId    
-        print ('Peak Indexing')
+        #print ('Peak Indexing')
         keepcells = []
         try:
             controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))

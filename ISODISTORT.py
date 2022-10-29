@@ -16,7 +16,10 @@ from __future__ import division, print_function
 import subprocess as subp
 import os
 import os.path
-import requests
+try:
+    import requests
+except:
+    print('Module requests not installed, access to ISODISTORT not possible')
 import copy
 import GSASIIscriptable as G2sc
 import tempfile

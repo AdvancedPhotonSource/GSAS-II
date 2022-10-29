@@ -13,19 +13,20 @@
 
 This implements an interface to the NIST*LATTICE code using 
 the Spring 1991 program version. NIST*LATTICE, "A Program to Analyze 
-Lattice Relationships" was created by Vicky Lynn Karen and Alan D. Mighell, 
-National Institute of Standards and Technology, Materials Science and 
-Engineering Laboratory, Gaithersburg, Maryland 20899. 
+Lattice Relationships" was created by Vicky Lynn Karen and Alan D. Mighell
+(National Institute of Standards and Technology, Materials Science and 
+Engineering Laboratory, Gaithersburg, Maryland 20899.)
+Minor code modifications made to provide more significant digits for
+cell reduction matrix terms. 
 
-[cite: V. L. Karen and A. D. Mighell, NIST Technical Note 1290 
-(1991), https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf;
-V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
+[if used cite: V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991),
+https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf;
+and V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
 https://patents.google.com/patent/US5235523A/en?oq=5235523]
 
 This is still under development; not yet in use.
 
-Easy part done: cell reduction and reversion of that. Work to come, 
-"Search for higher symmetry unit cells" & "Relate two unit cells"
+Work to come: "Relate two unit cells"
 '''
 
 import subprocess
@@ -39,14 +40,27 @@ centerLbl = {'P':'Primitive', 'A':'A-centered', 'B':'B-centered', 'C':'C-centere
 	'F':'Face-centered', 'I':' Body-centered', 'R':'Rhombohedral', 'H':'Rhombohedral'}
 
 def showCell(cell,center,setting):
-    'format cell input or output'
+    '''show unit cell input or output nicely formatted.
+    :param list cell: six lattice constants as float values.
+    :param str center: cell centering code; one of P/A/B/C/F/I/R
+      Note that 'R' is used for rhombohedral lattices in either 
+      rhombohedral (primitive) or hexagonal cells.
+    :param str setting: is ' ' except for rhombohedral symmetry where 
+      it will be R or H for the cell type.
+    :returns: a formatted string
+    '''
     s = "{:.4f} {:.4f} {:.4f} {:.3f} {:.3f} {:.3f}".format(*cell)
     s += '  ' + centerLbl.get(center,'?')
     if setting.strip(): s += '-' + setting
     return s
 
 def uniqCells(cellList):
-    'remove duplicated cells from an output list'
+    '''remove duplicated cells from a cell output list
+    :param list cellList: A list of reduced cells where each entry represents a
+      reduced cell as (_,cell,_,_,center,...) where cell has six lattice 
+      constants and center is the cell centering code (P/A/B/C/F/I/R).
+    :returns: a list as above, but where each unique cell is listed only once
+    '''
     uList = []
     shown = []
     for i in cellList:
@@ -55,11 +69,32 @@ def uniqCells(cellList):
         shown.append(s)
         uList.append(i)
     return uList
+
+def emulateLP(line,fp):
+    '''Emulate an antique 132 column line printer, where the first column
+    that is printed is used for printer control. '1' starts a new page 
+    and '0' double-spaces. Not implemented is '+' which overprints.
+    If the file pointer is not None, the line is copied to the 
+    file, removing the first column but adding a bit of extra formatting 
+    to separate pages or add a blank line where needed. 
+
+    :param str line: string to be printed
+    :param file fp: file pointer object
+    '''
+    if not fp: return
+    if line[0] == '1':
+        fp.write('\n'+130*'='+'\n'+line[1:])            
+    elif line[0] == '0':
+        fp.write('\n'+line[1:])            
+    elif len(line) == 1:
+        fp.write('\n')            
+    else:
+        fp.write(line[1:])            
         
-def ReduceCell(center,cellin,mode=0,deltaV=0):
+def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
     '''Compute reduced cell(s) with NIST*LATTICE
     
-    :param str center: cell centering code, one of P/A/B/C/F/I/R
+    :param str center: cell centering code; one of P/A/B/C/F/I/R
       Note that 'R' is used for rhombohedral lattices in either 
       hexagonal or rhombohedral (primitive) cells
     :param list cellin: six lattice constants as float values
@@ -70,7 +105,8 @@ def ReduceCell(center,cellin,mode=0,deltaV=0):
         3: generate sub- and supercells
     :param int deltaV: volume ratios for sub/supercells if mode != 0 as 
       ratio of original cell to smallest subcell or largest supercell. Ignored 
-      if mode=0. 
+      if mode=0.
+    :param str output: name of file to write the NIST*LATTICE output  
     :returns: a dict with item 'input' with input cell as (cell,center,setting)
       and 'output' which is a list of reduced cells of form
       (d,cell,vol,mat,center,setting). In these, 
@@ -88,10 +124,10 @@ def ReduceCell(center,cellin,mode=0,deltaV=0):
     setting = " " 
     (a,b,c,alpha,beta,gamma) = cellin
     celldict = {}
-    if center == "R":
-        setting = "R"
-    elif alpha == 90 and beta == 90 and gamma == 120:
+    if center == "R" and alpha == 90 and beta == 90 and gamma == 120:
         setting = "H"
+    elif center == "R" :
+        setting = "R"
     # prepare input and start program
     cellline = '{:10.4f}{:10.4f}{:10.4f}{:10.3f}{:10.3f}{:10.3f}'.format(*cellin)
     inp = "RSS      1\n"
@@ -109,10 +145,13 @@ def ReduceCell(center,cellin,mode=0,deltaV=0):
     d = 1
     line = '?'
     linenum = 0
+    fp = None
+    if output: fp = open(output,'w')
     try:
         for b in p.stdout.readlines():
             linenum += 1
             line = b.decode()
+            emulateLP(line,fp)
             pat = r"T 2= (.*)/ (.*)/ (.*)"  # transform matrix
             s = re.split(pat,line)
             if len(s) > 1: 
@@ -136,7 +175,7 @@ def ReduceCell(center,cellin,mode=0,deltaV=0):
         return celldict
     finally:
         p.terminate()
-    if len(celldict['output'] or len(err) > 0) == 0:
+    if len(celldict['output']) == 0 or len(err) > 0:
         print('Error:' ,err.decode())
     return celldict
 
@@ -189,8 +228,162 @@ def ConvCell(redcell):
     return (cell,center,setting,mat)
 
 
+def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
+                    mode='I', vrange=8, output=None):
+    '''Search for matrices that relate two unit cells 
+    
+    :param list cell1: six lattice constants as float values for 1st cell
+    :param str center1: cell centering code for 1st cell; one of P/A/B/C/F/I/R
+      Note that 'R' is used for rhombohedral lattices in either 
+      hexagonal or rhombohedral (primitive) cells
+    :param list cell2: six lattice constants as float values for 2nd cell
+    :param str center2: cell centering code for 2nd cell (see center1)
+    :param list tolerance: comparison tolerances for a, b, c, alpha, beta 
+      & gamma (defaults to [0.2,0.2,0.2,1.,1.,1.]
+    :param str mode: search mode, which should be either 'I' or 'F'
+      'I' provides searching with integral matrices or
+      'F' provides searching with integral and fractional matrices
+    :param int vrange: maximum matrix term range. 
+       Must be 1 <= vrange <= 10 for mode='F' or 
+       Must be 1 <= vrange <= 40 for mode='I' 
+    :param str output: name of file to write the NIST*LATTICE output  
+
+    :returns: a list of matrices that match cell1 to cell2 where 
+      each entry contains (det, im, m, tol, one2two, two2one) where
+      0: det is the determinant, giving the volume ratio between cells
+      1: im relates the reduced cell for cell1 to the reduced cell for cell2
+      2: m relates the reduced cell for cell2 to the reduced cell for cell1
+      3: tol quality of agreement as six differences between the 
+        two reduced cells
+      4: one2two numpy matrix that transforms cell1 to cell2
+      5: two2one numpy matrix that transforms cell2 to cell1
+    '''
+    # reduce input cells. Save cell, volume and matrix
+    rcVmat = [[],[]]
+    rcVmat[0] = ReduceCell(center1,cell1)['output'][0][1:4]
+    rcVmat[1] = ReduceCell(center2,cell2)['output'][0][1:4]
+    reverseCells = False
+    if rcVmat[0][1] < rcVmat[1][1]: # largest volume goes first
+        reverseCells = True
+        rcVmat = list(reversed(rcVmat))
+    # prepare input and start program
+    inp = "REL      1\n"
+    inp += "{:.1s}  {:2d}     {:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}\n".format(
+            mode,vrange,*tolerance)
+    for i in range(2):
+        inp += "          {:10.5f}{:10.5f}{:10.5f}{:10.4f}{:10.4f}{:10.4f}\n".format(
+            *rcVmat[i][0])
+    p = subprocess.Popen([nistlattice],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.close()
+    err = p.stderr.read()
+    line = '?'
+    fp = None
+    if output: fp = open(output,'w')
+    # read output and parse
+    lines = [b.decode() for b in p.stdout.readlines()]
+    p.terminate()
+    if fp:
+        for line in lines: emulateLP(line,fp)
+        fp.close()
+    lnum = 0
+    while lnum < len(lines):
+        if ' H Matrix ' in lines[lnum] and ' Determinant' in lines[lnum]:
+            lnum += 2
+            break
+        lnum += 1
+    else:
+        print('no header found')
+        return []
+
+    xforms = []
+    while lnum < len(lines):
+        try:
+            sl = lines[lnum].split()
+            if len(sl) == 10:
+                sl = [float(i) for i in sl]
+                m = 3*[3*[0]]  # forward matrix
+                im = 3*[3*[0]] # inverse matrix
+                tol = 6*[0]
+                m[0] = sl[0:3]
+                im[0] = sl[3:6]
+                tol[0:3] = sl[6:9]
+                det = sl[9]
+            
+                lnum += 1
+                sl = [float(i) for i in lines[lnum].split()]
+                m[1] = sl[0:3]
+                im[1] = sl[3:6]
+                tol[3:] = sl[6:9]
+            
+                lnum += 1
+                sl = [float(i) for i in lines[lnum].split()]
+                m[2] = sl[0:3]
+                im[2] = sl[3:6]
+            
+                xmatI = np.dot(np.dot(np.linalg.inv(rcVmat[0][2]),m),rcVmat[1][2])
+                xmat  = np.dot(np.dot(np.linalg.inv(rcVmat[1][2]),im),rcVmat[0][2])
+                if reverseCells:
+                    one2two, two2one = xmatI, xmat
+                    xforms.append((det, m, im, tol, one2two, two2one))
+                else:
+                    one2two, two2one = xmat, xmatI
+                    xforms.append((det, im, m, tol, one2two, two2one))
+        except Exception as msg:
+            print('error with line',lnum,msg)
+            print(lines[lnum])
+
+        lnum += 1
+    if len(err) > 0:
+        print('Execution error:' ,err.decode())
+    return xforms
+
 if __name__ == '__main__':  # test code
+
     import GSASIIlattice as G2lat
+    cell1 = (5.03461,5.03461,13.74753,90,90,120)
+    center1 = 'R'
+    cell2 = (7.40242,5.03461,5.42665,90,84.14,90)
+    center2 = 'P'
+    #print(ReduceCell(center1,cell1,output='/tmp/reduce.txt'))
+    tolerance = 3*[0.1]+3*[.5]
+    print('\ncomparing ',showCell(cell1,center1,' '),showCell(cell2,center2,' '))
+    out = CompareCell(cell1, center1, cell2, center2, tolerance, output='/tmp/CompCell.txt')
+    for i in out:
+        print(70*'=')
+        print(i[0],i[3],'\n',i[5])
+    print('testing with 1st entry')
+    print('cell1 ',showCell(cell1,center1,' '))
+    print('cell2-->cell1',G2lat.TransformCell(cell2,out[0][5]))
+    print('cell2 ',showCell(cell2,center2,' '))
+    print('cell1-->cell2',G2lat.TransformCell(cell1,out[0][4]))
+
+    out = CompareCell(cell2, center2, cell1, center1, tolerance)
+    print('reversed input, testing with 1st entry')
+    print('cell1 ',showCell(cell2,center2,' '))
+    print('cell2-->cell1',G2lat.TransformCell(cell1,out[0][5]))
+    print('cell2 ',showCell(cell1,center1,' '))
+    print('cell1-->cell2',G2lat.TransformCell(cell2,out[0][4]))
+
+    
+    center2 = 'I'
+    print('\n\ncomparing ',showCell(cell1,center1,' '),showCell(cell2,center2,' '))
+    out = CompareCell(cell1, center1, cell2, center2, tolerance)
+    for i in out:
+        print(70*'=')
+        print(i[0],i[3],'\n',i[5])
+    print('testing with 1st entry')
+    print('cell1 ',showCell(cell1,center1,' '))
+    print('cell2-->cell1',G2lat.TransformCell(cell2,out[0][5]))
+    print('cell2 ',showCell(cell2,center2,' '))
+    print('cell1-->cell2',G2lat.TransformCell(cell1,out[0][4]))
+
+    import sys; sys.exit()
+
+    
     cellin = [5.,5.,5.,85.,85.,85.,]
     cellList = ConvCell(cellin)
     print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList[:3]))

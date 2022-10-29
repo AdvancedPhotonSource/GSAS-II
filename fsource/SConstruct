@@ -381,7 +381,7 @@ def generate_nist(source, target, env, for_signature):
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:
-        installcmd = "cp -p $TARGET " + InstallLoc
+        installcmd = "mv $TARGET " + InstallLoc
     return [cmd, installcmd]
 env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
 

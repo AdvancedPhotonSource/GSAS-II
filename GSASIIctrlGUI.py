@@ -572,6 +572,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             kw['style'] |= wx.TE_PROCESS_ENTER
         else:
             kw['style'] = wx.TE_PROCESS_ENTER
+        if 'size' not in kw: # wx 4.2.0 needs a size
+            kw['size'] = (105,-1)
         if typeHint is not None:
             self.type = typeHint
         elif nDig is not None:

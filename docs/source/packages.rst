@@ -72,18 +72,21 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   miniconda and anaconda but if you create an environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
   unless you request it specifically.  
-
+* requests: this package simplifies http access
+  (https://requests.readthedocs.io/). It is used for access to
+  webpages such as ISODISTORT and for some internal software downloads.
+  
 *Conda command*:
   Here is a typical conda command used to install a GSAS-II compatible
   Python interpreter::
 
-    conda install python=3.9 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion -c conda-forge
+    conda install python=3.9 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion requests -c conda-forge
     
   or to put a Python configured for GSAS-II into a separate conda
   environment (here named ``g2python``, but any name can be used), use
   command::
 
-    conda create -n g2python python=3.9 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion -c conda-forge 
+    conda create -n g2python python=3.9 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion requests -c conda-forge 
 
 Note that at present the subversion is only available for Linux, so
 that should be removed from the commands above. For windows add pywin32

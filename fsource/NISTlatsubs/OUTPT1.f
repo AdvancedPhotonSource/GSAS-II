@@ -193,9 +193,14 @@ C
  2600 FORMAT(///2X,'Sublattices for Delta = 1/',I2)
  2700 FORMAT(//36X,'***** Supercell ',I3,' *****'/)
  2800 FORMAT(//37X,'***** Subcell ',I3,' *****'/)
- 2900 FORMAT(1X,'T 1=',4X,3F7.2,'/',3F7.2,'/',3F7.2)
- 3000 FORMAT(1X,'T 2=',4X,3F7.2,'/',3F7.2,'/',3F7.2)
- 3100 FORMAT(1X,'T 2 INV=',3F7.2,'/',3F7.2,'/',3F7.2)
+C     Minor formatting change by Brian Toby 10/29/2022: increase sig. digits
+C       for cell reduction matrix display
+C 2900 FORMAT(1X,'T 1=',4X,3F7.2,'/',3F7.2,'/',3F7.2)
+C 3000 FORMAT(1X,'T 2=',4X,3F7.2,'/',3F7.2,'/',3F7.2)
+C 3100 FORMAT(1X,'T 2 INV=',3F7.2,'/',3F7.2,'/',3F7.2)
+ 2900 FORMAT(1X,'T 1=',4X,3F14.7,'/',3F14.7,'/',3F14.7)
+ 3000 FORMAT(1X,'T 2=',4X,3F14.7,'/',3F14.7,'/',3F14.7)
+ 3100 FORMAT(1X,'T 2 INV=',3F14.7,'/',3F14.7,'/',3F14.7)
  3200 FORMAT(1H+,108X,'** Cell Matrix **'/)
  3300 FORMAT(1X,'CELL  1=',3F10.4,1X,3F10.3,14X,'V1=',F10.2,5X,3F10.3)
  3400 FORMAT(1X,'CELL  2=',3F10.4,1X,3F10.3,14X,'V2=',F10.2,5X,3F10.3)

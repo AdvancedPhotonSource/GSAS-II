@@ -844,12 +844,13 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     fmax = 50.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
     
-def getFWHM(pos,Inst):
+def getFWHM(pos,Inst,N=1):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987) , J. Appl. Cryst. 20, 79-83
     via getgamFW(g,s).
     
     :param pos: float peak position in deg 2-theta or tof in musec
     :param Inst: dict instrument parameters
+    :param N: int Inst index (0 for input, 1 for fitted)
     
     :returns float: total FWHM of pseudoVoigt in deg or musec
     ''' 
@@ -866,24 +867,24 @@ def getFWHM(pos,Inst):
     if 'LF' in Inst['Type'][0]:
         return 3
     elif 'T' in Inst['Type'][0]:
-        dsp = pos/Inst['difC'][1]
-        alp = alpTOF(dsp,Inst['alpha'][1])
-        bet = betTOF(dsp,Inst['beta-0'][1],Inst['beta-1'][1],Inst['beta-q'][1])
-        s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
-        g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
+        dsp = pos/Inst['difC'][N]
+        alp = alpTOF(dsp,Inst['alpha'][N])
+        bet = betTOF(dsp,Inst['beta-0'][1],Inst['beta-1'][N],Inst['beta-q'][N])
+        s = sigTOF(dsp,Inst['sig-0'][N],Inst['sig-1'][N],Inst['sig-2'][N],Inst['sig-q'][N])
+        g = gamTOF(dsp,Inst['X'][N],Inst['Y'][N],Inst['Z'][N])
         return getgamFW(g,s)+np.log(2.0)*(alp+bet)/(alp*bet)
     elif 'C' in Inst['Type'][0]:
-        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
-        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
+        s = sig(pos/2.,Inst['U'][N],Inst['V'][N],Inst['W'][N])
+        g = gam(pos/2.,Inst['X'][N],Inst['Y'][N],Inst['Z'][N])
         return getgamFW(g,s)/100.  #returns FWHM in deg
     elif 'E' in Inst['Type'][0]:
-        s = sigED(pos,Inst['A'][1],Inst['B'][1],Inst['C'][1])
+        s = sigED(pos,Inst['A'][N],Inst['B'][N],Inst['C'][N])
         return 2.35482*s
     else:   #'B'
-        alp = alpPink(pos,Inst['alpha-0'][1],Inst['alpha-1'][1])
-        bet = betPink(pos,Inst['beta-0'][1],Inst['beta-1'][1])
-        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
-        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
+        alp = alpPink(pos,Inst['alpha-0'][N],Inst['alpha-1'][N])
+        bet = betPink(pos,Inst['beta-0'][N],Inst['beta-1'][N])
+        s = sig(pos/2.,Inst['U'][N],Inst['V'][N],Inst['W'][N])
+        g = gam(pos/2.,Inst['X'][N],Inst['Y'][N],Inst['Z'][N])
         return getgamFW(g,s)/100.+np.log(2.0)*(alp+bet)/(alp*bet)  #returns FWHM in deg
     
 def getgamFW(g,s):

@@ -1344,6 +1344,8 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
+    elif RBType == 'Spin':
+        Cart = [np.zeros(3),]
     # if symmetry axis is defined, place symmetry axis along quaternion
     if RBObj.get('symAxis') is None:
         Q = RBObj['Orient'][0]

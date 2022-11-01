@@ -6468,10 +6468,12 @@ def PlotPeakWidths(G2frame,PatternName=None):
         B = data[6]
         S = 1.17741*np.sqrt(data[8])/T
         G = data[10]/T
+        W = G2pwd.getFWHM(T,Parms,0)/T
         Plot.plot(Q,A,color='r',label='Alpha')
         Plot.plot(Q,B,color='g',label='Beta')
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
+        Plot.plot(Q,W,color='g',label='FWHM (GL+ab)')
 
         fit = G2mth.setPeakparms(Parms,Parms2,T,Z,useFit=True)
         ds = T/difC
@@ -6483,10 +6485,12 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Bf = fit[6]
         Sf = 1.17741*np.sqrt(fit[8])/T
         Gf = fit[10]/T
+        Wf = G2pwd.getFWHM(T,Parms)/T
         Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
         Plot.plot(Q,Bf,color='g',dashes=(5,5),label='Beta fit')
         Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Gf,color='m',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
+        Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
         
         Tp = []
         Ap = []
@@ -9762,14 +9766,23 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
                 
-    def RenderSphere(x,y,z,radius,color):
+    def RenderSphere(x,y,z,radius,color,fade=False):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        if fade:
+            Fade = list(color) + [0.5,]
+            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,Fade)           
+            GL.glShadeModel(GL.GL_FLAT)
+            GL.glEnable(GL.GL_BLEND)
+            GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
         q = GLU.gluNewQuadric()
         GLU.gluSphere(q,radius,20,10)
         GL.glPopMatrix()
+        if fade:
+            GL.glDisable(GL.GL_BLEND)
+            GL.glShadeModel(GL.GL_SMOOTH)
         
     def RenderFadeSphere(x,y,z,radius,color):
         fade = list(color) + [1.0,]
@@ -10323,11 +10336,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     name = '  '+testRBObj['NameLookup'][ind]
                 except:
                     name = '  '+aType+str(ind)
+                radius = 0.2
+                Fade = False
+                if testRBObj['rbType'] == 'Spin':
+                    radius = testRBObj['AtInfo'][aType][0][0]
+                    Fade = True
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 if 'RBhighLight' in testRBObj and testRBObj['RBhighLight'] == ind: # highlighted atom is green
-                    RenderSphere(x,y,z,0.2,Gr)
+                    RenderSphere(x,y,z,radius,Gr,Fade)
                 else:
-                    RenderSphere(x,y,z,0.2,color/255.)
+                    RenderSphere(x,y,z,radius,color/255.,Fade)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
             RenderRBtriplet(testRBObj['rbObj']['Orig'][0],
@@ -10666,7 +10684,10 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
                 
-    def RenderSphere(x,y,z,radius,color):
+    def RenderSphere(x,y,z,radius,color,fade=False):
+        if fade:
+            Fade = list(color) + [0.5,]
+            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,Fade)
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)

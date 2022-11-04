@@ -140,13 +140,15 @@ information is provided.
 GSAS-II includes copies of these programs:
 
   **DIFFaX**
-    Simulate layered structures with faulting
+    Simulate layered structures with faulting. https://www.public.asu.edu/~mtreacy/DIFFaX.html
     
-  **CifFile**
-    A software library used to read data and structures from CIF
+  **PyCifRW**
+    A software library used to read data and structures from
+    CIF. https://bitbucket.org/jamesrhester/pycifrw
+    
     
   **Shapes**
-    Model small angle scattering with shaped particles
+    Model small angle scattering with shaped particles. 
     
   **NIST FPA**
     Use Fundamental Parameters to determine GSAS-II profile function 

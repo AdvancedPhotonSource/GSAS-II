@@ -2126,14 +2126,18 @@ def DoCalibInst(IndexPeaks,Inst):
 
 def getHeaderInfo(dataType):
     '''Provide parameter name, label name and formatting information for the 
-    contents of the peak table and where used in DoPeakFit
+    contents of the Peak Table and where used in DoPeakFit
     '''
     names = ['pos','int']
     lnames = ['position','intensity']
     if 'LF' in dataType:
-        names = ['int','sig','gam','damp','asym','l']
-        lnames = ['intensity','sigma','gamma','satellite\ndamping','satellite\nasym','00l']
-        fmt = ["%10.2f","%10.3f","%10.3f","%10.3f","%10.3f","%4d"]
+        names = ['int','sig','gam','damp','asym','l','ttheta']
+        lnames = ['intensity','sigma','gamma','satellite\ndamping',
+                      'satellite\nasym','00l',
+                      #'2theta    '
+                      '2\u03B8'
+                      ]
+        fmt = ["%10.2f","%10.3f","%10.3f","%10.3f","%10.3f","%4d","%7.3f"]
     elif 'C' in dataType:
         names += ['sig','gam']
         lnames += ['sigma','gamma']
@@ -2345,8 +2349,11 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         peakDict = {}
         peakVary = []
         names,_,_ = getHeaderInfo(dataType)
-        off = 0
-        if 'LF' in dataType: off = 2
+        if 'LF' in dataType:
+            off = 2
+            names = names[:-1] # drop 2nd 2theta value
+        else:
+            off = 0
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 peakDict.update(peak)
@@ -2362,12 +2369,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         '''Put values into the Peaks list from the refinement results from inside
         the parmDict array
         '''
+        names,_,_ = getHeaderInfo(Inst['Type'][0])
         off = 0
         if 'LF' in Inst['Type'][0]: 
             off = 2
             if 'clat' in varyList:
                 Peaks[-1]['clat'] = parmDict['clat']
-        names,_,_ = getHeaderInfo(Inst['Type'][0])
+            names = names[:-1] # drop 2nd 2theta value
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2377,7 +2385,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                     peak[2*j+off] = parmDict[parName]
             if 'pos'+str(i) not in parmDict: continue
             pos = parmDict['pos'+str(i)]
-            if 'LF' in Inst['Type'][0]: peak[0] = pos
+            if 'LF' in Inst['Type'][0]:
+                peak[0] = pos
+                peak[-1] = pos
             if 'difC' in Inst:
                 dsp = pos/Inst['difC'][1]
             for j in range(len(names)):
@@ -2413,7 +2423,11 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         names,fmt,_ = getHeaderInfo(dataType)
         head = 13*' '
         for name in names:
-            if name in ['alp','bet']:
+            if name == 'l':
+                head += name.center(3)+'    '
+            elif name == 'ttheta':
+                continue
+            elif name in ['alp','bet']:
                 head += name.center(8)+'esd'.center(8)
             else:
                 head += name.center(10)+'esd'.center(10)
@@ -2427,6 +2441,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             for j in range(len(names)):
                 name = names[j]
                 parName = name+str(i)
+                if parName not in parmDict: continue
                 ptstr += ptfmt[name] % (parmDict[parName])
                 if parName in varyList:
                     ptstr += ptfmt[name] % (sigDict[parName])
@@ -5322,6 +5337,8 @@ class profileObj(FP.FP_profile):
         w2 = np.exp(-10**((damp+asym) * (Qs - posQ)**2))
         w[len(w)//2:] = w2[len(w)//2:]
         weqdiv = w * np.sin(Qs * ncell * co2)**2 / (np.sin(Qs * co2)**2)
+        weqdiv[:np.searchsorted(Qs,posQ - np.pi/self.param_dicts[me]['clat'])] = 0  # isolate central peak, if needed
+        weqdiv[np.searchsorted(Qs,posQ + np.pi/self.param_dicts[me]['clat']):] = 0
         conv = FP.best_rfft(weqdiv)
         conv[1::2] *= -1 #flip center
         return conv

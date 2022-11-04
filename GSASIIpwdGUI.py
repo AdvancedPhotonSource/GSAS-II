@@ -1121,6 +1121,7 @@ def UpdatePeakGrid(G2frame, data):
         if 'LF' in Inst['Type'][0]:
             for i in range(len(data['LFpeaks'])):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
+            wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
             OnPeakFit(noFit=True)
         
@@ -1130,6 +1131,15 @@ def UpdatePeakGrid(G2frame, data):
         '''
         state = G2frame.dataWindow.setPeakMode.IsChecked()
         G2pwd.setPeakInstPrmMode(state)
+
+    def ShiftLFc(event):
+        '''Shift the Laue Fringe lattice parameter
+        '''
+        Obj = event.GetEventObject()
+        move = Obj.GetValue()
+        Obj.SetValue(0)
+        data['LaueFringe']['clat'] *= 1. + move/2000.
+        wx.CallAfter(RefreshPeakGrid,None)
 
     #======================================================================
     #### beginning of UpdatePeakGrid
@@ -1165,12 +1175,15 @@ def UpdatePeakGrid(G2frame, data):
     rowLabels = []
     PatternId = G2frame.PatternId
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
+    # Create the header on the Peak Table
     for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
     colLabels = []
     Types = []
     for _,f,l in zip(*G2pwd.getHeaderInfo(Inst['Type'][0])):
         colLabels.append(l)
-        if "d" in f:
+        if l.startswith('2'):
+            Types.append(wg.GRID_VALUE_FLOAT + ':7,3')
+        elif "d" in f:
             Types.append(wg.GRID_VALUE_NUMBER)
         else:
             Types.append(wg.GRID_VALUE_FLOAT + f.replace('%',':').replace('f','').replace('.',','))
@@ -1209,7 +1222,9 @@ def UpdatePeakGrid(G2frame, data):
                     l = int(l + 0.5)
                     data['peaks'][i][0] = 360 * np.arcsin(0.5 * lam / (data['LaueFringe']['clat']/l)) / np.pi
                 data['peaks'][i] += [0., False, 0., False, l, None]
-            data['LFpeaks'].append(data['peaks'][i][2:])
+            peakline = copy.deepcopy(data['peaks'][i][2:])
+            peakline[-1] = data['peaks'][i][0]
+            data['LFpeaks'].append(peakline)
         G2frame.PeakTable = G2G.Table(data['LFpeaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     else:
         G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -1240,9 +1255,14 @@ def UpdatePeakGrid(G2frame, data):
         data['LaueFringe']['clat-ref'] =  data['LaueFringe'].get('clat-ref',False)
         data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
         cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'clat',
-                                    typeHint=float,nDig=(10,4),
+                                    typeHint=float,nDig=(10,4),size=(80,-1),
                                     OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         topSizer.Add(cVal,0,WACV)
+        cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+        cellSpin.SetValue(0)
+        cellSpin.SetRange(-1,1)
+        cellSpin.Bind(wx.EVT_SPIN, ShiftLFc)
+        topSizer.Add(cellSpin,0,WACV)
         cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
         topSizer.Add(cRef,0,WACV)
         topSizer.Add((15,-1))
@@ -3638,7 +3658,15 @@ def UpdateUnitCellsGrid(G2frame, data):
                 File.close()
         finally:
             dlg.Destroy()
-        
+
+    def OnShowGenRefls(event):
+        '''Generate the reflections from the unit cell and 
+        display them in the console window
+        '''
+        OnHklShow(None)
+        for r in G2frame.HKL:
+            print("{0:.0f},{1:.0f},{2:.0f}   2\u03B8={4:7.3f} d={3:8.4f}".format(*r))
+    
     def OnCellChange(invalid,value,tc):
         if invalid:
             return
@@ -4601,6 +4629,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
+    G2frame.Bind(wx.EVT_MENU, OnShowGenRefls, id=G2G.wxID_SHOWGENHKLS)
         
     if len(data) < 6:
         data.append([])

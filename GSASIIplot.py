@@ -6394,8 +6394,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
                     'Gauss-fit','Lorenz-fit,total-fit'],header=True)
                 for vals in zip(Q,Y,Z,W,Yf,Zf,Wf): Write2csv(fp,vals)
             else:
-                Write2csv(fp,['Q','Gauss-def','Lorenz-def','Gauss-fit','Lorenz-fit',],header=True)
-                for vals in zip(Q,S,G,Sf,Gf): Write2csv(fp,vals)
+                Write2csv(fp,['Q','Gauss-def','Lorenz-def','FWHM-def','Gauss-fit','Lorenz-fit','FWHM-fit',],header=True)
+                for vals in zip(Q,S,G,W,Sf,Gf,Wf): Write2csv(fp,vals)
             fp.close()
         wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
 
@@ -6470,7 +6470,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         G = data[10]/T
         W = G2pwd.getFWHM(T,Parms,0)/T
         Plot.plot(Q,A,color='r',label='Alpha')
-        Plot.plot(Q,B,color='g',label='Beta')
+        Plot.plot(Q,B,color='orange',label='Beta')
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
         Plot.plot(Q,W,color='g',label='FWHM (GL+ab)')
@@ -6487,7 +6487,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Gf = fit[10]/T
         Wf = G2pwd.getFWHM(T,Parms)/T
         Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
-        Plot.plot(Q,Bf,color='g',dashes=(5,5),label='Beta fit')
+        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='Beta fit')
         Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
         Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
@@ -6509,7 +6509,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
             
         if Qp: 
             Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
-            Plot.plot(Qp,Bp,'+',color='g',label='Beta peak')
+            Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
             Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
             Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
@@ -10218,6 +10218,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
+                elif 'Q' in atom[ct]:       #spinning rigid body
+                    print(atom)
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -10329,7 +10331,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     RenderLines(x,y,z,mapBonds[ind],Wt)
         if len(testRBObj) and pageName == 'RB Models':  # plot a test rigid body as ball & [green] sticks
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
-            rbBonds = FindPeaksBonds(XYZ)
+            if testRBObj['rbType'] != 'Spin':
+                rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]
                 try:
@@ -10346,7 +10349,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     RenderSphere(x,y,z,radius,Gr,Fade)
                 else:
                     RenderSphere(x,y,z,radius,color/255.,Fade)
-                RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
+                if testRBObj['rbType'] != 'Spin':
+                    RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
             RenderRBtriplet(testRBObj['rbObj']['Orig'][0],
                             testRBObj['rbObj']['Orient'][0],
@@ -10469,8 +10473,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['Quaternion'] = [0.,0.,0,1.]
     resRBData = data['RBModels'].get('Residue',[])
     vecRBData = data['RBModels'].get('Vector',[])
+    spnRBData = data['RBModels'].get('Spin',[])
     rbAtmDict = {}
-    for rbObj in resRBData+vecRBData:
+    for rbObj in resRBData+vecRBData+spnRBData:
         exclList = ['X' for i in range(len(rbObj['Ids']))]
         rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
     testRBObj = data.get('testRBObj',{})

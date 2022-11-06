@@ -32,16 +32,18 @@ Work to come: "Relate two unit cells"
 import subprocess
 import re
 import numpy as np
+import GSASIIlattice as G2lat
 
 nistlattice = "/Users/toby/boxGSASII/bin/LATTIC"
 convcell = "/Users/toby/boxGSASII/bin/convcell"
 
 centerLbl = {'P':'Primitive', 'A':'A-centered', 'B':'B-centered', 'C':'C-centered',
 	'F':'Face-centered', 'I':' Body-centered', 'R':'Rhombohedral', 'H':'Rhombohedral'}
-
-def showCell(cell,center,setting):
+   
+def showCell(cell,center='P',setting=' ',*ignored):
     '''show unit cell input or output nicely formatted.
-    :param list cell: six lattice constants as float values.
+    :param list cell: six lattice constants as float values; a 7th volume value
+      is ignored if present.
     :param str center: cell centering code; one of P/A/B/C/F/I/R
       Note that 'R' is used for rhombohedral lattices in either 
       rhombohedral (primitive) or hexagonal cells.
@@ -49,13 +51,16 @@ def showCell(cell,center,setting):
       it will be R or H for the cell type.
     :returns: a formatted string
     '''
-    s = "{:.4f} {:.4f} {:.4f} {:.3f} {:.3f} {:.3f}".format(*cell)
+    s = "{:.4f} {:.4f} {:.4f} {:.3f} {:.3f} {:.3f}".format(*cell[:6])
     s += '  ' + centerLbl.get(center,'?')
     if setting.strip(): s += '-' + setting
     return s
 
+def printCell(label,*args,**kwargs):
+    print(label,showCell(*args,**kwargs))
+
 def uniqCells(cellList):
-    '''remove duplicated cells from a cell output list
+    '''remove duplicated cells from a cell output list from :func:`ReduceCell`
     :param list cellList: A list of reduced cells where each entry represents a
       reduced cell as (_,cell,_,_,center,...) where cell has six lattice 
       constants and center is the cell centering code (P/A/B/C/F/I/R).
@@ -104,8 +109,8 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
         2: generate subcells
         3: generate sub- and supercells
     :param int deltaV: volume ratios for sub/supercells if mode != 0 as 
-      ratio of original cell to smallest subcell or largest supercell. Ignored 
-      if mode=0.
+      ratio of original cell to smallest subcell or largest supercell 
+      to original cell. Ignored if mode=0. Otherwise should be 2, 3, 4 or 5
     :param str output: name of file to write the NIST*LATTICE output  
     :returns: a dict with item 'input' with input cell as (cell,center,setting)
       and 'output' which is a list of reduced cells of form
@@ -341,9 +346,202 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
         print('Execution error:' ,err.decode())
     return xforms
 
+def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
+                      deltaV=2, minsym=' ', output=None):
+    '''Search for a higher symmetry lattice related to an input unit cell,
+    and optionally to the supercells and/or subcells with a specified 
+    volume ratio to the input cell. 
+
+    :param list cellin: six lattice constants as float values
+    :param str center: cell centering code; one of P/A/B/C/F/I/R
+      Note that 'R' is used for rhombohedral lattices in either 
+      hexagonal or rhombohedral (primitive) cells
+    :param list tolerance: comparison tolerances for a, b, c, alpha, beta 
+      & gamma (defaults to [0.2,0.2,0.2,1.,1.,1.]
+    :param int mode: 
+        0: use only input cell,
+        1: generate supercells, 
+        2: generate subcells
+        3: generate sub- and supercells
+    :param int deltaV: volume ratios for sub/supercells if mode != 0 as 
+      ratio of original cell to smallest subcell or largest supercell 
+      to original cell. Ignored if mode=0. Otherwise should be 2, 3, 4 or 5
+    :param ? minsym:
+    :param str output: name of file to write the NIST*LATTICE output  
+
+    :returns: a list of processed cells (only one if mode=0) where for each cell the 
+      the following items are included: conventional input cell; reduced input cell; 
+      symmetry-generated conventional cell; symmetry-generated reduced cell; 
+      matrix to convert sym-generated output cell to input conventional cell
+    '''
+    # setting is non-blank for rhombohedral lattices (center=R) only.
+    #  setting = R for rhob axes 
+    #  setting = H for hex. axes
+    setting = " " 
+    (a,b,c,alpha,beta,gamma) = cellin
+    celldict = {}
+    if center == "R" and alpha == 90 and beta == 90 and gamma == 120:
+        setting = "H"
+    elif center == "R" :
+        setting = "R"
+    # prepare input and start program
+    cellline = '{:10.4f}{:10.4f}{:10.4f}{:10.3f}{:10.3f}{:10.3f}'.format(*cellin)
+    inp = "SYM      1\n"
+    inp += "R{:1d} {:2d}     {:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}\n".format(
+            mode,deltaV,*tolerance)
+    inp += "{:1d}  {:1d}{:1d}   {}{}{}\n".format(mode,2,deltaV,center,setting,cellline)
+    p = subprocess.Popen([nistlattice],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.close()
+    # read output and parse
+    err = p.stderr.read()
+    
+    d = 1
+    lines = [b.decode() for b in p.stdout.readlines()]
+    p.terminate()
+    fp = None
+    if output: fp = open(output,'w')
+    if fp:
+        for line in lines: emulateLP(line,fp)
+        fp.close()
+    lnum = 0
+    d = 1
+    startCellList = []  # reduced cell(s) as (determinant, xform-matrix, reduced-cell, volume) save for internal use
+    symCellList = []
+    try:
+        # get list of starting cells
+        while lnum < len(lines):
+            line = lines[lnum]
+            lnum += 1
+            pat = r"T 2= (.*)/ (.*)/ (.*)"  # transform matrix
+            s = re.split(pat,line)
+            if len(s) > 1: 
+                mat = [[float(j) for j in re.split(r" *([\d\.-]*) *",i,maxsplit=3)[1::2]]
+                           for i in s[1:-1]]
+            pat = r"Delta =(.*)"   # Volume ratio (if mode >0)
+            s = re.split(pat,line)
+            if len(s) > 1: 
+                d = float(eval(s[1]))
+
+            pat = r"CELL  2=(.*)V2=(.*)"  # cell lattice and volume
+            s = re.split(pat,line)
+            if len(s) > 1:
+                lat = [float(i) for i in re.split(r" *([\d\.-]*) *",s[1],maxsplit=6)[1::2]]
+                vol = float(re.split(r" *([\d\.-]*) *",s[2],maxsplit=1)[1])
+                startCellList.append((d,mat,lat,vol))
+            if "  **  Symmetry" in line:
+                break
+        #======================================================================
+        # for each input-generated cell, get sets of generated H-matrices 
+        for icell,cellstuff in enumerate(startCellList):
+            while lnum < len(lines):
+                line = lines[lnum]
+                lnum += 1
+                pat = r"CELL  1=(.*)V1=(.*)"  # cell lattice and volume
+                s = re.split(pat,line)
+                if len(s) > 1:
+                    lat = [float(i) for i in re.split(r" *([\d\.-]*) *",s[1],maxsplit=6)[1::2]]
+                    vol = float(re.split(r" *([\d\.-]*) *",s[2],maxsplit=1)[1])
+                    if not np.allclose(cellstuff[2],lat):
+                        print('Warning mismatch between list of reduced cells and'
+                                  ' processed output at line',
+                                  lnum)
+                        print('cell info=',cellstuff)
+                        print('lat,vol=',lat,vol)
+                    break
+            while lnum < len(lines):
+                line = lines[lnum]
+                lnum += 1
+                if ' H Matrix ' in lines[lnum] and ' Determinant' in lines[lnum]:
+                    lnum += 2
+                    break
+            # for each H-matrix, compute a new reduced cell
+            xformSum = np.zeros(7)
+            xformCount = 0
+            while lnum < len(lines):
+                line = lines[lnum]
+                sl = lines[lnum].split()
+                if len(sl) == 10:
+                    sl = [float(i) for i in sl]
+                    m = 3*[3*[0]]  # forward matrix
+                    im = 3*[3*[0]] # inverse matrix
+                    tol = 6*[0]
+                    m[0] = sl[0:3]
+                    im[0] = sl[3:6]
+                    tol[0:3] = sl[6:9]
+                    #det = sl[9]
+            
+                    lnum += 1
+                    sl = [float(i) for i in lines[lnum].split()]
+                    m[1] = sl[0:3]
+                    im[1] = sl[3:6]
+                    tol[3:] = sl[6:9]
+            
+                    lnum += 1
+                    sl = [float(i) for i in lines[lnum].split()]
+                    m[2] = sl[0:3]
+                    im[2] = sl[3:6]
+                    xformSum += G2lat.TransformCell(lat,m)
+                    xformCount += 1
+                lnum += 1
+                    
+                # got to end of output for current cell, process this input    
+                if 50*'-' in line:
+                    if xformCount:
+                        inRedCell = (startCellList[icell][2], 'P', ' ')
+                        if icell ==0:
+                            inCnvCell = (cellin, center, setting)
+                            red2convInp = np.linalg.inv(startCellList[0][1])
+                        else:
+                            inCnvCell = ConvCell(startCellList[icell][2])
+                            red2convInp = inCnvCell[3]
+                        redCell = ([j for j in (xformSum/xformCount)[:6]], 'P', ' ')
+                        cnvCell = ConvCell(redCell[0][:6])
+                        # steps to walk back conventional cell back to original
+                        #c1 = G2lat.TransformCell(cnvCell[0],np.linalg.inv(cnvCell[3]))
+                        #c2 = G2lat.TransformCell(c1[:6],im) # use last, as they are all equiv.
+                        #c3 = G2lat.TransformCell(c2[:6],red2convInp)
+                        cnv2origMat = np.dot(np.dot(red2convInp,im),np.linalg.inv(cnvCell[3]))
+                        #c3 = G2lat.TransformCell(cnvCell[0],cnv2origMat)
+                        symCellList.append((
+                            inCnvCell[:3],   # input cell (conventional)
+                            inRedCell,       # input cell (reduced)
+                            cnvCell[:3],   # symmetry-generated conventional cell
+                            redCell,       # symmetry-generated reduced cell
+                            cnv2origMat,    # matrix to convert sym-generated output cell to input conventional cell
+                            ))                            
+                    break   # go on to next input-generated cell
+
+        
+    except Exception as msg:
+        print('Parse error at line ',lnum,'\n',msg)
+        print(line)
+        return celldict
+    finally:
+        p.terminate()
+    if len(symCellList) == 0 or len(err) > 0:
+        print('Error:' ,err.decode())
+    return symCellList
+    
 if __name__ == '__main__':  # test code
 
-    import GSASIIlattice as G2lat
+    cell = [14.259, 22.539, 8.741, 90., 114.1, 90.]
+    center = 'C'
+    print('CellSymSearch output')
+    for i in CellSymSearch(cell, center, output='/tmp/cellsym.txt'):
+        print('\ninp-conv, inp-red, out-conv, out-red, out(conv)->inp(conv)')
+        for j in i: print(j)
+            
+    print('\n\nCellSymSearch output')
+    for i in CellSymSearch(cell, center, output='/tmp/cellsym.txt', mode=3):
+        print('\ninp-conv, inp-red, out-conv, out-red, out(conv)->inp(conv)')
+        for j in i: print(j)
+
+    import sys; sys.exit()
+
     cell1 = (5.03461,5.03461,13.74753,90,90,120)
     center1 = 'R'
     cell2 = (7.40242,5.03461,5.42665,90,84.14,90)
@@ -386,7 +584,7 @@ if __name__ == '__main__':  # test code
     
     cellin = [5.,5.,5.,85.,85.,85.,]
     cellList = ConvCell(cellin)
-    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList[:3]))
+    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)
     print(G2lat.TransformCell(cellin,mat))
@@ -394,7 +592,7 @@ if __name__ == '__main__':  # test code
     print('\ntest from [5,6,7,90,105,90] C-Centered') # ==>  [5,6,7,90,105,90] C-Centered
     cellin = [3.9051,3.9051,7,99.537,99.537,100.389]
     cellList = ConvCell(cellin)
-    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList[:3]))
+    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)
     print(G2lat.TransformCell(cellin,mat))
@@ -402,7 +600,7 @@ if __name__ == '__main__':  # test code
     print('\nHexagonal test (no change)')
     cellin = [5.,5.,7.,90.,90.,120.,]
     cellList = ConvCell(cellin)
-    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList[:3]))
+    print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)
     print(G2lat.TransformCell(cellin,mat))

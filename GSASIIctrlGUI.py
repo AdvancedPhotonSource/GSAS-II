@@ -33,6 +33,7 @@ Class or function name             Description
                                    choice is selected
 :func:`G2CheckBoxFrontLbl`         A version of :class:`G2CheckBox` that places the label
                                    for the check box in front. Otherwise works the same. 
+:func:`G2RadioButtons`             Creates a series of grouped radio buttons.
 :class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
                                    wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
 :class:`G2SpinWidget`              A customized combination of a wx.SpinButton and a validated 
@@ -1413,6 +1414,42 @@ def G2CheckBoxFrontLbl(parent,label,loc,key,OnChange=None):
     Sizer.myCheckBox = checkBox
     return Sizer
     
+def G2RadioButtons(parent,loc,key,choices,values=None,OnChange=None):
+    '''A customized version of wx.RadioButton that returns a list 
+    of coupled RadioButtons
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the widgets. Can be None.
+    :param dict/list loc: the dict or list with the initial value to be
+      placed in the CheckBox. 
+    :param int/str key: the dict key or the list index for the value to be
+      edited by the CheckBox. The ``loc[key]`` element must exist.
+      The CheckButton will be initialized from this value.
+    :param list choices:
+    :param list values:
+    :param function OnChange: specifies a function or method that will be
+      called when the CheckBox is changed (Default is None). 
+      The called function is supplied with one argument, the calling event.
+    '''
+    def _OnEvent(event):
+        if event.GetEventObject() not in buttons:
+            print('Strange: unknown button')
+            return
+        loc[key] = values[buttons.index(event.GetEventObject())]
+        #log.LogVarChange(self.loc,self.key)
+        if OnChange: OnChange(event)
+    if not values:
+        values = list(range(len(choices)))
+    buttons = []
+    kw = {'style':wx.RB_GROUP}
+    for i,c in enumerate(choices):
+        if i == 1:
+            kw = {}
+        buttons.append(wx.RadioButton(parent,wx.ID_ANY,c,**kw))
+        if loc[key] == values[i]: buttons[-1].SetValue(True)
+        buttons[-1].Bind(wx.EVT_RADIOBUTTON, _OnEvent)
+    return buttons
+
 #### Commonly used dialogs ################################################################################
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),

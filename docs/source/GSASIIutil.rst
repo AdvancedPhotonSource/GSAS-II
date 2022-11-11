@@ -28,6 +28,9 @@
 .. automodule:: GSASIImpsubs
     :members: 
 
+.. automodule:: nistlat
+    :members: 
+
 .. automodule:: ElementTable
     :members: 
 

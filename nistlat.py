@@ -19,14 +19,14 @@ Engineering Laboratory, Gaithersburg, Maryland 20899.)
 Minor code modifications made to provide more significant digits for
 cell reduction matrix terms. 
 
-[if used cite: V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991),
+Please cite V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991),
 https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf;
 and V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
-https://patents.google.com/patent/US5235523A/en?oq=5235523]
+https://patents.google.com/patent/US5235523A/en?oq=5235523 if this module 
+is used. 
 
-This is still under development; not yet in use.
+This will be deployed in GSAS-II after a release of updated binary images. 
 
-Work to come: "Relate two unit cells"
 '''
 
 import subprocess
@@ -42,6 +42,7 @@ centerLbl = {'P':'Primitive', 'A':'A-centered', 'B':'B-centered', 'C':'C-centere
    
 def showCell(cell,center='P',setting=' ',*ignored):
     '''show unit cell input or output nicely formatted.
+
     :param list cell: six lattice constants as float values; a 7th volume value
       is ignored if present.
     :param str center: cell centering code; one of P/A/B/C/F/I/R
@@ -61,6 +62,7 @@ def printCell(label,*args,**kwargs):
 
 def uniqCells(cellList):
     '''remove duplicated cells from a cell output list from :func:`ReduceCell`
+
     :param list cellList: A list of reduced cells where each entry represents a
       reduced cell as (_,cell,_,_,center,...) where cell has six lattice 
       constants and center is the cell centering code (P/A/B/C/F/I/R).
@@ -75,7 +77,7 @@ def uniqCells(cellList):
         uList.append(i)
     return uList
 
-def emulateLP(line,fp):
+def _emulateLP(line,fp):
     '''Emulate an antique 132 column line printer, where the first column
     that is printed is used for printer control. '1' starts a new page 
     and '0' double-spaces. Not implemented is '+' which overprints.
@@ -104,23 +106,28 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
       hexagonal or rhombohedral (primitive) cells
     :param list cellin: six lattice constants as float values
     :param int mode: 
-        0: reduction, 
-        1: generate supercells, 
-        2: generate subcells
-        3: generate sub- and supercells
+
+        * 0: reduction, 
+        * 1: generate supercells, 
+        * 2: generate subcells
+        * 3: generate sub- and supercells
+
     :param int deltaV: volume ratios for sub/supercells if mode != 0 as 
       ratio of original cell to smallest subcell or largest supercell 
       to original cell. Ignored if mode=0. Otherwise should be 2, 3, 4 or 5
-    :param str output: name of file to write the NIST*LATTICE output  
-    :returns: a dict with item 'input' with input cell as (cell,center,setting)
-      and 'output' which is a list of reduced cells of form
-      (d,cell,vol,mat,center,setting). In these, 
-        cell: is the six cell dimensions;
-        center: is as above (always 'P' on output); 
-        setting: is ' ' except for rhombohedral symmetry where it may be R or H for the cell type;
-        d: is the volume ratio for new cell over input cell;
-        vol: is volume of output cell
-        mat: is the matrix that gives the output cell when the input cell is multiplied by mat.     
+    :param str output: name of file to write the NIST*LATTICE output.
+      Default is None, which does not produce a file.    
+    :returns: a dict with two items, 'input' and 'output'. The value for
+      'input' is the input cell as (cell,center,setting). The value for
+      'output' is a list of reduced cells of form
+      (d,cell,vol,mat,center,setting). In these: 
+
+        * cell: a list with the six cell dimensions;
+        * center: is as above (always 'P' on output); 
+        * setting: is ' ' except for rhombohedral symmetry where it may be R or H for the cell type;
+        * d: is the volume ratio for new cell over input cell;
+        * vol: is volume of output cell
+        * mat: is the matrix that gives the output cell when the input cell is multiplied by mat.
     '''
 
     # setting is non-blank for rhombohedral lattices (center=R) only.
@@ -156,7 +163,7 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
         for b in p.stdout.readlines():
             linenum += 1
             line = b.decode()
-            emulateLP(line,fp)
+            _emulateLP(line,fp)
             pat = r"T 2= (.*)/ (.*)/ (.*)"  # transform matrix
             s = re.split(pat,line)
             if len(s) > 1: 
@@ -186,14 +193,16 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
 
 def ConvCell(redcell):
     '''Converts a reduced cell to a conventional cell
+
     :param list redcell: unit cell parameters as 3 cell lengths 
       and 3 angles (in degrees)
-    :returns: tuple (cell,center,setting,mat) where 
-        cell: has the six cell dimensions for the conventional cell;
-        center: is P/A/B/C/F/I/R;
-        setting: is ' ' except for rhombohedral symmetry (center=R), where 
+    :returns: tuple (cell,center,setting,mat) where:
+ 
+        * cell: has the six cell dimensions for the conventional cell;
+        * center: is P/A/B/C/F/I/R;
+        * setting: is ' ' except for rhombohedral symmetry (center=R), where 
           it will always be H (for hexagonal cell choice);
-        mat: is the matrix that gives the conventional cell when the reduced 
+        * mat: is the matrix that gives the conventional cell when the reduced 
           cell is multiplied by mat.
     '''
     inp = "{:10.5f}{:10.5f}{:10.5f}{:10.4f}{:10.4f}{:10.4f}".format(*redcell)
@@ -251,17 +260,19 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     :param int vrange: maximum matrix term range. 
        Must be 1 <= vrange <= 10 for mode='F' or 
        Must be 1 <= vrange <= 40 for mode='I' 
-    :param str output: name of file to write the NIST*LATTICE output  
+    :param str output: name of file to write the NIST*LATTICE output.
+      Default is None, which does not produce a file.    
 
-    :returns: a list of matrices that match cell1 to cell2 where 
-      each entry contains (det, im, m, tol, one2two, two2one) where
-      0: det is the determinant, giving the volume ratio between cells
-      1: im relates the reduced cell for cell1 to the reduced cell for cell2
-      2: m relates the reduced cell for cell2 to the reduced cell for cell1
-      3: tol quality of agreement as six differences between the 
-        two reduced cells
-      4: one2two numpy matrix that transforms cell1 to cell2
-      5: two2one numpy matrix that transforms cell2 to cell1
+    :returns: A list of matrices that match cell1 to cell2 where 
+      each entry contains (det, im, m, tol, one2two, two2one) where:
+
+        * det is the determinant, giving the volume ratio between cells
+        * im relates the reduced cell for cell1 to the reduced cell for cell2
+        * m relates the reduced cell for cell2 to the reduced cell for cell1
+        * tol shows the quality of agreement, as six differences between the 
+             two reduced cells
+        * one2two: a numpy matrix that transforms cell1 to cell2
+        * two2one: a numpy matrix that transforms cell2 to cell1
     '''
     # reduce input cells. Save cell, volume and matrix
     rcVmat = [[],[]]
@@ -292,7 +303,7 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     lines = [b.decode() for b in p.stdout.readlines()]
     p.terminate()
     if fp:
-        for line in lines: emulateLP(line,fp)
+        for line in lines: _emulateLP(line,fp)
         fp.close()
     lnum = 0
     while lnum < len(lines):
@@ -347,7 +358,7 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     return xforms
 
 def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
-                      deltaV=2, minsym=' ', output=None):
+                      deltaV=2, output=None):
     '''Search for a higher symmetry lattice related to an input unit cell,
     and optionally to the supercells and/or subcells with a specified 
     volume ratio to the input cell. 
@@ -359,20 +370,26 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     :param list tolerance: comparison tolerances for a, b, c, alpha, beta 
       & gamma (defaults to [0.2,0.2,0.2,1.,1.,1.]
     :param int mode: 
-        0: use only input cell,
-        1: generate supercells, 
-        2: generate subcells
-        3: generate sub- and supercells
+
+        * 0: use only input cell,
+        * 1: generate supercells, 
+        * 2: generate subcells
+        * 3: generate sub- and supercells
+
     :param int deltaV: volume ratios for sub/supercells if mode != 0 as 
       ratio of original cell to smallest subcell or largest supercell 
       to original cell. Ignored if mode=0. Otherwise should be 2, 3, 4 or 5
-    :param ? minsym:
-    :param str output: name of file to write the NIST*LATTICE output  
+    :param str output: name of file to write the NIST*LATTICE output. Default
+      is None, which does not produce a file.
 
-    :returns: a list of processed cells (only one if mode=0) where for each cell the 
-      the following items are included: conventional input cell; reduced input cell; 
-      symmetry-generated conventional cell; symmetry-generated reduced cell; 
-      matrix to convert sym-generated output cell to input conventional cell
+    :returns: a list of processed cells (only one entry in list when mode=0) 
+      where for each cell the the following items are included: 
+
+        * conventional input cell; 
+        * reduced input cell; 
+        * symmetry-generated conventional cell; 
+        * symmetry-generated reduced cell; 
+        * matrix to convert sym-generated output cell to input conventional cell
     '''
     # setting is non-blank for rhombohedral lattices (center=R) only.
     #  setting = R for rhob axes 
@@ -405,7 +422,7 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     fp = None
     if output: fp = open(output,'w')
     if fp:
-        for line in lines: emulateLP(line,fp)
+        for line in lines: _emulateLP(line,fp)
         fp.close()
     lnum = 0
     d = 1

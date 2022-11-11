@@ -52,7 +52,7 @@ plotting routine               action
 :func:`PlotRigidBody`         show rigid body structures as balls & sticks
 :func:`PlotLayers`            show layer structures as balls & sticks
 :func:`PlotFPAconvolutors`    plots the convolutors from Fundamental Parameters
-:func:'PlotClusterYYZ'plots the result of cluster analysis
+:func:'PlotClusterYYZ'        plots the result of cluster analysis
 ============================  ===========================================================================
 
 These plotting routines place their graphics in the GSAS-II Plot Window, which contains a

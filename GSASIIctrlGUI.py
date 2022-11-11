@@ -800,6 +800,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.evaluated = False # expression has been recast as value, reset flag
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
+            self.result[self.key] = self.GetValue()
             if not self.invalid: # don't update an invalid expression
                 self._setValue(self.result[self.key])
         if self.OnLeave:

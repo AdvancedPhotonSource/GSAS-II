@@ -25,7 +25,13 @@
       REAL*4        ACOFG(7),ACOFL(7)   
       REAL*4        GNORM               !Gaussian Normalization constant
       REAL*4        COFT(6),COFN(3) 
-
+      REAL*4        EPS                 !Are values different
+! Local variables saved between calls
+      REAL*4        prev_sig,prev_gam
+      REAL*4        eta,fwhm,frac,dsdg,dsdl,sumhm,dedf,sqsg
+      save          eta,fwhm,frac,prev_sig,prev_gam,dsdg,dsdl,sumhm,
+     1                   dedf,sqsg
+      
 !SUBROUTINES CALLED:
 
 !FUNCTION DEFINITIONS:
@@ -36,32 +42,41 @@
       DATA SQ2PI/2.506628275/            !SQRT(2PI)
       DATA COFT/1.0,2.69269,2.42843,4.47163,0.07842,1.0/
       DATA COFN/1.36603,-0.47719,0.11116/
+      DATA prev_sig/-1.0/
+      DATA prev_gam/-1.0/
+      DATA eps/1.0e-10/           !Threshold for recalculation
 
 !CODE:
 
-      SQSG = MAX(SQRT(SIG),0.001)
-      FWHG = STOFW*SQSG
-      PGL = FWHG**5
-      SUMHM = PGL
-      DSDL = 0.0
-      DSDG = 0.0
-      DO ITRM=1,5
-        PGL = PGL/FWHG
-        DSDL = DSDL+FLOAT(ITRM)*COFT(ITRM+1)*PGL
-        DSDG = DSDG+FLOAT(6-ITRM)*COFT(ITRM)*PGL
-        PGL = PGL*GAM
-        SUMHM = SUMHM+COFT(ITRM+1)*PGL
-      END DO
-      FWHM = EXP(0.2*LOG(SUMHM))
-      FRAC = GAM/FWHM
-      DEDF = 0.0
-      PF = 1.0
-      ETA = 0.0
-      DO ITRM=1,3
-        DEDF = DEDF+FLOAT(ITRM)*COFN(ITRM)*PF
-        PF = PF*FRAC
-        ETA = ETA+COFN(ITRM)*PF
-      END DO
+! Check for repeat call
+      if (abs(prev_sig-sig) .gt. eps .or.   
+     1  (abs(prev_gam-gam).gt.eps)) then !need to recalculate
+         prev_sig = sig
+         prev_gam = gam
+         SQSG = MAX(SQRT(SIG),0.001)
+         FWHG = STOFW*SQSG
+         PGL = FWHG**5
+         SUMHM = PGL
+         DSDL = 0.0
+         DSDG = 0.0
+         DO ITRM=1,5
+            PGL = PGL/FWHG
+            DSDL = DSDL+FLOAT(ITRM)*COFT(ITRM+1)*PGL
+            DSDG = DSDG+FLOAT(6-ITRM)*COFT(ITRM)*PGL
+            PGL = PGL*GAM
+            SUMHM = SUMHM+COFT(ITRM+1)*PGL
+         END DO
+         FWHM = EXP(0.2*LOG(SUMHM))
+         FRAC = GAM/FWHM
+         DEDF = 0.0
+         PF = 1.0
+         ETA = 0.0
+         DO ITRM=1,3
+            DEDF = DEDF+FLOAT(ITRM)*COFN(ITRM)*PF
+            PF = PF*FRAC
+            ETA = ETA+COFN(ITRM)*PF
+         END DO
+      end if   !end of recalculation step 
       CALL LORENTZ(DX,FWHM,TL,DTLDT,DTLDFW)
       SIGP = (FWHM/STOFW)**2
       EX = MAX(-20.0,-0.5*DX**2/SIGP)
@@ -82,7 +97,7 @@
 
       RETURN
       END
-
+      
       SUBROUTINE PSVOIGT2(DX,SIG,GAM,FUNC,DFDX,DFDS,DFDG)
 
 !PURPOSE: Compute function & derivatives pseudovoigt - unfinished; 

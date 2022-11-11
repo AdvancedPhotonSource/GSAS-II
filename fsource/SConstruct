@@ -67,6 +67,7 @@ F2PYpath = ARGUMENTS.get('F2PYpath', '')
 spath = os.path.normpath(os.path.split(sys.executable)[0])
 for pth in [F2PYpath,spath,os.path.normpath(os.path.join(spath,'..')),os.path.join(spath,'Scripts')]:
     if not pth: continue
+    # look for f2py3 first
     if sys.platform == "win32":
         program = 'f2py3.exe'
     else:
@@ -75,6 +76,7 @@ for pth in [F2PYpath,spath,os.path.normpath(os.path.join(spath,'..')),os.path.jo
     if is_exe(f2pyprogram):
         F2PYpath,F2PYprog = os.path.split(f2pyprogram)
         break
+    # not there, try f2py
     if sys.platform == "win32":
         program = 'f2py.exe'
     else:
@@ -83,6 +85,7 @@ for pth in [F2PYpath,spath,os.path.normpath(os.path.join(spath,'..')),os.path.jo
     if is_exe(f2pyprogram):
         F2PYpath,F2PYprog = os.path.split(f2pyprogram)
         break
+    # none of the above, look for f2py.py (probably obsolete)
     program = 'f2py.py'
     f2pyprogram = os.path.join(pth,program)
     if os.path.exists(f2pyprogram) and os.path.splitext(program)[1] == '.py':
@@ -410,6 +413,9 @@ for sub in glob.glob('*subs'):
         #target = os.path.splitext(file)[0]+'.o'
         target = env.fort(file) # connect .o files to .for files
         #print ('Compile: ',file, target)
+        filelist.append(target)
+    for file in glob.glob(os.path.join(sub,'*.f90')):
+        target = env.fort(file) # connect .o files to .f90 files
         filelist.append(target)
     #lib = Library(sub, Glob(os.path.join(sub,'*.for'))) # register library to be created
     if sys.platform == "win32":

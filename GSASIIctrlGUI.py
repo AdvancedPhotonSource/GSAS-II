@@ -727,6 +727,21 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetForegroundColour("black")
             self.Refresh()
 
+    def _GetNumValue(self):
+        'Get and where needed convert string from GetValue into int or float'
+        try:
+            val = self.GetValue()
+            if self.type is int:
+                val = int(val)
+            elif self.type is float:
+                val = float(val)
+        except:
+            if self.CIFinput and (val == '?' or val == '.'):
+                pass
+            else:
+                self.invalid = True
+        return val
+    
     def ShowStringValidity(self,previousInvalid=True):
         '''Check if input is valid. Anytime the input is
         invalid, call self.OKcontrol (if defined) because it is fast.
@@ -800,7 +815,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.evaluated = False # expression has been recast as value, reset flag
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
-            self.result[self.key] = self.GetValue()
+            self.result[self.key] = self._GetNumValue()
             if not self.invalid: # don't update an invalid expression
                 self._setValue(self.result[self.key])
         if self.OnLeave:
@@ -8368,6 +8383,92 @@ def ChooseOrigin(G2frame,rd):
     else:
         dlg.Destroy()
         return None
+
+def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
+    '''Create a non-modal dialog for sliders to set contour plot 
+    intensity thresholds. 
+    '''
+    def updatePlot():
+        'updates plot after a change in values'
+        wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype)
+    def OnSlider(event):
+        'respond when min or max slider is moved'
+        obj = event.GetEventObject()
+        val = obj.GetValue()/100.
+        if obj.mode == 'max':
+            G2frame.Cmax = val
+        else:
+            G2frame.Cmin = val
+        obj.txt.SetValue(int(Ymax*val))
+        updatePlot()
+    def OnNewVal(*args,**kwargs):
+        'respond when a value is placed in the min or max text box'
+        obj = kwargs['tc']
+        if obj.mode == 'max':
+            val = Range[1]
+            G2frame.Cmax = val/Ymax
+        else:
+            val = Range[0]
+            G2frame.Cmin = val/Ymax
+        obj.slider.SetValue(int((100*val/Ymax) + 0.5))
+        updatePlot()
+    # makeContourSliders starts here
+    Range = [Ymax*G2frame.Cmin,Ymax*G2frame.Cmax]
+    dlg = wx.Dialog(G2frame.plotFrame,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    vbox = wx.BoxSizer(wx.VERTICAL)
+    vbox.Add((-1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add((-1,-1),1,wx.EXPAND,1)
+    hbox.Add(wx.StaticText(
+                dlg,wx.ID_ANY,'Set Contour Intensity Limits'),1,wx.ALL)
+    hbox.Add((-1,-1),1,wx.EXPAND,1)
+    vbox.Add(hbox)
+    vbox.Add((-1,10))
+    dlg.slideSizer = wx.FlexGridSizer(2,3,5,5)
+    dlg.slideSizer.AddGrowableCol(2)
+
+    dlg.slideSizer.Add(wx.StaticText(parent=dlg,label=' Min intensity'),0,WACV)
+    minSel = wx.Slider(parent=dlg,style=wx.SL_HORIZONTAL,
+                           value=int(100*G2frame.Cmin+0.5))
+    minSel.Bind(wx.EVT_SLIDER, OnSlider)
+    minVal = ValidatedTxtCtrl(dlg,Range,0,xmin=0,
+                xmax=Ymax-1, OnLeave=OnNewVal)
+    minVal.slider = minSel
+    minVal.mode = 'min'
+    minSel.txt = minVal
+    minSel.mode = 'min'
+    dlg.slideSizer.Add(minVal,0,WACV)
+    dlg.slideSizer.Add(minSel,0,wx.EXPAND|wx.ALL,3)
+
+    dlg.slideSizer.Add(wx.StaticText(parent=dlg,label=' Max intensity'),0,WACV)
+    maxSel = wx.Slider(parent=dlg,style=wx.SL_HORIZONTAL,
+                           value=int(100*G2frame.Cmax+0.5))
+    maxSel.Bind(wx.EVT_SLIDER, OnSlider)
+    maxVal = ValidatedTxtCtrl(dlg,Range,1,xmin=1,
+                xmax=Ymax, OnLeave=OnNewVal)
+    maxVal.slider = maxSel
+    maxVal.mode = 'max'
+    maxSel.txt = maxVal
+    maxSel.mode = 'max'
+    dlg.slideSizer.Add(maxVal,0,WACV)
+    dlg.slideSizer.Add(maxSel,0,wx.EXPAND|wx.ALL,3)
+
+    vbox.Add(dlg.slideSizer,0,wx.EXPAND,0)
+    vbox.Add((-1,15))
+
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add((-1,-1),1,wx.EXPAND,1)
+    btn = wx.Button(dlg, wx.ID_CLOSE) 
+    hbox.Add(btn,0,wx.ALL,0)
+    btn.Bind(wx.EVT_BUTTON,lambda x: dlg.Destroy())
+    hbox.Add((-1,-1),1,wx.EXPAND,1)
+    vbox.Add(hbox,0,wx.EXPAND,0)
+    vbox.Add((-1,5))
+
+    dlg.SetSizer(vbox)
+    vbox.Fit(dlg)
+    wx.CallLater(100,minVal.SetValue,Range[0])
+    dlg.Show()
 
 if __name__ == '__main__':
     app = wx.App()

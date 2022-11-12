@@ -2106,15 +2106,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['sqrtPlot']:
                 Page.plotStyle['logPlot'] = False
                 G2frame.SubBack = False
-            Ymax = max(Pattern[1][1])
+            YmaxS = max(Pattern[1][1])
             if Page.plotStyle['sqrtPlot']:
-                Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
-                Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
-                Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+                Page.plotStyle['delOffset'] = .02*np.sqrt(YmaxS)
+                Page.plotStyle['refOffset'] = -0.1*np.sqrt(YmaxS)
+                Page.plotStyle['refDelt'] = .1*np.sqrt(YmaxS)
             else:
-                Page.plotStyle['delOffset'] = .02*Ymax
-                Page.plotStyle['refOffset'] = -0.1*Ymax
-                Page.plotStyle['refDelt'] = .1*Ymax
+                Page.plotStyle['delOffset'] = .02*YmaxS
+                Page.plotStyle['refOffset'] = -0.1*YmaxS
+                Page.plotStyle['refDelt'] = .1*YmaxS
             newPlot = True
         elif event.key == 'S' and 'PWDR' in plottype:
             choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
@@ -2161,6 +2161,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmax = 1.0
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
+        elif event.key == 'C' and 'PWDR' in plottype and G2frame.Contour:
+            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -3208,7 +3210,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             'd: lower contour max','u: raise contour max',
             'D: lower contour min','U: raise contour min',
             'o: reset contour limits','g: toggle grid',
-            'i: interpolation method','S: color scheme','c: contour off','t: temperature for y-axis','s: toggle sqrt plot')
+            'i: interpolation method','S: color scheme','c: contour off',
+            't: temperature for y-axis','s: toggle sqrt plot',
+            'C: contour plot control window'
+            )
     else:
         if 'PWDR' in plottype:
             Page.Choice = [' key press',

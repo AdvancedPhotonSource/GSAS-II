@@ -553,7 +553,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.CIFinput = CIFinput
         self.notBlank = notBlank
         self.ASCIIonly = ASCIIonly
-        self.type = str
+        
         # patch: remove this when min & max are no longer used to call this
         if min is not None:
             xmin=min
@@ -565,9 +565,15 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if GSASIIpath.GetConfigValue('debug'):
                 print('Call to ValidatedTxtCtrl using max (change to xmax) here:')
                 G2obj.HowDidIgetHere(True)
+        # end patch
+        
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
+        self.timer = None      # tracks pending updates for expressions in float textctrls
+        self.delay = 5000      # delay for timer update (5 sec)
+        self.type = str
+        
         val = loc[key]
         if 'style' in kw: # add a "Process Enter" to style
             kw['style'] |= wx.TE_PROCESS_ENTER
@@ -671,8 +677,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     self.invalid = True
             if self.nDig and show and not self.invalid:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
+                self.evaluated = False # expression has been recast as value, reset flag
             elif show and not self.invalid:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)).rstrip('0'))
+                self.evaluated = False # expression has been recast as value, reset flag
         else:
             if self.ASCIIonly:
                 s = ''
@@ -704,6 +712,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
         if event: event.Skip()
+        if self.timer:
+            self.timer.Restart(self.delay)
                     
     def _onStringKey(self,event):
         if event: event.Skip()
@@ -782,14 +792,24 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
-        but (unlike _onLoseFocus) don't update the textbox contents.
+        but (unlike _onLoseFocus) there is a two second delay before 
+        the textbox contents are updated with the value from the formula.
         '''
+        def delayedUpdate():
+            self.timer = None
+            try:
+                self._setValue(self.result[self.key])
+            except:
+                pass
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
         elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str 
            return
         if self.evaluated and not self.invalid: # deal with computed expressions
-            self.evaluated = False # expression has been recast as value, reset flag
+            if self.timer:
+                self.timer.Restart(self.delay)
+            else:
+                self.timer = wx.CallLater(self.delay,delayedUpdate)    # this includes a try in case the widget is deleted
         if self.invalid: # don't update an invalid expression
             if event: event.Skip()
             return
@@ -812,12 +832,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 return 
-            self.evaluated = False # expression has been recast as value, reset flag
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
             self.result[self.key] = self._GetNumValue()
             if not self.invalid: # don't update an invalid expression
                 self._setValue(self.result[self.key])
+                
         if self.OnLeave:
             self.event = event
             try:
@@ -1449,7 +1469,7 @@ def G2RadioButtons(parent,loc,key,choices,values=None,OnChange=None):
     '''
     def _OnEvent(event):
         if event.GetEventObject() not in buttons:
-            print('Strange: unknown button')
+            if GSASIIpath.GetConfigValue('debug'): print('Strange: unknown button')
             return
         loc[key] = values[buttons.index(event.GetEventObject())]
         #log.LogVarChange(self.loc,self.key)

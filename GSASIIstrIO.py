@@ -1686,7 +1686,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                             G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
             textureData = General['SH Texture']
-            if textureData['Order'] and seqHistName is not None:
+            if textureData['Order']:    # and seqHistName is not None:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
                 phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
                 for item in ['omega','chi','phi']:

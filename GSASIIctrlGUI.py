@@ -108,6 +108,7 @@ Class or function name             Description
 :func:`MultipleChoicesSelector`    Dialog for displaying fairly complex choices, used for 
                                    CIF powder histogram imports only
 :func:`PhaseSelector`              Select a phase from a list (used for phase importers)
+:class:`gpxFileSelector`           File browser dialog for opening existing .gpx files
 
 ================================  =================================================================
 
@@ -179,6 +180,7 @@ import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
 import GSASIIstrMain as G2stMn
+import GSASIIIO as G2IO
 import config_example
 if sys.version_info[0] >= 3:
     unicode = str
@@ -8490,6 +8492,285 @@ def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
     wx.CallLater(100,minVal.SetValue,Range[0])
     dlg.Show()
 
+################################################################################
+# GPX browser routines
+def skimGPX(fl):
+    '''pull out fit information from a .gpx file quickly
+
+    :returns: dict with status info
+    '''
+    if fl is None: return {}
+    result = {}
+    if not os.path.exists(fl):
+        return {'error':'File does not exist!'}
+    cnt = 0
+    hist = 0
+    fp = open(fl,'rb')
+    result['last saved'] = time.ctime(os.stat(fl).st_mtime)
+    try:
+        while True:
+            cnt += 1
+            try:
+                data = G2IO.cPickleLoad(fp)
+            except EOFError:
+                #print(cnt,'entries read')        
+                break
+            if cnt > 50:  # don't spend too long on this file, if big
+                result['PWDR'] += 3*['   .']
+                break
+            datum = data[0]
+            if datum[0] == 'Notebook':
+                result[datum[0]] = datum[1][-1]
+            elif datum[0] == 'Covariance':
+                d = datum[1]['Rvals']
+                result[datum[0]] = 'Overall: Rwp={:.2f}, GOF={:.1f}'.format(
+                    d.get('Rwp','?'),d.get('GOF','?'))
+                if d.get('converged',False):
+                    result[datum[0]] += '  **Converged**'
+            elif datum[0].startswith('PWDR'):
+                if 'Residuals' not in datum[1][0]: continue
+                if 'PWDR' not in result: result['PWDR'] = []
+                result['PWDR'].append(
+                    "hist #{}: wR={:.2f} ({:})".format(
+                        hist,datum[1][0]['Residuals'].get('wR','?'),datum[0]))
+                hist += 1
+#            elif datum[0].startswith('HKLF'):
+#                pass
+#            elif 'Controls' in datum[0]:
+#                datum[0]['Seq Data']
+            elif datum[0] in ('Constraints','Restraints','Rigid bodies'):
+                pass
+            else:
+                pass
+                #GSASIIpath.IPyBreak_base()
+    except Exception as msg:
+        result['error'] = 'read error: '+str(msg)
+    finally:
+        fp.close()
+    return result
+
+class gpxFileSelector(wx.Dialog):
+    '''Create a file selection widget for locating .gpx files as a modal
+    dialog. Displays status information on selected files. After creating 
+    this use dlg.ShowModal() to wait for selection of a file.
+    If dlg.ShowModal() returns wx.ID_OK, use dlg.Selection (multiple=False)
+    to obtain the selected file or dlg.Selections (multiple=True) to 
+    obtain a list of multiple files.
+
+    :param wx.Frame parent: name of panel or frame that will be
+      the parent to the dialog. Can be None.
+
+    :param path startdir: Specifies the initial directory that is
+      opened when the window is initially opened. Default is '.'
+
+    :param bool multiple: if True, checkboxes are used to allow
+      selection of multiple files. Default is False
+
+    '''
+    def __init__(self,parent,startdir='.',multiple=False,*args,**kwargs):
+        import wx.lib.filebrowsebutton as wxfilebrowse
+        import wx.richtext as wxrt
+        self.timer = None
+        self.delay = 1500 # time to wait before applying filter (1.5 sec)
+        self.Selection = None
+        self.Selections = []
+        self.startDir = startdir
+        if startdir == '.':
+            self.startDir = os.getcwd()
+        self.multiple = multiple
+        wx.Dialog.__init__(self, parent=parent, 
+                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.CenterOnParent()
+        
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        self.dirBtn = wxfilebrowse.DirBrowseButton(self,wx.ID_ANY, size=(650, -1), 
+                            changeCallback = self.DirSelected,
+                            startDirectory = self.startDir
+                    )
+        topSizer.Add(self.dirBtn,0,wx.EXPAND,1)
+        
+        subSiz = wx.BoxSizer(wx.HORIZONTAL)
+        self.opt = {'useBak':False, 'sort':0, 'filter':'*'}
+        chk = G2CheckBoxFrontLbl(self,' Include\n .bakXX?',self.opt,'useBak',
+                                     OnChange=self.DirSelected)
+        subSiz.Add(chk)
+        subSiz.Add((10,-1),1,wx.EXPAND,1)
+        subSiz.Add(wx.StaticText(self,wx.ID_ANY,'   Sort by: '),0,wx.ALIGN_CENTER_VERTICAL,1)
+        choices = ['age','name (alpha+case)','name (alpha)']
+        for w in G2RadioButtons(self,self.opt,'sort',choices,
+                                    OnChange=self.DirSelected):
+            subSiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL,0)
+        subSiz.Add((10,-1),1,wx.EXPAND,1)
+        subSiz.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALIGN_CENTER_VERTICAL,1)
+        self.filterBox = ValidatedTxtCtrl(self, self.opt, 'filter', 
+                                size=(80,-1), style=wx.TE_PROCESS_ENTER,
+                                OnLeave=self.DirSelected, notBlank=False)
+        self.filterBox.Bind(wx.EVT_TEXT,self._startUpdateTimer)
+        self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.DirSelected)
+        subSiz.Add(self.filterBox)
+        subSiz.Add((2,-1))
+        
+        topSizer.Add(subSiz,0,wx.EXPAND,0)
+
+        mainPanel = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_LIVE_UPDATE|wx.SP_3D)
+        mainPanel.SetMinimumPaneSize(100)
+
+        if self.multiple:
+            self.fileBox = wx.CheckListBox(mainPanel,wx.ID_ANY, size=(200, 200),
+                                               style=wx.LB_SINGLE)
+            self.fileBox.Bind(wx.EVT_CHECKLISTBOX,self.FileSelected)
+        else:
+            self.fileBox = wx.ListBox(mainPanel,wx.ID_ANY, size=(200, 200),
+                                          style=wx.LB_SINGLE)
+        self.fileBox.Bind(wx.EVT_LISTBOX,self.FileSelected)
+
+        self.rtc = wxrt.RichTextCtrl(mainPanel, style=wx.VSCROLL|wx.HSCROLL|
+                                       wx.NO_BORDER|wx.richtext.RE_READONLY)
+        mainPanel.SplitVertically(self.fileBox, self.rtc, 200)
+        topSizer.Add(mainPanel,1,wx.EXPAND)
+        
+        subSiz = wx.BoxSizer(wx.HORIZONTAL)
+        subSiz.Add((-1,-1),1,wx.EXPAND,1)
+        self.OKbtn = wx.Button(self, wx.ID_OK, label='Open')
+        self.OKbtn.Enable(False)   # A file must be selected 1st
+        btn = wx.Button(self, wx.ID_CANCEL)
+        subSiz.Add(self.OKbtn)
+        subSiz.Add((5,-1))
+        subSiz.Add(btn)
+        subSiz.Add((-1,-1),1,wx.EXPAND,1)
+        topSizer.Add(subSiz,0,wx.EXPAND)
+        self.SetSizer(topSizer)
+        topSizer.Fit(self)
+        self.dirBtn.SetValue(self.startDir)
+
+    def _startUpdateTimer(self,event):
+        if self.timer:
+            self.timer.Restart(self.delay)
+        else:
+            self.timer = wx.CallLater(self.delay,self.DirSelected)
+        
+    def DirSelected(self,event=None,*args,**kwargs):
+        '''Respond to a directory being selected. List files found in fileBox and 
+        clear any selections. Also clear any reference to a timer. 
+        '''
+        import re
+        try:
+            if self.timer: self.timer.Stop()
+        except:
+            pass
+        self.timer = None
+        self.fileBox.Clear()
+        self.rtc.Clear()
+        self.Selection = None
+        self.Selections = []
+        self.OKbtn.Enable(False)
+        glb = self.opt['filter'].strip()
+        if not glb:
+            glb = '*'
+        elif not '*' in glb:
+            glb = '*' + glb + '*'
+        fullglob = os.path.join(self.dirBtn.GetValue(),glb+'.gpx')
+        self.fl = glob.glob(fullglob)
+        if self.opt['useBak']:
+            self.sl = [(os.path.split(i)[1],os.stat(i).st_mtime,i) for i in self.fl]
+        else:
+            self.sl = [(os.path.split(i)[1],os.stat(i).st_mtime,i) for i in self.fl 
+                  if not re.match(r'.*\.bak\d+\.gpx.*',i)]
+        if self.opt['sort'] == 0:
+            self.sl.sort(key=lambda x: x[1],reverse=True)
+        elif self.opt['sort'] == 1:
+            self.sl.sort(key=lambda x: x[0])
+        else:
+            self.sl.sort(key=lambda x: x[0].lower())
+        items = [i[0]+' ('+self._fmtTimeStampDelta(i[1])+')' for i in self.sl]
+        if items: 
+            self.fileBox.InsertItems(items,0)
+        
+    def FileSelected(self,event): 
+        '''Respond to a file being selected (or checked in multiple mode)
+        '''
+        if self.multiple:  # disable  Open when nothing is selected
+            self.Selections = []
+            OK = False
+            for i in self.fileBox.GetCheckedItems():
+                self.Selections.append(self.sl[i][2])
+                OK = True
+            self.OKbtn.Enable(OK)
+        else:
+            self.OKbtn.Enable(True)
+        self.Selection = self.sl[self.fileBox.GetSelection()][2]
+        result = skimGPX(self.Selection)
+        self.displayGPXrtc(result,self.Selection)
+
+    def displayGPXrtc(self,result,fwp):
+        '''Show info about selected file in a RichText display'''
+        self.rtc.Clear()
+        if fwp is None: return
+        self.rtc.Freeze()
+        self.rtc.BeginSuppressUndo()
+        self.rtc.BeginAlignment(wx.TEXT_ALIGNMENT_CENTER)
+        self.rtc.BeginFontSize(14)
+        self.rtc.BeginBold()
+        self.rtc.WriteText(os.path.split(fwp)[1])
+        self.rtc.EndBold()
+        self.rtc.Newline()
+        self.rtc.EndFontSize()
+        self.rtc.EndAlignment()
+        self.rtc.WriteText('last saved on ')
+        self.rtc.WriteText(result['last saved'])
+        self.rtc.Newline()
+        if 'Covariance' in result:
+            self.rtc.BeginLeftIndent(0,40)
+            self.rtc.WriteText(result['Covariance'])
+            self.rtc.Newline()
+            self.rtc.EndLeftIndent()
+        if 'Notebook' in result:
+            self.rtc.BeginLeftIndent(0,40)
+            self.rtc.BeginItalic()
+            self.rtc.WriteText('Last notebook entry: ')
+            self.rtc.EndItalic()
+            self.rtc.WriteText(result['Notebook'])
+            self.rtc.Newline()
+            self.rtc.EndLeftIndent()
+
+        if 'PWDR' in result:
+            self.rtc.BeginParagraphSpacing(0,0)
+            self.rtc.BeginLeftIndent(0)
+            self.rtc.BeginBold()
+            self.rtc.WriteText('Powder histograms:')
+            self.rtc.EndBold()
+            self.rtc.EndLeftIndent()
+            self.rtc.Newline()
+            self.rtc.BeginLeftIndent(40)
+            for line in result['PWDR']:
+                self.rtc.WriteText(line+'\n')
+            self.rtc.EndLeftIndent()
+            self.rtc.EndParagraphSpacing()
+            
+        if 'error' in result:
+            self.rtc.Newline()
+            self.rtc.BeginBold()
+            self.rtc.WriteText('Error encountered: ')
+            self.rtc.EndBold()
+            self.rtc.WriteText(result['error'])
+        self.rtc.EndSuppressUndo()
+        self.rtc.Thaw()
+
+    def _fmtTimeStampDelta(self,tm):
+        'Show file age relative to now'
+        delta = time.time() - tm
+        if delta > 60*60*24*365:
+            return "{:.2f} years".format(delta/(60*60*24*365))
+        elif delta > 60*60*24*7:
+            return "{:.1f} weeks".format(delta/(60*60*24*7))
+        elif delta > 60*60*24:
+            return "{:.1f} days".format(delta/(60*60*24))
+        elif delta > 60*60:
+            return "{:.1f} hours".format(delta/(60*60))
+        else:
+            return "{:.1f} minutes".format(delta/60)
+
+    
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()

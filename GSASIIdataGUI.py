@@ -677,13 +677,15 @@ class GSASII(wx.Frame):
     def _Add_FileMenuItems(self, parent):
         '''Add items to File menu
         '''
-        item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
+        item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project (.gpx) file')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
         if sys.platform == "darwin": 
-            item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project file (*.gpx) in a separate process')
+            item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project (.gpx) file in a separate process')
             self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project file (*.gpx)')
+        item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project (.gpx) file')
         self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Open w/project browser\tCtrl+B','Use project browser to a GSAS-II project (.gpx) file')            
+        self.Bind(wx.EVT_MENU, self.OnFileBrowse, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Save project\tCtrl+S','Save project under current name')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Save project as...','Save current project to new file')
@@ -4324,38 +4326,42 @@ class GSASII(wx.Frame):
         else:
             print('file not found',f)        
         
+    def _SaveOld(self):
+        '''See if we should save current project and continue 
+        to read another.
+        returns True if the project load should continue
+        '''
+        if self.dataWindow:
+            self.dataWindow.ClearData()
+            dlg = wx.MessageDialog(self,
+                    'Do you want to save and replace the current project?\n'
+                    '(Use No to read without saving or Cancel to continue '
+                    'with current project)',
+                'Save & Overwrite?',
+                wx.YES|wx.NO|wx.CANCEL)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_NO:
+            result = True
+        elif result == wx.ID_CANCEL:
+            return False
+        else:
+            if not self.OnFileSave(None):
+                return False
+        self.GPXtree.DeleteChildren(self.root)
+        self.GSASprojectfile = ''
+        self.HKL = []
+        self.Extinct = []
+        if self.G2plotNB.plotList:
+            self.G2plotNB.clear()
+        return True
+        
     def OnFileOpen(self, event, filename=None):
         '''Gets a GSAS-II .gpx project file in response to the
         File/Open Project menu button
         '''
-        def SaveOld():
-            '''See if we should save current project and continue 
-            to read another.
-            returns True if the project load should continue
-            '''
-            if self.dataWindow:
-                self.dataWindow.ClearData()
-            dlg = wx.MessageDialog(self,
-                    'Do you want to save and replace the current project?\n(Use No to read without saving or Cancel to continue with current project)',
-                    'Save & Overwrite?',
-                    wx.YES|wx.NO|wx.CANCEL)
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result == wx.ID_NO:
-                result = True
-            elif result == wx.ID_CANCEL:
-                return False
-            else:
-                if not self.OnFileSave(None): return False
-            self.GPXtree.DeleteChildren(self.root)
-            self.GSASprojectfile = ''
-            self.HKL = []
-            self.Extinct = []
-            if self.G2plotNB.plotList:
-                self.G2plotNB.clear()
-            return True
         
         def GetGPX():
             if self.LastGPXdir:
@@ -4375,7 +4381,7 @@ class GSASII(wx.Frame):
             
         self.EnablePlot = False
         if self.GPXtree.GetChildrenCount(self.root,False):
-            if not SaveOld(): return
+            if not self._SaveOld(): return
 
         if not filename:
             GetGPX()
@@ -4397,6 +4403,39 @@ class GSASII(wx.Frame):
             import traceback
             print (traceback.format_exc())
 
+    def OnFileBrowse(self, event):
+        '''Gets a GSAS-II .gpx project using the GPX browser, in response 
+        to the File/"Open Project browser" menu button 
+        '''        
+        self.EnablePlot = False
+        if self.LastGPXdir:
+            pth = self.LastGPXdir
+        else:
+            pth = '.'
+
+        try:
+            dlg = G2G.gpxFileSelector(parent=self,startdir=pth)
+            if wx.ID_OK == dlg.ShowModal():
+                filename = dlg.Selection
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        
+        if self.GPXtree.GetChildrenCount(self.root,False):
+            if not self._SaveOld(): return # cancel was entered; nothing changed
+        self.GSASprojectfile = filename
+        self.LastGPXdir = os.path.split(os.path.abspath(filename))[0]
+
+        self.init_vars()
+        try:
+            self.StartProject()         #open the file if possible
+        except:
+            print ('\nError opening file '+filename)
+            import traceback
+            print (traceback.format_exc())
+
+            
     def StartProject(self):
         '''Opens a GSAS-II project file & selects the 1st available data set to 
         display (PWDR, HKLF, REFD or SASD)

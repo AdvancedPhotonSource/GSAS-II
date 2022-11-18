@@ -27,8 +27,21 @@ which creates the GSAS-II GUI and finally the event loop is started.
 import sys
 #import os
 import platform
-import wx
-import GSASIIpath
+try:
+    import wx
+# importing the following wx modules at the same time as wx seems to eliminate 
+# the "Debug: Adding duplicate image handler for 'Windows bitmap file'"
+# error message
+    import wx.grid as wg
+    import wx.aui
+    import wx.lib.scrolledpanel as wxscroll
+    import wx.html        # could postpone this for quicker startup
+    import wx.lib.mixins.listctrl  as  listmix
+    import wx.richtext as wxrt
+    import wx.lib.filebrowsebutton as wxfilebrowse
+    import GSASIIpath
+except ImportError:
+    pass
 GSASIIpath.SetVersionNumber("$Revision$")
 
 __version__ = '1.0.0'

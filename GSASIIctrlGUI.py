@@ -147,7 +147,10 @@ try:
     import wx.lib.scrolledpanel as wxscroll
     import wx.html        # could postpone this for quicker startup
     import wx.lib.mixins.listctrl  as  listmix
+    import wx.richtext as wxrt
+    import wx.lib.filebrowsebutton as wxfilebrowse
     import matplotlib as mpl
+
 except ImportError:
     print('ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build')
         
@@ -8500,7 +8503,7 @@ def skimGPX(fl):
     :returns: dict with status info
     '''
     if fl is None: return {}
-    result = {}
+    result = {'other':[]}
     if not os.path.exists(fl):
         return {'error':'File does not exist!'}
     cnt = 0
@@ -8510,6 +8513,7 @@ def skimGPX(fl):
     try:
         while True:
             cnt += 1
+            note = None
             try:
                 data = G2IO.cPickleLoad(fp)
             except EOFError:
@@ -8522,27 +8526,41 @@ def skimGPX(fl):
             if datum[0] == 'Notebook':
                 result[datum[0]] = datum[1][-1]
             elif datum[0] == 'Covariance':
-                d = datum[1]['Rvals']
-                result[datum[0]] = 'Overall: Rwp={:.2f}, GOF={:.1f}'.format(
-                    d.get('Rwp','?'),d.get('GOF','?'))
-                if d.get('converged',False):
-                    result[datum[0]] += '  **Converged**'
-            elif datum[0].startswith('PWDR'):
+                d = datum[1].get('Rvals')
+                if d:
+                    result[datum[0]] = 'Overall: Rwp={:.2f}, GOF={:.1f}'.format(
+                        d.get('Rwp','?'),d.get('GOF','?'))
+                    if d.get('converged',False): result[datum[0]] += '  **Converged**'
+            elif datum[0].startswith('PWDR '):
                 if 'Residuals' not in datum[1][0]: continue
                 if 'PWDR' not in result: result['PWDR'] = []
                 result['PWDR'].append(
                     "hist #{}: wR={:.2f} ({:})".format(
                         hist,datum[1][0]['Residuals'].get('wR','?'),datum[0]))
                 hist += 1
-#            elif datum[0].startswith('HKLF'):
-#                pass
+            elif datum[0].startswith('HKLF '):
+                note = 'Single crystal histogram(s)'
+            elif datum[0].startswith('REFD '):
+                note = 'Reflectivity histogram(s)'
+            elif datum[0].startswith('SASD '):
+                note = 'Small angle histogram(s)'
+            elif datum[0].startswith('PDF  '):
+                note = 'PDF histogram(s)'
+            elif datum[0].startswith('IMG '):
+                note = 'Image(s)'
+            elif datum[0] == 'Sequential results':
+                note = 'Sequential results'
 #            elif 'Controls' in datum[0]:
 #                datum[0]['Seq Data']
             elif datum[0] in ('Constraints','Restraints','Rigid bodies'):
                 pass
             else:
-                pass
-                #GSASIIpath.IPyBreak_base()
+#                print(datum[0])
+#                breakpoint()
+                pass   
+            if note:
+                if note not in result['other']:
+                    result['other'].append(note)
     except Exception as msg:
         result['error'] = 'read error: '+str(msg)
     finally:
@@ -8568,8 +8586,6 @@ class gpxFileSelector(wx.Dialog):
 
     '''
     def __init__(self,parent,startdir='.',multiple=False,*args,**kwargs):
-        import wx.lib.filebrowsebutton as wxfilebrowse
-        import wx.richtext as wxrt
         self.timer = None
         self.delay = 1500 # time to wait before applying filter (1.5 sec)
         self.Selection = None
@@ -8591,9 +8607,9 @@ class gpxFileSelector(wx.Dialog):
         
         subSiz = wx.BoxSizer(wx.HORIZONTAL)
         self.opt = {'useBak':False, 'sort':0, 'filter':'*'}
-        chk = G2CheckBoxFrontLbl(self,' Include\n .bakXX?',self.opt,'useBak',
+        chk = G2CheckBoxFrontLbl(self,' Include .bakXX?',self.opt,'useBak',
                                      OnChange=self.DirSelected)
-        subSiz.Add(chk)
+        subSiz.Add(chk,0,wx.ALIGN_CENTER_VERTICAL,0)
         subSiz.Add((10,-1),1,wx.EXPAND,1)
         subSiz.Add(wx.StaticText(self,wx.ID_ANY,'   Sort by: '),0,wx.ALIGN_CENTER_VERTICAL,1)
         choices = ['age','name (alpha+case)','name (alpha)']
@@ -8638,7 +8654,9 @@ class gpxFileSelector(wx.Dialog):
         subSiz.Add((5,-1))
         subSiz.Add(btn)
         subSiz.Add((-1,-1),1,wx.EXPAND,1)
+        topSizer.Add((-1,5))
         topSizer.Add(subSiz,0,wx.EXPAND)
+        topSizer.Add((-1,5))
         self.SetSizer(topSizer)
         topSizer.Fit(self)
         self.dirBtn.SetValue(self.startDir)
@@ -8724,7 +8742,7 @@ class gpxFileSelector(wx.Dialog):
             self.rtc.WriteText(result['Covariance'])
             self.rtc.Newline()
             self.rtc.EndLeftIndent()
-        if 'Notebook' in result:
+        if 'Notebook' in result and len(result.get('Notebook','').strip()):
             self.rtc.BeginLeftIndent(0,40)
             self.rtc.BeginItalic()
             self.rtc.WriteText('Last notebook entry: ')
@@ -8732,7 +8750,20 @@ class gpxFileSelector(wx.Dialog):
             self.rtc.WriteText(result['Notebook'])
             self.rtc.Newline()
             self.rtc.EndLeftIndent()
-
+        if len(result.get('other',[])) > 0:
+            self.rtc.BeginParagraphSpacing(0,0)
+            self.rtc.BeginLeftIndent(0)
+            self.rtc.BeginBold()
+            self.rtc.WriteText('Data types in project:')
+            self.rtc.EndBold()
+            self.rtc.EndLeftIndent()
+            self.rtc.Newline()
+            self.rtc.BeginLeftIndent(40)
+            for line in result['other']:
+                self.rtc.WriteText(line+'\n')
+            self.rtc.EndLeftIndent()
+            self.rtc.EndParagraphSpacing()
+                   
         if 'PWDR' in result:
             self.rtc.BeginParagraphSpacing(0,0)
             self.rtc.BeginLeftIndent(0)

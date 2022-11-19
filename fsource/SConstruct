@@ -226,18 +226,12 @@ Mac & 64 bit on linux. 32-bit builds with anaconda/gfortran in 32-bit Python
 is not working, at least not when installed in 64-bits Linux/Windows. 
 
 examples:
-    scons -Q
+    scons
        (builds into ../bin for current platform using default options)
-    scons -Q install=t
+    scons -Q install=T
        (builds into ../bin<platform-dir> for module distribution)
     """)
     sys.exit()
-#==========================================================================================
-# override from command-line options
-for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflags','LDFLAGS']:
-    if ARGUMENTS.get(var, None) is not None:
-        print ('Setting',var,'to',ARGUMENTS.get(var),'based on command line')
-        exec(var + "= ARGUMENTS.get('" + var +"')")
 #==========================================================================================
 # get the python version number from the python image in the f2py directory
 # find the python location associated with the f2py in use. Note 
@@ -388,23 +382,14 @@ def generate_nist(source, target, env, for_signature):
     return [cmd, installcmd]
 env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
 
-
 #==========================================================================================
-# Setup build Environment
-#    add compiler, f2py & python to path
-if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
-if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
-if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
-#   add other needed environment variables
-for var in ('LDFLAGS','SDKROOT'):
-    if eval(var) != "":
-       env['ENV'][var] = eval(var)
-       print("Setting environment variable {} to {}".format(var,eval(var)))
-if 'WINDIR' in os.environ: env['ENV']['WINDIR'] = os.environ['WINDIR']
-
+# override from command-line options
+for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflags','LDFLAGS']:
+    if ARGUMENTS.get(var, None) is not None:
+        print ('Setting',var,'to "'+ARGUMENTS.get(var)+'" based on command line')
+        exec(var + "= ARGUMENTS.get('" + var +"')")
 #==========================================================================================
-# finally ready to build something!
-# locate libraries to be built (subdirectories named *subs)
+# locate libraries to be built (in subdirectories named *subs)
 liblist = []
 NISTlib = []
 for sub in glob.glob('*subs'):
@@ -438,17 +423,21 @@ for src in glob.glob('*.for'):
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
 
+exelist = []
 # NIST*LATTICE programs
 for src in 'LATTIC.f','convcell.f':
     target = os.path.splitext(src)[0] + EXEsuffix
     out = env.nist(target,src)
     Clean(out, target)
     Depends(target, NISTlib) # make sure library is rebuilt if old    
+    exelist.append(out[0].name)
 #==========================================================================================
-# all done with setup, show the user the options and let scons do the work
+# all done with setup, finally ready to build something! but 1st show the 
+# user the final options and save in build notes; then let scons do the work
+print ('Note: Use "scons help" to see build options')
 print (80*'=')
 for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
-    print ('Variable',var,'is',eval(var))
+    print ('Variable',var,'is','"'+eval(var)+'"')
 print ('Using python at', pythonprogram )
 print ('Python/f2py version =',version,PlatformBits)
 print ('Install directory is',InstallLoc)
@@ -458,7 +447,24 @@ print ("")
 print ('f2py will build these modules:',)
 for mod in modlist: print (" " + mod,)
 print ("")
-print ('Use "scons help" to see build options')
+print ('Will compile these executables:',)
+for mod in exelist: print (" " + mod,)
+print ("")
+print (80*'=')
+print("Setting environment variables:")
+# Setup build Environment
+#    add compiler, f2py & python to path
+if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
+if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
+if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
+#   add other needed environment variables
+for var in ('LDFLAGS','SDKROOT'):
+    if eval(var) != "":
+       env['ENV'][var] = eval(var)
+       print("\t{} = {}".format(var,eval(var)))
+if 'WINDIR' in os.environ:
+    env['ENV']['WINDIR'] = os.environ['WINDIR']
+    print("\t {} = {}".format(WINDIR,eval(os.environ['WINDIR'])))
 print (80*'=')
 #print (env.Dump())
 if 'help' in COMMAND_LINE_TARGETS: sys.exit()
@@ -470,4 +476,6 @@ if not GetOption('no_exec'):
     fp = open(os.path.join(InstallLoc,'Build.notes.txt'),'w')
     fp.write('Created {} on {}\n'.format(datetime.datetime.isoformat(datetime.datetime.now()),
                                          platform.node()))
+    for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
+        fp.write('\tVariable',var,'=','"'+eval(var)+'"\n')
     fp.close()

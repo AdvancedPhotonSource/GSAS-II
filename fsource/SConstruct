@@ -373,8 +373,7 @@ env.Append(BUILDERS = {'fort' : fort, 'lib' : lib},)
 def generate_nist(source, target, env, for_signature):
     #exe = os.path.splitext(str(source[0]))[0] + EXEsuffix
     exe = target
-#    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o ' + exe
-    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET ;env'
+    cmd = os.path.join(FORTpath,FCompiler) + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET'
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:
@@ -453,8 +452,8 @@ print ("")
 print (80*'=')
 print("Setting environment variables:")
 # Setup build Environment
-#    add compiler, f2py & python to path
-#if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
+#    add compiler, f2py & python locations to path
+if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
 if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 #   add other needed environment variables
@@ -474,8 +473,32 @@ if not os.path.exists(InstallLoc) and not GetOption('no_exec'):
     os.makedirs(InstallLoc)
 if not GetOption('no_exec'):
     fp = open(os.path.join(InstallLoc,'Build.notes.txt'),'w')
-    fp.write('Created {} on {}\n'.format(datetime.datetime.isoformat(datetime.datetime.now()),
-                                         platform.node()))
+    user = '?'
+    if 'USER' in os.environ:
+        user = os.environ.get('USER','?')
+    elif 'USERNAME' in os.environ:
+        user = os.environ.get('USERNAME','?')
+    fp.write('Created {} on {} by user "{}"\n\n'.format(datetime.datetime.isoformat(datetime.datetime.now()),
+                                         platform.node(),user))
+    try:
+        if sys.platform == "win32":
+            fp.write('Platform win32_ver: '+str(platform.win32_ver())+'\n')
+        elif sys.platform == "darwin":
+            fp.write('Platform mac_ver: {0:} on {2:}\n'.format(*platform.mac_ver()))
+        fp.write('Platform uname: '+str(list(platform.uname()))+'\n')
+    except:
+        pass
+    if 'BUILD_TAG' in os.environ:
+        fp.write('BUILD TAG: '+ os.environ['BUILD_TAG'] +'\n')
+    if 'CONDA_PREFIX' in os.environ:
+        fp.write('CONDA_PREFIX: '+ os.environ['CONDA_PREFIX'] +'\n')
+    
+    fp.write('\n\tPython: '+platform.python_version()+'\n')
+    try:
+        import numpy
+        fp.write('\tnumpy: '+numpy.__version__+'\n\n')
+    except:
+        pass
     for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
         fp.write('\tVariable '+var+' = "'+eval(var)+'"\n')
     fp.close()

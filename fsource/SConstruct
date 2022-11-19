@@ -454,9 +454,9 @@ print (80*'=')
 print("Setting environment variables:")
 # Setup build Environment
 #    add compiler, f2py & python to path
-if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
+#if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
 if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
-if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
+if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 #   add other needed environment variables
 for var in ('LDFLAGS','SDKROOT'):
     if eval(var) != "":

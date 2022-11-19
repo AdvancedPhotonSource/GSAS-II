@@ -477,5 +477,5 @@ if not GetOption('no_exec'):
     fp.write('Created {} on {}\n'.format(datetime.datetime.isoformat(datetime.datetime.now()),
                                          platform.node()))
     for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
-        fp.write('\tVariable',var,'=','"'+eval(var)+'"\n')
+        fp.write('\tVariable '+var+' = "'+eval(var)+'"\n')
     fp.close()

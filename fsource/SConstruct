@@ -374,7 +374,7 @@ def generate_nist(source, target, env, for_signature):
     #exe = os.path.splitext(str(source[0]))[0] + EXEsuffix
     exe = target
 #    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o ' + exe
-    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET'
+    cmd = FCompiler + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET ;env'
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:

@@ -148,13 +148,16 @@ else:
     sys.exit()
 if ARGUMENTS.get('TMP'):
    tmpdir = ARGUMENTS.get('TMP')
+NISTcompileFlags = ''
 if FCompiler == 'gfortran':
     if ARGUMENTS.get('LIBGCC', '').upper().startswith('T'):
         LDFLAGS += ' -static-libgcc'
-        print('LIBGCC')
+        NISTcompileFlags += ' -static-libgcc'
+        print('Static LIBGCC requested')
     if ARGUMENTS.get('LIBGFORTRAN', '').upper().startswith('T'):
         LDFLAGS += ' -static-libgfortran'
-        print('LIBGfortran')
+        NISTcompileFlags += ' -static-libgfortran'
+        print('Static LIBGfortran requested')
     
 #==========================================================================================
 # help
@@ -373,7 +376,7 @@ env.Append(BUILDERS = {'fort' : fort, 'lib' : lib},)
 def generate_nist(source, target, env, for_signature):
     #exe = os.path.splitext(str(source[0]))[0] + EXEsuffix
     exe = target
-    cmd = os.path.join(FORTpath,FCompiler) + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET'
+    cmd = os.path.join(FORTpath,FCompiler) + ' $SOURCE ' + NISTlib[0] + ' -o $TARGET' + NISTcompileFlags
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:

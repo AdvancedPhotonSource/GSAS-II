@@ -8525,6 +8525,11 @@ def skimGPX(fl):
             datum = data[0]
             if datum[0] == 'Notebook':
                 result[datum[0]] = datum[1][-1]
+            elif 'Controls' in datum[0]:
+#                datum[0]['Seq Data']
+                if 'LastSavedUsing' in datum[1]:
+                    result['last saved'] += ' (v' + datum[1]['LastSavedUsing'] +')'
+                    
             elif datum[0] == 'Covariance':
                 d = datum[1].get('Rvals')
                 if d:
@@ -8550,8 +8555,6 @@ def skimGPX(fl):
                 note = 'Image(s)'
             elif datum[0] == 'Sequential results':
                 note = 'Sequential results'
-#            elif 'Controls' in datum[0]:
-#                datum[0]['Seq Data']
             elif datum[0] in ('Constraints','Restraints','Rigid bodies'):
                 pass
             else:

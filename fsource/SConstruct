@@ -466,7 +466,7 @@ for var in ('LDFLAGS','SDKROOT'):
        print("\t{} = {}".format(var,eval(var)))
 if 'WINDIR' in os.environ:
     env['ENV']['WINDIR'] = os.environ['WINDIR']
-    print("\t {} = {}".format(WINDIR,eval(os.environ['WINDIR'])))
+    print("\t {} = {}".format('WINDIR',eval(os.environ['WINDIR'])))
 print (80*'=')
 #print (env.Dump())
 if 'help' in COMMAND_LINE_TARGETS: sys.exit()

@@ -534,13 +534,13 @@ def svnChecksumPatch(svn,fpath,verstr):
     '''
     print('\nAttempting patch for svn Checksum mismatch error\n')
     svnCleanup(fpath)
-    cmd = ['svn','update','--set-depth','empty',
+    cmd = [svn,'update','--set-depth','empty',
                os.path.join(fpath,'bindist')]
     showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
-    cmd = ['svn','switch',g2home+'/trunk/bindist',
+    cmd = [svn,'switch',g2home+'/trunk/bindist',
                os.path.join(fpath,'bindist'),
                '--non-interactive', '--trust-server-cert', '--accept',
                'theirs-conflict', '--force', '-rHEAD', '--ignore-ancestry']
@@ -548,7 +548,7 @@ def svnChecksumPatch(svn,fpath,verstr):
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     DownloadG2Binaries(g2home,verbose=True)
-    cmd = ['svn','update','--set-depth','infinity',
+    cmd = [svn,'update','--set-depth','infinity',
                os.path.join(fpath,'bindist')]
     showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)

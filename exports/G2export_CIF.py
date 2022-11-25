@@ -4770,6 +4770,17 @@ class ExportPhaseCIF(ExportCIF):
                     self._Exporter(event=event,phaseOnly=newName)
                     self.CloseFile()
                     return
+        MagPhase = None
+        ChemPhase = None
+            
+        if len(self.phasenam) == 2:
+            for name in self.phasenam:
+                if self.Phases[name]['General']['Type'] == 'nuclear':
+                    ChemPhase = name
+                if self.Phases[name]['General']['Type'] == 'magnetic':
+                    MagPhase = name
+            if MagPhase and ChemPhase:
+                mergeMag(ChemPhase,MagPhase)
         for name in self.phasenam:
             self.openDelayed()
             self._Exporter(event=event,phaseOnly=name)

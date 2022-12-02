@@ -398,10 +398,38 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
         tblSigs += [sigwtFrList]
     return tblLabels,tblValues,tblSigs,tblTypes
 
-
-# Refactored over here to allow access by GSASIIscriptable.py
 def WriteCIFitem(fp, name, value=''):
-    '''Helper function for writing CIF output.'''
+    '''Helper function for writing CIF output.
+    This gets used in different ways. The simplest use will be:
+
+    >>> WriteCIFitem(fp, '_some_cif_name', valstr)
+
+    For loops it will be used like this:
+
+    >>> WriteCIFitem(fp, 'loop_   _cif_name1  _cif_name2')
+    >>> for v1,v2 in values:
+    >>>     WriteCIFitem(fp, value=v1)
+    >>>     WriteCIFitem(fp, value=v2)
+
+    or if items will be aligned in a table (no spaces or new 
+    lines in the items)
+
+    >>> WriteCIFitem(fp, 'loop_   _cif_name1  _cif_name2')
+    >>> for v1,v2 in values:
+    >>>     s = PutInCol("{:.4f}".format(v1),10)
+    >>>     s += PutInCol(str(v2),8) 
+    >>>     WriteCIFitem(fp, value=s)
+    
+    It is occasionally used where a CIF value is passed as the name 
+    parameter. This works if no quoting is needed, but is not a good 
+    practice. 
+    
+    :param fp: file access object
+    :param str name: a CIF data name
+    :param str value: the value associated with the CIF data name. 
+      Written in different ways depending on what the contents contain, 
+      with respect to quoting. 
+    '''
     # Ignores unicode issues
     if value:
         if "\n" in value or (len(value) > 70 and ' ' in value.strip()):

@@ -238,6 +238,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
                 G2G.G2MessageBox(self,msg,'Install xmltodict Error')
                 return False
+            import xmltodict as xml
         try:
             import zipfile as ZF        
             with ZF.ZipFile(filename, 'r') as zipObj:

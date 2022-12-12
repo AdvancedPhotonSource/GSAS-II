@@ -1123,6 +1123,7 @@ def UpdatePeakGrid(G2frame, data):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
+            print('NB: refreshing peaks')
             OnPeakFit(noFit=True)
         
     def OnSetPeakWidMode(event):

@@ -22,6 +22,7 @@ import numpy as np
 import atmdata
 import GSASIImath as G2mth
 import ElementTable as ET
+import GSASIIElem as G2elem
 
 
 getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
@@ -592,6 +593,7 @@ def SetupGeneral(data, dirname):
     atomData = data['Atoms']
     generalData['AtomTypes'] = []
     generalData['Isotopes'] = {}
+    RBModels = data.get('RBModels',{})
 # various patches
     if 'Isotope' not in generalData:
         generalData['Isotope'] = {}
@@ -675,6 +677,7 @@ def SetupGeneral(data, dirname):
             'dVects':{'Ovec':[],'Tvec':[]},'Sampling':1.0}
     if 'Sampling' not in generalData['Compare']:
         generalData['Compare']['Sampling'] = 1.0
+    generalData['SpnIds'] = generalData.get('SpnIds',{})
 
 # end of patches
     cx,ct,cs,cia = generalData['AtomPtrs']
@@ -724,6 +727,37 @@ def SetupGeneral(data, dirname):
             if generalData['Type'] == 'magnetic':
                 if len(landeg) < len(generalData['AtomTypes']):
                     landeg.append(2.0)
+        if 'Q' in atom[ct]:  #RBData must exist #TODO: need code here to add to atom count for atom type in spinrb
+            rbId = generalData['SpnIds'][atom[cia+8]]
+            for Srb in RBModels.get('Spin',[]):
+                if rbId > 0 and Srb['RBId'] == rbId:
+                    Info = G2elem.GetAtomInfo(Srb['atType'])
+                    if Info['Symbol'] not in generalData['AtomTypes']:
+                        generalData['AtomTypes'].append(Info['Symbol'])
+                        generalData['Z'] = Info['Z']
+                        generalData['Isotopes'][Info['Symbol']] = Info['Isotopes']
+                        generalData['BondRadii'].append(Info['Drad'])
+                        generalData['AngleRadii'].append(Info['Arad'])
+                        generalData['vdWRadii'].append(Info['Vdrad'])
+                        if Info['Symbol'] in generalData['Isotope']:
+                            if generalData['Isotope'][Info['Symbol']] not in generalData['Isotopes'][Info['Symbol']]:
+                                isotope = list(generalData['Isotopes'][Info['Symbol']].keys())[-1]
+                                generalData['Isotope'][Info['Symbol']] = isotope
+                            generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][Info['Symbol']]]['Mass'])
+                        else:
+                            generalData['Isotope'][Info['Symbol']] = 'Nat. Abund.'
+                            if 'Nat. Abund.' not in generalData['Isotopes'][Info['Symbol']]:
+                                isotope = list(generalData['Isotopes'][Info['Symbol']].keys())[-1]
+                                generalData['Isotope'][Info['Symbol']] = isotope
+                            generalData['AtomMass'].append(Info['Mass'])
+                        generalData['NoAtoms'][Info['Symbol']] = atom[cx+3]*atom[cs+1]*Srb['Natoms']
+                        generalData['Color'].append(Info['Color'])
+                    else:
+                        generalData['NoAtoms'][Info['Symbol']] += atom[cx+3]*atom[cs+1]*Srb['Natoms']
+                    break
+                else:
+                    break
+            
     if generalData['Type'] == 'magnetic':
         generalData['Lande g'] = landeg[:len(generalData['AtomTypes'])]
 

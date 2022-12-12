@@ -148,11 +148,13 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
+import GSASIIElem as G2elem
 try:
     import pytexture as ptx
+    ptx.pyqlmninit()
 except ImportError:
     print('binary load error: pytexture not found')
-#from  OpenGL.GL import *
+#import  scipy.special as spsp
 import OpenGL.GL as GL
 import OpenGL.GLU as GLU
 import gltext
@@ -6671,9 +6673,9 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
-    if Start:                   #initialize the spherical harmonics qlmn arrays
-        ptx.pyqlmninit()
-        Start = False
+    # if Start:                   #initialize the spherical harmonics qlmn arrays
+    #     ptx.pyqlmninit()
+    #     Start = False
     cell = generalData['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
     useList = data['Histograms']
@@ -6811,7 +6813,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             for item in coeff[5]:
                 L,N = eval(item.strip('C'))
                 SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]                        
-            ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+            ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
             X = np.linspace(0,90.0,26)
             Y = G2lat.polfcal(ODFln,'0',X,0.0)
             Plot.plot(X,Y,color='k',label=str(PH))
@@ -6987,7 +6989,7 @@ def PlotTexture(G2frame,data,Start=False):
     G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)
-    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+    ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
     if not np.any(ODFln):
         return
     PX = np.array(SHData['PFxyz'])
@@ -6995,7 +6997,7 @@ def PlotTexture(G2frame,data,Start=False):
     xy = math.sqrt(PX[0]**2+PX[1]**2)
     xyz = math.sqrt(PX[0]**2+PX[1]**2+PX[2]**2)
     psi = asind(xy/xyz)
-    IODFln = G2lat.Glnh(Start,SHCoef,psi,gam,SamSym[textureData['Model']])
+    IODFln = G2lat.Glnh(SHCoef,psi,gam,SamSym[textureData['Model']])
     if 'Axial' in SHData['PlotType']:
         X = np.linspace(0,90.0,26)
         Y = G2lat.polfcal(ODFln,SamSym[textureData['Model']],X,0.0)
@@ -9694,16 +9696,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GL.glColor3ubv(color)
             GL.glVertex3fv(np.zeros(3))
             GL.glVertex3fv(line)
-        # arrows on line ends, colored by planes
-        # for i in range(3):
-        #     for j in (1,-1):
-        #         GL.glColor3ubv(colors[(i+1)%3])
-        #         GL.glVertex3fv(lines[i])
-        #         GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+1)%3])
-        #         GL.glColor3ubv(colors[(i+2)%3])
-        #         GL.glVertex3fv(lines[i])
-        #         GL.glVertex3fv(0.7*lines[i]+ j*0.2*lines[(i+2)%3])
-        # draw vector part of Q in white
         A,V = G2mth.Q2AVdeg(Q)
         Vfrac = np.inner(Bmat,V)
         GL.glColor3ubv([255,255,255])
@@ -9717,7 +9709,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-        
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
@@ -9770,22 +9761,70 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
-                
-    def RenderSphere(x,y,z,radius,color,fade=False):
+        
+    def RenderTextureSphere(x,y,z,radius,Qmat,color,shape=[20,10],Fade=None):
+        global spID
+        SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
+        SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
+        SpFade[:,:,3] = 128
+        newSP = False
+        spID = GL.glGenTextures(1)
+        # if not spID:
+        #     spID = GL.glGenTextures(1)
+        #     newSP = True
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, spID)
+        GL.glFrontFace(GL.GL_CCW)       #shows outside
+        GL.glEnable(GL.GL_CULL_FACE)    #removes striping
+        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
+        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_REPEAT)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_REPEAT)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
+        GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MIN_FILTER,GL.GL_LINEAR)
+        GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MAG_FILTER,GL.GL_LINEAR)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
+        # if newSP:
+        #     GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
+        # else:
+        #     GL.glTexSubImage2D(GL.GL_TEXTURE_2D,0,0,0,shape[0], shape[1],GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
+        q = GLU.gluNewQuadric()
+        GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
+        GLU.gluQuadricTexture(q, GL.GL_TRUE)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        GL.glMultMatrixf(Qmat)
+        GLU.gluSphere(q,radius,shape[0],shape[1])
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_CULL_FACE)
+        GL.glDisable(GL.GL_TEXTURE_2D)
+        GL.glDisable(GL.GL_BLEND)
+
+    def RenderSphere(x,y,z,radius,color,fade=False,shape=[20,10]):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         if fade:
             Fade = list(color) + [0.5,]
-            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,Fade)           
+            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,Fade)     #GL.GL_AMBIENT_AND_DIFFUSE causes striping      
             GL.glShadeModel(GL.GL_FLAT)
+            GL.glFrontFace(GL.GL_CCW)       #shows outside
+            GL.glEnable(GL.GL_CULL_FACE)    #removes striping
             GL.glEnable(GL.GL_BLEND)
             GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
         q = GLU.gluNewQuadric()
-        GLU.gluSphere(q,radius,20,10)
+        GLU.gluSphere(q,radius,shape[0],shape[1])
         GL.glPopMatrix()
         if fade:
+            GL.glDisable(GL.GL_CULL_FACE)
             GL.glDisable(GL.GL_BLEND)
             GL.glShadeModel(GL.GL_SMOOTH)
         
@@ -10211,6 +10250,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 except: #problem with old files - missing code
                     pass
             if 'balls' in atom[cs]:
+                fade = False
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']
                 if atNum < 0:
@@ -10224,13 +10264,41 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = 0.0
                 elif 'Q' in atom[ct]:       #spinning rigid body
-                    print(atom)
+                    for Srb in data['RBModels'].get('Spin',[]):
+                        if Srb['RBId'] == generalData['SpnIds'][atom[ci]]:
+                            radius = Srb['radius'][0]
+                            fade = True
+                            Info = G2elem.GetAtomInfo(Srb['atType'])
+                            atColor = Info['Color']
+                            break
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
                     else:
                         radius = ballScale*BondRadii[atNum]
-                RenderSphere(x,y,z,radius,atColor)
+                if 'Q' in atom[ct]:
+                    SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
+                    if SpnData is not None and SpnData['nSH'] > 0:
+                        SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                        Q = SpnData['Orient'][0]
+                        A,V = G2mth.Q2AVdeg(Q)
+                        QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
+                        QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
+                        Q2 = G2mth.prodQQ(QA,QR)
+                        Qmat = G2mth.Q2Mat(Q2)
+                        Q4mat = np.concatenate((np.concatenate((Qmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                        SHC = SpnData['SHC']
+                        PSI,GAM = np.mgrid[0:120,0:60]   #[azm,pol]
+                        PSI = PSI.flatten()*3.  #azimuth 0-360 ncl
+                        GAM = GAM.flatten()*3.  #polar 0-180 incl
+                        P = G2lat.SHarmcal(SytSym,SHC,GAM,PSI).reshape((120,60))
+                        if np.min(P) < np.max(P):
+                            P = (P-np.min(P))/(np.max(P)-np.min(P))
+                        RenderTextureSphere(x,y,z,radius,Q4mat,atColor,shape=[120,60],Fade=P)
+                    else:
+                        RenderSphere(x,y,z,radius,atColor,fade,shape=[60,30])
+                else:
+                    RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
@@ -10374,7 +10442,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
             for x,y,z in drawingData['Voids']:
-                RenderFadeSphere(x,y,z,.05,(0.,0.,1.))
+                RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
             if drawingData['Plane'][1]:
@@ -10383,7 +10451,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 for plane in Planes:
                     RenderPlane(plane,color)
         if drawingData.get('showSlice',0):      #must be done last to properly show things behind as faded
-            global contourSet,Zslice
+            global contourSet
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
                 rho = D4mapData['rho']
@@ -10440,11 +10508,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Draw('focus')     #to get correct drawing after tab change       
         
     #### PlotStructure starts here
-    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
+    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,spID
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
     txID = 0
+    spID = 0
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
+    RBmodels = data['RBModels']
+    SpnRB = RBmodels.get('Spin',[])
     cell = generalData['Cell'][1:7]
     ABC = np.array(cell[0:3])
     Vol = generalData['Cell'][7:8][0]

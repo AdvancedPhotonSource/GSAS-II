@@ -1345,7 +1345,9 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
     elif RBType == 'Spin':
-        Cart = [np.zeros(3),]
+        Cart = np.zeros(3)
+        XYZ = [np.array(RBObj['Orig'][0]),]
+        return XYZ,Cart
     # if symmetry axis is defined, place symmetry axis along quaternion
     if RBObj.get('symAxis') is None:
         Q = RBObj['Orient'][0]
@@ -1360,6 +1362,11 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     for i,xyz in enumerate(Cart):
         XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
     return XYZ,Cart
+
+def GetSpnRBData(SpnRB,atId):
+    for SpnData in SpnRB:
+        if atId in SpnData['Ids']:
+            return SpnData
 
 def UpdateMCSAxyz(Bmat,MCSA):
     '''default doc string
@@ -5812,8 +5819,8 @@ def makeQuat(A,B,C):
         V3 = np.cross(V1,V2)
     else:
         V3 = np.zeros(3)
-    Q = np.array([0.,0.,0.,1.])
-    D = 0.
+    Q = np.array([0.,0.,0.,1./np.sqrt(2.0)])
+    D = 180.
     if nl.norm(V3):
         V3 = V3/nl.norm(V3)
         D1 = min(1.0,max(-1.0,np.vdot(V1,V2)))
@@ -5828,6 +5835,31 @@ def makeQuat(A,B,C):
         D *= 2.
         if DM > DP:
             D *= -1.
+    return Q,D
+
+def make2Quat(A,B):
+    ''' Make quaternion from rotation of A vector to B vector
+    
+        :param np.array A,B: Cartesian 3-vectors
+        :returns: quaternion & rotation angle in radians q=r+ai+bj+ck
+    '''
+
+    V1 = np.cross(A,B)
+    if nl.norm(V1):
+        V1 = V1/nl.norm(V1)
+    else:
+        V1 = np.zeros(3)
+    Q = np.array([0.,0.,0.,1./np.sqrt(2.0)])
+    D = 180.
+    if nl.norm(V1):
+        A1 = A/nl.norm(A)
+        B1 = B/nl.norm(B)
+        D1 = min(1.0,max(-1.0,np.vdot(A1,B1)))
+        D = np.arccos(D1)/2.0
+        S = np.sin(D)
+        Q[0] = np.cos(D)
+        Q[1:] = V1*S
+        D *= 2.
     return Q,D
     
 def annealtests():

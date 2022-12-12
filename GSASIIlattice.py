@@ -46,6 +46,7 @@ import sys
 import random as ran
 import numpy as np
 import numpy.linalg as nl
+import scipy.special as spsp
 import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
@@ -2106,11 +2107,186 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]>HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
     return HKLFT.T
-        
 
 #Spherical harmonics routines
-def OdfChk(SGLaue,L,M):
+def RBChk(sytsym,L,M):
+    '''finds symmetry rules for spherical harmonic coefficients for site symmetries
+    :param str SGLaue: Laue symbol or sytsym symbol
+    :param int L: principal harmonic term; only evens are used
+    :param int M: second harmonic term; can be -L <= M <= L
+    :returns True if allowed and sign for term
+    NB: not complete for all site symmetries! Many are missing
+    '''
+    if M <= L:
+        if sytsym == '23':   #cubics use different Fourier expansion than those below
+            if 2 < L < 11 and M > 0:
+                if L%12 == 2:
+                    if M <= L//12: return True,1.0
+                else:
+                    if M <= L//12+1: return True,1.0            
+        elif  sytsym == 'm3':
+            if 2 < L < 11 and M > 0:
+                if L%12 == 2:
+                    if M <= L//12: return True,1.0
+                else:
+                    if M <= L//12+1: return True,1.0            
+        elif sytsym == '432':
+            if 2 < L < 11 and M > 0:
+                if L%12 == 2:
+                    if M <= L//12: return True,1.0
+                else:
+                    if M <= L//12+1: return True,1.0            
+        elif sytsym == '-43m':
+            if 2 < L < 11 and M > 0:
+                if L%12 == 2:
+                    if M <= L//12: return True,1.0
+                else:
+                    if M <= L//12+1: return True,1.0
+        elif sytsym == 'm3m':   #L < 21 by generator
+            if not L%2 and M > 0:
+                if L%12 == 2:
+                    if M <= L//12: return True,1.0
+                else:
+                    if M <= L//12+1: return True,1.0            
+        elif sytsym == '6':
+            if not M%6: return True,1.0     #P?
+        elif sytsym == '-6':    #M+2J?
+            if L != 1 and not M%3: return True,1.0  #P?
+        elif sytsym == '6/m':
+            if not L%2 and not M%6: return True,1.0   #P?
+        elif sytsym == '622':
+            if not M%6: return True,-1.**M
+        elif sytsym == '6mm':
+            if not M%6: return True,1.0
+        elif sytsym == '-6m2(100)':   #M+2J?
+            if L != 1 and not M%3: return True,1.0
+        elif sytsym == '-6m2(120)':   #M+2J?
+            if L != 1 and not M%3: return True,-1.**M
+        elif sytsym == '6/mmm':
+            if not L%2 and not M%6: return True,1.0
+        elif sytsym == '4(z)':
+            if not M%4: return True,1.0     #P?
+        elif sytsym == '-4(z)':
+            if L%2 and (M//2)%2: return True,1.0    #P?
+            if not L%2 and not (M//2)%2: return True,1.0
+        elif sytsym == '4/m(z)':
+            if not M%4: return True,1.0   #P?
+        elif sytsym == '422(z)':
+            if not M%4: return True,-1.0**L
+        elif sytsym == '4mm(z)':
+            if not M%4: return True,1.0
+        elif sytsym == '-42m(z)':
+            if L%2 and (M//2)%2: return True,1.0
+            if not L%2 and not (M//2)%2: return True,-1.0**L
+        elif sytsym == '-4m2(z)':
+            if L%2 and (M//2)%2: return True,1.0
+            if not L%2 and not (M//2)%2: return True,1.0
+        elif sytsym == '4/mmm(z)':
+            if not L%2 and not M%4: return True,1.0
+        elif sytsym == '3' or sytsym == '3(111)':
+            if not M%3: return True,1.0     #P?
+        elif sytsym == '-3' or sytsym == '-3(111)':
+            if not L%2 and not M%3: return True,1.0    #P?
+        elif sytsym == '32(100)' or sytsym == '32(111)':
+            if not M%3: return True,-1.0**L
+        elif sytsym == '32(120)':
+            if not M%3: return True,-1.0**(L-M)
+        elif sytsym == '3m(100)' or sytsym == '3m(111)':
+            if not M%3: return True,-1.0**M
+        elif sytsym == '3m(120)':
+            if not M%3: return True,1.0
+        elif sytsym == '-3m(100)' or sytsym == '-3m(111)':
+            if not L%2 and not M%3: return True,-1.0**M
+        elif sytsym == '-3m(120)':
+            if not L%2 and not M%3: return True,1.0
+        elif '222' in sytsym:
+            if M%2: return True,-1.0**L
+        elif 'mm2(x)' in sytsym:
+            if L%2 and M%2: return True,1.0  #both odd
+            if not L%2 and not M%2: return True,1.0    #both even
+        elif 'mm2(y)' in sytsym:
+            if L%2 and M%2: return True,-1.0**L  #both odd
+            if not L%2 and not M%2: return True,-1.0**L     #both even
+        elif 'mm2(z)' in sytsym:
+            if M%2: return True,1.0
+        elif 'mmm' in sytsym :
+            if not L%2 and not M%2: return True,1.0
+        elif sytsym == '2(x)':
+            return True,-1.0**(L-M)
+        elif sytsym == '2(y)':
+            return True,-1.0**L
+        elif sytsym == '2(z)':
+            if not M%2: return True,1.0     #P?
+        elif sytsym == 'm(x)':
+            if not L%2 : return True,-1.0**M
+        elif sytsym == 'm(y)':
+            return True,1.0
+        elif sytsym == 'm(z)':
+            if L%2 and M%2: return True,1.0       #P?
+            if not L%2 and not M%2: return True,1.0         #P?
+        elif sytsym == '2/m(x)':
+            if not L%2 : return True,-1.0**M
+        elif sytsym == '2/m(y)':
+            if not L%2: return True,1.0
+        elif sytsym == '2/m(z)':
+            if not L%2 and not M%2: return True,1.0
+        elif sytsym == '1':     #P?
+            return True,1.0
+        elif sytsym == '-1':    #P?
+            if not L%2: return True,1.0
+    return False,0.
+    
+def RBsymChk(RBsym,coefNames):
+    '''imposes rigid body symmetry on spherical harmonics terms
+    Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+    '''
+    newNames = []
+    newSgns = []
+    if RBsym in ['53m','532']:
+        for name in coefNames:
+            LM = eval(name[1:])
+            if LM[0] in [6,10,12,16,18]:
+                newNames.append(name)
+                newSgns.append(1.0)
+    elif RBsym in ['m3m','-43m']:   #take all terms?
+        for name in coefNames:
+            LM = eval(name[1:])
+            if LM[0] not in [1,2,5] and not LM[1]%2:
+                if LM[0]%2 and LM[1]: #odd L, no M=0
+                    newNames.append(name)
+                    newSgns.append(1.0)
+                elif not LM[0]%2:   #even L & M
+                    newNames.append(name)
+                    newSgns.append(1.0)
+    else:
+        for name in coefNames:
+            LM = eval(name[1:])
+            rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
+            if rbChk:
+                newNames.append(name)
+                newSgns.append(sgn)
+    return newNames,newSgns
+        
+def GenRBCoeff(sytsym,L):
     'needs doc string'
+    coefNames = []
+    coefSgns = []
+    for iord in range(L+1):
+        if not iord: continue
+        for n in range(iord+1):
+            rbChk,sgn = RBChk(sytsym,iord,n)
+            if rbChk:
+                coefNames.append('C(%d,%d)'%(iord,n))
+                coefSgns.append(sgn)
+    return coefNames,coefSgns
+
+def OdfChk(SGLaue,L,M):
+    '''finds symmetry rules for spherical harmonic coefficients for Laue groups 
+    :param str SGLaue: Laue symbol 
+    :param int L: principal harmonic term; only evens are used
+    :param int M: second harmonic term; can be -L <= M <= L
+    :returns True if allowed
+    '''
     if not L%2 and abs(M) <= L:
         if SGLaue == '0':                      #cylindrical symmetry
             if M == 0: return True
@@ -2132,20 +2308,20 @@ def OdfChk(SGLaue,L,M):
             if not abs(M)%6: return True
         elif SGLaue == '6/mmm':
             if not abs(M)%6 and M >= 0: return True
-        elif SGLaue == 'm3':
+        elif SGLaue in ['m3']:   #cubics use different Fourier expansion than those above
             if M > 0:
                 if L%12 == 2:
                     if M <= L//12: return True
                 else:
                     if M <= L//12+1: return True
-        elif SGLaue == 'm3m':
+        elif SGLaue in ['m3m']:
             if M > 0:
                 if L%12 == 2:
                     if M <= L//12: return True
                 else:
                     if M <= L//12+1: return True
     return False
-        
+
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     'needs doc string'
     coeffNames = []
@@ -2415,14 +2591,140 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
         else:
             Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
     return Kcl*Ksl,Lnorm(L)
+
+def SphHarmAng(L,M,P,Th,Ph):
+    ''' Compute spherical harmonics values using scipy.special.sph_harm
     
-def Glnh(Start,SHCoef,psi,gam,SamSym):
+    :param int L: degree of the harmonic (L >= 0)
+    :param int M: order number (|M| <= L)
+    :param int P: sign flag = -1 or 1
+    :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
+    :param float/array Ph: Polar coordinate 0<= Ph <= 180
+    
+    :returns ylmp value/array: as reals
+    '''
+    
+    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    
+    if M == 0:
+        return np.real(ylmp)    #*2.
+    if P>0:
+        return np.real(ylmp)
+    else:
+        return np.imag(ylmp)
+    
+def CubicSHarm(L,M,Th,Ph):
+    '''Calculation of the cubic harmonics given in Table 3 in M.Kara & K. Kurki-Suonio, 
+    Acta Cryt. A37, 201 (1981). For L = 14,20 only for m3m from F.M. Mueller and M.G. Priestley, 
+    Phys Rev 148, 638 (1966)
+     
+    :param int L: degree of the harmonic (L >= 0)
+    :param int M: order number (|M| <= L)
+    :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
+    :param float/array Ph: Polar coordinate 0<= Ph <= 180
+    
+    :returns klm value/array: cubic harmonics
+    
+    '''
+    if L == 0:
+        return SphHarmAng(L,M,1,Th,Ph)
+    elif L == 3:
+        return SphHarmAng(3,2,-1,Th,Ph)
+    elif L == 4:
+        klm = 0.5*np.sqrt(7.0/3.0)*SphHarmAng(4,0,1,Th,Ph)
+        klm = 0.5*np.sqrt(5.0/3.0)*SphHarmAng(4,4,1,Th,Ph)
+    elif L == 6:
+        if M == 1:
+            klm = 0.5*np.sqrt(0.5)*SphHarmAng(6,0,1,Th,Ph)
+            klm -= 0.5*np.sqrt(7.0/2.0)*SphHarmAng(6,4,1,Th,Ph)
+        else:
+            klm = 0.25*np.sqrt(11.0)*SphHarmAng(6,2,1,Th,Ph)
+            klm -= 0.25*np.sqrt(5.0)*SphHarmAng(6,6,1,Th,Ph)
+    elif L == 7:
+        klm = 0.5*np.sqrt(13./6.)*SphHarmAng(7,2,-1,Th,Ph)
+        klm = 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,-1,Th,Ph)
+    elif L == 8:
+        klm = 0.125*np.sqrt(33.)*SphHarmAng(8,0,1,Th,Ph)
+        klm += 0.25*np.sqrt(7./3.)*SphHarmAng(8,4,1,Th,Ph)
+        klm += 0.125*np.sqrt(65./3.)*SphHarmAng(8,8,1,Th,Ph)
+    elif L == 9:
+        if M == 1:
+            klm = 0.25*np.sqrt(3.)*SphHarmAng(9,2,-1,Th,Ph)
+            klm -= 0.25*np.sqrt(13.)*SphHarmAng(9,6,-1,Th,Ph)
+        else:
+            klm = 0.5*np.sqrt(17./6.)*SphHarmAng(9,4,-1,Th,Ph)
+            klm -= 0.5*np.sqrt(7./6.)*SphHarmAng(9,8,-1,Th,Ph)
+    elif L == 10:
+        if M == 1:
+            klm = 0.125*np.sqrt(65./6.)*SphHarmAng(10,0,1,Th,Ph)
+            klm -= 0.25*np.sqrt(11.0/2.0)*SphHarmAng(10,4,1,Th,Ph)
+            klm -= 0.125*np.sqrt(187.0/6.0)*SphHarmAng(10,8,1,Th,Ph)
+        else:
+            klm = 0.125*np.sqrt(247./6.)*SphHarmAng(10,2,1,Th,Ph)
+            klm += (1./16.)*np.sqrt(19./3.)*SphHarmAng(10,6,1,Th,Ph)
+            klm -= (1./16.)*np.sqrt(85.)*SphHarmAng(10,10,1,Th,Ph)
+#only m3m cubics from here down; from F.M. Mueller and M.G. Priestley, Phys Rev 148, 638 (1966)
+    elif L == 12:
+        if M == 1:
+            klm = 0.69550265*SphHarmAng(12,0,1,Th,Ph)
+            klm += 0.31412555*SphHarmAng(12,4,1,Th,Ph)
+            klm += 0.34844954*SphHarmAng(12,8,1,Th,Ph)
+            klm += 0.54422797*SphHarmAng(12,12,1,Th,Ph)
+        else:
+            klm = 0.55897937*SphHarmAng(12,4,1,Th,Ph)
+            klm -= 0.80626751*SphHarmAng(12,8,1,Th,Ph)
+            klm += 0.19358400*SphHarmAng(12,12,1,Th,Ph)
+    elif L == 14:
+        klm = 0.44009645*SphHarmAng(14,0,1,Th,Ph)
+        klm -= 0.45768183*SphHarmAng(14,4,1,Th,Ph)
+        klm -= 0.49113230*SphHarmAng(14,8,1,Th,Ph)
+        klm -= 0.59634848*SphHarmAng(14,12,1,Th,Ph)
+    elif L == 16:
+        if M == 1:
+            klm = 0.68136168*SphHarmAng(16,0,1,Th,Ph)
+            klm += 0.27586801*SphHarmAng(16,4,1,Th,Ph)
+            klm += 0.29048987*SphHarmAng(16,8,1,Th,Ph)
+            klm += 0.32756975*SphHarmAng(16,12,1,Th,Ph)
+            klm += 0.51764542*SphHarmAng(16,16,1,Th,Ph)
+        else:
+            klm = 0.63704821*SphHarmAng(16,4,1,Th,Ph)
+            klm -= 0.32999033*SphHarmAng(16,8,1,Th,Ph)
+            klm -= 0.64798073*SphHarmAng(16,12,1,Th,Ph)
+            klm += 0.25572816*SphHarmAng(16,16,1,Th,Ph)
+    elif L == 18:
+        if M == 1:
+            klm = 0.45791513*SphHarmAng(18,0,1,Th,Ph)
+            klm -= 0.38645598*SphHarmAng(18,4,1,Th,Ph)
+            klm -= 0.40209462*SphHarmAng(18,8,1,Th,Ph)
+            klm -= 0.43746593*SphHarmAng(18,12,1,Th,Ph)
+            klm -= 0.53657149*SphHarmAng(18,16,1,Th,Ph)
+        else:
+            klm = 0.14872751*SphHarmAng(18,4,1,Th,Ph)
+            klm -= 0.63774601*SphHarmAng(18,8,1,Th,Ph)
+            klm += 0.72334167*SphHarmAng(18,12,1,Th,Ph)
+            klm -= 0.21894515*SphHarmAng(18,16,1,Th,Ph)
+    elif L == 20:
+        if M == 1:
+            klm = 0.67141495*SphHarmAng(20,0,1,Th,Ph)
+            klm += 0.24982619*SphHarmAng(20,4,1,Th,Ph)
+            klm += 0.25782846*SphHarmAng(20,8,1,Th,Ph)
+            klm += 0.27469333*SphHarmAng(20,12,1,Th,Ph)
+            klm += 0.31248919*SphHarmAng(20,16,1,Th,Ph)
+            klm += 0.49719956*SphHarmAng(20,20,1,Th,Ph)
+        else:
+            klm = 0.66299538*SphHarmAng(20,4,1,Th,Ph)
+            klm -= 0.11295259*SphHarmAng(20,8,1,Th,Ph)
+            klm -= 0.42738441*SphHarmAng(20,12,1,Th,Ph)
+            klm -= 0.52810433*SphHarmAng(20,16,1,Th,Ph)
+            klm += 0.29347435*SphHarmAng(20,20,1,Th,Ph)
+    else:   #shouldn't happen
+        return 0.0
+    return klm
+    
+def Glnh(SHCoef,psi,gam,SamSym):
     'needs doc string'
     import pytexture as ptx
 
-    if Start:
-        ptx.pyqlmninit()
-        Start = False
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
         l,m,n = eval(term.strip('C'))
@@ -2438,13 +2740,10 @@ def Glnh(Start,SHCoef,psi,gam,SamSym):
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
 
-def Flnh(Start,SHCoef,phi,beta,SGData):
+def Flnh(SHCoef,phi,beta,SGData):
     'needs doc string'
     import pytexture as ptx
     
-    if Start:
-        ptx.pyqlmninit()
-        Start = False
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
         l,m,n = eval(term.strip('C'))
@@ -2496,6 +2795,28 @@ def polfcal(ODFln,SamSym,psi,gam):
                     Ksl = RSQPI*psrs/SQ2
             PolVal += ODFln[term][1]*Ksl
     return PolVal
+
+def SHarmcal(SytSym,SHFln,psi,gam):
+    '''Perform a surface spherical harmonics computation.
+    Note that the the number of gam values must either be 1 or must match psi
+    
+    :param str SytSym: sit symmetry - only looking for cubics
+    :param dict SHFln: spherical harmonics coefficients; key has L & M
+    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
+    :param float/array gam: Polar coordinate 0<= Ph <= 180
+    
+    :returns array SHVal: spherical harmonics array for psi,gam values
+    '''
+    SHVal = np.ones_like(gam)
+    for term in SHFln:
+        l,m = eval(term.strip('C'))
+        if SytSym in ['m3m','m3','43m','432','23']:
+            Ksl = CubicSHarm(l,m,psi,gam)
+        else:
+            p = SHFln[term][2]
+            Ksl = SphHarmAng(l,m,p,psi,gam)
+        SHVal += SHFln[term][0]*Ksl
+    return SHVal
     
 def invpolfcal(ODFln,SGData,phi,beta):
     'needs doc string'

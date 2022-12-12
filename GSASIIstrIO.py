@@ -1916,14 +1916,13 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         except KeyError:
                             del itemRest[rest]
                 elif name == 'Texture' and textureData['Order']:
-                    Start = False
                     SHCoef = textureData['SH Coeff'][1]
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
                     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
                     pFile.write ('    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd \n')
                     for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
                         R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
                         Z = ma.masked_greater(Z,0.0)
                         num = ma.count(Z)

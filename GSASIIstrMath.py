@@ -402,7 +402,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                     for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
                         PH = np.array(hkl)
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
+                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
                         R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
                         Z1 = ma.masked_greater(Z,0.0)           #is this + or -?
                         IndZ1 = np.array(ma.nonzero(Z1))
@@ -459,7 +459,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                         for item in SHcof:
                             L,N = eval(item.strip('C'))
                             SH3Coef['C%d,0,%d'%(L,N)] = SHcof[item]                        
-                        ODFln = G2lat.Flnh(False,SH3Coef,phi,beta,SGData)
+                        ODFln = G2lat.Flnh(SH3Coef,phi,beta,SGData)
                         X = np.linspace(0,90.0,26)
                         Y = ma.masked_greater(G2lat.polfcal(ODFln,'0',X,0.0),0.0)       #+ or -?
                         IndY = ma.nonzero(Y)
@@ -577,7 +577,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     hkl = np.array(hkl)
                     if np.any(lasthkl-hkl):
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
+                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
                         lasthkl = copy.copy(hkl)                        
                     if 'unit' in name:
                         pass
@@ -657,7 +657,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     for item in SHcof:
                         L,N = eval(item.strip('C'))
                         SH3Coef['C%d,0,%d'%(L,N)] = SHcof[item]                        
-                    ODFln = G2lat.Flnh(False,SH3Coef,phi,beta,SGData)
+                    ODFln = G2lat.Flnh(SH3Coef,phi,beta,SGData)
                     lasthkl = copy.copy(hkl)                        
                 for SHname in SHnames:
                     l,n = eval(SHname[1:])

@@ -120,7 +120,11 @@ ElTable = [
     (["Bk",],                 10.5,7.5, "Berkelium",   REcolor,          1.716,(138,79,227)),
     (["Cf",],                 11.5,7.5, "Californium", REcolor,          1.764,(161,54,212)),
     (["Va",],                 13.5,7.5, "Vacancy",     White,            0.000,(255,255,255)),
-    (["Q","QA","QB","QC","QD"],  14.5,7.5, "Special form factor", REcolor,  0.000,(161,54,212)),
+    (["Q",],                  14.5,7.5, "Special form factor", REcolor,  0.000,(161,54,212)),
+    (["Qa",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
+    (["Qb",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
+    (["Qc",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
+    (["Qd",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
     (["None",],                  15.5,7.5, "No element choice",REcolor,     0.000,(161,54,212)),
     ]
 

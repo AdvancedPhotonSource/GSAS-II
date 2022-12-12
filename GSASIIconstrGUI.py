@@ -385,7 +385,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
     # generate symmetry constraints to check for conflicts
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies'))
-    rbIds = rigidbodyDict.get('RBIds', {'Vector': [], 'Residue': []})
+    rbIds = rigidbodyDict.get('RBIds', {'Vector': [], 'Residue': [],'Spin':[]})
     rbVary, rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict, Print=False)
     parmDict.update(rbDict)
     (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
@@ -1563,7 +1563,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     ##### end patch #############################################################################
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
     globalList = list(rbDict.keys())
@@ -1976,6 +1976,11 @@ def UpdateRigidBodies(G2frame,data):
             G2frame.Bind(wx.EVT_MENU, LoadVectorRB, id=G2G.wxID_RESBODYRD)
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
+        elif text == 'Spinning rigid bodies':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SpinBodyMenu)
+            G2frame.Bind(wx.EVT_MENU, AddSpinRB, id=G2G.wxID_SPINBODYADD)
+            G2frame.Page = [page,'srb']
+            UpdateSpinRB()
         else:
             G2gd.SetDataMenuBar(G2frame)
             #G2frame.Page = [page,'rrb']
@@ -3009,7 +3014,22 @@ create a Vector or Residue rigid body.
                 print ('Atom XYZ saved to: '+filename)
         finally:
             dlg.Destroy()
+            
+    def AddSpinRB(event):
         
+        rbid = ran.randint(0,sys.maxsize)
+        radius = 1.0
+        atType = 'C'
+        rbType = 'Qa'
+        Natoms = 1
+        name = 'UNKRB'
+        namelist = [data['Spin'][key]['RBname'] for key in data['Spin']]
+        name = G2obj.MakeUniqueLabel(name,namelist)
+        atColor = G2elem.GetAtomInfo(atType)['Color']
+        data['Spin'][rbid] = {'RBname':name,'Natoms':Natoms,'radius':[radius,False],'atType':atType,'rbType':rbType,
+            'useCount':0,'nSH':0,'SHC':{},'Matrix':np.eye(3),'rbPos':np.zeros(3),'atColor':atColor}
+        data['RBIds']['Spin'].append(rbid)
+        UpdateSpinRB()
         
     def FindNeighbors(Orig,XYZ,atTypes,atNames,AtInfo):
         Radii = []
@@ -3076,6 +3096,7 @@ create a Vector or Residue rigid body.
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
         UpdateResidueRB()
+        
 
     def UpdateVectorRB(Scroll=0):
         '''Display & edit a selected Vector RB
@@ -3356,6 +3377,98 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         
         VectorRBDisplay.Show()
         
+    def UpdateSpinRB():
+        
+        def OnTypeSel(event):
+            Obj = event.GetEventObject()
+            ObjId = event.GetId()
+            data['Spin'][Indx[ObjId]]['rbType'] = Obj.GetValue()
+            
+        def OnAtSel(event):
+            Obj = event.GetEventObject()
+            ObjId = event.GetId()
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+            if PE.ShowModal() == wx.ID_OK:
+                if PE.Elem != 'None':
+                    El = PE.Elem.strip().lower().capitalize()
+                    data['Spin'][Indx[ObjId]]['atType'] = El
+                    data['Spin'][Indx[ObjId]]['Color'] = G2elem.GetAtomInfo(El)['Color']
+                    Obj.ChangeValue(El)
+                   
+        def OnRefSel(event):
+            ObjId = event.GetId()
+            data['Spin'][Indx[ObjId]]['radius'][1] = not data['Spin'][Indx[ObjId]]['radius'][1]
+
+        def OnSymSel(event):
+            ObjId = event.GetId()
+            data['Spin'][Indx[ObjId]]['RBsym'] = simsel.GetValue()
+            
+        #patch
+        if 'Spin' not in data:
+            data['Spin'] = {}
+            data['RBIds'].update({'Spin':[]})
+        # end patch
+        if not len(data['Spin']):
+            return
+        GS = SpinRBDisplay.GetSizer()
+        if GS: 
+            try:        #get around a c++ error in wx 4.0; doing is again seems to be OK
+                GS.Clear(True)
+            except:
+                GS.Clear(True)
+        
+        SetStatusLine(' ')
+        
+        if GS: 
+            SpinRBSizer = GS
+        else:
+            SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
+        Indx = {}
+        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid bodies:'),0,WACV)
+        bodSizer = wx.FlexGridSizer(0,7,5,5)
+        for item in ['Name','Type','RB sym','Atom','Number','radius','refine']:
+            bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
+        for ibod,spinID in enumerate(data['Spin']):
+            bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
+            choices = ['Q','Qa','Qb','Qc','Qd']
+            typeSel = wx.ComboBox(SpinRBDisplay,choices=choices,value=data['Spin'][spinID]['rbType'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            typeSel.Bind(wx.EVT_COMBOBOX,OnTypeSel)
+            Indx[typeSel.GetId()] = spinID
+            bodSizer.Add(typeSel,0)
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m']
+            data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
+            simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[simsel.GetId()] = spinID
+            simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
+            bodSizer.Add(simsel)
+            atSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['atType'])
+            atSel.Bind(wx.EVT_TEXT,OnAtSel)
+            Indx[atSel.GetId()] = spinID
+            bodSizer.Add(atSel,0)
+            bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'Natoms'))
+            bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID]['radius'],0))
+            refSel = wx.CheckBox(SpinRBDisplay)
+            refSel.SetValue(data['Spin'][spinID]['radius'][1])
+            Indx[refSel.GetId()] = spinID
+            refSel.Bind(wx.EVT_CHECKBOX,OnRefSel)
+            bodSizer.Add(refSel,0)
+        
+        SpinRBSizer.Add(bodSizer)
+        SpinRBSizer.Add((5,25),)
+        SpinRBSizer.Layout()    
+        SpinRBDisplay.SetSizer(SpinRBSizer,True)
+        SpinRBDisplay.SetAutoLayout(True)
+        Size = SpinRBSizer.GetMinSize()
+        SpinRBDisplay.SetSize(Size)
+        Size[0] += 40
+        Size[1] = max(Size[1],450) + 20
+        SpinRB.SetSize(Size)
+        SpinRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
+        G2frame.dataWindow.SendSizeEvent()
+        
+        SpinRBDisplay.Show()
         
     def UpdateResidueRB():
         '''Draw the contents of the Residue Rigid Body tab for Rigid Bodies tree entry
@@ -3807,6 +3920,9 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     ResidueRBDisplay = wx.Panel(ResidueRB)
     G2frame.rbBook.AddPage(ResidueRB,'Residue rigid bodies')
     # vector RBs are not too common, so select Residue as the default when one is present
+    SpinRB = wx.ScrolledWindow(G2frame.rbBook)
+    SpinRBDisplay = wx.Panel(SpinRB)
+    G2frame.rbBook.AddPage(SpinRB,'Spinning rigid bodies')
     if len(data['RBIds']['Residue']) > 0 and len(data['RBIds']['Vector']) == 0:
         G2frame.rbBook.ChangeSelection(1)
         OnPageChanged(None)

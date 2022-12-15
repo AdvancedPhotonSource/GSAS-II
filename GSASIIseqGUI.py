@@ -1226,6 +1226,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colSigs += [None]
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    if histNames[0][:4] not in ['SASD','IMG ','REFD']:
+        G2frame.colList += [[data[name]['Rvals']['GOF'] for name in histNames]]
+        G2frame.colSigs += [None]
+        colLabels += ['GOF']
+        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
     if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]

@@ -537,6 +537,8 @@ def svnChecksumPatch(svn,fpath,verstr):
     cmd = [svn,'update','--set-depth','empty',
                os.path.join(fpath,'bindist')]
     showsvncmd(cmd)        
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--non-interactive', '--trust-server-cert']
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
@@ -550,6 +552,8 @@ def svnChecksumPatch(svn,fpath,verstr):
     DownloadG2Binaries(g2home,verbose=True)
     cmd = [svn,'update','--set-depth','infinity',
                os.path.join(fpath,'bindist')]
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--non-interactive', '--trust-server-cert']
     showsvncmd(cmd)        
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
@@ -739,6 +743,8 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
     else:
         vstr = '-rHEAD'
     cmd = [svn,'st',fpath,'--xml','-u',vstr]
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--non-interactive', '--trust-server-cert']
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)

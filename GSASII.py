@@ -27,6 +27,7 @@ which creates the GSAS-II GUI and finally the event loop is started.
 import sys
 #import os
 import platform
+import scipy.optimize # addresses problem with build for wx on Pi
 try:
     import wx
 # importing the following wx modules at the same time as wx seems to eliminate 
@@ -39,9 +40,9 @@ try:
     import wx.lib.mixins.listctrl  as  listmix
     import wx.richtext as wxrt
     import wx.lib.filebrowsebutton as wxfilebrowse
-    import GSASIIpath
 except ImportError:
     pass
+import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
 __version__ = '1.0.0'

@@ -44,7 +44,7 @@ Python extension packages are required:
 * matplotlib (http://matplotlib.org/contents.html)  and
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation). Note: a copy of this is distributed with GSAS-II (at present) and will be installed if the Python setuptools package is present. 
 
-Several packages are used in sections of the code, but are not
+Several Python packages are used in sections of the code, but are not
 required. If these packages are not present, warning messages may be
 generated if they would be needed, but the vast bulk of GSAS-II will function normally. 
 
@@ -56,26 +56,31 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   the HDF5 importer(s) will not appear in the import menu and a
   warning message appears on GSAS-II startup. 
 * imageio is used to make movies. 
-* svn: When using Anaconda we also encourage installation of the
-  svn (subversion) conda package. This is not actually part of Python
-  and can be installed directly into your system's configuration. It is used by
-  GSAS-II to download updates to our code. This can be skipped if svn
-  is installed directly (easy Linux, but a bit harder on MacOS and
-  Windows). In conda-forge this package is called subversion, but at
-  present is only available for Linux.
-* pywin32 (windows only): this provides the win32com module that is
+* requests: this package simplifies http access
+  (https://requests.readthedocs.io/). It is used for access to
+  webpages such as ISODISTORT and for some internal software downloads.
+* win32com (windows only): this module is
   used to install GSAS-II on windows machines. GSAS-II can be used on
   Windows without this, but the installation will offer less
-  integration into Windows. 
+  integration into Windows. Conda provides this under the name pywin32.
 * conda: the conda package allows access to conda features from
-  inside Python. It will be used inceasingly by GSAS-II to
+  inside Python. It will be used increasingly by GSAS-II to
   self-install software. The conda package is installed by default in
   miniconda and anaconda but if you create an environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
   unless you request it specifically.  
-* requests: this package simplifies http access
-  (https://requests.readthedocs.io/). It is used for access to
-  webpages such as ISODISTORT and for some internal software downloads.
+
+The following are conda package is used in GSAS-II but is not
+actually a Python package.
+  
+* svn (or subversion): the GSAS-II code works much better when
+  subversion is available to install and update the GSAS-II
+  code. Technically it is optional, but is not easy to bypass. The
+  Anaconda distribution once provided this, but does this no longer. With
+  the conda-forge repository we now use, it is only available for
+  Linux (where it really is not needed since it is easy to install
+  there) and the package is called subversion. For MacOS and Windows, the GSAS-II
+  self-installer now provides binaries for the svn program. 
   
 *Conda command*:
   Here is a typical conda command used to install a GSAS-II compatible

@@ -389,8 +389,10 @@ should generate warnings or error messages.
 * ``versionDict['badVersionWarn']`` is a dict of with lists of package 
   versions that are known to have bugs. One should select an older or 
   newer version of the package. 
+* ``versionDict['tooNewUntested']`` is a dict with module versions that have 
+  not been tested but there is no reason to expect problems
 * ``versionDict['tooNewWarn']`` is a dict with module versions that have not 
-  been tested but raise concerns that problems may occur. 
+  been tested but there are concerns that problems may occur. 
 
 **Packages/versions to be avoided**
 
@@ -426,15 +428,18 @@ should generate warnings or error messages.
 
 '''
 # add comments above when changing anything below
-versionDict['tooOld'] = {'matplotlib': '1.'}
+versionDict['tooOld'] = {'matplotlib': '1.', 'Python':'2.7'}
 'modules that will certainly fail'
-versionDict['tooOldWarn'] = {'wx': '2.'}
-'modules that may fail but should be updated'
+versionDict['tooOldWarn'] = {'wx': '2.','Python':'3.6'}
+'modules that may fail and should be updated'
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
-                                 'matplotlib': ['3.1','3.2']}
+                                 'matplotlib': ['3.1','3.2'],
+                                 'wx':['4.2.0']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {'wx':'4.2','python':'3.10'}
+versionDict['tooNewWarn'] = {'wx':'4.2'}
 'module versions newer than what we have tested & where problems are suspected'
+versionDict['tooNewUntested'] = {'Python':'3.11'}
+'module versions newer than what we have tested & no problems are suspected'
 
 def ShowVersions():
     '''Show the versions all of required Python packages, etc.
@@ -445,42 +450,51 @@ def ShowVersions():
     import matplotlib as mpl
     import OpenGL as ogl
     import GSASIIpath
-    # print (versions)
-    print ("Python module versions loaded:")
-    print ("  Python:     {} from {}".format(sys.version.split()[0],sys.executable))
-    if compareVersions(platform.python_version(),
-                        versionDict['tooNewWarn']['python']) >= 0:
-        print (22*' '+"-- We are anticipating significant problems with this new version of Python. Please report them.")
+    print ("Python/module versions loaded:")
     version = '?'
     versionDict['errors'] = ''
     warn = False
-    for s,m in [('wx',wx), ('matplotlib', mpl), ('numpy',np),
+    for s,m in [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
                     ('scipy',sp), ('OpenGL',ogl)]:
         msg = ''
+        if s == 'Python':
+            pkgver = platform.python_version()
+            prefix = ''
+            msg = "from {}. ".format(sys.executable)
+        else:
+            pkgver = m.__version__
+            prefix = 'Package '
         if s in versionDict['tooOld']:
-            match = compareVersions(m.__version__,versionDict['tooOld'][s])
+            match = compareVersions(pkgver,versionDict['tooOld'][s])
             if match <= 0:
-                msg = "version will cause problems"
+                if msg: msg += ' -- '
+                msg += "Too old, problems are likely"
                 warn = True
                 if versionDict['errors']: versionDict['errors'] += '\n'
-                versionDict['errors'] += 'Package {} version {} is too old for GSAS-II. An update is required'.format(s,m.__version__)
+                versionDict['errors'] += prefix + '{} version {} is too old for GSAS-II. An update is required. '.format(s,pkgver)
         if s in versionDict['tooOldWarn']:
-            match = compareVersions(m.__version__,versionDict['tooOldWarn'][s])
+            match = compareVersions(pkgver,versionDict['tooOldWarn'][s])
             if match <= 0:
-                msg = "version can cause problems"
-                warn = True
-        if s in versionDict['tooNewWarn']:
-            match = compareVersions(m.__version__,versionDict['tooNewWarn'][s])
-            if match >= 0:
-                msg = "version is too new and has not been tested"
+                msg += "Version can cause problems"
                 warn = True
         if s in versionDict['badVersionWarn']:
             for v in versionDict['badVersionWarn'][s]:
-                if compareVersions(m.__version__,v) == 0:
-                    msg = "version is known to be buggy"
+                if compareVersions(pkgver,v) == 0:
+                    msg += "Version is known to be buggy"
                     warn = True
                     break
-        print("  {:12s}{}  {}".format(s+':',m.__version__,msg))
+        if s in versionDict['tooNewWarn'] and not warn:
+            match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
+            if match >= 0:
+                msg += "Problems are anticipated with this version (not tested)"
+                warn = True
+        if s in versionDict['tooNewUntested'] and not warn:
+            match = compareVersions(pkgver,versionDict['tooNewUntested'][s])
+            if match >= 0:
+                msg += "New version not tested; please keep us posted"
+                warn = True
+        print("  {:12s}{}  {}".format(s+':',pkgver,msg))
+
     Image = None
     try:
         from PIL import Image
@@ -512,7 +526,7 @@ def ShowVersions():
         "no SVN"
     else:
         rev = "SVN version {}".format(rev)
-    print ("Latest GSAS-II revision (from .py files): {} ({})\n".format(
+    print ("Latest GSAS-II revision (from .py files): {} ({})".format(
         GSASIIpath.GetVersionNumber(),rev))
     # patch 11/2020: warn if GSASII path has not been updated past v4576.
     # For unknown reasons on Mac with gsas2full, there have been checksum
@@ -524,11 +538,56 @@ def ShowVersions():
     except:
         print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
     # end patch
+    prog = 'convcell'
+    if sys.platform.startswith('win'): prog += '.exe'
+    if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
+        versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
+        warn = True
+    elif GSASIIpath.GetConfigValue('debug'):
+        print('N.B. current binaries have been updated')
     if warn:
         print('You are suggested to install a new version of GSAS-II.\nSee https://bit.ly/G2install',
               '\n\nFor information on packages see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html and',
               '\nhttps://gsas-ii.readthedocs.io/en/latest/GSASIIGUI.html#GSASIIdataGUI.versionDict')
+    print()
 
+def TestOldVersions():
+    '''Test the versions of required Python packages, etc.
+    Returns a non-empty text string if there are problems.
+    '''
+    import numpy as np
+    import scipy as sp
+    import wx
+    import matplotlib as mpl
+    import OpenGL as ogl
+    warnmsg = ''
+    errmsg = ''
+    for s,m in [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
+                    ('scipy',sp), ('OpenGL',ogl)]:
+        if s == 'Python':
+            pkgver = platform.python_version()
+            prefix = ''
+        else:
+            pkgver = m.__version__
+            prefix = 'Package '+s
+        if s in versionDict['tooOld']:
+            match = compareVersions(pkgver,versionDict['tooOld'][s])
+            if match <= 0:
+                if errmsg: errmsg += '\n'
+                errmsg += prefix + '{} version {} is too old to run GSAS-II.'.format(s,pkgver)
+        if s in versionDict['tooOldWarn']:
+            match = compareVersions(pkgver,versionDict['tooOldWarn'][s])
+            if match <= 0:
+                if warnmsg: warnmsg += '\n'
+                warnmsg += prefix + '{} version {} is likely too old for GSAS-II.'.format(s,pkgver)
+        if s in versionDict['badVersionWarn']:
+            for v in versionDict['badVersionWarn'][s]:
+                if compareVersions(pkgver,v) == 0:
+                    if errmsg: errmsg += '\n'
+                    errmsg += prefix + '{} version {} causes problems with GSAS-II.'.format(s,pkgver)
+                    break
+    return errmsg,warnmsg
+        
 #### GUI creation #############################################################
 def GSASIImain(application):
     '''Start up the GSAS-II GUI'''                        

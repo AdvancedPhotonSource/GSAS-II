@@ -5457,7 +5457,7 @@ For DIFFaX use cite:
     def OnCheckUpdates(self,event):
         '''Check if the GSAS-II repository has an update for the current source files
         and perform that update if requested.
-        '''            
+        '''
         if not GSASIIpath.whichsvn():
             dlg = wx.MessageDialog(self.frame,
                                    'No Subversion','Cannot update GSAS-II because subversion (svn) was not found.',
@@ -5493,6 +5493,30 @@ For DIFFaX use cite:
             dlg.ShowModal()
             dlg.Destroy()
             return
+        errmsg,warnmsg = G2gd.TestOldVersions()
+        if (errmsg or warnmsg):
+            msg = 'Based on the age of Python or an installed Python package (see below)'
+            msg += ' you are recommended to'
+            if GSASIIpath.condaTest():
+                msg += ' either use conda to update (see https://bit.ly/G2pkgs for version recommendations) and then update GSAS-II. Or'
+            msg += ' reinstall GSAS-II (see https://bit.ly/G2install), which will update both.\n\n'
+            if errmsg:
+                opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.NO_DEFAULT
+                msg += 'Error(s):\n\t'+errmsg
+            else:
+                opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.YES_DEFAULT
+            if warnmsg:
+                if errmsg: msg += '\n\nWarning(s):\n\t'
+                msg += warnmsg
+
+            msg += '\n\nContinue to update GSAS-II?'
+            dlg = wx.MessageDialog(self.frame, msg,'Confirm update',opt)
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result != wx.ID_YES: return
         print ('GSAS-II version on server: '+repos)
         if local == repos:
             up,mod,lock = GSASIIpath.svnGetFileStatus()
@@ -5535,7 +5559,7 @@ For DIFFaX use cite:
                                    'the latest GSAS-II version, but if '
                                    'conflicts arise, local changes will be '
                                    'discarded. It is also possible that the '
-                                   'local changes may prevent GSAS-II from running. '
+                                   'merge may prevent GSAS-II from running. '
                                    '\n\nPress OK to start an update if this is acceptable:',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
@@ -5602,7 +5626,7 @@ For DIFFaX use cite:
                                    'Downdating is not encouraged because '
                                    'if merging is not possible, your local changes will be '
                                    'discarded. It is also possible that the '
-                                   'local changes my prevent GSAS-II from running. '
+                                   'merge may prevent GSAS-II from running. '
                                    'Press OK to continue anyway.',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)

@@ -247,9 +247,11 @@ try:
         0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
         0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-    #This can be done on request for other colors
-    oldpaired = mpl.colors.LinearSegmentedColormap('Paired',_Old_Paired_data,N=256)
-    mpl.cm.register_cmap(cmap=oldpaired,lut=256)   
+    '''This can be done on request for other colors - any new names must be explicitly added to color list
+    obtained from mpl.cm.datad.keys() (currently 10 places in GSAS-II code)
+    '''
+    oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
+    mpl.cm.register_cmap(cmap=oldpaired,name='GSPaired')   
     blue = [tuple(1.-np.array(item)) for item in _Old_Paired_data['blue']]
     blue.reverse()
     green = [tuple(1.-np.array(item)) for item in _Old_Paired_data['green']]
@@ -257,11 +259,10 @@ try:
     red = [tuple(1.-np.array(item)) for item in _Old_Paired_data['red']]
     red.reverse()
     Old_Paired_data_r = {'blue':blue,'green':green,'red':red}
-    oldpaired_r = mpl.colors.LinearSegmentedColormap('Paired_r',Old_Paired_data_r,N=256)
-    mpl.cm.register_cmap(cmap=oldpaired_r,lut=256)   
-
-except:  # causes error in Sphinx 
-    pass
+    oldpaired_r = mpl.colors.LinearSegmentedColormap('GSPaired_r',Old_Paired_data_r,N=256)
+    mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   
+except Exception as err:
+    print(u'error: {}'.format(err))
 # options for publication-quality Rietveld plots
 plotOpt = {}
 plotOpt['labelSize'] = '11'
@@ -2119,7 +2120,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['refDelt'] = .1*YmaxS
             newPlot = True
         elif event.key == 'S' and 'PWDR' in plottype:
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -5267,7 +5268,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     G2frame.PDFselections = None
             dlg.Destroy()
         elif event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -5858,7 +5859,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
             dlg.Destroy()
             
         elif event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -7221,7 +7222,7 @@ def PlotCovariance(G2frame,Data):
     '''
     def OnPlotKeyPress(event):
         if event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -7399,7 +7400,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 
     def OnPlotKeyPress(event):
         if event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -9053,7 +9054,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetShowCS(drawingData['showSlice'])
             
         elif key in ['S']:
-            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -9730,8 +9731,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     def RenderViewPlane(plane,Z,width,height):
         global txID
         GL.glShadeModel(GL.GL_FLAT)
-        newTX = False
-        if not txID:
+        newTX = True
+        if txID < 0:
             txID = GL.glGenTextures(1)
             newTX = True
         GL.glBindTexture(GL.GL_TEXTURE_2D, txID)
@@ -9748,10 +9749,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
-        if newTX:
-            GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
-        else:
-            GL.glTexSubImage2D(GL.GL_TEXTURE_2D,0,0,0,width,height,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+        # if newTX:
+        #     GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+        # else:
+        #     GL.glTexSubImage2D(GL.GL_TEXTURE_2D,0,0,0,width,height,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
         GL.glBegin(GL.GL_POLYGON)
         for vertex,evertex in zip(plane,eBox):
             GL.glTexCoord2fv(evertex)
@@ -10264,11 +10266,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = 0.0
                 elif 'Q' in atom[ct]:       #spinning rigid body
-                    for Srb in data['RBModels'].get('Spin',[]):
-                        if Srb['RBId'] == generalData['SpnIds'][atom[ci]]:
-                            radius = Srb['radius'][0]
+                    for Srb in RBdata.get('Spin',[]):
+                        if Srb == generalData['SpnIds'][atom[ci]]:
+                            radius = RBdata['Spin'][Srb]['radius'][0]
                             fade = True
-                            Info = G2elem.GetAtomInfo(Srb['atType'])
+                            Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
                             atColor = Info['Color']
                             break
                 else:
@@ -10510,9 +10512,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     #### PlotStructure starts here
     global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,spID
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
-    txID = 0
+    txID = -1
     spID = 0
     ForthirdPI = 4.0*math.pi/3.0
+    RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
+    RBdata = G2frame.GPXtree.GetItemPyData(RBId)
     generalData = data['General']
     RBmodels = data['RBModels']
     SpnRB = RBmodels.get('Spin',[])

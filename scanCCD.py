@@ -312,7 +312,7 @@ class scanCCD(wx.Frame):
             def OnSkipFiles(event):
                 data['skip'] = int(skipFile.GetValue())
                             
-            colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]+['GSPaired','GSPaired_r',]
             colorSizer = wx.FlexGridSizer(0,5,5,5)
             colorSizer.Add(wx.StaticText(self.SCCDPanel,label=' Color bar '),0,wx.ALIGN_CENTER_VERTICAL)
             colSel = wx.ComboBox(self.SCCDPanel,value=data['color'],choices=colorList,

@@ -10997,7 +10997,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         PTSizer.Add(pfVal,0,WACV)
         if 'Axial' not in textureData['PlotType'] and '3D' not in textureData['PlotType']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,WACV)
-            choice = [m for m in mpl.cm.datad.keys()]       #if not m.endswith("_r")
+            choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]       #if not m.endswith("_r")
             choice.sort()
             colorSel = wx.ComboBox(Texture,-1,value=G2frame.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -11563,6 +11563,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
             Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+            RBObj['SytSym'] = Sytsym    #Only needed for spinning RBs
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
@@ -11571,7 +11572,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         def SpnrbSizer(RBObj,spnIndx):
             '''Displays details for selected spinning rigid body'''
             
-
             def OnDelSpnRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
@@ -11588,6 +11588,30 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 data['Drawing']['Atoms'] = []
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
+                
+            def OnAddShell(event):
+                RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
+                RBdata = G2frame.GPXtree.GetItemPyData(RBId)
+                rbNames = []
+                for item in RBdata.get('Spin',[]):
+                    rbNames.append(item['RBname'])
+                if len(rbNames) == 1:
+                    selection = rbNames[0]
+                else:
+                    choices = sorted(rbNames)
+                    dlg = G2G.G2SingleChoiceDialog(
+                        G2frame,'Select rigid body to\nadd to structure',
+                        'Select rigid body',choices)
+                    dlg.CenterOnParent()
+                    try:
+                        if dlg.ShowModal() == wx.ID_OK:
+                            selection = choices[dlg.GetSelection()]
+                        else:
+                            return
+                    finally:
+                        dlg.Destroy()
+                    print('Add shell - TBD',selection)
+                        
                 
             def SHsizer():
                 def OnSHOrder(event):
@@ -11654,7 +11678,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
             Indx[delRB.GetId()] = rbId
-            topLine.Add(delRB,0,WACV)            
+            topLine.Add(delRB,0,WACV)
+            addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add new shell',style=wx.BU_EXACTFIT)
+            addShell.Bind(wx.EVT_BUTTON,OnAddShell)
+            Indx[addShell.GetId()] = rbId
+            topLine.Add(addShell,0,WACV)
             sprbSizer.Add(topLine)
             sprbSizer.Add(LocationSizer(RBObj,'Spin'))
             sprbSizer.Add(SHsizer())
@@ -13571,7 +13599,7 @@ of the crystal structure.
         time1 = time.time()
         nprocs = GSASIIpath.GetConfigValue('Multiprocessing_cores',0)
         if process == 'single' or not nprocs:
-            pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
+            pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
             Size = pgbar.GetSize()
@@ -14468,7 +14496,7 @@ of the crystal structure.
         if ReflData == None: 
             G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
-        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
+        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
@@ -14508,7 +14536,7 @@ of the crystal structure.
         if ReflData == None: 
             G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
-        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
+        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
@@ -14567,7 +14595,7 @@ of the crystal structure.
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],tth,Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
                 else:   # xray - typical caked 2D image data
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[5+im],Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
-        pgbar = wx.ProgressDialog('Texture fit','Residual = %5.2f'%(101.0),101.0, 
+        pgbar = wx.ProgressDialog('Texture fit','Residual = %5.2f'%(101.0),101, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         Error = G2mth.FitTexture(General,Gangls,refData,keyList,pgbar)
         pgbar.Destroy()

@@ -2262,6 +2262,7 @@ def RBsymChk(RBsym,coefNames):
         for name in coefNames:
             LM = eval(name[1:])
             rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
+            rbChk = True    #ignore 
             if rbChk:
                 newNames.append(name)
                 newSgns.append(sgn)
@@ -2592,6 +2593,26 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
             Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
     return Kcl*Ksl,Lnorm(L)
 
+def H2ThPh(H,Bmat,Q):
+    '''Convert HKL to spherical polar & azimuth angles
+    '''
+    A,V = G2mth.Q2AVdeg(Q)
+    QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
+    QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
+    Q2 = G2mth.prodQQ(QA,QR)
+    Qmat = G2mth.Q2Mat(Q2)
+    CH = np.inner(H,Bmat)
+    CH = np.inner(CH,Qmat)
+    CH /= nl.norm(CH,axis=2)[:,:,nxs]
+    H3 = np.array([0,0,1.])
+    DHR = np.inner(CH,H3)
+    Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.
+    TH = CH*np.array([1.,1.,0.])[nxs,nxs,:]     #projection of CH onto xy plane
+    TH /= nl.norm(TH,axis=2)[:,:,nxs]
+    Th = atan2d(TH[:,:,0],TH[:,:,1])                #azimuth angle 0<=Th<360<
+    Th = np.where(Th<0.,Th+360.,Th)
+    return Th,Ph
+
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm
     
@@ -2607,7 +2628,7 @@ def SphHarmAng(L,M,P,Th,Ph):
     ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
     
     if M == 0:
-        return np.real(ylmp)    #*2.
+        return np.real(ylmp)/4.
     if P>0:
         return np.real(ylmp)
     else:
@@ -2809,13 +2830,14 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     '''
     SHVal = np.ones_like(gam)
     for term in SHFln:
-        l,m = eval(term.strip('C'))
-        if SytSym in ['m3m','m3','43m','432','23']:
-            Ksl = CubicSHarm(l,m,psi,gam)
-        else:
-            p = SHFln[term][2]
-            Ksl = SphHarmAng(l,m,p,psi,gam)
-        SHVal += SHFln[term][0]*Ksl
+        if 'C(' in term[:2]:
+            l,m = eval(term.strip('C'))
+            if SytSym in ['m3m','m3','43m','432','23']:
+                Ksl = CubicSHarm(l,m,psi,gam)
+            else:
+                p = SHFln[term][2]
+                Ksl = SphHarmAng(l,m,p,psi,gam)
+            SHVal += SHFln[term][0]*Ksl
     return SHVal
     
 def invpolfcal(ODFln,SGData,phi,beta):

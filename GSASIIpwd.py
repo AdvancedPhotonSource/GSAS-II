@@ -2470,7 +2470,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
             dlg.Raise()
-            GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))[0]
+            GoOn = dlg.Update(int(Rwp),newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))[0]
             if not GoOn:
                 return -M           #abort!!
         return M

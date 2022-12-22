@@ -3424,7 +3424,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         else:
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
-        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid bodies:'),0,WACV)
+        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells/nonspherical atoms (radius=0):'),0,WACV)
         bodSizer = wx.FlexGridSizer(0,7,5,5)
         for item in ['Name','Type','RB sym','Atom','Number','radius','refine']:
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
@@ -3436,7 +3436,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             typeSel.Bind(wx.EVT_COMBOBOX,OnTypeSel)
             Indx[typeSel.GetId()] = spinID
             bodSizer.Add(typeSel,0)
-            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m']
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m','-1','1']
             data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
             simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)

@@ -6587,7 +6587,7 @@ class SelectConfigSetting(wx.Dialog):
             if var == 'Contour_color':
                 if self.vars[var][1] is None:
                     self.vars[var][1] = 'Paired'
-                colorList = sorted([m for m in mpl.cm.datad.keys() ],key=lambda s: s.lower())   #if not m.endswith("_r")
+                colorList = sorted([m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',],key=lambda s: s.lower())   #if not m.endswith("_r")
                 self.colSel = wx.ComboBox(self,value=self.vars[var][1],choices=colorList,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 self.colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)

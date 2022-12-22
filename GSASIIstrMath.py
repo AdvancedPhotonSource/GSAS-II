@@ -312,6 +312,37 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
+                
+def MakeSpHarmFF(HKL,pfx,Bmat,SHCdict,Tdata,FF):
+    ''' Computes hkl dependent form factors from spinning rigid bodies
+    '''
+    for iAt,Atype in enumerate(Tdata):
+        if 'Q' in Atype:
+            for irb in range(len(SHCdict)):
+                if SHCdict[irb]['AtNo'] == iAt:
+                    break
+            
+            
+            Th,Ph = G2lat.H2ThPh(HKL,Bmat)
+            P = G2lat.SHarmcal(SHCdict['SytSym'],SHCdict[irb],Th,Ph)
+            FF[:,iAt] = P
+            
+def GetSHC(pfx,parmDict):
+    SHCdict = {}
+    for parm in parmDict:
+        if pfx+'RBS' in parm or '::RBS' in parm:
+            items = parm.split(':')
+            name = items[2][3:]    #strip 'RB'
+            if name == ';0':
+                name = 'R'
+            atid = int(items[3])
+            if atid not in SHCdict:
+                SHCdict[atid] = {}
+            if ';' in name:
+                name = name.split(';')[1]
+            SHCdict[atid][name] = parmDict[parm]
+    return SHCdict
+    
     
 ################################################################################
 ##### Penalty & restraint functions 
@@ -801,6 +832,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
+    SHCdict = GetSHC(pfx,parmDict)
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
@@ -839,6 +871,10 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
+        #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
+        #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
+        if len(SHCdict):
+            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,FF)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])

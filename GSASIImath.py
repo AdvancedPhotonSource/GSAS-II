@@ -3532,7 +3532,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         sumD = np.sum(np.abs(Mat))
         R = min(100.,100.*sumD/sumObs)
         pgbar.Raise()
-        pgbar.Update(R,newmsg='Residual = %5.2f'%(R))
+        pgbar.Update(int(R),newmsg='Residual = %5.2f'%(R))
         print (' Residual: %.3f%%'%(R))
         return Mat
         
@@ -4021,7 +4021,7 @@ def ChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
@@ -4181,7 +4181,7 @@ def SSChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
@@ -5493,8 +5493,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         return np.sqrt(M/np.sum(refList[4]**2))
     
     def MCSAcallback(x, f,accept):
-        return not pgbar.Update(min(100.,f*100),
-            newmsg='%s%8.4f%s'%('MC/SA Residual:',f*100,'%'))[0]
+        return not pgbar.Update(min(100,f*100),
+            newmsg='%s%8.4f%s'%('MC/SA Residual:',int(f*100),'%'))[0]
 
     sq2pi = np.sqrt(2*np.pi)
     sq4pi = np.sqrt(4*np.pi)

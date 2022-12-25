@@ -324,7 +324,7 @@ class G2PlotMpl(_tabPlotWin):
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,0,)
         self.SetSizer(sizer)
-        
+    
     def SetToolTipString(self,text):
         if 'phoenix' in wx.version():
             return self.canvas.SetToolTip(text)
@@ -409,7 +409,9 @@ class G2PlotNoteBook(wx.Panel):
         sizer = wx.BoxSizer()
         sizer.Add(self.nb,1,wx.EXPAND)
         self.SetSizer(sizer)
-        self.status = parent.CreateStatusBar()
+        self.status = parent.CreateStatusBar()        
+        # self.status.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)) # unneeded
+        # self.status.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)) # ignored, alas
         self.status.SetFieldsCount(2)
         self.status.firstLen = 150
         self.status.SetStatusWidths([self.status.firstLen,-1])            
@@ -550,6 +552,7 @@ class G2PlotNoteBook(wx.Panel):
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)
             self.SetSelectionNoRefresh(plotNum) # raises plot tab
+        Plot.format_coord = lambda x,y: "" # remove coord display from toolbar
 
         Page.plotInvalid = False # plot has just been drawn
         Page.excludeMode = False

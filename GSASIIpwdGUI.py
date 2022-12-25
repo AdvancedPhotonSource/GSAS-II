@@ -54,8 +54,11 @@ import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
 import G2shapes
 import SUBGROUPS as kSUB
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-WACV = wx.ALIGN_CENTER_VERTICAL
+try:
+    VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+    WACV = wx.ALIGN_CENTER_VERTICAL
+except:
+    pass
 if '2' not in platform.python_version_tuple()[0]:
     unichr = chr
 GkDelta = unichr(0x0394)
@@ -6489,7 +6492,7 @@ def UpdateModelsGrid(G2frame,data):
                     else:
                         value = np.log10(Parms[parm][0])
                         valMinMax = [value-1,value+1]
-                    parmSldr = wx.Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
+                    parmSldr = G2G.G2Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
                         maxValue=slMult*valMinMax[1],value=slMult*value)
                     Indx[parmValue.GetId()] = [Parms,parm,parmSldr]
                     Indx[parmSldr.GetId()] = [Parms,parm,parmValue]
@@ -6526,7 +6529,7 @@ def UpdateModelsGrid(G2frame,data):
                             else:
                                 value = np.log10(Args[parm][0])
                                 valMinMax = [value-1,value+1]
-                            parmSldr = wx.Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
+                            parmSldr = G2G.G2Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
                                 maxValue=slMult*valMinMax[1],value=slMult*value)
                             Indx[parmVar.GetId()] = [Args[parm],1]
                             Indx[parmValue.GetId()] = [Args,parm,parmSldr]
@@ -7150,7 +7153,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                     if len(parms) > 1:
                         slide = wx.BoxSizer(wx.HORIZONTAL)
                         slide.Add(wx.StaticText(G2frame.dataWindow,label=' Layer thickness: '),0,WACV)
-                        parmSldr = wx.Slider(G2frame.dataWindow,minValue=0,maxValue=data['slider max'],value=data['Layers'][ilay]['Thick'][0])
+                        parmSldr = G2G.G2Slider(G2frame.dataWindow,minValue=0,maxValue=data['slider max'],value=data['Layers'][ilay]['Thick'][0])
                         parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
                         slide.Add(parmSldr,1,wx.EXPAND)
                     for parm in parms:
@@ -7663,7 +7666,7 @@ def UpdatePDFGrid(G2frame,data):
             
         bkBox = wx.BoxSizer(wx.HORIZONTAL)
         bkBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background ratio: '),0,WACV)    
-        backSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
+        backSldr = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
             value=int(100*data['BackRatio']))
         bkBox.Add(backSldr,1,wx.EXPAND)
         backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
@@ -7676,7 +7679,7 @@ def UpdatePDFGrid(G2frame,data):
         if 'XC' in inst['Type'][0]:
             sqBox = wx.BoxSizer(wx.HORIZONTAL)
             sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Ruland width: '),0,WACV)    
-            rulandSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
+            rulandSldr = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
                 value=int(100*data['Ruland']))
             sqBox.Add(rulandSldr,1,wx.EXPAND)
             rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
@@ -7688,7 +7691,7 @@ def UpdatePDFGrid(G2frame,data):
             
         gscaleBox = wx.BoxSizer(wx.HORIZONTAL)
         gscaleBox.Add(wx.StaticText(G2frame.dataWindow,label=' G(R) scale: '),0,WACV)    
-        gscaleSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
+        gscaleSldr = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
             value=int(50*data['GR Scale']))
         gscaleBox.Add(gscaleSldr,1,wx.EXPAND)
         gscaleSldr.Bind(wx.EVT_SLIDER, OnGRscaleSlider)

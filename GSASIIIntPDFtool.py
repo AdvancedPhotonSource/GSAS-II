@@ -163,6 +163,7 @@ class AutoIntFrame(wx.Frame):
                           +[self.pbkg[i][0] for i in (0,1,2)]
                           +[self.pbkg[i][5] for i in (0,1,2)]):
                 l.SetForegroundColour(c)
+                l.SetBackgroundColour("white")
             checkPDFselection()
             self.SendSizeEvent()
                                     

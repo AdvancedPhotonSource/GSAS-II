@@ -1281,17 +1281,23 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Eq = wx.BoxSizer(wx.VERTICAL)
                 for s in eqString:
                     line = wx.StaticText(panel,label=s)
-                    if problemItem: line.SetBackgroundColour(wx.YELLOW)
+                    if problemItem:
+                        line.SetForegroundColour(wx.BLACK)
+                        line.SetBackgroundColour(wx.YELLOW)
                     Eq.Add(line,0)
                 Eq.Add((-1,4))
             else:
                 Eq = wx.StaticText(panel,label=eqString[0])
-                if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
+                if problemItem:
+                    Eq.SetForegroundColour(wx.BLACK)
+                    Eq.SetBackgroundColour(wx.YELLOW)
             constSizer.Add(Eq)
             constSizer.Add((3,3))
             if note:
                 Eq = wx.StaticText(panel,label=note,style=WACV)
-                if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
+                if problemItem:
+                    Eq.SetForegroundColour(wx.BLACK)
+                    Eq.SetBackgroundColour(wx.YELLOW)
             else:
                 Eq = (-1,-1)
             constSizer.Add(Eq,1,wx.EXPAND,3)
@@ -3797,7 +3803,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             slideSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Selected torsion angle:'),0)
             iSeq,angId = rbData['SelSeq']
-            angSlide = wx.Slider(ResidueRBDisplay,-1,
+            angSlide = G2G.G2Slider(ResidueRBDisplay,-1,
                 int(100*rbData['rbSeq'][iSeq][2]),0,36000,size=(200,20),
                 style=wx.SL_HORIZONTAL)
             angSlide.Bind(wx.EVT_SLIDER, OnSlider)

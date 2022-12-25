@@ -40,9 +40,12 @@ try:
 except AttributeError:
     pass
 
-WACV = wx.ALIGN_CENTER_VERTICAL
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-VERY_YELLOW = wx.Colour(255,255,0)
+try:
+    VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+    VERY_YELLOW = wx.Colour(255,255,0)
+    WACV = wx.ALIGN_CENTER_VERTICAL
+except:
+    pass
 TabSelectionIdDict = {}
 
 ################################################################################

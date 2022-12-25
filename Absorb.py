@@ -14,6 +14,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
+import GSASIIctrlGUI as G2G
 
 try:
     wx.NewIdRef
@@ -211,7 +212,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             mainSizer.Add(lablSizer,0)
             mainSizer.Add((5,5),0)
-            nRow = len(self.Elems)/5
+            nRow = len(self.Elems)//5
             compSizer = wx.FlexGridSizer(nRow+1,10,0,0)
             for Elem in self.Elems:
                 compSizer.Add(wx.StaticText(parent=self.panel,label="  "+Elem[0].capitalize(),
@@ -254,12 +255,12 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         slideSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=self.panel, 
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
-        slideSizer.Add(self.SpinButton,0,wx.ALIGN_RIGHT)
+        slideSizer.Add(self.SpinButton)
         self.SpinButton.SetRange(-1,1)
         self.SpinButton.SetValue(0)
         self.SpinButton.Bind(wx.EVT_SPIN, self.OnSpinButton, id=wxID_SPINBUTTON)
 
-        self.slider1 = wx.Slider(id=wxID_SLIDER1, maxValue=int(1000.*self.Wmax),
+        self.slider1 = G2G.G2Slider(id=wxID_SLIDER1, maxValue=int(1000.*self.Wmax),
             minValue=int(1000.*self.Wmin), parent=self.panel,style=wx.SL_HORIZONTAL,
             value=int(self.Wave*1000.), )
         slideSizer.Add(self.slider1,1,wx.EXPAND)

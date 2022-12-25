@@ -1932,6 +1932,10 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             nPop= len(ClusData['codes'])-np.count_nonzero(ClusData['codes']-i)
             txt = wx.StaticText(G2frame.dataWindow,label='Cluster #%d has %d members'%(i,nPop))
             txt.SetForegroundColour(wx.Colour(Colors[i][1]))
+            if wx.Colour(Colors[i][1]).GetLuminance() > 0.5:
+                txt.SetBackgroundColour(wx.Colour(50,50,50))
+            else:
+                txt.SetBackgroundColour(wx.Colour(200,200,200))
             memSizer.Add(txt)        
         headSizer = wx.BoxSizer(wx.HORIZONTAL)
         headSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster to list members: '),0,WACV)        
@@ -1948,6 +1952,10 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                      ClusList.append(item)               
             cluslist = wx.ListBox(G2frame.dataWindow, choices=ClusList)
             cluslist.SetForegroundColour(wx.Colour(Colors[shoNum][1]))
+            if wx.Colour(Colors[shoNum][1]).GetLuminance() > 0.5:
+                cluslist.SetBackgroundColour(wx.Colour(50,50,50))
+            else:
+                cluslist.SetBackgroundColour(wx.Colour(200,200,200))
             cluslist.Bind(wx.EVT_LISTBOX,OnSelection)
             memSizer.Add(cluslist)
         return memSizer
@@ -2016,7 +2024,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         mainSizer.Add(LimitSizer())
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster Analysis input data size: %d'%(GetYMatSize())))
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=
-            '(Examine any %s plot for reasonable limits; any change will clear Cluster data matrix) '%ClusData['Type']),0,WACV)
+            '(Examine any %s plot for reasonable limits; any change will clear Cluster data matrix) '%ClusData['Type']))
         makeArray = wx.Button(G2frame.dataWindow,label='Make Cluster Analysis data array')
         makeArray.Bind(wx.EVT_BUTTON,OnMakeArray)
         mainSizer.Add(makeArray)

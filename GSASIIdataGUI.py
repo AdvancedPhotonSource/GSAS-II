@@ -307,39 +307,6 @@ def GUIpatches():
         print('Fixing location (see https://github.com/matplotlib/matplotlib/issues/5420.)')
         os.environ['LC_ALL'] = 'en_US.UTF-8'
         locale.getdefaultlocale()
-    try:
-        import OpenGL
-        OpenGL  # avoids unused package error
-    except ImportError:
-        print('*******************************************************')
-        print('PyOpenGL is missing from your python installation')
-        print('     - we will try to install it')
-        print('*******************************************************')
-        def install_with_easyinstall(package):
-            try: 
-                print ("trying a system-wide PyOpenGl install")
-                easy_install.main(['-f',os.path.split(__file__)[0],package])
-                return
-            except:
-                pass
-            try: 
-                print ("trying a user level PyOpenGl install")
-                easy_install.main(['-f',os.path.split(__file__)[0],'--user',package])
-                return
-            except:
-                print (u"Install of '+package+u' failed. Please report this information:")
-                import traceback
-                print (traceback.format_exc())
-                sys.exit()
-        from setuptools.command import easy_install
-        install_with_easyinstall('PyOpenGl')
-        print('*******************************************************')         
-        print('OpenGL has been installed. Restarting GSAS-II')
-        print('*******************************************************')         
-        loc = os.path.dirname(__file__)
-        import subprocess
-        subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
-        sys.exit()
     # PATCH: for Mavericks (OS X 10.9.x), wx produces an annoying warning about LucidaGrandeUI.
     # In case stderr has been suppressed there, redirect python error output to stdout. Nobody
     # else should care much about this. 
@@ -434,7 +401,7 @@ versionDict['tooOldWarn'] = {'wx': '2.','Python':'3.6'}
 'modules that may fail and should be updated'
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2'],
-                                 'wx':['4.2.0']}
+                                 'wx':['4.1']}
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {'wx':'4.2'}
 'module versions newer than what we have tested & where problems are suspected'

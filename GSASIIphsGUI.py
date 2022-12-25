@@ -76,11 +76,14 @@ try:
 except AttributeError:
     pass
 
-VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-WHITE = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
-RED = wx.Colour(255,0,0)
-WACV = wx.ALIGN_CENTER_VERTICAL
+try:
+    VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+    WHITE = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+    BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+    RED = wx.Colour(255,0,0)
+    WACV = wx.ALIGN_CENTER_VERTICAL
+except:
+    pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
@@ -3496,8 +3499,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(Atoms))
                 if c in range(colU11-1,colU11+6):
-                    Atoms.SetColSize(c,50)            
-                    attr.SetBackgroundColour(VERY_LIGHT_GREY)
+                    Atoms.SetColSize(c,50)
+                    attr.SetBackgroundColour(VERY_LIGHT_GREY) # make invisible
                     attr.SetTextColour(VERY_LIGHT_GREY)
                     attr.SetReadOnly(True)
                 Atoms.SetColAttr(c, attr)
@@ -7622,7 +7625,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 lineSizer = wx.BoxSizer(wx.HORIZONTAL)            
                 dispVal = G2G.ValidatedTxtCtrl(ISODIST,modeDisp,idsp,xmin=-2.,xmax=2.,size=(75,20),OnLeave=OnDispVal)
                 lineSizer.Add(dispVal,0,WACV)
-                displ = wx.Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,
+                displ = G2G.G2Slider(ISODIST,style=wx.SL_HORIZONTAL,minValue=-2000,maxValue=2000,
                     value=int(modeDisp[idsp]*1000),size=(250,20))
                 displ.Bind(wx.EVT_SLIDER, OnDispl)
                 Indx[displ.GetId()] = [idsp,dispVal]
@@ -10372,7 +10375,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
                 contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
                 line3Sizer.Add(contourMaxTxt,0,WACV)
-                contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
+                contourMax = G2G.G2Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
                     value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
                 contourMax.Bind(wx.EVT_SLIDER, OnContourMax)
                 line3Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
@@ -12569,7 +12572,7 @@ of the crystal structure.
                 OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
                     xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
                 OriSizer2.Add(OrientVecSiz[-1],0,WACV)
-                azSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
+                azSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
                     minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
                 azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
                 OriSizer2.Add(azSlide,0,WACV)
@@ -12609,7 +12612,7 @@ of the crystal structure.
                             else:
                                 torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
                         TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
-                        torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxValue=3600,value=int(torsion[0]*10.))
+                        torSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxValue=3600,value=int(torsion[0]*10.))
                         torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                         TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
                         TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)

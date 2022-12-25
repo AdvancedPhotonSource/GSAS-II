@@ -175,13 +175,16 @@ def FillParmSizer():
     text = wx.StaticText(prmPnl,wx.ID_ANY,'label',style=wx.ALIGN_CENTER,
                 size=(170,-1)) # make just a bit bigger than largest item in column
     text.SetBackgroundColour(wx.WHITE)
+    text.SetForegroundColour(wx.BLACK)
     prmSizer.Add(text,0,wx.EXPAND)
     text = wx.StaticText(prmPnl,wx.ID_ANY,'value',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
+    text.SetForegroundColour(wx.BLACK)
     prmSizer.Add(text,0,wx.EXPAND)
     txtSizer = wx.BoxSizer(wx.HORIZONTAL)
     text = wx.StaticText(prmPnl,wx.ID_ANY,'explanation',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
+    text.SetForegroundColour(wx.BLACK)
     txtSizer.Add(text,1,wx.EXPAND)
     txtSizer.Add(G2G.HelpButton(prmPnl,helpIndex='FPAinput'))
     prmSizer.Add(txtSizer,0,wx.EXPAND)
@@ -303,6 +306,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
             ):
         text = wx.StaticText(FPdlg,wx.ID_ANY,lbl,style=wx.ALIGN_CENTER)
         text.SetBackgroundColour(wx.WHITE)
+        text.SetForegroundColour(wx.BLACK)
         waveSizer.Add(text,0,wx.EXPAND)
         if prm not in parmDict: parmDict[prm] = {}
         for i in parmDict['wave'].keys():
@@ -761,9 +765,11 @@ def MakeSimSizer(G2frame, dlg):
     prmSizer = wx.FlexGridSizer(cols=2,hgap=3,vgap=5)
     text = wx.StaticText(dlg,wx.ID_ANY,'value',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
+    text.SetForegroundColour(wx.BLACK)
     prmSizer.Add(text,0,wx.EXPAND)
     text = wx.StaticText(dlg,wx.ID_ANY,'explanation',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
+    text.SetForegroundColour(wx.BLACK)
     prmSizer.Add(text,0,wx.EXPAND)
     for key,defVal,text in (
             ('minTT',3.,'Location of first peak in 2theta (deg)'),

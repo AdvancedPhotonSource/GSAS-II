@@ -53,8 +53,12 @@ if (type(wx.ListCtrl).__name__ ==
     class Junk2(object): pass
     listmix.TextEditMixin = Junk2
 
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-WACV = wx.ALIGN_CENTER_VERTICAL
+try:    
+    #VERY_LIGHT_GREY = wx.Colour(235,235,235)
+    VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+    WACV = wx.ALIGN_CENTER_VERTICAL
+except:
+    pass
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -1059,7 +1063,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
         sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
         sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
-        maxSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
+        maxSel = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
         G2frame.slideSizer.AddGrowableCol(2)
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
         maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,xmin=Range[0][0]+1,
@@ -1072,7 +1076,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         # Imin = sv0 * (Imax-Imin0-1) / 100 + Imin0
         DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1) # Imax-Imin0-1
         sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
-        minSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
+        minSel = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
             xmax=Range[0][1],typeHint=int,OnLeave=OnNewVal)
@@ -2014,7 +2018,7 @@ def UpdateMasks(G2frame,data):
         sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
         sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
         sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
-        maxSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
+        maxSel = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
         maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,xmin=Range[0][0]+1,
             xmax=Range[0][1],OnLeave=OnNewVal)
         slideSizer.Add(maxVal,0,WACV)
@@ -2030,7 +2034,7 @@ def UpdateMasks(G2frame,data):
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
             xmax=Range[0][1],typeHint=int,OnLeave=OnNewVal)
         slideSizer.Add(minVal,0,WACV)
-        minSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
+        minSel = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)
         slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
         maxSizer.Add(slideSizer,flag=wx.EXPAND|wx.ALL)
@@ -2152,6 +2156,7 @@ def UpdateMasks(G2frame,data):
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL]
         colIds = ['position, mm','diameter, mm','Delete?']
@@ -2172,6 +2177,7 @@ def UpdateMasks(G2frame,data):
     if Rings:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Ring masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,3,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' 2-theta,deg'),0,WACV)
@@ -2194,6 +2200,7 @@ def UpdateMasks(G2frame,data):
     if Arcs:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Arc masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,4,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' 2-theta,deg'),0,WACV)
@@ -2224,6 +2231,7 @@ def UpdateMasks(G2frame,data):
     if Xlines:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' X line masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Xlines)):
@@ -2237,6 +2245,7 @@ def UpdateMasks(G2frame,data):
     if Ylines:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Y line masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Ylines)):
@@ -2251,6 +2260,7 @@ def UpdateMasks(G2frame,data):
         lbl = wx.StaticText(parent=G2frame.dataWindow,
             label=' Polygon masks (on plot LB vertex drag to move, RB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         for i in range(len(Polygons)):
@@ -2268,6 +2278,7 @@ def UpdateMasks(G2frame,data):
         lbl = wx.StaticText(parent=G2frame.dataWindow,
             label=' Frame mask (on plot LB vertex drag to move, RB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
         frameList = []

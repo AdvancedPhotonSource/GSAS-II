@@ -18,7 +18,6 @@ information that is shown in the data display window
 '''
 from __future__ import division, print_function
 import copy
-import wx
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
@@ -32,10 +31,17 @@ import GSASIIctrlGUI as G2G
 import GSASIIpy3 as G2py3
 import GSASIIdataGUI as G2gd
 
-WACV = wx.ALIGN_CENTER_VERTICAL
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-WHITE = wx.Colour(255,255,255)
-BLACK = wx.Colour(0,0,0)
+try:
+    import wx
+    WACV = wx.ALIGN_CENTER_VERTICAL
+    #VERY_LIGHT_GREY = wx.Colour(235,235,235)
+    #WHITE = wx.Colour(255,255,255)
+    #BLACK = wx.Colour(0,0,0)
+    VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+    WHITE = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+    BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+except:
+    pass
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 

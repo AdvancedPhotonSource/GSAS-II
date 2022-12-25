@@ -8,7 +8,8 @@ versions, for others we do find significant differences, for those we
 are currently recommending the following versions:
 
  * Python 3.10 is recommended, but 3.7 or later is fine
- * wxPython 4.1.1, but 3.0 or later should be OK
+ * wxPython 4.2, but with Python <=3.9 any wx4.x should be OK. However,
+   expect problems with Py>=3.10 and anything older than wx4.2.0
  * NumPy 1.23 recommended, but anything from 1.17 on is likely fine
  * matplotlib 3.6 is recommended, 3.4 or later preferred. 
 
@@ -38,11 +39,14 @@ GUI Requirements
 When using the GSAS-II graphical user interface (GUI), the following
 Python extension packages are required:
 
-* wxPython (http://wxpython.org/docs/api/). Note that GSAS-II has been tested with wxPython 2.8.x, 3.0.x and 4.0.x. We encourage use of 3.0 with Python 2.7 and 4.x with Python 3.x. 
+* wxPython (http://wxpython.org/docs/api/). Note that GSAS-II has been
+  tested with various wxPython versions over the years.  We encourage
+  use of 4.x with Python 3.x, but with Py>=3.10 you must use
+  wxPython 4.2.0 or later.
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
 * matplotlib (http://matplotlib.org/contents.html)  and
-* PyOpenGL (http://pyopengl.sourceforge.net/documentation). Note: a copy of this is distributed with GSAS-II (at present) and will be installed if the Python setuptools package is present. 
+* PyOpenGL (http://pyopengl.sourceforge.net/documentation). 
 
 Several Python packages are used in sections of the code, but are not
 required. If these packages are not present, warning messages may be

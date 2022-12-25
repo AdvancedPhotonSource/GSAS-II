@@ -1834,7 +1834,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        GL.glEnable(GL.GL_DEPTH_TEST)
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+        except:
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            return
 #        GL.glShadeModel(GL.GL_SMOOTH)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
@@ -9307,15 +9311,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['cameraPos'] += event.GetWheelRotation()/24.
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
         G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
+        drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
+                G2frame.phaseDisplay.Zclip.SetScaledValue(drawingData['Zclip'])
+                G2frame.phaseDisplay.Zval.SetValue(drawingData['Zclip'])
+                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.
+                xmax=.99*drawingData['cameraPos']
+                G2frame.phaseDisplay.Zclip.SetScaledRange(xmin,xmax)
                 G2frame.phaseDisplay.cameraPosTxt.SetValue(drawingData['cameraPos'])
-                G2frame.phaseDisplay.cameraSlider.SetValue(drawingData['cameraPos'])
-                Zval = G2frame.phaseDisplay.Zval.result[0]
-                drawingData['Zval'] = Zval
-                G2frame.phaseDisplay.Zclip.SetValue(100.*Zval/drawingData['cameraPos'])
-                
+                G2frame.phaseDisplay.cameraSlider.SetScaledValue(drawingData['cameraPos'])
         Draw('wheel')
         
     def getSelection():
@@ -9462,7 +9468,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        GL.glEnable(GL.GL_DEPTH_TEST)
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+        except:
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            return
         GL.glShadeModel(GL.GL_SMOOTH)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
@@ -10700,7 +10710,11 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        GL.glEnable(GL.GL_DEPTH_TEST)
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+        except:
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
@@ -10954,7 +10968,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        GL.glEnable(GL.GL_DEPTH_TEST)
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+        except:
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
@@ -11414,7 +11432,11 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        GL.glEnable(GL.GL_DEPTH_TEST)
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+        except:
+            if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
+            return
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)

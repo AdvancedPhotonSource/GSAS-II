@@ -6165,8 +6165,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         '''Initializes the contents of the dataWindow panel
         '''
         self.Unbind(wx.EVT_SIZE)
-        #self.SetBackgroundColour(wx.WHITE)
-        self.SetBackgroundColour(VERY_LIGHT_GREY)  # BHT: I prefer a gray background. Makes TextCtrls stand out, but
+        #self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
+        #self.SetBackgroundColour(VERY_LIGHT_GREY)  # BHT: I prefer a gray background. Makes TextCtrls stand out, but
         # a bit lighter than the splitter bar
         Sizer = self.GetSizer()
         if Sizer:
@@ -7158,7 +7158,14 @@ def UpdateNotebook(G2frame,data):
         G2frame.GPXtree.SetItemPyData(GetGPXtreeItemId(G2frame,G2frame.root,'Notebook'),data)
         if 'nt' not in os.name:
             text.AppendText('\n')
-                    
+            
+    G2frame.dataWindow.ClearData()
+    bigSizer = wx.BoxSizer(wx.VERTICAL)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
+    topSizer.Add((250,-1))
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
+    bigSizer.Add(topSizer)
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
     text.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
@@ -7166,8 +7173,12 @@ def UpdateNotebook(G2frame,data):
     for line in data:
         text.AppendText(line+"\n")
     text.AppendText('Notebook entry @ '+time.ctime()+"\n")
-    G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
-    G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
+    bigSizer.Add(text,1,wx.ALL|wx.EXPAND)
+    bigSizer.Layout()
+    bigSizer.FitInside(G2frame.dataWindow)
+    G2frame.dataWindow.SetSizer(bigSizer)
+    G2frame.dataWindow.SetDataSize()
+    G2frame.SendSizeEvent()
 
 #####  Comments ###############################################################
 def UpdateComments(G2frame,data):

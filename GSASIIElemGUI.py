@@ -91,6 +91,8 @@ class PickElement(wx.Dialog):
             #        style=wx.CB_READONLY, value=name[0])
             if sum(color)/3 < 150 and color[1] < 150: # background is mostly dark, use white letters
                 El.SetForegroundColour((255,255,255))
+            else:
+                El.SetForegroundColour((10,10,10))
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
         El.SetBackgroundColour(color)

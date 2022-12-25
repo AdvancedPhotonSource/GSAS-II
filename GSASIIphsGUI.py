@@ -76,9 +76,9 @@ try:
 except AttributeError:
     pass
 
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-WHITE = wx.Colour(255,255,255)
-BLACK = wx.Colour(0,0,0)
+VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+WHITE = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 RED = wx.Colour(255,0,0)
 WACV = wx.ALIGN_CENTER_VERTICAL
 mapDefault = G2elem.mapDefault
@@ -2021,8 +2021,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     cellSizer.Add(cellVal,0,WACV)
                     cellList.append(cellVal.GetId())
                 else:               #volume
-                    volVal = wx.TextCtrl(General,value=(fmt%(cell[7])),style=wx.TE_READONLY)
-                    volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                    volVal = G2G.ReadOnlyTextCtrl(General,value=(fmt%(cell[7])))
                     cellSizer.Add(volVal,0,WACV)
             return cellSizer
             
@@ -2046,8 +2045,7 @@ def UpdatePhaseData(G2frame,Item,data):
             elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
             for elem in generalData['AtomTypes']:
-                typTxt = wx.TextCtrl(General,value=elem,style=wx.TE_READONLY)
-                typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                typTxt = G2G.ReadOnlyTextCtrl(General,value=elem)
                 elemSizer.Add(typTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Isotope'),0,WACV)
             for elem in generalData['AtomTypes']:
@@ -2059,33 +2057,27 @@ def UpdatePhaseData(G2frame,Item,data):
                 elemSizer.Add(isoSel,1,wx.EXPAND)
             elemSizer.Add(wx.StaticText(General,label=' No. per cell'),0,WACV)
             for elem in generalData['AtomTypes']:
-                numbTxt = wx.TextCtrl(General,value='%.1f'%(generalData['NoAtoms'][elem]),
-                    style=wx.TE_READONLY)
-                numbTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                numbTxt = G2G.ReadOnlyTextCtrl(General,value='%.1f'%(generalData['NoAtoms'][elem]))
                 elemSizer.Add(numbTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Atom weight'),0,WACV)
             for wt in generalData['AtomMass']:
-                wtTxt = wx.TextCtrl(General,value='%.3f'%(wt),style=wx.TE_READONLY)
-                wtTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                wtTxt = G2G.ReadOnlyTextCtrl(General,value='%.3f'%(wt))
                 elemSizer.Add(wtTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Bond radii'),0,WACV)
             for rad in generalData['BondRadii']:
-                bondRadii = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
-                bondRadii.SetBackgroundColour(VERY_LIGHT_GREY)
+                bondRadii = G2G.ReadOnlyTextCtrl(General,value='%.2f'%(rad))
                 elemSizer.Add(bondRadii,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Angle radii'),0,WACV)
             for rad in generalData['AngleRadii']:
-                elemTxt = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
-                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemTxt = G2G.ReadOnlyTextCtrl(General,value='%.2f'%(rad))
                 elemSizer.Add(elemTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' van der Waals radii'),0,WACV)
             for rad in generalData['vdWRadii']:
-                elemTxt = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
-                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemTxt = G2G.ReadOnlyTextCtrl(General,value='%.2f'%(rad))
                 elemSizer.Add(elemTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Default color'),0,WACV)
             for R,G,B in generalData['Color']:
-                colorTxt = wx.TextCtrl(General,value='',style=wx.TE_READONLY)
+                colorTxt = G2G.ReadOnlyTextCtrl(General,value='')
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
                 elemSizer.Add(colorTxt,0,WACV)
             if generalData['Type'] == 'magnetic':
@@ -2106,15 +2098,13 @@ def UpdatePhaseData(G2frame,Item,data):
             density,mattCoeff = G2mth.getDensity(generalData)
             denSizer = wx.BoxSizer(wx.HORIZONTAL)
             denSizer.Add(wx.StaticText(General,-1,' Density: '),0,WACV)
-            denTxt = wx.TextCtrl(General,-1,'%.3f'%(density),style=wx.TE_READONLY)
-            denTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+            denTxt = G2G.ReadOnlyTextCtrl(General,-1,'%.3f'%(density))
             denSizer.Add(denTxt,0,WACV)
             mattTxt = None        
             if generalData['Type'] == 'macromolecular' and generalData['Mass'] > 0.0:
                 denSizer.Add(wx.StaticText(General,-1,' Matthews coeff.: '),
                     0,WACV)
-                mattTxt = wx.TextCtrl(General,-1,'%.3f'%(mattCoeff),style=wx.TE_READONLY)
-                mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                mattTxt = G2G.ReadOnlyTextCtrl(General,-1,'%.3f'%(mattCoeff))
                 denSizer.Add(mattTxt,0,WACV)
             return denSizer,denTxt,mattTxt
             
@@ -2330,9 +2320,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     vecSizer.Add(modVal,0,WACV)
                     Indx[modVal.GetId()] = i
                 else:
-                    modVal = wx.TextCtrl(General,value=('%.3f'%(val)),
-                        size=wx.Size(50,20),style=wx.TE_READONLY)
-                    modVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                    modVal = G2G.ReadOnlyTextCtrl(General,value=('%.3f'%(val)),
+                        size=wx.Size(50,20))
                     vecSizer.Add(modVal,0,WACV)
             if PWDR:
                 Ref = wx.CheckBox(General,label='Refine?')
@@ -8775,8 +8764,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                         minmax = [wave[0][0],1.0+wave[0][0]]
                                 waveVal = G2G.ValidatedTxtCtrl(waveData,wave[0],ival,nDig=(10,5),xmin=minmax[0],xmax=minmax[1],OnLeave=OnWavePlot)
                             else:
-                                waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
-                                waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                                waveVal = G2G.ReadOnlyTextCtrl(waveData,value='%.5f'%(val))
                             Waves.Add(waveVal,0,WACV)
                             if len(wave[0]) > 6 and ival == 5:
                                 Waves.Add((5,5),0)
@@ -10085,33 +10073,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         
 #### Draw Options page ################################################################################
     def UpdateDrawOptions():
-        import wx.lib.colourselect as wcs
         def SlopSizer(): 
-            
-            def OnCameraPosTxt(invalid,value,tc):
-                cameraPos.SetValue(drawingData['cameraPos'])
-                drawingData['Zclip'] = min(100.*Zval.result[0]/drawingData['cameraPos'],99.)
-                Zclip.SetValue(drawingData['Zclip'])
+            def OnCameraPos():
+                drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
+                Zclip.SetScaledValue(drawingData['Zclip'])
+                Zval.SetValue(drawingData['Zclip'])
+                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.
+                xmax=.99*drawingData['cameraPos']
+                Zclip.SetScaledRange(xmin,xmax)
                 G2plt.PlotStructure(G2frame,data)
-                
-            def OnCameraPos(event):
-                drawingData['cameraPos'] = cameraPos.GetValue()
-                cameraPosTxt.SetValue(drawingData['cameraPos'])
-                drawingData['Zclip'] = min(100.*Zval.result[0]/drawingData['cameraPos'],99.)
-                Zclip.SetValue(drawingData['Zclip'])
-                G2plt.PlotStructure(G2frame,data)
-
-            def OnZclip(event):
-                drawingData['Zclip'] = Zclip.GetValue()
-                Zclip.SetValue(drawingData['Zclip'])
-                Zval.SetValue(drawingData['Zclip']*drawingData['cameraPos']/100.)
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnZclipVal(invalid,value,tc):
-                drawingData['Zclip'] = value*100./drawingData['cameraPos']
-                Zclip.SetValue(drawingData['Zclip'])
-                G2plt.PlotStructure(G2frame,data)
-                
             def OnMoveZ(event):
                 move = MoveZ.GetValue()*drawingData['Zstep']
                 MoveZ.SetValue(0)
@@ -10123,52 +10093,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawingData['viewPoint'][0] = VP
                 panel = drawOptions.GetChildren()
                 names = [child.GetName() for child in panel]
-                panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))                
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnVdWScaleTxt(invalid,value,tc):
-                vdwScale.SetValue(100.*value)
-                G2plt.PlotStructure(G2frame,data)                
-                
-            def OnVdWScale(event):
-                drawingData['vdwScale'] = vdwScale.GetValue()/100.
-                vdwScaleTxt.SetValue(drawingData['vdwScale'])
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnEllipseProbTxt(invalid,value,tc):
-                ellipseProb.SetValue(100.*value)
-                G2plt.PlotStructure(G2frame,data)                
-    
-            def OnEllipseProb(event):
-                drawingData['ellipseProb'] = ellipseProb.GetValue()
-                ellipseProbTxt.SetValue(drawingData['ellipseProb'])
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnBallScaleTxt(invalid,value,tc):
-                ballScale.SetValue(100.*value)
-                G2plt.PlotStructure(G2frame,data)
-    
-            def OnBallScale(event):
-                drawingData['ballScale'] = ballScale.GetValue()/100.
-                ballScaleTxt.SetValue(drawingData['ballScale'])
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnBondRadiusTxt(invalid,value,tc):
-                bondRadius.SetValue(100.*value)
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnBondRadius(event):
-                drawingData['bondRadius'] = bondRadius.GetValue()/100.
-                bondRadiusTxt.SetValue(drawingData['bondRadius'])
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnMagMultTxt(invalid,value,tc):
-                magMult.SetValue(100.*value)
-                G2plt.PlotStructure(G2frame,data)
-
-            def OnMagMult(event):
-                drawingData['magMult'] = magMult.GetValue()/100.
-                magMultTxt.SetValue(drawingData['magMult'])
+                panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnRadFactor(invalid,value,tc):
@@ -10179,28 +10104,27 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             slideSizer = wx.FlexGridSizer(0,3,0,0)
             slideSizer.AddGrowableCol(2,1)
             valSize = (50,20)
-    
-            slideSizer.Add(wx.StaticText(drawOptions,label=' Camera Distance, '+Angstr+': '),0,WACV)
-            cameraPosTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'cameraPos',nDig=(10,2),xmin=10.,
-                    xmax=500.,OnLeave=OnCameraPos,size=valSize)
+
+            cameraPosTxt,cameraPos = G2G.G2SliderWidget(
+                drawOptions,drawingData,'cameraPos',
+                sizer=slideSizer,
+                nDig=(10,1),xmin=10.,xmax=500.,size=valSize,
+                label=' Camera Distance, '+Angstr+': ',iscale=5.,
+                onChange=OnCameraPos)
             G2frame.phaseDisplay.cameraPosTxt = cameraPosTxt
-            slideSizer.Add(cameraPosTxt,0,WACV)
-            cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],
-                minValue=10,maxValue=500,name='cameraSlider')
-            cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
             G2frame.phaseDisplay.cameraSlider = cameraPos
-            slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
-            
-            ZclipTxt = wx.StaticText(drawOptions,wx.ID_ANY,' Z clipping, '+Angstr+': ')
-            slideSizer.Add(ZclipTxt,0,WACV)
-            Zval = G2G.ValidatedTxtCtrl(drawOptions,ZclipVal,0,nDig=(10,2),xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
-                    xmax=.99*drawingData['cameraPos'],size=valSize,OnLeave=OnZclipVal)
+
+            Zval,Zclip = G2G.G2SliderWidget(
+                drawOptions,drawingData,'Zclip',
+                sizer=slideSizer,size=valSize,
+                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
+                xmax=.99*drawingData['cameraPos'],
+                nDig=(10,2),
+                label=' Z clipping, '+Angstr+': ',iscale=50.,
+                onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
             G2frame.phaseDisplay.Zval = Zval
-            slideSizer.Add(Zval)
-            Zclip = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'],minValue=1,maxValue=99)
             G2frame.phaseDisplay.Zclip = Zclip
-            Zclip.Bind(wx.EVT_SLIDER, OnZclip)
-            slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
+            OnCameraPos()
             
             slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Z step, '+Angstr+': '),0,WACV)
             Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0,size=valSize)
@@ -10214,46 +10138,47 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             MoveSizer.Add(MoveZ)
             slideSizer.Add(MoveSizer,1,wx.EXPAND|wx.RIGHT)
             
-            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' van der Waals scale: '),0,WACV)
-            vdwScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=1.0,size=valSize,OnLeave=OnVdWScaleTxt)
-            slideSizer.Add(vdwScaleTxt,0,WACV)
-            vdwScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
-            vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
-            slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
-    
-            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Ellipsoid probability, %: '),0,WACV)
-            ellipseProbTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ellipseProb',nDig=(10,2),xmin=1,xmax=99,size=valSize,OnLeave=OnEllipseProbTxt)
-            slideSizer.Add(ellipseProbTxt,0,WACV)
-            ellipseProb = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
-            ellipseProb.SetRange(1,99)
-            ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
-            slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
-    
-            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Ball scale: '),0,WACV)
-            ballScaleTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'ballScale',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBallScaleTxt)
-            slideSizer.Add(ballScaleTxt,0,WACV)
-            ballScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
-            ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
-            slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
-            
-            slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Bond radius, '+Angstr+': '),0,WACV)
-            bondRadiusTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'bondRadius',nDig=(10,2),xmin=0.01,xmax=0.99,size=valSize,OnLeave=OnBondRadiusTxt)
-            slideSizer.Add(bondRadiusTxt,0,WACV)
-            bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']),minValue=1,maxValue=25)
-            bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
-            slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
-            
+            G2G.G2SliderWidget(
+                drawOptions,drawingData,'vdwScale',
+                sizer=slideSizer,size=valSize,
+                xmin=0.01, xmax=1.0,
+                nDig=(10,3),iscale=50.,
+                label=' van der Waals scale: ',
+                onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
+            G2G.G2SliderWidget(
+                drawOptions,drawingData,'ellipseProb',
+                sizer=slideSizer,size=valSize,
+                xmin=1, xmax=99,
+                nDig=(10,2),iscale=2.,
+                label=' Ellipsoid probability, %: ',
+                onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
+            G2G.G2SliderWidget(
+                drawOptions,drawingData,'ballScale',
+                sizer=slideSizer,size=valSize,
+                xmin=0.01, xmax=0.99,
+                nDig=(10,3),iscale=100.,
+                label=' Ball scale: ',
+                onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
+            G2G.G2SliderWidget(
+                drawOptions,drawingData,'bondRadius',
+                sizer=slideSizer,size=valSize,
+                xmin=0.01, xmax=0.25,
+                nDig=(10,2),iscale=500.,
+                label=' Bond radius, '+Angstr+': ',
+                onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
             if generalData['Type'] == 'magnetic':
-                slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Mag. mom. mult.: '),0,WACV)
-                magMultTxt = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'magMult',nDig=(10,2),xmin=0.1,xmax=5.,size=valSize,OnLeave=OnMagMultTxt)
-                slideSizer.Add(magMultTxt,0,WACV)
-                magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']),minValue=10,maxValue=500)
-                magMult.Bind(wx.EVT_SLIDER, OnMagMult)
-                slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
+                G2G.G2SliderWidget(
+                    drawOptions,drawingData,'magMult',
+                    sizer=slideSizer,size=valSize,
+                    xmin=0.1, xmax=1.2,
+                    nDig=(10,2),iscale=100.,
+                    label=' Mag. mom. mult.: ',
+                    onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
                         
             slideSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,' Bond search factor: '),0,WACV)
             slideSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',
                 nDig=(10,2),xmin=0.1,xmax=1.2,size=valSize,OnLeave=OnRadFactor),0,WACV)
+            slideSizer.Add((-1,-1))
 
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
@@ -10261,11 +10186,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             return slopSizer
             
         def ShowSizer():
-            
-            def OnBackColor(event):
-                drawingData['backColor'] = list(event.GetValue())[:3]
-                G2plt.PlotStructure(G2frame,data)
-    
             def OnShowABC(event):
                 drawingData['showABC'] = showABC.GetValue()
                 G2plt.PlotStructure(G2frame,data)
@@ -10373,8 +10293,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(drawOptions,label=' Background color:'),0,WACV)
-            backColor = wcs.ColourSelect(drawOptions,colour=drawingData['backColor'],size=wx.Size(25,25))
-            backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
+            backColor = G2G.setColorButton(drawOptions,drawingData, 'backColor',
+                                       G2plt.PlotStructure,[G2frame,data])
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
@@ -10510,10 +10430,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             def OnPhase(invalid,value,tc):
                 G2plt.PlotStructure(G2frame,data)
             
-            def OnPlaneColor(event):
-                drawingData['Plane'][4] = list(event.GetValue())[:3]
-                G2plt.PlotStructure(G2frame,data)
-
             planeSizer = wx.BoxSizer(wx.VERTICAL)
             planeSizer1 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
@@ -10536,8 +10452,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             phase = G2G.ValidatedTxtCtrl(drawOptions,drawingData['Plane'],3,nDig=(10,2),OnLeave=OnPhase)
             planeSizer2.Add(phase,0,WACV)
             planeSizer2.Add(wx.StaticText(drawOptions,-1,' Plane color: '),0,WACV)
-            planeColor = wcs.ColourSelect(drawOptions, -1,colour=drawingData['Plane'][4],size=wx.Size(25,25))
-            planeColor.Bind(wcs.EVT_COLOURSELECT, OnPlaneColor)
+            planeColor = G2G.setColorButton(drawOptions,drawingData['Plane'], 4,
+                                       G2plt.PlotStructure,[G2frame,data])
             planeSizer2.Add(planeColor,0,WACV)
             planeSizer.Add(planeSizer1)
             planeSizer.Add(planeSizer2)
@@ -10573,7 +10489,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
-        ZclipVal = [drawingData['Zclip']*drawingData['cameraPos']/100.,]
         SetDrawingDefaults(drawingData)        
 
         G2frame.GetStatusBar().SetStatusText('Add h or v to View Dir to set vector horizontal or vertical',1)

@@ -2171,10 +2171,13 @@ def UpdateRestraints(G2frame,data,phaseName):
     try:
         phasedata = G2frame.GetPhaseData()[phaseName]
     except KeyError:        #delete unknown or previously deleted phases from Restraints
-        rId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-        pId = G2gd.GetGPXtreeItemId(G2frame,rId,phaseName)
-        G2frame.GPXtree.Delete(pId)
+        # deleting phase without refresh can cause wx to crash
+        #rId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        #pId = G2gd.GetGPXtreeItemId(G2frame,rId,phaseName)
+        #G2frame.GPXtree.Delete(pId)
         print('Unknown phase '+phaseName+' is deleted from Restraints')
+        G2frame.dataWindow.GetSizer().Add(
+            wx.StaticText(G2frame.dataWindow,-1,' Phase does not exist'),0)
         return
     restrData = data[phaseName]
     if 'Bond' not in restrData:

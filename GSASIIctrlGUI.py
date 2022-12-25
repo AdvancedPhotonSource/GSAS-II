@@ -190,11 +190,9 @@ if sys.version_info[0] >= 3:
     basestring = str
 
 # Define a short names for convenience
-WHITE = (255,255,255)
 DULL_YELLOW = (230,230,190)
 # Don't depend on wx, for scriptable
 try:
-    VERY_LIGHT_GREY = wx.Colour(235,235,235)
     WACV = wx.ALIGN_CENTER_VERTICAL
     wxaui_NB_TOPSCROLL = wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_SCROLL_BUTTONS
 except:     # Don't depend on GUI
@@ -444,6 +442,18 @@ class G2TreeCtrl(wx.TreeCtrl):
             if name in self.ExposedItems: self.Expand(item)
             item, cookie = self.GetNextChild(self.root, cookie)
 
+def ReadOnlyTextCtrl(*args,**kwargs):
+    '''Create a read-only TextCtrl for display of constants
+    This is probably not ideal as it mixes visual cues, but it does look nice.
+    Addresses 4.2 bug where TextCtrl has no default size
+    '''
+    kwargs['style'] = wx.TE_READONLY
+    if wx.__version__.startswith('4.2') and 'size' not in kwargs:
+        kwargs['size'] = (105, 22)
+    Txt = wx.TextCtrl(*args,**kwargs)
+    Txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+    return Txt
+            
 #### TextCtrl that stores input as entered with optional validation ################################################################################
 class ValidatedTxtCtrl(wx.TextCtrl):
     '''Create a TextCtrl widget that uses a validator to prevent the
@@ -739,7 +749,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetInsertionPoint(ins) # put insertion point back 
         else: # valid input
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-            self.SetForegroundColour("black")
+            self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
 
     def _GetNumValue(self):
@@ -994,7 +1004,7 @@ class NumberValidator(wxValidator):
             return False
         else: # valid input
             tc.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-            tc.SetForegroundColour("black")
+            tc.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             tc.Refresh()
             return True
 
@@ -1117,8 +1127,32 @@ class ASCIIValidator(wxValidator):
             return
         return  # Returning without calling event.Skip, which eats the keystroke
 
+ci = lambda x: int(x + 0.5)  # closest integer       
+class G2Slider(wx.Slider):
+    '''Wrapper around wx.Slider widget that implements scaling
+    Also casts floats as integers to avoid py3.10+ errors
+    '''
+    def __init__(self, parent, id=wx.ID_ANY, value=0, minValue=0, maxValue=100, *arg, **kwarg):
+        wx.Slider.__init__(self, parent, id, ci(value), ci(minValue), ci(maxValue), *arg, **kwarg)
+        self.iscale = 1
+        
+    def SetScaling(self,iscale):
+        self.iscale = iscale
+        
+    def SetScaledRange(self,xmin,xmax):
+        self.SetRange(ci(xmin*self.iscale),ci(xmax*self.iscale))
+
+    def SetScaledValue(self,value):
+        wx.Slider.SetValue(self, ci(self.iscale*value))
+
+    def GetScaledValue(self):
+        return self.GetValue()/float(self.iscale)
+    
+    def SetValue(self,value):
+        wx.Slider.SetValue(self, ci(value))
+
 def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
-                       onChange=None,onChangeArgs=[]):
+                       onChange=None,onChangeArgs=[],sizer=None,nDig=None,size=None):
     '''A customized combination of a wx.Slider and a validated 
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a slider or text entry to set a value within a range.
@@ -1140,9 +1174,10 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
 
     :param float xmax: the maximum allowed valid value.
 
-    :param float iscale: number to scale values to integers which is what the 
+    :param float iscale: number to scale values to integers, which is what the 
        Scale widget uses. If the xmin=1 and xmax=4 and iscale=1 then values
-       only the values 1,2,3 and 4 can be set with the slider.
+       only the values 1,2,3 and 4 can be set with the slider. However, 
+       if iscale=2 then the values 1, 1.5, 2, 2.5, 3, 3.5 and 4 are all allowed.
 
     :param callable onChange: function to call when value is changed.
        Default is None where nothing will be called. 
@@ -1153,25 +1188,36 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
     '''
 
     def onScale(event):
-        loc[key] = vScale.GetValue()/float(iscale)
+        loc[key] = vScale.GetScaledValue()
         wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
         if onChange: onChange(*onChangeArgs)
     def onValSet(*args,**kwargs):
-        vScale.SetValue(int(0.5+iscale*loc[key]))        
+        vScale.SetScaledValue(loc[key])
         if onChange: onChange(*onChangeArgs)
     loc[key] = min(xmax,max(xmin,loc[key]))
-    hSizer = wx.BoxSizer(wx.HORIZONTAL)
+    if sizer is None:
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+    else:
+        hSizer = sizer
     hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    vScale = wx.Slider(parent,style=wx.SL_HORIZONTAL,value=int(0.5+iscale*loc[key]))
-    vScale.SetRange(int(0.5+xmin*iscale),int(0.5+xmax*iscale))
+    vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,value=int(0.5+iscale*loc[key]))
+    vScale.SetScaling(iscale)
+    vScale.SetScaledValue(loc[key])
+    vScale.SetScaledRange(xmin,xmax)
     vScale.Bind(wx.EVT_SLIDER, onScale)
-    hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    vEntry = ValidatedTxtCtrl(parent,loc,key,
-                nDig=(10,int(0.9+np.log10(iscale))),OnLeave=onValSet,
-                xmin=xmin,xmax=xmax,typeHint=float)
-    hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-    return hSizer
-
+    if nDig is None:
+        nDig = (10,int(0.9+np.log10(iscale)))
+    vEntry = ValidatedTxtCtrl(parent,loc,key,nDig=nDig,OnLeave=onValSet,
+                xmin=xmin,xmax=xmax,typeHint=float,size=size)
+    if sizer is None:
+        hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+        return hSizer
+    else:
+        hSizer.Add(vEntry,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
+        hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        return vEntry,vScale
+    
 def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
                        onChange=None,onChangeArgs=[],hsize=35):
     '''A customized combination of a wx.SpinButton and a validated 
@@ -2619,7 +2665,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
     txtSizer = wx.BoxSizer(wx.VERTICAL)
     txt = wx.StaticText(spanel,wx.ID_ANY,txt)
     txt.Wrap(600)
-    txt.SetBackgroundColour(wx.WHITE)
+    txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     txtSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
     spanel.SetSizer(txtSizer)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2701,7 +2747,7 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
             s += t
             st = wx.StaticText(spanel,wx.ID_ANY,s)
             if col == 0: st.Wrap(650)  # last resort...
-            st.SetBackgroundColour(wx.WHITE)
+            st.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             txtSizer.Add(st,pos=(i,col),flag=wx.EXPAND)
         #txtSizer.AddGrowableRow(i)
     txtSizer.AddGrowableCol(0)  #to fill screen
@@ -3716,7 +3762,7 @@ class OrderBox(wxscroll.ScrolledPanel):
                 self.maxcol = max(self.maxcol, max(posdict))
         wxscroll.ScrolledPanel.__init__(self,parent,wx.ID_ANY,*arg,**kw)
         self.GBsizer = wx.GridBagSizer(4,4)
-        self.SetBackgroundColour(WHITE)
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.SetSizer(self.GBsizer)
         colList = [str(i) for i in range(self.maxcol+2)]
         for i in range(self.maxcol+1):
@@ -3730,7 +3776,7 @@ class OrderBox(wxscroll.ScrolledPanel):
             for col in posdict:
                 lbl = posdict[col]
                 pnl = wx.Panel(self,wx.ID_ANY)
-                pnl.SetBackgroundColour(VERY_LIGHT_GREY)
+                pnl.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
                 insize = wx.BoxSizer(wx.VERTICAL)
                 wid = wx.Choice(pnl,wx.ID_ANY,choices=colList)
                 insize.Add(wid,0,wx.EXPAND|wx.BOTTOM,3)
@@ -5722,17 +5768,14 @@ class HelpButton(wx.Button):
         if self.helpIndex:
             ShowHelp(self.helpIndex,self.parent)
             return
-        #dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
         self.dlg = wx.Dialog(self.parent,wx.ID_ANY,'Help information', 
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        #self.dlg.SetBackgroundColour(wx.WHITE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         txt = wx.StaticText(self.dlg,wx.ID_ANY,self.msg)
         if self.wrap:
             txt.Wrap(self.wrap)
         mainSizer.Add(txt,1,wx.ALL|wx.EXPAND,10)
-        txt.SetBackgroundColour(wx.WHITE)
-
+        txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self.dlg, wx.ID_CLOSE) 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
@@ -6175,7 +6218,6 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
         [['-1'],[" a = "," b = "," c = ",u" \u03B1 = ",u" \u03B2 = ",u" \u03B3 = "],
              ["{:.5f}","{:.5f}","{:.5f}","{:.3f}","{:.3f}","{:.3f}"],[0,1,2,3,4,5]]
         ]
-    VERY_LIGHT_GREY = wx.Colour(235,235,235)
     cellList = []
     if SGData is None:
         laue = '-1'
@@ -6209,7 +6251,7 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
     cellSizer.Add(wx.StaticText(frame,label=' Vol = '),(row,volCol))
     if editAllowed:
         volVal = wx.TextCtrl(frame,value=('{:.2f}'.format(cell[6])),style=wx.TE_READONLY)
-        volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+        volVal.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         cellSizer.Add(volVal,(row,volCol+1))
     else:
         cellSizer.Add(wx.StaticText(frame,label='{:.2f}'.format(cell[6])),(row,volCol+1))
@@ -8828,6 +8870,32 @@ class gpxFileSelector(wx.Dialog):
         else:
             return "{:.1f} minutes".format(delta/60)
 
+def setColorButton(parent,array,key,callback=None,callbackArgs=[]):
+    '''Define a button for setting colors
+    This bypasses the bug in wx4.1.x in ColourSelect
+    '''
+    import wx.lib.colourselect as wcs
+    def OnColor(event):
+        array[key] = list(event.GetValue())[:3]
+        if callback: callback(*callbackArgs)
+    def onSetColour(event):
+        dlg = wx.ColourDialog(parent.GetTopLevelParent())
+        try:
+            dlg.GetColourData().SetChooseFull(True)
+            dlg.GetColourData().SetColour(array[key])
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetColourData()
+                array[key] = data.GetColour().Get()
+                print('OK',array[key])
+        finally:
+            dlg.Destroy()    
+    if wx.__version__.startswith('4.1'):
+        colorButton = wx.Button(parent,wx.ID_ANY,'Set')
+        colorButton.Bind(wx.EVT_BUTTON, onSetColour)
+    else:
+        colorButton = wcs.ColourSelect(parent,colour=array[key],size=wx.Size(25,25))
+        colorButton.Bind(wcs.EVT_COLOURSELECT, OnColor)
+    return colorButton
     
 if __name__ == '__main__':
     app = wx.App()

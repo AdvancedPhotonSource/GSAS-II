@@ -10081,6 +10081,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.
                 xmax=.99*drawingData['cameraPos']
                 Zclip.SetScaledRange(xmin,xmax)
+                Zval.Validator.xmin = xmin
+                Zval.Validator.xmax = xmax
                 G2plt.PlotStructure(G2frame,data)
             def OnMoveZ(event):
                 move = MoveZ.GetValue()*drawingData['Zstep']

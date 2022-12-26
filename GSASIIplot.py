@@ -262,7 +262,9 @@ try:
     oldpaired_r = mpl.colors.LinearSegmentedColormap('GSPaired_r',Old_Paired_data_r,N=256)
     mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   
 except Exception as err:
-    print(u'error: {}'.format(err))
+    pass
+#    print(u'error: {}'.format(err))
+
 # options for publication-quality Rietveld plots
 plotOpt = {}
 plotOpt['labelSize'] = '11'

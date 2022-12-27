@@ -70,20 +70,23 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
 * conda: the conda package allows access to conda features from
   inside Python. It will be used increasingly by GSAS-II to
   self-install software. The conda package is installed by default in
-  miniconda and anaconda but if you create an environment for GSAS-II
+  miniconda and anaconda, but if you create an environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
-  unless you request it specifically.  
+  unless you request it specifically but is helpful to have to allow
+  GSAS-II to install some codes. 
 
-The following are conda package is used in GSAS-II but is not
-actually a Python package.
+The following conda package is used where possible in GSAS-II but provides a
+command-line tool rather than a Python package.
   
 * svn (or subversion): the GSAS-II code works much better when
   subversion is available to install and update the GSAS-II
-  code. Technically it is optional, but is not easy to bypass. The
-  Anaconda distribution once provided this, but does this no longer. With
+  code. Technically having subversion is optional, but not having it
+  has a big impact on GSAS-II. The
+  Anaconda distribution once provided this, but does so no longer. With
   the conda-forge repository we now use, it is only available for
   Linux (where it really is not needed since it is easy to install
-  there) and the package is called subversion. For MacOS and Windows, the GSAS-II
+  there) and the package is called subversion. (There is a brain-dead
+  Mac version.) For MacOS and Windows, the GSAS-II
   self-installer now provides binaries for the svn program. 
   
 *Conda command*:

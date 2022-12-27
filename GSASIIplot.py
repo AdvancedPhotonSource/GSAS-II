@@ -547,6 +547,7 @@ class G2PlotNoteBook(wx.Panel):
             new = True
             if Type == 'mpl':
                 Plot = self.addMpl(label,publish=publish).gca()
+                Plot.format_coord = lambda x,y: "" # remove coord display from toolbar
             elif Type == 'ogl':
                 Plot = self.addOgl(label)
             elif Type == '3d':

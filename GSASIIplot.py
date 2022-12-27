@@ -326,7 +326,7 @@ class G2PlotMpl(_tabPlotWin):
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,0,)
         self.SetSizer(sizer)
-    
+        
     def SetToolTipString(self,text):
         if 'phoenix' in wx.version():
             return self.canvas.SetToolTip(text)
@@ -1840,7 +1840,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         
     def SetLights():
         try:
-            GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
@@ -9474,7 +9474,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         
     def SetLights():
         try:
-            GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
@@ -9764,7 +9764,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
-        GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+            GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
         # if newTX:
         #     GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
         # else:
@@ -9778,7 +9778,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
-        
+                
     def RenderTextureSphere(x,y,z,radius,Qmat,color,shape=[20,10],Fade=None):
         global spID
         SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
@@ -10315,7 +10315,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         RenderSphere(x,y,z,radius,atColor,fade,shape=[60,30])
                 else:
-                    RenderSphere(x,y,z,radius,atColor)
+                RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
@@ -10716,7 +10716,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         
     def SetLights():
         try:
-            GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
@@ -10974,7 +10974,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         
     def SetLights():
         try:
-            GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
@@ -11438,7 +11438,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         
     def SetLights():
         try:
-            GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return

@@ -4328,13 +4328,18 @@ class GSASII(wx.Frame):
             print('no previous projects found')
             return
         sellist = []
-        for f in files:
-            dirname,filroot = os.path.split(f)
-            if os.path.exists(f) and '.gpx' in f:
-                sellist.append("{} from {}".format(filroot,dirname))
-#            else:
-#                sellist.append("not found: {}".format(f))
-        
+        keeplist = []
+        try:
+            for f in files:
+                dirname,filroot = os.path.split(f)
+                if os.path.exists(f) and '.gpx' in f:
+                    sellist.append("{} from {}".format(filroot,dirname))
+                    keeplist.append(f)
+        except:
+            print('Error processing previous project list:',files)
+        if len(keeplist) == 0:
+            GSASIIpath.SetConfigValue({'previous_GPX_files':tuple([])})
+            return
         dlg = G2G.G2SingleChoiceDialog(self,'Select previous project to open',
             'Select project',sellist)
         dlg.CenterOnParent()

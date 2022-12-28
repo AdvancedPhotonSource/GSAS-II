@@ -10837,12 +10837,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 mainSizer.Add(wx.StaticText(Texture,label=
                 " All your histograms have the same values for Omega, Chi, Phi and Azimuth.\n Texture fitting requires differing values."))
             elif len(unique) == 2:
-            mainSizer.Add(wx.StaticText(Texture,label=
+                mainSizer.Add(wx.StaticText(Texture,label=
                     " You have only two unique settings for Omega, Chi, Phi and Azimuth.\n Texture fitting requires more differing values."))
-            if textureData['Order'] or textureData['SH Coeff'][0]:
-                mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
+        if textureData['Order'] or textureData['SH Coeff'][0]:
+            mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
             '\n *** To remove this texture: Turn off refinement and set Harmonic order to zero below.\n'))
-            G2G.HorizontalLine(mainSizer,Texture)
+        G2G.HorizontalLine(mainSizer,Texture)
         
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
         titleSizer.Add(wx.StaticText(Texture,label=' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
@@ -11488,7 +11488,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
             return rbSizer
-                         
+        
         def SpnrbSizer(RBObj,spnIndx):
             '''Displays details for selected spinning rigid body'''
             
@@ -11793,7 +11793,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             except:
                 pass
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
-           
+            
         def OnSpnSelect(event):
             global prevSpnId
             prevSpnId = spnSelect.GetSelection()
@@ -11951,11 +11951,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             spnSizer.Add(spnSelect,0)            
             rbSizer.Add(spnSizer)
         mainSizer.Add(rbSizer,0,wx.EXPAND)
-            G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
+        G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
         G2frame.bottomSizer.Add(wx.StaticText(RigidBodies,label=' '))
-            mainSizer.Add(G2frame.bottomSizer)
-            G2plt.PlotStructure(G2frame,data)
-            G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
+        mainSizer.Add(G2frame.bottomSizer)
+        G2plt.PlotStructure(G2frame,data)
+        G2plt.PlotStructure(G2frame,data) # draw twice initially for mac
         if nobody:
             msg = 'Define a rigid body with the "Rigid Bodies" tree entry before adding it to the phase here'
             if RBData.get('RBIds') is None:
@@ -12124,7 +12124,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             elem = line[1]
                             x,y,z = rbObj['Orig'][0]
                         else:
-                        elem = line[0]
+                            elem = line[0]
                             x,y,z = line[2:5]
                         nextNum = len(data['Atoms'])
                         lbl = 'Rb' + elem + str(nextNum)
@@ -12154,7 +12154,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     rbObj.update(data['testRBObj']['rbData']['Spin'][rbId])
                     del rbObj['rbPos']
                 else:
-                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
                 i = 0
                 while True:     #find unique name
                     rbName = '%s:%d'%(rbObj['RBname'],i)
@@ -12545,8 +12545,8 @@ of the crystal structure.
             except:
                 rbObj['fixOrig'] = False
             if rbType != 'Spin':
-            fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
-            OriSizer.Add(fixOrig,0,WACV,10)
+                fixOrig = G2G.G2CheckBox(RigidBodies,'Lock',rbObj,'fixOrig')
+                OriSizer.Add(fixOrig,0,WACV,10)
             if not rbObj['fixOrig']:
                 origSet = wx.Button(RigidBodies,label='Set to view point')
                 origSet.Bind(wx.EVT_BUTTON,OnOrigSet)
@@ -12556,73 +12556,73 @@ of the crystal structure.
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             mainSizer.Add(sytsymtxt)
             if rbType != 'Spin':
-            OriSizer1 = wx.FlexGridSizer(0,5,5,5)
-            if len(atomData):
-                choice = list(atNames[0].keys())
-                choice.sort()
-                G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
-            mainSizer.Add(OriSizer1)
-            mainSizer.Add((5,5),0)
-            OriSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-            if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
-            rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
-            rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-            OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
-            OrientVecSiz = []
-            OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
-                xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
-            OriSizer2.Add(OrientVecSiz[-1],0,WACV)
+                OriSizer1 = wx.FlexGridSizer(0,5,5,5)
+                if len(atomData):
+                    choice = list(atNames[0].keys())
+                    choice.sort()
+                    G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
+                mainSizer.Add(OriSizer1)
+                mainSizer.Add((5,5),0)
+                OriSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+                if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
+                rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
+                rbObj['OrientVec'][1:] = np.inner(Bmat,V)
+                OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
+                OrientVecSiz = []
+                OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
+                    xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
+                OriSizer2.Add(OrientVecSiz[-1],0,WACV)
                 azSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
-                minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
-            azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
-            OriSizer2.Add(azSlide,0,WACV)
-            mainSizer.Add(OriSizer2)
-            OriSizer3 = wx.BoxSizer(wx.HORIZONTAL)
-            OriSizer3.Add(wx.StaticText(RigidBodies,label='Orientation vector'),0,WACV)
-            for ix,lbl in enumerate('xyz'):
-                OriSizer3.Add(wx.StaticText(RigidBodies,label='  '+lbl+': '),0,WACV)
-                OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],ix+1,nDig=(10,4),
-                    xmin=-1.,xmax=1.,typeHint=float,OnLeave=UpdateOrientation))
-                OriSizer3.Add(OrientVecSiz[-1],0,WACV)
-            OrientVecSiz.append(azSlide)
-            OriSizer3.Add(wx.StaticText(RigidBodies,label=' (frac coords)'),0,WACV)
-            G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
-            mainSizer.Add(OriSizer3)
-            mainSizer.Add((5,5),0)
-            OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
-            OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
-            choices = ['None']+RBdirlbl
-            symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
-            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-            OriSizer4.Add(symRadioSet)
-            mainSizer.Add(OriSizer4)
-            mainSizer.Add((5,5),0)
-            RefSizer = wx.FlexGridSizer(0,7,5,5)
-            mainSizer.Add(RefSizer)
-            mainSizer.Add((5,5),0)
-            if Torsions:                    
-                rbSeq = RBData['Residue'][rbId]['rbSeq']
-                TorSizer = wx.FlexGridSizer(0,4,5,5)
-                TorSizer.AddGrowableCol(1,1)
-                for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
-                    torName = ''
-                    for item in [seq[0],seq[1],seq[3][0]]:
-                        if data['testRBObj']['NameLookup'][item]:
-                            torName += data['testRBObj']['NameLookup'][item]+' '
-                        else:
-                            torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
-                    TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
+                    minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
+                azSlide.Bind(wx.EVT_SLIDER, OnAzSlide)
+                OriSizer2.Add(azSlide,0,WACV)
+                mainSizer.Add(OriSizer2)
+                OriSizer3 = wx.BoxSizer(wx.HORIZONTAL)
+                OriSizer3.Add(wx.StaticText(RigidBodies,label='Orientation vector'),0,WACV)
+                for ix,lbl in enumerate('xyz'):
+                    OriSizer3.Add(wx.StaticText(RigidBodies,label='  '+lbl+': '),0,WACV)
+                    OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],ix+1,nDig=(10,4),
+                        xmin=-1.,xmax=1.,typeHint=float,OnLeave=UpdateOrientation))
+                    OriSizer3.Add(OrientVecSiz[-1],0,WACV)
+                OrientVecSiz.append(azSlide)
+                OriSizer3.Add(wx.StaticText(RigidBodies,label=' (frac coords)'),0,WACV)
+                G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
+                mainSizer.Add(OriSizer3)
+                mainSizer.Add((5,5),0)
+                OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
+                OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
+                choices = ['None']+RBdirlbl
+                symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
+                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                OriSizer4.Add(symRadioSet)
+                mainSizer.Add(OriSizer4)
+                mainSizer.Add((5,5),0)
+                RefSizer = wx.FlexGridSizer(0,7,5,5)
+                mainSizer.Add(RefSizer)
+                mainSizer.Add((5,5),0)
+                if Torsions:                    
+                    rbSeq = RBData['Residue'][rbId]['rbSeq']
+                    TorSizer = wx.FlexGridSizer(0,4,5,5)
+                    TorSizer.AddGrowableCol(1,1)
+                    for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
+                        torName = ''
+                        for item in [seq[0],seq[1],seq[3][0]]:
+                            if data['testRBObj']['NameLookup'][item]:
+                                torName += data['testRBObj']['NameLookup'][item]+' '
+                            else:
+                                torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
+                        TorSizer.Add(wx.StaticText(RigidBodies,label='Side chain torsion for rb seq: '+torName),0,WACV)
                         torSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,minValue=0,maxValue=3600,value=int(torsion[0]*10.))
-                    torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
-                    TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
-                    TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)
-                    ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
-                    Indx[torSlide.GetId()] = [t,ang]
-                    Indx[ang.GetId()] = [t,torSlide]
-                    TorSizer.Add(ang,0,WACV)                            
-                mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
-            else:
-                mainSizer.Add(wx.StaticText(RigidBodies,label='No side chain torsions'),0)
+                        torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
+                        TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
+                        TorSizer.Add(wx.StaticText(RigidBodies,label=' Angle: '),0,WACV)
+                        ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
+                        Indx[torSlide.GetId()] = [t,ang]
+                        Indx[ang.GetId()] = [t,torSlide]
+                        TorSizer.Add(ang,0,WACV)                            
+                    mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
+                else:
+                    mainSizer.Add(wx.StaticText(RigidBodies,label='No side chain torsions'),0)
                 
             OkBtn = wx.Button(RigidBodies,label="Add")
             OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
@@ -12655,7 +12655,7 @@ of the crystal structure.
             if rbType != 'Spin':
                 mainSizer.Add(wx.StaticText(RigidBodies,label=' Spinning rigid body:'),0)
             else:
-            mainSizer.Add(wx.StaticText(RigidBodies,label=
+                mainSizer.Add(wx.StaticText(RigidBodies,label=
                     'Match between atoms in rigid body and crystal. Use assignments to align bodies.'),0)
             mainSizer.Add((5,5))
             gridSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -12677,7 +12677,7 @@ of the crystal structure.
                         displayTable.append([l[1],-1,l[1]+str(i),-1,'Create new'])
                         Actions = False
                     else:
-                    displayTable.append([l[0],l[5],l[6],l[10],lbl])
+                        displayTable.append([l[0],l[5],l[6],l[10],lbl])
             Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_NUMBER,
                      wg.GRID_VALUE_STRING, wg.GRID_VALUE_FLOAT+':8,3',wg.GRID_VALUE_STRING]
             RigidBodies.atomsTable = G2G.Table(displayTable,rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -12826,14 +12826,14 @@ of the crystal structure.
             rbRef = RBData[rbType][rbId].get('rbRef',[])    #get only for spinning RBs
             data['testRBObj']['rbRef'] = rbRef
         else:
-        data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
-        data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
-        data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
-        data['testRBObj']['rbType'] = rbType
-        data['testRBObj']['rbData'] = RBData
-        data['testRBObj']['Sizers'] = {}
-        rbRef = RBData[rbType][rbId]['rbRef']
-        data['testRBObj']['rbRef'] = rbRef
+            data['testRBObj']['rbAtTypes'] = RBData[rbType][rbId]['rbTypes']
+            data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            data['testRBObj']['rbType'] = rbType
+            data['testRBObj']['rbData'] = RBData
+            data['testRBObj']['Sizers'] = {}
+            rbRef = RBData[rbType][rbId]['rbRef']
+            data['testRBObj']['rbRef'] = rbRef
         refType = []
         #refName = []
         for ref in rbRef[:3]:

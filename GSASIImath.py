@@ -1332,14 +1332,15 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     :returns: coordinates for rigid body as XYZ,Cart where XYZ is 
        the location in crystal coordinates and Cart is in cartesian
     '''
-    RBRes = RBData[RBType][RBObj['RBId']]
     if RBType == 'Vector':
+        RBRes = RBData[RBType][RBObj['RBId']]
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
         Cart = np.zeros_like(vecs[0])
         for vec,mag in zip(vecs,mags):
             Cart += vec*mag
     elif RBType == 'Residue':
+        RBRes = RBData[RBType][RBObj['RBId']]
         Cart = np.array(RBRes['rbXYZ'])
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])

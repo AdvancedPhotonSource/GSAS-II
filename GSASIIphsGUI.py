@@ -10078,16 +10078,28 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
     def UpdateDrawOptions():
         def SlopSizer(): 
             def OnCameraPos():
-                drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
+                #old code
+                # drawingData['cameraPos'] = cameraPos.GetValue()
+                # cameraPosTxt.SetLabel(' Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
+                # Zclip.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                #new code
+#                drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
                 Zclip.SetScaledValue(drawingData['Zclip'])
                 Zval.SetValue(drawingData['Zclip'])
-                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.
-                xmax=.99*drawingData['cameraPos']
+                xmin=1.0    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.
+                xmax=2.*drawingData['cameraPos']
                 Zclip.SetScaledRange(xmin,xmax)
+                Zclip.SetMax(xmax)
                 Zval.Validator.xmin = xmin
                 Zval.Validator.xmax = xmax
+                #end new code
                 G2plt.PlotStructure(G2frame,data)
+                
             def OnMoveZ(event):
+                #old code
+                # drawingData['Zclip'] = Zclip.GetValue()
+                # Zclip.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                #new code
                 move = MoveZ.GetValue()*drawingData['Zstep']
                 MoveZ.SetValue(0)
                 VP = np.inner(Amat,np.array(drawingData['viewPoint'][0]))
@@ -10099,6 +10111,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 panel = drawOptions.GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
+                #end new code
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnRadFactor(invalid,value,tc):
@@ -10113,7 +10126,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             cameraPosTxt,cameraPos = G2G.G2SliderWidget(
                 drawOptions,drawingData,'cameraPos',
                 sizer=slideSizer,
-                nDig=(10,1),xmin=10.,xmax=500.,size=valSize,
+                nDig=(10,1),xmin=5.,xmax=500.,size=valSize,
                 label=' Camera Distance, '+Angstr+': ',iscale=5.,
                 onChange=OnCameraPos)
             G2frame.phaseDisplay.cameraPosTxt = cameraPosTxt
@@ -10122,8 +10135,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Zval,Zclip = G2G.G2SliderWidget(
                 drawOptions,drawingData,'Zclip',
                 sizer=slideSizer,size=valSize,
-                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
-                xmax=.99*drawingData['cameraPos'],
+                xmin=1.0,    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.,
+                xmax=2.*drawingData['cameraPos'],
                 nDig=(10,2),
                 label=' Z clipping, '+Angstr+': ',iscale=50.,
                 onChange=G2plt.PlotStructure,onChangeArgs=[G2frame,data])
@@ -10390,6 +10403,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawingData['showMap'] = showMap.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
+            valSize = (50,20)
             mapSizer = wx.BoxSizer(wx.VERTICAL)
             showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
             showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
@@ -10397,9 +10411,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             mapSizer.Add(showMap,0)
             mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'contourLevel',
                 'Max relative to rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),
-                0.01,1.0,100,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
+                0.01,1.0,100,size=valSize,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
             mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
-                'Range of map surrounding view point: ',0.1,10.,10.,
+                'Range of map surrounding view point: ',0.1,10.,10.,size=valSize,
                 onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:  '),0,WACV)
@@ -11513,8 +11527,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
                 RBdata = G2frame.GPXtree.GetItemPyData(RBId)
                 rbNames = []
+                rbIds = {}
                 for item in RBdata.get('Spin',[]):
-                    rbNames.append(item['RBname'])
+                    name = RBdata['Spin'][item]['RBname']
+                    rbNames.append(name)
+                    rbIds[name] = item
                 if len(rbNames) == 1:
                     selection = rbNames[0]
                 else:
@@ -11530,23 +11547,31 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             return
                     finally:
                         dlg.Destroy()
-                    print('Add shell - TBD',selection)
+                    rbData = RBdata['Spin'][rbIds[selection]]
+                    data['RBModels']['Spin'][-1]['RBId'].append(rbIds[selection])
+                    data['RBModels']['Spin'][-1]['SHC'].append({})
+                    for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
+                        data['RBModels']['Spin'][-1][name].append(rbData[name])
+                    wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                         
                 
             def SHsizer():
                 def OnSHOrder(event):
-                    RBObj['nSH'] = int(shOrder.GetValue())
-                    RBObj['SHC'] = SetSHCoef(RBObj['nSH'])
+                    Obj = event.GetEventObject()
+                    iSh = Indx[Obj.GetId()]
+                    RBObj['nSH'][iSh] = int(shOrder.GetValue())
+                    RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
+                    G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                     
-                def SetSHCoef(Order):
+                def SetSHCoef(iSh,Order):
                     SGData = data['General']['SGData']
                     Sytsym = G2spc.SytSym(RBObj['Orig'][0],SGData)[0]
                     cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,Order)
                     cofNames,cofSgns = G2lat.RBsymChk(RBObj['RBsym'],cofNames)
                     cofTerms = [[0.0,val,False] for val in cofSgns]
                     newSHcoef = dict(zip(cofNames,cofTerms))
-                    SHcoef = RBObj['SHC']
+                    SHcoef = RBObj['SHC'][iSh]
                     for cofName in SHcoef:      #transfer old values to new set
                         if cofName in cofNames:
                             newSHcoef[cofName] = SHcoef[cofName]
@@ -11554,46 +11579,69 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 
                 def OnSchRef(event):
                     Obj = event.GetEventObject()
-                    name = Indx[Obj.GetId()]
-                    RBObj['SHC'][name][2] = not RBObj['SHC'][name][2]
+                    iSh,name = Indx[Obj.GetId()]
+                    RBObj['SHC'][iSh][name][2] = not RBObj['SHC'][iSh][name][2]
                 
                 def NewSHC(invalid,value,tc):
                     G2plt.PlotStructure(G2frame,data)
                     
+                def OnDelShell(event):
+                    Obj = event.GetEventObject()
+                    iSh = Indx[Obj.GetId()]
+                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
+                        del RBObj[name][iSh]
+                    G2plt.PlotStructure(G2frame,data)
+                    wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
+                    
+                #patch
+                if RBObj['SHC'] == {}:
+                    RBObj['SHC'] = [{},]
+                #end patch
                 shSizer = wx.BoxSizer(wx.VERTICAL)
-                shoSizer = wx.BoxSizer(wx.HORIZONTAL)
-                shoSizer.Add(wx.StaticText(RigidBodies,label=' Bessel/Harmonic order: '),0,WACV)
-                shOrder = wx.ComboBox(RigidBodies,value=str(RBObj['nSH']),choices=[str(i) for i in range(19)],
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                shOrder.Bind(wx.EVT_COMBOBOX,OnSHOrder)
-                shoSizer.Add(shOrder,0,WACV)
-                shSizer.Add(shoSizer)
-                if not len(RBObj['SHC']):
-                    shSizer.Add(wx.StaticText(RigidBodies,
-                        label=' No harmonic terms found for this location; try different equivalent position'))
-                elif len(RBObj['SHC']) > 12:
-                    shSizer.Add(wx.StaticText(RigidBodies,
-                        label=' WARNING: More than 12 terms found; use lower harmonic order'))
-                else:
-                    shcSizer = wx.FlexGridSizer(0,9,5,5)
-                    Indx = {}
-                    for item in RBObj['SHC']:
-                        shcSizer.Add(wx.StaticText(RigidBodies,label=item))
-                        shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][item],0,nDig=(8,5),
-                            typeHint=float,size=(70,-1),OnLeave=NewSHC))
-                        schref = wx.CheckBox(RigidBodies,label=' refine? ')
-                        schref.SetValue(RBObj['SHC'][item][2])
-                        schref.Bind(wx.EVT_CHECKBOX,OnSchRef)                    
-                        Indx[schref.GetId()] = item
-                        shcSizer.Add(schref)
-                    shSizer.Add(shcSizer)
+                Indx = {}
+                for iSh,nSh in enumerate(RBObj['nSH']):
+                    if iSh:
+                        subLine = wx.BoxSizer(wx.HORIZONTAL)
+                        subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: %s '  \
+                            %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh],RBObj['RBsym'][iSh])),0,WACV)
+                        delShell = wx.Button(RigidBodies,wx.ID_ANY,'Delete shell',style=wx.BU_EXACTFIT)
+                        Indx[delShell.GetId()] = iSh
+                        delShell.Bind(wx.EVT_BUTTON,OnDelShell)
+                        subLine.Add(delShell,0,WACV)
+                        shSizer.Add(subLine)
+                    shoSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    shoSizer.Add(wx.StaticText(RigidBodies,label=' Bessel/Harmonic order: '),0,WACV)
+                    shOrder = wx.ComboBox(RigidBodies,value=str(RBObj['nSH'][iSh]),choices=[str(i) for i in range(19)],
+                        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    Indx[shOrder.GetId()] = iSh
+                    shOrder.Bind(wx.EVT_COMBOBOX,OnSHOrder)
+                    shoSizer.Add(shOrder,0,WACV)
+                    shSizer.Add(shoSizer)
+                    if not RBObj['nSH'][iSh]:
+                        shSizer.Add(wx.StaticText(RigidBodies,
+                            label=' Select harmonic order or try different equivalent position'))
+                    elif len(RBObj['SHC'][iSh]) > 12:
+                        shSizer.Add(wx.StaticText(RigidBodies,
+                            label=' WARNING: More than 12 terms found; use lower harmonic order'))
+                    else:
+                        shcSizer = wx.FlexGridSizer(0,9,5,5)
+                        for item in RBObj['SHC'][iSh]:
+                            shcSizer.Add(wx.StaticText(RigidBodies,label=item))
+                            shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][iSh][item],0,nDig=(8,5),
+                                typeHint=float,size=(70,-1),OnLeave=NewSHC))
+                            schref = wx.CheckBox(RigidBodies,label=' refine? ')
+                            schref.SetValue(RBObj['SHC'][iSh][item][2])
+                            schref.Bind(wx.EVT_CHECKBOX,OnSchRef)                    
+                            Indx[schref.GetId()] = iSh,item
+                            shcSizer.Add(schref)
+                        shSizer.Add(shcSizer)
                 return shSizer
 
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
             sprbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,
-                label='Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'],RBObj['atType'],RBObj['RBsym'])),0,WACV)
+                label='Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'][0],RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
@@ -11932,7 +11980,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             nobody = False
             RBnames = []
             for RBObj in data['RBModels']['Spin']:
-                RBnames.append(RBObj['RBname'])
+                RBnames.append(RBObj['RBname'][0])
             spnId = -1
             if prevSpnId is not None:
                 spnId = prevSpnId
@@ -12168,6 +12216,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 #     rbObj['Orig'][0] = list(rbObj['Orig'][0])    # patch: somehow this was getting set as a tuple
                 if not rbType in data['RBModels']:
                     data['RBModels'][rbType] = []
+                if rbType == 'Spin':    #convert items to lists of shells
+                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
+                        item = rbObj[name]                        
+                        rbObj[name] = [item,] 
                 data['RBModels'][rbType].append(rbObj)
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']

@@ -9316,15 +9316,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['cameraPos'] += event.GetWheelRotation()/24.
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
         G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
-        drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
+#        drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.Zclip.SetScaledValue(drawingData['Zclip'])
                 G2frame.phaseDisplay.Zval.SetValue(drawingData['Zclip'])
-                xmin=.01*drawingData['Zclip']*drawingData['cameraPos']/100.
-                xmax=.99*drawingData['cameraPos']
+                xmin=1.0    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.
+                xmax=2.0*drawingData['cameraPos']
                 G2frame.phaseDisplay.Zclip.SetScaledRange(xmin,xmax)
+                G2frame.phaseDisplay.Zclip.SetMax(xmax)
                 G2frame.phaseDisplay.cameraPosTxt.SetValue(drawingData['cameraPos'])
                 G2frame.phaseDisplay.cameraSlider.SetScaledValue(drawingData['cameraPos'])
         Draw('wheel')
@@ -10283,10 +10284,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 elif 'Q' in atom[ct]:       #spinning rigid body
                     for Srb in RBdata.get('Spin',[]):
                         if Srb == generalData['SpnIds'][atom[ci]]:
-                            radius = RBdata['Spin'][Srb]['radius'][0]
+                            radius = [RBdata['Spin'][Srb]['radius'],]
                             fade = True
                             Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
-                            atColor = Info['Color']
+                            atColor = [Info['Color'],]
                             break
                 else:
                     if 'vdW' in atom[cs]:
@@ -10295,8 +10296,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         radius = ballScale*BondRadii[atNum]
                 if 'Q' in atom[ct]:
                     SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
-                    if SpnData is not None and SpnData['nSH'] > 0:
+                    try:
+                        N = SpnData['nSH'][0]
+                    except TypeError:
+                        break
+                    if SpnData is not None:
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                        radius = SpnData['radius']
+                        atColor = SpnData['atColor']
                         Q = SpnData['Orient'][0]
                         A,V = G2mth.Q2AVdeg(Q)
                         QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
@@ -10304,16 +10311,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         Q2 = G2mth.prodQQ(QA,QR)
                         Qmat = G2mth.Q2Mat(Q2)
                         Q4mat = np.concatenate((np.concatenate((Qmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-                        SHC = SpnData['SHC']
-                        PSI,GAM = np.mgrid[0:120,0:60]   #[azm,pol]
-                        PSI = PSI.flatten()*3.  #azimuth 0-360 ncl
-                        GAM = GAM.flatten()*3.  #polar 0-180 incl
-                        P = G2lat.SHarmcal(SytSym,SHC,GAM,PSI).reshape((120,60))
-                        if np.min(P) < np.max(P):
-                            P = (P-np.min(P))/(np.max(P)-np.min(P))
-                        RenderTextureSphere(x,y,z,radius,Q4mat,atColor,shape=[120,60],Fade=P)
-                    else:
-                        RenderSphere(x,y,z,radius,atColor,fade,shape=[60,30])
+                        for ish,nSH in enumerate(SpnData['nSH']):
+                            if nSH > 0:
+                                SHC = SpnData['SHC'][ish]
+                                PSI,GAM = np.mgrid[0:120,0:60]   #[azm,pol]
+                                PSI = PSI.flatten()*3.  #azimuth 0-360 ncl
+                                GAM = GAM.flatten()*3.  #polar 0-180 incl
+                                P = G2lat.SHarmcal(SytSym,SHC,GAM,PSI).reshape((120,60))
+                                if np.min(P) < np.max(P):
+                                    P = (P-np.min(P))/(np.max(P)-np.min(P))
+                                RenderTextureSphere(x,y,z,radius[ish][0],Q4mat,atColor[ish],shape=[120,60],Fade=P)
+                        else:
+                            RenderSphere(x,y,z,radius[ish][0],atColor[ish],fade,shape=[60,30])
                 else:
                     RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:

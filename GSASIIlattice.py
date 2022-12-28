@@ -2617,7 +2617,7 @@ def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm
     
     :param int L: degree of the harmonic (L >= 0)
-    :param int M: order number [det(M) <= L]
+    :param int M: order number (\\|M\\| <= L)
     :param int P: sign flag = -1 or 1
     :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
     :param float/array Ph: Polar coordinate 0<= Ph <= 180
@@ -2640,7 +2640,7 @@ def CubicSHarm(L,M,Th,Ph):
     Phys Rev 148, 638 (1966)
      
     :param int L: degree of the harmonic (L >= 0)
-    :param int M: order number [det(M) <= L]
+    :param int M: order number [\\|M\\| <= L]
     :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
     :param float/array Ph: Polar coordinate 0<= Ph <= 180
     

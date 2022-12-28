@@ -1150,9 +1150,15 @@ class G2Slider(wx.Slider):
     
     def SetValue(self,value):
         wx.Slider.SetValue(self, ci(value))
+        
+    def SetMax(self,xmax):
+        wx.Slider.SetMax(self,ci(xmax*self.iscale))
+        
+    def SetMin(self,xmin):
+        wx.Slider.SetMin(self,ci(xmin*self.iscale))
 
 def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
-                       onChange=None,onChangeArgs=[],sizer=None,nDig=None,size=None):
+    onChange=None,onChangeArgs=[],sizer=None,nDig=None,size=(50,20)):
     '''A customized combination of a wx.Slider and a validated 
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a slider or text entry to set a value within a range.
@@ -1219,7 +1225,7 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
         return vEntry,vScale
     
 def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
-                       onChange=None,onChangeArgs=[],hsize=35):
+        onChange=None,onChangeArgs=[],hsize=35):
     '''A customized combination of a wx.SpinButton and a validated 
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a the spin button or text entry to set a value within a range.

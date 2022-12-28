@@ -11509,7 +11509,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             def OnDelSpnRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
-                RBData['Spin'][RBId]['useCount'] -= 1
+                RBData['Spin'][RBId[0]]['useCount'] -= 1
                 cia = data['General']['AtomPtrs'][3]
                 atomData = data['Atoms']
                 atomId = data['RBModels']['Spin'][spnIndx]['Ids'][0]
@@ -11641,7 +11641,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             sprbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,
-                label='Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'][0],RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
+                label='Shell 0: Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'][0],RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)

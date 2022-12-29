@@ -3317,7 +3317,7 @@ class G2ColumnIDDialog(wx.Dialog):
             Sizer.Add((5,5))
             if self.Comments[-1] != '\n': self.Comments += '\n'
             txt = wx.StaticText(panel,label=self.Comments)
-            txt.SetBackgroundColour((250,250,250))
+            txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             font1 = wx.Font(txt.GetFont().GetPointSize(),wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             txt.SetFont(font1)
             Sizer.Add(txt,0,wx.ALL|wx.EXPAND,0)
@@ -5896,11 +5896,11 @@ def updateNotifier(G2frame,fileVersion):
     for i,key in enumerate(sorted(noticeDict,reverse=True)):
         if i != 0: tblLine(panel,1)
         txtbox = wx.StaticText(panel,wx.ID_ANY,str(key))
-        txtbox.SetBackgroundColour(wx.Colour(250,250,250))
+        txtbox.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         tblSizer.Add(txtbox,0,wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL)
         txtbox = wx.StaticText(panel,wx.ID_ANY,noticeDict[key])
         txtbox.Wrap(size[0]-110)
-        txtbox.SetBackgroundColour(wx.Colour(250,250,250))
+        txtbox.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         tblSizer.Add(txtbox)
     tblLine(panel)
     panel.SetSizer(tblSizer)

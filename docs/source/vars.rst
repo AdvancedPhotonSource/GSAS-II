@@ -131,6 +131,14 @@
      - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBRU
      - Residue rigid body group Uiso param.
+   * - RBSAtNo
+     - Atom number for spinning rigid body.
+   * - RBSO\ :math:`\scriptstyle S`\  (example: ``RBSOa``)
+     - Spinning rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBSP\ :math:`\scriptstyle M`\  (example: ``RBSPx``)
+     - Spinning rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
+   * - RBSShC\ :math:`\scriptstyle V`\  (example: ``RBSShC1``)
+     - Spinning rigid body sph. harmonics term; where \ :math:`\scriptstyle V`\  is one of the characters 1, -, 2 or 0 ,, 1, -, 2 or 0.
    * - constr\ :math:`\scriptstyle G`\  (example: ``constr10``)
      - Generated degree of freedom from constraint; where \ :math:`\scriptstyle G`\  is one or more digits (0, 1,... 9).
    * - nv-(.+)
@@ -217,8 +225,8 @@
      - Bragg peak sigma.
    * - PkGam
      - Bragg peak gamma.
-   * - e\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle V_1`\  (example: ``e11``)
-     - strain tensor e\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle V_1`\ ; where \ :math:`\scriptstyle V_0`\  is one of the characters 1 or 2 and \ :math:`\scriptstyle V_1`\  is one of the characters 1 or 2.
+   * - e\ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\  (example: ``e11``)
+     - strain tensor e\ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\ ; where \ :math:`\scriptstyle W_0`\  is one of the characters 1 or 2 and \ :math:`\scriptstyle W_1`\  is one of the characters 1 or 2.
    * - Dcalc
      - Calc. d-spacing.
    * - Back
@@ -231,14 +239,14 @@
      - phase weight fraction.
    * - alpha
      - TOF profile term.
-   * - alpha-\ :math:`\scriptstyle W`\  (example: ``alpha-0``)
-     - Pink profile term; where \ :math:`\scriptstyle W`\  is one of the characters 0 or 1.
-   * - beta-\ :math:`\scriptstyle X`\  (example: ``beta-0``)
-     - TOF/Pink profile term; where \ :math:`\scriptstyle X`\  is one of the characters 0, 1 or q.
-   * - sig-\ :math:`\scriptstyle Y`\  (example: ``sig-0``)
-     - TOF profile term; where \ :math:`\scriptstyle Y`\  is one of the characters 0, 1, 2 or q.
-   * - dif\ :math:`\scriptstyle Z`\  (example: ``difA``)
-     - TOF to d-space calibration; where \ :math:`\scriptstyle Z`\  is one of the characters A, B or C.
+   * - alpha-\ :math:`\scriptstyle X`\  (example: ``alpha-0``)
+     - Pink profile term; where \ :math:`\scriptstyle X`\  is one of the characters 0 or 1.
+   * - beta-\ :math:`\scriptstyle Y`\  (example: ``beta-0``)
+     - TOF/Pink profile term; where \ :math:`\scriptstyle Y`\  is one of the characters 0, 1 or q.
+   * - sig-\ :math:`\scriptstyle Z`\  (example: ``sig-0``)
+     - TOF profile term; where \ :math:`\scriptstyle Z`\  is one of the characters 0, 1, 2 or q.
+   * - dif\ :math:`\scriptstyle [`\  (example: ``difA``)
+     - TOF to d-space calibration; where \ :math:`\scriptstyle [`\  is one of the characters A, B or C.
    * - C\ :math:`\scriptstyle G_0`\ ,\ :math:`\scriptstyle G_1`\  (example: ``C10,10``)
      - spherical harmonics preferred orientation coef.; where \ :math:`\scriptstyle G_0`\  is one or more digits (0, 1,... 9) and \ :math:`\scriptstyle G_1`\  is one or more digits (0, 1,... 9).
    * - Pressure

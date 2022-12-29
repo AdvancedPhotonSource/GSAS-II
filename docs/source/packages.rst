@@ -2,26 +2,34 @@ Required Packages & Supported Platforms
 ==========================================
 
 GSAS-II requires a standard Python interpreter to be installed, as
-well as several separately-developed packages, as described
-below. While for some packages, we have not seen much dependence on
-versions, for others we do find significant differences, for those we
-are currently recommending the following versions:
+well as several separately-developed packages that are not supplied
+with Python, as are described
+in these paragraphs.
+While for some packages, we have not seen much dependence on
+versions, for others we do find significant differences, this is also
+discussed further below. The GSAS-II GUI will warn about Python and
+packages versions that are believed to be problematic,
+as defined in variable :attr:`GSASIIdataGUI.versionDict`,
+but for new installations we are currently recommending the following
+versions: 
 
- * Python 3.10 is recommended, but 3.7 or later is fine
- * wxPython 4.2, but with Python <=3.9 any wx4.x should be OK. However,
-   expect problems with Py>=3.10 and anything older than wx4.2.0
+ * Python 3.10 is recommended, but 3.7 or later is fine. 
+ * wxPython 4.2 or later is recommended, but with Python <=3.9 any
+   wx4.x version should be OK. However,
+   expect problems with Py>=3.10 and anything older than wx4.2.0.
  * NumPy 1.23 recommended, but anything from 1.17 on is likely fine
- * matplotlib 3.6 is recommended, 3.4 or later preferred. 
+ * matplotlib 3.6 is recommended, but 3.4 or later is preferred. 
+ * pyOpenGL: no version-related problems have been seen.
+   
+Note that GSAS-II is being developed using Python 3.7, 3.9 and
+3.10. No testing has yet been done with Python 3.11.  We are no longer
+supporting Python 2.7 and <=3.6, and recomment upgrading.
 
-Note that GSAS-II is being developed using Python 3.7, 3.9 and 3.10. We are no longer
-supporting Python 2.7 and <=3.6, and recomment upgrading. More details on problematic package versions can be found in
-the documentation for variable :attr:`GSASIIdataGUI.versionDict`.
-
-There are a number of ways to install Python along with the packages
+There are a number of ways to install Python plus the packages
 needed by GSAS-II. We had been creating installers utilizing the Anaconda
 Python (https://www.anaconda.com/)
 distribution, but no longer provides modern versions that include
-wsPython or subversion, so we are transitioning to the
+wxPython or subversion, so we are transitioning to the
 community-supported conda-forge library of packages and the miniforge
 distribution. On MacOS, homebrew can be used for Python and most
 needed packages, while on Linux, the native package installers
@@ -30,7 +38,13 @@ that fashion can be installed with Python's pip mechanism.
 Other alternatives Python packages include Enthought Inc.'s Canopy and
 Python(x,y), see here:
 https://www.python.org/download/alternatives/. We are no longer using
-any of them and are unsure of how they will function. 
+any of them and are unsure of how they will function.
+
+Package requirements depend on how GSAS-II is run. More packages are
+required and optional for GUI use, as described in the following
+section. If setting up GSAS-II on a server that will only 
+run GSAS-II via the scripting interface, then fewer packages are
+needed, as discussed in the section following that. 
 
 
 GUI Requirements
@@ -50,16 +64,17 @@ Python extension packages are required:
 
 Several Python packages are used in sections of the code, but are not
 required. If these packages are not present, warning messages may be
-generated if they would be needed, but the vast bulk of GSAS-II will function normally. 
+generated if they would be needed, or items may not appear in menus, 
+but the vast bulk of GSAS-II will function normally. 
 
-* Pillow (https://pillow.readthedocs.org) or PIL (http://www.pythonware.com/products/pil/). This is used to save
-  and read certain types of images.
+* Pillow (https://pillow.readthedocs.org) or PIL (http://www.pythonware.com/products/pil/). This is used to read and save certain types of images.
 * h5py is the HDF5 interface and hdf5 is the support package. These
   packages are (not surprisingly) required
   to import images from HDF5 files. If these libraries are not present,
   the HDF5 importer(s) will not appear in the import menu and a
   warning message appears on GSAS-II startup. 
-* imageio is used to make movies. 
+* imageio is used to make movies. This is optional and is offered for plotting
+  superspace (modulated) structures. 
 * requests: this package simplifies http access
   (https://requests.readthedocs.io/). It is used for access to
   webpages such as ISODISTORT and for some internal software downloads.
@@ -67,54 +82,67 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
   used to install GSAS-II on windows machines. GSAS-II can be used on
   Windows without this, but the installation will offer less
   integration into Windows. Conda provides this under the name pywin32.
-* conda: the conda package allows access to conda features from
-  inside Python. It will be used increasingly by GSAS-II to
-  self-install software. The conda package is installed by default in
-  miniconda and anaconda, but if you create an environment for GSAS-II
+* conda: the conda package allows access to package installation,
+  etc. features from  inside Python. It is not required but is helpful
+  to have, as it allows GSAS-II to install some packages that are not
+  supplied initially. The conda package is included by default in
+  the base miniconda and anaconda installations, but if you create an
+  environment for GSAS-II 
   (`conda create -n <env> package-list...`), it will not be added
-  unless you request it specifically but is helpful to have to allow
-  GSAS-II to install some codes. 
+  to that environment unless you request it specifically.  
 
-The following conda package is used where possible in GSAS-II but provides a
+The following conda package is used where possible in GSAS-II but it provides a
 command-line tool rather than a Python package.
   
-* svn (or subversion): the GSAS-II code works much better when
-  subversion is available to install and update the GSAS-II
-  code. Technically having subversion is optional, but not having it
-  has a big impact on GSAS-II. The
-  Anaconda distribution once provided this, but does so no longer. With
+* svn: the GSAS-II code utilizes the subversion
+  program for software installation and updates. GSAS-II can be manually
+  installed without it, but updates will also need to be done
+  manually. GSAS-II  works much better when
+  subversion is available. The Anaconda distribution had provided
+  subversion in a package named svn, but this is so no longer updated. With
   the conda-forge repository we now use, it is only available for
   Linux (where it really is not needed since it is easy to install
-  there) and the package is called subversion. (There is a brain-dead
-  Mac version.) For MacOS and Windows, the GSAS-II
-  self-installer now provides binaries for the svn program. 
+  there) and the package is named subversion. (The Mac there version
+  is brain-dead.)
+  For MacOS and Windows, the GSAS-II gsas2full self-installer now
+  provides binaries for the svn program.  
   
 *Conda command*:
-  Here is a typical conda command used to install a GSAS-II compatible
-  Python interpreter::
+  Should you wish to install Python and the desired packages yourself,
+  this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is
+  hombrew. Homebrew is a good option on MacOS. We also recommend  use
+  of the miniconda or mambaconda self installers from
+  conda-forge. Here is a typical conda command used to install a GSAS-II compatible
+  Python interpreter on Linux after
+  miniconda/miniforge/mambaforge/anaconda has been installed::
 
-    conda install python=3.9 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion requests -c conda-forge
+    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion requests -c conda-forge
     
   or to put a Python configured for GSAS-II into a separate conda
   environment (here named ``g2python``, but any name can be used), use
   command::
 
-    conda create -n g2python python=3.9 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion requests -c conda-forge 
+    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion requests -c conda-forge 
 
-Note that at present the subversion is only available for Linux, so
-that should be removed from the commands above. For windows add pywin32
-Also, while there is no
-reason why GSAS-II should not run with Python 3.10, we are not yet
-providing binaries for this. 
+ For Windows/Mac/Raspberry Pi, omit subversion from the previous command::
+
+    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge
    
-Remember to activate using: ``<path>\Scripts\activate``  (windows); 
-``source <path>/bin/activate`` (Mac/Linux). Note that one should add
-``g2python`` (etc.) at the end if using a conda environment.
+ and::
 
-Note that svn seems to be unsupported these days by Anaconda. For
-Linux and MacOS, use subversion in conda-forge rather than svn. No
-good solution yet for Windows.
+    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda requests -c conda-forge 
 
+Before starting GSAS-II under conda remember to activate using:
+``<path>\Scripts\activate``  (windows);
+``source <path>/bin/activate`` (Mac/Linux),
+optionally adding the environment
+name, (such as ``g2python``) if using a conda environment. 
+
+
+Note that at present we are not suppling binaries for Python 3.11, but
+we are not aware of any reason why GSAS-II will not run fine with
+this. 
+  
 Scripting  Requirements
 -----------------------
 

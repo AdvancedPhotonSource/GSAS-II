@@ -1296,30 +1296,31 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 Qrijk = RB['Orient'][0]
                 Angle = 2.0*acosd(Qrijk[0])
                 pFile.write('\nRBObject %s at %10.4f %10.4f %10.4f Refine? %s\n'%
-                    (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
+                    (RB['RBname'][0],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
                 pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
-                pFile.write('Bessel/Spherical Harmonics coefficients; symmetry required sign shown')
-                SHC = RB['SHC']
-                if len(SHC):
-                    SHkeys = list(SHC.keys())
-                    nCoeff = len(SHC)
-                    nBlock = nCoeff//6+1
-                    iBeg = 0
-                    iFin = min(iBeg+6,nCoeff)
-                    for block in range(nBlock):
-                        ptlbls = ' names :'
-                        ptstr =  ' values:'
-                        ptref =  ' refine:'
-                        for item in SHkeys[iBeg:iFin]:
-                            ptlbls += '%12s'%(item)
-                            ptstr += '%9.4f*%2.0f'%(SHC[item][0],SHC[item][1])
-                            ptref += '%12s'%(SHC[item][2])
-                        pFile.write(ptlbls+'\n')
-                        pFile.write(ptstr+'\n')
-                        pFile.write(ptref+'\n')
-                        iBeg += 6
+                pFile.write('Bessel/Spherical Harmonics coefficients; symmetry required sign shown\n')
+                for ish,SHC in enumerate(RB['SHC']):
+                    if len(SHC):
+                        pFile.write('Spin shell (%s) no: %d\n'%(RB['RBname'][ish],ish))
+                        SHkeys = list(SHC.keys())
+                        nCoeff = len(SHC)
+                        nBlock = nCoeff//6+1
+                        iBeg = 0
                         iFin = min(iBeg+6,nCoeff)
+                        for block in range(nBlock):
+                            ptlbls = ' names :'
+                            ptstr =  ' values:'
+                            ptref =  ' refine:'
+                            for item in SHkeys[iBeg:iFin]:
+                                ptlbls += '%12s'%(item)
+                                ptstr += '%9.4f*%2.0f'%(SHC[item][0],SHC[item][1])
+                                ptref += '%12s'%(SHC[item][2])
+                            pFile.write(ptlbls+'\n')
+                            pFile.write(ptstr+'\n')
+                            pFile.write(ptref+'\n')
+                            iBeg += 6
+                            iFin = min(iBeg+6,nCoeff)
                 
     def PrintAtoms(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -1439,7 +1440,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         #### patch 2/24/21 BHT: new param, AtomFrac in RB
         if 'AtomFrac' not in RB and rbKey != 'S': raise Exception('out of date RB: edit in RB Models')
         # end patch
-        rbid = str(rbids.index(RB['RBId']))
+        if rbKey == 'S':
+            rbid = str(rbids.index(RB['RBId'][0]))  #for spin RBs
+        else:
+            rbid = str(rbids.index(RB['RBId'])) #others
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
@@ -1484,10 +1488,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         else:
             name = pfx+'RB'+rbKey+'AtNo:'+str(iRB)+':'+rbid
             phaseDict[name] = atomIndx[RB['Ids'][0]][1]
-            name = pfx+'RB'+rbKey+'AtType:'+str(iRB)+':'+rbid
-            phaseDict[name] = RB['atType']
             name = pfx+'RB'+rbKey+'SytSym:'+str(iRB)+':'+rbid
             phaseDict[name] = RB['SytSym']
+            for ish,atype in enumerate(RB['atType']):
+                name = '%sRBSAtType;%d:%d:%s'%(pfx,ish,iRB,rbid)
+                phaseDict[name] = RB['atType'][ish]
                                 
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
@@ -1530,14 +1535,15 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseVary += [name,]
                 
     def MakeRBSphHarm(rbKey,phaseVary,phaseDict):
-        rbid = str(rbids.index(RB['RBId']))
-        pfxRB = pfx+'RB'+rbKey+'Sh;'
-        for i,shcof in enumerate(RB['SHC']):
-            SHcof = RB['SHC'][shcof]
-            name = pfxRB+shcof+':'+str(iRB)+':'+rbid
-            phaseDict[name] = SHcof[0]*SHcof[1]
-            if SHcof[2]:
-                phaseVary += [name,]
+        rbid = str(rbids.index(RB['RBId'][0]))
+        for ish,Shcof in enumerate(RB['SHC']):
+            pfxRB = '%sRBSSh;%d;'%(pfx,ish)
+            for i,shcof in enumerate(Shcof):
+                SHcof = Shcof[shcof]
+                name = pfxRB+shcof+':'+str(iRB)+':'+rbid
+                phaseDict[name] = SHcof[0]*SHcof[1]
+                if SHcof[2]:
+                    phaseVary += [name,]
                     
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     if Print:

@@ -9781,37 +9781,24 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glShadeModel(GL.GL_SMOOTH)
 
     def RenderTextureSphere(x,y,z,radius,Qmat,color,shape=[20,10],Fade=None):
-        global spID
         SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
         SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
         SpFade[:,:,3] = 128
-        newSP = False
         spID = GL.glGenTextures(1)
-        # if not spID:
-        #     spID = GL.glGenTextures(1)
-        #     newSP = True
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
+        GL.glFrontFace(GL.GL_CCW)       #shows outside
+        GL.glEnable(GL.GL_CULL_FACE)    #removes striping
         GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, spID)
-        GL.glFrontFace(GL.GL_CCW)       #shows outside
-        GL.glEnable(GL.GL_CULL_FACE)    #removes striping
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
-        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP)
-        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP)
-        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_REPEAT)
-        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_REPEAT)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MIN_FILTER,GL.GL_LINEAR)
         GL.glTexParameter(GL.GL_TEXTURE_2D,GL.GL_TEXTURE_MAG_FILTER,GL.GL_LINEAR)
         GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
-        # if newSP:
-        #     GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,shape[0], shape[1],0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
-        # else:
-        #     GL.glTexSubImage2D(GL.GL_TEXTURE_2D,0,0,0,shape[0], shape[1],GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,SpFade)
         q = GLU.gluNewQuadric()
         GLU.gluQuadricDrawStyle(q,GLU.GLU_FILL)
         GLU.gluQuadricTexture(q, GL.GL_TRUE)
@@ -10308,19 +10295,21 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         A,V = G2mth.Q2AVdeg(Q)
                         QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
                         QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
-                        Q2 = G2mth.prodQQ(QA,QR)
+                        Q2 = G2mth.prodQQ(QA,QR)    #correct - rotates about V axis
                         Qmat = G2mth.Q2Mat(Q2)
-                        Q4mat = np.concatenate((np.concatenate((Qmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                        Q4mat = np.eye(4)
+                        Q4mat[:3,:3] = Qmat
+                        Npsi,Ngam = 120,60
+                        PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
+                        PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
+                        GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                         for ish,nSH in enumerate(SpnData['nSH']):
                             if nSH > 0:
                                 SHC = SpnData['SHC'][ish]
-                                PSI,GAM = np.mgrid[0:120,0:60]   #[azm,pol]
-                                PSI = PSI.flatten()*3.  #azimuth 0-360 ncl
-                                GAM = GAM.flatten()*3.  #polar 0-180 incl
-                                P = G2lat.SHarmcal(SytSym,SHC,GAM,PSI).reshape((120,60))
+                                P = G2lat.SHarmcal(SytSym,SHC,PSI,GAM).reshape((Npsi,Ngam))
                                 if np.min(P) < np.max(P):
                                     P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                RenderTextureSphere(x,y,z,radius[ish][0],Q4mat,atColor[ish],shape=[120,60],Fade=P)
+                                RenderTextureSphere(x,y,z,radius[ish][0],Q4mat,atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
                         else:
                             RenderSphere(x,y,z,radius[ish][0],atColor[ish],fade,shape=[60,30])
                 else:
@@ -10534,10 +10523,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Draw('focus')     #to get correct drawing after tab change       
         
     #### PlotStructure starts here
-    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,spID
+    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
     txID = -1
-    spID = 0
     ForthirdPI = 4.0*math.pi/3.0
     RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
     RBdata = G2frame.GPXtree.GetItemPyData(RBId)

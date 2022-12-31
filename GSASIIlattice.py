@@ -2613,6 +2613,29 @@ def H2ThPh(H,Bmat,Q):
     Th = np.where(Th<0.,Th+360.,Th)
     return Th,Ph
 
+def SHarmcal(SytSym,SHFln,psi,gam):
+    '''Perform a surface spherical harmonics computation.
+    Note that the the number of gam values must either be 1 or must match psi
+    
+    :param str SytSym: sit symmetry - only looking for cubics
+    :param dict SHFln: spherical harmonics coefficients; key has L & M
+    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
+    :param float/array gam: Polar coordinate 0<= Ph <= 180
+    
+    :returns array SHVal: spherical harmonics array for psi,gam values
+    '''
+    SHVal = np.ones_like(psi)
+    for term in SHFln:
+        if 'C(' in term[:2]:
+            l,m = eval(term.strip('C'))
+            if SytSym in ['m3m','m3','43m','432','23']:
+                Ksl = CubicSHarm(l,m,psi,gam)
+            else:
+                p = SHFln[term][2]
+                Ksl = SphHarmAng(l,m,p,psi,gam)
+            SHVal += SHFln[term][0]*Ksl
+    return SHVal
+    
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm
     
@@ -2628,7 +2651,7 @@ def SphHarmAng(L,M,P,Th,Ph):
     ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
     
     if M == 0:
-        return np.real(ylmp)/4.
+        return np.real(ylmp)/SQ2
     if P>0:
         return np.real(ylmp)
     else:
@@ -2817,29 +2840,6 @@ def polfcal(ODFln,SamSym,psi,gam):
             PolVal += ODFln[term][1]*Ksl
     return PolVal
 
-def SHarmcal(SytSym,SHFln,psi,gam):
-    '''Perform a surface spherical harmonics computation.
-    Note that the the number of gam values must either be 1 or must match psi
-    
-    :param str SytSym: sit symmetry - only looking for cubics
-    :param dict SHFln: spherical harmonics coefficients; key has L & M
-    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
-    :param float/array gam: Polar coordinate 0<= Ph <= 180
-    
-    :returns array SHVal: spherical harmonics array for psi,gam values
-    '''
-    SHVal = np.ones_like(gam)
-    for term in SHFln:
-        if 'C(' in term[:2]:
-            l,m = eval(term.strip('C'))
-            if SytSym in ['m3m','m3','43m','432','23']:
-                Ksl = CubicSHarm(l,m,psi,gam)
-            else:
-                p = SHFln[term][2]
-                Ksl = SphHarmAng(l,m,p,psi,gam)
-            SHVal += SHFln[term][0]*Ksl
-    return SHVal
-    
 def invpolfcal(ODFln,SGData,phi,beta):
     'needs doc string'
     import pytexture as ptx

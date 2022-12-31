@@ -11553,7 +11553,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
                         data['RBModels']['Spin'][-1][name].append(rbData[name])
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
-                        
                 
             def SHsizer():
                 def OnSHOrder(event):

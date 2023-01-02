@@ -862,52 +862,53 @@ class GSASIItoolbar(Toolbar):
                 dlg.Destroy()
 
 
-    # these routines are not currently in use, but there are probably good
-    # places in the graphics to disable the zoom/pan to release the mouse bind
-    #
-    # use as Page.canvas.toolbar.reset_zoompan()
-    #
     def get_zoompan(self):
-        """Return "ZOOM" if Zoom is active, , "PAN" if Pan is active,
+        """Return "Zoom" if Zoom is active, "Pan" if Pan is active,
         or None if neither
         """
         return self.GetActive()
 
-    def reset_zoompan(self):
-        '''Turns off Zoom or Pan mode, if on. Ignored if neither is set
-        '''
-        if self._active == 'ZOOM':
-            self._active = None
-            if self._idPress is not None:
-                self._idPress = self.canvas.mpl_disconnect(self._idPress)
-                self.mode = ''
+    # this routine is not currently in use, and needs to be updated
+    # to match internals of lib/python3.x/site-packages/matplotlib/backend_bases.py
+    # but there are probably good places in the graphics to disable the
+    # zoom/pan and release the mouse bind
+    #
+    # def reset_zoompan(self):
+    #     '''Turns off Zoom or Pan mode, if on. Ignored if neither is set.
+    #     call as Page.toolbar.reset_zoompan()
+    #     '''
+    #     if self._active == 'ZOOM':
+    #         self._active = None
+    #         if self._idPress is not None:
+    #             self._idPress = self.canvas.mpl_disconnect(self._idPress)
+    #             self.mode = ''
 
-            if self._idRelease is not None:
-                self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
-                self.mode = ''
-            self.canvas.widgetlock.release(self)
-            if hasattr(self,'_NTB2_ZOOM'):
-                self.ToggleTool(self._NTB2_ZOOM, False)
-            elif hasattr(self,'wx_ids'):
-                self.ToggleTool(self.wx_ids['Zoom'], False)
-            else:
-                print('Unable to reset Zoom button, please report this with matplotlib version')
-        elif self._active == 'PAN':
-            self._active = None
-            if self._idPress is not None:
-                self._idPress = self.canvas.mpl_disconnect(self._idPress)
-                self.mode = ''
+    #         if self._idRelease is not None:
+    #             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+    #             self.mode = ''
+    #         self.canvas.widgetlock.release(self)
+    #         if hasattr(self,'_NTB2_ZOOM'):
+    #             self.ToggleTool(self._NTB2_ZOOM, False)
+    #         elif hasattr(self,'wx_ids'):
+    #             self.ToggleTool(self.wx_ids['Zoom'], False)
+    #         else:
+    #             print('Unable to reset Zoom button, please report this with matplotlib version')
+    #     elif self._active == 'PAN':
+    #         self._active = None
+    #         if self._idPress is not None:
+    #             self._idPress = self.canvas.mpl_disconnect(self._idPress)
+    #             self.mode = ''
 
-            if self._idRelease is not None:
-                self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
-                self.mode = ''
-            self.canvas.widgetlock.release(self)
-            if hasattr(self,'_NTB2_PAN'):
-                self.ToggleTool(self._NTB2_PAN, False)
-            elif hasattr(self,'wx_ids'):
-                self.ToggleTool(self.wx_ids['Pan'], False)
-            else:
-                print('Unable to reset Pan button, please report this with matplotlib version')
+    #         if self._idRelease is not None:
+    #             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+    #             self.mode = ''
+    #         self.canvas.widgetlock.release(self)
+    #         if hasattr(self,'_NTB2_PAN'):
+    #             self.ToggleTool(self._NTB2_PAN, False)
+    #         elif hasattr(self,'wx_ids'):
+    #             self.ToggleTool(self.wx_ids['Pan'], False)
+    #         else:
+    #             print('Unable to reset Pan button, please report this with matplotlib version')
                 
 def SetCursor(page):
     mode = page.toolbar.GetActive()
@@ -2387,32 +2388,37 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 dsp = G2lat.Pos2dsp(Parms,xpos)
                 q = 2.*np.pi/dsp
+            statLine = ""
             if G2frame.Contour: #PWDR only
                 try:
                     if 'T' in Parms['Type'][0]:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1]),1)
+                        statLine = 'TOF =%9.3f d=%9.5f Q=%9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1])
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1]),1)
+                        statLine = '2-theta =%9.3f d=%9.5f Q= %9.5f pattern ID =%5d, %s'%(xpos,dsp,q,int(ypos+.5),PlotList[int(ypos+.5)][-1])
                 except IndexError:
                     pass
             else:
                 if 'T' in Parms['Type'][0]:
                     if Page.plotStyle['sqrtPlot']:
-                        G2frame.G2plotNB.status.SetStatusText('TOF = %9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                        statLine = 'TOF = %9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                        statLine = 'TOF =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos)
                 elif 'E' in Parms['Type'][0]:
-                    G2frame.G2plotNB.status.SetStatusText('Energy =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                    statLine = 'Energy =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos)
                 else:
                     if 'PWDR' in plottype:
+                        ytmp = ypos
                         if Page.plotStyle['sqrtPlot']:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
-                        else:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                            ytmp = ypos**2
+                        statLine = '2-theta=%.3f d=%.5f Q=%.4f Intensity=%.2f'%(xpos,dsp,q,ypos)
                     elif plottype == 'SASD':
-                        G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
+                        statLine = 'q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp)
                     elif plottype == 'REFD':
-                        G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
+                        statLine = 'q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp)
+            zoomstat = Page.toolbar.get_zoompan()
+            if zoomstat:
+                statLine = "[" + zoomstat + "] " + statLine
+            G2frame.G2plotNB.status.SetStatusText(statLine,1)
             s = ''
             if G2frame.PickId:
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)

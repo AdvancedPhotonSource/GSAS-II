@@ -84,7 +84,7 @@ except ImportError:
     ]
 
 ft_factors.sort()
-ft_factors=numpy.array(ft_factors, numpy.int)
+ft_factors=numpy.array(ft_factors, int)
 
 ## @brief used for debugging moments from FP_profile.axial_helper().
 moment_list=[]
@@ -214,23 +214,23 @@ class FP_profile:
         b=self.add_buffer #shortcut
         
         ## a real-format scratch buffer
-        self._rb1=b(numpy.zeros(nn,numpy.float))
+        self._rb1=b(numpy.zeros(nn,float))
         ## a real-format scratch buffer
-        self._rb2=b(numpy.zeros(nn,numpy.float))
+        self._rb2=b(numpy.zeros(nn,float))
         ## a real-format scratch buffer
-        self._rb3=b(numpy.zeros(nn,numpy.float))
+        self._rb3=b(numpy.zeros(nn,float))
         ## a complex-format scratch buffer
         self._cb1=b(numpy.zeros(nn,numpy.complex))
         ## a scratch buffer used by the axial helper
-        self._f0buf=b(numpy.zeros(self.oversampling*twotheta_output_points, numpy.float))
+        self._f0buf=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## a scratch buffer used for axial divergence
-        self._epsb2=b(numpy.zeros(self.oversampling*twotheta_output_points, numpy.float))
+        self._epsb2=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## the I2+ buffer
-        self._I2p=b(numpy.zeros(self.oversampling*twotheta_output_points, numpy.float))
+        self._I2p=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## the I2- buffer
-        self._I2m=b(numpy.zeros(self.oversampling*twotheta_output_points, numpy.float))
+        self._I2m=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## another buffer used for axial divergence
-        self._axial=b(numpy.zeros(self.oversampling*twotheta_output_points, numpy.float))
+        self._axial=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## the largest frequency in Fourier space
         omega_max=self.n_omega_points*2*math.pi/window_fullwidth
         #build the x grid and the complex array that is the convolver
@@ -307,7 +307,7 @@ class FP_profile:
     #  When the contents of the array are changed by the convolver, the
     #  cached copy is implicitly updated, so thsat the next time this is called with the same
     #  parameters, it will return the previous array.
-    def get_conv(self, name, key, format=numpy.float):
+    def get_conv(self, name, key, format=float):
         #either get an old buffer associated with key, with valid convolution kernel,
         #or create a new, empty buffer. If we already have too many buffers, swap one out.
         history=self.convolution_history[name] #previous computed values as a list
@@ -810,7 +810,7 @@ class FP_profile:
         """handle all centered top-hats"""
         if width is None:
             return #no convolver
-        flag, conv = self.get_conv(name, width, numpy.float)
+        flag, conv = self.get_conv(name, width, float)
         if flag: return conv #already up to date
         rb1=self._rb1
         rb1[:]=self.omega_vals
@@ -1047,7 +1047,7 @@ class FP_profile:
         if not kwargs: return None
         kwargs.update(self.param_dicts["conv_global"])
 
-        flag, conv = self.get_conv(me, kwargs, numpy.float)
+        flag, conv = self.get_conv(me, kwargs, float)
         if flag: return conv #already up to date
         
         xx=type("data",(), kwargs)
@@ -1090,7 +1090,7 @@ class FP_profile:
         me=self.get_function_name() #the name of this convolver,as a string
         if not self.output_gaussian_smoother_bins_sigma: return # no smoothing
         flag, buf=self.get_conv(me, self.output_gaussian_smoother_bins_sigma,
-            format=numpy.float)
+            format=float)
         if flag: return buf #already computed
         buf[:]=self.omega_vals
         buf*=(self.output_gaussian_smoother_bins_sigma*(

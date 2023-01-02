@@ -547,7 +547,6 @@ class G2PlotNoteBook(wx.Panel):
             new = True
             if Type == 'mpl':
                 Plot = self.addMpl(label,publish=publish).gca()
-                Plot.format_coord = lambda x,y: "" # remove coord display from toolbar
             elif Type == 'ogl':
                 Plot = self.addOgl(label)
             elif Type == '3d':
@@ -555,7 +554,10 @@ class G2PlotNoteBook(wx.Panel):
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)
             self.SetSelectionNoRefresh(plotNum) # raises plot tab
-
+        try:
+            Plot.format_coord = lambda x,y: "" # remove coord display from toolbar
+        except:
+            pass
         Page.plotInvalid = False # plot has just been drawn
         Page.excludeMode = False
         self.lastRaisedPlotTab = label

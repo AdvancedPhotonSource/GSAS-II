@@ -716,6 +716,12 @@ class GSASIItoolbar(Toolbar):
         self.updateActions = None # defines a call to be made as part of plot updates
         self.DeleteToolByPos(POS_CONFIG_SPLTS_BTN)
         self.parent = self.GetParent()
+        spacers = 4
+        if wx.__version__.startswith('4.2'):
+            spacers = 3
+            self.SetToolBitmapSize(wx.Size(28, 20)) # seems needed in wx4.2, packs icons closer
+        for i in range(spacers): # leave some space for MPL text
+            self.AddSeparator()
         self.AddToolBarTool('Key press','Select key press','key.ico',self.OnKey)
         self.AddToolBarTool('Help on','Show help on this plot','help.ico',self.OnHelp)
         # add arrow keys to control zooming
@@ -731,6 +737,7 @@ class GSASIItoolbar(Toolbar):
                 self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
         if publish:
             self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
+        self.Realize()
             
     def AddToolBarTool(self,label,title,filename,callback):
         G2path = os.path.split(os.path.abspath(__file__))[0]

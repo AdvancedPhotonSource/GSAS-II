@@ -5664,8 +5664,34 @@ import scipy.cluster.hierarchy as SCH
 
         
 ################################################################################
-#### Quaternion stuff
+#### Quaternion & other geometry stuff
 ################################################################################
+
+def Cart2Polar(X,Y,Z):
+    ''' convert Cartesian to polar coordinates
+    '''
+    
+    R = np.sqrt(X**2+Y**2+Z**2)
+    Pl = acosd(Z/R)
+    Az = atan2d(Y,X)
+    return R,Az,Pl
+    
+def Polar2Cart(R,Az,Pl):
+    '''Convert polar to Cartesian coordinates
+    '''
+
+    X = R*sind(Pl)*cosd(Az)
+    Y = R*sind(Pl)*sind(Az)
+    Z = R*cosd(Pl)
+    return Y,-X,Z
+
+def RotPolbyQ(R,Az,Pl,Q):
+    '''Rotate polar coordinates by quaternion
+    '''
+    X,Y,Z = Polar2Cart(R,Az,Pl)
+    XYZ = np.vstack((X,Y,Z)).T
+    nXYZ = prodQVQ(Q,XYZ).T
+    return(Cart2Polar(nXYZ[0],nXYZ[1],nXYZ[2]))
 
 def prodQQ(QA,QB):
     ''' Grassman quaternion product

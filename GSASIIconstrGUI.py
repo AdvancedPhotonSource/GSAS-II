@@ -3026,7 +3026,7 @@ create a Vector or Residue rigid body.
         rbid = ran.randint(0,sys.maxsize)
         radius = 1.0
         atType = 'C'
-        rbType = 'Qa'
+        rbType = 'Q'
         Natoms = 1
         name = 'UNKRB'
         namelist = [data['Spin'][key]['RBname'] for key in data['Spin']]
@@ -3436,12 +3436,14 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
         for ibod,spinID in enumerate(data['Spin']):
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
-            choices = ['Q','Qa','Qb','Qc','Qd']
-            typeSel = wx.ComboBox(SpinRBDisplay,choices=choices,value=data['Spin'][spinID]['rbType'],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            typeSel.Bind(wx.EVT_COMBOBOX,OnTypeSel)
-            Indx[typeSel.GetId()] = spinID
-            bodSizer.Add(typeSel,0)
+            bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
+            data['Spin'][spinID]['rbType'] = 'Q'    #patch
+            # choices = ['Q','Qa','Qb','Qc','Qd']
+            # typeSel = wx.ComboBox(SpinRBDisplay,choices=choices,value=data['Spin'][spinID]['rbType'],
+            #     style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            # typeSel.Bind(wx.EVT_COMBOBOX,OnTypeSel)
+            # Indx[typeSel.GetId()] = spinID
+            # bodSizer.Add(typeSel,0)
             symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m','-1','1']
             data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
             simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],

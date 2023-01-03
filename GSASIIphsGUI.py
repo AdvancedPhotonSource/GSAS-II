@@ -9835,7 +9835,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 atom[cuij:cuij+6] = item[1]
                 Opp = G2spc.Opposite(item[0])
                 for key in Opp:
-                    if noDuplicate(Opp[key],atomData):
+                    if noDuplicate(Opp[key],atomData) or atom[ct] == 'Q':
                         unit = item[3]+np.array(eval(key))*1.
                         cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
                         atom[cx:cx+3] = Opp[key]

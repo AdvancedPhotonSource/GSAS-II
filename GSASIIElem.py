@@ -251,6 +251,7 @@ def GetAtomInfo(El,ifMag=False):
         Elem = ET.MagElTable
     Elements = [elem[0][0] for elem in Elem]
     AtomInfo = {}
+    if 'Q' in El: El = 'Q'      #patch - remove Qa, etc.
     ElS = getElSym(El)
     if El not in atmdata.XrayFF and El not in atmdata.MagFF:
         if ElS not in atmdata.XrayFF:
@@ -728,6 +729,7 @@ def SetupGeneral(data, dirname):
                 if len(landeg) < len(generalData['AtomTypes']):
                     landeg.append(2.0)
         if 'Q' in atom[ct]:
+            atom[ct] = 'Q'  #patch - remove 'QA', etc.
             for Srb in RBModels.get('Spin',[]):
                 if Srb['Ids'][0] != atom[cia+8]:
                     continue

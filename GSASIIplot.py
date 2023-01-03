@@ -9795,7 +9795,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,Qmat,color,shape=[20,10],Fade=None):
+    def RenderTextureSphere(x,y,z,radius,color,shape=[20,10],Fade=None):
         SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
         SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
         SpFade[:,:,3] = 128
@@ -9820,7 +9820,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
-        GL.glMultMatrixf(Qmat)
         GLU.gluSphere(q,radius,shape[0],shape[1])
         GL.glPopMatrix()
         GL.glDisable(GL.GL_CULL_FACE)
@@ -10299,32 +10298,26 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if 'Q' in atom[ct]:
                     SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
                     try:
-                        N = SpnData['nSH'][0]
+                        SpnData['nSH'][0]
                     except TypeError:
                         break
                     if SpnData is not None:
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                         radius = SpnData['radius']
                         atColor = SpnData['atColor']
-                        Q = SpnData['Orient'][0]
-                        A,V = G2mth.Q2AVdeg(Q)
-                        QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
-                        QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
-                        Q2 = G2mth.prodQQ(QA,QR)    #correct - rotates about V axis
-                        Qmat = G2mth.Q2Mat(Q2)
-                        Q4mat = np.eye(4)
-                        Q4mat[:3,:3] = Qmat
-                        Npsi,Ngam = 120,60
+                        Q = G2mth.invQ(SpnData['Orient'][0])
+                        Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
                         PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
+                        Rp,PSIp,GAMp = G2mth.RotPolbyQ(np.ones_like(PSI),PSI,GAM,Q)
                         for ish,nSH in enumerate(SpnData['nSH']):
                             if nSH > 0:
                                 SHC = SpnData['SHC'][ish]
-                                P = G2lat.SHarmcal(SytSym,SHC,PSI,GAM).reshape((Npsi,Ngam))
+                                P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                 if np.min(P) < np.max(P):
                                     P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                RenderTextureSphere(x,y,z,radius[ish][0],Q4mat,atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
+                                RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
                         else:
                             RenderSphere(x,y,z,radius[ish][0],atColor[ish],fade,shape=[60,30])
                 else:

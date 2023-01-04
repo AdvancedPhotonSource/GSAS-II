@@ -11592,10 +11592,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                     
-                #patch
-                if RBObj['SHC'] == {}:
-                    RBObj['SHC'] = [{},]
-                #end patch
+                # #patch
+                # if RBObj['SHC'] == {}:
+                #     RBObj['SHC'] = [{},]
+                # #end patch
                 shSizer = wx.BoxSizer(wx.VERTICAL)
                 Indx = {}
                 for iSh,nSh in enumerate(RBObj['nSH']):

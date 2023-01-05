@@ -734,6 +734,11 @@ class GSASIItoolbar(Toolbar):
         if publish:
             self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
         self.Realize()
+        
+    def set_message(self,s):
+        ''' this removes spurious text messages from the tool bar
+        '''
+        pass
             
     def AddToolBarTool(self,label,title,filename,callback):
         G2path = os.path.split(os.path.abspath(__file__))[0]

@@ -2262,7 +2262,6 @@ def RBsymChk(RBsym,coefNames):
         for name in coefNames:
             LM = eval(name[1:])
             rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
-            rbChk = True    #ignore 
             if rbChk:
                 newNames.append(name)
                 newSgns.append(sgn)

@@ -23,6 +23,7 @@ import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
+from scipy.stats import median_absolute_deviation as MAD
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1707,9 +1708,15 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
             return [posx,posy,min(6.*vals[4],spotSize)]
         else:
             return None
-    
+
+# Original version
 def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
-    
+    '''Find "bad" regions on an image and remove them with a spot mask.
+    This works by masking pixels that are well outside the range of the
+    radial average.
+    Original version from RBVD, takes 1-5 min per image. No longer in use.
+    '''
+    #if GSASIIpath.GetConfigValue('debug'): print('original AutoSpotMask starting')
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:
@@ -1735,6 +1742,60 @@ def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
             if not GoOn[0]:
                 break
     return mask
+
+def AutoSpotMask(Image, Masks, Controls, numChans, dlg=None):
+    '''Find "bad" regions on an image and remove them with a spot mask.
+    This works by masking pixels that are well outside the range of the
+    median at that radial distance.
+    This is ~4x faster than the original version from RBVD.
+    Developed by Howard Yanxon, Wenqian Xu and James Weng. 
+
+    Called from OnFindSpotMask (single image) and OnAutoFindSpotMask 
+    (multiple images) in :func:`GSASIIimgGUI.UpdateMasks`
+
+    :param np.array Image: 2D data structure describing a diffaction image
+    :param dict Masks: contents of Masks data tree 
+    :param dict Controls: diffraction & calibration parameters for image from
+      IMG data tree entry
+    :param int numChans: number of channels in eventual 2theta pattern 
+      after integration
+    :param wx.Dialog dlg: a widget that can be used to show the status of
+      the spot mask scan and can optionally be used to cancel the scan. If 
+      dlg=None then this is ignored (for non-GUI use).
+    :returns: a mask array with the same shape as Image or None if the 
+      the scan is cancelled from the dlg Dialog.
+    '''
+    #if GSASIIpath.GetConfigValue('debug'): print('faster all-Python AutoSpotMask')
+    frame = Masks['Frames']
+    tam = ma.make_mask_none(Image.shape)
+    if frame:
+        tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
+    LUtth = np.array(Controls['IOtth'])
+    dtth = (LUtth[1]-LUtth[0])/numChans
+    esdMul = Masks['SpotMask']['esdMul']   
+    print(' Spots greater or less than %.1f of median abs deviation are masked'%esdMul)
+    band = np.array(Image)
+    TA = Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
+    TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
+    mask = (TA >= LUtth[1]) | (TA < LUtth[0]) | tam
+ 
+    for it in range(len(TThs)):
+        masker = (TA >= TThs[it]) & (TA < TThs[it]+dtth) & ~tam
+        bin = band[masker]
+        if np.all(np.isnan(bin)):
+            continue
+        if bin.size < 1:
+            continue
+        median = np.nanmedian(bin)  
+        mad = MAD(bin, nan_policy='omit')       
+        anom = np.abs(band-median)/mad <= esdMul
+        mask |= (anom & masker)
+        if not dlg is None:
+            GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
+            if not GoOn[0]:
+                return None
+                #break
+    return ~mask
 
 def DoPolaCalib(ImageZ,imageData,arcTth):
     ''' Determine image polarization by successive integrations with & without preset arc mask.

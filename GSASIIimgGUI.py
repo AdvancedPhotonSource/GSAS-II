@@ -1797,10 +1797,14 @@ def UpdateMasks(G2frame,data):
             dlg.Destroy()
             
     def OnFindSpotMask(event):
-        'Do auto search for spot masks'
+        '''Do auto search for spot masks
+        Called from (Masks) Operations->"Spot mask search"
+        '''
+        dlg = wx.MessageDialog(G2frame.dataWindow,
+                'NB: This can be slow (0.5 to 2 min)',
+                'Spot mask search', wx.OK|wx.CANCEL)
         try:
-            if wx.MessageDialog(G2frame.dataWindow,'NB: This is slow (5-10min)',
-                'Spot mask search', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
+            if dlg.ShowModal() == wx.ID_OK:
                 Controls = G2frame.GPXtree.GetItemPyData( 
                     G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
                 wave = Controls['wavelength']
@@ -1823,6 +1827,8 @@ def UpdateMasks(G2frame,data):
                 print(' Spot mask search not done')
         except:
             print('Invalid limits - spot mask search not done')
+        finally:
+            dlg.Destroy()
             
     def OnAutoFindSpotMask(event):
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])

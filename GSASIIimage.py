@@ -23,7 +23,6 @@ import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
-from scipy.stats import median_absolute_deviation as MAD
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1766,6 +1765,15 @@ def AutoSpotMask(Image, Masks, Controls, numChans, dlg=None):
       the scan is cancelled from the dlg Dialog.
     '''
     #if GSASIIpath.GetConfigValue('debug'): print('faster all-Python AutoSpotMask')
+    try:
+        from scipy.stats import median_absolute_deviation as MAD
+    except ImportError:
+        try:
+            from scipy.stats import median_abs_deviation as MAD
+        except:
+            print('Unable to load scipy.stats.median_abs_deviation')
+            return None
+
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:

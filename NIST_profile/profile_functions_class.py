@@ -220,7 +220,7 @@ class FP_profile:
         ## a real-format scratch buffer
         self._rb3=b(numpy.zeros(nn,float))
         ## a complex-format scratch buffer
-        self._cb1=b(numpy.zeros(nn,numpy.complex))
+        self._cb1=b(numpy.zeros(nn,complex))
         ## a scratch buffer used by the axial helper
         self._f0buf=b(numpy.zeros(self.oversampling*twotheta_output_points, float))
         ## a scratch buffer used for axial divergence
@@ -730,7 +730,7 @@ class FP_profile:
         if "equatorial_divergence_deg" in kwargs:
             del kwargs["equatorial_divergence_deg"] #not used
         
-        flag, axfn = self.get_conv(me, kwargs, numpy.complex)
+        flag, axfn = self.get_conv(me, kwargs, complex)
         if flag: return axfn #already up to date if first return is True
         
         xx=type("data",(), kwargs)
@@ -764,7 +764,7 @@ class FP_profile:
             return None #no convolver
         #we also need the diffractometer radius from the global space
         kwargs["diffractometer_radius"]=self.param_dicts["conv_global"]["diffractometer_radius"]
-        flag, tailfn = self.get_conv(me, kwargs, numpy.complex)
+        flag, tailfn = self.get_conv(me, kwargs, complex)
         if flag: return tailfn #already up to date
         
         #tube_tails is (main width, left width, right width, intensity),
@@ -885,7 +885,7 @@ class FP_profile:
             if hasattr(v,'tolist'):
                 key[k]=v.tolist()
     
-        flag, emiss = self.get_conv(me, key, numpy.complex)
+        flag, emiss = self.get_conv(me, key, complex)
         if flag: return emiss #already up to date
         
         xx=type("data", (), kwargs) #make it dot-notation accessible
@@ -931,7 +931,7 @@ class FP_profile:
         if not equatorial_divergence_deg: return None
         twotheta0=self.param_dicts["conv_global"]["twotheta0"]
         key=(twotheta0, equatorial_divergence_deg)
-        flag, conv = self.get_conv(me, key, numpy.complex)
+        flag, conv = self.get_conv(me, key, complex)
         if flag: return conv #already up to date
         
         #Flat-specimen error, from Cheary, Coelho & Cline 2004 NIST eq. 9 & 10
@@ -963,7 +963,7 @@ class FP_profile:
         kwargs["twotheta0"]=self.param_dicts["conv_global"]["twotheta0"]
         kwargs["diffractometer_radius"]=self.param_dicts["conv_global"]["diffractometer_radius"]
 
-        flag, conv = self.get_conv(me, kwargs, numpy.complex)
+        flag, conv = self.get_conv(me, kwargs, complex)
         if flag: return conv #already up to date
         xx=type("data", (), kwargs) #make it dot-notation accessible
         
@@ -1004,7 +1004,7 @@ class FP_profile:
         flag, conv = self.get_conv(me,
             (twotheta0, diffractometer_radius,
             specimen_displacement, zero_error_deg),
-            numpy.complex)
+            complex)
         if flag: return conv#already up to date
 
         delta=-2*math.cos(twotheta0/2.0)*specimen_displacement/diffractometer_radius

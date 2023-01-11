@@ -40,7 +40,7 @@ class FP_atan_windowed_convolver:
             if hasattr(v,'tolist') and hasattr(v,'__len__') and len(v) > 1:
                 key[k]=tuple(v.tolist())
     
-        flag, emiss = self.get_conv(me, key, numpy.complex)
+        flag, emiss = self.get_conv(me, key, complex)
         if flag: return emiss #already up to date
         
         xx=type("data", (), kwargs) #make it dot-notation accessible
@@ -106,7 +106,7 @@ class FP_atan_windowed_convolver:
             if hasattr(v,'tolist') and hasattr(v,'__len__') and len(v) > 1:
                 key[k]=tuple(v.tolist()) #tuples are better keys
     
-        flag, emiss = self.get_conv(me, key, numpy.complex)
+        flag, emiss = self.get_conv(me, key, complex)
         if flag: return emiss #already up to date
         
         xx=type("data", (), kwargs) #make it dot-notation accessible

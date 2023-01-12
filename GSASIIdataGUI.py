@@ -450,16 +450,15 @@ def ShowVersions():
                     msg += "Version is known to be buggy"
                     warn = True
                     break
-        if s in versionDict['tooNewWarn'] and not warn:
-            match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
-            if match >= 0:
-                msg += "Problems are anticipated with this version (not tested)"
-                warn = True
         if s in versionDict['tooNewUntested'] and not warn:
             match = compareVersions(pkgver,versionDict['tooNewUntested'][s])
             if match >= 0:
                 msg += "New version not tested; please keep us posted"
                 warn = True
+        if s in versionDict['tooNewWarn'] and not warn:
+            match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
+            if match >= 0:
+                msg += "Tests incomplete w/suspected bugs; Please report problems"
         print("  {:12s}{}  {}".format(s+':',pkgver,msg))
 
     Image = None

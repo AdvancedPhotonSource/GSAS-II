@@ -150,6 +150,7 @@ try:
     import wx.richtext as wxrt
     import wx.lib.filebrowsebutton as wxfilebrowse
     import matplotlib as mpl
+    import matplotlib.figure as mplfig
 
 except ImportError:
     print('ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build')
@@ -6776,7 +6777,7 @@ class G2RefinementProgress(wx.Dialog):
         vSizer.Add((-1,-1),1,wx.EXPAND,1)
         hSizer.Add(vSizer,1,wx.EXPAND,1)
         pltPanel = wx.Panel(self,size=(-1,-1))
-        self.figure = mpl.figure.Figure(dpi=100,figsize=(3,2))
+        self.figure = mplfig.Figure(dpi=100,figsize=(3,2))
         self.figure.subplots_adjust(right=0.99,top=0.99)
         Canvas(pltPanel, wx.ID_ANY, self.figure) # no need to save, get this from self.figure.canvas
         self.plotaxis = self.figure.add_subplot()

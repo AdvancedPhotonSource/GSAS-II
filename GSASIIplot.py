@@ -125,14 +125,20 @@ try:
     import wx
     import wx.aui
     import wx.glcanvas
+except (ImportError, ValueError):
+    print('GSASIIplot: wx not imported')
+try:
     import matplotlib as mpl
     if not mpl.get_backend():       #could be assigned by spyder debugger
         mpl.use('wxAgg')
+    import matplotlib.figure as mplfig
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
     from scipy.ndimage.interpolation import map_coordinates
-except (ImportError, ValueError):
-    pass
+except (ImportError, ValueError) as err:
+    print('GSASIIplot: matplotlib not imported')
+    if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
+
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -315,7 +321,7 @@ class G2PlotMpl(_tabPlotWin):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
         mpl.rcParams['axes.grid'] = False
-        self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,6))
+        self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
         self.toolbar.Realize()
@@ -372,7 +378,7 @@ class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
-        self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
+        self.figure = mplfig.Figure(dpi=dpi,figsize=(6,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,Arrows=False)
 
@@ -3998,7 +4004,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         '''
         plotOpt['initNeeded'] = False
         # create a temporary hard-copy figure to get output options
-        figure = mpl.figure.Figure(dpi=200,figsize=(6,8))
+        figure = mplfig.Figure(dpi=200,figsize=(6,8))
         canvas = hcCanvas(figure)
         fmtDict = canvas.get_supported_filetypes()
         figure.clear()
@@ -4836,7 +4842,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     def onSave(event):
         '''Write the current plot to a file
         '''
-        hcfigure = mpl.figure.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
+        hcfigure = mplfig.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
         if 'OriginPro' in plotOpt['format']:
             CopyRietveld2Origin(Pattern,Plot,Page,plotOpt,G2frame)
@@ -4999,7 +5005,7 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     vbox.Add(hbox,0,wx.ALL|wx.ALIGN_CENTER)
 
     # screen preview
-    figure = mpl.figure.Figure(figsize=(plotOpt['width'],plotOpt['height']))
+    figure = mplfig.Figure(figsize=(plotOpt['width'],plotOpt['height']))
     canvas = Canvas(dlg,-1,figure)
     vbox.Add(canvas,1,wx.ALL|wx.EXPAND,1)
 
@@ -5035,7 +5041,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     :param list Pattern: histogram object from data tree
     :param mpl.axes Plot: The axes object from the Rietveld plot
     :param wx.Panel Page: The tabbed panel for the Rietveld plot
-    :param mpl.figure figure: The figure object from the Rietveld plot
+    :param matplotlib.figure.Figure figure: The figure object from the Rietveld plot
     '''
     gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
     ax0 = figure.add_subplot(gs[0])
@@ -10029,7 +10035,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         '''
         color wx.Colour object - doesn't work
         '''                     
-        figure = mpl.figure.Figure(figsize=(1.,1.),facecolor=(0.,0.,0.,0.))
+        figure = mplfig.Figure(figsize=(1.,1.),facecolor=(0.,0.,0.,0.))
         figure.clf()
         canvas = hcCanvas(figure)
         ax0 = figure.add_subplot(111)
@@ -10500,7 +10506,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Zslice = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Zslice<=Rmax,Zslice,Rmax)
             ZU = np.flipud(Z)
-            figure = mpl.figure.Figure(figsize=(6,6),facecolor=(1.,1.,1.,.5))
+            figure = mplfig.Figure(figsize=(6,6),facecolor=(1.,1.,1.,.5))
             canvas = hcCanvas(figure)
             figure.clf()
             ax0 = figure.add_subplot(111)

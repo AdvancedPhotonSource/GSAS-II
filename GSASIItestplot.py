@@ -9,6 +9,7 @@ Plotting module used for script testDeriv.
 import wx
 import wx.aui
 import matplotlib as mpl
+import matplotlib.figure as mplfig
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 except ImportError:
@@ -22,7 +23,7 @@ class Plot(wx.Panel):
     'Creates a plotting window'
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
         wx.Panel.__init__(self, parent, id=id, **kwargs)
-        self.figure = mpl.figure.Figure(dpi=dpi, #figsize=(5,7)
+        self.figure = mplfig.Figure(dpi=dpi, #figsize=(5,7)
                                         )
         self.canvas = Canvas(self, -1, self.figure)
         self.toolbar = Toolbar(self.canvas)

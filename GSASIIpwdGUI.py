@@ -995,7 +995,7 @@ def UpdatePeakGrid(G2frame, data):
                         if float(reflGrid.GetCellValue(r,c)) < 0.:
                             reflGrid.SetCellBackgroundColour(r,c,wx.RED)
                         else:
-                            reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
+                            reflGrid.SetCellBackgroundColour(r,c,wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
                     except:
                         pass
                     

@@ -2112,37 +2112,26 @@ def LaueUnique(Laue,HKLF):
 def RBChk(sytsym,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for site symmetries
     :param str SGLaue: Laue symbol or sytsym symbol
-    :param int L: principal harmonic term; only evens are used
+    :param int L: principal harmonic term
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed and sign for term
-    NB: not complete for all site symmetries! Many are missing
+    NB: not complete for all possible site symmetries! Many are missing
+    Based on Tables 2 & 4 of M. Kara & K. Kurki-Suonio, Acta Cryst. A37, 201-210 (1981).
     '''
     if M <= L:
-        if sytsym == '23':   #cubics use different Fourier expansion than those below
-            if 2 < L < 11 and M > 0:
-                if L%12 == 2:
-                    if M <= L//12: return True,1.0
-                else:
-                    if M <= L//12+1: return True,1.0            
+        if sytsym == '23':   #cubics use different Fourier expansion than those below        
+            if 2 < L < 11 and [L,M] in [[3,1],[4,1],[6,1],[6,2],[7,1],[8,1],[9,1],[9,2],[10,1],[10,2]]:
+                return True,1.0
         elif  sytsym == 'm3':
-            if 2 < L < 11 and M > 0:
-                if L%12 == 2:
-                    if M <= L//12: return True,1.0
-                else:
-                    if M <= L//12+1: return True,1.0            
+            if 2 < L < 11 and [L,M] in [[4,1],[6,1],[6,2],[8,1],[10,1],[10,2]]:
+                return True,1.0
         elif sytsym == '432':
-            if 2 < L < 11 and M > 0:
-                if L%12 == 2:
-                    if M <= L//12: return True,1.0
-                else:
-                    if M <= L//12+1: return True,1.0            
+            if 2 < L < 11 and [L,M] in [[4,1],[6,1],[8,1],[9,2],[10,1]]:
+                return True,1.0
         elif sytsym == '-43m':
-            if 2 < L < 11 and M > 0:
-                if L%12 == 2:
-                    if M <= L//12: return True,1.0
-                else:
-                    if M <= L//12+1: return True,1.0
-        elif sytsym == 'm3m':   #L < 21 by generator
+            if 2 < L < 11 and [L,M] in [[3,1],[4,1],[6,1],[7,1],[8,1],[9,1],[10,1]]:
+                return True,1.0
+        elif sytsym == 'm3m':   #correct for L < 21 by generator
             if not L%2 and M > 0:
                 if L%12 == 2:
                     if M <= L//12: return True,1.0
@@ -2150,23 +2139,29 @@ def RBChk(sytsym,L,M):
                     if M <= L//12+1: return True,1.0            
         elif sytsym == '6':
             if not M%6: return True,1.0     #P?
-        elif sytsym == '-6':    #M+2J?
-            if L != 1 and not M%3: return True,1.0  #P?
+        elif sytsym == '-6':    #L=M+2J
+            if L != 1 and not M%3:          #P?
+                if not L%2 and not M%6: return True,1.0
+                elif L%2 and (M//3)%2: return True,1.0
         elif sytsym == '6/m':
             if not L%2 and not M%6: return True,1.0   #P?
         elif sytsym == '622':
             if not M%6: return True,-1.**M
         elif sytsym == '6mm':
             if not M%6: return True,1.0
-        elif sytsym == '-6m2(100)':   #M+2J?
-            if L != 1 and not M%3: return True,1.0
-        elif sytsym == '-6m2(120)':   #M+2J?
-            if L != 1 and not M%3: return True,-1.**M
+        elif sytsym in ['-6m2(100)','-6m2']:   #L=M+2J
+            if L != 1 and not M%3:
+                if not L%2 and not M%6: return True,1.0
+                elif L%2 and (M//3)%2: return True,1.0
+        elif sytsym == '-6m2(120)':   #L=M+2J
+            if L != 1 and not M%3:
+                if not L%2 and not M%6: return True,1.0
+                elif L%2 and (M//3)%2: return True,-1.**M
         elif sytsym == '6/mmm':
             if not L%2 and not M%6: return True,1.0
         elif sytsym == '4(z)':
             if not M%4: return True,1.0     #P?
-        elif sytsym == '-4(z)':
+        elif sytsym == '-4(z)':   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0    #P?
             if not L%2 and not (M//2)%2: return True,1.0
         elif sytsym == '4/m(z)':
@@ -2175,10 +2170,10 @@ def RBChk(sytsym,L,M):
             if not M%4: return True,-1.0**L
         elif sytsym == '4mm(z)':
             if not M%4: return True,1.0
-        elif sytsym == '-42m(z)':
+        elif sytsym in ['-42m(z)','-42m']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,-1.0**L
-        elif sytsym == '-4m2(z)':
+        elif sytsym == '-4m2(z)':   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,1.0
         elif sytsym == '4/mmm(z)':
@@ -2191,20 +2186,20 @@ def RBChk(sytsym,L,M):
             if not M%3: return True,-1.0**L
         elif sytsym == '32(120)':
             if not M%3: return True,-1.0**(L-M)
-        elif sytsym == '3m(100)' or sytsym == '3m(111)':
+        elif sytsym in ['3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
         elif sytsym == '3m(120)':
             if not M%3: return True,1.0
-        elif sytsym == '-3m(100)' or sytsym == '-3m(111)':
+        elif sytsym in ['-3m(100)','-3m(111)','-3m']:
             if not L%2 and not M%3: return True,-1.0**M
         elif sytsym == '-3m(120)':
             if not L%2 and not M%3: return True,1.0
         elif '222' in sytsym:
             if M%2: return True,-1.0**L
-        elif 'mm2(x)' in sytsym:
+        elif 'mm2(x)' in sytsym:  #m=l-2j
             if L%2 and M%2: return True,1.0  #both odd
             if not L%2 and not M%2: return True,1.0    #both even
-        elif 'mm2(y)' in sytsym:
+        elif 'mm2(y)' in sytsym:  #m=l-2j
             if L%2 and M%2: return True,-1.0**L  #both odd
             if not L%2 and not M%2: return True,-1.0**L     #both even
         elif 'mm2(z)' in sytsym:
@@ -2221,12 +2216,12 @@ def RBChk(sytsym,L,M):
             if not L%2 : return True,-1.0**M
         elif sytsym == 'm(y)':
             return True,1.0
-        elif sytsym == 'm(z)':
+        elif sytsym == 'm(z)':  #m=l-2j
             if L%2 and M%2: return True,1.0       #P?
             if not L%2 and not M%2: return True,1.0         #P?
         elif sytsym == '2/m(x)':
             if not L%2 : return True,-1.0**M
-        elif sytsym == '2/m(y)':
+        elif sytsym in ['2/m(y)','2/m']:
             if not L%2: return True,1.0
         elif sytsym == '2/m(z)':
             if not L%2 and not M%2: return True,1.0
@@ -2236,49 +2231,118 @@ def RBChk(sytsym,L,M):
             if not L%2: return True,1.0
     return False,0.
     
-def RBsymChk(RBsym,coefNames):
+def RBsymChk(RBsym,cubic,coefNames):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
     '''
+    cubicsigns = {'C(3,1)c':[-1,],'C(4,1)c':[1,1,],'C(6,1)c':[1,-1],'C(6,2)c':[1,-1],'C(7,1)c':[1,-1],'C(8,1)c':[1,1,1],
+        'C(9,1)c':[1,-1],'C(9,2)c':[1,-1],'C(10,1)c':[1,-1,-1],'C(10,2)c':[1,1,-1]}
+    cubicnames = {'C(3,1)c':['C(3,2)',],'C(4,1)c':['C(4,0)','C(4,4)'],'C(6,1)c':['C(6,0)','C(6,4)'],
+        'C(6,2)c':['C(6,2)','C(6,6)'],'C(7,1)c':['C(7,2)','C(7,6)'],'C(8,1)c':['C(8,0)','C(8,4)','C(8,8)'],
+        'C(9,1)c':['C(9,2)','C((9,6)'],'C(9,2)c':['C(9,4)','C(9,8)'],
+        'C(10,1)c':['C(10,0)','C(10,4)','C(10,8)'],'C(10,2)c':['C(10,2)','C(10,6)','C(10,10)']}
     newNames = []
     newSgns = []
-    if RBsym in ['53m','532']:
-        for name in coefNames:
-            LM = eval(name[1:])
-            if LM[0] in [6,10,12,16,18]:
-                newNames.append(name)
-                newSgns.append(1.0)
-    elif RBsym in ['m3m','-43m']:   #take all terms?
-        for name in coefNames:
-            LM = eval(name[1:])
-            if LM[0] not in [1,2,5] and not LM[1]%2:
-                if LM[0]%2 and LM[1]: #odd L, no M=0
+    if cubic:       #sytsym is a cubic site
+        if RBsym in ['53m','532']:
+            for name in coefNames:
+                LM = eval(name[1:-1])
+                if LM[0] in [6,10,12,16,18]:
                     newNames.append(name)
                     newSgns.append(1.0)
-                elif not LM[0]%2:   #even L & M
+        elif RBsym in ['m3m','-43m']:   #take all terms?
+            for name in coefNames:
+                LM = eval(name[1:-1])
+                rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
+                if rbChk:
                     newNames.append(name)
                     newSgns.append(1.0)
+        else:   #RBsym not cubic or icosahedral
+            for name in coefNames:  #these are cubic names
+                LM = eval(name[1:-1])
+                if (LM[0]+LM[1])%2:     #even L odd M or vv
+                    if LM[0]%2:
+                        M = [4*m for m in range(LM[0]//2)[1:] if 4*m <= LM[0]]
+                    else:
+                        M = [4*m for m in range(LM[0]//2) if 4*m <= LM[0]]
+                else:       #both even or both odd
+                    M = [4*m+2 for m in range(LM[0]//2) if 4*m+2 <= LM[0]]
+                for m in M:
+                    rbChk,sgn = RBChk(RBsym,LM[0],m)
+                    if rbChk:
+                        newNames.append('C(%d,%d)'%(LM[0],m))
+                        newSgns.append(sgn)
     else:
         for name in coefNames:
             LM = eval(name[1:])
-            rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
-            if rbChk:
-                newNames.append(name)
-                newSgns.append(sgn)
+            if RBsym in ['m3m','-43m']:
+                cubNames,sgns = GenShCoeff(RBsym,LM[0])
+                print(name,LM[0],cubNames)
+                M = []
+                for cname in cubNames:
+                    LMc = eval(cname[1:-1])
+                    if (LMc[0]+LMc[1])%2:     #even L odd M or vv
+                        if LMc[0]%2:
+                            M += [4*m for m in range(LMc[0]//2)[1:] if 4*m <= LMc[0]]
+                        else:
+                            M += [4*m for m in range(LMc[0]//2) if 4*m <= LMc[0]]
+                    else:       #both even or both odd
+                        M += [4*m+2 for m in range(LMc[0]//2) if 4*m+2 <= LMc[0]]
+                    for m in M:
+                        rbChk,sgn = RBChk(RBsym,LM[0],m)
+                        if rbChk:
+                            newname = 'C(%d,%d)'%(LM[0],m)
+                            if newname not in newNames:
+                                newNames.append(newname)
+                                newSgns.append(sgn)
+                print(name,cubNames,M)
+            else:
+                rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
+                if rbChk:
+                    newNames.append(name)
+                    newSgns.append(sgn)
     return newNames,newSgns
         
-def GenRBCoeff(sytsym,L):
-    'needs doc string'
+def GenRBCoeff(sytsym,RBsym,L):
+    '''imposes rigid body symmetry on spherical harmonics terms
+    Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+    '''
     coefNames = []
     coefSgns = []
+    cubic = False
+    if sytsym in ['23','m3','432','-43m','m3m']:
+        cubic = True
     for iord in range(L+1):
         if not iord: continue
         for n in range(iord+1):
             rbChk,sgn = RBChk(sytsym,iord,n)
             if rbChk:
-                coefNames.append('C(%d,%d)'%(iord,n))
+                if cubic:
+                    coefNames.append('C(%d,%d)c'%(iord,n))
+                else:
+                    coefNames.append('C(%d,%d)'%(iord,n))
                 coefSgns.append(sgn)
-    return coefNames,coefSgns
+    if RBsym == '1':
+        return coefNames,coefSgns
+    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames)
+    return newNames,newSgns
+
+def GenShCoeff(sytsym,L):
+    coefNames = []
+    coefSgns = []
+    cubic = False
+    if sytsym in ['23','m3','432','-43m','m3m']:
+        cubic = True
+    for n in range(L+1):
+        rbChk,sgn = RBChk(sytsym,L,n)
+        if rbChk:
+            if cubic:
+                coefNames.append('C(%d,%d)c'%(L,n))
+            else:
+                coefNames.append('C(%d,%d)'%(L,n))
+            coefSgns.append(sgn)
+    newNames,newSgns = RBsymChk(sytsym,cubic,coefNames)
+    return newNames,newSgns
 
 def OdfChk(SGLaue,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for Laue groups 
@@ -2616,7 +2680,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation.
     Note that the the number of gam values must either be 1 or must match psi
     
-    :param str SytSym: sit symmetry - only looking for cubics
+    :param str SytSym: sit symmetry - only looking for cubics - remove this
     :param dict SHFln: spherical harmonics coefficients; key has L & M
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
@@ -2626,8 +2690,8 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     SHVal = np.ones_like(psi)
     for term in SHFln:
         if 'C(' in term[:2]:
-            l,m = eval(term.strip('C'))
-            if SytSym in ['m3m','m3','43m','432','23']:
+            l,m = eval(term.strip('C').strip('c'))
+            if SytSym in ['m3m','m3','43m','432','23'] or 'c' in term:
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
                 p = SHFln[term][2]

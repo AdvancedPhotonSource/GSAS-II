@@ -5,6 +5,7 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 import GSASIIspc as G2spc
+import GSASIIlattice as G2lat
 import GSASIIctrlGUI as G2G
 import GSASIIphsGUI as G2phsGUI
 
@@ -35,6 +36,7 @@ class testSytSym(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.ExitMain)    
         self.dataFrame = None
         Data = {'SGData':G2spc.SpcGroup('P 1')[1],}
+        self.RBsym = '1'
         self.propVec = '0,0,0'
         self.XYZ = '0,0,0'
         self.UpdateData(Data)
@@ -88,6 +90,18 @@ class testSytSym(wx.Frame):
                 StrUIJ = [str(suij) for suij in CSIU[0]]
                 ValUIJ = [str(val) for val in CSIU[1]]
                 CSIUtxt.SetLabel(' site sym: %6s, mult: %3d, CSI-U: %s %s'%(SytSym,Mul,StrUIJ,ValUIJ))
+                ShTerms,ShSigns = G2lat.GenRBCoeff(SytSym,'1',21)
+                ShRBTerms,ShRBSigns = G2lat.GenRBCoeff(SytSym,self.RBsym,21)
+                if len(ShTerms) > 12:
+                    StrSh = [sh for sh in ShTerms[:12]]
+                else:
+                    StrSh = [sh for sh in ShTerms]
+                Shtxt.SetLabel(' Sp. Harm coeff:  %s'%StrSh)
+                if len(ShRBTerms) > 12:
+                    StrRBSh = [sh for sh in ShRBTerms[:12]]
+                else:
+                    StrRBSh = [sh for sh in ShRBTerms]
+                ShRBtxt.SetLabel(' Sp. Harm coeff:  %s'%StrRBSh)
             except:
                 print('Bad X,Y,Z entry: ',Obj.GetValue())
                 self.XYZ = '0,0,0'
@@ -114,6 +128,15 @@ class testSytSym(wx.Frame):
             for hkl in HKLs[1:]:    #skip 0,0,0
                 ext = G2spc.checkMagextc(hkl,SGData)
                 if ext: print(hkl)
+                
+        def OnRBSymSel(event):            
+            self.RBsym = simsel.GetStringSelection()
+            ShRBTerms,ShRBSigns = G2lat.GenRBCoeff(SytSym,self.RBsym,21)
+            if len(ShRBTerms) > 12:
+                StrRBSh = [sh for sh in ShRBTerms[:12]]
+            else:
+                StrRBSh = [sh for sh in ShRBTerms]
+            ShRBtxt.SetLabel(' Sp. Harm coeff:  %s'%StrRBSh)            
 
         SGData = Data['SGData']
         self.testSSPanel.DestroyChildren()
@@ -135,20 +158,41 @@ class testSytSym(wx.Frame):
         mainSizer.Add(topSizer)
         XYZ= np.array(eval('['+self.XYZ+']'),dtype=np.float)
         SytSym,Mul,Nop,dupDir = G2spc.SytSym(XYZ,SGData)
+        ShTerms,ShSigns = G2lat.GenRBCoeff(SytSym,'1',21)
+        ShRBTerms,ShRBSigns = G2lat.GenRBCoeff(SytSym,self.RBsym,21)
         CSIX = G2spc.GetCSxinel(SytSym)
         CSIU = G2spc.GetCSuinel(SytSym)
         StrXYZ = [str(sxyz) for sxyz in CSIX[0]]
         ValXYZ = [str(val) for val in CSIX[1]]
         StrUIJ = [str(suij) for suij in CSIU[0]]
         ValUIJ = [str(val) for val in CSIU[1]]
+        if len(ShTerms) > 12:
+            StrSh = [sh for sh in ShTerms[:12]]
+        else:
+            StrSh = [sh for sh in ShTerms]
+        if len(ShRBTerms) > 12:
+            StrRBSh = [sh for sh in ShRBTerms[:12]]
+        else:
+            StrRBSh = [sh for sh in ShRBTerms]
         CSIXtxt = wx.StaticText(self.testSSPanel,label=' site sym: %6s, mult: %3d, CSI-X: %s %s'%(SytSym,Mul,StrXYZ,ValXYZ))
-        mainSizer.Add(CSIXtxt,0,WACV)
+        mainSizer.Add(CSIXtxt)
         mainSizer.Add((5,5),0)
         CSIUtxt = wx.StaticText(self.testSSPanel,label=' site sym: %6s, mult: %3d, CSI-U: %s %s'%(SytSym,Mul,StrUIJ,ValUIJ))
         mainSizer.Add(CSIUtxt,0,WACV)
+        Shtxt = wx.StaticText(self.testSSPanel,label=' Sp. Harm coeff:  %s'%StrSh)
+        mainSizer.Add(Shtxt)
+        RBsizer = wx.BoxSizer(wx.HORIZONTAL)
+        RBsizer.Add(wx.StaticText(self.testSSPanel,label=' Spinning RB symmetry: '))
+        symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m','-1','1']
+        simsel = wx.ComboBox(self.testSSPanel,choices=symchoice,value=self.RBsym,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        simsel.Bind(wx.EVT_COMBOBOX,OnRBSymSel)
+        RBsizer.Add(simsel,0,WACV)
+        mainSizer.Add(RBsizer)
+        ShRBtxt = wx.StaticText(self.testSSPanel,label=' Sp. Harm coeff:  %s'%StrRBSh)
+        mainSizer.Add(ShRBtxt)
         testHKL = wx.Button(self.testSSPanel,-1,'Extinction test')
         testHKL.Bind(wx.EVT_BUTTON,OnTestHKL)
-        mainSizer.Add(testHKL,0,WACV)
+        mainSizer.Add(testHKL)
         printSizer = wx.BoxSizer(wx.HORIZONTAL)
         showOps = wx.Button(self.testSSPanel,-1,'Show sym. ops')
         showOps.Bind(wx.EVT_BUTTON,OnShowOps)
@@ -156,7 +200,7 @@ class testSytSym(wx.Frame):
         showGen = wx.Button(self.testSSPanel,-1,'Print generators')
         showGen.Bind(wx.EVT_BUTTON,OnShowGen)
         printSizer.Add(showGen,0,WACV)
-        mainSizer.Add(printSizer,0,WACV)
+        mainSizer.Add(printSizer)
         self.testSSPanel.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.testSSPanel)
         Size[0] = 800

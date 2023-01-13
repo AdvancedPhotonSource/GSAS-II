@@ -909,7 +909,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True,cctbx_args=None):
         else:
             if dlg:
                 dlg.Raise()
-                GoOn = dlg.Update(100*Nc/ncMax)[0]
+                GoOn = dlg.Update(100*Nc//ncMax)[0]
                 if Skip or not GoOn:
                     GoOn = False
                     break

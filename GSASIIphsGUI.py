@@ -11566,8 +11566,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 def SetSHCoef(iSh,Order):
                     SGData = data['General']['SGData']
                     Sytsym = G2spc.SytSym(RBObj['Orig'][0],SGData)[0]
-                    cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,Order)
-                    cofNames,cofSgns = G2lat.RBsymChk(RBObj['RBsym'],cofNames)
+                    cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
                     cofTerms = [[0.0,val,False] for val in cofSgns]
                     newSHcoef = dict(zip(cofNames,cofTerms))
                     SHcoef = RBObj['SHC'][iSh]
@@ -11592,10 +11591,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                     
-                # #patch
-                # if RBObj['SHC'] == {}:
-                #     RBObj['SHC'] = [{},]
-                # #end patch
                 shSizer = wx.BoxSizer(wx.VERTICAL)
                 Indx = {}
                 for iSh,nSh in enumerate(RBObj['nSH']):
@@ -11615,6 +11610,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     Indx[shOrder.GetId()] = iSh
                     shOrder.Bind(wx.EVT_COMBOBOX,OnSHOrder)
                     shoSizer.Add(shOrder,0,WACV)
+                    if RBObj['nSH'][iSh]>0:
+                        shoSizer.Add(wx.StaticText(RigidBodies,label=" 'c' for cubic harmonic term"),0,WACV)
                     shSizer.Add(shoSizer)
                     if not RBObj['nSH'][iSh]:
                         shSizer.Add(wx.StaticText(RigidBodies,

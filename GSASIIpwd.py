@@ -2886,7 +2886,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     inst = PWDdata['Instrument Parameters'][0]
     try:
         refList = PWDdata['Reflection Lists'][Name]['RefList']
-    except KeyError:
+    except TypeError:
         return 'Error - missing reflection list; you must do Refine first'
     dMin = refList[-1][4]
     gsasType = 'xray2'

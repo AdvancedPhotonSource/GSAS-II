@@ -4022,7 +4022,7 @@ def ChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
@@ -4182,7 +4182,7 @@ def SSChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)

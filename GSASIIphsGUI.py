@@ -11477,6 +11477,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
             Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
             Ocheck.SetValue(RBObj['Orig'][1])
+            # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,
                 'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
@@ -11491,6 +11492,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
+            # TODO: could be just 'A' for spinning RBs; fix by sytsym rules?
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV','V'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)

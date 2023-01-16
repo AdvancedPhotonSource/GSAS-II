@@ -4022,7 +4022,7 @@ def ChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
@@ -4182,7 +4182,7 @@ def SSChargeFlip(data,reflDict,pgbar):
         Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
-        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
+        GoOn = pgbar.Update(int(Rcf),newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',int(Rcf),'%','No.cycles = ',Ncyc))[0]
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
@@ -4493,7 +4493,7 @@ def PeaksUnique(data,Ind,Sel,dlg):
                     cntr = mapPeaks[jnd][Sel]
                     icntr = jnd
             Unique.append(icntr)
-        dlg.Update(ind,newmsg='Map peak no. %d processed'%ind)  
+        dlg.Update(int(ind),newmsg='Map peak no. %d processed'%ind)  
     return Unique
 
 def AtomsCollect(data,Ind,Sel):
@@ -5157,7 +5157,7 @@ def anneal(func, x0, args=(), schedule='fast',
                     if best_state.cost < 1.0 and autoRan:
                         schedule.set_range(x0,best_state.cost/2.)                        
         if dlg:
-            GoOn = dlg.Update(min(100.,best_state.cost*100),
+            GoOn = dlg.Update(int(min(100.,best_state.cost*100)),
                 newmsg='%s%8.5f, %s%d\n%s%8.4f%s'%('Temperature =',schedule.T, \
                     'Best trial:',bestn,  \
                     'MC/SA Residual:',best_state.cost*100,'%', \
@@ -5494,7 +5494,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         return np.sqrt(M/np.sum(refList[4]**2))
     
     def MCSAcallback(x, f,accept):
-        return not pgbar.Update(min(100,f*100),
+        return not pgbar.Update(int(min(100,f*100)),
             newmsg='%s%8.4f%s'%('MC/SA Residual:',int(f*100),'%'))[0]
 
     sq2pi = np.sqrt(2*np.pi)

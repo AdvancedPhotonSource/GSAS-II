@@ -2119,7 +2119,14 @@ def RBChk(sytsym,L,M):
     Based on Tables 2 & 4 of M. Kara & K. Kurki-Suonio, Acta Cryst. A37, 201-210 (1981).
     '''
     if M <= L:
-        if sytsym == '23':   #cubics use different Fourier expansion than those below        
+        if sytsym == '53m':
+            if not L%2 and M > 0:
+                if L in [6,10,12,16,18]:
+                    if L%12 == 2:
+                        if M <= L//12: return True,1.0
+                    else:
+                        if M <= L//12+1: return True,1.0            
+        elif sytsym == '23':   #cubics use different Fourier expansion than those below        
             if 2 < L < 11 and [L,M] in [[3,1],[4,1],[6,1],[6,2],[7,1],[8,1],[9,1],[9,2],[10,1],[10,2]]:
                 return True,1.0
         elif  sytsym == 'm3':
@@ -2231,7 +2238,7 @@ def RBChk(sytsym,L,M):
             if not L%2: return True,1.0
     return False,0.
     
-def RBsymChk(RBsym,cubic,coefNames):
+def RBsymChk(RBsym,cubic,coefNames,L=18):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
     '''
@@ -2273,30 +2280,14 @@ def RBsymChk(RBsym,cubic,coefNames):
                         newNames.append('C(%d,%d)'%(LM[0],m))
                         newSgns.append(sgn)
     else:
-        for name in coefNames:
-            LM = eval(name[1:])
-            if RBsym in ['m3m','-43m']:
-                cubNames,sgns = GenShCoeff(RBsym,LM[0])
-                print(name,LM[0],cubNames)
-                M = []
-                for cname in cubNames:
-                    LMc = eval(cname[1:-1])
-                    if (LMc[0]+LMc[1])%2:     #even L odd M or vv
-                        if LMc[0]%2:
-                            M += [4*m for m in range(LMc[0]//2)[1:] if 4*m <= LMc[0]]
-                        else:
-                            M += [4*m for m in range(LMc[0]//2) if 4*m <= LMc[0]]
-                    else:       #both even or both odd
-                        M += [4*m+2 for m in range(LMc[0]//2) if 4*m+2 <= LMc[0]]
-                    for m in M:
-                        rbChk,sgn = RBChk(RBsym,LM[0],m)
-                        if rbChk:
-                            newname = 'C(%d,%d)'%(LM[0],m)
-                            if newname not in newNames:
-                                newNames.append(newname)
-                                newSgns.append(sgn)
-                print(name,cubNames,M)
-            else:
+        if RBsym in ['m3m','-43m','53m']:   #force mol. sym. here
+            for L in range(L+1):
+                cubNames,cubSgns = GenShCoeff(RBsym,L)
+                newNames += cubNames
+                newSgns += cubSgns
+        else:
+            for name in coefNames:
+                LM = eval(name[1:])
                 rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
                 if rbChk:
                     newNames.append(name)
@@ -2324,14 +2315,14 @@ def GenRBCoeff(sytsym,RBsym,L):
                 coefSgns.append(sgn)
     if RBsym == '1':
         return coefNames,coefSgns
-    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames)
+    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames,L)
     return newNames,newSgns
 
 def GenShCoeff(sytsym,L):
     coefNames = []
     coefSgns = []
     cubic = False
-    if sytsym in ['23','m3','432','-43m','m3m']:
+    if sytsym in ['23','m3','432','-43m','m3m','53m']:
         cubic = True
     for n in range(L+1):
         rbChk,sgn = RBChk(sytsym,L,n)
@@ -2341,7 +2332,7 @@ def GenShCoeff(sytsym,L):
             else:
                 coefNames.append('C(%d,%d)'%(L,n))
             coefSgns.append(sgn)
-    newNames,newSgns = RBsymChk(sytsym,cubic,coefNames)
+    newNames,newSgns = RBsymChk(sytsym,cubic,coefNames,L)
     return newNames,newSgns
 
 def OdfChk(SGLaue,L,M):

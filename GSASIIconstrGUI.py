@@ -3903,7 +3903,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         ResidueRB.SetSize(Size)
-        #ResidueRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1)) # dataframe already scrolls
+        ResidueRB.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1)) # dataframe already scrolls
         G2frame.dataWindow.SendSizeEvent()
         
         ResidueRBDisplay.Show()

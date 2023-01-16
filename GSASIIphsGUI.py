@@ -11335,7 +11335,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
 
-##### Rigid bodies ################################################################################
+#### Rigid bodies ################################################################################
     def FillRigidBodyGrid(refresh=True,vecId=None,resId=None,spnId=None):
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
@@ -11433,7 +11433,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                 data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
-                UpdateDrawAtoms(atomStyle)
+                UpdateDrawAtoms()
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnOrien(*args, **kwargs):
@@ -11457,7 +11457,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                     data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                     data['Drawing']['Atoms'] = []
-                    UpdateDrawAtoms(atomStyle)
+                    UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -11523,6 +11523,17 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
                 
+            def OnSymRadioSet(event):
+                '''Set the polar axis for the sp. harm. as 
+                RBdata['Spin'][RBId]['symAxis']. This may never be 
+                set, so use RBdata['Spin'][RBId].get('symAxis') to 
+                access this so the default value is [0,0,1]. 
+                '''
+                Obj = event.GetEventObject()
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
+                RBObj['symAxis'] = axis
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnAddShell(event):
                 RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
                 RBdata = G2frame.GPXtree.GetItemPyData(RBId)
@@ -11552,6 +11563,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     data['RBModels']['Spin'][-1]['SHC'].append({})
                     for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
                         data['RBModels']['Spin'][-1][name].append(rbData[name])
+                    G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                 
             def SHsizer():
@@ -11649,6 +11661,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             topLine.Add(addShell,0,WACV)
             sprbSizer.Add(topLine)
             sprbSizer.Add(LocationSizer(RBObj,'Spin'))
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
+            symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+            symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='Sp harm polar axis is aligned along:')
+            symRadioSet.SetStringSelection(symax)
+            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+            Indx[symRadioSet.GetId()] = rbId
+            sprbSizer.Add(symRadioSet)
             sprbSizer.Add(SHsizer())
             return sprbSizer
                          
@@ -11912,7 +11932,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             nobody = False
             resSizer = wx.BoxSizer(wx.VERTICAL)
-            resSizer.Add(wx.StaticText(RigidBodies,label='Residue rigid bodies:'))
+            resSizer.Add(wx.StaticText(RigidBodies,label='Residue RBs:'))
             RBnames = []
             resVarLookup = []
             for irb,RBObj in enumerate(data['RBModels']['Residue']):
@@ -11943,7 +11963,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbSizer.Add(resSizer)
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
             vecSizer = wx.BoxSizer(wx.VERTICAL)
-            vecSizer.Add(wx.StaticText(RigidBodies,label='Vector rigid bodies:'))
+            vecSizer.Add(wx.StaticText(RigidBodies,label='Vector RBs:'))
             nobody = False
             RBnames = []
             for RBObj in data['RBModels']['Vector']:
@@ -11972,7 +11992,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbSizer.Add(vecSizer)
         if 'Spin' in data['RBModels'] and len(data['RBModels']['Spin']):
             spnSizer = wx.BoxSizer(wx.VERTICAL)
-            spnSizer.Add(wx.StaticText(RigidBodies,label='Spinning rigid bodies:'))
+            spnSizer.Add(wx.StaticText(RigidBodies,label='Spinning RBs:'))
             nobody = False
             RBnames = []
             for RBObj in data['RBModels']['Spin']:

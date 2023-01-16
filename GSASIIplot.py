@@ -10312,7 +10312,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                         radius = SpnData['radius']
                         atColor = SpnData['atColor']
-                        Q = G2mth.invQ(SpnData['Orient'][0])
+                        symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
+                        QA = G2mth.invQ(SpnData['Orient'][0])
+                        QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]
+                        Q = G2mth.prodQQ(QB,QA)
                         Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
                         PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl

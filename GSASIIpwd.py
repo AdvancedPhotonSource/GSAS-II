@@ -2988,16 +2988,16 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
         fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][2] for bvs in RMCPdict['BVS']]))        
         fl.write('  > SAVE :: 100000\n')
         fl.write('  > UPDATE :: 100000\n')
-        if len(RMCPdict['Swap']):
-            fl.write('\n')
-            fl.write('SWAP_MULTI ::\n')
-            for swap in RMCPdict['Swap']:
-                try:
-                    at1 = Atseq.index(swap[0])
-                    at2 = Atseq.index(swap[1])
-                except ValueError:
-                    break
-                fl.write('  > SWAP_ATOMS :: %d %d %.2f\n'%(at1,at2,swap[2]))
+    if len(RMCPdict['Swaps']):
+        fl.write('\n')
+        fl.write('SWAP_MULTI ::\n')
+        for swap in RMCPdict['Swaps']:
+            try:
+                at1 = Atseq.index(swap[0])
+                at2 = Atseq.index(swap[1])
+            except ValueError:
+                break
+            fl.write('  > SWAP_ATOMS :: %d %d %.2f\n'%(at1,at2,swap[2]))
         
     if len(RMCPdict['FxCN']):
         fl.write('FIXED_COORDINATION_CONSTRAINTS ::  %d\n'%len(RMCPdict['FxCN']))        

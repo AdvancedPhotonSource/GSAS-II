@@ -5997,7 +5997,7 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
             swapAdd = wx.Button(G2frame.FRMC,label='Add')
             swapAdd.Bind(wx.EVT_BUTTON,OnAddSwap)
             swapBox.Add(swapAdd,0,WACV)
-            swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabiities: '),0,WACV)
+            swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabilities: '),0,WACV)
             mainSizer.Add(swapBox,0)        
             if len(RMCPdict['Swaps']):
                 mainSizer.Add(GetSwapSizer(RMCPdict),0)            
@@ -11636,7 +11636,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     else:
                         shcSizer = wx.FlexGridSizer(0,9,5,5)
                         for item in RBObj['SHC'][iSh]:
-                            shcSizer.Add(wx.StaticText(RigidBodies,label=item))
+                            shcSizer.Add(wx.StaticText(RigidBodies,label='%2d*%s'%(RBObj['SHC'][iSh][item][1],item)))
                             shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][iSh][item],0,nDig=(8,5),
                                 typeHint=float,size=(70,-1),OnLeave=NewSHC))
                             schref = wx.CheckBox(RigidBodies,label=' refine? ')

@@ -1056,8 +1056,8 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     this is done in :func:`GetPhaseData`.
     '''
     def PrintSpnRBModel(RBModel):
-        pFile.write('Spinning RB name: %s no.atoms: %d No. times used: %d\n'%
-            (RBModel['RBname'],RBModel['Natoms'],RBModel['useCount']))
+        pFile.write('Spinning RB name: %s atom type: %s, no.atoms: %d, No. times used: %d\n'%
+            (RBModel['RBname'],RBModel['atType'],RBModel['Natoms'],RBModel['useCount']))
         for i in WriteSpnRBModel(RBModel):
             pFile.write(i)
 
@@ -1068,7 +1068,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             pFile.write(i)
         
     def PrintVecRBModel(RBModel):
-        pFile.write('Vector RB name: %s no.atoms: %d No. times used: %d\n'%
+        pFile.write('Vector RB name: %s no.atoms: %d, No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
         for i in WriteVecRBModel(RBModel):
             pFile.write(i)
@@ -1088,7 +1088,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 if RBradius[1]:
                     rbVary.append(pid)
                 if Print:
-                    pFile.write('\Spinning rigid body model:\n')
+                    pFile.write('\nSpinning rigid body model:\n')
                     PrintSpnRBModel(rigidbodyDict['Spin'][item])
                     
     if len(rbIds['Vector']):
@@ -1314,7 +1314,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             ptref =  ' refine:'
                             for item in SHkeys[iBeg:iFin]:
                                 ptlbls += '%12s'%(item)
-                                ptstr += '%9.4f*%2.0f'%(SHC[item][0],SHC[item][1])
+                                ptstr += '%9.4f*%2d'%(SHC[item][0],SHC[item][1])
                                 ptref += '%12s'%(SHC[item][2])
                             pFile.write(ptlbls+'\n')
                             pFile.write(ptstr+'\n')

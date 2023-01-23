@@ -29,13 +29,19 @@ This will be deployed in GSAS-II after a release of updated binary images.
 
 '''
 
+import os
+import os.path
 import subprocess
 import re
 import numpy as np
+import GSASIIpath
+GSASIIpath.SetBinaryPath()
 import GSASIIlattice as G2lat
 
-nistlattice = "/Users/toby/boxGSASII/bin/LATTIC"
-convcell = "/Users/toby/boxGSASII/bin/convcell"
+nistlattice = os.path.join(GSASIIpath.binaryPath,"LATTIC")
+convcell = os.path.join(GSASIIpath.binaryPath,"convcell")
+is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
 
 centerLbl = {'P':'Primitive', 'A':'A-centered', 'B':'B-centered', 'C':'C-centered',
 	'F':'Face-centered', 'I':' Body-centered', 'R':'Rhombohedral', 'H':'Rhombohedral'}

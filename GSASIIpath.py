@@ -1082,12 +1082,14 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
         sys.path.insert(0,path2GSAS2)  # make sure current path is used
     binpath = None
     binprfx = GetBinaryPrefix()
-    for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+    for loc in (os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]),
+               os.path.expanduser('~/.GSASII')):
         # Look at bin directory (created by a local compile) before looking for standard dist files
         searchpathlist = [os.path.join(loc,'bin')]
         # also look for matching binary dist in loc/AllBinaries
         versions = {}
         for d in glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*')):
+            d = os.path.realpath(d)
             v = intver(d.rstrip('/').split('_')[-1].lstrip('n'))
             versions[v] = d
         searchpathlist = [os.path.join(loc,'bin')]

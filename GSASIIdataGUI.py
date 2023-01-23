@@ -365,19 +365,23 @@ should generate warnings or error messages.
 
 * Python:
 
- * We know of problems with Python <2.7 and <3.6. 
- * A problem has been noted with wx4.0.7.post2 with Python 3.10 that we can't yet duplicate (2/4/22). 
- * We anticipate that Python 3.10 will flag code that previously worked fine
-    with errors where we pass a floating point number to a wxpython routine that
-    expects a int value. 
+ * We are no longer supporting Python <=2.7 and <=3.6. Jan. 2023: We will soon start 
+   removing code that is specific to Python 2.7. 
+ * A problem has been noted with wx4.0.7.post2 with Python 3.10 that we can't 
+   yet duplicate (2/4/22).
+ * We anticipate that Python 3.10 will flag code that previously worked fine,
+   because it reports an errors where we pass a floating point number to a 
+   wxpython routine that expects a int value. We are fixing these as we learn about them.
 
 * wxPython:
 
  * <=2.x.x: while most of GSAS-II has been written to be 
-    compatible with older versions of wxpython, we are now testing with 
-    version 4.0 only. Version 3.0 is pretty similar to 4.0 and should not 
-    have problems. wxpython 4.1 seems to create a lot of errors for 
-    conflicting options that will need to be checked up upon.
+   compatible with older versions of wxpython, we are now testing with 
+   version 4.0+ only.
+ * wxpython 3.0 is pretty similar to 4.0, but we did see 
+   some issues with Python 3.x. 
+ * wxpython 4.1 has some serious internal bugs with Python 3.10+ so we recommend 
+   4.2+ for compatibility with newer Python versions.
 
 * Matplotlib:
 
@@ -406,7 +410,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 versionDict['tooNewWarn'] = {'wx':'4.2'}
 'module versions newer than what we have tested & where problems are suspected'
 versionDict['tooNewUntested'] = {'Python':'3.11'}
-'module versions newer than what we have tested & no problems are suspected'
+'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
     '''Show the versions all of required Python packages, etc.
@@ -509,12 +513,13 @@ def ShowVersions():
     if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
         versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
         warn = True
-    elif GSASIIpath.GetConfigValue('debug'):
-        print('N.B. current binaries have been updated')
+    #elif GSASIIpath.GetConfigValue('debug'):
+    #    print('N.B. current binaries have been updated')
     if warn:
-        print('You are suggested to install a new version of GSAS-II.\nSee https://bit.ly/G2install',
-              '\n\nFor information on packages see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html and',
-              '\nhttps://gsas-ii.readthedocs.io/en/latest/GSASIIGUI.html#GSASIIdataGUI.versionDict')
+        print(70*'=',
+            '\nYou are suggested to install a new version of GSAS-II. See\nhttps://bit.ly/G2install',
+              '\n\nFor information on GSAS-II package requirements see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html',
+              '\n'+70*'=')
     print()
 
 def TestOldVersions():

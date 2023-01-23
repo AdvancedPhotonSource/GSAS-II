@@ -11,8 +11,21 @@
 *GSASIIseqGUI: Sequential Results GUI*
 ----------------------------------------
 
-Module that defines GUI routines and classes for the various sequential result GUI Frames (window)
-Also defines GUI routines for Cluster Analysis results 
+Module that defines GUI routines and classes for the various sequential result GUI Frames (window).
+Also defines GUI routines for Cluster Analysis results. 
+
+Note that there are seven types of sequential results that GSAS-II can produce 
+and all are displayed/analyzed with the code in this module. They vary by title so that 
+a project can hold one result of each type without a naming collision:
+
+ * Rietveld (Title: Sequential results)
+ * PDF (Title: Sequential PDFfit2 results)
+ * Peak fit (Title: Sequential peak fit results)
+ * Small angle (Title: Sequential SASD fit results) 
+ * Reflectometry (Title: Sequential REFD results)
+ * Image (strain) (Title: Sequential strain fit results)
+ * Image (calibration) (Title: Sequential image calibration results)
+
 '''
 from __future__ import division, print_function
 import platform

@@ -5417,17 +5417,16 @@ class MyHelp(wx.Menu):
         if GSASIIpath.whichsvn():
             helpobj = self.Append(wx.ID_ANY,'&Check for updates\tCtrl+U',
                     'Updates to latest GSAS-II version')
-            frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
+            if os.access(GSASIIpath.path2GSAS2, os.W_OK):
+                frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
+            else:
+                helpobj.Enable(False)
             helpobj = self.Append(wx.ID_ANY,'&Regress to old GSAS-II version',
                     'Installs previous GSAS-II version')
-            frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
-            # if GSASIIpath.svnTestBranch():
-            #     msg = "&Switch back to standard GSAS-II version"
-            # else:
-            #     msg = "&Switch to test (2frame) GSAS-II version"
-            # helpobj = self.Append(
-            #     help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=msg)
-            # frame.Bind(wx.EVT_MENU, self.OnSelectBranch, helpobj)
+            if os.access(GSASIIpath.path2GSAS2, os.W_OK):
+                frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
+            else:
+                helpobj.Enable(False)
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
             helpobj = self.Append(wx.ID_ANY,lbl,'')
@@ -5436,12 +5435,12 @@ class MyHelp(wx.Menu):
         # add help lookup(s) in gsasii.html
         self.AppendSeparator()
         if includeTree:
-            helpobj = self.Append(wx.ID_ANY,'Help on Data tree',
-                'Web page on GSAS-II data structure')
+            helpobj = self.Append(wx.ID_ANY,'Help on GSAS-II',
+                'Access web page with information on GSAS-II')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
             self.HelpById[helpobj.GetId()] = 'Data tree'
         helpobj = self.Append(wx.ID_ANY,'Help on current data tree item\tF1',
-                'Web page on selected item in tree')
+                'Access web page on selected item in tree')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
        
     def OnHelpById(self,event):

@@ -342,6 +342,7 @@ class TransformDialog(wx.Dialog):
         self.Mtrans = False
         self.kvec = [0.,0.,0.]
         self.Draw()
+        self.CenterOnParent()
 
     def Draw(self):
                 

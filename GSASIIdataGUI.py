@@ -6596,8 +6596,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
             'Find cells that index fitted peaks')
-        self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search',
+        self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search-Bilbao',
             'Run Bilboa "Lattice Symmetry" to find higher symmetry cells')
+        G2G.Define_wxId('wxID_NISTLATSYM')
+        self.IndexEdit.Append(G2G.wxID_NISTLATSYM,'Cell Symmetry Search-NIST*LATTICE',
+            'Run NIST*LATTICE to find higher symmetry cells')
         self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
             'If disabled, do Load Phase first')
         self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',

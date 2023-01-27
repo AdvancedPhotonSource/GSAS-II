@@ -25,8 +25,6 @@ and V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
 https://patents.google.com/patent/US5235523A/en?oq=5235523 if this module 
 is used. 
 
-This will be deployed in GSAS-II after a release of updated binary images. 
-
 '''
 
 import os

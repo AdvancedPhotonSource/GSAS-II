@@ -4377,12 +4377,120 @@ def UpdateUnitCellsGrid(G2frame, data):
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return
-#        while cells: cells.pop() # cells.clear() is much cleaner but not Py2
+        cells.clear()
         for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
             cells.append([])
             cells[-1] += [mat,0,16]
             cells[-1] += cell
-            cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]            
+            cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]
+        G2frame.GPXtree.SetItemPyData(pUCid,data)
+        G2frame.OnFileSave(event)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+    def OnNISTLatSym(event):
+        'Run NIST*LATTICE cell search'
+        pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+        nistInput=[0.2,1.,2,3]
+        msg = G2G.NISTlatUse(True)
+        dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(wx.StaticText(dlg,label='NIST*LATTICE Cell Symmetry Search Settings'),
+                      0,wx.ALIGN_CENTER_HORIZONTAL,0)
+        sizer.Add((-1,15))
+        sizer.Add(wx.StaticText(dlg,label=msg))
+        sizer.Add((-1,15))
+        tableSizer = wx.FlexGridSizer(0,2,0,0)
+        tableSizer.Add(wx.StaticText(dlg,label='Cell length tolerance (A) '),
+            0,WACV|wx.ALIGN_LEFT)
+        w = G2G.ValidatedTxtCtrl(dlg,nistInput,0,nDig=(6,2))
+        tableSizer.Add(w)
+        tableSizer.Add(wx.StaticText(dlg,label='Cell angle tolerance (deg) '),
+            0,WACV|wx.ALIGN_LEFT)
+        w = G2G.ValidatedTxtCtrl(dlg,nistInput,1,nDig=(6,1))
+        tableSizer.Add(w)
+        tableSizer.Add(wx.StaticText(dlg,label='Cell volume range (ratio) '),
+            0,WACV|wx.ALIGN_LEFT)
+        w = G2G.ValidatedTxtCtrl(dlg,nistInput,2)
+        tableSizer.Add(w)
+        tableSizer.Add(wx.StaticText(dlg,label='Search mode: Generate '),
+            0,WACV|wx.ALIGN_LEFT)
+        tableSizer.Add(G2G.EnumSelector(dlg,nistInput,3,
+                    ['supercells', 'subcells', 'sub- and supercells'],
+                    [1,2,3]))
+        sizer.Add(tableSizer,1,wx.EXPAND)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_OK)
+        btn.SetDefault()
+        btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+        btnsizer.AddButton(btn)
+        btn = wx.Button(dlg, wx.ID_CANCEL)
+        btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() == wx.ID_OK:
+            dlg.Destroy()    
+        else:
+            dlg.Destroy()    
+            return
+        tol = 3*[nistInput[0]]+3*[nistInput[1]]
+        cell = controls[6:12]
+        center = controls[13].strip()[0]
+        delta = nistInput[2]
+        mode = nistInput[3]
+        wx.BeginBusyCursor()
+        import nistlat
+        out = nistlat.CellSymSearch(cell, center, tolerance=tol, mode=mode,
+                      deltaV=delta)
+        wx.EndBusyCursor()
+    
+        if not out: return
+        cells.clear()
+        for o in out:
+            cells.append([])
+            c = o[2][0]
+            # assign a Laue class
+            laue = 16 # P1
+            if c[0] == c[1] == c[2] and c[3] == c[4] == c[5] == 90:
+                if o[2][1] == 'F':
+                    laue = 0 # Fm3m
+                elif o[2][1] == 'I':
+                    laue = 1 # Im3m
+                else:
+                    laue = 2 # Pm3m
+            elif o[2][1] == 'R':
+                laue = 3 # R3
+            elif c[0] == c[1] and c[5] == 120:
+                laue = 4 # P6/mmm
+            elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+                laue = 5 # I4/mmm
+            elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+                laue = 6 # P4/mmm
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'F':
+                laue =  7 # 'Fmmm'
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+                laue =  8 # 'Immm'
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'A':
+                laue =  9 # 'Ammm'
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'B':
+                laue =  10 # 'Bmmm'
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'C':
+                laue =  11 # 'Cmmm'
+            elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+                laue =  12 # 'Pmmm'
+            elif c[3] == c[5] == 90 and o[2][1] == 'C':
+                laue =  13 # 'C2/m'
+            elif c[3] == c[5] == 90 and o[2][1] == 'P':
+                laue =  14 # 'P2/m'
+            elif o[2][1] == 'C':
+                laue =  15 # 'C1'
+            cells[-1] += [o[4],0,laue]
+            cells[-1] += c
+            cells[-1] += [G2lat.calc_V(G2lat.cell2A(c)),False,False]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -4404,6 +4512,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 [True,False],[1,100]],
             formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
                     'bool','%d',])
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
@@ -4626,6 +4735,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
     G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM)
+    G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)

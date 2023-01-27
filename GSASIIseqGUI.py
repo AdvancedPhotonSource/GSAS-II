@@ -1214,19 +1214,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # prevVaryList = []
     posdict = {}    # defines position for each entry in table; for inner
                     # dict key is column number & value is parameter name 
+    histNumList = []
     for i,name in enumerate(histNames):
+        if name in Histograms:
+            histNumList.append(list(Histograms.keys()).index(name))
         # if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
         #     prevVaryList = data[name]['varyList']
-            posdict[name] = {}
-            for var in data[name]['varyList']:
-                svar = striphist(var,'*')
-                if 'PWL' in svar:
-                    if int(svar.split(':')[-1]) > maxPWL:
-                        continue
-                posdict[name][combinedVaryList.index(svar)] = svar
+        posdict[name] = {}
+        for var in data[name]['varyList']:
+            svar = striphist(var,'*')
+            if 'PWL' in svar:
+                if int(svar.split(':')[-1]) > maxPWL:
+                    continue
+            posdict[name][combinedVaryList.index(svar)] = svar
     ####--  build up the data table by columns -----------------------------------------------
     nRows = len(histNames)
-    G2frame.colList = [list(range(nRows))]
+    if len(histNumList) != nRows:
+        G2frame.colList = [list(range(nRows))]
+    else:
+        G2frame.colList = [histNumList]
     if len(data.get('Use',[])) != nRows:
         data['Use'] = nRows*[True]
     G2frame.colList += [data['Use']]
@@ -1564,6 +1570,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # highlight unconverged shifts 
     if histNames[0][:4] not in ['SASD','IMG ','REFD',] and deltaChiCol is not None:
         for row,name in enumerate(histNames):
+            if name not in Controls['Seq Data']:
+                G2frame.dataDisplay.SetCellTextColour(row,0,wx.Colour(255,0,0))
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             try:
                 if deltaChi > 10.:

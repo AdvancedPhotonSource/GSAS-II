@@ -8902,7 +8902,18 @@ def setColorButton(parent,array,key,callback=None,callbackArgs=[]):
         colorButton = wcs.ColourSelect(parent,colour=array[key],size=wx.Size(25,25))
         colorButton.Bind(wcs.EVT_COLOURSELECT, OnColor)
     return colorButton
-    
+
+def NISTlatUse(msgonly=False):
+        msg = '''Performing cell symmetry search using NIST*LATTICE. Please cite:
+        V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991),
+        https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf  
+        and 
+        V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
+        https://patents.google.com/patent/US5235523A/en?oq=5235523'''
+        print(msg)
+        if msgonly: return msg
+        wx.MessageBox(msg,caption='Using NIST*LATTICE',style=wx.ICON_INFORMATION)
+
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()

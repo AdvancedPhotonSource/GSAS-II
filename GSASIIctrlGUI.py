@@ -8914,6 +8914,179 @@ def NISTlatUse(msgonly=False):
         if msgonly: return msg
         wx.MessageBox(msg,caption='Using NIST*LATTICE',style=wx.ICON_INFORMATION)
 
+def Load2Cells(G2frame,phase):
+    '''Accept two unit cells and use NIST*LATTICE to search for a relationship 
+    that relates them. 
+
+    The first unit cell is initialized as the currently selected phase and
+    the second unit cell is set to the first different phase from the tree. 
+    The user can initialize the cell parameters to select a different phase 
+    for either cell or can type in the values themselves. 
+
+    :param wx.Frame G2frame: The main GSAS-II window
+    :param dict phase: the currently selected frame
+    '''
+    def setRatioMax(*arg,**kwarg):
+        '''Set the value for the max volume used in the search according 
+        to the type of search selected. 
+        '''
+        if nistInput[2] == 'I':
+            volRatW.Validator.xmax = 40
+            volMaxLbl.SetLabel(' (ratio, 1 to 40)')
+        else:
+            volRatW.Validator.xmax = 10
+            volMaxLbl.SetLabel(' (ratio, 1 to 10)')
+        volRatW.SetValue(min(volRatW.Validator.xmax,nistInput[3]))
+    def computeNISTlatCompare(event):
+        'run NIST*LATTICE after the compute button is pressed'
+        import nistlat
+        out = nistlat.CompareCell(cellLen[0], cellCntr[0],
+                                  cellLen[1], cellCntr[1],
+                    tolerance=3*[nistInput[0]]+3*[nistInput[1]],
+                    mode=nistInput[2], vrange=nistInput[3])
+        if len(out):
+            msg = str(len(out))+' Transformations were found. See console for matrices.'
+            G2MessageBox(G2frame,msg,'Transforms found')
+            print(len(out),'transform matrices found')
+            for i in out:
+                print(' ',i[5][0],'/',i[5][1],'/',i[5][2])
+        else:
+            G2MessageBox(G2frame,
+                'No transforms were found within supplied limits',
+                'No transforms found')
+    def setCellFromPhase(event):
+        '''respond to "set from phase" button. A phase is selected and 
+        the unit cell info is loaded from that phase into the appropriate
+        cell widgets.
+        '''
+        cell = event.GetEventObject().cellNum
+        widgets = event.GetEventObject().widgets
+        phaseList = list(Phases.keys())
+        if len(Phases) == 0:
+            print('No phases in project')
+            return
+        elif len(Phases) == 1:
+            p = phaseList[0]
+        else:
+            dlg = G2SingleChoiceDialog(G2frame,'Select a phase from list',
+                                           'Select phase',phaseList)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    p = phaseList[dlg.GetSelection()]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        ph2 = Phases[p]
+        cellLen[cell] = ph2['General']['Cell'][1:7]
+        cellCntr[cell] = ph2['General']['SGData']['SpGrp'].strip()[0]
+        for val,wid in zip(cellLen[cell],widgets[:6]):
+            wid.SetValue(val)
+        widgets[6].SetValue(cellCntr[cell])
+        dlg.Raise() # needed to bring modal dialog to front, at least on Mac
+        
+    # Load2Cells starts here  
+    msg = NISTlatUse(True)
+    nistInput=[0.2,1.,'I',8]
+    cellLen = [None,None]
+    cellCntr = [None,None]
+    cellLen[0] = phase['General']['Cell'][1:7]
+    cellCntr[0] = phase['General']['SGData']['SpGrp'].strip()[0]
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    cellLen[1] = 3*[1.]+3*[90.]
+    cellCntr[1] = 'P'
+    for p in Phases:
+        ph2 = Phases[p]
+        if ph2['ranId'] != phase['ranId']:
+            cellLen[1] = ph2['General']['Cell'][1:7]
+            cellCntr[1] = ph2['General']['SGData']['SpGrp'].strip()[0]
+            break
+
+    dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.CenterOnParent()
+
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(wx.StaticText(dlg,label='NIST*LATTICE: Relate Two Unit Cells'),
+                  0,wx.ALIGN_CENTER_HORIZONTAL,0)
+    sizer.Add((-1,15))
+    sizer.Add(wx.StaticText(dlg,label=msg))
+    sizer.Add((-1,15))
+    tableSizer = wx.FlexGridSizer(0,9,0,0)
+    tableSizer.Add((-1,-1))
+    for l in u'abc\u03B1\u03B2\u03B3':
+        tableSizer.Add(wx.StaticText(dlg,label=l),
+                       0,WACV|wx.ALIGN_CENTER)
+    tableSizer.Add(wx.StaticText(dlg,label='Centering'),
+                       0,WACV|wx.ALIGN_LEFT)
+    tableSizer.Add((-1,-1))
+    for cell in range(2):
+        tableSizer.Add(wx.StaticText(dlg,label='Cell '+str(cell+1)),0,wx.ALIGN_CENTER|wx.RIGHT,5)
+        wlist = []
+        for i in range(6):
+            l = 3
+            if i < 3: l = 4
+            w = ValidatedTxtCtrl(dlg,cellLen[cell],i,nDig=(7,l),size=(60,-1))
+            wlist.append(w)
+            tableSizer.Add(w,0,wx.LEFT|wx.RIGHT,3)
+        w = EnumSelector(dlg,cellCntr,cell,['P','A','B','C','F','I','R'])
+        tableSizer.Add(w)
+        wlist.append(w)
+        btn = wx.Button(dlg, wx.ID_ANY, 'Load from phase')
+        btn.cellNum = cell
+        btn.widgets = wlist
+        btn.Bind(wx.EVT_BUTTON, setCellFromPhase)
+        tableSizer.Add(btn)
+    sizer.Add(tableSizer,0,wx.LEFT|wx.RIGHT,20)
+    tableSizer = wx.FlexGridSizer(0,3,0,0)
+    tableSizer.Add(wx.StaticText(dlg,label='Cell length tolerance: '),
+                       0,WACV|wx.ALIGN_LEFT)
+    w = ValidatedTxtCtrl(dlg,nistInput,0,nDig=(6,2))
+    tableSizer.Add(w)
+    tableSizer.Add(wx.StaticText(dlg,label=' (A) '))
+    tableSizer.Add(wx.StaticText(dlg,label='Cell angle tolerance: '),
+                       0,WACV|wx.ALIGN_LEFT)
+    w = ValidatedTxtCtrl(dlg,nistInput,1,nDig=(6,1))
+    tableSizer.Add(w)
+    tableSizer.Add(wx.StaticText(dlg,label=' (degrees) '))
+    tableSizer.Add(wx.StaticText(dlg,label='Cell volume range: '),
+            0,WACV|wx.ALIGN_LEFT)
+    volRatW = ValidatedTxtCtrl(dlg,nistInput,3,xmin=1,xmax=40)
+    tableSizer.Add(volRatW)
+    volMaxLbl = wx.StaticText(dlg,label=' (ratio, 1 to 40)')
+    tableSizer.Add(volMaxLbl)
+    sizer.Add(tableSizer,0,wx.EXPAND)
+    tableSizer = wx.FlexGridSizer(0,2,0,0)
+    tableSizer.Add(wx.StaticText(dlg,label='Search mode: '),
+                       0,WACV|wx.ALIGN_LEFT)
+    tableSizer.Add(EnumSelector(dlg,nistInput,2,
+                    ['Integral matrices', 'Fractional matrices'],
+                    ['I','F'],OnChange=setRatioMax))
+    sizer.Add(tableSizer,0,wx.EXPAND)
+    btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_ANY,'Compute')
+    btn.Bind(wx.EVT_BUTTON, computeNISTlatCompare)
+    btnSizer.Add((-1,-1),1,wx.EXPAND)
+    btnSizer.Add(btn)
+    btnSizer.Add((-1,-1),1,wx.EXPAND)
+    sizer.Add(btnSizer,0,wx.EXPAND|wx.CENTER,0)
+
+    btnsizer = wx.StdDialogButtonSizer()
+    btn = wx.Button(dlg, wx.ID_CLOSE)
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+    dlg.SetSizer(sizer)
+    sizer.Fit(dlg)
+    
+    if dlg.ShowModal() == wx.ID_OK:
+        dlg.Destroy()    
+    else:
+        dlg.Destroy()    
+        return
+        
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()

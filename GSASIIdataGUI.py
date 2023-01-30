@@ -5567,12 +5567,15 @@ class GSASII(wx.Frame):
         else:
             refPlotUpdate = None
 
+        seqList = self.testSeqRefineMode()
         try:
-            OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate)
+            OK,Rvals = G2stMn.DoLeBail(self.GSASprojectfile,dlg,cycles=1,refPlotUpdate=refPlotUpdate,seqList=seqList)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
-        if OK:
+        if OK and seqList:
+            print('continuing with sequential fit')
+        elif OK:
             text = ''
             rtext = 'LeBail-only fit done. '
             Rwp = Rvals.get('Rwp')

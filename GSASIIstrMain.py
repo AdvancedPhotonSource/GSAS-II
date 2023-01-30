@@ -524,10 +524,19 @@ def CheckLeBail(Phases):
                 pass
     return False
         
-def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
+def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     '''Fit LeBail intensities without changes to any other refined parameters.
     This is a stripped-down version of :func:`Refine` that does not perform 
     any refinement cycles
+
+    :param str GPXfile: G2 .gpx file name
+    :param wx.ProgressDialog dlg: optional progress window to update. 
+      Default is None, which means no calls are made to this. 
+    :param int cycles: Number of LeBail cycles to perform
+    :param function refPlotUpdate: Optional routine used to plot results. 
+      Default is None, which means no calls are made to this. 
+    :param list seqList: List of histograms to be processed. Default 
+      is None which means that all used histograms in .gpx file are processed.
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
@@ -541,7 +550,11 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None):
     calcControls.update(Controls)
     constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
     restraintDict = {}
-    Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    Histograms_All,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    if seqList:
+        Histograms = {i:Histograms_All[i] for i in seqList}
+    else:
+        Histograms = Histograms_All
     if not Phases:
         G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
         return False,{'msg':'No phases'}

@@ -389,7 +389,10 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
     return [makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
 
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
-    '''Routine to locate GSASII importers matching a prefix string
+    '''Routine to locate GSASII importers matching a prefix string.
+
+    Warns if more than one file with the same name is in the path 
+    or if a file is found that is not in the main directory tree. 
     '''
     if errprefix is None:
         errprefix = prefix
@@ -401,13 +404,17 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
             pkg = os.path.splitext(os.path.split(filename)[1])[0]
             if pkg in import_files:
-                G2Print('Warning: file {} hidden by {}'.format(os.path.abspath(filename),import_files[pkg]))
+                G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
+            elif not filename.startswith(GSASIIpath.path2GSAS2):
+                G2Print('Note, found non-standard importer: {}'.format(os.path.abspath(filename)))
+                import_files[pkg] = filename
             else:
-                import_files[pkg] = filename            
+                import_files[pkg] = filename
 
     for pkg in sorted(import_files.keys()):
         try:
             exec('import '+pkg)
+            #print(eval(pkg+'.__file__'))
             for name, value in inspect.getmembers(eval(pkg)):
                 if name.startswith('_'):
                     continue
@@ -433,22 +440,27 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     return readerlist
 
 def LoadExportRoutines(parent, traceback=False):
-    '''Routine to locate GSASII exporters 
+    '''Routine to locate GSASII exporters. Warns if more than one file
+    with the same name is in the path or if a file is found that is not 
+    in the main directory tree. 
     '''
+    GSASIIpath.InvokeDebugOpts()  # DEBUG
     exporterlist = []
-    import_files = {}
+    export_files = {}
     if '.' not in sys.path: sys.path.append('.')
     for path in sys.path:
         for filename in glob.iglob(os.path.join(path,"G2export*.py")):
             pkg = os.path.splitext(os.path.split(filename)[1])[0]
-            if pkg in import_files:
-                G2Print('Warning: file {} hidden by {}'
-                                  .format(os.path.abspath(filename),import_files[pkg]))
+            if pkg in export_files:
+                G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
+            elif not filename.startswith(GSASIIpath.path2GSAS2):
+                G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
+                export_files[pkg] = filename
             else:
-                import_files[pkg] = filename            
+                export_files[pkg] = filename
     # go through the routines and import them, saving objects that
     # have export routines (method Exporter)
-    for pkg in sorted(import_files.keys()):
+    for pkg in sorted(export_files.keys()):
         try:
             exec('import '+pkg)
             for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
@@ -474,11 +486,11 @@ def LoadExportRoutines(parent, traceback=False):
                     continue
                 exporterlist.append(exporter)
         except AttributeError:
-            G2Print ('Export Attribute Error ' + import_files[pkg])
+            G2Print ('Export Attribute Error ' + export_files[pkg])
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            G2Print ('\nExport init: Error importing file ' + import_files[pkg])
+            G2Print ('\nExport init: Error importing file ' + export_files[pkg])
             G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)

@@ -1187,7 +1187,7 @@ def UpdatePeakGrid(G2frame, data):
         colLabels.append(l)
         if l.startswith('2'):
             Types.append(wg.GRID_VALUE_FLOAT + ':7,3')
-        elif "d" in f:
+        elif l == '00l':
             Types.append(wg.GRID_VALUE_NUMBER)
         else:
             Types.append(wg.GRID_VALUE_FLOAT + f.replace('%',':').replace('f','').replace('.',','))

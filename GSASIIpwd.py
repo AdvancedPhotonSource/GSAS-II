@@ -2351,13 +2351,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         names,_,_ = getHeaderInfo(dataType)
         if 'LF' in dataType:
             off = 2
-            names = names[:-1] # drop 2nd 2theta value
+            names = names[:-2] # drop 00l & 2theta from header
         else:
             off = 0
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 peakDict.update(peak)
                 continue
+            if 'LF' in dataType: peakDict['l'+str(i)] = peak[12]
             for j,name in enumerate(names):
                 parName = name+str(i)
                 peakDict[parName] = peak[off+2*j]

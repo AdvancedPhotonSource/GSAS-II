@@ -2137,7 +2137,7 @@ def getHeaderInfo(dataType):
                       #'2theta    '
                       '2\u03B8'
                       ]
-        fmt = ["%10.2f","%10.3f","%10.3f","%10.3f","%10.3f","%4d","%7.3f"]
+        fmt = ["%10.2f","%10.3f","%10.3f","%10.3f","%10.3f","%4.0f","%8.3f"]
     elif 'C' in dataType:
         names += ['sig','gam']
         lnames += ['sigma','gamma']
@@ -2376,6 +2376,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if 'clat' in varyList:
                 Peaks[-1]['clat'] = parmDict['clat']
             names = names[:-1] # drop 2nd 2theta value
+            for i,peak in enumerate(Peaks): 
+                if type(peak) is dict: continue
+                parmDict['ttheta'+str(i)] = peak[-1]
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2424,14 +2427,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         head = 13*' '
         for name in names:
             if name == 'l':
-                head += name.center(3)+'    '
+                head += name
             elif name == 'ttheta':
-                continue
+                head += name.center(8)
             elif name in ['alp','bet']:
                 head += name.center(8)+'esd'.center(8)
             else:
                 head += name.center(10)+'esd'.center(10)
-        head += 'bins'.center(8)
+        head += 'bins'.center(12)
         print (head)
         ptfmt = dict(zip(names,fmt))
         for i,peak in enumerate(Peaks):
@@ -2443,6 +2446,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 parName = name+str(i)
                 if parName not in parmDict: continue
                 ptstr += ptfmt[name] % (parmDict[parName])
+                if name == 'l' or name == 'ttheta':
+                    continue
                 if parName in varyList:
                     ptstr += ptfmt[name] % (sigDict[parName])
                 else:
@@ -2450,7 +2455,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         ptstr += 8*' '
                     else:
                         ptstr += 10*' '
-            ptstr += '%9.2f'%(ptsperFW[i])
+            ptstr += '%8.1f'%(ptsperFW[i])
             print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
                 
     def devPeakProfile(values,xdata,ydata,fixback, weights,dataType,parmdict,varylist,bakType,dlg):

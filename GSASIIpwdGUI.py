@@ -1193,7 +1193,8 @@ def UpdatePeakGrid(G2frame, data):
             Types.append(wg.GRID_VALUE_FLOAT + f.replace('%',':').replace('f','').replace('.',','))
             colLabels.append('refine')
             Types.append(wg.GRID_VALUE_BOOL)
-    T = []
+    # sort peaks & save into tree
+    T = []  
     for peak in data['peaks']:
         T.append(peak[0])
     D = dict(zip(T,data['peaks']))
@@ -1203,10 +1204,10 @@ def UpdatePeakGrid(G2frame, data):
     X = []
     for key in T: X.append(D[key])
     data['peaks'] = X
+    G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
 
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
     if 'LF' in Inst['Type'][0]:
         data['LFpeaks'] = []
         for i in range(len(data['peaks'])):
@@ -1228,6 +1229,7 @@ def UpdatePeakGrid(G2frame, data):
                 data['peaks'][i] += [0., False, 0., False, l, None]
             peakline = copy.deepcopy(data['peaks'][i][2:])
             peakline[-1] = data['peaks'][i][0]
+            peakline[-2] = int(peakline[-2]+.5)
             data['LFpeaks'].append(peakline)
         G2frame.PeakTable = G2G.Table(data['LFpeaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     else:

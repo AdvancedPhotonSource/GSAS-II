@@ -269,12 +269,12 @@ Required Binary Files
 As noted before, GSAS-II also requires that some code must be compiled.
 For the following platforms, binary images are provided:
 
-  * Windows-10: 64-bit Intel-compatible processors, prefix: win_64_
-  * MacOS: Intel processors, prefix mac_64_ 
-  * MacOS: ARM processors, aka Apple Silicon (M1, etc), prefix mac_arm_
-  * Linux: 64-bit Intel-compatible processors, prefix linux_64_
+  * Windows-10: 64-bit Intel-compatible processors, prefix `win_64_`
+  * MacOS: Intel processors, prefix `mac_64_ `
+  * MacOS: ARM processors, aka Apple Silicon (M1, etc), prefix `mac_arm_`
+  * Linux: 64-bit Intel-compatible processors, prefix `linux_64_`
   * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS only),
-    prefix linux_arm32_ and linux_arm64_
+    prefixes `linux_arm32_` and `linux_arm64_`
 
 Note that these binaries must match the major versions of both Python and
 numpy; binaries for only a small number of combinations are provided.

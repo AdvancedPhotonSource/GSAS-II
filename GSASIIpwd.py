@@ -904,15 +904,15 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
     a gpx file or the data tree.
 
     :param str pfx: histogram prefix (:h:)
-    :parm dict parmDict: Refinement parameter values
-    :parm str bakType: defines background function to be used. Should be
+    :param dict parmDict: Refinement parameter values
+    :param str bakType: defines background function to be used. Should be
       one of these: 'chebyschev', 'cosine', 'chebyschev-1', 
       'Q^2 power series', 'Q^-2 power series', 'lin interpolate', 
       'inv interpolate', 'log interpolate'
-    :parm str dataType: Code to indicate histogram type (PXC, PNC, PNT,...)
-    :parm MaskedArray xdata: independent variable, 2theta (deg*100) or 
+    :param str dataType: Code to indicate histogram type (PXC, PNC, PNT,...)
+    :param MaskedArray xdata: independent variable, 2theta (deg*100) or 
       TOF (microsec?)
-    :parm numpy.array fixback: Array of fixed background points (length 
+    :param numpy.array fixback: Array of fixed background points (length 
       matching xdata) or None
 
     :returns: yb,sumBK where yp is an array of background values (length 
@@ -1062,10 +1062,10 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
     See :func:`getBackground` for parameter definitions.
 
     :returns: dydb,dyddb,dydpk,dydfb where the first three are 2-D arrays 
-    of derivatives with respect to the background terms, the Debye terms and 
-    the background peak terms vs. the points in the diffracton pattern. The 
-    final 1D array is the derivative with respect to the fixed-background 
-    multiplier (= the fixed background values).
+      of derivatives with respect to the background terms, the Debye terms and 
+      the background peak terms vs. the points in the diffracton pattern. The 
+      final 1D array is the derivative with respect to the fixed-background 
+      multiplier (= the fixed background values).
     '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[hfx+'difC']/xdata

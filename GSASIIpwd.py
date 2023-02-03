@@ -900,7 +900,25 @@ def getgamFW(g,s):
     return gamFW(2.35482*s,g)   #sqrt(8ln2)*sig = FWHM(G)
                 
 def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
-    '''Computes the background from vars pulled from gpx file or tree.
+    '''Computes the background based on parameters that may be taken from 
+    a gpx file or the data tree.
+
+    :param str pfx: histogram prefix (:h:)
+    :parm dict parmDict: Refinement parameter values
+    :parm str bakType: defines background function to be used. Should be
+      one of these: 'chebyschev', 'cosine', 'chebyschev-1', 
+      'Q^2 power series', 'Q^-2 power series', 'lin interpolate', 
+      'inv interpolate', 'log interpolate'
+    :parm str dataType: Code to indicate histogram type (PXC, PNC, PNT,...)
+    :parm MaskedArray xdata: independent variable, 2theta (deg*100) or 
+      TOF (microsec?)
+    :parm numpy.array fixback: Array of fixed background points (length 
+      matching xdata) or None
+
+    :returns: yb,sumBK where yp is an array of background values (length 
+      matching xdata) and sumBK is a list with three values. The sumBK[0] is
+      the sum of all yb values, sumBK[1] is the sum of Debye background terms 
+      and sumBK[2] is the sum of background peaks.
     '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[pfx+'difC']/xdata
@@ -1039,7 +1057,16 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
     return yb,sumBk
     
 def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
-    'needs a doc string'
+    '''Computes the derivatives of the background 
+    Parameters passed to this may be pulled from gpx file or data tree.
+    See :func:`getBackground` for parameter definitions.
+
+    :returns: dydb,dyddb,dydpk,dydfb where the first three are 2-D arrays 
+    of derivatives with respect to the background terms, the Debye terms and 
+    the background peak terms vs. the points in the diffracton pattern. The 
+    final 1D array is the derivative with respect to the fixed-background 
+    multiplier (= the fixed background values).
+    '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[hfx+'difC']/xdata
     elif 'E' in dataType:

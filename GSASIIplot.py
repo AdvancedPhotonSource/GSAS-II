@@ -120,6 +120,7 @@ import os.path
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
+import GSASIIpath
 # Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
@@ -139,7 +140,6 @@ except (ImportError, ValueError) as err:
     print('GSASIIplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
-import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIdataGUI as G2gd

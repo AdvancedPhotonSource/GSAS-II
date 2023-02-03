@@ -266,23 +266,23 @@ Optional Python Packages
 Required Binary Files
 --------------------------------
 
-As noted before, GSAS-II also requires that some code must be compiled.
+As noted before, GSAS-II also requires that some code be compiled.
 For the following platforms, binary images are provided:
 
-  * Windows-10: 64-bit Intel-compatible processors, prefix `win_64_`
-  * MacOS: Intel processors, prefix `mac_64_ `
-  * MacOS: ARM processors, aka Apple Silicon (M1, etc), prefix `mac_arm_`
-  * Linux: 64-bit Intel-compatible processors, prefix `linux_64_`
-  * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS only),
-    prefixes `linux_arm32_` and `linux_arm64_`
+  * Windows-10: 64-bit Intel-compatible processors. [Prefix `win_64_`\ ]
+  * MacOS: Intel processors. [Prefix `mac_64_`\ ]
+  * MacOS: ARM processors, aka Apple Silicon (M1, etc). [Prefix `mac_arm_`\ ]
+  * Linux: 64-bit Intel-compatible processors. [Prefix `linux_64_`\ ]
+  * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS only).
+    [Prefixes `linux_arm32_` and `linux_arm64_`\ ]
 
 Note that these binaries must match the major versions of both Python and
 numpy; binaries for only a small number of combinations are provided.
 A full list of what is available can be seen by looking at the
 contents of the directory at web address
 https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser/Binaries,
-noting that a subdirectory name will be `prefix_p`X.X`_n`Y.Y where `prefix`
-is given above X.X is the Python version and Y.Y is the numpy
+noting that a subdirectory name will be *prefix*\  _p\ `X.X`\ _n\ `Y.Y` where
+*prefix* is noted above and `X.X` is the Python version and `Y.Y` is the numpy
 version.
 Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of

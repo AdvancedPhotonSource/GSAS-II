@@ -11496,13 +11496,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
-            # TODO: could be just 'A' for spinning RBs; fix by sytsym rules?
-            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV','V'],
+            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+            Qchoice = [' ','A','AV','V']
+            if rbType == 'Spin':
+                Qchoice = [' ','A']
+            # TODO: fix by sytsym rules?
+            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
-            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             RBObj['SytSym'] = Sytsym    #Only needed for spinning RBs
             sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
             rbSizer.Add(topSizer)
@@ -11541,14 +11544,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnAddShell(event):
-                RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
-                RBdata = G2frame.GPXtree.GetItemPyData(RBId)
                 rbNames = []
                 rbIds = {}
-                for item in RBdata.get('Spin',[]):
-                    name = RBdata['Spin'][item]['RBname']
+                for rbId in RBData['Spin']:
+                    name = RBData['Spin'][rbId]['RBname']
                     rbNames.append(name)
-                    rbIds[name] = item
+                    rbIds[name] = rbId
                 if len(rbNames) == 1:
                     selection = rbNames[0]
                 else:
@@ -11564,13 +11565,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             return
                     finally:
                         dlg.Destroy()
-                    rbData = RBdata['Spin'][rbIds[selection]]
-                    data['RBModels']['Spin'][-1]['RBId'].append(rbIds[selection])
-                    data['RBModels']['Spin'][-1]['SHC'].append({})
-                    for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
-                        data['RBModels']['Spin'][-1][name].append(rbData[name])
-                    G2plt.PlotStructure(G2frame,data)
-                    wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
+                        
+                rbData = RBData['Spin'][rbIds[selection]]
+                RBObj['RBId'].append(rbIds[selection])
+                RBObj['SHC'].append({})
+                for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
+                    data['RBModels']['Spin'][-1][name].append(rbData[name])
+                RBData['Spin'][rbIds[selection]]['useCount'] += 1
+                G2plt.PlotStructure(G2frame,data)
+                wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                 
             def SHsizer():
                 def OnSHOrder(event):
@@ -11604,6 +11607,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 def OnDelShell(event):
                     Obj = event.GetEventObject()
                     iSh = Indx[Obj.GetId()]
+                    rbId = RBObj['RBId'][iSh]
+                    RBData['Spin'][rbId]['useCount'] -= 1
+                    RBData['Spin'][rbId]['useCount'] = max(0,RBData['Spin'][rbId]['useCount'])
                     for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
                         del RBObj[name][iSh]
                     G2plt.PlotStructure(G2frame,data)
@@ -11640,7 +11646,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     else:
                         shcSizer = wx.FlexGridSizer(0,9,5,5)
                         for item in RBObj['SHC'][iSh]:
-                            shcSizer.Add(wx.StaticText(RigidBodies,label='%2d*%s'%(RBObj['SHC'][iSh][item][1],item)))
+                            shcSizer.Add(wx.StaticText(RigidBodies,label='%s'%item.strip('+').strip('-')))
                             shcSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['SHC'][iSh][item],0,nDig=(8,5),
                                 typeHint=float,size=(70,-1),OnLeave=NewSHC))
                             schref = wx.CheckBox(RigidBodies,label=' refine? ')
@@ -11657,10 +11663,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             topLine.Add(wx.StaticText(RigidBodies,
                 label='Shell 0: Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'][0],RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
             rbId = RBObj['RBId']
-            delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-            delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
-            Indx[delRB.GetId()] = rbId
-            topLine.Add(delRB,0,WACV)
+            if len(RBObj['nSH']) == 1:
+                delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
+                delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
+                Indx[delRB.GetId()] = rbId
+                topLine.Add(delRB,0,WACV)
             addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add new shell',style=wx.BU_EXACTFIT)
             addShell.Bind(wx.EVT_BUTTON,OnAddShell)
             Indx[addShell.GetId()] = rbId
@@ -12006,11 +12013,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             spnId = -1
             if prevSpnId is not None:
                 spnId = prevSpnId
-            try:
-                rbName = RBnames[spnId]
-            except:
-                spnId = 0
-                rbName = RBnames[spnId]
+                try:
+                    rbName = RBnames[spnId]
+                except:
+                    spnId = 0
+                    rbName = RBnames[spnId]
             rbObj = data['RBModels']['Spin'][spnId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             spnSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
@@ -12213,9 +12220,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
                 
-                rbNames = []
+                rbNames = [[]]
                 for item in data['RBModels'].get(rbType,[]):
-                    rbNames.append(item['RBname'])
+                    if rbType == 'Spin':
+                        rbNames.append(item['RBname'][0])
+                    else:
+                        rbNames.append(item['RBname'])
                 rbObj['Ids'] = Ids          #atomids
                 rbId = rbObj['RBId']        #RB obj id
                 rbObj['AtomFract'] = [1.0,False]
@@ -12742,14 +12752,14 @@ of the crystal structure.
                 if i in rbAssignments:
                     if rbAssignments[i] is None:
                         displayTable.append([l[0],-1,'?',-1,'Create new'])
-                        Actions = False
+#                        Actions = False
                     else:
                         lbl = rbAssignments[i]
                         displayTable.append([l[0],l[5],l[6],l[10],lbl]) # TODO: think about this
                 else:
                     if rbType == 'Spin':
                         displayTable.append([l[1],-1,l[1]+str(i),-1,'Create new'])
-                        Actions = False
+#                        Actions = False
                     else:
                         displayTable.append([l[0],l[5],l[6],l[10],lbl])
             Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_NUMBER,

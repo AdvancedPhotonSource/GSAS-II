@@ -5346,8 +5346,7 @@ class GSASII(wx.Frame):
             if 'pId' not in Phases[phase]:
                 self.ErrorDialog('View parameter error','You must run least squares at least once')
                 raise Exception('No pId for phase '+phase)
-        rigidbodyDict = self.GPXtree.GetItemPyData(   
-            GetGPXtreeItemId(self,self.root,'Rigid bodies'))
+        rigidbodyDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,BLtable,MFtable,maxSSwave = \

@@ -10313,10 +10313,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         radius = SpnData['radius']
                         atColor = SpnData['atColor']
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
-                        QA = G2mth.invQ(SpnData['Orient'][0])
-                        QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]
-                        Q = G2mth.prodQQ(QB,QA)
                         Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
+                        QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
+                        QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
+                        QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
+                        Q = G2mth.prodQQ(QB,QA)
+                        Q = G2mth.prodQQ(Q,QP)
                         PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl

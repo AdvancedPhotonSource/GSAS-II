@@ -2158,11 +2158,8 @@ def _FormatConstraint(RelDict,RelVal):
     return s1
 
 def _showEquiv(varlist,mapvars,invmultarr,longmsg=False):
-    '''Format an equivalence relationship
-    note that 
-    varlist,           mapvars,     invmultarr 
-    are elements of
-    dependentParmList, indParmList, invarrayList
+    '''Format an equivalence relationship, note that varlist, mapvars, invmultarr 
+    are elements of dependentParmList, indParmList, invarrayList
     '''
     for i,mv in enumerate(mapvars):
         s1 = str(mv)
@@ -2482,10 +2479,7 @@ def Map2Dict(parmDict,varyList):
             #    varlist,
             #    np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))
             #    ): print('parmDict set',v,':',val)
-            parmDict.update(zip(
-                varlist,
-                np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))
-                ))
+            parmDict.update(zip(varlist,np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))))
 
     # * for the created parameters, compute them from their dependents
     for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):

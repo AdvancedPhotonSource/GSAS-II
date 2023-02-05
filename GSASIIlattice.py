@@ -2111,8 +2111,8 @@ def LaueUnique(Laue,HKLF):
 #Spherical harmonics routines
 def RBChk(sytsym,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for site symmetries
-    :param str SGLaue: Laue symbol or sytsym symbol
-    :param int L: principal harmonic term
+    :param str sytsym: atom site symmetry symbol
+    :param int L: principal harmonic term L>0
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed and sign for term
     NB: not complete for all possible site symmetries! Many are missing
@@ -2241,6 +2241,10 @@ def RBChk(sytsym,L,M):
 def RBsymChk(RBsym,cubic,coefNames,L=18):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+    :param str RBsym:  molecular point symmetry symbol
+    :param bool cubic: True if atom site symmetry is cubic
+    :param list coefNames: sp. harm coefficient names to be checked/converted
+    :param int L:  maximum spherical harmonic order no. for cubic generation if needed
     '''
     # cubicsigns = {'C(3,1)c':[-1,],'C(4,1)c':[1,1,],'C(6,1)c':[1,-1],'C(6,2)c':[1,-1],'C(7,1)c':[1,-1],'C(8,1)c':[1,1,1],
     #     'C(9,1)c':[1,-1],'C(9,2)c':[1,-1],'C(10,1)c':[1,-1,-1],'C(10,2)c':[1,1,-1]}
@@ -2297,6 +2301,11 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+    :param str sytsym: atom position site symmetry symbol
+    :param str RBsym: molecular point symmetry symbol
+    :param int L: spherical harmonic order no.
+    :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
+    :returns list newSgns: matching coefficient signs as +/- 1.0
     '''
     coefNames = []
     coefSgns = []
@@ -2319,6 +2328,12 @@ def GenRBCoeff(sytsym,RBsym,L):
     return newNames,newSgns
 
 def GenShCoeff(sytsym,L):
+    '''Generate spherical harmonic coefficient names for atom site symmetry
+    :param str sytsym: site symmetry or perhaps molecular symmetry
+    :param int L:spherical harmonic order no.
+    :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
+    :returns list newSgns: matching coefficient signs as +/- 1.0
+    '''
     coefNames = []
     coefSgns = []
     cubic = False
@@ -2378,7 +2393,13 @@ def OdfChk(SGLaue,L,M):
     return False
 
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
-    'needs doc string'
+    '''Generate spherical harmonics coefficient names for texture
+    :param str SGLaue: Laue symbol
+    :param str SamSym: sample symmetry symbol
+    :param int L: spherical harmonic order no.
+    :param bool IfLMN: if TRUE return sp.harm. name as C(L,M,N); else return C(L,N)
+    :returns coefficient name as C(L,M,N) or C(L,N)
+    '''
     coeffNames = []
     for iord in [2*i+2 for i in range(L//2)]:
         for m in [i-iord for i in range(2*iord+1)]:
@@ -2392,7 +2413,12 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     return coeffNames
     
 def CrsAng(H,cell,SGData):
-    'needs doc string'
+    '''Convert HKL to polar coordinates with proper orientation WRT space group point group
+    :param array H: hkls
+    :param list cell: lattice parameters
+    :param dict SGData: space group data
+    :returns arrays phi,beta: polar, azimuthal angles for HKL
+    '''
     a,b,c,al,be,ga = cell
     SQ3 = 1.732050807569
     H1 = np.array([1,0,0])
@@ -2649,6 +2675,12 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
 
 def H2ThPh(H,Bmat,Q):
     '''Convert HKL to spherical polar & azimuth angles
+    
+    :param array H: array of hkl as [n,3]
+    :param [3,3] array Bmat: inv crystal to Cartesian transformation
+    :param array Q: quaternion for rotation of HKL to new polar axis
+    :returns array Th: HKL azimuth angles
+    :returns array Ph: HKL polar angles
     '''
     A,V = G2mth.Q2AVdeg(Q)
     QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
@@ -2657,15 +2689,15 @@ def H2ThPh(H,Bmat,Q):
     Qmat = G2mth.Q2Mat(Q2)
     CH = np.inner(H,Bmat)
     CH = np.inner(CH,Qmat)
-    CH /= nl.norm(CH,axis=2)[:,:,nxs]
+    CH /= nl.norm(CH,axis=1)[:,nxs]
     H3 = np.array([0,0,1.])
     DHR = np.inner(CH,H3)
     Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.
-    TH = CH*np.array([1.,1.,0.])[nxs,nxs,:]     #projection of CH onto xy plane
-    TH /= nl.norm(TH,axis=2)[:,:,nxs]
-    Th = atan2d(TH[:,:,0],TH[:,:,1])                #azimuth angle 0<=Th<360<
+    TH = CH*np.array([1.,1.,0.])[nxs,:]     #projection of CH onto xy plane
+    TH /= nl.norm(TH,axis=1)[:,nxs]
+    Th = atan2d(TH[:,0],TH[:,1])                #azimuth angle 0<=Th<360<
     Th = np.where(Th<0.,Th+360.,Th)
-    return Th,Ph
+    return Th,Ph        #azimuth,polar angles
 
 def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation.
@@ -2678,17 +2710,32 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     
     :returns array SHVal: spherical harmonics array for psi,gam values
     '''
-    SHVal = np.ones_like(psi)
+    SHVal = np.ones_like(psi)/(4.*np.pi)
     for term in SHFln:
-        if 'C(' in term[:2]:
-            l,m = eval(term.strip('C').strip('c'))
-            if SytSym in ['m3m','m3','43m','432','23'] or 'c' in term:
+        trm = term.strip('+').strip('-')    #patch
+        if 'C(' in term[:3]:
+            l,m = eval(trm.strip('C').strip('c'))
+            if SytSym in ['m3m','m3','43m','432','23'] or 'c' in trm:
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
                 p = SHFln[term][2]
                 Ksl = SphHarmAng(l,m,p,psi,gam)
             SHVal += SHFln[term][0]*Ksl
     return SHVal
+
+def KslCalc(trm,psi,gam):
+    '''Compute one angular part term in spherical harmonics
+    :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
+    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
+    :param float/array gam: Polar coordinate 0<= Ph <= 180
+    
+    :returns array Ksl: spherical harmonics angular part for psi,gam pairs
+    '''
+    l,m = eval(trm.strip('C').strip('c'))
+    if 'c' in trm:
+        return CubicSHarm(l,m,psi,gam)
+    else:
+        return SphHarmAng(l,m,1.0,psi,gam)        
     
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm

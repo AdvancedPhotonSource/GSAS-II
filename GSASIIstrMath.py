@@ -17,6 +17,7 @@ import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.stats as st
+import scipy.special as sp
 import multiprocessing as mp
 import pickle
 import GSASIIpath
@@ -56,11 +57,13 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     '''
     atxIds = ['Ax:','Ay:','Az:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
-    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
-    if not RBIds['Vector'] and not RBIds['Residue']:
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds
+    RBIds['Spin'] = RBIds.get('Spin',[])        #patch
+    if not RBIds['Vector'] and not RBIds['Residue'] and not RBIds['Spin']:
         return
     VRBIds = RBIds['Vector']
     RRBIds = RBIds['Residue']
+    SRBIds = RBIds['Spin']
     if Update:
         RBData = rigidbodyDict
     else:
@@ -72,6 +75,13 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 for j in range(len(VRBData[rbId]['VectMag'])):
                     name = '::RBV;'+str(j)+':'+str(i)
                     VRBData[rbId]['VectMag'][j] = parmDict[name]
+    if RBIds['Spin']:
+        SRBData = RBData['Spin']
+        for i,rbId in enumerate(SRBIds):
+            if SRBData[rbId]['useCount']:
+                name = '::RBS;0:'+str(i)
+                SRBData[rbId]['radius'][0] = parmDict[name]
+        
     for phase in Phases:
         Phase = Phases[phase]
         General = Phase['General']
@@ -156,16 +166,27 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 elif UIJ[i][0] == 'I':
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
                     
+        for irb,RBObj in enumerate(RBModels.get('Spin',[])):
+            jrb = SRBIds.index(RBObj['RBId'][0])
+            name = pfx+'RBSOa:%d:%d'%(irb,jrb)
+            RBObj['Orient'][0][0] = parmDict[name]
+            for ish in range(len(RBObj['RBId'])):
+                jrb = SRBIds.index(RBObj['RBId'][ish])
+                for item in RBObj['SHC'][ish]:
+                    name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,irb,jrb)
+                    RBObj['SHC'][ish][item][0] = parmDict[name]
+                    
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     'Computes rigid body derivatives'
     atxIds = ['dAx:','dAy:','dAz:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     OIds = ['Oa:','Oi:','Oj:','Ok:']
-    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
-    if not RBIds['Vector'] and not RBIds['Residue']:
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'spin':[]})  #these are lists of rbIds
+    if not RBIds['Vector'] and not RBIds['Residue'] and not RBIds['Spin']:
         return
     VRBIds = RBIds['Vector']
     RRBIds = RBIds['Residue']
+    SRBIds = RBIds['Spin']
     RBData = rigidbodyDict
     for item in parmDict:
         if 'RB' in item:
@@ -182,6 +203,14 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'],cia+8)
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
+    
+    for irb,RBObj in enumerate(RBModels.get('Spin',[])):
+        symAxis = RBObj.get('symAxis')
+        SModel = RBData['Spin'][RBObj['RBId']]
+        Q = RBObj['Orient'][0]
+        jrb = SRBIds.index(RBObj['RBId'])
+        rbsx = str(irb)+':'+str(jrb)
+        #TODO what is needed here?
     
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')
@@ -313,34 +342,73 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
                 
-def MakeSpHarmFF(HKL,pfx,Bmat,SHCdict,Tdata,FF):
+def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ):
     ''' Computes hkl dependent form factors from spinning rigid bodies
     '''
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
-            for irb in range(len(SHCdict)):
-                if SHCdict[irb]['AtNo'] == iAt:
+            SHdat = SHCdict[iAt]
+            Orient = [SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']]
+            QA = G2mth.invQ(Orient)       #rotates about chosen axis
+            symAxis = np.array(SHdat['symAxis'])
+            QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
+            Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
+            Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,Q)
+            QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
+            SQR = np.repeat(SQ,HKL.shape[1])
+            FF[:,iAt] = 0.
+            ishl = 0
+            while True:
+                shl = '%d'%ishl
+                if shl not in SHdat:
                     break
-            
-            
-            Th,Ph = G2lat.H2ThPh(HKL,Bmat)
-            P = G2lat.SHarmcal(SHCdict['SytSym'],SHCdict[irb],Th,Ph)
-            FF[:,iAt] = P
+                Shell = SHdat[shl]
+                R = Shell['R']
+                Atm = Shell['AtType']
+                Nat = Shell['Natoms']
+                if 'X' in hType:
+                    SFF = G2el.ScatFac(FFtables[Atm],SQR)
+                    dat = G2el.getBLvalues(BLtables)
+                elif 'N' in hType:
+                    dat = G2el.getBLvalues(BLtables)
+                    SFF = dat[Atm]
+                FF[:,iAt] += Nat*SFF*sp.spherical_jn(0,QR*R)/(4.*np.pi)    #Bessel function; L=0 term
+                for item in Shell:
+                    if 'C(' in item:
+                        l,m = eval(item.strip('C').strip('c'))
+                        SH = G2lat.KslCalc(item,Th,Ph)*Shell[item]
+                        BS = 1.0
+                        if R > 0.:
+                            BS = sp.spherical_jn(l,QR*R)    #Bessel function
+                        FF[:,iAt] += Nat*SFF*BS*SH
+                ishl += 1
+#TODO will need derivatives version of this - dFF/dC, dFF/dR & dFF/dOa (not Oi,Oj,Ok)
             
 def GetSHC(pfx,parmDict):
     SHCdict = {}
     for parm in parmDict:
-        if pfx+'RBS' in parm or '::RBS' in parm:
+        if pfx+'RBS' in parm:
             items = parm.split(':')
-            name = items[2][3:]    #strip 'RB'
-            if name == ';0':
-                name = 'R'
-            atid = int(items[3])
+            tag = ':'.join([items[-2],'0'])
+            name = items[2][3:]    #strip 'RBS'
+#            print(parm,items,tag,name,parmDict[parm])
+            atid = parmDict[pfx+'RBSAtNo:'+tag]
             if atid not in SHCdict:
                 SHCdict[atid] = {}
-            if ';' in name:
-                name = name.split(';')[1]
-            SHCdict[atid][name] = parmDict[parm]
+            if ';' not in name:     # will get Oa, Oi ,Oj, Ok
+                if name not in ['AtNo','Px','Py','Pz','SytSym']:
+                    SHCdict[atid][name] = parmDict[parm]
+                continue
+            bits = name.split(';')
+            shno = bits[1]
+            if shno not in SHCdict[atid]:
+                SHCdict[atid][shno] = {'R':parmDict['::RBS;0:%s'%shno]}
+            if 'AtType' in bits[0] or 'Natoms' in bits[0]:
+                SHCdict[atid][shno][bits[0]] = parmDict[parm]
+            elif 'Sh' in name:
+                cof = bits[2]
+                SHCdict[atid][shno][cof] = parmDict[parm]
+#    for item in SHCdict: print(item,SHCdict[item])
     return SHCdict
     
     
@@ -792,8 +860,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
-    TwDict = refDict.get('TwDict',{})           
-    if 'S' in calcControls[hfx+'histType']:
+    TwDict = refDict.get('TwDict',{})
+    hType = calcControls[hfx+'histType'] 
+    if 'S' in hType:
         NTL = calcControls[phfx+'NTL']
         NM = calcControls[phfx+'TwinNMN']+1
         TwinLaw = calcControls[phfx+'TwinLaw']
@@ -803,12 +872,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
-    if 'NC' in calcControls[hfx+'histType'] or 'NB' in calcControls[hfx+'histType']:
+    if 'NC' in hType or 'NB' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
-    elif 'X' in calcControls[hfx+'histType']:
+    elif 'X' in hType:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    elif 'SEC' in calcControls[hfx+'histType']:
+    elif 'SEC' in hType:
         FP = np.zeros(len(Tdata))
         FPP = np.zeros(len(Tdata))
     Uij = np.array(G2lat.U6toUij(Uijdata))
@@ -816,11 +885,11 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     blkSize = 100       #no. of reflections in a block - size seems optimal
     nRef = refDict['RefList'].shape[0]
     SQ = 1./(2.*refDict['RefList'].T[4])**2
-    if 'N' in calcControls[hfx+'histType']:
+    if 'N' in hType:
         dat = G2el.getBLvalues(BLtables)
         refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
-    elif 'SEC' in calcControls[hfx+'histType']:
+    elif 'SEC' in hType:
         dat = G2el.getFFvalues(EFtables,0.)
         refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
@@ -851,7 +920,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
-        if 'T' in calcControls[hfx+'histType']:
+        if 'T' in hType:
             if 'P' in calcControls[hfx+'histType']:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
             else:
@@ -874,7 +943,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
         if len(SHCdict):
-            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,FF)
+            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
@@ -887,7 +956,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if SGData['SGInv']: #centrosymmetric; B=0
             fbs[0] *= 0.
             fas[1] *= 0.
-        if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
+        if 'P' in hType:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
             refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2

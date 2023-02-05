@@ -1129,10 +1129,26 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
                 sigstr += 12*' '
         pFile.write(namstr+'\n')
         pFile.write(valstr+'\n')
+        pFile.write(sigstr+'\n')
+
+    def PrintRBSpnandSig(SpinRB,SpinSig):
+        pFile.write('\n Spinning radius for %s:\n'%SpinRB['RBname'])
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,[val,sig] in enumerate(zip(SpinRB['radius'],SpinSig)):
+            namstr += '%12s'%('Spin '+str(i))
+            valstr += '%12.4f'%(val)
+            if sig:
+                sigstr += '%12.4f'%(sig)
+            else:
+                sigstr += 12*' '
+        pFile.write(namstr+'\n')
+        pFile.write(valstr+'\n')
         pFile.write(sigstr+'\n')        
         
-    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
-    if not RBIds['Vector']:
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds
+    if not RBIds['Vector'] and not RBIds['Spin']:
         return
     for irb,item in enumerate(RBIds['Vector']):
         if rigidbodyDict['Vector'][item]['useCount']:
@@ -1143,6 +1159,15 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
                 if name in sigDict:
                     VectSig.append(sigDict[name])
             PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)    
+    for irb,item in enumerate(RBIds['Spin']):
+        if rigidbodyDict['Spin'][item]['useCount']:
+            SpinSig = []
+            name = '::RBS;'+str(0)+':'+str(irb)
+            if name in sigDict:
+                SpinSig.append(sigDict[name])
+                
+            
+            PrintRBSpnandSig(rigidbodyDict['Spin'][item],SpinSig)    
         
 ################################################################################
 ##### Phase data
@@ -1290,7 +1315,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write('Atom site frac: %10.3f Refine? %s\n'%(RB['AtomFrac'][0],RB['AtomFrac'][1]))
                 PrintRBThermals()
                 
-        if len(spnRBData):
+        if len(spnRBData):      #TODO: fix this
             for RB in spnRBData:
                 Oxyz = RB['Orig'][0]
                 Qrijk = RB['Orient'][0]
@@ -1302,7 +1327,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write('Bessel/Spherical Harmonics coefficients; symmetry required sign shown\n')
                 for ish,SHC in enumerate(RB['SHC']):
                     if len(SHC):
-                        pFile.write('Spin shell (%s) no: %d\n'%(RB['RBname'][ish],ish))
+                        pFile.write('Spin shell (%s) shell no: %d\n'%(RB['RBname'][ish],ish))
                         SHkeys = list(SHC.keys())
                         nCoeff = len(SHC)
                         nBlock = nCoeff//6+1
@@ -1488,11 +1513,15 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         else:
             name = pfx+'RB'+rbKey+'AtNo:'+str(iRB)+':'+rbid
             phaseDict[name] = atomIndx[RB['Ids'][0]][1]
+            name = pfx+'RB'+rbKey+'symAxis:'+str(iRB)+':'+rbid
+            phaseDict[name] = RB['symAxis']
             name = pfx+'RB'+rbKey+'SytSym:'+str(iRB)+':'+rbid
             phaseDict[name] = RB['SytSym']
             for ish,atype in enumerate(RB['atType']):
                 name = '%sRBSAtType;%d:%d:%s'%(pfx,ish,iRB,rbid)
                 phaseDict[name] = RB['atType'][ish]
+                name = '%sRBSNatoms;%d:%d:%s'%(pfx,ish,iRB,rbid)
+                phaseDict[name] = RB['Natoms'][ish]
                                 
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
@@ -1535,13 +1564,15 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseVary += [name,]
                 
     def MakeRBSphHarm(rbKey,phaseVary,phaseDict):
-        rbid = str(rbids.index(RB['RBId'][0]))
         for ish,Shcof in enumerate(RB['SHC']):
+            if not len(Shcof):
+                continue
+            shid = str(rbids.index(RB['RBId'][ish]))
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]
-                name = pfxRB+shcof+':'+str(iRB)+':'+rbid
-                phaseDict[name] = SHcof[0]*SHcof[1]
+                name = pfxRB+shcof.strip('+').strip('-')+':'+str(iRB)+':'+shid      #patch; remove sign
+                phaseDict[name] = SHcof[0]*SHcof[1]         #apply sign p
                 if SHcof[2]:
                     phaseVary += [name,]
                     
@@ -2348,6 +2379,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     def PrintRBObjTLSAndSig(rbfx,rbsx,TLS):
         for i in WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
             pFile.write(i)
+            
+    def PrintRBObjSHCAndSig(rbfx,SHC,rbsx):
+        for i in WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
+            pFile.write(i)
         
     def PrintRBObjTorAndSig(rbsx):
         nTors = len(RBObj['Torsions'])
@@ -2489,6 +2524,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         else:
             VRBIds = RBIds['Vector']
             RRBIds = RBIds['Residue']
+            SRBIds = RBIds['Spin']
             RBModels = Phase['RBModels']
             if pFile:
                 for irb,RBObj in enumerate(RBModels.get('Vector',[])):
@@ -2504,7 +2540,15 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     PrintRBObjPOAndSig('RBR',rbsx)
                     PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                     PrintRBObjTorAndSig(rbsx)
-            atomsSig = {}   # TODO: replace with sigKey & sigDict
+                for irb,RBObj in enumerate(RBModels.get('Spin',[])):
+                    for ish in range(len(RBObj['RBId'])):       #shell no.
+                        jrb = SRBIds.index(RBObj['RBId'][ish])  #spin rb no.
+                        rbsx = str(irb)+':'+str(jrb)
+                        pFile.write(' Spin rigid body parameters:\n')
+                        PrintRBObjPOAndSig('RBS',rbsx)
+                        rbsx = ':%d:%d'%(irb,jrb)
+                        PrintRBObjSHCAndSig('RBSSh;%d;'%ish,RBObj['SHC'][ish],rbsx)
+            atomsSig = {}
             sigKey = {}
             wavesSig = {}
             cx,ct,cs,cia = General['AtomPtrs']
@@ -4139,12 +4183,30 @@ def WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
     out.append(sigstr+'\n')
     return out
 
+def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
+    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings. 
+    Moved so it can be used in ExportCIF
+    '''
+    out = []
+    namstr = '  names :'
+    valstr = '  values:'
+    sigstr = '  esds  :'
+    out.append(' Sp.harm.:\n')
+    for item in SHC:
+        name = pfx+rbfx+item+rbsx
+        namstr += '%12s'%(item)
+        valstr += '%12.4f'%(parmDict[name])
+        if name in sigDict:
+            sigstr += '%12.4f'%(sigDict[name])
+    out.append(namstr+'\n')
+    out.append(valstr+'\n')
+    out.append(sigstr+'\n')
+    return out
+
 def WriteSpnRBModel(RBModel,sigDict={},irb=None):
     '''Write description of a spinning rigid body. Code here to make usable from G2export_CIF
     '''
-    out = []
-    #rbRef = RBModel['rbRef']
-    atTypes = RBModel['rbType']
+    out = ' Radius: %10.3f refine? %s\n'%(RBModel['radius'][0],RBModel['radius'][1])    
     return out
 
 def WriteResRBModel(RBModel):
@@ -4162,7 +4224,6 @@ def WriteResRBModel(RBModel):
         (atNames[rbRef[0]],atNames[rbRef[1]],atNames[rbRef[0]],atNames[rbRef[2]]))
     if rbSeq:
         for i,rbseq in enumerate(rbSeq):
-#                nameLst = [atNames[i] for i in rbseq[3]]
             out.append('  Torsion sequence %d Bond: %s - %s riding: %s\n'%
                     (i,atNames[rbseq[0]],atNames[rbseq[1]],str([atNames[i] for i in rbseq[3]])))
     return out

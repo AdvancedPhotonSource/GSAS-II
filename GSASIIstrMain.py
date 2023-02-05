@@ -903,7 +903,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             
             
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,
-                                                  rigidbodyDict,SeqResult[histogram],Controls['parmFrozen'])
+                rigidbodyDict,SeqResult[histogram],Controls['parmFrozen'])
             if msg: 
                 printFile.write(msg+'\n')
             NewparmDict = {}

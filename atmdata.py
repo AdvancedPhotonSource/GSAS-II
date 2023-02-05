@@ -470,10 +470,6 @@ AtmSize = {
     'Cf':[2.20,  2.00, 1.70, 0],
     'Va':[0.50,  0.50, 0.50, 0],
     'Q': [0.50,  0.50, 0.50, 0],
-    # 'Qa':[0.50,  0.50, 0.50, 0],
-    # 'Qb':[0.50,  0.50, 0.50, 0],
-    # 'Qc':[0.50,  0.50, 0.50, 0],
-    # 'Qd':[0.50,  0.50, 0.50, 0],
         }
 # Bond valence coefficients for X-O, X-F & X-Cl Taken from Brese and O'Keefe, Acta Cryst B, 47, 192-197 (1991).
 BVSoxid = {
@@ -536,6 +532,7 @@ BVSoxid = {
     'Pr':['Pr+3',],
     'Pt':['Pt+2','Pt+4',],
     'Pu':['Pu+3',],
+    'Q' :['Q',],    #spin sph. harm RB
     'Rb':['Rb+1',],
     'Re':['Re+7',],
     'Rh':['Rh+3',],

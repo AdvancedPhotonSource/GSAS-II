@@ -474,6 +474,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 namelist = [rbfx+'S12',rbfx+'S13',rbfx+'S21',rbfx+'S23',rbfx+'S31',rbfx+'S32',rbfx+'SAA',rbfx+'SBB']
             if 'U' in name:
                 namelist = [rbfx+'U',]
+            if 'Tr' in name:
+                namelist = [rbfx+'Tr',]
 
         for item in nameList:
             keys = item.split(':')
@@ -484,7 +486,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 mitem = ':'.join(keys)
                 if mitem == name: continue
                 if mitem not in outList: outList.append(mitem)
-            elif keys[2] in namelist and item != name:
+            elif (keys[2] in namelist or keys[2].split(';')[0] in namelist) and item != name:
                 outList.append(item)
         return outList
         
@@ -3634,6 +3636,27 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     res.ForceRefresh()
                     G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                     
+            def OnHDswitch(event):
+                Obj = event.GetEventObject()
+                res = Indx[Obj.GetId()]
+                resTable = res.GetTable()
+                AtInfo = data['Residue']['AtInfo']
+                for r in range(res.GetNumberRows()):
+                    row = resTable.GetRowValues(r)
+                    if row[1] == 'H':
+                        row[0] = 'D'+row[0][1:]
+                        row[1] = 'D'
+                    elif row[1] == 'D':
+                        row[0] = 'H'+row[0][1:]
+                        row[1] = 'H'                        
+                    rbData['atNames'][r] = row[0]
+                    rbData['rbTypes'][r] = row[1]
+                    Info = G2elem.GetAtomInfo(row[1])
+                    AtInfo[row[1]] = [Info['Drad'],Info['Color']]
+                    resTable.SetRowValues(r,row)
+                res.ForceRefresh()
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+                    
             def OnCycleXYZ(event):
                 Obj = event.GetEventObject()
                 res = Indx[Obj.GetId()]
@@ -3724,7 +3747,11 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
                 molcent.Bind(wx.EVT_BUTTON,OnMolCent)
                 Indx[molcent.GetId()] = resGrid
                 refAtmSizer2.Add(molcent,0,WACV)
-            
+                HDbut = wx.Button(ResidueRBDisplay,label='H <-> D?')
+                HDbut.Bind(wx.EVT_BUTTON,OnHDswitch)
+                Indx[HDbut.GetId()] = resGrid
+                refAtmSizer2.Add(HDbut,0,WACV)
+
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(refAtmSizer,0,wx.EXPAND)
             if refAtmSizer2: mainSizer.Add(refAtmSizer2)

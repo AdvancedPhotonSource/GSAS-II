@@ -9,9 +9,11 @@
 
 from __future__ import division, print_function
 import os
+import os.path as ospath
 import platform
 import numpy as np
 import GSASIIobj as G2obj
+import GSASIIctrlGUI as G2G
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
@@ -141,10 +143,10 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.ras','.RAS'),
+            extensionlist=('.ras','.RAS','rasx',),
             strictExtension=True,
-            formatName = 'Rigaku .ras file',
-            longFormatName = 'Rigaku .ras raw multipattern powder data'
+            formatName = 'Rigaku .ras/.rasx file',
+            longFormatName = 'Rigaku .ras/.rasx raw multipattern powder data'
             )
         self.scriptable = True
         self.vals = None
@@ -160,63 +162,118 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
             fp = open(filename,'r',encoding='latin-1')
         self.vals = None
         self.stepsize = None
-        fp.seek(0)
-        if fp.readline()[:-1] != '*RAS_DATA_START':
-            self.errors = 'Bad ras file'
+        if '.rasx' in filename:
+            try:
+                import xmltodict as xml
+            except:
+                print('Attempting to conda install xmltodict - please wait')
+                res = GSASIIpath.condaInstall('xmltodict')
+                if res:
+                    msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
+                    G2G.G2MessageBox(self,msg,'Install xmltodict Error')
+                    return False
+                import xmltodict as xml
+            try:
+                import zipfile as ZF        
+                with ZF.ZipFile(filename, 'r') as zipObj:
+                    zipObj.extract('Data0/Profile0.txt')
+                    zipObj.extract('Data0/MesurementConditions0.xml')
+                with open('Data0/Profile0.txt') as fd:
+                    fd.seek(3)
+                    self.data = fd.readlines()
+                    self.formatName = 'Rigaku .rasx file'
+                with open('Data0/MesurementConditions0.xml') as xd:
+                    self.comments = xd.read()
+                os.remove('Data0/MesurementConditions0.xml')
+                os.remove('Data0/Profile0.txt')
+                os.rmdir('Data0')
+                self.idstring = ospath.basename(filename) + ' Bank 1'
+                self.powderentry[0] = filename
+                self.comments = []
+                return True
+            except:
+                return False
+        else:
+            fp.seek(0)
+            if fp.readline()[:-1] != '*RAS_DATA_START':
+                self.errors = 'Bad ras file'
+                fp.close()
+                return False
+            nBanks= 0
+            for i,line in enumerate(fp):
+                if line[:-1] == '*RAS_HEADER_START':
+                    nBanks += 1
+                    self.dnames.append(os.path.basename(filename)+' sample '+(str(nBanks)))
+            if nBanks:
+                if not len(self.selections):
+                    self.selections = list(range(nBanks))
+                    self.numbanks = nBanks
             fp.close()
-            return False
-        nBanks= 0
-        for i,line in enumerate(fp):
-            if line[:-1] == '*RAS_HEADER_START':
-                nBanks += 1
-                self.dnames.append(os.path.basename(filename)+' sample '+(str(nBanks)))
-        if nBanks:
-            if not len(self.selections):
-                self.selections = list(range(nBanks))
-                self.numbanks = nBanks
-        fp.close()
         return True
 
     def Reader(self,filename, ParentFrame=None, **kwarg):
-        'Read a Rigaku .ras file'
-        if '2' in platform.python_version_tuple()[0]:
-            fp = open(filename,'Ur')
-        else:
-            fp = open(filename,'r',encoding='latin-1')
-        blockNum = self.selections[0]
-        x = []
-        y = []
-        w = []
-        block = 0
-        while True:
-            line = fp.readline()[:-1]
-            if line != '*RAS_INT_START':
-                continue
-            if block == blockNum:
+        'Read a Rigaku .ras/.rasx file'
+        if '.rasx' in filename:
+            x = []
+            y = []
+            w = []
+            for line in self.data:
+                sline = line.split()
+                x.append(float(sline[0]))
+                y.append(float(sline[1]))
+                w.append(1.0/max(1.,float(y[-1])))
+            N = len(x)
+            self.powderdata = [
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.zeros(N), # calc. intensities (zero)
+                np.zeros(N), # calc. background (zero)
+                np.zeros(N), # obs-calc profiles
+                ]
+            self.repeat = False
+            return True
+                
+            
+        else:    #.ras file
+            if '2' in platform.python_version_tuple()[0]:
+                fp = open(filename,'Ur')
+            else:
+                fp = open(filename,'r',encoding='latin-1')
+            blockNum = self.selections[0]
+            x = []
+            y = []
+            w = []
+            block = 0
+            while True:
                 line = fp.readline()[:-1]
-                while True:
-                    if line == '*RAS_INT_END':
-                        break
-                    sline = line.split()
-                    x.append(float(sline[0]))
-                    y.append(float(sline[1]))
-                    w.append(1.0/max(1.,float(y[-1])))
+                if line != '*RAS_INT_START':
+                    continue
+                if block == blockNum:
                     line = fp.readline()[:-1]
-                break
-            block += 1            
-        N = len(x)
-        self.powderdata = [
-            np.array(x), # x-axis values
-            np.array(y), # powder pattern intensities
-            np.array(w), # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # calc. background (zero)
-            np.zeros(N), # obs-calc profiles
-            ]
-        self.powderentry[0] = self.dnames[blockNum]
-        self.idstring = self.dnames[blockNum]
-        self.selections.remove(blockNum)
-        self.repeat = False
-        if len(self.selections):
-            self.repeat = True
-        return True
+                    while True:
+                        if line == '*RAS_INT_END':
+                            break
+                        sline = line.split()
+                        x.append(float(sline[0]))
+                        y.append(float(sline[1]))
+                        w.append(1.0/max(1.,float(y[-1])))
+                        line = fp.readline()[:-1]
+                    break
+                block += 1            
+            N = len(x)
+            self.powderdata = [
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.zeros(N), # calc. intensities (zero)
+                np.zeros(N), # calc. background (zero)
+                np.zeros(N), # obs-calc profiles
+                ]
+            self.powderentry[0] = self.dnames[blockNum]
+            self.idstring = self.dnames[blockNum]
+            self.selections.remove(blockNum)
+            self.repeat = False
+            if len(self.selections):
+                self.repeat = True
+            return True

@@ -11579,20 +11579,19 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 def OnSHOrder(event):
                     Obj = event.GetEventObject()
                     iSh = Indx[Obj.GetId()]
-                    RBObj['nSH'][iSh] = int(shOrder.GetValue())
+                    RBObj['nSH'][iSh] = int(Obj.GetValue())
                     RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                     
                 def SetSHCoef(iSh,Order):
-                    SGData = data['General']['SGData']
-                    Sytsym = G2spc.SytSym(RBObj['Orig'][0],SGData)[0]
+                    Sytsym = RBObj['SytSym']
                     cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
                     cofTerms = [[0.0,val,False] for val in cofSgns]
                     newSHcoef = dict(zip(cofNames,cofTerms))
                     SHcoef = RBObj['SHC'][iSh]
-                    for cofName in SHcoef:      #transfer old values to new set
-                        if cofName in cofNames:
+                    for cofName in newSHcoef:      #transfer old values to new set
+                        if cofName in SHcoef:
                             newSHcoef[cofName] = SHcoef[cofName]
                     return newSHcoef
                 
@@ -11610,7 +11609,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     rbId = RBObj['RBId'][iSh]
                     RBData['Spin'][rbId]['useCount'] -= 1
                     RBData['Spin'][rbId]['useCount'] = max(0,RBData['Spin'][rbId]['useCount'])
-                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
+                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym','SHC']:
                         del RBObj[name][iSh]
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)

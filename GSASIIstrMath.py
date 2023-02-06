@@ -205,11 +205,19 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     RBModels =  Phase['RBModels']
     
     for irb,RBObj in enumerate(RBModels.get('Spin',[])):
-        symAxis = RBObj.get('symAxis')
-        SModel = RBData['Spin'][RBObj['RBId']]
-        Q = RBObj['Orient'][0]
-        jrb = SRBIds.index(RBObj['RBId'])
-        rbsx = str(irb)+':'+str(jrb)
+        pass
+        #     jrb = SRBIds.index(RBObj['RBId'][0])
+        #     name = pfx+'RBSOa:%d:%d'%(irb,jrb)
+        #     RBObj['Orient'][0][0] = parmDict[name]
+        #     for ish in range(len(RBObj['RBId'])):
+        #         jrb = SRBIds.index(RBObj['RBId'][ish])
+        #         for item in RBObj['SHC'][ish]:
+        #             name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,irb,jrb)
+        #             RBObj['SHC'][ish][item][0] = parmDict[name]
+        # SModel = RBData['Spin'][RBObj['RBId']]
+        # Q = RBObj['Orient'][0]
+        # jrb = SRBIds.index(RBObj['RBId'])
+        # rbsx = str(irb)+':'+str(jrb)
         #TODO what is needed here?
     
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):

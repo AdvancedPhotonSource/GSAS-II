@@ -397,7 +397,8 @@ def GetSHC(pfx,parmDict):
     for parm in parmDict:
         if pfx+'RBS' in parm:
             items = parm.split(':')
-            tag = ':'.join([items[-2],'0'])
+#            tag = ':'.join([items[-2],'0'])
+            tag = ':'.join([items[-2],items[-1]])
             name = items[2][3:]    #strip 'RBS'
 #            print(parm,items,tag,name,parmDict[parm])
             atid = parmDict[pfx+'RBSAtNo:'+tag]

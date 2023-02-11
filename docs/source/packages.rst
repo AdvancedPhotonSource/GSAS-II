@@ -281,8 +281,8 @@ numpy; binaries for only a small number of combinations are provided.
 A full list of what is available can be seen by looking at the
 contents of the directory at web address
 https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser/Binaries,
-noting that a subdirectory name will be *prefix*\  _p\ `X.X`\ _n\ `Y.Y` where
-*prefix* is noted above and `X.X` is the Python version and `Y.Y` is the numpy
+noting that a subdirectory name will be `prefix`\ _p\ `X.X`\ _n\ `Y.Y` where
+`prefix` is noted above and `X.X` is the Python version and `Y.Y` is the numpy
 version.
 Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of

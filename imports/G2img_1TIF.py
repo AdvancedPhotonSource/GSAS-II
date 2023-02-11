@@ -76,6 +76,8 @@ def GetTifData(filename):
     distance = None
     polarization = None
     samplechangerpos = None
+    xpixelsize = None
+    ypixelsize = None
     try:
         Meta = open(filename+'.metadata','r')
         head = Meta.readlines()
@@ -94,6 +96,10 @@ def GetTifData(filename):
                     polarization = float(line.split('=')[1])
                 elif 'samplechangercoordinate' == keyword.lower():
                     samplechangerpos = float(line.split('=')[1])
+                elif 'detectorxpixelsize' == keyword.lower():
+                    xpixelsize = float(line.split('=')[1])
+                elif 'detectorypixelsize' == keyword.lower():
+                    ypixelsize = float(line.split('=')[1])
             except:
                 G2fil.G2Print('error reading metadata: '+line)
         Meta.close()
@@ -358,6 +364,10 @@ def GetTifData(filename):
     distance = (not distance) and 100.0 or distance
     polarization = (not polarization) and 0.99 or polarization
     samplechangerpos = (not samplechangerpos) and 0.0 or samplechangerpos
+    if xpixelsize is not None and ypixelsize is not None:
+        pixy = [xpixelsize,ypixelsize]
+        if GSASIIpath.GetConfigValue('debug'):
+            G2fil.G2Print ('pixel size from metadata: '+str(pixy))
     data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy,
             'setdist':distance,'PolaVal':[polarization,False],'samplechangerpos':samplechangerpos,'det2theta':0.0}
     File.close()    

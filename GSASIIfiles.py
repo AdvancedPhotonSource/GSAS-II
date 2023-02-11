@@ -444,7 +444,6 @@ def LoadExportRoutines(parent, traceback=False):
     with the same name is in the path or if a file is found that is not 
     in the main directory tree. 
     '''
-    GSASIIpath.InvokeDebugOpts()  # DEBUG
     exporterlist = []
     export_files = {}
     if '.' not in sys.path: sys.path.append('.')

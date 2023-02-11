@@ -3796,7 +3796,7 @@ def getPowderProfileDerv(args):
     dMdv = np.zeros(shape=(len(varylist),len(x)))
     fixback = Histogram['Background'][1].get('fixback',None)
     dMdb,dMddb,dMdpk,dMdfb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixback)
-    if prc == 0 and hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
+    if prc == 0 and hfx+'Back;0' in varylist: # for now assume that Back;x vars do not appear in constraints
         bBpos = varylist.index(hfx+'Back;0')
         dMdv[bBpos:bBpos+len(dMdb)] += dMdb     #TODO crash if bck parms tossed
     names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']

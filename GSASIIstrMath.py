@@ -350,8 +350,8 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
                 
-def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ):
-    ''' Computes hkl dependent form factors from spinning rigid bodies
+def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=False):
+    ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
     '''
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
@@ -390,7 +390,9 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ):
                             BS = sp.spherical_jn(l,QR*R)    #Bessel function
                         FF[:,iAt] += Nat*SFF*BS*SH
                 ishl += 1
+
 #TODO will need derivatives version of this - dFF/dC, dFF/dR & dFF/dOa (not Oi,Oj,Ok)
+    
             
 def GetSHC(pfx,parmDict):
     SHCdict = {}

@@ -2750,13 +2750,14 @@ def SphHarmAng(L,M,P,Th,Ph):
     '''
     
     ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    norm = np.sqrt((2.*L+1.)/(2.*np.pi))
     
     if M == 0:
-        return np.real(ylmp)/SQ2
+        return norm*np.real(ylmp)/SQ2
     if P>0:
-        return np.real(ylmp)
+        return norm*np.real(ylmp)
     else:
-        return np.imag(ylmp)
+        return -norm*np.imag(ylmp)
     
 def CubicSHarm(L,M,Th,Ph):
     '''Calculation of the cubic harmonics given in Table 3 in M.Kara & K. Kurki-Suonio, 

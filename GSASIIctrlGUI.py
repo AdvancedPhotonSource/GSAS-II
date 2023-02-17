@@ -36,6 +36,7 @@ Class or function name             Description
 :func:`G2RadioButtons`             Creates a series of grouped radio buttons.
 :class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
                                    wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
+:class:`G2Slider`                  A wrapped version of wx.Slider that implements scaling
 :class:`G2SpinWidget`              A customized combination of a wx.SpinButton and a validated 
                                    wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
 :class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
@@ -109,7 +110,12 @@ Class or function name             Description
                                    CIF powder histogram imports only
 :func:`PhaseSelector`              Select a phase from a list (used for phase importers)
 :class:`gpxFileSelector`           File browser dialog for opening existing .gpx files
-
+:class:`ScrolledStaticText`        A wx.StaticText widget that fits a large string into a 
+                                   small space by scrolling it
+:func:`ReadOnlyTextCtrl`           A wx.TextCtrl widget to be used wx.StaticText 
+                                   (no edits allowed) text appears in a box.
+:func:`setColorButton`             A button for color selection as a replacement 
+                                   for wx.ColourSelect 
 ================================  =================================================================
 
 Other miscellaneous non-GUI routines that may be of use for GUI-related actions:
@@ -9086,19 +9092,74 @@ def Load2Cells(G2frame,phase):
     else:
         dlg.Destroy()    
         return
+
+class ScrolledStaticText(wx.StaticText):
+    '''Fits a long string into a small space by scrolling it. Inspired by 
+    ActiveText.py from J Healey <rolfofsaxony@gmx.com> 
+    https://discuss.wxpython.org/t/activetext-rather-than-statictext/36370
+    
+    :param w.Frame parent: Frame or Panel where widget will be placed
+    :param str label: string to be displayed
+    :param int delay: time between updates in ms (default is 100)
+    :param int lbllen: number of characters to show (default is 15)
+    :param bool dots: If True (default) ellipsis (...) are placed 
+        at the beginning and end of the string when any characters 
+        in the string are not shown. The displayed string length 
+        will thus be lbllen+6 most of the time
+    :param (other): other optional keyword parameters for the
+      wx.StaticText widget such as size or style may be specified.
+    '''
+    def __init__(self, parent, label='', delay=100, lbllen=15, 
+                 dots=True, **kwargs):
+        wx.StaticText.__init__(self, parent, wx.ID_ANY, '', **kwargs)
+        self.fullmsg = label
+        self.lbllen = lbllen
+        self.msgpos = 0
+        self.dots = dots
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.onTimer)
+        self.timer.Start(delay, wx.TIMER_CONTINUOUS)
+        
+    def onTimer(self,event):
+        if self.dots and self.msgpos > 0:
+            txt = '...'
+        else:
+            txt = ''
+        txt += self.fullmsg[self.msgpos:self.msgpos+self.lbllen+1]
+        if self.dots and self.msgpos+self.lbllen < len(self.fullmsg):
+            txt += '...'
+        try:
+            self.SetLabel(txt)
+        except:
+            self.timer.Stop()
+        self.msgpos += 1
+        if self.msgpos >= len(self.fullmsg): self.msgpos = 0
+
         
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
+    ms = wx.BoxSizer(wx.VERTICAL)
+    #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',.2,1.2,100)
+    #ms.Add(siz)
+    #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',20,50,.1)
+    #ms.Add(siz)
+    text = 'this is a long string that will be scrolled'
+    ms.Add(ScrolledStaticText(frm,label=text))
+    ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
+
+#    choices = [wx.ID_YES,wx.ID_NO]
+#    warnmsg = '\nsome info\non a few lines\nand one more'
+#    ans = ShowScrolledInfo(header='Constraint Warning',
+#                    txt='Warning noted after last constraint edit:\n'+warnmsg+
+#                    '\n\nKeep this change?',
+#                    buttonlist=choices,parent=frm,height=250)
+#    print(ans, choices)
+    frm.SetSizer(ms)
     frm.Show(True)
-    warnmsg = '\nsome info\non a few lines\nand one more'
-    choices = [wx.ID_YES,wx.ID_NO]
-    ans = ShowScrolledInfo(header='Constraint Warning',
-                    txt='Warning noted after last constraint edit:\n'+warnmsg+
-                    '\n\nKeep this change?',
-                    buttonlist=choices,parent=frm,height=250)
-    print(ans, choices)
+    app.MainLoop()
+
     import sys; sys.exit()
     
     #======================================================================

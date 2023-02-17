@@ -44,10 +44,12 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                 if gotCcomment and S.find('*/') > -1:
                     begin = False
                     continue
-                if S.strip().startswith('/*'):
+                elif S.strip().startswith('/*'):
                     gotCcomment = True
                     continue   
-                if S.lstrip()[0] in ["'",'#','!',]:
+                elif not S.strip(): # ignore blank lines
+                    continue   
+                elif S.lstrip()[0] in ["'",'#','!',]:
                     continue       #ignore comments, if any
                 else:
                     begin = False
@@ -85,7 +87,9 @@ class fp_ReaderClass(G2obj.ImportPowderData):
             self.errors = 'Error reading line: '+str(i+1)
             # Allow a block of comments delimited by /* and */
             # or (GSAS style) each comment line can begin with '#' or '!'
-            if S.lstrip()[0] in ["'",'#','!',]:
+            if not S.strip(): # ignore blank lines
+                continue   
+            elif S.lstrip()[0] in ["'",'#','!',]:
                 self.comments.append(S[:-1])
                 continue       # store comments, if any
             if begin:

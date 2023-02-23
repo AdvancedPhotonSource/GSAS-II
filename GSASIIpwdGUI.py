@@ -954,12 +954,12 @@ def UpdatePeakGrid(G2frame, data):
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
             return
-        try:
-            dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-            results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
-        finally:
-            dlg.Destroy()
+        # try:
+        dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,dlg)
+        # finally:
+        #     dlg.Destroy()
         if results is None:
             return
         peaks['sigDict'] = results[0]

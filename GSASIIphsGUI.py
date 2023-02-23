@@ -11498,8 +11498,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 topSizer.Add(orien,0,WACV)
             Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             Qchoice = [' ','A','AV','V']
-            if rbType == 'Spin':
-                Qchoice = [' ','A']
             # TODO: fix by sytsym rules?
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -11570,7 +11568,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 RBObj['RBId'].append(rbIds[selection])
                 RBObj['SHC'].append({})
                 for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
-                    data['RBModels']['Spin'][-1][name].append(rbData[name])
+                    RBObj[name].append(rbData[name])
                 RBData['Spin'][rbIds[selection]]['useCount'] += 1
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
@@ -11590,8 +11588,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     cofTerms = [[0.0,val,False] for val in cofSgns]
                     newSHcoef = dict(zip(cofNames,cofTerms))
                     SHcoef = RBObj['SHC'][iSh]
-                    for cofName in newSHcoef:      #transfer old values to new set
-                        if cofName in SHcoef:
+                    for cofName in SHcoef:      #transfer old values to new set
+                        if cofName in newSHcoef:
                             newSHcoef[cofName] = SHcoef[cofName]
                     return newSHcoef
                 
@@ -11885,10 +11883,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
            
         def RepaintRBInfo(rbType,rbIndx,Scroll=0):
             oldFocus = wx.Window.FindFocus()
-            if 'phoenix' in wx.version():
-                G2frame.bottomSizer.Clear(True)
-            else:
-                G2frame.bottomSizer.DeleteWindows()
+            try:
+                if 'phoenix' in wx.version():
+                    G2frame.bottomSizer.Clear(True)
+                else:
+                    G2frame.bottomSizer.DeleteWindows()
+            except:
+                return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
@@ -12251,7 +12252,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
                         item = rbObj[name]                        
                         rbObj[name] = [item,] 
-                data['RBModels'][rbType].append(rbObj)
+                data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
                 

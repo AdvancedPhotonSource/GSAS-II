@@ -7010,7 +7010,7 @@ class G2RefinementProgress(wx.Dialog):
             cycle = len(self.fitVals[self.curHist])
         else:
             return
-        if not self.SeqLen:
+        if self.maxCycle and not self.SeqLen:
             self.gauge.SetValue(int(min(self.gaugemaximum,100.*cycle/self.maxCycle)))
         self.cycleLbl.SetLabel('Cycle {:}'.format(cycle))
         if cycle == 0:

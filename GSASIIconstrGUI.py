@@ -3395,7 +3395,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         def OnAtSel(event):
             Obj = event.GetEventObject()
             ObjId = event.GetId()
-            PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=False)
             if PE.ShowModal() == wx.ID_OK:
                 if PE.Elem != 'None':
                     El = PE.Elem.strip().lower().capitalize()
@@ -3440,12 +3440,6 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
             data['Spin'][spinID]['rbType'] = 'Q'    #patch
-            # choices = ['Q','Qa','Qb','Qc','Qd']
-            # typeSel = wx.ComboBox(SpinRBDisplay,choices=choices,value=data['Spin'][spinID]['rbType'],
-            #     style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            # typeSel.Bind(wx.EVT_COMBOBOX,OnTypeSel)
-            # Indx[typeSel.GetId()] = spinID
-            # bodSizer.Add(typeSel,0)
             symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m','-1','1']
             data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
             simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],

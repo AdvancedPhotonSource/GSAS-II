@@ -1466,9 +1466,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         if 'AtomFrac' not in RB and rbKey != 'S': raise Exception('out of date RB: edit in RB Models')
         # end patch
         if rbKey == 'S':
-            rbid = str(rbids.index(RB['RBId'][0]))  #for spin RBs
+            rbid = str(atomIndx[RB['Ids'][0]][1])  #at no for spin RBs
         else:
-            rbid = str(rbids.index(RB['RBId'])) #others
+            rbid = str(rbids.index(RB['RBId'])) #rb no for others
+        sfx = str(iRB)+':'+rbid
+        if rbKey == 'S':
+            sfx = rbid+':'+str(iRB)
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
@@ -1476,7 +1479,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym 
         equivs = {1:[],2:[],3:[]}
         for i in range(3):
-            name = pfxRB+pstr[i]+':'+str(iRB)+':'+rbid
+            name = pfxRB+pstr[i]+':'+sfx
             phaseDict[name] = RB['Orig'][0][i]
             if RB['Orig'][1]:
                 if xId[i] > 0:                               
@@ -1497,7 +1500,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         A,V = G2mth.Q2AV(RB['Orig'][0])
         fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
-            name = pfxRB+ostr[i]+':'+str(iRB)+':'+rbid
+            name = pfxRB+ostr[i]+':'+sfx
             phaseDict[name] = RB['Orient'][0][i]
             if RB['Orient'][1] == 'AV' and i:
                 phaseVary += [name,]
@@ -1506,22 +1509,24 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             elif RB['Orient'][1] == 'V' and i not in fixAxis:
                 phaseVary += [name,]
         if rbKey != 'S':
-            name = pfx+'RB'+rbKey+'f:'+str(iRB)+':'+rbid
+            name = pfx+'RB'+rbKey+'f:'+sfx
             phaseDict[name] = RB['AtomFrac'][0]
             if RB['AtomFrac'][1]:
                 phaseVary += [name,]
         else:
-            name = pfx+'RB'+rbKey+'AtNo:'+str(iRB)+':'+rbid
+            name = pfx+'RB'+rbKey+'AtNo:'+sfx
             phaseDict[name] = atomIndx[RB['Ids'][0]][1]
-            name = pfx+'RB'+rbKey+'symAxis:'+str(iRB)+':'+rbid
+            name = pfx+'RB'+rbKey+'symAxis:'+sfx
             phaseDict[name] = RB['symAxis']
-            name = pfx+'RB'+rbKey+'SytSym:'+str(iRB)+':'+rbid
+            name = pfx+'RB'+rbKey+'SytSym:'+sfx
             phaseDict[name] = RB['SytSym']
             for ish,atype in enumerate(RB['atType']):
-                name = '%sRBSAtType;%d:%d:%s'%(pfx,ish,iRB,rbid)
+                name = '%sRBSAtType;%d:%s'%(pfx,ish,sfx)
                 phaseDict[name] = RB['atType'][ish]
-                name = '%sRBSNatoms;%d:%d:%s'%(pfx,ish,iRB,rbid)
+                name = '%sRBSNatoms;%d:%s'%(pfx,ish,sfx)
                 phaseDict[name] = RB['Natoms'][ish]
+                name = '%sRBSShR;%d:%s'%(pfx,ish,sfx)
+                phaseDict[name] = rbid
                                 
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
@@ -1564,14 +1569,15 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseVary += [name,]
                 
     def MakeRBSphHarm(rbKey,phaseVary,phaseDict):
+        iAt = str(atomIndx[RB['Ids'][0]][1])  #for spin RBs
         for ish,Shcof in enumerate(RB['SHC']):
             if not len(Shcof):
                 continue
-            shid = str(rbids.index(RB['RBId'][ish]))
+            rbid = str(rbids.index(RB['RBId'][ish]))
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]
-                name = pfxRB+shcof.strip('+').strip('-')+':'+str(iRB)+':'+shid      #patch; remove sign
+                name = pfxRB+shcof.strip('+').strip('-')+':'+iAt+':'+rbid      #patch; remove sign
                 phaseDict[name] = SHcof[0]*SHcof[1]         #apply sign p
                 if SHcof[2]:
                     phaseVary += [name,]

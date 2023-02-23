@@ -1570,7 +1570,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # highlight unconverged shifts 
     if histNames[0][:4] not in ['SASD','IMG ','REFD',] and deltaChiCol is not None:
         for row,name in enumerate(histNames):
-            if name not in Controls['Seq Data']:
+            if name not in Controls.get('Seq Data',{}):
                 G2frame.dataDisplay.SetCellTextColour(row,0,wx.Colour(255,0,0))
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             try:

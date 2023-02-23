@@ -2778,7 +2778,7 @@ def CubicSHarm(L,M,Th,Ph):
         return SphHarmAng(3,2,-1,Th,Ph)
     elif L == 4:
         klm = 0.5*np.sqrt(7.0/3.0)*SphHarmAng(4,0,1,Th,Ph)
-        klm = 0.5*np.sqrt(5.0/3.0)*SphHarmAng(4,4,1,Th,Ph)
+        klm += 0.5*np.sqrt(5.0/3.0)*SphHarmAng(4,4,1,Th,Ph)
     elif L == 6:
         if M == 1:
             klm = 0.5*np.sqrt(0.5)*SphHarmAng(6,0,1,Th,Ph)
@@ -2788,7 +2788,7 @@ def CubicSHarm(L,M,Th,Ph):
             klm -= 0.25*np.sqrt(5.0)*SphHarmAng(6,6,1,Th,Ph)
     elif L == 7:
         klm = 0.5*np.sqrt(13./6.)*SphHarmAng(7,2,-1,Th,Ph)
-        klm = 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,-1,Th,Ph)
+        klm += 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,-1,Th,Ph)
     elif L == 8:
         klm = 0.125*np.sqrt(33.)*SphHarmAng(8,0,1,Th,Ph)
         klm += 0.25*np.sqrt(7./3.)*SphHarmAng(8,4,1,Th,Ph)

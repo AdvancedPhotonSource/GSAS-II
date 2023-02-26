@@ -2344,6 +2344,10 @@ def UpdateInstrumentGrid(G2frame,data):
         insVal.update({key:data[key][1] for key in instkeys})
         insRef.update({key:data[key][2] for key in instkeys})
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
+
+    def OnInstMult(event):
+        'If checked or unchecked, redisplay window'
+        wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
         
     def lblWdef(lbl,dec,val):
         'Label parameter showing the default value'
@@ -2640,6 +2644,187 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.dataWindow.SetDataSize()
         G2frame.dataWindow.SetSizer(mainSizer)
         # end of MakeParameterWindow
+        
+    plotYsel = {}   # selected Y items
+    def MakeMultiParameterWindow(selected=None):
+        '''Displays the Instrument parameters for multiple histograms 
+        in the dataWindow panel
+        '''
+        plotIndex = {'plotX':0} # index for param name => plotTbl index
+                                # plotX is selected X axis
+        plotTbl = []   # table of values for each param
+        plotLabel = []   # table of values for each param
+        def onSelectHists(event):
+            'select histograms to show'
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                        'Select histograms to show of type '+data['Type'][1],
+                        'Select histograms',hlist)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selected = dlg.GetSelections()
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+            wx.CallAfter(MakeMultiParameterWindow,selected)
+            return
+        def onSelectX(event):
+            'respond to change in plotting x axis; save and plot (if y selected)'
+            plotIndex['plotX'] = event.GetEventObject().rbindex
+            onPrmPlot(event)
+            
+        def onPrmPlot(event):
+            '''Callback after a change to X or Y plot contents
+            plots multiple instrument param values vs selected X value.
+            If no Y values are selected, any previous plot is deleted.
+            '''
+            xvals = plotTbl[plotIndex['plotX']]
+            xlbl  = plotLabel[plotIndex['plotX']]
+            XY = []
+            keys = ''
+            for k in plotYsel:
+                if k == 'plotX': continue
+                if not plotYsel[k]: continue
+                yvals = plotTbl[plotIndex[k]]
+                if keys: keys += ', '
+                keys += plotLabel[plotIndex[k]]
+                XY.append((xvals,yvals))
+            if not XY:
+                G2frame.G2plotNB.Delete('Parameter values')
+                return
+            G2plt.PlotXY(G2frame,XY,labelX=xlbl,labelY=keys,Title='Parameter values',newPlot=True)
+
+        # gather histograms matching the currently selected histogram
+        histoList,histIdList = G2frame.GetHistogramNamesID(['PWDR',])
+        hlist = GetHistsLikeSelected(G2frame)
+        if selected is None and len(hlist) > 10:  # on initial call this is none
+            onSelectHists(None) # lots of histograms, give user a chance to choose
+            return
+        elif selected is None:  # select all, not so many
+            selected = range(len(hlist))
+            lbl = 'Instrument parameters for all matching histograms'
+        else:
+            lbl = 'Instrument parameters for selected histograms'
+        wx.BeginBusyCursor()
+        h = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        histnames = [h]
+        histdict = {h:data}
+        histnum = {h:G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['hId']}
+        for i in selected:
+            h = hlist[i]
+            if h not in histoList: # unexpected
+                print('hist from GetHistsLikeSelected not in GetHistogramNamesID',h)
+                continue
+            hid = histIdList[h]
+            inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hid, 'Instrument Parameters'))
+            histnames.append(h)
+            histdict[h] = inst
+            histnum[h] = G2frame.GPXtree.GetItemPyData(hid)[0]['hId']
+
+        # start posting info into window
+        G2frame.dataWindow.ClearData()
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lbl))
+        if hlist:
+            btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Select\nHistograms')
+            topSizer.Add(btn,0,wx.LEFT|wx.RIGHT,15)
+            btn.Bind(wx.EVT_BUTTON,onSelectHists)
+        topSizer.Add((20,-1))
+        topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer)
+
+        # create table w/headers
+        sdlg = G2frame.dataWindow
+        fgs = wx.FlexGridSizer(0,len(histnames)+3,0,0)
+        fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas X'),0,wx.LEFT|wx.RIGHT,1)
+        fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas Y'),0,wx.LEFT|wx.RIGHT,1)
+        fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'Histogram  '),0,WACV|wx.LEFT,14)
+        for i,h in enumerate(histnames):
+            if len(h[:5].strip()) > 20:
+                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],
+                                               dots=False,lbllen=20)
+                            ,0,WACV|wx.LEFT|wx.RIGHT,5)
+            else:
+                fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,h[5:]),0,WACV|wx.LEFT|wx.RIGHT,5)
+
+        firstRadio = wx.RB_GROUP
+        # put non-editable values at top of table (plot as x but not y)
+        keylist = ['num']
+        lbllist = ['#']
+        if 'T' in data['Type'][1]:
+            keylist += ['2-theta']
+            lbllist += ['2-theta']
+        for key,lbl in zip(keylist,lbllist):
+            rb = wx.RadioButton(sdlg,wx.ID_ANY,'',style=firstRadio)
+            rb.rbindex = len(plotTbl)
+            rb.Bind(wx.EVT_RADIOBUTTON,onSelectX)
+            plotLabel.append(lbl)
+            fgs.Add(rb,0,wx.ALIGN_CENTER|WACV)
+            if firstRadio:
+                rb.SetValue(True)
+                firstRadio = 0            
+            fgs.Add((-1,-1)) # skip y checkbutton
+            fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,lbl),0,WACV|wx.LEFT,14)
+            plotvals = []
+            for h in histnames:
+                if key == 'num':
+                    val = histnum[h]
+                else:
+                    val = histdict[h][key][1]
+                fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,str(val)),
+                    0,wx.ALIGN_CENTER|WACV,0)
+                plotvals.append(val)
+            plotTbl.append(plotvals)
+
+        # determine what items will be shown based on histogram type
+        Items = []
+        if 'C' in data['Type'][1]:               #constant wavelength
+            if 'Lam1' in data:
+                Items = ['Lam1','Lam2','I(L2)/I(L1)']
+            else:
+                Items = ['Lam','Zero','Polariz.']
+            Items += ['U','V','W','X','Y','Z','SH/L','Azimuth']
+        elif 'B' in data['Type'][1]:
+            Items = ['Azimuth','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+        elif 'E' in data['Type'][1]:
+            Items = ['2-theta','XE','YE','ZE','A','B','C']
+        elif 'T' in data['Type'][1]:            # TOF
+            Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+        # display the items in the table
+        for k in Items:
+            plotYsel[k] = plotYsel.get(k,False)
+            #if not l: l = k
+            l = k
+            rb = wx.RadioButton(sdlg,wx.ID_ANY,'',style=firstRadio)
+            rb.rbindex = len(plotTbl)
+            rb.Bind(wx.EVT_RADIOBUTTON,onSelectX)
+            plotLabel.append(l)
+            fgs.Add(rb,0,wx.ALIGN_CENTER|WACV)
+            if firstRadio:
+                rb.SetValue(True)
+                firstRadio = 0
+            fgs.Add(G2G.G2CheckBox(sdlg,'',plotYsel,k,OnChange=onPrmPlot),0,wx.ALIGN_CENTER|WACV)
+            plotIndex[k] = rb.rbindex
+            fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,l),0,WACV|wx.LEFT,14)
+            plotvals = []
+            for h in histnames:
+                miniSizer = wx.BoxSizer(wx.HORIZONTAL)
+                itemVal = G2G.ValidatedTxtCtrl(sdlg,histdict[h][k],1,nDig=(10,4),typeHint=float)
+                plotvals.append(histdict[h][k][1])
+                miniSizer.Add(itemVal)
+                miniSizer.Add((2,-1))
+                miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,15)
+                fgs.Add(miniSizer,0,wx.ALIGN_CENTER)
+            plotTbl.append(plotvals)
+            
+        mainSizer.Add(fgs)
+        G2frame.dataWindow.SetDataSize()
+        G2frame.dataWindow.SetSizer(mainSizer)
+        G2frame.dataWindow.SendSizeEvent()
+        wx.EndBusyCursor()
+        # end of MakeMultiParameterWindow
                 
     # beginning of UpdateInstrumentGrid code    
     #patch: make sure all parameter items are lists
@@ -2710,10 +2895,15 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_INSTCOPY)
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2G.wxID_INSTFLAGCOPY)
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2G.wxID_INST1VAL)
+        G2frame.Bind(wx.EVT_MENU,OnInstMult,id=G2G.wxID_INSTSHOWMULT)        
     elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
-    MakeParameterWindow()
+    menuitem = G2frame.dataWindow.InstMenu.FindItemById(G2G.wxID_INSTSHOWMULT)
+    if menuitem.IsChecked():
+        MakeMultiParameterWindow()
+    else:
+        MakeParameterWindow()
     G2frame.dataWindow.SendSizeEvent()        
     
 ################################################################################

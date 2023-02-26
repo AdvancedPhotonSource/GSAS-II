@@ -6509,7 +6509,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PWDR / Instrument Parameters
         G2G.Define_wxId('wxID_INSTPRMRESET','wxID_INSTCOPY','wxID_INSTFLAGCOPY','wxID_INSTLOAD',
-            'wxID_INSTSAVE', 'wxID_INST1VAL', 'wxID_INSTCALIB', 'wxID_INSTSAVEALL',)
+            'wxID_INSTSAVE', 'wxID_INST1VAL', 'wxID_INSTCALIB', 'wxID_INSTSAVEALL',
+            'wxID_INSTSHOWMULT',)
         self.InstMenu = wx.MenuBar()
         self.PrefillDataMenu(self.InstMenu)
         self.InstEdit = wx.Menu(title='')
@@ -6522,6 +6523,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.InstEdit.Append(G2G.wxID_INSTCOPY,'Copy','Copy instrument profile parameters to other histograms')
         self.InstEdit.Append(G2G.wxID_INSTFLAGCOPY,'Copy flags','Copy instrument parameter refinement flags to other histograms')
         self.InstEdit.Append(G2G.wxID_INST1VAL,'Set one value','Set one instrument parameter value across multiple histograms')
+        self.InstEdit.AppendCheckItem(G2G.wxID_INSTSHOWMULT,'Show multiple','Show multiple histograms of same type as current')
         self.PostfillDataMenu()
         
         # PWDR / Sample Parameters

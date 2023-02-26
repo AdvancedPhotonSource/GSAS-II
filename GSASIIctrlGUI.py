@@ -9116,10 +9116,11 @@ class ScrolledStaticText(wx.StaticText):
         self.lbllen = lbllen
         self.msgpos = 0
         self.dots = dots
+        self.onTimer(None)
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.onTimer)
         self.timer.Start(delay, wx.TIMER_CONTINUOUS)
-        
+
     def onTimer(self,event):
         if self.dots and self.msgpos > 0:
             txt = '...'

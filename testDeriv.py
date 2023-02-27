@@ -258,7 +258,7 @@ class testDeriv(wx.Frame):
                 for i in self.parmDict:
                     if orig[i] != self.parmDict[i] and i != name:
                         if first:
-                            print('Propogated changes from this shift')
+                            print('Propagated changes from this shift')
                             print(name,orig[name],self.parmDict[name],orig[name]-self.parmDict[name])
                             print('are:')
                             first = False

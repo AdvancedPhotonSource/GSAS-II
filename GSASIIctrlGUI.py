@@ -4687,8 +4687,8 @@ class VirtualVarBox(wx.ListCtrl):
         if v is not None and v[-1] is not None:
             txt = G2obj.fmtVarDescr(name)
             if txt:
-                txt.replace('Ph=','Phase: ')
-                txt.replace('Pwd=','Histogram: ')
+                #txt = txt.replace('Ph=','Phase: ')
+                #txt = txt.replace('Pwd=','Histogram: ')
                 txtwid = wx.StaticText(dlg,wx.ID_ANY,'Parameter meaning is "'+txt+'"')
                 txtwid.Wrap(580)
                 mainSizer.Add(txtwid)
@@ -9097,6 +9097,20 @@ class ScrolledStaticText(wx.StaticText):
     '''Fits a long string into a small space by scrolling it. Inspired by 
     ActiveText.py from J Healey <rolfofsaxony@gmx.com> 
     https://discuss.wxpython.org/t/activetext-rather-than-statictext/36370
+
+    Use examples::
+
+      frm = wx.Frame(None) # create a frame
+      ms = wx.BoxSizer(wx.VERTICAL)
+      text = 'this is a long string that will be scrolled'
+      ms.Add(G2G.ScrolledStaticText(frm,label=text))
+      txt = G2G.ScrolledStaticText(frm,label=text, lbllen=20)
+      smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
+      smallfont.SetPointSize(10)
+      txt.SetFont(smallfont)
+      ms.Add(txt)
+      ms.Add(G2G.ScrolledStaticText(frm,label=text,dots=False,delay=250,lbllen=20))
+      frm.SetSizer(ms)
     
     :param w.Frame parent: Frame or Panel where widget will be placed
     :param str label: string to be displayed
@@ -9148,8 +9162,16 @@ if __name__ == '__main__':
     #ms.Add(siz)
     text = 'this is a long string that will be scrolled'
     ms.Add(ScrolledStaticText(frm,label=text))
+    txt = ScrolledStaticText(frm,label=text, lbllen=20)
+    smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
+    smallfont.SetPointSize(10)
+    txt.SetFont(smallfont)
+    ms.Add(txt)
     ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
-
+    frm.SetSizer(ms)
+    frm.Show(True)
+    app.MainLoop()
+    
 #    choices = [wx.ID_YES,wx.ID_NO]
 #    warnmsg = '\nsome info\non a few lines\nand one more'
 #    ans = ShowScrolledInfo(header='Constraint Warning',
@@ -9157,9 +9179,6 @@ if __name__ == '__main__':
 #                    '\n\nKeep this change?',
 #                    buttonlist=choices,parent=frm,height=250)
 #    print(ans, choices)
-    frm.SetSizer(ms)
-    frm.Show(True)
-    app.MainLoop()
 
     import sys; sys.exit()
     

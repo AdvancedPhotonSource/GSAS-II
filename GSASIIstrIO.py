@@ -1176,7 +1176,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                  seqHistName=None,symHold=None):
     '''Setup the phase information for a structural refinement, used for 
     regular and sequential refinements, optionally printing information 
-    to the .lst file (if Print is True)
+    to the .lst file (if Print is True). Used as part of refinements but also 
+    to generate information on refinement settings. Can be used with dicts from 
+    data tree or read from the GPX file. 
+    Note that this routine shares a name with routine G2frame.GetPhaseData() 
+    (:meth:`GSASIIdata.GSASII.GetPhaseData`) that instead returns the phase
+    dict(s) from the tree.
 
     :param dict PhaseData: the contents of the Phase tree item (may be read from
       .gpx file) with information on all phases
@@ -1191,7 +1196,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
       name is supplied, only the phases used in the current histogram are loaded.
       If 'All' is specified, all phases are loaded (used for error checking).
     :param list symHold: if not None (None is the default) the names of parameters
-       held due to symmetry are placed in this list
+       held due to symmetry are placed in this list even if not varied. (Used 
+       in G2constrGUI and for parameter impact estimates in AllPrmDerivs).
     :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
         FFtables,EFtables,BLtables,MFtables,maxSSwave (see code for details). 
     '''
@@ -1685,7 +1691,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     phaseDict.update({pfx+'AMx:'+str(i):at[cx+4],pfx+'AMy:'+str(i):at[cx+5],pfx+'AMz:'+str(i):at[cx+6]})
                 if 'F' in at[ct+1]:
                     phaseVary.append(pfx+'Afrac:'+str(i))
-                if 'X' in at[ct+1]:
+                if 'X' in at[ct+1] or symHold is not None:
                     try:    #patch for sytsym name changes
                         xId,xCoef = G2spc.GetCSxinel(at[cs])[:2]
                     except KeyError:

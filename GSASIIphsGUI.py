@@ -11612,17 +11612,24 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
                     
+                    
                 shSizer = wx.BoxSizer(wx.VERTICAL)
-                Indx = {}
                 for iSh,nSh in enumerate(RBObj['nSH']):
+                    rbId = RBObj['RBId'][iSh]
+                    RBObj['atType'][iSh] = RBData['Spin'][rbId]['atType']
                     if iSh:
                         subLine = wx.BoxSizer(wx.HORIZONTAL)
                         subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: %s '  \
                             %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh],RBObj['RBsym'][iSh])),0,WACV)
-                        delShell = wx.Button(RigidBodies,wx.ID_ANY,'Delete shell',style=wx.BU_EXACTFIT)
+                        delShell = wx.Button(RigidBodies,label='Delete shell',style=wx.BU_EXACTFIT)
                         Indx[delShell.GetId()] = iSh
                         delShell.Bind(wx.EVT_BUTTON,OnDelShell)
                         subLine.Add(delShell,0,WACV)
+                        hidesh = wx.CheckBox(RigidBodies,label='Hide shell?')
+                        hidesh.SetValue(RBObj['hide'][iSh])
+                        hidesh.Bind(wx.EVT_CHECKBOX,OnHideSh)
+                        Indx[hidesh.GetId()] = iSh
+                        subLine.Add(hidesh,0,WACV)
                         shSizer.Add(subLine)
                     shoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     shoSizer.Add(wx.StaticText(RigidBodies,label=' Bessel/Harmonic order: '),0,WACV)
@@ -11654,6 +11661,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         shSizer.Add(shcSizer)
                 return shSizer
 
+            def OnHideSh(event):
+                Obj = event.GetEventObject()
+                iSh = Indx[Obj.GetId()]
+                RBObj['hide'][iSh] = not RBObj['hide'][iSh]
+                G2plt.PlotStructure(G2frame,data)
+                
+            RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
+            rbId = RBObj['RBId'][0]
+            RBObj['atType'][0] = RBData['Spin'][rbId]['atType']
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
             sprbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
@@ -11669,6 +11685,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             addShell.Bind(wx.EVT_BUTTON,OnAddShell)
             Indx[addShell.GetId()] = rbId
             topLine.Add(addShell,0,WACV)
+            hidesh = wx.CheckBox(RigidBodies,label='Hide shell?')
+            hidesh.SetValue(RBObj['hide'][0])
+            hidesh.Bind(wx.EVT_CHECKBOX,OnHideSh)
+            Indx[hidesh.GetId()] = 0
+            topLine.Add(hidesh,0,WACV)
             sprbSizer.Add(topLine)
             sprbSizer.Add(LocationSizer(RBObj,'Spin'))
             choices = [' x ',' y ',' z ','x+y','x+y+z']

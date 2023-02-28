@@ -421,13 +421,15 @@ def CalcPDF(data,inst,limits,xydata):
     R = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
     xydata['GofR'][1][0] = R
     xydata['gofr'][1][0] = R
-    GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])*data.get('GR Scale',1.0)
+    GR = -(2./np.pi)*dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])*data.get('GR Scale',1.0)
+#    GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])*data.get('GR Scale',1.0)
     xydata['GofR'][1][1] = GR
-    gr = GR/(np.pi*R)
-    xydata['gofr'][1][1] = gr
     numbDen = 0.
     if 'ElList' in data:
         numbDen = GetNumDensity(data['ElList'],data['Form Vol'])
+        gr = GR/(4.*np.pi*numbDen*R)+1.
+#        gr = GR/(np.pi*R) ##mising numberdensity
+        xydata['gofr'][1][1] = gr
     if data.get('noRing',True):
         Rmin = data['Rmin']
         xydata['gofr'][1][1] = np.where(R<Rmin,-4.*numbDen,xydata['gofr'][1][1])

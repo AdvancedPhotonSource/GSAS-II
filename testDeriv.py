@@ -199,7 +199,7 @@ class testDeriv(wx.Frame):
         self.testDerivPanel.SetSizer(topSizer)    
         Size = topSizer.GetMinSize()
         self.testDerivPanel.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
-        Size[1] = min(200,Size[1])
+        Size[1] = max(200,Size[1])
         Size[0] += 20
         self.SetSize(Size)
 

@@ -1472,12 +1472,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         if 'AtomFrac' not in RB and rbKey != 'S': raise Exception('out of date RB: edit in RB Models')
         # end patch
         if rbKey == 'S':
-            rbid = str(atomIndx[RB['Ids'][0]][1])  #at no for spin RBs
+            atid = str(atomIndx[RB['Ids'][0]][1])  #at no for spin RBs
+            rbid = rbids.index(RB['RBId'][0])
+            sfx = atid+':'+str(rbid)
         else:
             rbid = str(rbids.index(RB['RBId'])) #rb no for others
-        sfx = str(iRB)+':'+rbid
-        if rbKey == 'S':
-            sfx = rbid+':'+str(iRB)
+            sfx = str(iRB)+':'+rbid
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
@@ -1527,6 +1527,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             name = pfx+'RB'+rbKey+'SytSym:'+sfx
             phaseDict[name] = RB['SytSym']
             for ish,atype in enumerate(RB['atType']):
+                rbid = rbids.index(RB['RBId'][ish])
+                sfx = atid+':'+str(rbid)
                 name = '%sRBSAtType;%d:%s'%(pfx,ish,sfx)
                 phaseDict[name] = RB['atType'][ish]
                 name = '%sRBSNatoms;%d:%s'%(pfx,ish,sfx)
@@ -2553,12 +2555,12 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                     PrintRBObjTorAndSig(rbsx)
                 for irb,RBObj in enumerate(RBModels.get('Spin',[])):
+                    iAt = AtLookup[RBObj['Ids'][0]]
                     for ish in range(len(RBObj['RBId'])):       #shell no.
                         jrb = SRBIds.index(RBObj['RBId'][ish])  #spin rb no.
-                        rbsx = str(irb)+':'+str(jrb)
+                        rbsx = ':%d:%d'%(iAt,jrb)
                         pFile.write(' Spin rigid body parameters:\n')
                         PrintRBObjPOAndSig('RBS',rbsx)
-                        rbsx = ':%d:%d'%(irb,jrb)
                         PrintRBObjSHCAndSig('RBSSh;%d;'%ish,RBObj['SHC'][ish],rbsx)
             atomsSig = {}
             sigKey = {}

@@ -9836,7 +9836,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     def RenderSphere(x,y,z,radius,color,fade=False,shape=[20,10]):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         if fade:
-            Fade = list(color) + [0.5,]
+            Fade = list(color) + [0.2,]
             GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,Fade)     #GL.GL_AMBIENT_AND_DIFFUSE causes striping      
             GL.glShadeModel(GL.GL_FLAT)
             GL.glFrontFace(GL.GL_CCW)       #shows outside
@@ -10323,8 +10323,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                         Rp,PSIp,GAMp = G2mth.RotPolbyQ(np.ones_like(PSI),PSI,GAM,Q)
+                        SpnData['hide'] = SpnData.get('hide',[False for i in range(len(SpnData['atType']))])
                         for ish,nSH in enumerate(SpnData['nSH']):
-                            if nSH > 0:
+                            if nSH > 0 and not SpnData['hide'][ish]:
                                 SHC = SpnData['SHC'][ish]
                                 P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                 if np.min(P) < np.max(P):

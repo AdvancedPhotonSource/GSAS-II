@@ -169,12 +169,12 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
         for irb,RBObj in enumerate(RBModels.get('Spin',[])):
             iAt = AtLookup[RBObj['Ids'][0]]
             jrb = SRBIds.index(RBObj['RBId'][0])
-            name = pfx+'RBSOa:%d:%d'%(iAt,irb)
+            name = pfx+'RBSOa:%d:%d'%(iAt,jrb)
             RBObj['Orient'][0][0] = parmDict[name]
             for ish in range(len(RBObj['RBId'])):
                 jrb = SRBIds.index(RBObj['RBId'][ish])
                 for item in RBObj['SHC'][ish]:
-                    name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,iAt,irb)
+                    name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,iAt,jrb)
                     RBObj['SHC'][ish][item][0] = parmDict[name]
                     
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
@@ -411,7 +411,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                             dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
                         dSHdO = Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.02
                         FF[:,iAt] += Nat*SFF*BS*SH*Shell[item]
-                        name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)   #how do I get radius no.?
+                        name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdS[name] = Nat*SFF*BS*SH
                         #fill derivatives here wrt iAt,ishl,item or l,m
                 dFFdS[Rname] = dBSdR
@@ -425,12 +425,8 @@ def GetSHC(pfx,parmDict):
     for parm in parmDict:
         if pfx+'RBS' in parm and 'RBS;' not in parm:    #skips radii parms
             items = parm.split(':')
-            if 'RBSSh' in parm:
-                tag = ':'.join([items[-2],'0'])
-            else:
-                tag = ':'.join([items[-2],items[-1]])
+            atid = int(items[-2])
             name = items[2][3:]    #strip 'RBS'
-            atid = parmDict[pfx+'RBSAtNo:'+tag]
             if atid not in SHCdict:
                 SHCdict[atid] = {}
             if ';' not in name:     # will get Oa, Oi ,Oj, Ok
@@ -1031,6 +1027,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])    # must be ops[0].T
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
+    nCent = len(SGData['SGCen'])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType'] 
@@ -1151,13 +1148,13 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)*Mdata/len(SGMT)
+            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)*Mdata/(nCent*len(SGMT))
             dFdx[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)*Mdata/len(SGMT)
+            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)*Mdata/(nCent*len(SGMT))
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
@@ -3911,7 +3908,7 @@ def getPowderProfileDerv(args):
         # determine the parameters that will have derivatives computed only at end
         nonatomvarylist = []
         for name in varylist:
-            if '::RBV;' not in name:
+            if '::RBV;' not in name and '::RBS;' not in name:
                 try:
                     aname = name.split(pfx)[1][:2]
                     if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
@@ -3921,7 +3918,7 @@ def getPowderProfileDerv(args):
             nonatomvarylist.append(name)
         nonatomdependentVars = []
         for name in dependentVars:
-            if '::RBV;' not in name:
+            if '::RBV;' not in name and '::RBS;' not in name:
                 try:
                     aname = name.split(pfx)[1][:2]
                     if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \

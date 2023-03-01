@@ -11469,20 +11469,31 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             SGData = data['General']['SGData']
             rbSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.FlexGridSizer(0,6,5,5)
-            if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
-                if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
-                RBObj['Orig'][0] = list(RBObj['Orig'][0])
-            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
-            topSizer.Add((-1,-1))
-            for ix in range(3):
-                origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
-                    typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
-                topSizer.Add(origX,0,WACV)
-            Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-            Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
-            Ocheck.SetValue(RBObj['Orig'][1])
-            # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
-            topSizer.Add(Ocheck,0,WACV)
+            if rbType != 'Spin':
+                if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
+                    if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
+                    RBObj['Orig'][0] = list(RBObj['Orig'][0])
+                Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
+                topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
+                topSizer.Add((-1,-1))
+                for ix in range(3):
+                    origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
+                        typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
+                    topSizer.Add(origX,0,WACV)
+                Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
+                Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
+                Ocheck.SetValue(RBObj['Orig'][1])
+                # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
+                topSizer.Add(Ocheck,0,WACV)
+                Name = 'Origin'
+            else:
+                if 'Orig' in RBObj:     #cleanout - not using Orig for spinning RBs!
+                    del RBObj['Orig']
+                atId = RBObj['Ids'][0]
+                Atom = data['Atoms'][AtLookUp[atId]]
+                atXYZ = Atom[cx:cx+3]
+                Sytsym,Mult = G2spc.SytSym(atXYZ,SGData)[:2]
+                Name = Atom[ct-1]
             topSizer.Add(wx.StaticText(RigidBodies,-1,
                 'Rotation angle (deg)\n&& Orient. vector (frac)'),0,WACV)
             Indx['Orien'] = {}
@@ -11496,16 +11507,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
-            Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
             Qchoice = [' ','A','AV','V']
-            # TODO: fix by sytsym rules?
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
             Qcheck.SetValue(RBObj['Orient'][1])
             topSizer.Add(Qcheck,0,WACV)
             RBObj['SytSym'] = Sytsym    #Only needed for spinning RBs
-            sytsymtxt = wx.StaticText(RigidBodies,label='Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
+            sytsymtxt = wx.StaticText(RigidBodies,label='%s site symmetry: %s, multiplicity: %d '%(Name,Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
             return rbSizer
@@ -11669,12 +11678,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
             rbId = RBObj['RBId'][0]
+            atId = RBObj['Ids'][0]
+            atName = data['Atoms'][AtLookUp[atId]][ct-1]
             RBObj['atType'][0] = RBData['Spin'][rbId]['atType']
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
             sprbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
-            topLine.Add(wx.StaticText(RigidBodies,
-                label='Shell 0: Name: %s   Atom type: %s RB sym: %s '%(RBObj['RBname'][0],RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
+            topLine.Add(wx.StaticText(RigidBodies,label='Shell 0: Name: %s Atom name: %s Atom type: %s RB sym: %s '%
+                (RBObj['RBname'][0],atName,RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
             rbId = RBObj['RBId']
             if len(RBObj['nSH']) == 1:
                 delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
@@ -11913,7 +11924,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
-            data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
@@ -12040,7 +12051,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     spnId = 0
                     rbName = RBnames[spnId]
             rbObj = data['RBModels']['Spin'][spnId]
-            data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
             spnSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
             if spnId != -1:
                 spnSelect.SetSelection(spnId)

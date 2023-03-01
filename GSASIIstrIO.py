@@ -1321,13 +1321,15 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write('Atom site frac: %10.3f Refine? %s\n'%(RB['AtomFrac'][0],RB['AtomFrac'][1]))
                 PrintRBThermals()
                 
-        if len(spnRBData):      #TODO: fix this
+        if len(spnRBData):
             for RB in spnRBData:
-                Oxyz = RB['Orig'][0]
+                atId = RB['Ids'][0]
+                Atom = Atoms[atomIndx[atId][1]]
+                Oxyz = Atom[cx:cx+3]
                 Qrijk = RB['Orient'][0]
                 Angle = 2.0*acosd(Qrijk[0])
-                pFile.write('\nRBObject %s at %10.4f %10.4f %10.4f Refine? %s\n'%
-                    (RB['RBname'][0],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
+                pFile.write('\nRBObject %s at %10.4f %10.4f %10.4f \n'%
+                    (RB['RBname'][0],Oxyz[0],Oxyz[1],Oxyz[2]))
                 pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
                 pFile.write('Bessel/Spherical Harmonics coefficients; symmetry required sign shown\n')
@@ -1481,29 +1483,36 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
-        Sytsym = G2spc.SytSym(RB['Orig'][0],SGData)[0]
-        xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym 
-        equivs = {1:[],2:[],3:[]}
-        for i in range(3):
-            name = pfxRB+pstr[i]+':'+sfx
-            phaseDict[name] = RB['Orig'][0][i]
-            if RB['Orig'][1]:
-                if xId[i] > 0:                               
-                    phaseVary += [name,]
-                    equivs[xId[i]].append([name,xCoef[i]])
-                else:
-                    if symHold is not None: #variable is held due to symmetry
-                        symHold.append(name)
-                    G2mv.StoreHold(name,'In rigid body')
-        for equiv in equivs:
-            if len(equivs[equiv]) > 1:
-                name = equivs[equiv][0][0]
-                coef = equivs[equiv][0][1]
-                for eqv in equivs[equiv][1:]:
-                    eqv[1] /= coef
-                    G2mv.StoreEquivalence(name,(eqv,))
-        pfxRB = pfx+'RB'+rbKey+'O'
-        A,V = G2mth.Q2AV(RB['Orig'][0])
+        if rbKey != 'S':
+            XYZ = RB['Orig'][0]
+            Sytsym = G2spc.SytSym(XYZ,SGData)[0]
+            xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym 
+            equivs = {1:[],2:[],3:[]}
+            if 'S' not in rbKey:
+                for i in range(3):
+                    name = pfxRB+pstr[i]+':'+sfx
+                    phaseDict[name] = RB['Orig'][0][i]
+                    if RB['Orig'][1]:
+                        if xId[i] > 0:                               
+                            phaseVary += [name,]
+                            equivs[xId[i]].append([name,xCoef[i]])
+                        else:
+                            if symHold is not None: #variable is held due to symmetry
+                                symHold.append(name)
+                            G2mv.StoreHold(name,'In rigid body')
+                for equiv in equivs:
+                    if len(equivs[equiv]) > 1:
+                        name = equivs[equiv][0][0]
+                        coef = equivs[equiv][0][1]
+                        for eqv in equivs[equiv][1:]:
+                            eqv[1] /= coef
+                            G2mv.StoreEquivalence(name,(eqv,))
+        else:
+            atId = RB['Ids'][0]
+            Atom = Atoms[atomIndx[atId][1]]
+            XYZ = Atom[cx:cx+3]
+        pfxRB = pfx+'RB'+rbKey+'O'        
+        A,V = G2mth.Q2AV(XYZ)
         fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
             name = pfxRB+ostr[i]+':'+sfx

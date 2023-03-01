@@ -210,6 +210,20 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             dFdvDict[name] += dFdvDict[pfx+'RBS;0:%d'%irb]
         else:            
             dFdvDict[name] = dFdvDict[pfx+'RBS;0:%d'%irb]
+            
+        # XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Spin')
+        # for ia,atId in enumerate(RBObj['Ids']):
+        #     atNum = AtLookup[atId]
+        #     dx = 0.00001
+        #     for iv in range(4):
+        #         Q[iv] -= dx
+        #         XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
+        #         Q[iv] += 2.*dx
+        #         XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
+        #         Q[iv] -= dx
+        #         dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
+        #         for ix in [0,1,2]:
+        #             dFdvDict[pfx+'RBS'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
         
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')

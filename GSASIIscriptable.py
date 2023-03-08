@@ -181,6 +181,7 @@ method                                                Use
 :attr:`G2PwdrData.Peaks`                              Provides access to the peak list data structure
 :attr:`G2PwdrData.PeakList`                           Provides the peak list parameter values 
 :meth:`G2PwdrData.Export_peaks`                       Writes the peak parameters to a text file 
+:meth:`G2PwdrData.set_background`                     Sets a background histogram that will be subtracted (point by point) from the current histogram.
 ==================================================    ===============================================================================================================
 
 ---------------------------------

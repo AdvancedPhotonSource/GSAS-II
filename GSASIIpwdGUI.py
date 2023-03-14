@@ -3782,6 +3782,42 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
+    def OnMakePks(event):
+        hkl = G2frame.HKL
+        PatternId = G2frame.PatternId
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+        peaks = []
+        profile = Pattern[1]
+        bxye = GetFileBackground(G2frame,profile,background)
+        x0 = profile[0]
+        iBeg = np.searchsorted(x0,limits[0])
+        iFin = np.searchsorted(x0,limits[1])
+        x = x0[iBeg:iFin]
+        y = (profile[1]-bxye)[iBeg:iFin]
+#        ysig = 1.0*np.std(y0)
+        poss = [p for p in hkl[:,4] if (x[0] <= p <= x[-1])]
+        mags = y[np.searchsorted(x,poss)]
+        refs = list(zip(poss,mags))
+        if 'T' in Inst['Type'][0]:    
+            refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
+        else:   #'C', 'E' or 'B'
+            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
+        for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
+            for ref2 in refs[i+1:]:
+                if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
+                    del(refs[i])
+        if 'T' in Inst['Type'][0]:    
+            refs = G2mth.sortArray(refs,1,reverse=False)
+        else:   #'C', 'E' or 'B'
+            refs = G2mth.sortArray(refs,1,reverse=True)
+        for pos,mag in refs:
+            peaks.append(G2mth.setPeakparms(inst,inst2,pos,mag))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),peaks)
+        
     def OnSpcSel(event):
         controls[13] = spcSel.GetString(spcSel.GetSelection())
         ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
@@ -5038,13 +5074,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     shiftSel.SetSelection(3)
     littleSizer.Add(shiftSel)
     
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',
-                                      style=wx.ALIGN_RIGHT),0,WACV)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
     G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
-    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,
-                            [ 'None',] + [c+notEq0 for c in ('h','k','l')],
-                            indLoc=G2frame.PlotOpts,indKey='hklHighlight',
-                            onChoice=OnHklShow)
+    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
+        indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnHklShow)
     littleSizer.Add(Sel,0,WACV)
     
     mainSizer.Add(littleSizer,0)
@@ -5072,10 +5105,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         if ssopt.get('Use',False):        #zero for super lattice doesn't work!
             controls[0] = False
         else:
-            littleSizer.Add(G2G.G2CheckBox(
-                G2frame.dataWindow,'Show Extinct',cellDisplayOpts,'showExtinct',
-                OnChange=OnHklShow),0,WACV)
-#                OnChange=OnUpdatePlot),0,WACV)
+            littleSizer.Add(G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',cellDisplayOpts,
+                'showExtinct',OnChange=OnHklShow),0,WACV)
         if 'N' in Inst['Type'][0]:
             MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
             MagSel.SetValue('MagSpGrp' in SGData)
@@ -5086,12 +5117,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
             zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
-                                        xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
+                xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
             littleSizer.Add(zero,0,WACV)
             zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
             zeroVar.SetValue(controls[0])
             zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
             littleSizer.Add(zeroVar,0,WACV)
+        if len(G2frame.HKL):
+            makePks = wx.Button(G2frame.dataWindow,label='Make Peak list')
+            makePks.Bind(wx.EVT_BUTTON,OnMakePks)
+            littleSizer.Add(makePks,0,WACV)
             
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)

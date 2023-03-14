@@ -2106,7 +2106,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         newPlot = False
         if event.key == 'w':    # and not Page.plotStyle['qPlot'] and not Page.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
             G2frame.Weight = not G2frame.Weight
-            if not G2frame.Weight and 'PWDR' in plottype:
+            if not G2frame.Weight and not G2frame.Contour and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
@@ -3246,7 +3246,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             'o: reset contour limits','g: toggle grid',
             'i: interpolation method','S: color scheme','c: contour off',
             't: temperature for y-axis','s: toggle sqrt plot',
-            'C: contour plot control window'
+            'C: contour plot control window',
+            'w: toggle w(Yo-Yc) contour plot'
             )
     else:
         if 'PWDR' in plottype:
@@ -3404,7 +3405,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xLabel = 'E, keV'
         else:
             xLabel = r'$\mathsf{2\theta}$'
-    if G2frame.Weight:
+    if G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
         # try:
@@ -3417,6 +3418,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
+    if G2frame.Weight and G2frame.Contour:
+        Title = r'$\mathsf{\Delta(I)/\sigma(I)}$ for '+Title
     if 'T' in ParmList[0]['Type'][0] or (Page.plotStyle['Normalize'] and not G2frame.SinglePlot):
         if Page.plotStyle['sqrtPlot']:
             Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
@@ -3573,7 +3576,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:            
             if len(X) == lenX :
-                ContourZ.append(Y)
+                if G2frame.Weight:
+                    ContourZ.append((xye[1]-xye[3])*np.sqrt(xye[2]))
+                else:
+                    ContourZ.append(Y)
             elif len(X) < lenX:
                 Yext = np.ones(lenX)*Y[-1]
                 Yext[:len(X)] = Y
@@ -3903,7 +3909,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.Contour:
         time0 = time.time()
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Page.Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
+        Vmin = Ymax*G2frame.Cmin
+        Vmax = Ymax*G2frame.Cmax
+        if G2frame.Weight:
+            Vmin = np.min(ContourZ)
+            Vmax = np.max(ContourZ)
+        Page.Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Vmin,vmax=Vmax,
             interpolation=G2frame.Interpolate,extent=[ContourX[0],ContourX[-1],ContourY[0]-.5,ContourY[-1]+.5],
             aspect='auto',origin='lower')
         if G2frame.TforYaxis:

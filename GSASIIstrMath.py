@@ -210,21 +210,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             dFdvDict[name] += dFdvDict[pfx+'RBS;0:%d'%irb]
         else:            
             dFdvDict[name] = dFdvDict[pfx+'RBS;0:%d'%irb]
-            
-        # XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Spin')
-        # for ia,atId in enumerate(RBObj['Ids']):
-        #     atNum = AtLookup[atId]
-        #     dx = 0.00001
-        #     for iv in range(4):
-        #         Q[iv] -= dx
-        #         XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-        #         Q[iv] += 2.*dx
-        #         XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-        #         Q[iv] -= dx
-        #         dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
-        #         for ix in [0,1,2]:
-        #             dFdvDict[pfx+'RBS'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
-        
+                   
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')
         VModel = RBData['Vector'][RBObj['RBId']]
@@ -373,7 +359,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
     
     def MakePolar(Orient,QB):
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
-        Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
+        Q = G2mth.prodQQ(QA,QB)     #might be switched? QB,QA is order for plotting
         return G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,Q)
         
     dFFdS = {}
@@ -383,11 +369,21 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             symAxis = np.array(SHdat['symAxis'])
             QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
             Th,Ph = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-            ThP,PhP = MakePolar([SHdat['Oa']+.01,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-            ThM,PhM = MakePolar([SHdat['Oa']-.01,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+            ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+            dp = 0.00001
+            ThPi,PhPi = MakePolar([SHdat['Oa'],SHdat['Oi']+dp,SHdat['Oj'],SHdat['Ok']],QB)
+            ThPj,PhPj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']+dp,SHdat['Ok']],QB)
+            ThPk,PhPk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']+dp],QB)
+            ThM,PhM = MakePolar([SHdat['Oa']-.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+            ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],QB)
+            ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
+            ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
             SQR = np.repeat(SQ,HKL.shape[1])
-            Oname = 'Oa:%d:%d'%(iAt,0)
+            Oname = 'Oa:%d:0'%iAt
+            Oiname = 'Oi:%d:0'%iAt
+            Ojname = 'Oj:%d:0'%iAt
+            Okname = 'Ok:%d:0'%iAt
             FF[:,iAt] = 0.
             ishl = 0
             while True:
@@ -410,26 +406,42 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
                 R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
                 dBSdR = Nat*SFF*(R0P-R0M)/0.02
+                dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
+                dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
+                dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
+                dSHdOk = np.zeros(HKL.shape[0]*HKL.shape[1])
                 FF[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
                         SH = G2lat.KslCalc(item,Th,Ph)
                         SHP = G2lat.KslCalc(item,ThP,PhP)
+                        SHPi = G2lat.KslCalc(item,ThPi,PhPi)
+                        SHPj = G2lat.KslCalc(item,ThPj,PhPj)
+                        SHPk = G2lat.KslCalc(item,ThPk,PhPk)
                         SHM = G2lat.KslCalc(item,ThM,PhM)
+                        SHMi = G2lat.KslCalc(item,ThMi,PhMi)
+                        SHMj = G2lat.KslCalc(item,ThMj,PhMj)
+                        SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
                         if R > 0.:
                             BS = sp.spherical_jn(l,QR*R)    #Bessel function
                             BSP = sp.spherical_jn(l,QR*(R+0.01))
                             BSM = sp.spherical_jn(l,QR*(R-0.01))
                             dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
-                        dSHdO = Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.02
+                        dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
+                        dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
+                        dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)
+                        dSHdOk += Nat*SFF*BS*Shell[item]*(SHPk-SHMk)/(2.*dp)
                         FF[:,iAt] += Nat*SFF*BS*SH*Shell[item]
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdS[name] = Nat*SFF*BS*SH
                         #fill derivatives here wrt iAt,ishl,item or l,m
                 dFFdS[Rname] = dBSdR
                 dFFdS[Oname] = dSHdO
+                dFFdS[Oiname] = dSHdOi
+                dFFdS[Ojname] = dSHdOj
+                dFFdS[Okname] = dSHdOk
                 ishl += 1
     if ifDeriv:
         return dFFdS    
@@ -1003,7 +1015,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fbs[0] *= 0.
             fas[1] *= 0.
         if 'P' in hType:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
-            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
+            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)    
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
             if len(TwinLaw) > 1:
@@ -1133,7 +1145,10 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-        dfadff = np.sum(fa[0]*Tcorr/fot,axis=-2)           #ignores resonant scattering?
+        dfadff = np.sum(fa[0]*Tcorr/fot,axis=-2)           #ignores resonant scattering? #TODO needs only for Q atoms!
+        for i,aname in enumerate(Tdata):
+            if 'Q' not in aname:
+                dfadff[:,i] = 0.0
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
@@ -1142,6 +1157,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
             dfbdff = np.sum(fb[0]*Tcorr/fot,axis=-2)           #ignores resonant scattering?
+            for i,aname in enumerate(Tdata):
+                if 'Q' not in aname:
+                    dfbdff[:,i] = 0.0
             dfbdba = np.sum(-sinp*Tcorr,axis=-2)
             dfadfl = np.sum(np.sum(-fotp*sinp,axis=-1),axis=-1)
             dfbdfl = np.sum(np.sum(fotp*cosp,axis=-1),axis=-1)
@@ -1162,13 +1180,13 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)*Mdata/(nCent*len(SGMT))
+            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)/len(SGMT)
             dFdx[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)*Mdata/(nCent*len(SGMT))
+            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)/len(SGMT)
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
@@ -1190,9 +1208,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
-        if len(dffdSH):
-            for item in dffdSH:
-                dFdvDict[pfx+'RBS'+item] = dFdff.T[i]*np.sum(np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+        for item in dffdSH:
+            dFdvDict[pfx+'RBS'+item] = dFdff.T[i]*np.sum(np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]

@@ -1096,7 +1096,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         xyz = np.array([x1,y1,z1])
         drs = get_drs(xyz,XYZ)
         drs_grid = np.where(drs>max_dr,max_dr,drs)/hist_grid
-        int_drs_grid = np.array(drs_grid,dtype=np.int)
+        int_drs_grid = np.array(drs_grid,dtype=np.int32)
         int_drs_grid = np.where(int_drs_grid>num_hist-2,num_hist-2,int_drs_grid)                
         ip_lows = int_drs_grid
         ip_highs = ip_lows + 1            

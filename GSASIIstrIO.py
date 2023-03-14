@@ -1512,16 +1512,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             Atom = Atoms[atomIndx[atId][1]]
             XYZ = Atom[cx:cx+3]
         pfxRB = pfx+'RB'+rbKey+'O'        
-        A,V = G2mth.Q2AV(XYZ)
+        A,V = G2mth.Q2AV(RB['Orient'][0])
         fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
             name = pfxRB+ostr[i]+':'+sfx
             phaseDict[name] = RB['Orient'][0][i]
             if RB['Orient'][1] == 'AV' and i:
                 phaseVary += [name,]
-            elif RB['Orient'][1] == 'A' and not i:
+            elif 'A' in RB['Orient'][1] and not i:
                 phaseVary += [name,]
-            elif RB['Orient'][1] == 'V' and i not in fixAxis:
+            elif RB['Orient'][1] == 'V' and i:
                 phaseVary += [name,]
         if rbKey != 'S':
             name = pfx+'RB'+rbKey+'f:'+sfx

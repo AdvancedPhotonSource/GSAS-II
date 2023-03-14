@@ -1334,7 +1334,7 @@ def GenMagOps(SGData):
     if SGData['SGFixed']:
         SpnFlp = SGData['SpnFlp']
     else:
-        SpnFlp = np.ones(Nsym,dtype=np.int)
+        SpnFlp = np.ones(Nsym,dtype=np.int32)
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
         Nfl = len(GenFlg)

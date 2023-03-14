@@ -1038,7 +1038,7 @@ def Uij2Ueqv(Uij,GS,Amat):
     :param GS: Uij too betaij conversion matrix
     :param Amat: crystal to Cartesian transformation matrix
     :returns: 1/3 trace of diagonalized U matrix
-    :returns: True if nonpositive-definate; False otherwise
+    :returns: True if nonpositive-definite; False otherwise
     '''
     U = np.multiply(U6toUij(Uij),GS)
     U = np.inner(Amat,np.inner(U,Amat).T)

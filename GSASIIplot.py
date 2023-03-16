@@ -1405,6 +1405,8 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             Page.qaxis = not Page.qaxis
         elif event.key == 'f':
             Page.faxis = not Page.faxis
+        elif event.key == 'v':
+            Page.vaxis = not Page.vaxis
         Draw()
 
     def OnMotion(event):
@@ -1451,29 +1453,53 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         colors=['b','r','g','c','m','k']
         Page.keyPress = OnKeyPress
         
-        if Page.qaxis:
+        if 'HKLF' in Name:
+            Fosq,sig,Fcsq = hklRef.T[5+Super:8+Super]
+        else:
+            Fosq,sig,Fcsq = hklRef.T[8+Super],1.0,hklRef.T[9+Super]
+        d = hklRef.T[4+Super].copy()
+
+        if Page.vaxis:
+            if Page.faxis:
+                Plot.set_xlabel(r'Fc',fontsize=14)
+                Plot.set_ylabel(r'Fo',fontsize=14)
+                X = np.nan_to_num(np.sqrt(Fcsq))
+                Y = np.sqrt(Fosq)
+                Z = 0.5*sig/np.sqrt(Fosq)
+            else:     
+                Plot.set_xlabel(r'Fc'+super2,fontsize=14)
+                Plot.set_ylabel(r'Fo'+super2,fontsize=14)
+                X = Fcsq.copy()
+                Y = Fosq.copy()
+                Z = sig.copy()
+        elif Page.qaxis:
             Plot.set_xlabel(r'q, '+Angstr+Pwrm1,fontsize=14)
-            X = 2.*np.pi/hklRef.T[4+Super]
+            X = 2.*np.pi/d   #q
         else:            
-            X = hklRef.T[4+Super]
-        if Page.faxis:
+            X = d  #d
+        if Page.faxis and not Page.vaxis:
             Plot.set_ylabel(r'F',fontsize=14)
-            Y = np.nan_to_num(np.sqrt(hklRef.T[8+Super]))
-            Z = np.sqrt(hklRef.T[9+Super])
-        else:            
-            Y = hklRef.T[8+Super]
-            Z = hklRef.T[9+Super]
+            Y = np.nan_to_num(np.sqrt(Fcsq))
+            Z = np.sqrt(Fosq)
+        elif not Page.vaxis:            
+            Y = Fcsq.copy()
+            Z = Fosq.copy()
         Ymax = np.max(Y)
         
-        XY = np.vstack((X,X,np.zeros_like(X),Y)).reshape((2,2,-1)).T
-        XZ = np.vstack((X,X,np.zeros_like(X),Z)).reshape((2,2,-1)).T
-        XD = np.vstack((X,X,np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.)).reshape((2,2,-1)).T
-        lines = mplC.LineCollection(XY,color=colors[0])
-        Plot.add_collection(lines)
-        lines = mplC.LineCollection(XZ,color=colors[1])
-        Plot.add_collection(lines)
-        lines = mplC.LineCollection(XD,color=colors[2])
-        Plot.add_collection(lines)
+        if not Page.vaxis:
+            XY = np.vstack((X,X,np.zeros_like(X),Y)).reshape((2,2,-1)).T
+            XZ = np.vstack((X,X,np.zeros_like(X),Z)).reshape((2,2,-1)).T
+            XD = np.vstack((X,X,np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.)).reshape((2,2,-1)).T
+            lines = mplC.LineCollection(XY,color=colors[0])
+            Plot.add_collection(lines)
+            lines = mplC.LineCollection(XZ,color=colors[1])
+            Plot.add_collection(lines)
+            lines = mplC.LineCollection(XD,color=colors[2])
+            Plot.add_collection(lines)
+        else:
+            Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b')
+            Plot.plot(X, X, color='r')
+
         xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
         dxylim = np.array([xylim[0][1]-xylim[0][0],xylim[1][1]-xylim[1][0]])/20.
         xylim[0,0] -= dxylim[0]
@@ -1503,11 +1529,12 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         newPlot = True
         Page.qaxis = False
         Page.faxis = False
+        Page.vaxis = False
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
-    Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
+    Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot','v: toggle Fo/Fc plot')
     Draw()
     
 #### Plot3DSngl ################################################################################

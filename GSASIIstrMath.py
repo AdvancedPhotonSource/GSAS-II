@@ -363,8 +363,10 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
         return G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,Q)
         
     dFFdS = {}
+    atFlg = []
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
+            atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
             QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
@@ -386,6 +388,11 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             Okname = 'Ok:%d:0'%iAt
             FF[:,iAt] = 0.
             ishl = 0
+#            dBSdR = np.zeros(HKL.shape[0]*HKL.shape[1])
+            dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
+            dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
+            dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
+            dSHdOk = np.zeros(HKL.shape[0]*HKL.shape[1])
             while True:
                 shl = '%d'%ishl
                 if shl not in SHdat:
@@ -406,10 +413,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
                 R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
                 dBSdR = Nat*SFF*(R0P-R0M)/0.02
-                dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
-                dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
-                dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
-                dSHdOk = np.zeros(HKL.shape[0]*HKL.shape[1])
                 FF[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
@@ -437,14 +440,16 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdS[name] = Nat*SFF*BS*SH
                         #fill derivatives here wrt iAt,ishl,item or l,m
-                dFFdS[Rname] = dBSdR
-                dFFdS[Oname] = dSHdO
-                dFFdS[Oiname] = dSHdOi
-                dFFdS[Ojname] = dSHdOj
-                dFFdS[Okname] = dSHdOk
                 ishl += 1
+                dFFdS[Rname] = dBSdR
+            dFFdS[Oname] = dSHdO
+            dFFdS[Oiname] = dSHdOi
+            dFFdS[Ojname] = dSHdOj
+            dFFdS[Okname] = dSHdOk
+        else:
+            atFlg.append(0.)
     if ifDeriv:
-        return dFFdS    
+        return dFFdS,atFlg    
             
 def GetSHC(pfx,parmDict):
     SHCdict = {}
@@ -1064,6 +1069,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return {}
     mSize = len(Mdata)
+    nOps = len(SGMT)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType'] or 'NB' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -1077,7 +1083,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     bij = Mast*Uij.T
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
-    dFdff = np.zeros((nRef,mSize))
+    dFdff = np.zeros((nRef,nOps,mSize))
     dFdx = np.zeros((nRef,mSize,3))
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
@@ -1122,7 +1128,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))     #Nref,Nops,6
         if len(SHCdict):
-            dffdsh = MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,True)
+            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,True)
             if len(dffdSH):
                 for item in dffdSH:
                     dffdSH[item] = np.concatenate((dffdSH[item],dffdsh[item]))
@@ -1145,10 +1151,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-        dfadff = np.sum(fa[0]*Tcorr/fot,axis=-2)           #ignores resonant scattering? #TODO needs only for Q atoms!
-        for i,aname in enumerate(Tdata):
-            if 'Q' not in aname:
-                dfadff[:,i] = 0.0
+#        dfadff = np.sum(fa[0]*Tcorr*atFlg/fot,axis=-2)           #ignores resonant scattering? #TODO needs only for Q atoms!
+        dfadff = fa[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
@@ -1156,10 +1160,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         # array(2,refBlk,nAtom,3) & array(2,refBlk,nAtom,6)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-            dfbdff = np.sum(fb[0]*Tcorr/fot,axis=-2)           #ignores resonant scattering?
-            for i,aname in enumerate(Tdata):
-                if 'Q' not in aname:
-                    dfbdff[:,i] = 0.0
+#            dfbdff = np.sum(fb[0]*Tcorr*atFlg/fot,axis=-2)           #ignores resonant scattering?
+            dfbdff = fb[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq
             dfbdba = np.sum(-sinp*Tcorr,axis=-2)
             dfadfl = np.sum(np.sum(-fotp*sinp,axis=-1),axis=-1)
             dfbdfl = np.sum(np.sum(fotp*cosp,axis=-1),axis=-1)
@@ -1180,13 +1182,15 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)/len(SGMT)
+#            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)/len(SGMT)
+            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadff[nxs,:,:,:]+fbs[:,:,nxs,nxs]*dfbdff[nxs,:,:,:],axis=0) #not summed on Uniq yet
             dFdx[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)/len(SGMT)
+#            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)/len(SGMT)
+            dFdff[iBeg:iFin] = (2.*SA[:,nxs,nxs]*dfadff+2.*SB[:,nxs,nxs]*dfbdff)      #not summed on Uniq yet
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
@@ -1209,7 +1213,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSH:
-            dFdvDict[pfx+'RBS'+item] = dFdff.T[i]*np.sum(np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+            i = int(item.split(':')[1])
+            dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]

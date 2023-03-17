@@ -1066,6 +1066,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    atFlg = np.zeros(len(Tdata))
     if not Xdata.size:          #no atoms in phase!
         return {}
     mSize = len(Mdata)

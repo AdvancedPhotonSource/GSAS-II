@@ -1632,6 +1632,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         if G2frame.autoIntFrame: # ensure only one open at a time
             G2frame.autoIntFrame.Raise()
             return
+        else:
+            print('Auto-integration window already open')
         PollTime = GSASIIpath.GetConfigValue('Autoint_PollTime',30.)
         G2frame.autoIntFrame = AutoIntFrame(G2frame,PollTime=PollTime)
         # debug code to reload code for window on each use

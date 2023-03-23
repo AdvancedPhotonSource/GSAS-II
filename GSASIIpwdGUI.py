@@ -2296,6 +2296,10 @@ def UpdateInstrumentGrid(G2frame,data):
         for item in copyList:
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            if 'Bank' not in data:
+                data['Bank'] = [1,1,0]
+            if 'Source' not in data:
+                data['Source'] = ['','']
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
             if 'Source' not in instData:

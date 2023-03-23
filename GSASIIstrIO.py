@@ -1058,8 +1058,6 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     def PrintSpnRBModel(RBModel):
         pFile.write('Spinning RB name: %s atom type: %s, no.atoms: %d, No. times used: %d\n'%
             (RBModel['RBname'],RBModel['atType'],RBModel['Natoms'],RBModel['useCount']))
-        for i in WriteSpnRBModel(RBModel):
-            pFile.write(i)
 
     def PrintResRBModel(RBModel):
         pFile.write('Residue RB name: %s no.atoms: %d, No. times used: %d\n'%
@@ -1082,11 +1080,6 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     if len(rbIds.get('Spin',{})):
         for irb,item in enumerate(rbIds['Spin']):
             if rigidbodyDict['Spin'][item]['useCount']:
-                RBradius = rigidbodyDict['Spin'][item]['radius']
-                pid = '::RBS;0:'+str(irb)
-                rbDict[pid] = RBradius[0]
-                if RBradius[1]:
-                    rbVary.append(pid)
                 if Print:
                     pFile.write('\nSpinning rigid body model:\n')
                     PrintSpnRBModel(rigidbodyDict['Spin'][item])
@@ -1131,24 +1124,8 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
         pFile.write(valstr+'\n')
         pFile.write(sigstr+'\n')
 
-    def PrintRBSpnandSig(SpinRB,SpinSig):
-        pFile.write('\n Spinning radius for %s:\n'%SpinRB['RBname'])
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
-        for i,[val,sig] in enumerate(zip(SpinRB['radius'],SpinSig)):
-            namstr += '%12s'%('Spin '+str(i))
-            valstr += '%12.4f'%(val)
-            if sig:
-                sigstr += '%12.4f'%(sig)
-            else:
-                sigstr += 12*' '
-        pFile.write(namstr+'\n')
-        pFile.write(valstr+'\n')
-        pFile.write(sigstr+'\n')        
-        
     RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds
-    if not RBIds['Vector'] and not RBIds['Spin']:
+    if not RBIds['Vector']:
         return
     for irb,item in enumerate(RBIds['Vector']):
         if rigidbodyDict['Vector'][item]['useCount']:
@@ -1159,15 +1136,6 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
                 if name in sigDict:
                     VectSig.append(sigDict[name])
             PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)    
-    for irb,item in enumerate(RBIds['Spin']):
-        if rigidbodyDict['Spin'][item]['useCount']:
-            SpinSig = []
-            name = '::RBS;'+str(0)+':'+str(irb)
-            if name in sigDict:
-                SpinSig.append(sigDict[name])
-                
-            
-            PrintRBSpnandSig(rigidbodyDict['Spin'][item],SpinSig)    
         
 ################################################################################
 ##### Phase data
@@ -1342,9 +1310,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         iBeg = 0
                         iFin = min(iBeg+6,nCoeff)
                         for block in range(nBlock):
-                            ptlbls = ' names :'
-                            ptstr =  ' values:'
-                            ptref =  ' refine:'
+                            if not block:
+                                ptlbls = ' names :%12s'%'Radius'
+                                ptstr =  ' values:%12.4f'%RB['Radius'][ish][0]
+                                ptref =  ' refine:%12s'%RB['Radius'][ish][1]                               
+                            else:
+                                ptlbls = ' names :'
+                                ptstr =  ' values:'
+                                ptref =  ' refine:'
                             for item in SHkeys[iBeg:iFin]:
                                 ptlbls += '%12s'%(item)
                                 ptstr += '%9.4f*%2d'%(SHC[item][0],SHC[item][1])
@@ -1591,6 +1564,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             if not len(Shcof):
                 continue
             rbid = str(rbids.index(RB['RBId'][ish]))
+            name = '%sRBSSh;%d;Radius:%s:%s'%(pfx,ish,iAt,rbid)
+            phaseDict[name] = RB['Radius'][ish][0]
+            if RB['Radius'][ish][1]:
+                phaseVary += [name,]
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]
@@ -2568,8 +2545,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     for ish in range(len(RBObj['RBId'])):       #shell no.
                         jrb = SRBIds.index(RBObj['RBId'][ish])  #spin rb no.
                         rbsx = ':%d:%d'%(iAt,jrb)
-                        pFile.write(' Spin rigid body parameters:\n')
-                        PrintRBObjPOAndSig('RBS',rbsx)
+                        pFile.write(' Spin rigid body parameters for at. no. %d; shell %d:\n'%(iAt,ish))
+                        if not ish:
+                            PrintRBObjPOAndSig('RBS',rbsx[1:])  #skip leading ':'
                         PrintRBObjSHCAndSig('RBSSh;%d;'%ish,RBObj['SHC'][ish],rbsx)
             atomsSig = {}
             sigKey = {}
@@ -4201,6 +4179,8 @@ def WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
         valstr += '%12.4f'%(parmDict[name])
         if name in sigDict:
             sigstr += '%12.4f'%(sigDict[name])
+        else:
+            sigstr += 12*' '
     out.append(namstr+'\n')
     out.append(valstr+'\n')
     out.append(sigstr+'\n')
@@ -4211,9 +4191,15 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
     Moved so it can be used in ExportCIF
     '''
     out = []
-    namstr = '  names :'
-    valstr = '  values:'
+    name = pfx+rbfx+'Radius'+rbsx
+    namstr = '  names :%12s'%'Radius'
+    valstr = '  values:%12.4f'%parmDict[name]
     sigstr = '  esds  :'
+    if name in sigDict:
+        sigstr += '%12.4f'%sigDict[name]
+        [name]
+    else:
+        sigstr += 12*' '
     out.append(' Sp.harm.:\n')
     for item in SHC:
         name = pfx+rbfx+item+rbsx
@@ -4221,15 +4207,11 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
         valstr += '%12.4f'%(parmDict[name])
         if name in sigDict:
             sigstr += '%12.4f'%(sigDict[name])
+        else:
+            sigstr += 12*' '
     out.append(namstr+'\n')
     out.append(valstr+'\n')
     out.append(sigstr+'\n')
-    return out
-
-def WriteSpnRBModel(RBModel,sigDict={},irb=None):
-    '''Write description of a spinning rigid body. Code here to make usable from G2export_CIF
-    '''
-    out = ' Radius: %10.3f refine? %s\n'%(RBModel['radius'][0],RBModel['radius'][1])    
     return out
 
 def WriteResRBModel(RBModel):

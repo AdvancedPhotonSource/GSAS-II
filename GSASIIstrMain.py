@@ -422,7 +422,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
                 G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
                 G2stIO.SetISOmodes(parmDict,sigDict,Phases,printFile)
                 G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
-                                             pFile=printFile,covMatrix=covMatrix,varyList=varyList)
+                    pFile=printFile,covMatrix=covMatrix,varyList=varyList)
                 G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
                 # check for variables outside their allowed range, reset and freeze them
                 frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)

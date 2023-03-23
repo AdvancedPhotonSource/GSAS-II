@@ -2705,6 +2705,7 @@ def H2ThPh(H,Bmat,Q):
 
 def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation.
+    Presently only used for plotting
     Note that the the number of gam values must either be 1 or must match psi
     
     :param str SytSym: sit symmetry - only looking for cubics - remove this

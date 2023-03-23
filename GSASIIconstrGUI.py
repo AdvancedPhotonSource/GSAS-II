@@ -3026,7 +3026,6 @@ create a Vector or Residue rigid body.
     def AddSpinRB(event):
         
         rbid = ran.randint(0,sys.maxsize)
-        radius = 1.0
         atType = 'C'
         rbType = 'Q'
         Natoms = 1
@@ -3034,8 +3033,8 @@ create a Vector or Residue rigid body.
         namelist = [data['Spin'][key]['RBname'] for key in data['Spin']]
         name = G2obj.MakeUniqueLabel(name,namelist)
         atColor = G2elem.GetAtomInfo(atType)['Color']
-        data['Spin'][rbid] = {'RBname':name,'Natoms':Natoms,'radius':[radius,False],'atType':atType,'rbType':rbType,
-            'useCount':0,'nSH':0,'SHC':[{},],'Matrix':np.eye(3),'rbPos':np.zeros(3),'atColor':atColor}
+        data['Spin'][rbid] = {'RBname':name,'Natoms':Natoms,'atType':atType,'rbType':rbType,
+            'useCount':0,'nSH':0,'SHC':[{},],'Radius':[1.0,False],'Matrix':np.eye(3),'rbPos':np.zeros(3),'atColor':atColor}
         data['RBIds']['Spin'].append(rbid)
         UpdateSpinRB()
         
@@ -3403,10 +3402,6 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     data['Spin'][Indx[ObjId]]['Color'] = G2elem.GetAtomInfo(El)['Color']
                     Obj.ChangeValue(El)
                    
-        def OnRefSel(event):
-            ObjId = event.GetId()
-            data['Spin'][Indx[ObjId]]['radius'][1] = not data['Spin'][Indx[ObjId]]['radius'][1]
-
         def OnSymSel(event):
             ObjId = event.GetId()
             data['Spin'][Indx[ObjId]]['RBsym'] = simsel.GetValue()
@@ -3433,8 +3428,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
         SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells/nonspherical atoms (radius=0):'),0,WACV)
-        bodSizer = wx.FlexGridSizer(0,7,5,5)
-        for item in ['Name','Type','RB sym','Atom','Number','radius','refine']:
+        bodSizer = wx.FlexGridSizer(0,5,5,5)
+        for item in ['Name','Type','RB sym','Atom','Number']:
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
         for ibod,spinID in enumerate(data['Spin']):
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
@@ -3452,12 +3447,6 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             Indx[atSel.GetId()] = spinID
             bodSizer.Add(atSel,0)
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'Natoms'))
-            bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID]['radius'],0))
-            refSel = wx.CheckBox(SpinRBDisplay)
-            refSel.SetValue(data['Spin'][spinID]['radius'][1])
-            Indx[refSel.GetId()] = spinID
-            refSel.Bind(wx.EVT_CHECKBOX,OnRefSel)
-            bodSizer.Add(refSel,0)
         
         SpinRBSizer.Add(bodSizer)
         SpinRBSizer.Add((5,25),)

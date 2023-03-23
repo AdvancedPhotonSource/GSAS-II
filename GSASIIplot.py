@@ -10348,7 +10348,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         break
                     if SpnData is not None:
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
-                        radius = SpnData['radius']
+                        radius = SpnData['Radius']
                         atColor = SpnData['atColor']
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!

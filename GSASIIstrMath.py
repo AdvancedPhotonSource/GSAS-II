@@ -75,12 +75,6 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 for j in range(len(VRBData[rbId]['VectMag'])):
                     name = '::RBV;'+str(j)+':'+str(i)
                     VRBData[rbId]['VectMag'][j] = parmDict[name]
-    if RBIds['Spin']:
-        SRBData = RBData['Spin']
-        for i,rbId in enumerate(SRBIds):
-            if SRBData[rbId]['useCount']:
-                name = '::RBS;0:'+str(i)
-                SRBData[rbId]['radius'][0] = parmDict[name]
         
     for phase in Phases:
         Phase = Phases[phase]
@@ -170,7 +164,9 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
             iAt = AtLookup[RBObj['Ids'][0]]
             jrb = SRBIds.index(RBObj['RBId'][0])
             name = pfx+'RBSOa:%d:%d'%(iAt,jrb)
-            RBObj['Orient'][0][0] = parmDict[name]
+            for i,po in enumerate(['RBSOa:','RBSOi:','RBSOj:','RBSOk:']):
+                name = pfx+'%s%d:%d'%(po,iAt,jrb)
+                RBObj['Orient'][0][i] = parmDict[name]                
             for ish in range(len(RBObj['RBId'])):
                 jrb = SRBIds.index(RBObj['RBId'][ish])
                 for item in RBObj['SHC'][ish]:
@@ -204,12 +200,12 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
     
-    for irb,RBObj in enumerate(RBModels.get('Spin',[])):
-        name = '::RBS;0:%d'%irb
-        if name in dFdvDict:
-            dFdvDict[name] += dFdvDict[pfx+'RBS;0:%d'%irb]
-        else:            
-            dFdvDict[name] = dFdvDict[pfx+'RBS;0:%d'%irb]
+    # for irb,RBObj in enumerate(RBModels.get('Spin',[])):
+    #     name = '::RBS;0:%d'%irb
+    #     if name in dFdvDict:
+    #         dFdvDict[name] += dFdvDict[pfx+'RBS;0:%d'%irb]
+    #     else:            
+    #         dFdvDict[name] = dFdvDict[pfx+'RBS;0:%d'%irb]
                    
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')
@@ -398,7 +394,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 if shl not in SHdat:
                     break
                 Shell = SHdat[shl]
-                R = Shell['R']
+                R = Shell['Radius']
                 Atm = Shell['AtType']
                 Nat = Shell['Natoms']
                 Irb = Shell['ShR']
@@ -408,7 +404,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 elif 'N' in hType:
                     dat = G2el.getBLvalues(BLtables)
                     SFF = dat[Atm]
-                Rname = ';0:%s'%Irb
+                Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
                 R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
                 R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
                 R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
@@ -439,9 +435,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                         FF[:,iAt] += Nat*SFF*BS*SH*Shell[item]
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdS[name] = Nat*SFF*BS*SH
-                        #fill derivatives here wrt iAt,ishl,item or l,m
-                ishl += 1
                 dFFdS[Rname] = dBSdR
+                ishl += 1
             dFFdS[Oname] = dSHdO
             dFFdS[Oiname] = dSHdOi
             dFFdS[Ojname] = dSHdOj
@@ -467,7 +462,7 @@ def GetSHC(pfx,parmDict):
             bits = name.split(';')
             shno = bits[1]
             if shno not in SHCdict[atid]:
-                SHCdict[atid][shno] = {'R':parmDict['::RBS;0:%s'%shno]}
+                SHCdict[atid][shno] = {}
             if 'AtType' in bits[0] or 'Natoms' in bits[0] or 'ShR' in bits[0]:
                 SHCdict[atid][shno][bits[0]] = parmDict[parm]
             elif 'Sh' in name:
@@ -1066,7 +1061,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
-    atFlg = np.zeros(len(Tdata))
+    atFlg = np.zeros(len(Tdata)) #non zero for Q type atoms - see below
     if not Xdata.size:          #no atoms in phase!
         return {}
     mSize = len(Mdata)

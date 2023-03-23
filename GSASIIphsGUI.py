@@ -11580,7 +11580,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 rbData = RBData['Spin'][rbIds[selection]]
                 RBObj['RBId'].append(rbIds[selection])
                 RBObj['SHC'].append({})
-                for name in ['atColor','atType','Natoms','nSH','radius','RBname','RBsym']:
+                for name in ['atColor','atType','Natoms','nSH','RBname','RBsym','Radius']:
                     RBObj[name].append(rbData[name])
                 RBObj['hide'].append(False)
                 RBData['Spin'][rbIds[selection]]['useCount'] += 1
@@ -11611,17 +11611,22 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     Obj = event.GetEventObject()
                     iSh,name = Indx[Obj.GetId()]
                     RBObj['SHC'][iSh][name][2] = not RBObj['SHC'][iSh][name][2]
+                    
+                def OnRadRef(event):
+                    Obj = event.GetEventObject()
+                    iSh = Indx[Obj.GetId()]
+                    RBObj['Radius'][iSh][1] = not RBObj['Radius'][iSh][1]
                 
                 def NewSHC(invalid,value,tc):
                     G2plt.PlotStructure(G2frame,data)
-                    
+                                       
                 def OnDelShell(event):
                     Obj = event.GetEventObject()
                     iSh = Indx[Obj.GetId()]
                     rbId = RBObj['RBId'][iSh]
                     RBData['Spin'][rbId]['useCount'] -= 1
                     RBData['Spin'][rbId]['useCount'] = max(0,RBData['Spin'][rbId]['useCount'])
-                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym','SHC']:
+                    for name in ['atColor','atType','Natoms','nSH','RBId','RBname','RBsym','SHC']:
                         del RBObj[name][iSh]
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
@@ -11629,6 +11634,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     
                 shSizer = wx.BoxSizer(wx.VERTICAL)
                 for iSh,nSh in enumerate(RBObj['nSH']):
+                    #patch
+                    if 'Radius' not in RBObj:
+                        RBObj['Radius'] = [[1.0,False] for i in range(len(RBObj['nSH']))]
+                    #end patch
                     rbId = RBObj['RBId'][iSh]
                     RBObj['atType'][iSh] = RBData['Spin'][rbId]['atType']
                     if iSh:
@@ -11653,7 +11662,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     shOrder.Bind(wx.EVT_COMBOBOX,OnSHOrder)
                     shoSizer.Add(shOrder,0,WACV)
                     if RBObj['nSH'][iSh]>0:
-                        shoSizer.Add(wx.StaticText(RigidBodies,label=" 'c' for cubic harmonic term"),0,WACV)
+                        shoSizer.Add(wx.StaticText(RigidBodies,label=" 'c' for cubic harmonic term. "),0,WACV)
+                    shoSizer.Add(wx.StaticText(RigidBodies,label=' Radius: '),0,WACV)
+                    shoSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Radius'][iSh],0,nDig=(8,5),xmin=0.0,xmax=5.0,
+                        typeHint=float,size=(70,-1),OnLeave=NewSHC),0,WACV)
+                    radref = wx.CheckBox(RigidBodies,label=' refine? ')
+                    radref.SetValue(RBObj['Radius'][iSh][1])
+                    radref.Bind(wx.EVT_CHECKBOX,OnRadRef)
+                    Indx[radref.GetId()] = iSh
+                    shoSizer.Add(radref,0,WACV)
                     shSizer.Add(shoSizer)
                     if not RBObj['nSH'][iSh]:
                         shSizer.Add(wx.StaticText(RigidBodies,
@@ -12286,7 +12303,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 if not rbType in data['RBModels']:
                     data['RBModels'][rbType] = []
                 if rbType == 'Spin':    #convert items to lists of shells
-                    for name in ['atColor','atType','Natoms','nSH','radius','RBId','RBname','RBsym']:
+                    for name in ['atColor','atType','Natoms','nSH','Radius','RBId','RBname','RBsym']:
                         item = rbObj[name]                        
                         rbObj[name] = [item,] 
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
@@ -12941,7 +12958,7 @@ of the crystal structure.
         rbType,rbId = rbNames[selection]
         if rbType == 'Spin':
             data['testRBObj']['rbAtTypes'] = [RBData[rbType][rbId]['rbType'],] 
-            data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[RBData[rbType][rbId]['radius'],(128, 128, 255)],}
+            data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[RBData[rbType][rbId]['Radius'],(128, 128, 255)],}
             data['testRBObj']['rbType'] = rbType
             data['testRBObj']['rbData'] = RBData
             data['testRBObj']['Sizers'] = {}
@@ -12974,6 +12991,8 @@ of the crystal structure.
         data['testRBObj']['rbObj'] = {'Orig':[[0,0,0],False],
                     'Orient':[[0.,0.,0.,1.],' '],'Ids':[],'RBId':rbId,'Torsions':[],
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
+        # if rbType == 'Spin':
+        #     data['testRBObj']['rbObj']['Radius'] = [1.0,False]
         data['testRBObj']['torAtms'] = []                
         for item in RBData[rbType][rbId].get('rbSeq',[]):
             data['testRBObj']['rbObj']['Torsions'].append([item[2],False])

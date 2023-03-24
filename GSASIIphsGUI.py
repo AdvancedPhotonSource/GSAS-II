@@ -11813,7 +11813,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 torSizer.Add(torCheck,0,WACV)
             resrbSizer.Add(torSizer)
             members = 'Rigid body members: '
-            for Id in RBObj['Ids']:
+            for nId,Id in enumerate(RBObj['Ids']):
+                if nId and not nId%10:
+                    members += ('\n'+30*' ')
                 members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '
             resrbSizer.Add(wx.StaticText(RigidBodies,label=members[:-2]),0)
             fracSizer = wx.BoxSizer(wx.HORIZONTAL)

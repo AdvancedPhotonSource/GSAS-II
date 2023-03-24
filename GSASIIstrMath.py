@@ -378,10 +378,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
             SQR = np.repeat(SQ,HKL.shape[1])
-            Oname = 'Oa:%d:0'%iAt
-            Oiname = 'Oi:%d:0'%iAt
-            Ojname = 'Oj:%d:0'%iAt
-            Okname = 'Ok:%d:0'%iAt
             FF[:,iAt] = 0.
             ishl = 0
 #            dBSdR = np.zeros(HKL.shape[0]*HKL.shape[1])
@@ -389,6 +385,14 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdOk = np.zeros(HKL.shape[0]*HKL.shape[1])
+            if '0' not in SHdat:    #no spin RB for atom Q??
+                break
+            Shell = SHdat['0']
+            Irb = Shell['ShR']
+            Oname = 'Oa:%d:%s'%(iAt,Irb)
+            Oiname = 'Oi:%d:%s'%(iAt,Irb)
+            Ojname = 'Oj:%d:%s'%(iAt,Irb)
+            Okname = 'Ok:%d:%s'%(iAt,Irb)
             while True:
                 shl = '%d'%ishl
                 if shl not in SHdat:
@@ -1053,7 +1057,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])    # must be ops[0].T
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    nCent = len(SGData['SGCen'])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType'] 

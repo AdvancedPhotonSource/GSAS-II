@@ -6423,6 +6423,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         generalData = data['General']
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
+        dName = G2frame.LastGPXdir            
+        os.chdir(dName)
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
@@ -6446,6 +6448,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 wx.MessageDialog(G2frame,'ERROR: Phase name has space; change phase name','Bad phase name',wx.ICON_ERROR).ShowModal()
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
                 return
+            dName = G2frame.LastGPXdir            
             pName = generalData['Name']
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']

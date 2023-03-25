@@ -2920,6 +2920,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     BraggWt = RMCPdict['histogram'][1]
     inst = PWDdata['Instrument Parameters'][0]
     try:
+        pName = Phase['General']['Name']
         refList = PWDdata['Reflection Lists'][Name]['RefList']
     except TypeError:
         return 'Error - missing reflection list; you must do Refine first'

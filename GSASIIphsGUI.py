@@ -3564,7 +3564,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             oldSizer = AtomList.GetSizer()
-            if oldSizer: oldSizer.Clear()  # get rid of the old sizer, if repeated call
+            if oldSizer:  # 2nd+ use, clear out old entries
+                for i in oldSizer.GetChildren(): # look for grids in sizer
+                    if type(i.GetWindow()) is G2G.GSGrid:
+                        oldSizer.Detach(i.GetWindow())  # don't delete them
+                oldSizer.Clear(True)
             Atoms.AutoSizeColumns(False)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -9165,8 +9169,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 #### UpdateDrawAtoms executable code starts here
         G2frame.GetStatusBar().SetStatusText('',1)
         oldSizer = drawAtomsList.GetSizer()
-        if oldSizer: 
-            oldSizer.Clear()  # get rid of the old sizer, if repeated call
+        if oldSizer: # 2nd+ use, clear out old entries
+            for i in oldSizer.GetChildren(): # look for grids in sizer
+                if type(i.GetWindow()) is G2G.GSGrid:
+                    oldSizer.Detach(i.GetWindow())  # don't delete them
+            oldSizer.Clear(True)
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -14211,7 +14218,11 @@ of the crystal structure.
         # beginning of FillMapPeaksGrid()
         G2frame.GetStatusBar().SetStatusText('',1)
         oldSizer = MapPeakList.GetSizer()
-        if oldSizer: oldSizer.Clear()
+        if oldSizer: # 2nd+ use, clear out old entries
+            for i in oldSizer.GetChildren(): # look for grids in sizer
+                if type(i.GetWindow()) is G2G.GSGrid:
+                    oldSizer.Detach(i.GetWindow())  # don't delete them
+            oldSizer.Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(MapPeakList,label='Fourier map peak positions for %s:'%data['General']['Name']),0,WACV)
@@ -14717,8 +14728,16 @@ of the crystal structure.
         ChangePage(page)
         
     def ChangePage(page):
-        for p in G2frame.phaseDisplay.gridList: # clear out all grids, forcing edits in progress to complete
-            p.ClearGrid()
+        newlist = []
+        # force edits in open grids to complete
+        for p in G2frame.phaseDisplay.gridList:
+            if not p: continue   # skip deleted grids
+            try:
+                p.ClearGrid()
+                newlist.append(p)
+            except:
+                pass
+        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from list
         text = G2frame.phaseDisplay.GetPageText(page)
         G2frame.lastSelectedPhaseTab = text
         G2frame.dataWindow.helpKey = 'Phase-'+text # use name of Phase tab for help lookup
@@ -15062,9 +15081,10 @@ of the crystal structure.
         Pages.append('RB Models')
         
     MapPeakList = wx.ScrolledWindow(G2frame.phaseDisplay)   
+    G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
+    # create the grid once; N.B. need to reference at this scope
     MapPeaks = G2G.GSGrid(MapPeakList)
     G2frame.phaseDisplay.gridList.append(MapPeaks)    
-    G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
     
     if data['General']['doDysnomia']:
         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)

@@ -9986,7 +9986,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     def RenderTextureSphere(x,y,z,radius,color,shape=[20,10],Fade=None):
         SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
         SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
-        SpFade[:,:,3] = 128
+        SpFade[:,:,3] = 60
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
@@ -10470,14 +10470,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
-                elif 'Q' in atom[ct]:       #spinning rigid body
-                    for Srb in RBdata.get('Spin',[]):
-                        if Srb == generalData['SpnIds'][atom[ci]]:
-                            radius = [RBdata['Spin'][Srb]['radius'],]
-                            fade = True
-                            Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
-                            atColor = [Info['Color'],]
-                            break
+                # elif 'Q' in atom[ct]:       #spinning rigid body - set shell color
+                #     for Srb in RBdata.get('Spin',[]):
+                #         if Srb == generalData['SpnIds'][atom[ci]]:
+                #             fade = True
+                #             Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
+                #             atColor = [Info['Color'],]
+                #             break
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -10506,14 +10505,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         Rp,PSIp,GAMp = G2mth.RotPolbyQ(np.ones_like(PSI),PSI,GAM,Q)
                         SpnData['hide'] = SpnData.get('hide',[False for i in range(len(SpnData['atType']))])
                         for ish,nSH in enumerate(SpnData['nSH']):
-                            if nSH > 0 and not SpnData['hide'][ish]:
-                                SHC = SpnData['SHC'][ish]
-                                P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
-                                if np.min(P) < np.max(P):
-                                    P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
-                        else:
-                            RenderSphere(x,y,z,radius[ish][0],atColor[ish],fade,shape=[60,30])
+                            if not SpnData['hide'][ish]:
+                                if nSH > 0: 
+                                    SHC = SpnData['SHC'][ish]
+                                    P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                                    if np.min(P) < np.max(P):
+                                        P = (P-np.min(P))/(np.max(P)-np.min(P))
+                                    RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
+                                else:
+                                    RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:
                     RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
@@ -10632,7 +10632,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 radius = 0.2
                 Fade = False
                 if testRBObj['rbType'] == 'Spin':
-                    radius = testRBObj['AtInfo'][aType][0][0]
+                    radius = testRBObj['AtInfo'][aType][0]
                     Fade = True
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 if 'RBhighLight' in testRBObj and testRBObj['RBhighLight'] == ind: # highlighted atom is green
@@ -10642,9 +10642,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],
-                            testRBObj['rbObj']['Orient'][0],
-                            Bmat,testRBObj['rbObj'].get('symAxis'))
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],testRBObj['rbObj']['Orient'][0],
+                Bmat,testRBObj['rbObj'].get('symAxis'))
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]

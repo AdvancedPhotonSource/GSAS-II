@@ -11440,7 +11440,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 or azimuth)
                 '''
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],SGData)[:2]
+                Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
                 maxFrac = 0.0
                 for Id in RBObj['Ids']:
@@ -11636,7 +11636,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     rbId = RBObj['RBId'][iSh]
                     RBData['Spin'][rbId]['useCount'] -= 1
                     RBData['Spin'][rbId]['useCount'] = max(0,RBData['Spin'][rbId]['useCount'])
-                    for name in ['atColor','atType','Natoms','nSH','RBId','RBname','RBsym','SHC']:
+                    for name in ['atColor','atType','Natoms','nSH','RBId','RBname','RBsym','SHC','Radius']:
                         del RBObj[name][iSh]
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
@@ -11649,7 +11649,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         RBObj['Radius'] = [[1.0,False] for i in range(len(RBObj['nSH']))]
                     #end patch
                     rbId = RBObj['RBId'][iSh]
-                    RBObj['atType'][iSh] = RBData['Spin'][rbId]['atType']
+                    RBObj['atType'][iSh] = RBData['Spin'][rbId]['atType']                   
+                    RBObj['atColor'][iSh] = G2elem.GetAtomInfo(RBObj['atType'][iSh])['Color']  #correct atom color for shell
                     if iSh:
                         subLine = wx.BoxSizer(wx.HORIZONTAL)
                         subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: %s '  \
@@ -12086,6 +12087,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     rbName = RBnames[spnId]
             rbObj = data['RBModels']['Spin'][spnId]
             data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
+            data['Drawing']['Quaternion'] = rbObj['Orient'][0]
             spnSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
             if spnId != -1:
                 spnSelect.SetSelection(spnId)
@@ -12283,6 +12285,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
                     G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
+                    SetupGeneral()
                     UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
                 
@@ -12309,14 +12312,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     else:
                         break
                 rbObj['RBname'] = rbName
-                # if type(rbObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple                
-                #     if GSASIIpath.GetConfigValue('debug'): print('patching origin!')
-                #     rbObj['Orig'][0] = list(rbObj['Orig'][0])    # patch: somehow this was getting set as a tuple
                 if not rbType in data['RBModels']:
                     data['RBModels'][rbType] = []
                 if rbType == 'Spin':    #convert items to lists of shells
                     for name in ['atColor','atType','Natoms','nSH','Radius','RBId','RBname','RBsym']:
-                        item = rbObj[name]                        
+                        #patch
+                        if name == 'Radius' and name not in rbObj:
+                            item = rbObj['radius']
+                        else:
+                            item = rbObj[name]                        
                         rbObj[name] = [item,] 
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
@@ -12970,7 +12974,7 @@ of the crystal structure.
         rbType,rbId = rbNames[selection]
         if rbType == 'Spin':
             data['testRBObj']['rbAtTypes'] = [RBData[rbType][rbId]['rbType'],] 
-            data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[RBData[rbType][rbId]['Radius'],(128, 128, 255)],}
+            data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[1.0,(128, 128, 255)],}
             data['testRBObj']['rbType'] = rbType
             data['testRBObj']['rbData'] = RBData
             data['testRBObj']['Sizers'] = {}

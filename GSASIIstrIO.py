@@ -4193,10 +4193,10 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
     out = []
     name = pfx+rbfx+'Radius'+rbsx
     namstr = '  names :%12s'%'Radius'
-    valstr = '  values:%12.4f'%parmDict[name]
+    valstr = '  values:%12.5f'%parmDict[name]
     sigstr = '  esds  :'
     if name in sigDict:
-        sigstr += '%12.4f'%sigDict[name]
+        sigstr += '%12.5f'%sigDict[name]
         [name]
     else:
         sigstr += 12*' '
@@ -4204,9 +4204,9 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
     for item in SHC:
         name = pfx+rbfx+item+rbsx
         namstr += '%12s'%(item)
-        valstr += '%12.4f'%(parmDict[name])
+        valstr += '%12.5f'%(parmDict[name])
         if name in sigDict:
-            sigstr += '%12.4f'%(sigDict[name])
+            sigstr += '%12.5f'%(sigDict[name])
         else:
             sigstr += 12*' '
     out.append(namstr+'\n')

@@ -2040,7 +2040,7 @@ def CompileVarDesc():
         'RBSAtNo' : 'Atom number for spinning rigid body',
         'RBSO([aijk])' : 'Spinning rigid body orientation parameter \\1',
         'RBSP([xyz])' : 'Spinning rigid body \\1 position parameter',
-        'RBSShRadius' : 'Spinning rigid body radius',
+        'RBSShRadius' : 'Spinning rigid body shell radius',
         'RBSShC([1-20,1-20])'  : 'Spinning rigid body sph. harmonics term',
         'constr([0-9]*)' : 'Generated degree of freedom from constraint',
         'nv-(.+)' : 'New variable assignment with name \\1',

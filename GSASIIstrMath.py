@@ -169,17 +169,19 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 RBObj['Orient'][0][i] = parmDict[name]                
             for ish in range(len(RBObj['RBId'])):
                 jrb = SRBIds.index(RBObj['RBId'][ish])
+                name = pfx+'RBSSh;%d;Radius:%d:%d'%(ish,iAt,jrb)
+                RBObj['Radius'][ish][0] = parmDict[name]
                 for item in RBObj['SHC'][ish]:
                     name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,iAt,jrb)
                     RBObj['SHC'][ish][item][0] = parmDict[name]
                     
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
-    'Computes rigid body derivatives'
+    'Computes rigid body derivatives; there are none for Spin RBs'
     atxIds = ['dAx:','dAy:','dAz:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     OIds = ['Oa:','Oi:','Oj:','Ok:']
-    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'spin':[]})  #these are lists of rbIds
-    if not RBIds['Vector'] and not RBIds['Residue'] and not RBIds['Spin']:
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
+    if not RBIds['Vector'] and not RBIds['Residue']:
         return
     VRBIds = RBIds['Vector']
     RRBIds = RBIds['Residue']
@@ -199,14 +201,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'],cia+8)
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
-    
-    # for irb,RBObj in enumerate(RBModels.get('Spin',[])):
-    #     name = '::RBS;0:%d'%irb
-    #     if name in dFdvDict:
-    #         dFdvDict[name] += dFdvDict[pfx+'RBS;0:%d'%irb]
-    #     else:            
-    #         dFdvDict[name] = dFdvDict[pfx+'RBS;0:%d'%irb]
-                   
+                       
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')
         VModel = RBData['Vector'][RBObj['RBId']]

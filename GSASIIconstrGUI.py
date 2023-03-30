@@ -3033,8 +3033,8 @@ create a Vector or Residue rigid body.
         namelist = [data['Spin'][key]['RBname'] for key in data['Spin']]
         name = G2obj.MakeUniqueLabel(name,namelist)
         atColor = G2elem.GetAtomInfo(atType)['Color']
-        data['Spin'][rbid] = {'RBname':name,'Natoms':Natoms,'atType':atType,'rbType':rbType,
-            'useCount':0,'nSH':0,'SHC':[{},],'Radius':[1.0,False],'Matrix':np.eye(3),'rbPos':np.zeros(3),'atColor':atColor}
+        data['Spin'][rbid] = {'RBname':name,'Natoms':Natoms,'atType':atType,'rbType':rbType,'atColor':atColor,
+            'useCount':0,'nSH':0,'SHC':[{},],'Radius':[1.0,False],'Matrix':np.eye(3),'rbPos':np.zeros(3)}
         data['RBIds']['Spin'].append(rbid)
         UpdateSpinRB()
         

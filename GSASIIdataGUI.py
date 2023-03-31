@@ -3250,7 +3250,7 @@ class GSASII(wx.Frame):
         self.dirname = os.path.abspath(os.path.expanduser('~'))       #start in the users home directory by default; may be meaningless
         self.TutorialImportDir = None  # location to read tutorial files, set when a tutorial is viewed
         self.LastImportDir = None # last-used directory where an import was done
-        self.LastGPXdir = None    # directory where a GPX file was last read
+        self.LastGPXdir = None    # directory where a GPX file was last  or saved
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplay = None
         self.init_vars()
@@ -4626,10 +4626,8 @@ class GSASII(wx.Frame):
                 self.CheckNotebook()
                 G2IO.ProjFileSave(self)
                 self.SetTitleByGPX()
-                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
-# TODO should we do this instead?
-                # self.LastGPXdir = dlg.GetDirectory()
-                # os.chdir(self.LastGPXdir) 
+                self.LastGPXdir = dlg.GetDirectory()
+                os.chdir(self.LastGPXdir) 
                 config = G2G.GetConfigValsDocs()
                 GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
                 G2G.SaveConfigVars(config)

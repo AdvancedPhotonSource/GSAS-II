@@ -1789,6 +1789,10 @@ def AutoSpotMask(Image, Masks, Controls, numChans, dlg=None):
  
     for it in range(len(TThs)):
         masker = (TA >= TThs[it]) & (TA < TThs[it]+dtth) & ~tam
+        if (TThs[it] < Masks['SpotMask'].get('SearchMin',0.0) or 
+            TThs[it] > Masks['SpotMask'].get('SearchMax',180.0)):
+            mask |= masker
+            continue
         bin = band[masker]
         if np.all(np.isnan(bin)):
             continue
@@ -1798,6 +1802,7 @@ def AutoSpotMask(Image, Masks, Controls, numChans, dlg=None):
         mad = MAD(bin, nan_policy='omit')       
         anom = np.abs(band-median)/mad <= esdMul
         mask |= (anom & masker)
+        #print(TThs[it],sum(sum(masker))- sum(sum(anom & masker)))
         if not dlg is None:
             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
             if not GoOn[0]:

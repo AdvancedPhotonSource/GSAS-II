@@ -1821,7 +1821,10 @@ def UpdateMasks(G2frame,data):
                 dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
                     style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
                 time0 = time.time()
-                data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
+                if data['SpotMask'].get('ClearPrev',True):
+                    data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
+                else:
+                    data['SpotMask']['spotMask'] |= G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
                 print(' Spot masksearch time: %.2f m'%((time.time()-time0)/60.))
                 wx.CallAfter(UpdateMasks,G2frame,data)
                 wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
@@ -2160,6 +2163,19 @@ def UpdateMasks(G2frame,data):
     delbtn = wx.Button(G2frame.dataWindow,label='Clear spot mask')
     delbtn.Bind(wx.EVT_BUTTON,OnDelBtn)
     spotSizer.Add(delbtn,0,WACV)
+    mainSizer.Add(spotSizer,0)
+    spotSizer = wx.BoxSizer(wx.HORIZONTAL)
+    data['SpotMask']['ClearPrev'] = data['SpotMask'].get('ClearPrev',True)
+    data['SpotMask']['SearchMin'] = data['SpotMask'].get('SearchMin',0.0)
+    data['SpotMask']['SearchMax'] = data['SpotMask'].get('SearchMax',180.)
+    spotSizer.Add(G2G.G2CheckBoxFrontLbl(G2frame.dataWindow,'Clear previous mask on spot search',
+                  data['SpotMask'],'ClearPrev'))
+    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Spot search search range, 2theta min: '),0,WACV)
+    spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
+        key='SearchMin',xmin=0.,xmax=180.,size=(40,25)),0,WACV)
+    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label='  2theta max: '),0,WACV)
+    spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
+        key='SearchMax',xmin=0.,xmax=180.,size=(40,25)),0,WACV)
     mainSizer.Add(spotSizer,0)
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')

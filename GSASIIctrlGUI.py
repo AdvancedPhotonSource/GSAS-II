@@ -1505,7 +1505,7 @@ def G2CheckBoxFrontLbl(parent,label,loc,key,OnChange=None):
     label is placed before the CheckBox and returns a sizer rather than the
     G2CheckBox. 
 
-    If the CheckBox is needed, use Sizer.myCheckBox.
+    If the CheckBox is needed, reference Sizer.myCheckBox.
     '''
     Sizer = wx.BoxSizer(wx.HORIZONTAL)
     Sizer.Add(wx.StaticText(parent,label=label),0,WACV)

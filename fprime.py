@@ -410,8 +410,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             ff = []
             ffo = []
             for S in Stl: 
-                ff.append(G2elem.ScatFac(Elem[2],S)+res)
-                ffo.append(G2elem.ScatFac(Elem[2],S))
+                ff.append(G2elem.ScatFac(Elem[2],S*S)+res)
+                ffo.append(G2elem.ScatFac(Elem[2],S*S))
                 if self.FFxaxis == 'S':
                     X.append(S)
                 elif self.FFxaxis == 'T':

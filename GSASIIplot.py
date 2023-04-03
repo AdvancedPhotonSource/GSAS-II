@@ -1453,7 +1453,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     '''1D Structure factor plotting package - displays reflections as sticks proportional
         to F, F**2, etc. as requested
     '''
-    global xylim,X
+    global xylim,X,hkl
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     def OnKeyPress(event):
         if event.key == 'q':
@@ -1463,6 +1463,10 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         elif event.key == 'v':
             Page.vaxis = not Page.vaxis
         Draw()
+        
+    def OnPick(event):
+        H = hkl[:,event.ind[0]]
+        Page.SetToolTipString('#%d: %d,%d,%d'%(event.ind[0],H[0],H[1],H[2]))
 
     def OnMotion(event):
         global X
@@ -1494,24 +1498,30 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('d =%9.3f F^2 =%9.3f'%(Xpos,ypos),1)                   
+                if Page.vaxis:
+                    if Page.faxis:
+                        G2frame.G2plotNB.status.SetStatusText('Fo =%9.3f Fc =%9.3f; press & hold LB to identify'%(Xpos,ypos),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('Fo^2 =%9.3f Fc^2 =%9.3f; press & hold LB to identify'%(Xpos,ypos),1)
+                else:
+                    G2frame.G2plotNB.status.SetStatusText('d =%9.3f F^2 =%9.3f'%(Xpos,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+Name+' pattern first',1)
             Page.SetToolTipString(s)
                 
     def Draw():
-        global xylim
+        global xylim,hkl
         Plot.clear()
         Plot.set_title(Title)
         Plot.set_xlabel(r'd, '+Angstr,fontsize=14)
         Plot.set_ylabel(r'F'+super2,fontsize=14)
         colors=['b','r','g','c','m','k']
         Page.keyPress = OnKeyPress
-        
+        hkl = hklRef.T[:3]
         if 'HKLF' in Name:
             Fosq,sig,Fcsq = hklRef.T[5+Super:8+Super]
         else:
-            Fosq,sig,Fcsq = hklRef.T[8+Super],1.0,hklRef.T[9+Super]
+            Fosq,sig,Fcsq = hklRef.T[8+Super],np.nan_to_num(np.sqrt(hklRef.T[8+Super])),hklRef.T[9+Super]
         d = hklRef.T[4+Super].copy()
 
         if Page.vaxis:
@@ -1535,7 +1545,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         if Page.faxis and not Page.vaxis:
             Plot.set_ylabel(r'F',fontsize=14)
             Y = np.nan_to_num(np.sqrt(Fcsq))
-            Z = np.sqrt(Fosq)
+            Z = np.nan_to_num(np.sqrt(Fosq))
         elif not Page.vaxis:            
             Y = Fcsq.copy()
             Z = Fosq.copy()
@@ -1552,7 +1562,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             lines = mplC.LineCollection(XD,color=colors[2])
             Plot.add_collection(lines)
         else:
-            Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b')
+            Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b',picker=True,pickradius=5)
             Plot.plot(X, X, color='r')
 
         xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
@@ -1587,6 +1597,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         Page.vaxis = False
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
         Page.Offset = [0,0]
     
     Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot','v: toggle Fo/Fc plot')
@@ -3705,16 +3716,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
             # limit lines
-            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),
-                                    picker=True,pickradius=3.))    
-            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),
-                                    picker=True,pickradius=3.)) 
+            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=True,pickradius=3.))    
+            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=True,pickradius=3.)) 
             # excluded region lines
             for i,item in enumerate(lims[1:]):
-                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),
-                                    picker=True,pickradius=3.))    
-                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),
-                                    picker=True,pickradius=3.))
+                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=True,pickradius=3.))    
+                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=True,pickradius=3.))
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:
             if Page.plotStyle['chanPlot']:
@@ -3843,8 +3850,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                         if 'PWDR' in plottype and len(limits[2:]):
                             DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
-                    DifLine = Plot1.plot(X,DZ,colors[3],
-                        picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+                    DifLine = Plot1.plot(X,DZ,colors[3],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
                     
                 if Page.plotStyle['logPlot']:
@@ -3853,8 +3859,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_yscale("log",nonpositive='mask') # >=3.3
                         except:
                             Plot.set_yscale("log",nonpositive='mask')
-                        Plot.plot(X,Y,marker=pP,color=colors[0],linewidth=lW,
-                            picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
+                        Plot.plot(X,Y,marker=pP,color=colors[0],linewidth=lW,picker=True,pickradius=3.,
+                            clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
                             Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:

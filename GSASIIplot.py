@@ -10598,8 +10598,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             # find and display atoms within atomsExpandRadius A
             if atomsExpandRadius > 0:
                 distances2Atoms(x,y,z,atomsExpandRadius,atomsdistRadius,Amat,matRot)
-        elif len(Ind) == 1 and (pageName == 'Map peaks' or
-                                    pageName == 'Draw Options'):
+        elif len(Ind) == 1 and (pageName == 'Map peaks' or pageName == 'Draw Options'):
             # one peak has been selected, show as selected by draw options
             PeakDistRadius = drawingData['PeakDistRadius']
             atomsExpandRadius = drawingData['atomsExpandRadius']
@@ -10657,7 +10656,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr/255.)
-                RenderLabel(x,y,z,name,0.3,wxOrange,matRot)
+                if MCSA.get('showLabels',False):
+                    RenderLabel(x,y,z,name,0.3,wxOrange,matRot)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]

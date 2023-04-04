@@ -13222,7 +13222,7 @@ of the crystal structure.
                 wx.EndBusyCursor()
             FillRigidBodyGrid()
             
-##### MC/SA routines ################################################################################
+#### MC/SA routines ################################################################################
     def UpdateMCSA(Scroll=0):
         Indx = {}
         
@@ -13395,7 +13395,7 @@ of the crystal structure.
                     for it,tor in enumerate(model['Tor'][0]):
                         iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
                         name = atNames[iBeg]+'-'+atNames[iFin]
-                        torRef = wx.CheckBox(G2frame.MCSA,-1,label=' %s: '%(name))
+                        torRef = wx.CheckBox(G2frame.MCSA,label=' %s: '%(name))
                         torRef.SetValue(model['Tor'][1][it])
                         torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                         Indx[torRef.GetId()] = [model,'Tor',it]
@@ -13540,9 +13540,16 @@ of the crystal structure.
             G2frame.dataWindow.Refresh()
             G2frame.dataWindow.SendSizeEvent()
             wx.CallAfter(oldFocus.SetFocus)
+            
+        def OnShoLabels(event):
+            data['MCSA']['showLabels'] = not data['MCSA']['showLabels']
+            G2plt.PlotStructure(G2frame,data)
         
         # UpdateMCSA executable code starts here
         if G2frame.MCSA.GetSizer(): G2frame.MCSA.GetSizer().Clear(True)
+        #patch
+        data['MCSA']['showLabels'] = data['MCSA'].get('showLabels',False)
+        #end patch
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         general = data['General']
@@ -13593,14 +13600,19 @@ of the crystal structure.
                 G2frame.bottomSizer.Add(rbSizer(data['MCSA']['Models'][rbids[0]]))
                 mainSizer.Add(G2frame.bottomSizer)
                 
+        mainSizer.Add((5,5),0)
+        bottomSizer = wx.BoxSizer(wx.HORIZONTAL)
+        resStr = 'MC/SA results:  '
         if not data['MCSA']['Results']:
-            mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'No MC/SA results:'),0)
-            mainSizer.Add((5,5),0)
-        else:
-            mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA results:'),0)
-            mainSizer.Add((5,5),0)
+            resStr = 'No'+resStr
+        bottomSizer.Add(wx.StaticText(G2frame.MCSA,-1,resStr),0,WACV)
+        shoLabels = wx.CheckBox(G2frame.MCSA,label=' Show atom labels? ')
+        shoLabels.SetValue(data['MCSA']['showLabels'])
+        shoLabels.Bind(wx.EVT_CHECKBOX,OnShoLabels)
+        bottomSizer.Add(shoLabels,0,WACV)
+        mainSizer.Add(bottomSizer)
+        mainSizer.Add((5,5),0)
+        if data['MCSA']['Results']:
             Results = data['MCSA']['Results']
             mainSizer.Add(ResultsSizer(Results),0,wx.EXPAND)
             

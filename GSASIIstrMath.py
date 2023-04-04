@@ -399,10 +399,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 Irb = Shell['ShR']
                 if 'X' in hType:
                     SFF = G2el.ScatFac(FFtables[Atm],SQR)
-                    dat = G2el.getBLvalues(BLtables)
                 elif 'N' in hType:
-                    dat = G2el.getBLvalues(BLtables)
-                    SFF = dat[Atm]
+                    SFF = G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
                 R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
                 R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)

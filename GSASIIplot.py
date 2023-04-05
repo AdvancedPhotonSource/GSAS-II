@@ -1190,9 +1190,7 @@ def uneqImgShow(figure,ax,Xlist,Ylist,cmap,vmin,vmax,Ylbls=[]):
         For the series [1,2,3,5] this will be [0.5,1.5,2.5,4,6]
         Note that n+1 points are returned for input of n points
         '''
-        return np.concatenate( [[1.5*x[0] - x[1]/2], 
-                                (x[:-1]+x[1:])/2, 
-                                [1.5*x[-1] - x[-2]/2]] )
+        return np.concatenate( [[1.5*x[0] - x[1]/2], (x[:-1]+x[1:])/2, [1.5*x[-1] - x[-2]/2]] )
 
     lenX = len(Xlist) 
     if lenX != len(Ylist): 

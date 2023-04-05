@@ -242,7 +242,9 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         PE = G2elemGUI.PickElements(self,ElList)
         if PE.ShowModal() == wx.ID_OK:
             Elems = PE.Elem
-        PE.Destroy()
+        else:
+            return
+#        PE.Destroy()
         if Elems:
             for El in Elems:
                 ElemSym = El.strip().upper()

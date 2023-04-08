@@ -135,7 +135,7 @@ try:
     import matplotlib.figure as mplfig
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
-    from scipy.ndimage.interpolation import map_coordinates
+    from scipy.ndimage import map_coordinates
 except (ImportError, ValueError) as err:
     print('GSASIIplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
@@ -257,7 +257,8 @@ try:
     obtained from mpl.cm.datad.keys() (currently 10 places in GSAS-II code)
     '''
     oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
-    mpl.cm.register_cmap(cmap=oldpaired,name='GSPaired')   
+#    mpl.cm.register_cmap(cmap=oldpaired,name='GSPaired')       #deprecated
+    mpl.colormaps.register(oldpaired,name='GSPaired')
     blue = [tuple(1.-np.array(item)) for item in _Old_Paired_data['blue']]
     blue.reverse()
     green = [tuple(1.-np.array(item)) for item in _Old_Paired_data['green']]
@@ -266,7 +267,8 @@ try:
     red.reverse()
     Old_Paired_data_r = {'blue':blue,'green':green,'red':red}
     oldpaired_r = mpl.colors.LinearSegmentedColormap('GSPaired_r',Old_Paired_data_r,N=256)
-    mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   
+#    mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   #deprecated
+    mpl.colormaps.register(oldpaired_r,name='GSPaired_r')
 except Exception as err:
     pass
 #    print(u'error: {}'.format(err))
@@ -4063,7 +4065,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     
     if G2frame.Contour:
         time0 = time.time()
-        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+#        acolor = mpl.cm.get_cmap(G2frame.ContourColor) #deprecated
+        acolor = mpl.colormaps[G2frame.ContourColor]
         Vmin = Ymax*G2frame.Cmin
         Vmax = Ymax*G2frame.Cmax
         if unequalArrays:
@@ -10499,7 +10502,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
-                        QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
+                        QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
                         Q = G2mth.prodQQ(QB,QA)
                         Q = G2mth.prodQQ(Q,QP)

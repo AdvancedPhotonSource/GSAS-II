@@ -1134,11 +1134,12 @@ class ASCIIValidator(wxValidator):
             return
         return  # Returning without calling event.Skip, which eats the keystroke
 
-ci = lambda x: int(x + 0.5)  # closest integer       
 class G2Slider(wx.Slider):
     '''Wrapper around wx.Slider widget that implements scaling
     Also casts floats as integers to avoid py3.10+ errors
     '''
+    global ci
+    ci = lambda x: int(x + 0.5)  # closest integer       
     def __init__(self, parent, id=wx.ID_ANY, value=0, minValue=0, maxValue=100, *arg, **kwarg):
         wx.Slider.__init__(self, parent, id, ci(value), ci(minValue), ci(maxValue), *arg, **kwarg)
         self.iscale = 1
@@ -1213,18 +1214,18 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
     else:
         hSizer = sizer
     hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,value=int(0.5+iscale*loc[key]))
+    vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,size=(200,25))
     vScale.SetScaling(iscale)
-    vScale.SetScaledValue(loc[key])
     vScale.SetScaledRange(xmin,xmax)
+    vScale.SetScaledValue(loc[key])
     vScale.Bind(wx.EVT_SLIDER, onScale)
     if nDig is None:
         nDig = (10,int(0.9+np.log10(iscale)))
     vEntry = ValidatedTxtCtrl(parent,loc,key,nDig=nDig,OnLeave=onValSet,
                 xmin=xmin,xmax=xmax,typeHint=float,size=size)
     if sizer is None:
-        hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
         hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+        hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,0)
         return hSizer
     else:
         hSizer.Add(vEntry,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)

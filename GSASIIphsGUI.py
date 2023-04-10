@@ -10422,16 +10422,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 
             valSize = (50,20)
             mapSizer = wx.BoxSizer(wx.VERTICAL)
-            showMap = wx.CheckBox(drawOptions,-1,label=' Show density map?')
+            showMap = wx.CheckBox(drawOptions,label=' Show density map?')
             showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
             showMap.SetValue(drawingData['showMap'])
             mapSizer.Add(showMap,0)
-            mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'contourLevel',
-                'Max relative to rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),
-                0.01,1.0,100,size=valSize,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
-            mapSizer.Add(G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
-                'Range of map surrounding view point: ',0.1,10.,10.,size=valSize,
-                onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data)))
+            sliders = wx.FlexGridSizer(0,3,5,5)
+            G2G.G2SliderWidget(drawOptions,drawingData,'contourLevel',
+                'Fraction of rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),0.01,1.0,100.,
+                sizer=sliders,size=valSize,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
+            G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
+                'Visible map radius: ',0.1,10.,10.,sizer=sliders,size=valSize,
+                onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
+            mapSizer.Add(sliders)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'On map peak selection:  '),0,WACV)
             lineSizer.Add(G2G.G2CheckBox(drawOptions,'Move view point',drawingData,'peakMoveView'))

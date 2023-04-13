@@ -257,8 +257,10 @@ try:
     obtained from mpl.cm.datad.keys() (currently 10 places in GSAS-II code)
     '''
     oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
-#    mpl.cm.register_cmap(cmap=oldpaired,name='GSPaired')       #deprecated
-    mpl.colormaps.register(oldpaired,name='GSPaired')
+    try:
+        mpl.colormaps.register(oldpaired,name='GSPaired')
+    except:
+        mpl.cm.register_cmap(cmap=oldpaired,name='GSPaired')       #deprecated
     blue = [tuple(1.-np.array(item)) for item in _Old_Paired_data['blue']]
     blue.reverse()
     green = [tuple(1.-np.array(item)) for item in _Old_Paired_data['green']]
@@ -267,11 +269,12 @@ try:
     red.reverse()
     Old_Paired_data_r = {'blue':blue,'green':green,'red':red}
     oldpaired_r = mpl.colors.LinearSegmentedColormap('GSPaired_r',Old_Paired_data_r,N=256)
-#    mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   #deprecated
-    mpl.colormaps.register(oldpaired_r,name='GSPaired_r')
+    try:
+        mpl.colormaps.register(oldpaired_r,name='GSPaired_r')
+    except:
+        mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   #deprecated
 except Exception as err:
-    pass
-#    print(u'error: {}'.format(err))
+    if GSASIIpath.GetConfigValue('debug'): print('\nMPL CM setup error: {}\n'.format(err))
 
 # options for publication-quality Rietveld plots
 plotOpt = {}

@@ -2896,7 +2896,9 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx
         
 def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
-    'Needs a doc string'
+    '''Computes the sample-dependent Lorentzian & Gaussian peak width contributions from 
+    size & microstrain parameters
+    '''
     if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:     #All checked & OK
         costh = cosd(refl[5+im]/2.)
         #crystallite size
@@ -2969,7 +2971,9 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     return sig,gam
         
 def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
-    'Needs a doc string'
+    '''Computes the derivatives on sample-dependent Lorentzian & Gaussian peak widths contributions
+    from size & microstrain parameters
+    '''
     gamDict = {}
     sigDict = {}
     if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:         #All checked & OK

@@ -985,7 +985,9 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     this module. 
 
     :param list varyList: a list of parameters names (strings of form
-      ``<ph>:<hst>:<nam>``) that will be varied. Note that this is changed here. 
+      ``<ph>:<hst>:<nam>``) that will be varied. Note that this is changed 
+      here unless set to None. None is used to indicate that all constraints
+      should be generated.
     
     :param dict constrDict: a list of dicts defining relationships/constraints
       (as described in :func:`GroupConstraints`)
@@ -1086,6 +1088,8 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                             if var not in dropList: dropList.append(var) # ignore in constraint eqn
                     else:
                         problem = True
+            elif varyList is None:
+                valid += 1                
             elif var not in varyList and fixVal is not None:  # unvaried, constraint eq. only
                 if var not in unvariedParmsList: unvariedParmsList.append(var)
                 noVaryList.append(var)
@@ -1208,7 +1212,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             unvaried = False
             # this should not happen as they should have been removed
             for var in depPrmList:
-                if var not in varyList: 
+                if varyList is not None and var not in varyList: 
                     unvaried = True
                     break
             if unvaried: # something is not varied: skip group & remove all parameters from varyList
@@ -1225,7 +1229,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     varname = paramPrefix + str(consNum) # assign a unique name
                     consNum += 1
                     maplist.append(varname)
-                    varyList.append(varname)
+                    if varyList is not None: varyList.append(varname)
                 else:
                     rel = group[i]
                     maplist.append(fixedList[rel])
@@ -1235,7 +1239,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     varname = constrDict[rel].get('_name','::?????')
                     maplist.append(varname)
                     if  constrDict[rel].get('_vary',False):
-                        varyList.append(varname)
+                        if varyList is not None: varyList.append(varname)
                 else:
                    maplist.append(fixedList[rel])   # constraint equation
             for i in range(len(depPrmList)):
@@ -1280,6 +1284,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 constrParms['dep-constr'].append(mv)
             StoreHold(mv,'dependent param')
     saveVaryList = copy.copy(varyList)  # save varyList so it can be used within module
+    if varyList is None: saveVaryList = []
 
     # if equivMoved:
     #     print(60*'=')
@@ -1448,7 +1453,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         gotNotVary = False
         holdList = []
         for v in varlist+mapvars:
-            if v in varyList:
+            if varyList is None or v in varyList:
                 gotVary = True
                 holdList.append(v)
             elif type(v) is not float:
@@ -2465,7 +2470,7 @@ def Map2Dict(parmDict,varyList):
     '''
     # remove fixed parameters from the varyList
     for item in holdParmList:
-        if item in varyList: varyList.remove(item)
+        if varyList is not None and item in varyList: varyList.remove(item)
             
     # process the independent parameters:
     # * remove dependent ones from varylist
@@ -2473,7 +2478,7 @@ def Map2Dict(parmDict,varyList):
     global dependentParmList,arrayList,invarrayList,indParmList
     for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
         for item in varlist: # TODO: is this still needed?
-            if item in varyList: varyList.remove(item)
+            if varyList is not None and item in varyList: varyList.remove(item)
         if multarr is None:
             #for v,val in zip(  # shows values to be set
             #    varlist,
@@ -2490,7 +2495,10 @@ def Map2Dict(parmDict,varyList):
         # add/replace in parameter dict
         parmDict.update([i for i in z if type(i[0]) is not float])
     global saveVaryList
-    saveVaryList = copy.copy(varyList)
+    if varyList is not None:
+        saveVaryList = copy.copy(varyList)
+    else:
+        saveVaryList = []
     
 def normParms(parmDict):
     '''Attempt to put parameters into the right ballpark by scaling to 

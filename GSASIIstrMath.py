@@ -350,7 +350,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
     
     def MakePolar(Orient,QB):
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
-        Q = G2mth.prodQQ(QA,QB)     #might be switched? QB,QA is order for plotting
+        Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
         return G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,Q)
         
     dFFdS = {}
@@ -998,7 +998,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
         if len(SHCdict):
-            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ)
+            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ)     #Not Amat!
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])

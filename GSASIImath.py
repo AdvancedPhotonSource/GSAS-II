@@ -5758,7 +5758,7 @@ def Q2Mat(Q):
     M = [[aa+bb-cc-dd, 2.*(bc-ad),  2.*(ac+bd)],
         [2*(ad+bc),   aa-bb+cc-dd,  2.*(cd-ab)],
         [2*(bd-ac),    2.*(ab+cd), aa-bb-cc+dd]]
-    return np.array(M)
+    return np.around(np.array(M),8)
     
 def AV2Q(A,V):
     ''' convert angle (radians) & vector to quaternion
@@ -5872,13 +5872,13 @@ def make2Quat(A,B):
     '''
 
     V1 = np.cross(A,B)
-    if nl.norm(V1):
+    if nl.norm(V1) > 1.e-5:
         V1 = V1/nl.norm(V1)
     else:
         V1 = np.zeros(3)
-    Q = np.array([0.,0.,0.,1./np.sqrt(2.0)])
+    Q = np.array([1.,0.,0.,1.]/np.sqrt(2.0))
     D = 180.
-    if nl.norm(V1):
+    if nl.norm(V1) > 1.e-5:
         A1 = A/nl.norm(A)
         B1 = B/nl.norm(B)
         D1 = min(1.0,max(-1.0,np.vdot(A1,B1)))

@@ -940,6 +940,7 @@ def cell2AB(cell,alt=False):
     :returns: tuple of two 3x3 numpy arrays (A,B)
        A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
        B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
+       both rounded to 12 places (typically zero terms = +/-10e-6 otherwise)
     """
     G,g = cell2Gmat(cell) 
     cellstar = Gmat2cell(G)
@@ -951,6 +952,7 @@ def cell2AB(cell,alt=False):
         A[1][1] = cell[1]*sind(cell[3])
         A[1][2] = cell[1]*cosd(cell[3])
         A[2][2] = cell[2]
+        A = np.around(A,12)
         B = nl.inv(A)
         return A,B
     # from Giacovazzo (Fundamentals 2nd Ed.) p.75
@@ -960,6 +962,7 @@ def cell2AB(cell,alt=False):
     A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
     A[2][2] = 1./cellstar[2]         # 1/c*
+    A = np.around(A,12)
     B = nl.inv(A)
     return A,B
     
@@ -2682,24 +2685,23 @@ def H2ThPh(H,Bmat,Q):
     :returns array Th: HKL azimuth angles
     :returns array Ph: HKL polar angles
     '''
-    A,V = G2mth.Q2AVdeg(Q)
-    QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
-    QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
-    Q2 = G2mth.prodQQ(QA,QR)
-    Qmat = G2mth.Q2Mat(Q2)
-    CH = np.inner(H,Bmat.T)
-    CH = np.inner(CH,Qmat)
+    # A,V = G2mth.Q2AVdeg(Q)
+    # QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
+    # QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
+    # Q2 = G2mth.prodQQ(QR,QA)
+    Qmat = G2mth.Q2Mat(Q)
+    CH1 = np.inner(H,Bmat.T)
+    CH = np.inner(CH1,Qmat.T)
     N = nl.norm(CH,axis=1)
-    N = np.where(N,N,1.)
     CH /= N[:,nxs]
     H3 = np.array([0,0,1.])
     DHR = np.inner(CH,H3)
-    Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.
+    Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.; correct
     TH = CH*np.array([1.,1.,0.])[nxs,:]     #projection of CH onto xy plane
     N = nl.norm(TH,axis=1)
-    N = np.where(N,N,1.)
+    N = np.where(N > 1.e-5,N,1.)
     TH /= N[:,nxs]
-    Th = atan2d(TH[:,0],TH[:,1])                #azimuth angle 0<=Th<360<
+    Th = atan2d(TH[:,1],TH[:,0])                #azimuth angle 0<=Th<360<
     Th = np.where(Th<0.,Th+360.,Th)
     return Th,Ph        #azimuth,polar angles
 

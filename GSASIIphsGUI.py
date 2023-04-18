@@ -11961,7 +11961,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
-            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
+            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':

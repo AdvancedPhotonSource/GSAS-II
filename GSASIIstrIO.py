@@ -294,9 +294,10 @@ def PrintFprime(FFtables,pfx,pFile):
     FPstr = " f'     :"
     FPPstr = ' f"     :'
     for El in FFtables:
-        Elstr += ' %8s'%(El)
-        FPstr += ' %8.3f'%(FFtables[El][pfx+'FP'])
-        FPPstr += ' %8.3f'%(FFtables[El][pfx+'FPP'])
+        if 'Q' not in El:
+            Elstr += ' %8s'%(El)
+            FPstr += ' %8.3f'%(FFtables[El][pfx+'FP'])
+            FPPstr += ' %8.3f'%(FFtables[El][pfx+'FPP'])
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')
@@ -307,10 +308,11 @@ def PrintBlength(BLtables,wave,pFile):
     FPstr = " b'     :"
     FPPstr = ' b"     :'
     for El in BLtables:
-        BP,BPP = G2el.BlenResCW([El,],BLtables,wave)
-        Elstr += ' %8s'%(El)
-        FPstr += ' %8.3f'%(BP)
-        FPPstr += ' %8.3f'%(BPP)
+        if 'Q' not in El:
+            BP,BPP = G2el.BlenResCW([El,],BLtables,wave)
+            Elstr += ' %8s'%(El)
+            FPstr += ' %8.3f'%(BP)
+            FPPstr += ' %8.3f'%(BPP)
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')
@@ -1175,22 +1177,24 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pFile.write('   Symbol     fa                                      fb                                      fc\n')
         pFile.write(99*'-'+'\n')
         for Ename in FFtable:
-            ffdata = FFtable[Ename]
-            fa = ffdata['fa']
-            fb = ffdata['fb']
-            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
-                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc']))
+            if 'Q' not in Ename:
+                ffdata = FFtable[Ename]
+                fa = ffdata['fa']
+                fb = ffdata['fb']
+                pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                    (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc']))
                 
     def PrintEFtable(EFtable):
         pFile.write('\n Electron scattering factors:\n')
         pFile.write('   Symbol     fa                                                fb\n')
         pFile.write(99*'-'+'\n')
         for Ename in EFtable:
-            efdata = EFtable[Ename]
-            fa = efdata['fa']
-            fb = efdata['fb']
-            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
-                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fa[4],fb[0],fb[1],fb[2],fb[3],fb[4]))
+            if 'Q' not in Ename:
+                efdata = EFtable[Ename]
+                fa = efdata['fa']
+                fb = efdata['fb']
+                pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                    (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fa[4],fb[0],fb[1],fb[2],fb[3],fb[4]))
                 
     def PrintMFtable(MFtable):
         pFile.write('\n <j0> Magnetic scattering factors:\n')
@@ -1217,19 +1221,20 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pFile.write('   Symbol   isotope       mass       b       resonant terms\n')
         pFile.write(99*'-'+'\n')
         for Ename in BLtable:
-            bldata = BLtable[Ename]
-            isotope = bldata[0]
-            mass = bldata[1]['Mass']
-            if 'BW-LS' in bldata[1]:
-                bres = bldata[1]['BW-LS']
-                blen = 0
-            else:
-                blen = bldata[1]['SL'][0]
-                bres = []
-            line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
-            for item in bres:
-                line += '%10.5g'%(item)
-            pFile.write(line+'\n')
+            if 'Q' not in Ename:
+                bldata = BLtable[Ename]
+                isotope = bldata[0]
+                mass = bldata[1]['Mass']
+                if 'BW-LS' in bldata[1]:
+                    bres = bldata[1]['BW-LS']
+                    blen = 0
+                else:
+                    blen = bldata[1]['SL'][0]
+                    bres = []
+                line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
+                for item in bres:
+                    line += '%10.5g'%(item)
+                pFile.write(line+'\n')
             
     def PrintRBObjects(resRBData,vecRBData,spnRBData):
                 

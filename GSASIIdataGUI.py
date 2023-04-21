@@ -369,8 +369,8 @@ should generate warnings or error messages.
    removing code that is specific to Python 2.7. 
  * A problem has been noted with wx4.0.7.post2 with Python 3.10 that we can't 
    yet duplicate (2/4/22).
- * We anticipate that Python 3.10 will flag code that previously worked fine,
-   because it reports an errors where we pass a floating point number to a 
+ * We anticipate that Python 3.10+ will flag code that previously worked fine,
+   because it reports errors where we pass a floating point number to a 
    wxpython routine that expects a int value. We are fixing these as we learn about them.
 
 * wxPython:
@@ -382,6 +382,8 @@ should generate warnings or error messages.
    some issues with Python 3.x. 
  * wxpython 4.1 has some serious internal bugs with Python 3.10+ so we recommend 
    4.2+ for compatibility with newer Python versions.
+ * 4.2.0 has a problem on MacOS where buttons w/default size are not displayed properly.
+   (see https://github.com/wxWidgets/Phoenix/issues/2319). Worked around (mostly?) in our code. 
 
 * Matplotlib:
 
@@ -391,6 +393,9 @@ should generate warnings or error messages.
     3-D surfaces, such as microstrain vs crystal axes. The plots may appear 
     distorted as the lengths of x, y & z will not be constrained as equal.
     Preferably use 3.0.x as 3.3.x is not fully tested.
+  * between 3.3.x vs 3.6.x there seems to be a change in how 3d graphics
+    are handled; we seem to have this fixed, but not sure how <3.3 will work. 
+    Since 3.1 & 3.2 have problems; warn w/mpl <3.3.0
 
 * numpy: 
 
@@ -399,17 +404,17 @@ should generate warnings or error messages.
 
 '''
 # add comments above when changing anything below
-versionDict['tooOld'] = {'matplotlib': '1.', 'Python':'2.7'}
+versionDict['tooOld'] = {'matplotlib': '2.', 'Python':'2.7'}
 'modules that will certainly fail'
-versionDict['tooOldWarn'] = {'wx': '2.','Python':'3.6'}
+versionDict['tooOldWarn'] = {'wx': '3.99','Python':'3.6','matplotlib': '3.2.99'}
 'modules that may fail and should be updated'
 versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2'],
                                  'wx':['4.1']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {'wx':'4.2'}
+versionDict['tooNewWarn'] = {} 
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.11'}
+versionDict['tooNewUntested'] = {'Python':'3.11','wx': '4.2.1'}  # still catching up to wx4.2.0
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -516,11 +521,14 @@ def ShowVersions():
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print('N.B. current binaries have been updated')
     if warn:
-        print(70*'=',
-            '\nYou are suggested to install a new version of GSAS-II. See\nhttps://bit.ly/G2install',
-              '\n\nFor information on GSAS-II package requirements see\nhttps://gsas-ii.readthedocs.io/en/latest/packages.html',
-              '\n'+70*'=')
-    print()
+        print(70*'=','''
+You are suggested to install a new version of GSAS-II to address 
+problems with package(s) noted above. For installation instructions 
+see https://bit.ly/G2install
+
+For information on GSAS-II package requirements see 
+https://gsas-ii.readthedocs.io/en/latest/packages.html
+''',70*'=','\n')
 
 def TestOldVersions():
     '''Test the versions of required Python packages, etc.

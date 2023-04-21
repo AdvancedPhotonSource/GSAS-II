@@ -129,7 +129,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Phase fraction: ')
         elif 'HKLF' in G2frame.hist:
             scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Scale factor: ')                
-        scaleRef.SetValue(UseList[G2frame.hist]['Scale'][1])
+        scaleRef.SetValue(bool(UseList[G2frame.hist]['Scale'][1]))
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
         scaleVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Scale'],0,

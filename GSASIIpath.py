@@ -86,8 +86,9 @@ def addPrevGPX(fil,configDict):
         pass
     except AttributeError:
         configDict['previous_GPX_files'][1] = []
-    configDict['previous_GPX_files'][1].insert(0,fil)
-    configDict['previous_GPX_files'][1] = configDict['previous_GPX_files'][1][:5]
+    files = list(configDict['previous_GPX_files'][1])
+    files.insert(0,fil)
+    configDict['previous_GPX_files'][1] = files[:5]
 
 # routines for looking a version numbers in files
 version = -1

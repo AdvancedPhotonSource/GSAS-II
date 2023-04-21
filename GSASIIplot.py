@@ -134,7 +134,7 @@ try:
         mpl.use('wxAgg')
     import matplotlib.figure as mplfig
     import matplotlib.collections as mplC
-    import mpl_toolkits.mplot3d.axes3d as mp3d
+#    import mpl_toolkits.mplot3d.axes3d as mp3d
     from scipy.ndimage import map_coordinates
 except (ImportError, ValueError) as err:
     print('GSASIIplot: matplotlib not imported')
@@ -275,6 +275,9 @@ try:
         mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   #deprecated
 except Exception as err:
     if GSASIIpath.GetConfigValue('debug'): print('\nMPL CM setup error: {}\n'.format(err))
+    
+def GetColorMap(color):
+    return mpl.colormaps[color]
 
 # options for publication-quality Rietveld plots
 plotOpt = {}
@@ -384,6 +387,7 @@ class G2Plot3D(_tabPlotWin):
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         self.figure = mplfig.Figure(dpi=dpi,figsize=(6,6))
+        self.figure.plot3d = self.figure.add_subplot(111, projection='3d')
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,Arrows=False)
 
@@ -561,7 +565,8 @@ class G2PlotNoteBook(wx.Panel):
             elif Type == 'ogl':
                 Plot = self.addOgl(label)
             elif Type == '3d':
-                Plot = mp3d.Axes3D(self.add3D(label))
+                Plot = self.add3D(label)
+#                Plot = mp3d.Axes3D(self.add3D(label))  #doesn't work in mpl 3.6.2 (+)
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)
             self.SetSelectionNoRefresh(plotNum) # raises plot tab
@@ -4068,8 +4073,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     
     if G2frame.Contour:
         time0 = time.time()
-#        acolor = mpl.cm.get_cmap(G2frame.ContourColor) #deprecated
-        acolor = mpl.colormaps[G2frame.ContourColor]
+        acolor = GetColorMap(G2frame.ContourColor)
         Vmin = Ymax*G2frame.Cmin
         Vmax = Ymax*G2frame.Cmax
         if unequalArrays:
@@ -5713,7 +5717,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
 #            else:
 #                Plot.plot(X,Y,colors[N%6],picker=False)
     if G2frame.Contour and len(PlotList)>1:
-        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        acolor = GetColorMap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,
                     vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
                     interpolation=G2frame.Interpolate, 
@@ -5740,7 +5744,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             pass
         if Peaks == None:
             normcl = mpcls.Normalize(Ymin,Ymax)
-            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            acolor = GetColorMap(G2frame.ContourColor)
             wx.BeginBusyCursor()
             if XYlist.shape[0]>1:
                 if G2frame.Waterfall:
@@ -6148,9 +6152,9 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
     else:
         Plot.set_ylabel(r'Y',fontsize=14)
     if color is None:
-        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        acolor = GetColorMap(G2frame.ContourColor)
     else:
-        acolor = mpl.cm.get_cmap(color)
+        acolor = GetColorMap(color)
     if zrange is None:
         zrange=[0,Zmax*G2frame.Cmax]
     Img = Plot.imshow(Z.T,cmap=acolor,interpolation=G2frame.Interpolate,origin='lower', \
@@ -6246,18 +6250,18 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
         np.seterr(all='ignore')
         if True:
 #        try:
-            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
-            xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+            Plot.plot3d.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+            xyzlim = np.array([Plot.plot3d.get_xlim3d(),Plot.plot3d.get_ylim3d(),Plot.plot3d.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-            Plot.set_xlim3d(XYZlim)
-            Plot.set_ylim3d(XYZlim)
-            Plot.set_zlim3d(XYZlim)
-            Plot.set_title(Title)
-            Plot.set_xlabel(labelX)
-            Plot.set_ylabel(labelY)
-            Plot.set_zlabel(labelZ)
+            Plot.plot3d.set_xlim3d(XYZlim)
+            Plot.plot3d.set_ylim3d(XYZlim)
+            Plot.plot3d.set_zlim3d(XYZlim)
+            Plot.plot3d.set_title(Title)
+            Plot.plot3d.set_xlabel(labelX)
+            Plot.plot3d.set_ylabel(labelY)
+            Plot.plot3d.set_zlabel(labelZ)
             try:
-                Plot.set_box_aspect((1,1,1))
+                Plot.plot3d.set_box_aspect((1,1,1))
             except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                 pass
         # except:
@@ -7001,29 +7005,29 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                     
         if np.any(X) and np.any(Y) and np.any(Z):
             np.seterr(all='ignore')
-            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
-            xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+            Plot.plot3d.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+            xyzlim = np.array([Plot.plot3d.get_xlim3d(),Plot.plot3d.get_ylim3d(),Plot.plot3d.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
             if 'x' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
             if 'y' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
             if 'z' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
-            Plot.set_xlim3d(XYZlim)
-            Plot.set_ylim3d(XYZlim)
-            Plot.set_zlim3d(XYZlim)
+            Plot.plot3d.set_xlim3d(XYZlim)
+            Plot.plot3d.set_ylim3d(XYZlim)
+            Plot.plot3d.set_zlim3d(XYZlim)
             try:
-                Plot.set_box_aspect((1,1,1))
+                Plot.plot3d.set_box_aspect((1,1,1))
             except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                 pass
         if plotType == 'Size':
-            Plot.set_title('Crystallite size for '+phase+'; '+coeff[0]+' model')
-            Plot.set_xlabel(r'X, $\mu$m')
-            Plot.set_ylabel(r'Y, $\mu$m')
-            Plot.set_zlabel(r'Z, $\mu$m')
+            Plot.plot3d.set_title('Crystallite size for '+phase+'; '+coeff[0]+' model')
+            Plot.plot3d.set_xlabel(r'X, $\mu$m')
+            Plot.plot3d.set_ylabel(r'Y, $\mu$m')
+            Plot.plot3d.set_zlabel(r'Z, $\mu$m')
         else:    
-            Plot.set_title(r'$\mu$strain for '+phase+'; '+coeff[0]+' model')
-            Plot.set_xlabel(r'X, $\mu$strain')
-            Plot.set_ylabel(r'Y, $\mu$strain')
-            Plot.set_zlabel(r'Z, $\mu$strain')
+            Plot.plot3d.set_title(r'$\mu$strain for '+phase+'; '+coeff[0]+' model')
+            Plot.plot3d.set_xlabel(r'X, $\mu$strain')
+            Plot.plot3d.set_ylabel(r'Y, $\mu$strain')
+            Plot.plot3d.set_zlabel(r'Z, $\mu$strain')
     elif plotType in ['Preferred orientation',]:
         h,k,l = generalData['POhkl']
         if coeff[0] == 'MD':
@@ -7123,7 +7127,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.clabel(CS,fontsize=9,inline=1)
         except ValueError:
             pass
-        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        acolor = GetColorMap(G2frame.ContourColor)
         Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
         Plot.plot(y,x,'+',picker=True,pickradius=3)
         Page.figure.colorbar(Img)
@@ -7248,7 +7252,7 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
-            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            acolor = GetColorMap(G2frame.ContourColor)
             Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
             Page.figure.colorbar(Img)
             x,y,z = SHData['PFxyz']
@@ -7270,24 +7274,24 @@ def PlotTexture(G2frame,data,Start=False):
             
             if np.any(X) and np.any(Y) and np.any(Z):
                 np.seterr(all='ignore')
-                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+                Plot.plot3d.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
                 np.seterr(all='ignore')
-                xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+                xyzlim = np.array([Plot.plot3d.get_xlim3d(),Plot.plot3d.get_ylim3d(),Plot.plot3d.get_zlim3d()]).T
                 XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-                if 'x' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-                if 'y' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-                if 'z' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
-                Plot.set_xlim3d(XYZlim)
-                Plot.set_ylim3d(XYZlim)
-                Plot.set_zlim3d(XYZlim)
+                if 'x' in generalData['3Dproj']: Plot.plot3d.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+                if 'y' in generalData['3Dproj']: Plot.plot3d.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+                if 'z' in generalData['3Dproj']: Plot.plot3d.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+                Plot.plot3d.set_xlim3d(XYZlim)
+                Plot.plot3d.set_ylim3d(XYZlim)
+                Plot.plot3d.set_zlim3d(XYZlim)
                 try:
-                    Plot.set_box_aspect((1,1,1))
+                    Plot.plot3d.set_box_aspect((1,1,1))
                 except: #broken in mpl 3.1.1; worked in mpl 3.0.3
                     pass
-                Plot.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))
-                Plot.set_xlabel(r'X, MRD')
-                Plot.set_ylabel(r'Y, MRD')
-                Plot.set_zlabel(r'Z, MRD')
+                Plot.plot3d.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))
+                Plot.plot3d.set_xlabel(r'X, MRD')
+                Plot.plot3d.set_ylabel(r'Y, MRD')
+                Plot.plot3d.set_zlabel(r'Z, MRD')
         else:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
@@ -7303,7 +7307,7 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
-            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            acolor = GetColorMap(G2frame.ContourColor)
             Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
             Page.figure.colorbar(Img)
             if 'det Angles' in textureData and textureData['ShoDet']:
@@ -7428,7 +7432,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
     Slab = np.hstack((slab,slab,slab))   
-    acolor = mpl.cm.get_cmap('RdYlGn')
+    acolor = GetColorMap('RdYlGn')
     if 'delt' in MapType:
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff),cmap=acolor)
     else:
@@ -7533,7 +7537,7 @@ def PlotCovariance(G2frame,Data):
     G2frame.G2plotNB.status.SetStatusText('',1)
     G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     if Page.varyList:
-        acolor = mpl.cm.get_cmap(G2frame.VcovColor)
+        acolor = GetColorMap(G2frame.VcovColor)
         Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
             vmin=-1.,vmax=1.)   #,extent=[0.5,nVar+.5,0.5,nVar+.5])
         imgAx = Img.axes
@@ -7668,7 +7672,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     Page.Choice = ['s: to change colors']
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.status.SetStatusText('Use mouse LB to identify phi/psi atoms',1)
-    acolor = mpl.cm.get_cmap(G2frame.RamaColor)
+    acolor = GetColorMap(G2frame.RamaColor)
     if RamaName == 'All' or '-1' in RamaName:
         if len(Coeff): 
             X,Y = np.meshgrid(np.linspace(-180.,180.,45),np.linspace(-180.,180.,45))
@@ -8776,7 +8780,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     xlim = (0,Xmax)
     ylim = (Ymax,0)
     Imin,Imax = Data['range'][1]
-    acolor = mpl.cm.get_cmap(Data['color'])
+    acolor = GetColorMap(Data['color'])
     xcent,ycent = Data['center']
     if Data['det2theta']:
         xcent += Data['distance']*nptand(Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
@@ -9023,7 +9027,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     xsc = G2frame.Integrate[1]
     ysc = G2frame.Integrate[2]
     Imin,Imax = Data['range'][1]
-    acolor = mpl.cm.get_cmap(Data['color'])
+    acolor = GetColorMap(Data['color'])
     Plot.set_title(G2frame.GPXtree.GetItemText(G2frame.Image)[4:])
     Plot.set_ylabel('azimuth',fontsize=12)
     Plot.set_xlabel('2-theta',fontsize=12)
@@ -9084,7 +9088,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     Imin,Imax = Data['range'][1]
     step = (Imax-Imin)/5.
     V = np.arange(Imin,Imax,step)
-    acolor = mpl.cm.get_cmap(Data['color'])
+    acolor = GetColorMap(Data['color'])
     Plot.set_title(G2frame.GPXtree.GetItemText(G2frame.Image)[4:])
     Plot.set_xlabel('azimuth',fontsize=12)
     Plot.set_ylabel('2-theta',fontsize=12)
@@ -10709,7 +10713,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if drawingData.get('showSlice') in [1,]:
                 contourSet = ax0.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
-                acolor = mpl.cm.get_cmap(drawingData.get('contourColor','Paired'))                    
+                acolor = GetColorMap(drawingData.get('contourColor','Paired'))                    
                 ax0.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
                     contourSet = ax0.contour(ZU,colors='k',linewidths=1)
@@ -11996,13 +12000,13 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     elif CLuDict['plots'] == '3D PCA':
         if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
-                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[Codes[ixyz]],picker=True)
+                Plot.plot3d.scatter(xyz[0],xyz[1],xyz[2],color=Colors[Codes[ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
-                Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
-        Plot.set_xlabel('PCA axis-1',fontsize=12)
-        Plot.set_ylabel('PCA axis-2',fontsize=12)
-        Plot.set_zlabel('PCA axis-3',fontsize=12)
+                Plot.plot3d.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
+        Plot.plot3d.set_xlabel('PCA axis-1',fontsize=12)
+        Plot.plot3d.set_ylabel('PCA axis-2',fontsize=12)
+        Plot.plot3d.set_zlabel('PCA axis-3',fontsize=12)
     else:          
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)

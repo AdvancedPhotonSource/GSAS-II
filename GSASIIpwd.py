@@ -683,44 +683,44 @@ np.seterr(divide='ignore')
 
 # loc = mu, scale = std
 _norm_pdf_C = 1./math.sqrt(2*math.pi)
+
 class norm_gen(st.rv_continuous):
-    'needs a doc string'
+    '''
+    Normal distribution
+
+The location (loc) keyword specifies the mean.
+The scale (scale) keyword specifies the standard deviation.
+
+normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+
+    '''
       
     def pdf(self,x,*args,**kwds):
         loc,scale=kwds['loc'],kwds['scale']
         x = (x-loc)/scale
         return np.exp(-x**2/2.0) * _norm_pdf_C / scale
         
-norm = norm_gen(name='norm',longname='A normal',extradoc="""
-
-Normal distribution
-
-The location (loc) keyword specifies the mean.
-The scale (scale) keyword specifies the standard deviation.
-
-normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
-""")
+norm = norm_gen(name='norm')
 
 ## Cauchy
 
 # median = loc
 
 class cauchy_gen(st.rv_continuous):
-    'needs a doc string'
+    '''
+Cauchy distribution
+
+cauchy.pdf(x) = 1/(pi*(1+x**2))
+
+This is the t distribution with one degree of freedom.
+    '''
 
     def pdf(self,x,*args,**kwds):
         loc,scale=kwds['loc'],kwds['scale']
         x = (x-loc)/scale
         return 1.0/np.pi/(1.0+x*x) / scale
         
-cauchy = cauchy_gen(name='cauchy',longname='Cauchy',extradoc="""
-
-Cauchy distribution
-
-cauchy.pdf(x) = 1/(pi*(1+x**2))
-
-This is the t distribution with one degree of freedom.
-""")
+cauchy = cauchy_gen(name='cauchy')
     
 
 class fcjde_gen(st.rv_continuous):

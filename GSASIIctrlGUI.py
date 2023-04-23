@@ -90,6 +90,8 @@ Class or function name             Description
                                    used in Bind elsewhere in the code.
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
 :func:`ShowScrolledInfo`           Displays longer text where scrolling is possibly needed
+:func:`G2ScrolledGrid`             Displays a multicolumn table of information with 
+                                   possible scroll bars
 :func:`ShowScrolledColText`        Displays tabular text with scrolling where needed
 :func:`GetItemOrder`               Creates a dialog for ordering items into columns
 :func:`GetImportFile`              Gets one ore more file from the appropriate import
@@ -2780,6 +2782,69 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     dlg.ShowModal()
     dlg.Destroy()
     
+def G2ScrolledGrid(G2frame,lbl,title,tbl,colLbls,colTypes,maxSize=(600,300)):
+    '''Display a scrolled table of information in a dialog window
+
+    :param wx.Frame G2frame: parent for dialog
+    :param str lbl: label for window 
+    :param str title: window title
+    :param list tbl: list of lists where inner list is each row
+    :param list colLbls: list of str with labels for each column
+    :param list colTypes: Data types for each column (such as 
+      wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT)
+    :param list maxSize: Maximum size for the table in points. Defaults to 
+      (600,300)
+
+    Example::
+
+       row = ['item1',1.234,'description of item']
+       colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':8,4',wg.GRID_VALUE_STRING]
+       colLbls = ['item name','value','Description']
+       G2ScrolledGrid(frm,'window label','title',20*[row],colLbls,colTypes)
+
+    '''
+    dlg = wx.Dialog(G2frame,title=title,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(wx.StaticText(dlg,label=lbl),
+                      0,wx.ALIGN_CENTER_HORIZONTAL,0)
+    sizer.Add((-1,15))
+    rowlbl = [str(i+1) for i in range(len(tbl))]
+    wxtbl = Table(tbl,rowLabels=rowlbl,colLabels=colLbls,types=colTypes)
+        
+    scrGrid = wx.ScrolledWindow(dlg)
+    wxGrid = GSGrid(scrGrid)
+    wxGrid.SetTable(wxtbl, True)
+    wxGrid.AutoSizeColumns(False)
+    wxGrid.EnableEditing(False)
+    gridSizer = wx.BoxSizer(wx.VERTICAL)
+    gridSizer.Add(wxGrid,1,wx.EXPAND,1)
+    gridSizer.Layout()
+    Size = gridSizer.GetMinSize()
+    
+    Size[0] = min(Size[0]+25,maxSize[0])
+    Size[1] = min(Size[1]+25,maxSize[1])
+    scrGrid.SetSizer(gridSizer)
+    scrGrid.SetMinSize(Size)
+    scrGrid.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
+    scrGrid.Scroll(0,0)
+    sizer.Add(scrGrid,1,wx.EXPAND,1)
+        
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btnsizer.Add((-1,-1),1,wx.EXPAND,1)
+    btn = wx.Button(dlg, wx.ID_OK)
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    btnsizer.Add(btn)
+    btnsizer.Add((-1,-1),1,wx.EXPAND,1)
+    sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+       
+    sizer.Layout()    
+    dlg.SetSizer(sizer)
+    sizer.Fit(dlg)
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+    dlg.Destroy()
+
 ################################################################################
 class PickTwoDialog(wx.Dialog):
     '''This does not seem to be in use
@@ -9145,68 +9210,6 @@ class ScrolledStaticText(wx.StaticText):
             self.timer.Stop()
         self.msgpos += 1
         if self.msgpos >= len(self.fullmsg): self.msgpos = 0
-
-def G2ScrolledGrid(G2frame,lbl,title,tbl,colLbls,colTypes,maxSize=(600,300)):
-    '''Display a scrolled table of information in a dialog window
-
-    :param wx.Frame G2frame: parent for dialog
-    :param str lbl: label for window 
-    :param str title: window title
-    :param list tbl: list of lists where inner list is each row
-    :param list colLbls: list of str with labels for each column
-    :param list colTypes: Data types for each column (such as 
-      wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT)
-    :param list maxSize: Maximum size for the table in points. Defaults to 
-      (600,300)
-
-    Example::
-
-       row = ['item1',1.234,'description of item']
-       colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':8,4',wg.GRID_VALUE_STRING]
-       colLbls = ['item name','value','Description']
-       G2ScrolledGrid(frm,'window label','title',20*[row],colLbls,colTypes)
-
-    '''
-    dlg = wx.Dialog(G2frame,title=title,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-    sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(wx.StaticText(dlg,label=lbl),
-                      0,wx.ALIGN_CENTER_HORIZONTAL,0)
-    sizer.Add((-1,15))
-    rowlbl = [str(i+1) for i in range(len(tbl))]
-    wxtbl = Table(tbl,rowLabels=rowlbl,colLabels=colLbls,types=colTypes)
-        
-    scrGrid = wx.ScrolledWindow(dlg)
-    wxGrid = GSGrid(scrGrid)
-    wxGrid.SetTable(wxtbl, True)
-    wxGrid.AutoSizeColumns(False)
-    gridSizer = wx.BoxSizer(wx.VERTICAL)
-    gridSizer.Add(wxGrid,1,wx.EXPAND,1)
-    gridSizer.Layout()    
-    Size = gridSizer.GetMinSize()
-    
-    Size[0] = min(Size[0]+25,maxSize[0])
-    Size[1] = min(Size[1]+25,maxSize[1])
-    scrGrid.SetSizer(gridSizer)
-    scrGrid.SetMinSize(Size)
-    scrGrid.SetScrollbars(10,10,int(Size[0]/10-4),int(Size[1]/10-1))
-    scrGrid.Scroll(0,0)
-    sizer.Add(scrGrid,1,wx.EXPAND,1)
-        
-    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-    btnsizer.Add((-1,-1),1,wx.EXPAND,1)
-    btn = wx.Button(dlg, wx.ID_OK)
-    btn.SetDefault()
-    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
-    btnsizer.Add(btn)
-    btnsizer.Add((-1,-1),1,wx.EXPAND,1)
-    sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
-       
-    sizer.Layout()    
-    dlg.SetSizer(sizer)
-    sizer.Fit(dlg)
-    dlg.CenterOnParent()
-    dlg.ShowModal()
-    dlg.Destroy()    
         
 if __name__ == '__main__':
     app = wx.App()

@@ -525,7 +525,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 'Penalty hkls',hkls,filterBox=False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    POData[6] = [hkls[i] for i in dlg.GetSelections()]
+                    POData[6] = [hkls[i].split(':')[0] for i in dlg.GetSelections()]
                     if not POData[6]:
                         POData[6] = ['',]
                 else:
@@ -534,8 +534,20 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 dlg.Destroy()
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
-        A = G2lat.cell2A(generalData['Cell'][1:7])
-        hkls = G2lat.GenPfHKLs(10,SGData,A)    
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,G2frame.hist)
+        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Instrument Parameters'))[0]
+        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
+        reflData = reflSets[generalData['Name']]
+        Super = generalData.get('Super',0)
+        hkls = []
+        nprfo = 12
+        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
+            nprfo = 14
+        for ref in reflData['RefList']:
+            if ref[nprfo+Super] < 0.:
+                hkls += ['%d %d %d: %.3f'%(ref[0],ref[1],ref[2],ref[nprfo+Super]),]
+            if len(hkls) > 10:
+                break
         shPenalty = wx.BoxSizer(wx.HORIZONTAL)
         shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
         shPenalty.Add(wx.ComboBox(DData,value=POData[6][0],choices=POData[6],

@@ -1303,11 +1303,14 @@ def HorizontalLine(sizer,parent):
     '''Draws a horizontal line as wide as the window.
     '''
     if sys.platform == "darwin": 
-        line = wx.StaticLine(parent, size=(-1,1), style=wx.LI_HORIZONTAL)
+        #sizer.Add((-1,2))
+        line = wx.StaticLine(parent, size=(-1,18), style=wx.LI_HORIZONTAL)
         line.SetBackgroundColour((128,128,128))
+        sizer.Add(line, 0, wx.EXPAND|wx.ALL, 0)
+        sizer.Add((-1,18))
     else:
         line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
-    sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
+        sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
 
 ################################################################################
 class G2LoggedButton(wx.Button):

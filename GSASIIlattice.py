@@ -980,7 +980,6 @@ def HKL2SpAng(H,cell,SGData):
     phi = acosd(xH[2]/r)
     psi = atan2d(xH[1],xH[0])
     phi = np.where(phi>90.,180.-phi,phi)
-#    GSASIIpath.IPyBreak()
     return r,phi,psi
     
 def U6toUij(U6):
@@ -1416,7 +1415,7 @@ def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
             if Atoms[AtLookUp[Jd]][ct] == typo:
                 XYZt = Atoms[AtLookUp[Jd]][cx:cx+3]
                 Xeqv = list(G2spc.GenAtom(np.array(XYZt)%1.,SGData,True))
-                close = [np.allclose(np.inner(Amat,XYZo),np.inner(Amat,eqv[0]),atol=0.01) for eqv in Xeqv]
+                close = [np.allclose(np.inner(Amat,XYZo),np.inner(Amat,eqv[0]),atol=0.1) for eqv in Xeqv]
                 if True in close:
                     Atoms[AtLookUp[Jd]][cx+3] = 0.0
         Sytsym,Mult = G2spc.SytSym(Atoms[AtLookUp[Id]][cx:cx+3],SGData)[:2]

@@ -296,7 +296,64 @@ and MacOS:
 https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallMacHardWay,
 but these may be out of date or require adaptation. 
 
-Supported Externally-Developed Software
+Optional Binary Files 
+--------------------------------
+The AIRXD package
+(https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB) can be used to
+speed searching for "bad" pixels in images. If this package (named
+airxd.mask on Windows and Linux or airxd.mask_mac on MacOS) is found
+then the option "Use fast search" is shown on the Masks subentry for
+in each IMG tree entry; (if not "Fast search not installed" is displayed.) 
+
+This is supplied with the distribution binaries. To build this,
+download the code from the GitHub repository 
+(https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB).
+
+**On Windows and Linux:**
+Use pip to build the package. This will install various Python packages and it
+is suggested that you create a special Python environment (or install
+a copy of Python in ``/tmp/``, etc.) for this rather than build with an
+installation of Python that will be used for other purposes such as
+running GSAS-II.
+
+Once downloaded (here assumed in a directory named ``AIRXD-ML-PUB``), 
+use the following commands::
+
+    cd AIRXD-ML-PUB
+    pip install -e .
+
+This will create file ``_mask.abi3.so`` (Linux) or ``_mask.pyd`` (windows) in
+directory ``AIRXD-ML-PUB/airxd``. The entire ``airxd`` directory
+should be moved into any location in the GSAS-II path, most commonly
+the ``.../GSASII/bin`` or ``.../GSASII/bindist`` subdirectories. 
+  
+**On MacOS:**
+Once downloaded (here assumed in a directory named ``AIRXD-ML-PUB``), 
+use the following commands::
+
+    cd AIRXD-ML-PUB/airxd
+    clang -shared -undefined dynamic_lookup -o mask.so mask.cpp 
+
+This will create file ``mask.so`` in directory
+``AIRXD-ML-PUB/airxd``. The line in file 
+``AIRXD-ML-PUB/airxd/mask_mac.py`` that defines the location of this
+file,::
+
+        libmask = ctypes.CDLL('./_mask.cpython-38-darwin.so')
+
+needs to be changed. This is a suggested change::
+
+        import os.path
+        loc = os.path.join(os.path.split(__file__)[0],'mask.so')
+        libmask = ctypes.CDLL(loc)
+
+Once this is done, the
+entire ``airxd`` directory should be moved into any location in the
+GSAS-II path, most commonly
+the ``.../GSASII/bin`` or ``.../GSASII/bindist`` subdirectories.
+
+
+Referenced Externally-Developed Software
 ----------------------------------------------------
 
 GSAS-II provides interfaces to use a number of programs developed by

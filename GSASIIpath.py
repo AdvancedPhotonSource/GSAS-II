@@ -948,7 +948,15 @@ def IPyBreak_base(userMsg=None):
             print ('IPython InteractiveShellEmbed not found')
             return
     import inspect
-    ipshell = InteractiveShellEmbed()
+    from IPython import __version__
+    if __version__.startswith('8.12.'): # see https://github.com/ipython/ipython/issues/13966
+        from IPython.core import getipython
+        if getipython.get_ipython() is None:
+            ipshell = InteractiveShellEmbed.instance()
+        else:
+            ipshell = InteractiveShellEmbed()
+    else:
+        ipshell = InteractiveShellEmbed()
 
     frame = inspect.currentframe().f_back
     msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)

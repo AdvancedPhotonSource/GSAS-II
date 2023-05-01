@@ -17,13 +17,14 @@ Ellipse fitting & image integration
 from __future__ import division, print_function
 import math
 import time
+import copy
+import sys
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
-import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 try:
@@ -1742,15 +1743,64 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
 #                 break
 #     return mask
 
+def TestFastPixelMask():
+    '''Test if the fast (C++) version of Auto Pixel Masking is available.
+
+    :returns: True if the airxd.mask package can be imported; False otherwise.
+    '''
+    try:
+        if sys.platform == "darwin": # mac requires special version
+            from airxd.mask_mac import MASK
+        else:
+            from airxd.mask import MASK
+    except ModuleNotFoundError:
+        # if GSASIIpath.GetConfigValue('debug'): print('airxd not found')
+        return False
+    # if GSASIIpath.GetConfigValue('debug'):
+    #     import airxd
+    #     print('airxd loaded from',airxd.__file__)
+    return True
+
+def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
+    '''Find "bad" regions on an image and create a pixel mask to remove them.
+    This works by masking pixels that are well outside the range of the
+    median at that radial distance using the AIRXD C++ code
+    (https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB). Much faster than
+    AutoPixelMask.
+    Developed by Howard Yanxon, Wenqian Xu and James Weng. 
+
+    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image) 
+    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images) 
+    [see :func:`GSASIIimgGUI.UpdateMasks`]
+
+    :param np.array Image: 2D data structure describing a diffaction image
+    :param dict Masks: contents of Masks data tree 
+    :param dict Controls: diffraction & calibration parameters for image from
+      IMG data tree entry
+    :param int numChans: number of channels in eventual 2theta pattern 
+      after integration
+    :returns: a bool mask array with the same shape as Image 
+    '''
+    
+    if sys.platform == "darwin": # mac requires special version
+         from airxd.mask_mac import MASK
+    else:
+        from airxd.mask import MASK
+    mask = MASK(controls=Controls, shape=Image.shape)
+    #return mask.AutoSpotMask(Image, esdmul=Masks['SpotMask']['esdMul'])
+    # fix for bug that AIRXD.mask returns a Float array
+    return mask.AutoSpotMask(Image, esdmul=Masks['SpotMask']['esdMul']) == 1
+    
 def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
-    '''Find "bad" regions on an image and remove them with a pixel mask.
+    '''Find "bad" regions on an image and creata a pixel mask to remove them.
     This works by masking pixels that are well outside the range of the
     median at that radial distance.
     This is ~4x faster than the original version from RBVD.
     Developed by Howard Yanxon, Wenqian Xu and James Weng. 
 
-    Called from OnFindPixelMask (single image) and OnAutoFindPixelMask 
-    (multiple images) in :func:`GSASIIimgGUI.UpdateMasks`
+    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image) 
+    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images) 
+    [see :func:`GSASIIimgGUI.UpdateMasks`]
 
     :param np.array Image: 2D data structure describing a diffaction image
     :param dict Masks: contents of Masks data tree 

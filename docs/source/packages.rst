@@ -304,9 +304,10 @@ speed searching for "bad" pixels in images. If this package (named
 airxd.mask on Windows and Linux or airxd.mask_mac on MacOS) is found
 then the option "Use fast search" is shown on the Masks subentry for
 in each IMG tree entry; (if not "Fast search not installed" is displayed.) 
+The AIRXD package is supplied with the distribution binaries, but if
+it needs to be built locally, instructions are provided here.
 
-This is supplied with the distribution binaries. To build this,
-download the code from the GitHub repository 
+First,  download the code from the GitHub repository 
 (https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB).
 
 **On Windows and Linux:**

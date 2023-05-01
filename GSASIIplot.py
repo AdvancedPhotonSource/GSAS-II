@@ -277,7 +277,10 @@ except Exception as err:
     if GSASIIpath.GetConfigValue('debug'): print('\nMPL CM setup error: {}\n'.format(err))
     
 def GetColorMap(color):
-    return mpl.colormaps[color]
+    try:
+        return mpl.colormaps[color]
+    except:
+        return mpl.cm.get_cmap(color)
 
 # options for publication-quality Rietveld plots
 plotOpt = {}

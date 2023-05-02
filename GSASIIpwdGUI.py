@@ -942,8 +942,10 @@ def UpdatePeakGrid(G2frame, data):
             wave = G2mth.getWave(inst)
             overallInfo = {'ncell':peaks['LaueFringe']['ncell'],
                             'clat': peaks['LaueFringe']['clat'],
-                            'clat-ref': peaks['LaueFringe']['clat-ref']
-                               } # add overall info
+                            'clat-ref': peaks['LaueFringe']['clat-ref'],
+                            'fitRange': peaks['LaueFringe'].get('fitRange',8.0),
+                            'fitPower': peaks['LaueFringe'].get('fitPower',2.0),
+                               } # add overall info here
             if lines:
                 for i in peaks['peaks']:
                     pks = list(range(-lines,0)) + list(range(1,lines+1))
@@ -1126,7 +1128,6 @@ def UpdatePeakGrid(G2frame, data):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
-            print('NB: refreshing peaks')
             OnPeakFit(noFit=True)
         
     def OnSetPeakWidMode(event):
@@ -1253,40 +1254,70 @@ def UpdatePeakGrid(G2frame, data):
     if 'LF' in Inst['Type'][0]:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Laue Fringe fitting'))
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Overall parms: c='),0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Overall parms: '),0,WACV)
         data['LaueFringe'] = data.get('LaueFringe',{})
         data['LaueFringe']['ncell'] = data['LaueFringe'].get('ncell',20)
         data['LaueFringe']['clat'] =  data['LaueFringe'].get('clat',9.0)
         data['LaueFringe']['lmin'] =  data['LaueFringe'].get('lmin',1)
         data['LaueFringe']['clat-ref'] =  data['LaueFringe'].get('clat-ref',False)
         data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
+        data['LaueFringe']['fitRange'] =  data['LaueFringe'].get('fitRange',8.0)
+        data['LaueFringe']['fitPower'] =  data['LaueFringe'].get('fitPower',2.0)
+        prmVSizer = wx.BoxSizer(wx.VERTICAL)
+        prmSizer = wx.BoxSizer(wx.HORIZONTAL)
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' c='),0,WACV)
         cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'clat',
                                     typeHint=float,nDig=(10,4),size=(80,-1),
                                     OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
-        topSizer.Add(cVal,0,WACV)
+        prmSizer.Add(cVal,0,WACV)
         cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
         cellSpin.SetValue(0)
         cellSpin.SetRange(-1,1)
         cellSpin.Bind(wx.EVT_SPIN, ShiftLFc)
-        topSizer.Add(cellSpin,0,WACV)
+        prmSizer.Add(cellSpin,0,WACV)
         cRef = G2G.G2CheckBox(G2frame.dataWindow,'ref',data['LaueFringe'],'clat-ref')
-        topSizer.Add(cRef,0,WACV)
-        topSizer.Add((15,-1))
+        prmSizer.Add(cRef,0,WACV)
+        prmSizer.Add((15,-1))
         siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'lmin',
                                        'l min')
-        topSizer.Add(siz,0,WACV)
-        topSizer.Add((15,-1))
+        prmSizer.Add(siz,0,WACV)
+        prmSizer.Add((15,-1))
         siz = G2G.G2SpinWidget(G2frame.dataWindow,data['LaueFringe'] ,'ncell',
                                        'Laue ncell',
                                        onChange=RefreshPeakGrid,onChangeArgs=[None])
-        topSizer.Add(siz,0,WACV)
-        topSizer.Add((15,-1))
-        topSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
+        prmSizer.Add(siz,0,WACV)
+        # prmSizer.Add((15,-1))
+        # prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
+        # ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
+        #                             ['None','1','2','3','4','5','6'],list(range(7)),
+        #                             OnChange=RefreshPeakGrid)
+        # prmSizer.Add(ch,0,WACV)
+        # prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
+        prmVSizer.Add(prmSizer)
+
+        prmSizer = wx.BoxSizer(wx.HORIZONTAL)
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit width'),0,WACV)
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitRange',
+                                    typeHint=float,nDig=(6,1),size=(60,-1),
+                                        xmin=1., xmax=20.,
+                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        prmSizer.Add(cVal,0,WACV)
+        prmSizer.Add((15,-1))
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit exponent'),0,WACV)
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPower',
+                                    typeHint=float,nDig=(6,1),size=(60,-1),
+                                        xmin=0.5, xmax=10.,
+                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        prmSizer.Add(cVal,0,WACV)
+        prmSizer.Add((15,-1))
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
         ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
                                     ['None','1','2','3','4','5','6'],list(range(7)),
                                     OnChange=RefreshPeakGrid)
-        topSizer.Add(ch,0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
+        prmSizer.Add(ch,0,WACV)
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
+        prmVSizer.Add(prmSizer)
+        topSizer.Add(prmVSizer,0,WACV)
         mainSizer.Add(topSizer)
     mainSizer.Add(reflGrid,0,wx.ALL,10)
     G2frame.dataWindow.SetSizer(mainSizer)

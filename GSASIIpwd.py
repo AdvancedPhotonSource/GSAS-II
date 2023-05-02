@@ -1437,7 +1437,6 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     for powder patterns. 
     NB: not used for Rietveld refinement
     '''
-    
     yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
     yc = np.zeros_like(yb)
     if 'LF' in dataType:
@@ -1472,8 +1471,9 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 asym =  parmDict['asym'+str(iPeak)]
                 sig =  parmDict['sig'+str(iPeak)]
                 gam =  parmDict['gam'+str(iPeak)]
-                fmin = 8 # for now make peaks 8 degrees wide
+                fmin = parmDict.get('fitRange',8.0) # width for peak computation: defaults to 8 deg.
                 fmin = min(0.9*abs(xdata[-1] - xdata[0]),fmin) # unless the data range is smaller
+                fitPower = parmDict.get('fitPower',2.0)
                 iBeg = np.searchsorted(xdata,pos-fmin/2)
                 iFin = np.searchsorted(xdata,pos+fmin/2)
                 if not iBeg+iFin:       # skip peak below low limit
@@ -1481,14 +1481,14 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 elif not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
                     break
                 #LF.plotme(fmin,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym)
-                #LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,plot=(iPeak==0))
-                LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,plot=False)
+                #LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,fitPower,plot=(iPeak==0))
+                LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,damp,asym,fmin,fitPower,plot=False)
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     iBeg = np.searchsorted(xdata,pos2-fmin)
                     iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
-                        LaueFringePeakCalc(xdata,yc,lam2,pos2,intens*kRatio,sig,gam,shol,ncells,clat,damp,asym,fmin)
+                        LaueFringePeakCalc(xdata,yc,lam2,pos2,intens*kRatio,sig,gam,shol,ncells,clat,damp,asym,fmin,fitPower)
             except KeyError:        #no more peaks to process
                 return yb+yc
     elif 'C' in dataType:
@@ -5367,10 +5367,11 @@ class profileObj(FP.FP_profile):
         co2 = self.param_dicts[me]['clat'] / 2.
         damp =  self.param_dicts[me]['damp']
         asym =  self.param_dicts[me]['asym']
+        fpow =  self.param_dicts[me]['fitPower']        
         ttlist = np.linspace(pos-ttwid/2,pos+ttwid/2,len(self._epsb2))
         Qs = np.pi * 4 * np.sin(np.deg2rad(ttlist/2)) / wave
-        w =  np.exp(-1*10**((damp-asym) * (Qs - posQ)**2))
-        w2 = np.exp(-1*10**((damp+asym) * (Qs - posQ)**2))
+        w =  np.exp(-1*10**((damp-asym) * np.abs(Qs - posQ)**fpow))
+        w2 = np.exp(-1*10**((damp+asym) * np.abs(Qs - posQ)**fpow))
         w[len(w)//2:] = w2[len(w)//2:]
         weqdiv = w * np.sin(Qs * ncell * co2)**2 / (np.sin(Qs * co2)**2)
         weqdiv[:np.searchsorted(Qs,posQ - np.pi/self.param_dicts[me]['clat'])] = 0  # isolate central peak, if needed
@@ -5403,7 +5404,7 @@ class profileObj(FP.FP_profile):
         conv[1::2] *= -1 #flip center
         return conv
     
-def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,clat,damp,asym,calcwid,plot=False):
+def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,clat,damp,asym,calcwid,fitPower=2,plot=False):
     '''Compute the peakshape for a Laue Fringe peak convoluted with a Gaussian, Lorentzian & 
     an axial divergence asymmetry correction.
 
@@ -5421,38 +5422,39 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
     :param float asym:
     :param float calcwid: two-theta (deg.) width for cutoff of peak computation. 
        Defaults to 5
+    :param float fitPower: exponent used for damping fall-off
     :param bool plot: for debugging, shows contributions to peak
 
     **  If term is <= zero, item is removed from convolution
     '''
-    def LaueFringePeakPlot(ttArr,intArr):
-        import matplotlib.pyplot as plt
-        refColors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-                         'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-        fig, ax = plt.subplots()
-        ax.set(title='Peak convolution functions @ 2theta={:.3f}'.format(peakpos),
-                   xlabel=r'$\Delta 2\theta, deg$',
-                   ylabel=r'Intensity (arbitrary)')
-        ax.set_yscale("log",nonpositive='mask')
-        ttmin = ttmax = 0
-        for i,conv in enumerate(convList):
-            f = NISTpk.convolver_funcs[conv]()
-            if f is None: continue
-            FFT = FP.best_irfft(f)
-            if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
-            FFT /= FFT.max()
-            if i == 0:
-                tt = np.linspace(-NISTpk.twotheta_window_fullwidth_deg/2,
-                                    NISTpk.twotheta_window_fullwidth_deg/2,len(FFT))
-            ttmin = min(ttmin,tt[np.argmax(FFT>.005)])
-            ttmax = max(ttmax,tt[::-1][np.argmax(FFT[::-1]>.005)])
-            color = refColors[i%len(refColors)]
-            ax.plot(tt,FFT,color,label=conv[5:])
-        color = refColors[(i+1)%len(refColors)]
-        ax.plot(ttArr-peakpos,intArr/max(intArr),color,label='Convolution')
-        ax.set_xlim((ttmin,ttmax))
-        ax.legend(loc='best')
-        plt.show()
+    # def LaueFringePeakPlot(ttArr,intArr):
+    #     import matplotlib.pyplot as plt
+    #     refColors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+    #                      'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+    #     fig, ax = plt.subplots()
+    #     ax.set(title='Peak convolution functions @ 2theta={:.3f}'.format(peakpos),
+    #                xlabel=r'$\Delta 2\theta, deg$',
+    #                ylabel=r'Intensity (arbitrary)')
+    #     ax.set_yscale("log",nonpositive='mask')
+    #     ttmin = ttmax = 0
+    #     for i,conv in enumerate(convList):
+    #         f = NISTpk.convolver_funcs[conv]()
+    #         if f is None: continue
+    #         FFT = FP.best_irfft(f)
+    #         if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
+    #         FFT /= FFT.max()
+    #         if i == 0:
+    #             tt = np.linspace(-NISTpk.twotheta_window_fullwidth_deg/2,
+    #                                 NISTpk.twotheta_window_fullwidth_deg/2,len(FFT))
+    #         ttmin = min(ttmin,tt[np.argmax(FFT>.005)])
+    #         ttmax = max(ttmax,tt[::-1][np.argmax(FFT[::-1]>.005)])
+    #         color = refColors[i%len(refColors)]
+    #         ax.plot(tt,FFT,color,label=conv[5:])
+    #     color = refColors[(i+1)%len(refColors)]
+    #     ax.plot(ttArr-peakpos,intArr/max(intArr),color,label='Convolution')
+    #     ax.set_xlim((ttmin,ttmax))
+    #     ax.legend(loc='best')
+    #     plt.show()
     # hardcoded constants
     diffRadius = 220 # diffractometer radius in mm; needed for axial divergence, etc, but should not matter
     axial_factor = 1.5  # fudge factor to bring sh/l broadening to ~ agree with FPA
@@ -5483,7 +5485,8 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
             },
         'Gaussian': {'g2sig2': sigma2},
         'Lorentzian': {'g2gam': gamma},
-        'Lauefringe': {'Ncells': ncells, 'clat':clat, 'damp': damp, 'asym': asym},
+        'Lauefringe': {'Ncells': ncells, 'clat':clat, 'damp': damp,
+                        'asym': asym, 'fitPower':fitPower},
         }
     NISTpk=profileObj(anglemode="twotheta",
                     output_gaussian_smoother_bins_sigma=1.0,
@@ -5529,7 +5532,8 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
         pstart = -startInd
     elif startInd > len(intArr):
         return
-    elif startInd+pkPts >= len(intArr):
+#    elif startInd+pkPts >= len(intArr):
+    elif startInd+pkPts > len(intArr):
         offset = pkPts - len( intArr[startInd:] )
         istart = startInd
         iend = startInd+pkPts-offset
@@ -5538,8 +5542,8 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
         istart = startInd
         iend = startInd+pkPts
     intArr[istart:iend] += intens * peakObj.peak[pstart:pend]/pkMax
-    if plot:
-        LaueFringePeakPlot(ttArr[istart:iend], (intens * peakObj.peak[pstart:pend]/pkMax))
+#    if plot:
+#        LaueFringePeakPlot(ttArr[istart:iend], (intens * peakObj.peak[pstart:pend]/pkMax))
         
 def LaueSatellite(peakpos,wave,c,ncell,j=[-4,-3,-2,-1,0,1,2,3,4]):
     '''Returns the locations of the Laue satellite positions relative

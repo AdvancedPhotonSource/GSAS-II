@@ -8295,8 +8295,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         #     import importlib as imp
         #     imp.reload(G2pdG)
         #     imp.reload(G2pwd)
-        #     imp.reload(G2plt)
-        #     print('reloading G2pdG')
+        #     #imp.reload(G2plt)
+        #     print('reloading G2pwdGUI and G2pwd')
         G2pdG.UpdatePeakGrid(G2frame,data)
         newPlot = False
         if hasattr(G2frame,'Contour'):

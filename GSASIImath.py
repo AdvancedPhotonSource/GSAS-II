@@ -3180,6 +3180,38 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
             sig = sigVals[M-3]
     
     return Val,sig
+
+def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
+                    defESD=0.01,dlg=None):
+    '''Search for bond distance restraints. 
+    '''
+    foundBonds = []
+    indices = (-2,-1,0,1,2)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+    Norig = 0
+    for Oid,Otype,Ocoord in origAtoms:
+        Norig += 1
+        if dlg: dlg.Update(Norig)
+        for Tid,Ttype,Tcoord in targAtoms:
+            if 'macro' in GType:
+                result = [[Tcoord,1,[0,0,0],[]],]
+            else:
+                result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
+            for Txyz,Top,Tunit,Spn in result:
+                Dx = (Txyz-np.array(Ocoord))+Units
+                dx = np.inner(Amat,Dx)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),bond/Factor)
+                IndB = ma.nonzero(ma.masked_greater(dist,bond*Factor))
+                if np.any(IndB):
+                    for indb in IndB:
+                        for i in range(len(indb)):
+                            unit = Units[indb][i]+Tunit
+                            if np.any(unit):
+                                Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
+                            else:
+                                Topstr = str(Top)
+                            foundBonds.append([[Oid,Tid],['1',Topstr],bond,defESD])
+    return foundBonds
         
 def ValEsd(value,esd=0,nTZ=False):
     '''Format a floating point number with a given level of precision or

@@ -287,38 +287,16 @@ def UpdateRestraints(G2frame,data,phaseName):
                 bond = dlg.GetValue()
             dlg.Destroy()
         Factor = bondRestData['Range']
-        indices = (-2,-1,0,1,2)
-        Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
-        origAtoms = Lists['origin']
-        targAtoms = Lists['target']
-        dlg = wx.ProgressDialog("Generating bond restraints","Processed origin atoms",len(origAtoms), 
+        dlg = wx.ProgressDialog("Generating bond restraints","Processed origin atoms",len(Lists['origin']), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
         try:
-            Norig = 0
-            for Oid,Otype,Ocoord in origAtoms:
-                Norig += 1
-                dlg.Update(Norig)
-                for Tid,Ttype,Tcoord in targAtoms:
-                    if 'macro' in General['Type']:
-                        result = [[Tcoord,1,[0,0,0],[]],]
-                    else:
-                        result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
-                    for Txyz,Top,Tunit,Spn in result:
-                        Dx = (Txyz-np.array(Ocoord))+Units
-                        dx = np.inner(Amat,Dx)
-                        dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),bond/Factor)
-                        IndB = ma.nonzero(ma.masked_greater(dist,bond*Factor))
-                        if np.any(IndB):
-                            for indb in IndB:
-                                for i in range(len(indb)):
-                                    unit = Units[indb][i]+Tunit
-                                    if np.any(unit):
-                                        Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
-                                    else:
-                                        Topstr = str(Top)
-                                    newBond = [[Oid,Tid],['1',Topstr],bond,0.01]
-                                    if newBond not in bondRestData['Bonds']:
-                                        bondRestData['Bonds'].append(newBond)
+            bondlst = G2mth.searchBondRestr(Lists['origin'],Lists['target'],
+                                            bond,Factor,General['Type'],
+                                            SGData,Amat,0.01,dlg)
+            for newBond in bondlst:
+                if newBond not in bondRestData['Bonds']:
+                    bondRestData['Bonds'].append(newBond)
+                
         finally:
             dlg.Destroy()
         UpdateBondRestr(bondRestData)                

@@ -11219,6 +11219,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dlg.Destroy()
         
     def OnSelDataCopy(event):
+        '''Select HAP items to copy from one Phase/Hist to other(s)
+        '''
         hist = G2frame.hist
         sourceDict = data['Histograms'][hist]
         keyList = G2frame.dataWindow.HistsInPhase[:]
@@ -11252,7 +11254,78 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()            
-        
+
+    def OnSelDataRead(event):
+        '''Select HAP items to copy from another GPX file to current 
+        phase & hist
+        '''
+        sourceDict = data['Histograms'][G2frame.hist]
+        try:
+            dlg = G2G.gpxFileSelector(parent=G2frame)
+            if wx.ID_OK == dlg.ShowModal():
+                filename = dlg.Selection
+            else:
+                return
+        finally:
+            dlg.Destroy()
+
+        import pickle
+        phases = None
+        phasenames = []
+        try:
+            fp = open(filename,'rb')
+            while True:
+                try:
+                    d = pickle.load(fp)
+                except EOFError:
+                    break
+                if d[0][0] == 'Phases':
+                    phases = d
+                    phasenames = [phases[i][0] for i in range(1,len(phases))]
+        except:
+            return
+        finally:
+            fp.close()
+        if not phasenames: return
+        if len(phasenames) == 1:
+            phNum = 1
+        else:
+            dlg = wx.SingleChoiceDialog(G2frame,'Select Phase to use',
+                                            'Select',phasenames)
+            if dlg.ShowModal() == wx.ID_OK:
+                phNum = dlg.GetSelection()+1
+            else:
+                return
+        histograms = list(phases[phNum][1]['Histograms'].keys())
+        if len(histograms) == 0:
+            return
+        elif len(histograms) == 1:
+            histNam = histograms[0]
+        else:
+            dlg = wx.SingleChoiceDialog(G2frame,'Select histogram to use',
+                                            'Select',histograms)
+            if dlg.ShowModal() == wx.ID_OK:
+                histNam = histograms[dlg.GetSelection()]
+            else:
+                return
+        if 'HKLF' in histNam:
+            copyNames = ['Extinction','Babinet','Flack','Twins']
+        else:  #PWDR  
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+        copyNames += ['Scale','Fix FXU','FixedSeqVars']
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
+            'Select phase data parameters', copyNames)
+        selectedItems = []
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedItems = [copyNames[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedItems: return # nothing to copy
+        for i in selectedItems:
+            sourceDict[i] = phases[phNum][1]['Histograms'][histNam][i]
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
+
     def OnPwdrAdd(event):
         generalData = data['General']
         SGData = generalData['SGData']
@@ -14838,6 +14911,7 @@ of the crystal structure.
             G2frame.Bind(wx.EVT_MENU, OnDataCopy, id=G2G.wxID_DATACOPY)
             G2frame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2G.wxID_DATACOPYFLAGS)
             G2frame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2G.wxID_DATASELCOPY)
+            G2frame.Bind(wx.EVT_MENU, OnSelDataRead, id=G2G.wxID_DATASELREAD)
             G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
             G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
             G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)

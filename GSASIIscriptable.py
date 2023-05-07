@@ -152,6 +152,10 @@ method                                                Use
 :meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
 :meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
 :meth:`G2Phase.setSampleProfile`                      Sets sample broadening parameters
+:meth:`G2Phase.clearDistRestraint`                    Clears any previously defined bond distance restraint(s) for the selected phase
+:meth:`G2Phase.addDistRestraint`                      Finds and defines new bond distance restraint(s) for the selected phase
+:meth:`G2Phase.setDistRestraintWeight`                Sets the weighting factor for the bond distance restraints
+
 ==================================================    ===============================================================================================================
 
 ---------------------------------
@@ -5767,6 +5771,125 @@ class G2Phase(G2ObjectWrapper):
             dlast = d
             d = d[key]
         dlast[key] = newvalue
+
+    def _getBondRest(self,nam):
+        if 'Restraints' not in self.proj.data:
+            raise G2ScriptException(f"{nam} error: Restraints entry not in data tree")
+        try:
+            return self.proj.data['Restraints']['data'][self.name]['Bond']
+        except:
+            raise G2ScriptException(f"{nam} error: Bonds for phase not in Restraints")
+
+        
+    def setDistRestraintWeight(self, factor=1):
+        '''Sets the weight for the bond distance restraint(s) to factor
+
+        :param float factor: the weighting factor for this phase's restraints. Defaults
+          to 1 but this value is typically much larger (10**2 to 10**4)
+
+        .. seealso::
+           :meth:`G2Phase.addDistRestraint`
+        '''
+        bondRestData = self._getBondRest('setDistRestraintWeight')
+        bondRestData['wtFactor'] = float(factor)
+
+    def clearDistRestraint(self):
+        '''Deletes any previously defined bond distance restraint(s) for the selected phase
+
+        .. seealso::
+           :meth:`G2Phase.addDistRestraint`
+
+        '''
+        bondRestData = self._getBondRest('clearDistRestraint')
+        bondRestData['Bonds'] = []
+
+    def addDistRestraint(self, origin, target, bond, factor=1.1, ESD=0.01):
+        '''Adds bond distance restraint(s) for the selected phase
+
+        This works by search for interatomic distances between atoms in the
+        origin list and the target list (the two lists may be the same but most 
+        frequently will not) with a length between bond/factor and bond*factor.
+        If a distance is found in that range, it is added to the restraints
+        if it was not already found.
+
+        :param list origin: a list of atoms, each atom may be an atom 
+           object, an index or an atom label
+        :param list target: a list of atoms, each atom may be an atom 
+           object, an index or an atom label
+        :param float bond: the target bond length in A for the located atom
+        :param float factor: a tolerance factor used when searching for 
+           bonds (defaults to 1.1)
+        :param float ESD: the uncertainty for the bond (defaults to 0.01)
+
+        :returns: returns the number of new restraints that are found
+
+        As an example:: 
+
+            gpx = G2sc.G2Project('restr.gpx')
+            ph = gpx.phases()[0]
+            ph.clearDistRestraint()
+            origin = [a for a in ph.atoms() if a.element == 'Si']
+            target = [i for i,a in enumerate(ph.atoms()) if a.element == 'O']
+            c = ph.addDistRestraint(origin, target, 1.64)
+            print(c,'new restraints found')
+            ph.setDistRestraintWeight(1000)
+            gpx.save('restr-mod.gpx')
+
+        This example locates the first phase in a project file, clears any previous
+        restraints. Then it places constraints on bonds between Si and O atoms at 
+        1.64 A. Each restraint is weighted 1000 times in comparison to 
+        (obs-calc)/sigma for a data point. Note that the origin atoms are identified 
+        by atom object while the target atoms are identified by atom index. 
+        The methods are interchangeable. If atom labels are unique, then::
+
+           origin = [a.label for a in ph.atoms() if a.element == 'Si']
+        
+        would also work identically. 
+
+        '''
+        import GSASIImath as G2mth
+        bondRestData = self._getBondRest('addDistRestraint')
+        originList = []
+        for a in origin:
+            if type(a) is G2AtomRecord:
+                ao = a
+            elif type(a) is int:
+                ao = self.atoms()[a]
+            elif type(a) is str:
+                ao = self.atom(a)
+                if ao is None:
+                    raise G2ScriptException(
+                        f'addDistRestraint error: Origin atom matching label "{a}" not found')
+            else:
+                raise G2ScriptException(
+                    f'addDistRestraint error: Origin atom input {a} has unknown type ({type(a)})')
+            originList.append([ao.ranId, ao.element, list(ao.coordinates)])
+        targetList = []
+        for a in target:
+            if type(a) is G2AtomRecord:
+                ao = a
+            elif type(a) is int:
+                ao = self.atoms()[a]
+            elif type(a) is str:
+                ao = self.atom(a)
+                if ao is None:
+                    raise G2ScriptException(
+                        f'addDistRestraint error: Target atom matching label "{a}" not found')
+            else:
+                raise G2ScriptException(
+                    f'addDistRestraint error: Target atom input {a} has unknown type ({type(a)})')
+            targetList.append([ao.ranId, ao.element, list(ao.coordinates)])
+                    
+        GType = self.data['General']['Type']
+        SGData = self.data['General']['SGData']
+        Amat,Bmat = G2lat.cell2AB(self.data['General']['Cell'][1:7])
+        bondlst = G2mth.searchBondRestr(originList,targetList,bond,factor,GType,SGData,Amat,ESD)
+        count = 0
+        for newBond in bondlst:
+            if newBond not in bondRestData['Bonds']:
+                count += 1
+                bondRestData['Bonds'].append(newBond)
+        return count
     
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the 

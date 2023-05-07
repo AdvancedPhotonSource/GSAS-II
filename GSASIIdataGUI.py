@@ -6856,7 +6856,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         # Phase / Data tab or Hist/Phase menu (used in one place or other)
         G2G.Define_wxId('wxID_DATACOPY', 'wxID_DATACOPYFLAGS', 'wxID_DATASELCOPY', 'wxID_DATAUSE',
-            'wxID_PWDRADD', 'wxID_HKLFADD','wxID_DATADELETE', )
+            'wxID_PWDRADD', 'wxID_HKLFADD','wxID_DATADELETE',
+            'wxID_DATASELREAD', )
         self.DataMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DataMenu)
         self.DataMenu.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6872,6 +6873,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_DATADIJ')
         self.DataEdit.Append(G2G.wxID_DATADIJ,'Apply Strain to Lattice Constants',
                              'Shift cell by Dij of selected histogram')
+        self.DataEdit.Append(G2G.wxID_DATASELREAD,'Read selected data from .gpx','Read selected phase/hist data from a saved GSAS-II project')
         self.PostfillDataMenu()
             
         # Phase / Atoms tab

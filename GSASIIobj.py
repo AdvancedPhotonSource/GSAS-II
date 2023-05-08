@@ -19,8 +19,7 @@ as provides misc. support routines.
 
 .. only:: html
 
-   :math:`\\require{mediawiki-texvc}`
-
+   :math:`\renewcommand\AA{\text{Å}}`
 
 .. _VarNames_table:
 

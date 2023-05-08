@@ -30,7 +30,7 @@ without one of these keywords will be ignored.
 
 .. only:: html
 
-   :math:`\\require{mediawiki-texvc}`
+    :math:`\renewcommand\AA{\text{Å}}`
 
 .. tabularcolumns:: |l|p{4.5in}|
 

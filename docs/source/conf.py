@@ -150,10 +150,12 @@ html_static_path = ['_static']
 #        ],
 #     }
 
-# above replaced with to use file in trunk/docs/source/_static/theme_overrides.css 
-html_css_files = [
-    'theme_overrides.css',
-]
+# above replaced with to use file in trunk/docs/source/_static/theme_overrides.css
+# appears no longer needed
+#html_css_files = [
+#    'theme_overrides.css',
+#]
+
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

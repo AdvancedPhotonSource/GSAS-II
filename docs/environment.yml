@@ -8,7 +8,8 @@ dependencies:
   - imageio
   - h5py
   - numpy
-  - pillow
+#  - sphinx # included by RTD
+#  - pillow # included by RTD
   - pip
   - matplotlib
-  - wxpython
+#  - wxpython # slows down conda too much?

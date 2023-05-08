@@ -1,8 +1,8 @@
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
-  - python
-  - conda
+  - python=3.10
   - scipy
   - pyopengl
   - imageio

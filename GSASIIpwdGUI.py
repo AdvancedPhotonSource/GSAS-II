@@ -1317,7 +1317,9 @@ def UpdatePeakGrid(G2frame, data):
                                         xmin=0.5, xmax=10.,
                                         OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         prmSizer.Add(cVal,0,WACV)
-        prmSizer.Add((15,-1))
+        prmVSizer.Add(prmSizer)
+
+        prmSizer = wx.BoxSizer(wx.HORIZONTAL)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
         ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
                                     ['None','1','2','3','4','5','6'],list(range(7)),

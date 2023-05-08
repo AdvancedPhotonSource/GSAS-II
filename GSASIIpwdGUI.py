@@ -944,7 +944,8 @@ def UpdatePeakGrid(G2frame, data):
                             'clat': peaks['LaueFringe']['clat'],
                             'clat-ref': peaks['LaueFringe']['clat-ref'],
                             'fitRange': peaks['LaueFringe'].get('fitRange',8.0),
-                            'fitPower': peaks['LaueFringe'].get('fitPower',2.0),
+                            'fitPowerM': peaks['LaueFringe'].get('fitPowerM',2.0),
+                            'fitPowerP': peaks['LaueFringe'].get('fitPowerP',2.0),
                                } # add overall info here
             if lines:
                 for i in peaks['peaks']:
@@ -1262,7 +1263,8 @@ def UpdatePeakGrid(G2frame, data):
         data['LaueFringe']['clat-ref'] =  data['LaueFringe'].get('clat-ref',False)
         data['LaueFringe']['Show'] =  data['LaueFringe'].get('Show',0)
         data['LaueFringe']['fitRange'] =  data['LaueFringe'].get('fitRange',8.0)
-        data['LaueFringe']['fitPower'] =  data['LaueFringe'].get('fitPower',2.0)
+        data['LaueFringe']['fitPowerM'] =  data['LaueFringe'].get('fitPowerM',2.0)
+        data['LaueFringe']['fitPowerP'] =  data['LaueFringe'].get('fitPowerP',2.0)
         prmVSizer = wx.BoxSizer(wx.VERTICAL)
         prmSizer = wx.BoxSizer(wx.HORIZONTAL)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' c='),0,WACV)
@@ -1303,8 +1305,14 @@ def UpdatePeakGrid(G2frame, data):
                                         OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         prmSizer.Add(cVal,0,WACV)
         prmSizer.Add((15,-1))
-        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit exponent'),0,WACV)
-        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPower',
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit exponent, minus side'),0,WACV)
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerM',
+                                    typeHint=float,nDig=(6,1),size=(60,-1),
+                                        xmin=0.5, xmax=10.,
+                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        prmSizer.Add(cVal,0,WACV)
+        prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' plus side'),0,WACV)
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerP',
                                     typeHint=float,nDig=(6,1),size=(60,-1),
                                         xmin=0.5, xmax=10.,
                                         OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))

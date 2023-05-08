@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - conda
+  - scipy
+  - pyopengl
+  - imageio
+  - h5py
+  - numpy=1.23
+  - pillow
+  - sphinx
+  - matplotlib
+  - wxpython=4.2

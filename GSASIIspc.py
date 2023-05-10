@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-*GSASIIspc: Space group module*
--------------------------------
-
-Space group interpretation routines. Note that space group information is
-stored in a :ref:`Space Group (SGData)<SGData_table>` object.
-
-"""
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -14,6 +6,8 @@ stored in a :ref:`Space Group (SGData)<SGData_table>` object.
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+''':mod:`GSASIIspc` Classes & routines follow
+'''
 from __future__ import division, print_function
 import numpy as np
 import numpy.linalg as nl

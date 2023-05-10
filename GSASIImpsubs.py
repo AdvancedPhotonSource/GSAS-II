@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 '''
-*GSASIImpsubs: routines used in multiprocessing*
--------------------------------------------------
-
 The routines here are called either directly when GSAS-II is used without multiprocessing
 or in separate cores when multiprocessing is used.
 
@@ -17,13 +21,6 @@ These routines are designed to be used in one of two ways:
 Note that :func:`GSASIImpsubs.InitMP` should be called before any of the other routines
 in this module are used. 
 '''
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
 from __future__ import division, print_function
 import multiprocessing as mp
 import numpy as np

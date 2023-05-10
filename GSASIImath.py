@@ -8,12 +8,9 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIImath: computation module*
-================================
-
-Routines for least-squares minimization and other stuff
-
+Routines defined in :mod:`GSASIImath` follow.
 '''
+
 from __future__ import division, print_function
 import random as rn
 import numpy as np

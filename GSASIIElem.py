@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-*GSASIIElem: functions for element types*
------------------------------------------
-
-"""
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 ########### SVN repository information ###################
 # $Date$
@@ -12,6 +7,9 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+"""
+Routines used to define element settings follow. 
+"""
 
 import math
 import sys

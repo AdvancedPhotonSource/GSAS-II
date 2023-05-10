@@ -9,11 +9,7 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIindex: Cell Indexing Module*
-===================================
-
-Cell indexing program: variation on that of A. Coehlo
-includes cell refinement from peak positions
+Classes and routines defined in :mod:`GSASIIindex` follow. 
 '''
 
 from __future__ import division, print_function

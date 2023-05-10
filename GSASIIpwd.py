@@ -1,12 +1,5 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
-*GSASIIpwd: Powder calculations module*
-==============================================
-
-This version hacked to provide Laue Fringe fitting.
-
-'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -14,6 +7,10 @@ This version hacked to provide Laue Fringe fitting.
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+Classes and routines defined in :mod:`GSASIIpwd` follow. 
+'''
+
 from __future__ import division, print_function
 import sys
 import math

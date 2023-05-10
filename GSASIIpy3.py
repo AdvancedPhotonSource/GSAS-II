@@ -1,10 +1,6 @@
 '''
-*GSASIIpy3: Python 3.x Routines*
-================================
-
-Module to hold python 3-compatible code, to keep it separate from
-code that will break with __future__ options.
-
+Python 3 specific routines follow. TODO: refactor this code into 
+:mod:`GSASIIfiles`
 '''
 from __future__ import division, print_function
 import numpy as np

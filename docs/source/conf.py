@@ -45,7 +45,11 @@ print('Found highest version as {}'.format(version))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.mathjax']
+extensions = [
+    'sphinx_rtd_theme',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.mathjax']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -118,7 +122,12 @@ html_theme = 'sphinx_rtd_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    'collapse_navigation': False,
+#    'navigation_depth': 2,
+#    'includehidden': False,
+#    'titles_only': True
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -144,17 +153,23 @@ html_logo = 'G2_html_logo.png'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-#html_context = {
-#    'css_files': [
-#        '_static/theme_overrides.css',  # override wide tables in RTD theme
-#        ],
-#     }
+# to force tables from being too wide in the HTML rendering
+# file trunk/docs/source/_static/theme_overrides.css is added
+# to limit the page width.
+html_css_files = [
+    'theme_overrides.css',
+]
 
-# above replaced with to use file in trunk/docs/source/_static/theme_overrides.css
-# appears no longer needed
-#html_css_files = [
-#    'theme_overrides.css',
-#]
+# from https://github.com/spacetelescope/pysynphot/issues/116 (tnx Paul)
+# converts LaTeX Angstrom symbol to Unicode symbol in HTML output
+rst_prolog = u"""\
+
+.. only:: html
+
+  :math:`\\renewcommand\\AA{\\text{Å}}`
+
+"""
+
 
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,

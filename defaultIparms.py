@@ -9,9 +9,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*defaultIparms: Table of instrument parameters*
------------------------------------------------
-
 Defines some default instrument parameters.
 Format for each is a list of strings finished with a '\n'.
 Begin with '#GSAS-II...' as the reader routine checks this.

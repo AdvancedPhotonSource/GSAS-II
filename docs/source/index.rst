@@ -29,7 +29,8 @@ Argonne has assigned Software Invention #SF-22-147 to GSAS-II.
     GSASIIobj.rst
     GSASIIutil.rst
     GSASIIGUIr.rst
-    GSASIIGUI.rst
+    GSASIIGUI.rst 
+    GSASIIdata.rst 
     GSASIIstruc.rst
     GSASIImapvars.rst
     GSASIIimage.rst

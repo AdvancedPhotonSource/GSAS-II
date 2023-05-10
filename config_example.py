@@ -8,9 +8,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*config_example.py: Configuration options*
--------------------------------------------
-
 This file contains optional configuration options for GSAS-II. The variables
 in this file can be copied to file config.py, which is imported if present.
 Access these variables using :func:`GSASIIpath.GetConfigValue`, which returns

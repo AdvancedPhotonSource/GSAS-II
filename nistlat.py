@@ -8,9 +8,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module nistlat: NIST*LATTICE cell computations*
-------------------------------------------------------
-
 This implements an interface to the NIST*LATTICE code using 
 the Spring 1991 program version. NIST*LATTICE, "A Program to Analyze 
 Lattice Relationships" was created by Vicky Lynn Karen and Alan D. Mighell

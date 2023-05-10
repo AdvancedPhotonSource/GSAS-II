@@ -1,10 +1,5 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
-*GSASII small angle calculation module*
-=======================================
-
-'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -12,6 +7,9 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+Classes and routines defined in :mod:`GSASIIsasd` follow. 
+'''
 from __future__ import division, print_function
 import os
 import math

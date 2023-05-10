@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''
-*ElementTable: Periodic Table Data*
------------------------------------
-
 Element table data for building periodic table with valences & JMOL colors.
 Need these in case we go back to this periodic table coloring scheme.
 

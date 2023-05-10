@@ -7,18 +7,13 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIfiles: data (non-GUI) I/O routines*
-==========================================
-
-Module with miscellaneous routines for input and output from files.
-
 This module should not contain any references to wxPython so that it
 can be imported for scriptable use or potentially on clients where
 wx is not installed.
 
-Future refactoring: This module and GSASIIIO.py needs some work to
-move non-wx routines here. It may will likely make sense to rename the module(s)
-at that point.
+Future refactoring: This module and :mod:`GSASIIIO` needs some work to
+move non-wx routines to here. It will likely make sense to rename the 
+GSASIIIO module after that is done.
 '''
 from __future__ import division, print_function
 import platform

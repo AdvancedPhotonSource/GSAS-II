@@ -8,9 +8,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIlog: Logging of "Actions"*
----------------------------------
-
 Module to provide logging services, e.g. track and replay "actions"
 such as menu item, tree item, button press, value change and so on. 
 

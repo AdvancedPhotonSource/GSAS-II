@@ -28,10 +28,6 @@ without one of these keywords will be ignored.
 
 .. Next command allows \\AA to be used in HTML
 
-.. only:: html
-
-    :math:`\renewcommand\AA{\text{Å}}`
-
 .. tabularcolumns:: |l|p{4.5in}|
 
 ==============================  ====================================================

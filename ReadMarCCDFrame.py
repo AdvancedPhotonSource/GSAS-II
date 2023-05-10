@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-'''
-*ReadMarCCDFrame: Read Mar Files*
----------------------------------
-
-'''
 from __future__ import division, print_function
+'''Defines a routine to read from MARCCD files
+'''
+
 """ 
-  from /opt/marccd/documentation/header.txt
+from /opt/marccd/documentation/header.txt
 
    MarCCD Header Documentataion 
 

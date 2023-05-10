@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''
-*FormFactors: Scattering Data*
-------------------------------
-
 Contains atomic scattering factors from 
 "New Analytical Scattering Factor Functions for Free Atoms
 and Ions for Free Atoms and Ions", 

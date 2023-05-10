@@ -7,15 +7,7 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIIO: Misc I/O routines*
-=============================
-
-Module with miscellaneous routines for input and output. Many
-are GUI routines to interact with user.
-
-Includes support for image reading.
-
-Also includes base class for data export routines (TODO: should move)
+Misc routines for input and output, including image reading follow. 
 
 TODO: This module needs some work to separate wx from non-wx routines. GUI 
 routines should probably move to GSASIIctrlGUI.

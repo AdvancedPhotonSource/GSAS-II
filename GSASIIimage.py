@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#GSASII image calculations: ellipse fitting & image integration        
+#GSASII image calculations: Image calibration, masking & integration routines.
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -8,12 +8,9 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIimage: Image calc module*
-================================
-
-Ellipse fitting & image integration
-
+Classes and routines defined in :mod:`GSASIIimage` follow. 
 '''
+
 from __future__ import division, print_function
 import math
 import time

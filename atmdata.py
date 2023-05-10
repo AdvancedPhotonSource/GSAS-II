@@ -1,7 +1,4 @@
 '''
-*atmdata: Table of atomic data*
----------------------------------
-
 The entries here are:
 
   XrayFF: a dict of form factor coefficients

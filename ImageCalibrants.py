@@ -1,7 +1,4 @@
 """
-*ImageCalibrants: Calibration Standards*
-----------------------------------------
-
 GSASII powder calibrants in dictionary ``ImageCalibrants.Calibrants`` 
 containing substances commonly used for powder calibrations for image data.
 

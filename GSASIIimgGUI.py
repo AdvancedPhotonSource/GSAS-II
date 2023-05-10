@@ -40,7 +40,6 @@ import GSASIIfiles as G2fil
 import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-import GSASIIpy3 as G2py3
 import ImageCalibrants as calFile
 
 # documentation build kludge. This prevents an error with sphinx 1.8.5 (fixed by 2.3) where all mock objects are of type _MockObject
@@ -3955,7 +3954,7 @@ class IntegParmTable(wx.Dialog):
             for key in self.ParmList:
                 try:
                     float(tmpDict[key][0])
-                    parms.append([str(G2py3.FormatSigFigs(val1,sigfigs=5)) for val1 in tmpDict[key]])
+                    parms.append([str(G2fil.FormatSigFigs(val1,sigfigs=5)) for val1 in tmpDict[key]])
                 except ValueError:
                     parms.append(tmpDict[key])
                 except IndexError:
@@ -3979,7 +3978,7 @@ class IntegParmTable(wx.Dialog):
             for i,key in enumerate(self.ParmList):
                 val = tmpDict[d].get(key)
                 try:
-                    val = str(G2py3.FormatSigFigs(val,sigfigs=5))
+                    val = str(G2fil.FormatSigFigs(val,sigfigs=5))
                 except:
                     val = str(val)
                 parms[i].append(val)
@@ -4094,7 +4093,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             # fix IMfileList
             for c,lbl in enumerate(self.parent.ParmList):
                 try:
-                    vali = G2py3.FormatSigFigs(float(imgDict[lbl]),sigfigs=5)
+                    vali = G2fil.FormatSigFigs(float(imgDict[lbl]),sigfigs=5)
                 except ValueError:
                     vali = imgDict[lbl]
                 if abs(closeX-dist) < 1.: # distance is within 1 mm, replace

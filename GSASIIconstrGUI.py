@@ -41,7 +41,6 @@ import GSASIIfiles as G2fl
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
-import GSASIIpy3 as G2py3
 import GSASIIphsGUI as G2phG
 import GSASIIIO as G2IO
 import GSASIIscriptable as G2sc
@@ -4067,14 +4066,14 @@ def ShowIsoDistortCalc(G2frame,phase=None):
                 subSizer2.Add((-1,-1))
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
             try:
-                value = G2py3.FormatSigFigs(delocc)
+                value = G2fl.FormatSigFigs(delocc)
             except TypeError:
                 value = str(delocc)
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
             #subSizer.Add((10,-1))
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
             try:
-                value = G2py3.FormatSigFigs(val/norm)
+                value = G2fl.FormatSigFigs(val/norm)
                 if 'varyList' in covdata:
                     if str(G2mode) in covdata['varyList']:
                         sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]

@@ -28,8 +28,8 @@ import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phG
 import GSASIIctrlGUI as G2G
-import GSASIIpy3 as G2py3
 import GSASIIdataGUI as G2gd
+import GSASIIfiles as G2fil
 
 try:
     import wx
@@ -456,7 +456,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             laue = generalData['SGData']['SGLaue']
             if laue == '2/m':
                 laue += generalData['SGData']['SGUniq']
-            for cellGUI in G2py3.cellGUIlist:
+            for cellGUI in G2fil.cellGUIlist:
                 if laue in cellGUI[0]:
                     useGUI = cellGUI
                     break

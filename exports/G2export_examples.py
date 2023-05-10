@@ -25,10 +25,10 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIfiles as G2fil
 
 class ExportPhaseText(G2IO.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -143,7 +143,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
                            ):
             strg = ''
             for val,digits in zip(vallist,digitList):
-                strg += G2py3.FormatPadValue(val,digits)
+                strg += G2fil.FormatPadValue(val,digits)
             self.Write(strg)
         self.CloseFile()
         

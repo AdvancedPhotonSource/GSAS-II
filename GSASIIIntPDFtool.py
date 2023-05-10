@@ -42,7 +42,6 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-import GSASIIpy3 as G2py3
 import GSASIIimgGUI as G2imG
 import GSASIIfiles as G2fil
 import GSASIIscriptable as G2sc

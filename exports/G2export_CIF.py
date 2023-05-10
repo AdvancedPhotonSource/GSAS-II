@@ -62,7 +62,7 @@ import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO        
 #import GSASIImapvars as G2mv
 import GSASIIElem as G2el
-import GSASIIpy3 as G2py3
+import GSASIIfiles as G2fil
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -1595,9 +1595,9 @@ class ExportCIF(G2IO.ExportBaseclass):
         if len(DijTlist) == 0: return
         if len(Tlist) + len(DijTlist) < 2: return
         SGData = phasedict['General']['SGData']
-        for i in range(len(G2py3.cellGUIlist)):
-            if SGData['SGLaue'] in G2py3.cellGUIlist[i][0]:
-                terms = G2py3.cellGUIlist[i][5] + [6]
+        for i in range(len(G2fil.cellGUIlist)):
+            if SGData['SGLaue'] in G2fil.cellGUIlist[i][0]:
+                terms = G2fil.cellGUIlist[i][5] + [6]
                 break
         else:
             print('ShowHstrainCells error: Laue class not found',SGData['SGLaue'])

@@ -29,8 +29,8 @@ import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
-import GSASIIpy3 as G2p3
 import GSASIIpath
+import GSASIIfiles as G2fil
 try:
     import GSASIIctrlGUI as G2G
 except ImportError:
@@ -735,12 +735,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     ParentCoordinates[albl] = [None,None,None]
                 if '+' in exp:
                     val = exp.split('+')[0].strip()
-                    val = G2p3.FormulaEval(val)
+                    val = G2fil.FormulaEval(val)
                 elif '-' in exp:
                     val = exp.split('-')[0].strip()
-                    val = G2p3.FormulaEval(val)
+                    val = G2fil.FormulaEval(val)
                 else:
-                    val = G2p3.FormulaEval(exp)
+                    val = G2fil.FormulaEval(exp)
                 if val is None:
                     self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
                     error = True
@@ -922,7 +922,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     continue
                 if '+' in exp:
                     val = exp.split('+')[0].strip()
-                    val = G2p3.FormulaEval(val)
+                    val = G2fil.FormulaEval(val)
                     if val is None:
                         self.warnings += ' ERROR: _iso_occupancy_formula coordinate not interpreted: '+lbl
                         error = True

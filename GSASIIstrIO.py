@@ -41,7 +41,6 @@ import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIstrMath as G2stMth
 import GSASIIfiles as G2fil
-import GSASIIpy3 as G2py3
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -406,7 +405,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
             for var,val,norm,G2mode in zip(
                     ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
                 try:
-                    value = G2py3.FormatSigFigs(val/norm)
+                    value = G2fil.FormatSigFigs(val/norm)
                     if str(G2mode) in sigDict:
                         value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
                 except TypeError:
@@ -2763,7 +2762,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
             for var,val,norm,G2mode in zip(
                     ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
                 try:
-                    value = G2py3.FormatSigFigs(val/norm)
+                    value = G2fil.FormatSigFigs(val/norm)
                     if str(G2mode) in sigDict:
                         value = G2mth.ValEsd(val/norm,sigDict[str(G2mode)]/norm)
                 except TypeError:

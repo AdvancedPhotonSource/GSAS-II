@@ -51,7 +51,6 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
-import GSASIIpy3 as G2py3
 import GSASIIlog as log
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
@@ -569,10 +568,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 else:
                     self.invalid = True
             if self.nDig and show and not self.invalid:
-                wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
+                wx.TextCtrl.SetValue(self,str(G2fil.FormatValue(val,self.nDig)))
                 self.evaluated = False # expression has been recast as value, reset flag
             elif show and not self.invalid:
-                wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)).rstrip('0'))
+                wx.TextCtrl.SetValue(self,str(G2fil.FormatSigFigs(val)).rstrip('0'))
                 self.evaluated = False # expression has been recast as value, reset flag
         else:
             if self.ASCIIonly:
@@ -841,7 +840,7 @@ class NumberValidator(wxValidator):
             val = self.typ(tc.GetValue())
         except (ValueError, SyntaxError):
             if self.typ is float: # for float values, see if an expression can be evaluated
-                val = G2py3.FormulaEval(tc.GetValue().replace(',','.'))
+                val = G2fil.FormulaEval(tc.GetValue().replace(',','.'))
                 if val is None:
                     tc.invalid = True
                     return
@@ -3737,7 +3736,7 @@ class OrderBox(wxscroll.ScrolledPanel):
                 wid = wx.StaticText(pnl,wx.ID_ANY,lbl)
                 insize.Add(wid,0,flag=wx.EXPAND)
                 try:
-                    val = G2py3.FormatSigFigs(self.vallookup[nam][lbl],maxdigits=8)
+                    val = G2fil.FormatSigFigs(self.vallookup[nam][lbl],maxdigits=8)
                 except KeyError:
                     val = '?'
                 wid = wx.StaticText(pnl,wx.ID_ANY,'('+val+')')
@@ -4609,7 +4608,7 @@ class VirtualVarBox(wx.ListCtrl):
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
         subSizer.Add((-1,-1),1,wx.EXPAND)
         try:
-            value = G2py3.FormatSigFigs(self.parmWin.parmDict[name])
+            value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
         except TypeError:
             value = str(self.parmWin.parmDict[name])+' -?' # unexpected
         subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
@@ -4760,7 +4759,7 @@ class VirtualVarBox(wx.ListCtrl):
             return ""
         elif col == 3:
             try:
-                value = G2py3.FormatSigFigs(self.parmWin.parmDict[name])
+                value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
             except TypeError:
                 value = str(self.parmWin.parmDict[name])+' -?' # unexpected
             return value
@@ -4772,7 +4771,7 @@ class VirtualVarBox(wx.ListCtrl):
             n,val = G2obj.prmLookup(name,d)
             if val is None: return ""
             try:
-                return G2py3.FormatSigFigs(val,8)
+                return G2fil.FormatSigFigs(val,8)
             except TypeError:
                 return "?"
         elif col == 6:
@@ -5163,7 +5162,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
                 val = 'cosd('+val.strip('c')+')'
             if neg:
                 val = '-' + val
-            val = G2py3.FormulaEval(val)
+            val = G2fil.FormulaEval(val)
             if val is not None:
                 if mult:
                     self.nextval *= val

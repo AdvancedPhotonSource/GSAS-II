@@ -21,11 +21,11 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
+import GSASIIfiles as G2fil
 
 def WriteList(obj,headerItems):
     '''Write a CSV header
@@ -213,7 +213,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
                 line += '%.6g'%val
-#                line += G2py3.FormatValue(val,digits)
+#                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         if mode == 'w':
             print('Powder data written to CSV file '+self.fullpath)
@@ -288,7 +288,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
                 line += '%.6g'%val
-#                line += G2py3.FormatValue(val,digits)
+#                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         print('...file '+self.fullpath+' written')
@@ -418,7 +418,7 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
                 line = ""
                 for val,digits in zip(bindata,digitList):
                     if line: line += ','
-                    line += G2py3.FormatValue(val,digits)
+                    line += G2fil.FormatValue(val,digits)
                 self.Write(line)            
         self.Write('"Small angle data"')
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
@@ -442,7 +442,7 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
                 line += '%.6g'%val
-#                line += G2py3.FormatValue(val,digits)
+#                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         
@@ -509,7 +509,7 @@ class ExportREFDCSV(G2IO.ExportBaseclass):
             for val,digits in zip(vallist,digitList):
                 if line: line += ','
                 line += '%.6g'%val
-#                line += G2py3.FormatValue(val,digits)
+#                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
         

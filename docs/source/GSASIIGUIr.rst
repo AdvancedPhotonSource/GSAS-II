@@ -159,19 +159,6 @@ GSASIIIO Classes & Routines
     :members: 
 
 ---------------------------------------------
-*GSASIIpy3: Python 3.x Routines*
----------------------------------------------
-
-Module to hold Python 3-compatible code, to keep it separate from
-code that will break with __future__ options.
-
-GSASIIIO Classes & Routines
----------------------------------------------
-       
-.. automodule:: GSASIIpy3
-    :members: 
-
----------------------------------------------
 *gltext: draw OpenGL text*
 ---------------------------------------------
 

@@ -20,8 +20,8 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
+import GSASIIfiles as G2fil
 
 class ExportPowderFXYE(G2IO.ExportBaseclass):
     '''Used to create a FXYE file for a powder data set
@@ -89,7 +89,7 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         for XYS in zip(x,histblk['Data'][1],s):
             line = ''
             for val in XYS:
-                line += G2py3.FormatPadValue(val,(15,6))
+                line += G2fil.FormatPadValue(val,(15,6))
             self.Write(line)
         self.CloseFile()
         
@@ -145,7 +145,7 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
         for XYS in zip(x,histblk['Data'][1],s):
             line = ''
             for val in XYS:
-                line += G2py3.FormatPadValue(val,(15,6))
+                line += G2fil.FormatPadValue(val,(15,6))
             self.Write(line)
         self.CloseFile()
 

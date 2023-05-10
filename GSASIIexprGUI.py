@@ -32,9 +32,9 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIctrlGUI as G2G
-import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
+import GSASIIfiles as G2fil
 
 # Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -631,7 +631,7 @@ class ExpressionDialog(wx.Dialog):
                 var = self.varName[v]
                 if var in self.parmDict:
                     val = self.parmDict[var]
-                    s = G2py3.FormatSigFigs(val).rstrip('0')
+                    s = G2fil.FormatSigFigs(val).rstrip('0')
                 elif '*' in var:
                     vs = G2obj.LookupWildCard(var,self.parmDict.keys())
                     s = '('+str(len(vs))+' values)'
@@ -676,7 +676,7 @@ class ExpressionDialog(wx.Dialog):
             if not np.isfinite(val):
                 self.setEvalResult("Expression value is infinite or out-of-bounds")
                 return
-            s = G2py3.FormatSigFigs(val).rstrip('0')
+            s = G2fil.FormatSigFigs(val).rstrip('0')
             depVal = ""
             if self.depVarDict:
                 if not self.dependentVar:

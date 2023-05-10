@@ -1,5 +1,8 @@
 *GSAS-II Data Storage Modules*
-=============================
+===============================
+
+These modules are used to provide a place to find constants that are
+used in various locations. 
 
 -----------------------------------------
 *GSASIIdata: Ramachandran Parameters*

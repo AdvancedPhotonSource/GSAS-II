@@ -7,12 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIrestrGUI: Restraint GUI routines*
-----------------------------------------
-
-Used to define restraints.
-
+'''Restraint GUI routines follow.
 '''
 from __future__ import division, print_function
 import wx

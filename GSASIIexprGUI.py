@@ -7,20 +7,8 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIexprGUI: Expression Handling*
--------------------------------------
-
-This module defines a class for defining an expression in terms of values
-in a parameter dictionary via a wx.Dialog. The dialog creates a :class:`GSASII.ExpressionObj`
-which is used to evaluate the expression against a supplied parameter dictionary.
-
-The expression is parsed to find variables used in the expression and then
-the user is asked to assign parameters from the dictionary to each variable.
-
-Default expressions are read from file DefaultExpressions.txt using
-:func:`GSASIIpath.LoadConfigFile`.
-
+'''Routines for users to input Python expressions used within 
+GSAS-II computations follow.
 '''
 from __future__ import division, print_function
 import re

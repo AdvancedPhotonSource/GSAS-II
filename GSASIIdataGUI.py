@@ -8,12 +8,7 @@
 # $Id$
 #=========- SVN repository information ###################
 '''
-*GSASIIdataGUI: Main GSAS-II GUI*
-------------------------------------
-
-Module that defines GUI routines and classes for the main GUI Frame (window)
-and the main routines that define the GSAS-II tree panel and much of the
-data editing panel. 
+Routines for main GUI wx.Frame follow. 
 '''
 from __future__ import division, print_function
 import platform

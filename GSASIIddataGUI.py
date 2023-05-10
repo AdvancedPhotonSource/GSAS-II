@@ -7,14 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIddataGUI: Phase Diffraction Data GUI*
---------------------------------------------
-
-Module to create the GUI for display of diffraction data * phase
-information that is shown in the data display window
-(when a phase is selected.)
-
+'''Routines for Data tab in Phase dataframe follows. 
 '''
 from __future__ import division, print_function
 import copy

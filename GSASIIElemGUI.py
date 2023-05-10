@@ -6,12 +6,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIElemGUI: GUI to select and delete element lists*
--------------------------------------------------------
-
-Module to select elements from a periodic table and
-to delete an element from a list of selected elements.
+'''Routines for Periodic table wx.Frame follow. 
 '''
 from __future__ import division, print_function
 import GSASIIpath

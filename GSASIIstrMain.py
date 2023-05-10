@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-*GSASIIstrMain: main structure routine*
----------------------------------------
-
-'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -11,6 +6,9 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+:mod:`GSASIIstrMain` routines, used for refinement are found below.
+'''
 from __future__ import division, print_function
 import platform
 import sys

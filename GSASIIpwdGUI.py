@@ -7,13 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIpwdGUI: Powder Pattern GUI routines*
--------------------------------------------
-
-Used to define GUI controls for the routines that interact
-with the powder histogram (PWDR) data tree items.
-
+'''GUI routines for PWDR datadree subitems follow.
 '''
 from __future__ import division, print_function
 import platform

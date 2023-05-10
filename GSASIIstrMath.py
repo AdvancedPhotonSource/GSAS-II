@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-*GSASIIstrMath - structure math routines*
------------------------------------------
-'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -10,6 +6,10 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+:mod:`GSASIIstrMath` routines, used for refinement computations 
+are found below.
+'''
 from __future__ import division, print_function
 import time
 import copy

@@ -8,17 +8,6 @@
 # $Id$
 #========== SVN repository information ###################
 '''
-*GSASIIphsGUI: Phase GUI*
--------------------------
-
-Module to create the GUI for display of phase information
-in the data display window when a phase is selected.
-Phase information is stored in one or more
-:ref:`Phase Tree Item <Phase_table>` objects.
-Note that there are functions
-that respond to some tabs in the phase GUI in other modules
-(such as GSASIIddata).
-
 Main routine here is :func:`UpdatePhaseData`, which displays the phase information
 (called from :func:`GSASIIdataGUI:SelectDataTreeItem`).
 
@@ -26,7 +15,9 @@ Other top-level routines are:
 :func:`GetSpGrpfromUser` (called locally only);
 :func:`FindBondsDraw` and :func:`FindBondsDrawCell` (called locally and in GSASIIplot); 
 :func:`SetPhaseWindow` (called locally and in GSASIIddataGUI and GSASIIrestrGUI, multiple locations)
-to control scrolling. 
+to control scrolling.
+
+Routines for Phase dataframes follow. 
 '''
 from __future__ import division, print_function
 import platform

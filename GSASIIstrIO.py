@@ -7,15 +7,12 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIstrIO: structure I/O routines*
--------------------------------------
-
-Contains routines for reading from GPX files and printing to the .LST file. 
+:mod:`GSASIIstrIO` routines, used for refinement to 
+read from GPX files and print to the .LST file. 
 Used for refinements and in G2scriptable. 
 
-Should not contain any wxpython references as this should be able to be used
-in non-GUI settings. 
-
+This file should not contain any wxpython references as this 
+must be used in non-GUI settings. 
 '''
 from __future__ import division, print_function
 import platform

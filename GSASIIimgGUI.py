@@ -7,12 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*GSASIIimgGUI: Image GUI*
--------------------------
-
-Control image display and processing
-
+'''Image GUI routines follow.
 '''
 from __future__ import division, print_function
 import os

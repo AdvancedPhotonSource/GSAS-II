@@ -8,10 +8,7 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIconstrGUI: Constraint GUI routines*
-------------------------------------------
-
-Used to define constraints and rigid bodies.
+Constraints and rigid bodies GUI routines follow.
 
 '''
 from __future__ import division, print_function

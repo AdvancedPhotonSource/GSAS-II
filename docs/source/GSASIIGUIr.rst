@@ -5,6 +5,8 @@
 *GSASIIctrlGUI: Custom GUI controls*
 ---------------------------------------------
 
+ .. py:currentmodule:: GSASIIctrlGUI
+
 A library of GUI controls for reuse throughout GSAS-II, as indexed below
 
 .. tabularcolumns:: |l|p{4in}|

@@ -7,14 +7,10 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''Classes in :mod:`G2export_csv` follow:
 '''
-*Module G2export_csv: Spreadsheet export*
--------------------------------------------
-
-Code to create .csv (comma-separated variable) files for
-GSAS-II data export to a spreadsheet program, etc.
-
-'''
+# note documentation in docs/source/exports.rst
+#
 from __future__ import division, print_function
 import os.path
 import numpy as np

@@ -7,21 +7,9 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_JSON: ASCII .gpx Export*
-------------------------------------------------------
+'''Classes in :mod:`G2export_JSON` follow:
 
-This implements a simple exporter :class:`ExportCIF` that can export the 
-contents of an entire project as a sort-of human readable (JSON) ASCII file.
-This provides a way to see the contents of a GSAS-II project file, but 
-this format does not provide a mechanism to change the contents of a .gpx file,
-as the likelihood of breaking a data structure is too high, so these
-JSON files cannot be imported back into GSAS-II. 
-If you want to change the contents of a .gpx file, use :mod:`GSASIIscriptable` 
-where you can access the native Python data structures and change things 
-with a good chance of getting things to work. 
-
-This code is dedicated to my friend Robert Papoular who wants to see what is 
+This code is to honor my friend Robert Papoular, who wants to see what is 
 inside a .gpx file.
 '''
 from __future__ import division, print_function

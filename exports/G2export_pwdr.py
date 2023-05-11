@@ -7,12 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_pwdr: Export powder input files*
--------------------------------------------------
-
-Creates files used by GSAS (FXYE) & TOPAS (XYE) as input
-
+'''Classes in :mod:`G2export_pwdr` follow:
 '''
 from __future__ import division, print_function
 import os.path

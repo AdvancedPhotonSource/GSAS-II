@@ -7,18 +7,10 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''Classes in :mod:`G2export_CIF` follow:
 '''
-*Module G2export_CIF: CIF Exports*
-------------------------------------------------------
-
-This implements a complex exporter :class:`ExportCIF` that can implement an
-entire project in a complete CIF intended for submission as a
-publication. In addition, there are three subclasses of :class:`ExportCIF`:
-:class:`ExportProjectCIF`,
-:class:`ExportPhaseCIF` and :class:`ExportDataCIF` where extra parameters
-for the _Exporter() determine if a project, single phase or data set are written.
-'''
-
+# note documentation in docs/source/exports.rst
+#
 from __future__ import division, print_function
 import platform
 import datetime as dt
@@ -1461,7 +1453,8 @@ def WriteCompositionMM(fp, phasedict, phasenam, parmDict, quickmode=True, keV=No
                   G2mth.ValEsd(cellmass/Z,-0.09,True))
 
 class ExportCIF(G2IO.ExportBaseclass):
-    '''Base class for CIF exports
+    '''Base class for CIF exports. Not used directly. Exporters are defined 
+    in subclasses that call :meth:`MasterExporter`.
     '''
     def __init__(self,G2frame,formatName,extension,longFormatName=None,):
         G2IO.ExportBaseclass.__init__(self,G2frame,formatName,extension,longFormatName=None)
@@ -1634,7 +1627,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             line += ' ' + datablockidDict[h]
             WriteCIFitem(self.fp, line)       
 
-    def _Exporter(self,event=None,phaseOnly=None,histOnly=None):
+    def MasterExporter(self,event=None,phaseOnly=None,histOnly=None):
         '''Basic code to export a CIF. Export can be full or simple, as set by
         phaseOnly and histOnly which skips distances & angles, etc.
 
@@ -3838,7 +3831,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.ShowModal()
 
 #==============================================================================
-####  _Exporter code starts here         ======================================
+####  MasterExporter code starts here         ======================================
 #==============================================================================
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
@@ -4585,7 +4578,7 @@ class ExportProjectCIF(ExportCIF):
         self.Controls = Controls
         self.InitExport(event)
         self.loadTree()         # load all of the tree into a set of dicts
-        self._Exporter(event=event)
+        self.MasterExporter(event=event)
         self.CloseFile()
 
 class ExportPhaseCIF(ExportCIF):
@@ -4819,12 +4812,12 @@ class ExportPhaseCIF(ExportCIF):
                     self.openDelayed()
                     newName = ChemPhase + '_merged'
                     self.Phases = {newName:newPhase}
-                    self._Exporter(event=event,phaseOnly=newName)
+                    self.MasterExporter(event=event,phaseOnly=newName)
                     self.CloseFile()
                     return
         for name in self.phasenam:
             self.openDelayed()
-            self._Exporter(event=event,phaseOnly=name)
+            self.MasterExporter(event=event,phaseOnly=name)
         self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):
@@ -4834,7 +4827,7 @@ class ExportPhaseCIF(ExportCIF):
             )[0]+'_'+phasenam+'_'+hist
         self.CIFname = self.CIFname.replace(' ','')
         self.OpenFile(mode=mode)
-        self._Exporter(phaseOnly=phasenam)
+        self.MasterExporter(phaseOnly=phasenam)
         self.CloseFile()
 
 class ExportPwdrCIF(ExportCIF):
@@ -4869,7 +4862,7 @@ class ExportPwdrCIF(ExportCIF):
             AskFile='ask' # get a file name/directory to save in
             ): return
         self.OpenFile()
-        self._Exporter(event=event,histOnly=self.histnam[0])
+        self.MasterExporter(event=event,histOnly=self.histnam[0])
 
     def Writer(self,hist,mode='w'):
         '''Used for histogram CIF export of a sequential fit.
@@ -4880,7 +4873,7 @@ class ExportPwdrCIF(ExportCIF):
             )[0]+'_'+hist
         self.CIFname = self.CIFname.replace(' ','')
         self.OpenFile(mode=mode)
-        self._Exporter(histOnly=hist)
+        self.MasterExporter(histOnly=hist)
         if mode == 'w':
             print('CIF written to file '+self.fullpath)
         self.CloseFile()
@@ -4916,7 +4909,7 @@ class ExportHKLCIF(ExportCIF):
             AskFile='ask' # get a file name/directory to save in
             ): return
         self.OpenFile()
-        self._Exporter(event=event,histOnly=self.histnam[0])
+        self.MasterExporter(event=event,histOnly=self.histnam[0])
 
 #===============================================================================
 # misc CIF utilities

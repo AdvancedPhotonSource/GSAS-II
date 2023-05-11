@@ -7,15 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_map: Map export*
--------------------------------------------
-
-Code to write Fourier/Charge-Flip atomic density maps out in formats that
-can be read by external programs. At present a GSAS format
-that is supported by FOX and DrawXTL 
-(:class:`ExportMapASCII`) and the CCP4 format that
-is used by COOT (:class:`ExportMapCCP4`) are implemented.
+'''Classes in :mod:`G2export_map` follow:
 '''
 from __future__ import division, print_function
 import platform

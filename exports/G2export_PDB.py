@@ -7,13 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_PDB: Macromolecular export*
---------------------------------------------
-Code to export a phase into the venerated/obsolete (pick one)
-ASCII PDB format. Also defines exporter :class:`ExportPhaseCartXYZ`
-which writes atom positions in orthogonal coordinates for a phase.
-
+'''Classes in :mod:`G2export_PDB` follow:
 '''
 from __future__ import division, print_function
 import numpy as np

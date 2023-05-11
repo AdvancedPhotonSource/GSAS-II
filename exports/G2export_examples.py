@@ -7,18 +7,10 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''Classes in :mod:`G2export_examples` follow:
 '''
-*Module G2export_examples: Examples*
--------------------------------------------
-
-Code to demonstrate how GSAS-II data export routines are created. The
-classes defined here, :class:`ExportPhaseText`, 
-:class:`ExportSingleText`, :class:`ExportPowderReflText`, 
-and :class:`ExportPowderText` each demonstrate a different type
-of export. Also see :class:`G2export_map.ExportMapASCII` for an
-example of a map export.
-
-'''
+# note documentation in docs/source/exports.rst
+#
 from __future__ import division, print_function
 import os
 import numpy as np

@@ -7,12 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_FIT2D: Fit2D "Chi" export*
--------------------------------------------
-
-Code to create .chi (Fit2D like) files for GSAS-II powder data export 
-
+'''Classes in :mod:`G2export_FIT2D` follow:
 '''
 from __future__ import division, print_function
 import os.path

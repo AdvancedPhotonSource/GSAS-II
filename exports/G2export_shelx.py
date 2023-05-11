@@ -7,13 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_shelx: Examples*
--------------------------------------------
-
-Code to export coordinates in the SHELX .ins format
-(as best as I can makes sense of it).
-
+'''Classes in :mod:`G2export_shelx` follow:
 '''
 from __future__ import division, print_function
 import os.path

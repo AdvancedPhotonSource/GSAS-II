@@ -7,12 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*Module G2export_image: 2D Image data export*
-------------------------------------------------------
-
-Demonstrates how an image is retrieved and written. Uses
-a SciPy routine to write a PNG format file. 
+'''Classes in :mod:`G2export_image` follow:
 '''
 from __future__ import division, print_function
 import os.path

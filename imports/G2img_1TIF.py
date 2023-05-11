@@ -7,18 +7,9 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_1TIF: Tagged-image File images*
---------------------------------------------------
-
-Routine to read an image in Tagged-image file (TIF) format as well as a variety
-of slightly incorrect pseudo-TIF formats used at instruments around the world.
-This uses a custom reader that attempts to determine the instrument and detector
-parameters from various aspects of the file. 
-
 Note that the name ``G2img_1TIF`` is used so that this file will
 sort to the top of the image formats and thus show up first in the menu.
 (It is the most common, alas).
-
 '''
 
 from __future__ import division, print_function

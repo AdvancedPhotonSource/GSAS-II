@@ -1,7 +1,4 @@
 '''
-*makeBat: Create GSAS-II Batch File*
-====================================
-
 This script creates a file named ``RunGSASII.bat`` and a desktop shortcut to that file.
 It registers the filetype .gpx so that the GSAS-II project files exhibit the
 GSAS-II icon and so that double-clicking on them opens them in GSAS-II. 

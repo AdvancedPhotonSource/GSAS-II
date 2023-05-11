@@ -7,10 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2sfact_CIF: CIF import*
------------------------------------
-Read structure factors from a CIF reflection table.
-
 '''
 # routines to read in structure factors from a CIF
 # 

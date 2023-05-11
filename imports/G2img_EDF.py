@@ -7,9 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_EDF: .edf image file*
---------------------------------------
-
 '''
 
 from __future__ import division, print_function

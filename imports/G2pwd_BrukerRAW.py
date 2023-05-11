@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_BrukerRAW: Bruker v.1-v.3 .raw data*
----------------------------------------------------
-
-Routine to read in powder data from a Bruker versions 1-3 .raw file
-
 '''
 
 from __future__ import division, print_function

@@ -16,7 +16,7 @@ import GSASIIpath
 sind = lambda x: np.sin(x*np.pi/180.)
 GSASIIpath.SetVersionNumber("$Revision$")
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
-    '''Routines to import reflectivity data from a Pananalytical.xrdm (xml) file. 
+    '''Routines to import reflectivity data from a Panalytical.xrdm (xml) file. 
     
     '''
     def __init__(self):

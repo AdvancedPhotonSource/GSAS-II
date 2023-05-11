@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2phase_INS: Import phase from SHELX INS file*
---------------------------------------------------------
-
-Copies a phase from SHELX ins file into the
-current project.
-
 '''
 from __future__ import division, print_function
 import sys

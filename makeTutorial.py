@@ -8,12 +8,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*makeTutorial: Make Tutorial Web Page*
----------------------------------------------
-
-Creates an HTML page (``GSASII/help/Tutorials.html``) listing all the tutorials in
-:data:`GSASIIctrlGUI.tutorialIndex`. Run this after adding a new tutorial to that
-index.
 '''
 
 from __future__ import print_function
@@ -22,39 +16,41 @@ import os
 import GSASIIpath
 #import GSASIIctrl as G2G
 onlineVideos = []
-'''a list of videos that are in box, since I don't know how to check if they
-are present anymore
+'''a list of videos that are in box.com, since I don't know 
+how to retrieve this automatically any more. 
 '''
-onlineVideos.append('https://anl.box.com/v/CalibrationofanareadetectorinG')
-onlineVideos.append('https://anl.box.com/v/CalibrationTutorial')
-onlineVideos.append('https://anl.box.com/v/CalibrationofaTOFpowderdiffrac')
-onlineVideos.append('https://anl.box.com/v/Combinedrefinement')
-onlineVideos.append('https://anl.box.com/v/TOFcombinedXNRietveldrefinemen')
-onlineVideos.append('https://anl.box.com/v/NeutronCWPowderData')
-onlineVideos.append('https://anl.box.com/v/FindProfParamCW')
-onlineVideos.append('https://anl.box.com/v/DeterminingWavelength')
-onlineVideos.append('https://anl.box.com/v/FitPeaks----')
-onlineVideos.append('https://anl.box.com/v/LaboratoryX-')
-onlineVideos.append('https://anl.box.com/v/FittingSmallAngleScatteringDat')
-onlineVideos.append('https://anl.box.com/v/FitBkgTut---')
-onlineVideos.append('https://anl.box.com/v/SmallAngleImageProcessing')
-onlineVideos.append('https://anl.box.com/v/Integrationofareadetectordatai')
-onlineVideos.append('https://anl.box.com/v/MerohedraltwinrefinementinGSAS')
-onlineVideos.append('https://anl.box.com/v/ParametricFitting')
-onlineVideos.append('https://anl.box.com/v/SequentialRefinementofSmallAng')
-onlineVideos.append('https://anl.box.com/v/SequentialTutorial')
-onlineVideos.append('https://anl.box.com/v/SimpleMagnetic')
-onlineVideos.append('https://anl.box.com/v/SimTutorial-')
-onlineVideos.append('https://anl.box.com/v/SmallAngleSizeDistribution')
-onlineVideos.append('https://anl.box.com/v/StackingFaults-I')
-onlineVideos.append('https://anl.box.com/v/StartingGSAS')
-onlineVideos.append('https://anl.box.com/v/Strainfittingof2DdatainGSAS-II')
-onlineVideos.append('https://anl.box.com/v/Textureanalysisof2DdatainGSAS-')
-onlineVideos.append('https://anl.box.com/v/TOFSequentialSinglePeakFit')
-onlineVideos.append('https://anl.box.com/v/RigidBodyRef')
-#onlineVideos.append('
 
 if __name__ == '__main__':
+    for url in '''
+        https://anl.box.com/v/CalibrationofanareadetectorinG
+        https://anl.box.com/v/CalibrationTutorial
+        https://anl.box.com/v/CalibrationofaTOFpowderdiffrac
+        https://anl.box.com/v/Combinedrefinement
+        https://anl.box.com/v/TOFcombinedXNRietveldrefinemen
+        https://anl.box.com/v/NeutronCWPowderData
+        https://anl.box.com/v/FindProfParamCW
+        https://anl.box.com/v/DeterminingWavelength
+        https://anl.box.com/v/FitPeaks----
+        https://anl.box.com/v/LaboratoryX-
+        https://anl.box.com/v/FittingSmallAngleScatteringDat
+        https://anl.box.com/v/FitBkgTut---
+        https://anl.box.com/v/SmallAngleImageProcessing
+        https://anl.box.com/v/Integrationofareadetectordatai
+        https://anl.box.com/v/MerohedraltwinrefinementinGSAS
+        https://anl.box.com/v/ParametricFitting
+        https://anl.box.com/v/SequentialRefinementofSmallAng
+        https://anl.box.com/v/SequentialTutorial
+        https://anl.box.com/v/SimpleMagnetic
+        https://anl.box.com/v/SimTutorial-
+        https://anl.box.com/v/SmallAngleSizeDistribution
+        https://anl.box.com/v/StackingFaults-I
+        https://anl.box.com/v/StartingGSAS
+        https://anl.box.com/v/Strainfittingof2DdatainGSAS-II
+        https://anl.box.com/v/Textureanalysisof2DdatainGSAS-
+        https://anl.box.com/v/TOFSequentialSinglePeakFit
+        https://anl.box.com/v/RigidBodyRef
+'''.split(): onlineVideos.append(url)
+    
     GSASIIpath.SetBinaryPath()
     import GSASIIctrlGUI as G2G
     G2BaseURL = G2G.G2BaseURL

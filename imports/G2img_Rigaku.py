@@ -7,9 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_Rigaku: .stl image file*
---------------------------------------
-
 '''
 
 from __future__ import division, print_function

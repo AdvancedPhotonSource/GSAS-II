@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2sad_xye: read small angle data*
-------------------------------------------------
-
-Routines to read in small angle data from an .xye type file, with
-two-theta or Q steps. 
-
 '''
 
 from __future__ import division, print_function

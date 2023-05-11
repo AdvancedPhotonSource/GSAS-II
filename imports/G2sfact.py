@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2sfact: simple HKL import*
------------------------------------
-Read structure factors from a simple hkl file. Two routines are
-provided to read from files containing F or F\ :sup:`2` values.
-
 '''
 from __future__ import division, print_function
 import sys

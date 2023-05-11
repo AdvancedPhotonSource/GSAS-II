@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_xye: Topas .xye data*
-------------------------------------
-
-Routine to read in powder data from a Topas-compatible .xye file
-
 '''
 
 from __future__ import division, print_function

@@ -5,13 +5,9 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''
-*unit_tests: Self-test Module*
-------------------------------
-
-A script that can be run to test a series of self-tests in GSAS-II. At present,
-only modules ``GSASIIspc`` and ``GSASIIlattice`` have self-tests. 
-
+'''At present,
+only modules :mod:`GSASIIspc` and :mod:`GSASIIlattice` have self-tests
+and these have not been tested or updated in many, many years. 
 '''
 
 import GSASIIspc

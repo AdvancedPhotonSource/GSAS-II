@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_CIF: CIF powder data*
-------------------------------------
-
-Routine to read in powder data from a CIF. 
-
 '''
 from __future__ import division, print_function
 import numpy as np

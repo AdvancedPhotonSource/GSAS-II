@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 #GSASIItestplot.py
 '''
-*GSASIItestplot: Plotting for testDeriv*
-========================================
-
-Plotting module used for script testDeriv.
 '''
 import wx
 import wx.aui

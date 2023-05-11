@@ -7,15 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_PILTIF: Std Tagged-image File images*
------------------------------------------------------
-
-Routine to read an image in Tagged-image file (TIF) format using a standard
-image library function. This means that parameters such as the pixel size
-(which is in the TIFF header but is almost never correct) 
-and distance to sample, etc. are not correct unless specified in a 
-separate metadata file.
-
 The metadata can be specified in a file with the same name and path as 
 the TIFF file except that the the extension is .metadata.
 

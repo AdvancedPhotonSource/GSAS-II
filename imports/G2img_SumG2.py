@@ -7,9 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_SumG2: Python pickled image*
-------------------------------------------
-
 '''
 
 from __future__ import division, print_function

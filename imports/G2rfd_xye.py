@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2rfd_xye: read reflectometry data*
-------------------------------------------------
-
-Routines to read in reflectometry data from an .xye type file, with
-two-theta or Q steps. 
-
 '''
 
 from __future__ import division, print_function

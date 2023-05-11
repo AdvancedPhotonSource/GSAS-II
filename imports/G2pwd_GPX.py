@@ -7,10 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_GPX: GSAS-II projects*
-------------------------------------
-Routine to import powder data from GSAS-II .gpx files
-
 '''
 from __future__ import division, print_function
 import platform

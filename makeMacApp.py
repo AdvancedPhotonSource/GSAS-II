@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 '''
-*makeMacApp: Create Mac Applet*
-===============================
-
-This script creates an AppleScript app bundle to launch GSAS-II. The app is
+This routine creates an app, 
 usually created in the directory where the GSAS-II script (.../GSASII/GSASII.py) 
 is located. A softlink to Python is created inside that app bundle, 
 but the softlink name is GSAS-II so that "GSAS-II" shows up as the name 
@@ -19,7 +16,7 @@ This can be used two different ways.
     app is restored from a tar file. This works best for 11.0 (Big Sur) where there are security 
     constraints in place. 
 
- 2. If python is not in that location or a name/location is specified
+ 2. If Python is not in that location or a name/location is specified
     for the app that will be created, this script creates an app (AppleScript) with the GSAS-II
     and the python locations hard coded. When an AppleScript is created,  
     this script tests to make sure that a wxpython script will run inside the 

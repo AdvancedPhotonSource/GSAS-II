@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2phase_GPX: Import phase from GSAS-II project*
---------------------------------------------------------
-
-Copies a phase from another GSAS-II project file into the
-current project.
-
 '''
 from __future__ import division, print_function
 import platform

@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_csv: Read Excel .csv data*
-------------------------------------------
-
-Routine to read in powder data from Excel type comma separated variable
-column-oriented variable
-
 '''
 
 from __future__ import division, print_function

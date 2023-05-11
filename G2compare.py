@@ -9,10 +9,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-.. _G2compare:
-
-*G2compare: Tool for project comparison*
----------------------------------------------
 '''
 
 #TODO:

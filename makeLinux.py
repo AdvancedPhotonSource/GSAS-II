@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 '''
-*makeLinux: Create Linux Shortcuts*
-===================================
-
 This script creates a menu entry and dektop shortcut for Gnome
 (and perhaps KDE) desktop managers. Recent testing on Raspbian.
 
 This is a work in progress as I learn more about shortcuts in Linux.
 
-Run this script with one optional argument, the path to the GSASII.py
+Run this script with one optional argument, the path to the GSASII.py.
 The script path may be specified relative to the current path or given
 an absolute path, but will be accessed via an absolute path. 
 If no arguments are supplied, the GSASII.py script is assumed to be in the

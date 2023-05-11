@@ -9,18 +9,8 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-.. _GSASIIautoint:
-
-*GSASIIIntPDFtool: autointegration routines*
----------------------------------------------
-
-Independent-running GSAS-II based auto-integration program with minimal
-GUI, no visualization but intended to implement significant levels of 
-parallelization.
 '''
-# Autointegration from 
-# $Id$
-# hacked for stand-alone use
+# Autointegration GSASIIimgGUI and GSASIIimage, hacked for stand-alone use
 #
 # idea: select image file type & set filter from that
 #

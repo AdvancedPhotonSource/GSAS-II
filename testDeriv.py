@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 #testDeriv.py
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 '''
-*testDeriv: Check derivative computation*
-=========================================
-
-Use this to check derivatives used in structure least squares
-refinement against numerical values computed in this script.
-
 To use set ``DEBUG=True`` in GSASIIstrMain.py (line 40, as of version
 2546); run the least squares - zero cycles is sufficient.  Do the "Save
 Results"; this will write the file testDeriv.dat in the local

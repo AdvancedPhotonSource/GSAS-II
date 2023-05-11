@@ -7,8 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_MAR: MAR image files*
---------------------------------------
 '''
 
 from __future__ import division, print_function

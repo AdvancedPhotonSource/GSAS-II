@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_HDF5: summed HDF5 image file*
--------------------------------------------
-
-Reads all images found in a HDF5 file.
-
 '''
 
 from __future__ import division, print_function

@@ -7,13 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_png: png image file*
----------------------------------------
-
-Routine to read an image in .png (Portable Network Graphics) format.
-For now, the only known use of this is with converted Mars Rover (CheMin)
-tif files, so default parameters are for that.
-
 '''
 
 from __future__ import division, print_function

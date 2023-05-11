@@ -8,11 +8,6 @@
 ########### SVN repository information ###################
 #
 '''
-*Module G2phase_xyz: read coordinates from an xyz file*
--------------------------------------------------------
-
-A short routine to read in a phase from an xyz Cartesian coordinate file
-
 '''
 
 from __future__ import division, print_function

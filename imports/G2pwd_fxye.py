@@ -7,11 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pwd_fxye: GSAS data files*
-------------------------------------
-Routine to read in powder data in a variety of formats
-that are defined for GSAS.
-
 '''
 from __future__ import division, print_function
 import os.path as ospath

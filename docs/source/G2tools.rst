@@ -10,8 +10,27 @@ independently of the main GSAS-II program.
 
 Both are under development.
 
+.. _GSASIIautoint:
+
+*GSASIIIntPDFtool: autointegration routines*
+---------------------------------------------
+
+An auto-integration program based on GSAS-II but with
+a minimal GUI and no visualization that runs independently from
+the main GSAS-II program . This is intended to implement
+significant levels of parallelization and require less of a memory footprint. 
+
 .. automodule:: GSASIIIntPDFtool
-    :members: 
+    :members:
+
+.. _G2compare:
+
+*G2compare: Tool for project comparison*
+---------------------------------------------
+
+This is intended to read in multiple GSAS-II projects and provide
+graphics, tables of information and so on. Not much of this has been
+written at present. 
 
 .. automodule:: G2compare
     :members: 

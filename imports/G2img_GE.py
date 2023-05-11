@@ -7,14 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2img_GE: summed GE image file*
----------------------------------------
-
-Read data from General Electric angiography x-ray detectors,
-primarily as used at APS 1-ID. 
-This shows an example of an importer that will handle files with
-more than a single image. 
-
 '''
 
 from __future__ import division, print_function

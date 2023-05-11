@@ -7,12 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*Module G2pdf_gr: read PDF G(R) data*
-------------------------------------------------
-
-Routines to read in G(R) data from an .gr type file, with
-Angstrom steps. 
-
 '''
 
 from __future__ import division, print_function

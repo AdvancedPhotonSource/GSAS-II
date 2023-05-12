@@ -41,6 +41,7 @@ Argonne has assigned Software Invention #SF-22-147 to GSAS-II.
     SAS.rst
     GSASIIscriptable.rst
     GSASIIscripts.rst
+    GSASIIweb.rst
     imports.rst 
     exports.rst
     G2tools.rst

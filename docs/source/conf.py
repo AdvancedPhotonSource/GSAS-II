@@ -260,6 +260,8 @@ latex_logo = 'G2_html_logo.png'
 # If false, no module index is generated.
 #latex_domain_indices = True
 
+#build PDF with Unicode characters
+latex_engine = 'xelatex'
 
 # -- Options for manual page output --------------------------------------------
 

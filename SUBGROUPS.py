@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-*SUBGROUPS: Interface to special GSAS Bilbao SUBGROUPS & k-SUBGROUPSMAG web pages*
--------------------------------
-
-Extraction of  space subgroups for a given space group and a propagation vector
-from the GSAS version of SUBGROUPS & k-SUBGROUPSMAG web page on the Bilbao Crystallographic server
-
-"""
 ########### SVN repository information ###################
 # $Date$
 # $Author$

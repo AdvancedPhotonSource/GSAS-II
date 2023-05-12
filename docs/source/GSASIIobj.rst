@@ -7,15 +7,13 @@
 This module defines and/or documents the data structures used in GSAS-II, as well
 as provides misc. support routines.
 
-
 .. contents:: Section Contents 
-
-
-.. _VarNames_table:
 
 .. index::
    single: Parameter names
    single: GSAS-II variable naming
+
+.. _VarNames_table:
 
 Variable names in GSAS-II
 ----------------------------

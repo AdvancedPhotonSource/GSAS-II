@@ -72,11 +72,23 @@ Provides a script to reates an HTML page
 (``GSASII/help/Tutorials.html``) listing all the tutorials defined in
 variable
 :data:`GSASIIctrlGUI.tutorialIndex`. Run this after adding new tutorials to that
-index.
+catalog.
 
 .. automodule:: makeTutorial
     :members: 
 
+*makeVarTbl: Make Variables Table*
+========================================
+
+This creates a table of variable names from the definitions supplied
+in :func:`GSASIIobj.CompileVarDesc` which is used as input for the
+Sphinx documentation
+(in the :ref:`GSAS-II Variable Names table <VarNames_table>`).
+Run this after adding new  variables to that function.
+
+.. automodule:: makeVarTbl
+    :members: 
+       
 *unit_tests: Self-test Module*
 ===================================
 
@@ -85,3 +97,18 @@ A script that can be run to test a series of self-tests in GSAS-II.
 .. automodule:: unit_tests
     :members: 
 
+*testSytSym: Test Site Symmetry*
+========================================
+
+A GUI program for testing the site symmetry generation routines. 
+       
+.. automodule:: testSytSym
+    :members: 
+
+*testSSymbols: Test Superspace Group Symbols*
+===============================================
+
+A GUI program for testing the 3+1 superspace group symmetry generation routines. 
+       
+.. automodule:: testSSymbols
+    :members: 

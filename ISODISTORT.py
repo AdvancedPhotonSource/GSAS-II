@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-*ISODISTORT: Interface to BYU ISODISTORT web pages*
-------------------------------------------------------
-
-
-"""
 ########### SVN repository information ###################
-# $Date: 2018-07-10 11:41:00 -0500 (Tue, 10 Jul 2018) $
-# $Author: vondreele $
-# $Revision: 3465 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/kSUBGROUPSMAG.py $
-# $Id: kSUBGROUPSMAG.py 3465 2018-07-10 16:41:00Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import subprocess as subp

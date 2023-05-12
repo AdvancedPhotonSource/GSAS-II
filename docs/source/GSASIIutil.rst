@@ -144,3 +144,16 @@ nistlat Classes & Routines
 
 .. automodule:: ReadMarCCDFrame
     :members: 
+
+-----------------------------------------
+*G2shapes: Compute SAS particle shapes*
+-----------------------------------------
+
+Program SHAPES from
+"A New Algroithm for the Reconstruction of Protein Molecular Envelopes
+from X-ray Solution Scattering Data", 
+John Badger, J. Appl. Cryst. (2019) 52, 937-944.
+(DOI: 10.1107/S1600576719009774) modified to run inside GSAS-II.
+
+.. automodule:: G2shapes
+    :members: 

@@ -71,7 +71,8 @@ else:
 [wxID_ABSORBABOUT] = [wx.NewId() for _init_coll_ABOUT_Items in range(1)]
 
 class Absorb(wx.Frame):
-    ''' '''
+    '''Creates a frame where input for absorption calculation is supplied
+    '''
     Elems = []
     Wave = 1.5405      #CuKa default
     Kev = 12.397639    #keV for 1A x-rays
@@ -651,7 +652,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.SetWaveEnergy(Wave)
             
     def OnABOUTItems0Menu(self, event):
-        ''' '''
+        '''Displays the About window
+        '''
         try:
             import wx.adv as wxadv  # AboutBox moved here in Phoenix
         except:

@@ -1,4 +1,4 @@
-*GSAS-II GUI Submodules*
+*GSAS-II GUI Components*
 ========================
 
 These modules are used to create different parts of the GSAS-II
@@ -181,4 +181,37 @@ GSASIIfpaGUI Classes & Routines
 ---------------------------------------
 
 .. automodule:: GSASIIfpaGUI
+    :members: 
+
+-------------------------------------------------
+*fprime: compute f' & f"*
+-------------------------------------------------
+
+This module contains GUI routines to calculate and plot real and resonant X-ray
+scattering factors to 250keV, based on Fortran program of Cromer &
+Liberman corrected for Kissel & Pratt energy term; Jensen term not included
+(D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
+
+
+fprime Classes & Routines
+---------------------------------------
+
+.. automodule:: fprime
+    :members: 
+
+
+-------------------------------------------------
+*Absorb: Compute X-ray Absorption*
+-------------------------------------------------
+
+This module contains GUI routines to calculate X-ray absorption
+factors to 250keV for cylindrical powder samples with a specified
+chemical composition and density. Uses same approach
+as in :mod:`fprime`
+(D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
+
+Absorb Classes & Routines
+---------------------------------------
+
+.. automodule:: Absorb
     :members: 

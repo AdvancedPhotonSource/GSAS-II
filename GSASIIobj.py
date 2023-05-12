@@ -584,7 +584,9 @@ def CompileVarDesc():
     '''Set the values in the variable lookup tables 
     (:attr:`reVarDesc` and :attr:`reVarStep`).
     This is called in :func:`getDescr` and :func:`getVarStep` so this
-    initialization is always done before use.
+    initialization is always done before use. These variables are 
+    also used in script `makeVarTbl.py` which creates the table in section 3.2
+    of the Sphinx docs (:ref:`VarNames_table`).
 
     Note that keys may contain regular expressions, where '[xyz]'
     matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range 

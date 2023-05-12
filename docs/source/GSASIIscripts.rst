@@ -84,7 +84,7 @@ This creates a table of variable names from the definitions supplied
 in :func:`GSASIIobj.CompileVarDesc` which is used as input for the
 Sphinx documentation
 (in the :ref:`GSAS-II Variable Names table <VarNames_table>`).
-Run this after adding new  variables to that function.
+This is run as part of the Sphinx build from inside docs/source/conf.py.
 
 .. automodule:: makeVarTbl
     :members: 

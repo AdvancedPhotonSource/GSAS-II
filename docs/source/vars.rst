@@ -1,6 +1,6 @@
 .. 
-    This file is created using the makeVarTbl.py. Edit that not this file.
-         
+    This file is created using makeVarTbl.py. Edit that, not this file.
+
 .. list-table:: Naming for GSAS-II parameter names, ``p:h:<var>:n``
    :widths: 35 65
    :header-rows: 1

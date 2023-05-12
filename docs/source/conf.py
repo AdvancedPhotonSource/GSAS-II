@@ -38,6 +38,16 @@ for fil in (glob.glob(os.path.abspath(os.path.join('..', '..','*.py')))+
     except:
         pass
 print('Found highest version as {}'.format(version))
+# put the version into the docs
+print(os.path.split(__file__)[0])
+fp = open(os.path.join(os.path.split(__file__)[0],'version.rst'),'w')
+fp.write(f'This documentation was prepared from GSAS-II version {version}\n')
+fp.close()
+# update to use the most recent variables list
+fil = os.path.normpath(os.path.join(
+    os.path.split(__file__)[0],'..','..','makeVarTbl.py'))
+with open(fil, 'rb') as f:
+    exec(compile(f.read(), fil, 'exec'), {"__file__": fil,"__name__": "__main__"})
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

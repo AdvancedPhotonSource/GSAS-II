@@ -1,27 +1,31 @@
+import os
 import re
 import copy
-import GSASIIobj as G2obj
+print('Running makeVarTbl.py')
 
 def main():
+    import GSASIIobj as G2obj
     '''Gets the parameter table using :func:`G2obj.CompileVarDesc()` and then 
-    creates file ``docs/source/vars.rst``
+    creates file ``docs/source/vars.rst``. Run from Sphinx build in conf.py.
     '''
     # compile regular expressions
     parenRE = re.compile(r'\)|\(')
     bracketRE = re.compile(r'\[|\]')
     # get parameter table
     G2obj.CompileVarDesc()
-    fp = open('docs/source/vars.rst','w')
+    varstblloc = os.path.join(os.path.split(__file__)[0],'docs','source','vars.rst')
+    print('creating file',os.path.normpath(varstblloc))
+    fp = open(varstblloc,'w')
     fp.write('''.. 
-        This file is created using the makeVarTbl.py. Edit that not this file.
+    This file is created using makeVarTbl.py. Edit that, not this file.
 
-    .. list-table:: Naming for GSAS-II parameter names, ``p:h:<var>:n``
-       :widths: 35 65
-       :header-rows: 1
+.. list-table:: Naming for GSAS-II parameter names, ``p:h:<var>:n``
+   :widths: 35 65
+   :header-rows: 1
 
-       * - ``<var>``
-         - usage
-    ''')
+   * - ``<var>``
+     - usage
+''')
 
     explain = {71:'one or more digits (0, 1,... 9)',
                72:'the digits 0, 1, or 2',

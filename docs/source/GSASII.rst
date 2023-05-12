@@ -19,7 +19,7 @@ Keyboard Menu Shortcuts
 ----------------------------------------
 
 Shortcuts for commonly-used menu commands are created by adding a 
-menu command with a "\tctrl+" addition such as::
+menu command with a "\\tCtrl+" addition such as::
 
         item = parent.Append(wx.ID_ANY,'&Refine\tCtrl+R','Perform a refinement')
 
@@ -28,7 +28,7 @@ keyboard command (on MacOS this will be "Command+R" rather than "Control-R") as 
 keyboard letters/numbers that have GSAS-II assigned actions.
 are system assigned. Note that there are also plotting keyboard commands that are 
 implemented in :mod:`GSASIIplot`. 
-These can be discovered from the "K" button on the plot menu bar as they 
+These can be discovered from the "K" button on the plot menu bar, as they 
 vary depending on the type of plot.
 
 .. tabularcolumns:: |c|p{4in}|

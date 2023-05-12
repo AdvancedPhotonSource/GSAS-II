@@ -194,15 +194,6 @@ column-oriented variable. The only allowed extensions for this are
 
 .. automodule:: G2pwd_rigaku
     :members:
-       
-*Module G2pwd_Pnn: GSAS .Pnn data*
-------------------------------------
-
-Routine to read in powder data from a GSAS/EXPGUI .Pnn binary
-file. Note that this file is not portable across platforms. 
-
-.. automodule:: G2pwd_Pnn
-    :members: 
 
 
 ======================================

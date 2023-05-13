@@ -1814,7 +1814,7 @@ def UpdateMasks(G2frame,data):
         if G2img.TestFastPixelMask():
             wx.BeginBusyCursor()
             time0 = time.time()
-            if data['SpotMask'].get('ClearPrev',True):
+            if data['SpotMask'].get('ClearPrev',True) or data['SpotMask']['spotMask'] is None:
                  data['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans)
             else:
                 data['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans)
@@ -1836,7 +1836,7 @@ def UpdateMasks(G2frame,data):
         if mask is None:
             print(' Pixel mask search not completed')
             return
-        if data['SpotMask'].get('ClearPrev',True):
+        if data['SpotMask'].get('ClearPrev',True) or data['SpotMask']['spotMask'] is None:
             data['SpotMask']['spotMask'] = mask
         else:
             data['SpotMask']['spotMask'] |= mask
@@ -1874,7 +1874,7 @@ def UpdateMasks(G2frame,data):
                 if fast:
                     wx.BeginBusyCursor()
                     time0 = time.time()
-                    if data['SpotMask'].get('ClearPrev',True):
+                    if data['SpotMask'].get('ClearPrev',True) or data['SpotMask']['spotMask'] is None:
                         data['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(
                             G2frame.ImageZ,Mask,Controls,nChans)
                     else:
@@ -1890,7 +1890,7 @@ def UpdateMasks(G2frame,data):
                         time0 = time.time()
                         mask = G2img.AutoPixelMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
                         if mask is None: return  # aborted search
-                        if Mask['SpotMask'].get('ClearPrev',True):
+                        if Mask['SpotMask'].get('ClearPrev',True) or data['SpotMask']['spotMask'] is None:
                             Mask['SpotMask']['spotMask'] = mask
                         else:
                             Mask['SpotMask']['spotMask'] |= mask

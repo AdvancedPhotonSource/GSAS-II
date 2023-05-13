@@ -1695,6 +1695,13 @@ def UpdatePhaseData(G2frame,Item,data):
                         RfList[newName] = RfList[oldName]
                         del RfList[oldName]                            
                 NameTxt.SetValue(generalData['Name'])
+                # rename Restraints
+                resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+                Restraints = G2frame.GPXtree.GetItemPyData(resId)
+                i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
+                if i: G2frame.GPXtree.SetItemText(i,newName)
+                Restraints[newName] = Restraints[oldName]
+                del Restraints[oldName]
                                                 
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
@@ -3095,20 +3102,21 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     CSI = G2spc.GetCSxinel(SytSym)
                     atMxyz.append([SytSym,CSI[0]])
-            dlg = UseMagAtomDialog(G2frame,magchoices[sel],Atms,AtCods,atMxyz,ifMag=ifMag,ifDelete=True)
-            try:
-                opt = dlg.ShowModal()
-                if  opt == wx.ID_YES:
-                    G2frame.OnFileSave(event)       #saves current state of Unit Cell List
-                    newPhase['Atoms'],atCodes = dlg.GetSelection()
-                    generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
-                elif opt == wx.ID_DELETE:
-                    magData[magId]['Keep'] = False
-                    return
-                else:   #wx.ID_NO
-                    return
-            finally:
-                dlg.Destroy()
+            if ifMag:
+                dlg = UseMagAtomDialog(G2frame,magchoices[sel],Atms,AtCods,atMxyz,ifMag=ifMag,ifDelete=True)
+                try:
+                    opt = dlg.ShowModal()
+                    if  opt == wx.ID_YES:
+                        G2frame.OnFileSave(event)       #saves current state of Unit Cell List
+                        newPhase['Atoms'],atCodes = dlg.GetSelection()
+                        generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
+                    elif opt == wx.ID_DELETE:
+                        magData[magId]['Keep'] = False
+                        return
+                    else:   #wx.ID_NO
+                        return
+                finally:
+                    dlg.Destroy()
         else:
             return
         NShkl = len(G2spc.MustrainNames(SGData))
@@ -3132,6 +3140,132 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
         
+    def OnApplySubgroups(event):
+        '''Select and apply a transformation matrix from the Bilbao web site 
+        to replace current phase with a subgroup
+        '''
+        PatternName = data['magPhases']
+        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+            baseList = range(1,len(UCdata[5])+1)
+        else:
+            baseList = UCdata[0][16]
+        magKeep = []
+        magIds = []
+        magchoices = []
+        ifMag = False
+        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(UCdata[5])]
+        phaseDict = dict(zip(itemList,UCdata[5]))
+        for im,mid in enumerate(baseList):
+            if phaseDict[mid]['Keep']:
+                phaseDict[mid]['No.'] = im+1
+                trans = G2spc.Trans2Text(phaseDict[mid]['Trans'])
+                vec = G2spc.Latt2text([phaseDict[mid]['Uvec'],])
+                magKeep.append(phaseDict[mid])
+                magIds.append(mid)
+                magchoices.append('(%d) %s; (%s) + (%s)'%(im+1,phaseDict[mid]['Name'],trans,vec))
+        if not len(magKeep):
+            G2frame.ErrorDialog('Subgroup/magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
+                    'Make new project using subgroups','Select subgroup(s)',
+                    magchoices)
+        opt = dlg.ShowModal()
+        sels = []
+        if opt == wx.ID_OK:
+            sels = dlg.GetSelections()
+        if not sels: return
+        #
+        G2frame.OnFileSave(None) # save
+        orgFilName = G2frame.GSASprojectfile
+        phsnam = data['General']['Name']
+        # get restraints & clear geometrical restraints
+        resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame,resId,phsnam)
+        Restraints[phsnam]['Bond']['Bonds'] = []
+        Restraints[phsnam]['Angle']['Angles'] = []
+        savedRestraints = Restraints[phsnam]
+        del Restraints[phsnam]
+        for sel in sels:
+            magchoice = magKeep[sel]
+            spg = magchoice['SGData']['SpGrp'].replace(' ','')
+            magId = magIds[sel]
+            # generate the new phase            
+            newPhase = copy.deepcopy(data)
+            generalData = newPhase['General']
+            generalData['SGData'] = copy.deepcopy(magchoice['SGData'])
+            generalData['Cell'][1:] = magchoice['Cell'][:]
+            generalData['MagDmin'] = 1.0
+            SGData = generalData['SGData']
+            vvec = np.array([0.,0.,0.])
+            newPhase['MagXform'] = (magchoice['Trans'],magchoice['Uvec'],vvec)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,ifMag)
+            Atoms = newPhase['Atoms']
+            Atms = []
+            AtCods = []
+            atMxyz = []
+            for ia,atom in enumerate(Atoms):
+                atom[0] += '_%d'%ia
+                atom[2] = ''                    #clear away refinement flags
+                SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
+                Atms.append(atom)
+                AtCods.append(atCodes[ia])
+                CSI = G2spc.GetCSxinel(SytSym)
+                atMxyz.append([SytSym,CSI[0]])
+            NShkl = len(G2spc.MustrainNames(SGData))
+            NDij = len(G2spc.HStrainNames(SGData))
+            UseList = newPhase['Histograms']
+            detTrans = np.abs(nl.det(magchoice['Trans']))
+            newPhase['Drawing'] = []
+            for hist in UseList:
+                UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+                # reset Dij & microstrain terms where # of terms changes
+                if len(UseList[hist]['Mustrain'][4]) != NShkl:
+                    UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                if len(UseList[hist]['HStrain'][0]) != NDij:
+                    UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+            newPhase['General']['Map'] = mapDefault.copy()
+            # phase name rename
+            newName = generalData['Name'] = f"{phsnam}_{magchoice['No.']}_{spg}"
+            phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+            phaseNameList = usedHistograms.keys() # phase names in use
+            generalData['Name'] = newName
+            G2frame.GPXtree.SetItemText(Item,generalData['Name'])
+            # change phase name key in Reflection Lists for each histogram
+            for hist in data['Histograms']:
+                ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
+                if not rt: continue
+                RfList = G2frame.GPXtree.GetItemPyData(rt)
+                RfList[newName] = []
+                if phsnam in RfList:
+                    del RfList[phsnam]
+            # copy cleared restraints
+            Restraints[generalData['Name']] = savedRestraints
+            if resId: G2frame.GPXtree.SetItemText(resId,newName)
+            data.update(newPhase)
+            #clear away prev subgroup choices
+            if 'magPhases' in data: del data['magPhases']
+            UCdata[5] = []
+            G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
+            # save new file
+            G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_'+spg.replace('/','_')+'.gpx'
+            #G2frame.OnFileSaveas(event)
+            G2IO.ProjFileSave(G2frame)
+
+        # restore the original saved project
+        G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
+        # reopen tree to the original phase
+        def _ShowPhase():
+            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            G2frame.GPXtree.Expand(phId)        
+            phId = G2gd.GetGPXtreeItemId(G2frame,phId,phsnam)
+            G2frame.GPXtree.SelectItem(phId)
+        wx.CallLater(100,_ShowPhase)
 #####  Atom routines ################################################################################
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
@@ -14894,6 +15028,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
+        G2frame.Bind(wx.EVT_MENU, OnApplySubgroups, id=G2G.wxID_USEBILBAOSUB)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
         # Data (unless Hist/Phase tree entry shown)
         if not GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
@@ -15201,6 +15336,14 @@ of the crystal structure.
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,'magPhases' in data)
+    flag = False
+    if 'magPhases' in data:
+        PatternName = data['magPhases']
+        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+        flag = not any(['magAtms' in i for i in UCdata[5]])
+    G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,flag)
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:

@@ -4364,30 +4364,31 @@ class GSASII(wx.Frame):
         else:
             print('file not found',f)        
         
-    def _SaveOld(self):
+    def _SaveOld(self,askSave=True):
         '''See if we should save current project and continue 
         to read another.
         returns True if the project load should continue
         '''
         if self.dataWindow:
             self.dataWindow.ClearData()
+        if self.dataWindow and askSave:
             dlg = wx.MessageDialog(self,
                     'Do you want to save and replace the current project?\n'
                     '(Use No to read without saving or Cancel to continue '
                     'with current project)',
                 'Save & Overwrite?',
                 wx.YES|wx.NO|wx.CANCEL)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        if result == wx.ID_NO:
-            result = True
-        elif result == wx.ID_CANCEL:
-            return False
-        else:
-            if not self.OnFileSave(None):
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO:
+                result = True
+            elif result == wx.ID_CANCEL:
                 return False
+            else:
+                if not self.OnFileSave(None):
+                    return False
         self.GPXtree.DeleteChildren(self.root)
         self.GSASprojectfile = ''
         self.HKL = []
@@ -4396,7 +4397,7 @@ class GSASII(wx.Frame):
             self.G2plotNB.clear()
         return True
         
-    def OnFileOpen(self, event, filename=None):
+    def OnFileOpen(self, event, filename=None, askSave=True):
         '''Gets a GSAS-II .gpx project file in response to the
         File/Open Project menu button
         '''
@@ -4419,7 +4420,7 @@ class GSASII(wx.Frame):
             
         self.EnablePlot = False
         if self.GPXtree.GetChildrenCount(self.root,False):
-            if not self._SaveOld(): return
+            if not self._SaveOld(askSave=askSave): return
 
         if not filename:
             GetGPX()
@@ -6827,7 +6828,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # Phase / General tab
         G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP','wxID_VALIDPROTEIN', 
             'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE','wxID_USEBILBAOMAG',
-            'wxID_COMPARESTRUCTURE','wxID_COMPARECELLS')
+            'wxID_COMPARESTRUCTURE','wxID_COMPARECELLS','wxID_USEBILBAOSUB')
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral)
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -6845,7 +6846,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_COMPARECELLS,'Compare Cells','Compare Unit Cells using NIST*LATTICE')
         self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare polyhedra','Compare polyhedra to ideal octahedra/tetrahedra')
         self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)   
-        self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')        
+        self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')
+        self.GeneralCalc.Append(G2G.wxID_USEBILBAOSUB,'Make subgroup project file','If disabled, make in PWDR/Unit Cells')
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         

@@ -1871,7 +1871,7 @@ def UpdateMasks(G2frame,data):
                 nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
 
                 if fast and Mask['SpotMask'].get('FastSearch',True):
-                    print ('Fast pixel mask search for',name)
+                    print ('Fast pixel mask search for '+name)
                     wx.BeginBusyCursor()
                     time0 = time.time()
                     if Mask['SpotMask'].get('ClearPrev',True) or Mask['SpotMask']['spotMask'] is None:
@@ -1884,7 +1884,7 @@ def UpdateMasks(G2frame,data):
                     wx.EndBusyCursor()
                     continue
                 else:
-                    print ('Std pixel mask search for',name)
+                    print ('Std pixel mask search for '+name)
                     try:
                         dlg = wx.ProgressDialog("Pixel mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
                             style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)

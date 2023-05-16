@@ -1884,7 +1884,7 @@ def UpdateMasks(G2frame,data):
                     wx.EndBusyCursor()
                     continue
                 else:
-                    print ('Std pixel mask search for,+name)
+                    print ('Std pixel mask search for',name)
                     try:
                         dlg = wx.ProgressDialog("Pixel mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
                             style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)

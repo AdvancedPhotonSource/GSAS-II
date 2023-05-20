@@ -118,10 +118,6 @@ ElTable = [
     (["Cf",],                 11.5,7.5, "Californium", REcolor,          1.764,(161,54,212)),
     (["Va",],                 13.5,7.5, "Vacancy",     White,            0.000,(255,255,255)),
     (["Q",],                  14.5,7.5, "Special form factor", REcolor,  0.000,(161,54,212)),
-    # (["Qa",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
-    # (["Qb",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
-    # (["Qc",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
-    # (["Qd",],                    -1,-1, "Special form factor", REcolor,  0.000,(161,54,212)),
     (["None",],                  15.5,7.5, "No element choice",REcolor,     0.000,(161,54,212)),
     ]
 
@@ -158,14 +154,22 @@ MagElTable = [
     (["Yb","Yb+2","Yb+3"],                              15.5,6.5, "Ytterbium",   REcolor,          0.750,(0,191,56)),
     (["Hf","Hf+2","Hf+3"],                                   3,5, "Hafnium",     Metcolor,         0.804,(77,194,255)),
     (["Ta","Ta+2","Ta+3","Ta+4"],                            4,5, "Tantalum",    Metcolor,         0.834,(77,166,255)),
-    (["W","W+1","W+2","W+3","W+4","W+5"],               5,5, "Tungsten",    Metcolor,         0.864,(33,148,214)),
-    (["Re","Re+1","Re+2","Re+3","Re+4","Re+5","Re+6"],  6,5, "Rhenium",     Metcolor,         0.900,(38,125,171)),
-    (["Os","Os+1","Os+2","Os+3","Os+4","Os+5","Os+6","Os+7"],  7,5, "Osmium",      Metcolor,         0.919,(38,102,150)),
-    (["Ir","Ir+1","Ir+2","Ir+3","Ir+4","Ir+5","Ir+6"],  8,5, "Iridium",     Metcolor,         0.948,(23,84,135)),
+    (["W","W+1","W+2","W+3","W+4","W+5"],                    5,5, "Tungsten",    Metcolor,         0.864,(33,148,214)),
+    (["Re","Re+1","Re+2","Re+3","Re+4","Re+5","Re+6"],       6,5, "Rhenium",     Metcolor,         0.900,(38,125,171)),
+    (["Os","Os+1","Os+2","Os+3","Os+4","Os+5","Os+6","Os+7"],  7,5, "Osmium",    Metcolor,         0.919,(38,102,150)),
+    (["Ir","Ir+1","Ir+2","Ir+3","Ir+4","Ir+5","Ir+6"],       8,5, "Iridium",     Metcolor,         0.948,(23,84,135)),
     (["Pt","Pt+1","Pt+2","Pt+3","Pt+4","Pt+5","Pt+6"],       9,5, "Platinium",   Metcolor,         0.984,(208,208,224)),
     (["Au","Au+1","Au+2","Au+3","Au+4","Au+5"],             10,5, "Gold",        Metcolor,         1.014,(255,209,35)),
-    (["U","U+3","U+4","U+5"],                           5.5,7.5, "Uranium",     REcolor,          1.470,(0,143,255)),
+    (["U","U+3","U+4","U+5"],                            5.5,7.5, "Uranium",     REcolor,          1.470,(0,143,255)),
     (["Np","Np+3","Np+4","Np+5","Np+6"],                 6.5,7.5, "Neptunium",   REcolor,       1.536,(0,128,255)),
     (["Pu","Pu+3","Pu+4","Pu+5","Pu+6"],                 7.5,7.5, "Plutonium",   REcolor,       1.584,(0,107,255)),
     (["Am","Am+2","Am+3","Am+4","Am+5","Am+6","Am+7"],   8.5,7.5, "Americium",   REcolor,          1.626,(84,92,242)),
     ]
+
+OrbsElTable = [
+    (["B",],                      12,1, "Boron",       NonMetcolor,     0.0012,(255,181,181)),
+    (["C",],                      13,1, "Carbon",      NonMetcolor,     0.0018,(144,144,144)),
+    (["N",],                      14,1, "Nitrogen",    NonMetcolor,     0.0030,(48,80,248)),
+    (["O","O-1","O-2"],           15,1, "Oxygen",      NonMetcolor,     0.0042,(255,13,13)),
+    (["F","F-1"],                 16,1, "Fluorine",    NonMetcolor,     0.0054,(144,224,80)),
+]

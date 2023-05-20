@@ -11877,10 +11877,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     shoSizer.Add(wx.StaticText(RigidBodies,label=' Radius: '),0,WACV)
                     shoSizer.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Radius'][iSh],0,nDig=(8,5),xmin=0.0,xmax=5.0,
                         typeHint=float,size=(70,-1),OnLeave=NewSHC),0,WACV)
-                    radref = wx.CheckBox(RigidBodies,label=' refine? ')
-                    radref.SetValue(RBObj['Radius'][iSh][1])
-                    radref.Bind(wx.EVT_CHECKBOX,OnRadRef)
-                    Indx[radref.GetId()] = iSh
+                    if 'Q' in RBObj['atType'][iSh]:
+                        radref = wx.StaticText(RigidBodies,label=' For drawing only')
+                    else:
+                        radref = wx.CheckBox(RigidBodies,label=' refine? ')
+                        radref.SetValue(RBObj['Radius'][iSh][1])
+                        radref.Bind(wx.EVT_CHECKBOX,OnRadRef)
+                        Indx[radref.GetId()] = iSh
                     shoSizer.Add(radref,0,WACV)
                     shSizer.Add(shoSizer)
                     if not RBObj['nSH'][iSh]:

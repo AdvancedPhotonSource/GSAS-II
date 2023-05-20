@@ -3397,6 +3397,18 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     data['Spin'][Indx[ObjId]]['atType'] = El
                     data['Spin'][Indx[ObjId]]['Color'] = G2elem.GetAtomInfo(El)['Color']
                     Obj.ChangeValue(El)
+                    if 'Q' in El:
+                        wx.CallAfter(UpdateSpinRB)
+                    
+        def OnElSel(event):
+            Obj = event.GetEventObject()
+            ObjId = event.GetId()
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=False,ifOrbs=True)
+            if PE.ShowModal() == wx.ID_OK:
+                if PE.Elem != 'None':
+                    El = PE.Elem.strip().lower().capitalize()
+                    data['Spin'][Indx[ObjId]]['elType'] = El
+                    Obj.ChangeValue(El)
                    
         def OnSymSel(event):
             ObjId = event.GetId()
@@ -3423,26 +3435,43 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         else:
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
-        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells/nonspherical atoms (radius=0):'),0,WACV)
-        bodSizer = wx.FlexGridSizer(0,5,5,5)
+        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells/nonspherical atoms (Atom=Q & select Orbitals):'))
+        nQ = 0
+        for spinID in data['Spin']:
+            if 'Q' in data['Spin'][spinID]['atType']:
+                nQ += 1
+        if nQ:
+            bodSizer = wx.FlexGridSizer(0,6,5,5)
+        else:
+            bodSizer = wx.FlexGridSizer(0,5,5,5)
         for item in ['Name','Type','RB sym','Atom','Number']:
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label=item))
         for ibod,spinID in enumerate(data['Spin']):
+            if nQ:
+                bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Orbitals from'))
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
             data['Spin'][spinID]['rbType'] = 'Q'    #patch
-            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','4/mmm','-42m','mmm','2/m','-1','1']
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','4/mmm','-42m','mmm','2/m','-1','1']
             data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
             simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[simsel.GetId()] = spinID
             simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
             bodSizer.Add(simsel)
-            atSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['atType'])
-            atSel.Bind(wx.EVT_TEXT,OnAtSel)
+            atSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['atType'],style=wx.TE_PROCESS_ENTER)
+            atSel.Bind(wx.EVT_TEXT_ENTER,OnAtSel)
             Indx[atSel.GetId()] = spinID
             bodSizer.Add(atSel,0)
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'Natoms'))
+            if 'Q' in data['Spin'][spinID]['atType']:
+                data['Spin'][spinID]['elType'] = data['Spin'][spinID].get('elType','C')
+                elSel = wx.TextCtrl(SpinRBDisplay,value=data['Spin'][spinID]['elType'],style=wx.TE_PROCESS_ENTER)
+                elSel.Bind(wx.EVT_TEXT_ENTER,OnElSel)
+                Indx[elSel.GetId()] = spinID
+                bodSizer.Add(elSel,0)
+            elif nQ:
+                bodSizer.Add((5,5))
         
         SpinRBSizer.Add(bodSizer)
         SpinRBSizer.Add((5,25),)
@@ -3508,8 +3537,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),0,WACV)
-            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'],
-                                     style=wx.TE_PROCESS_ENTER)
+            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'],style=wx.TE_PROCESS_ENTER)
             RBname.Bind(wx.EVT_LEAVE_WINDOW, OnRBName)
             RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
             RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)

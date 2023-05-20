@@ -2162,11 +2162,11 @@ def RBChk(sytsym,L,M):
             if not M%3: return True,1.0     #P?
         elif sytsym == '-3' or sytsym == '-3(111)':
             if not L%2 and not M%3: return True,1.0    #P?
-        elif sytsym == '32(100)' or sytsym == '32(111)':
+        elif sytsym in ['32','32(100)','32(111)']:
             if not M%3: return True,-1.0**L
         elif sytsym == '32(120)':
             if not M%3: return True,-1.0**(L-M)
-        elif sytsym in ['3m(100)','3m(111)']:
+        elif sytsym in ['3m','3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
         elif sytsym == '3m(120)':
             if not M%3: return True,1.0

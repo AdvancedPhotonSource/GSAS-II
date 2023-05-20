@@ -1311,7 +1311,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         iBeg = 0
                         iFin = min(iBeg+6,nCoeff)
                         for block in range(nBlock):
-                            if not block:
+                            if not block and 'Q' not in RB['atType']:
                                 ptlbls = ' names :%12s'%'Radius'
                                 ptstr =  ' values:%12.4f'%RB['Radius'][ish][0]
                                 ptref =  ' refine:%12s'%RB['Radius'][ish][1]                               
@@ -1444,7 +1444,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             iFin = min(iBeg+10,nCoeff)
         
     def MakeRBParms(rbKey,phaseVary,phaseDict):
-        #### patch 2/24/21 BHT: new param, AtomFrac in RB
+        # patch 2/24/21 BHT: new param, AtomFrac in RB
         if 'AtomFrac' not in RB and rbKey != 'S': raise Exception('out of date RB: edit in RB Models')
         # end patch
         if rbKey == 'S':
@@ -1487,7 +1487,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             XYZ = Atom[cx:cx+3]
         pfxRB = pfx+'RB'+rbKey+'O'        
         A,V = G2mth.Q2AV(RB['Orient'][0])
-        fixAxis = [0, np.abs(V).argmax()+1]
+#        fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
             name = pfxRB+ostr[i]+':'+sfx
             phaseDict[name] = RB['Orient'][0][i]
@@ -1565,10 +1565,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             if not len(Shcof):
                 continue
             rbid = str(rbids.index(RB['RBId'][ish]))
-            name = '%sRBSSh;%d;Radius:%s:%s'%(pfx,ish,iAt,rbid)
-            phaseDict[name] = RB['Radius'][ish][0]
-            if RB['Radius'][ish][1]:
-                phaseVary += [name,]
+            if 'Q' not in RB['atType']:
+                name = '%sRBSSh;%d;Radius:%s:%s'%(pfx,ish,iAt,rbid)
+                phaseDict[name] = RB['Radius'][ish][0]
+                if RB['Radius'][ish][1]:
+                    phaseVary += [name,]
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]
@@ -4193,14 +4194,18 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
     '''
     out = []
     name = pfx+rbfx+'Radius'+rbsx
-    namstr = '  names :%12s'%'Radius'
-    valstr = '  values:%12.5f'%parmDict[name]
-    sigstr = '  esds  :'
-    if name in sigDict:
-        sigstr += '%12.5f'%sigDict[name]
-        [name]
+    if name in parmDict:
+        namstr = '  names :%12s'%'Radius'
+        valstr = '  values:%12.5f'%parmDict[name]
+        sigstr = '  esds  :'
+        if name in sigDict:
+            sigstr += '%12.5f'%sigDict[name]
+        else:
+            sigstr += 12*' '
     else:
-        sigstr += 12*' '
+        namstr = '  names :'
+        valstr =  '  values:'
+        sigstr =  '  esds  :'
     out.append(' Sp.harm.:\n')
     for item in SHC:
         name = pfx+rbfx+item+rbsx

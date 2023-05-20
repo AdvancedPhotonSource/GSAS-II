@@ -21,10 +21,11 @@ class PickElement(wx.Dialog):
         oneOnly if True element symbols are provided, otherwise select valence
         ifNone if True show None button
         ifMag if True present magnetic scatters only
+        ifOrbs if True present orbital form actors only
         multiple if True multiple elements can be selected
     '''
     Elem=None
-    def _init_ctrls(self,prnt,ifMag=False):
+    def _init_ctrls(self,prnt,ifMag=False,ifOrbs=False):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
@@ -38,6 +39,8 @@ class PickElement(wx.Dialog):
         Elems = ET.ElTable
         if ifMag:
             Elems = ET.MagElTable
+        if ifOrbs:
+            Elems = ET.OrbsElTable
         for E in Elems:
             if E[1] < 0: continue
             if self.oneOnly:
@@ -53,11 +56,11 @@ class PickElement(wx.Dialog):
                 pos=wxPoint(16.5*self.butWid+25,7.75*24+24),label="Done")
             b.Bind(wx.EVT_BUTTON, self.OnClose)
 
-    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,multiple=False):
+    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,ifOrbs=False,multiple=False):
         self.oneOnly = oneOnly
         self.ifNone = ifNone
         self.multiple = multiple
-        self._init_ctrls(parent,ifMag=ifMag)
+        self._init_ctrls(parent,ifMag=ifMag,ifOrbs=ifOrbs)
         self.elementList = []
         
     def ElButton(self, name, pos, tip, color):

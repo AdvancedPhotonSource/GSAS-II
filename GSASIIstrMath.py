@@ -169,8 +169,9 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 RBObj['Orient'][0][i] = parmDict[name]                
             for ish in range(len(RBObj['RBId'])):
                 jrb = SRBIds.index(RBObj['RBId'][ish])
-                name = pfx+'RBSSh;%d;Radius:%d:%d'%(ish,iAt,jrb)
-                RBObj['Radius'][ish][0] = parmDict[name]
+                if 'Q' not in RBObj['atType']:
+                    name = pfx+'RBSSh;%d;Radius:%d:%d'%(ish,iAt,jrb)
+                    RBObj['Radius'][ish][0] = parmDict[name]
                 for item in RBObj['SHC'][ish]:
                     name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,iAt,jrb)
                     RBObj['SHC'][ish][item][0] = parmDict[name]
@@ -375,7 +376,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             SQR = np.repeat(SQ,HKL.shape[1])
             FF[:,iAt] = 0.
             ishl = 0
-#            dBSdR = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
@@ -393,20 +393,27 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                 if shl not in SHdat:
                     break
                 Shell = SHdat[shl]
-                R = Shell['Radius']
                 Atm = Shell['AtType']
                 Nat = Shell['Natoms']
                 Irb = Shell['ShR']
                 if 'X' in hType:
-                    SFF = G2el.ScatFac(FFtables[Atm],SQR)
+                    if 'Q' in Atm:
+                        SFF = 0.0
+                    else:
+                        SFF = G2el.ScatFac(FFtables[Atm],SQR)
                 elif 'N' in hType:
                     SFF = G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
-                R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
-                R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
-                R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
-                dBSdR = Nat*SFF*(R0P-R0M)/0.02
-                FF[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
+                if 'Q' in Atm:
+                    dBSdR= 0.0
+                    FF[:,iAt] = 0.0
+                else:
+                    R = Shell['Radius']
+                    R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
+                    R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
+                    R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
+                    dBSdR = Nat*SFF*(R0P-R0M)/0.02
+                    FF[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
@@ -420,10 +427,12 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                         SHMj = G2lat.KslCalc(item,ThMj,PhMj)
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
-                        if R > 0.:
-                            BS = sp.spherical_jn(l,QR*R)    #Bessel function
-                            BSP = sp.spherical_jn(l,QR*(R+0.01))
-                            BSM = sp.spherical_jn(l,QR*(R-0.01))
+                        if 'Q' in Atm:
+                            BS = sp.spherical_jn(l,1.0)    #Slater term here?
+                        else:
+                            BS = sp.spherical_jn(l,QR*R)/(4.*np.pi)    #Bessel function
+                            BSP = sp.spherical_jn(l,QR*(R+0.01))/(4.*np.pi)
+                            BSM = sp.spherical_jn(l,QR*(R-0.01))/(4.*np.pi)
                             dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
@@ -432,7 +441,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
                         FF[:,iAt] += Nat*SFF*BS*SH*Shell[item]
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdS[name] = Nat*SFF*BS*SH
-                dFFdS[Rname] = dBSdR
+                if 'Q' not in Atm:
+                    dFFdS[Rname] = dBSdR
                 ishl += 1
             dFFdS[Oname] = dSHdO
             dFFdS[Oiname] = dSHdOi
@@ -1143,17 +1153,14 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-#        dfadff = np.sum(fa[0]*Tcorr*atFlg/fot,axis=-2)           #ignores resonant scattering? #TODO needs only for Q atoms!
         dfadff = fa[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
-        # array(2,refBlk,nAtom,3) & array(2,refBlk,nAtom,6)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-#            dfbdff = np.sum(fb[0]*Tcorr*atFlg/fot,axis=-2)           #ignores resonant scattering?
-            dfbdff = fb[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq
+            dfbdff = fb[0]*Tcorr*atFlg/fot         #ignores resonant scattering? no sum on Uniq
             dfbdba = np.sum(-sinp*Tcorr,axis=-2)
             dfadfl = np.sum(np.sum(-fotp*sinp,axis=-1),axis=-1)
             dfbdfl = np.sum(np.sum(fotp*cosp,axis=-1),axis=-1)
@@ -1174,14 +1181,12 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/len(SGMT)
-#            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadff+fbs[:,:,nxs]*dfbdff,axis=0)/len(SGMT)
             dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadff[nxs,:,:,:]+fbs[:,:,nxs,nxs]*dfbdff[nxs,:,:,:],axis=0) #not summed on Uniq yet
             dFdx[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/len(SGMT)
-#            dFdff[iBeg:iFin] = (2.*SA[:,nxs]*dfadff+2.*SB[:,nxs]*dfbdff)/len(SGMT)
             dFdff[iBeg:iFin] = (2.*SA[:,nxs,nxs]*dfadff+2.*SB[:,nxs,nxs]*dfbdff)      #not summed on Uniq yet
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])

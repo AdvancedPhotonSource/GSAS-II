@@ -2897,10 +2897,13 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
             except KeyError:                        
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
-            if not HistoPhase[histogram]['Use']:        #remove previously created  & now unused phase reflection list
-                if phase in Histograms[histogram]['Reflection Lists']:
-                    del Histograms[histogram]['Reflection Lists'][phase]
-                continue
+            try:
+                if (not HistoPhase[histogram]['Use']) and 'Reflection Lists' in Histograms[histogram]:        #remove previously created  & now unused phase reflection list
+                    if phase in Histograms[histogram]['Reflection Lists']:
+                        del Histograms[histogram]['Reflection Lists'][phase]
+                    continue
+            except Exception as msg:
+                pass
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
             if 'PWDR' in histogram:

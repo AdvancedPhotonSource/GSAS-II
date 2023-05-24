@@ -3152,9 +3152,9 @@ def UpdatePhaseData(G2frame,Item,data):
             baseList = range(1,len(UCdata[5])+1)
         else:
             baseList = UCdata[0][16]
-        magKeep = []
-        magIds = []
-        magchoices = []
+        subKeep = []
+        subIds = []
+        subchoices = []
         ifMag = False
         itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(UCdata[5])]
         phaseDict = dict(zip(itemList,UCdata[5]))
@@ -3163,15 +3163,15 @@ def UpdatePhaseData(G2frame,Item,data):
                 phaseDict[mid]['No.'] = im+1
                 trans = G2spc.Trans2Text(phaseDict[mid]['Trans'])
                 vec = G2spc.Latt2text([phaseDict[mid]['Uvec'],])
-                magKeep.append(phaseDict[mid])
-                magIds.append(mid)
-                magchoices.append('(%d) %s; (%s) + (%s)'%(im+1,phaseDict[mid]['Name'],trans,vec))
-        if not len(magKeep):
-            G2frame.ErrorDialog('Subgroup/magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
+                subKeep.append(phaseDict[mid])
+                subIds.append(mid)
+                subchoices.append('(%d) %s; (%s) + (%s)'%(im+1,phaseDict[mid]['Name'],trans,vec))
+        if not len(subKeep):
+            G2frame.ErrorDialog('Subgroup phase selection error','No subgroups available; be sure to "Keep" some')
             return
         dlg = G2G.G2MultiChoiceDialog(G2frame,
                     'Make new project using subgroups','Select subgroup(s)',
-                    magchoices)
+                    subchoices)
         opt = dlg.ShowModal()
         sels = []
         if opt == wx.ID_OK:
@@ -3188,11 +3188,13 @@ def UpdatePhaseData(G2frame,Item,data):
         Restraints[phsnam]['Bond']['Bonds'] = []
         Restraints[phsnam]['Angle']['Angles'] = []
         savedRestraints = Restraints[phsnam]
+        orgData = copy.deepcopy(data)
         del Restraints[phsnam]
         for sel in sels:
-            magchoice = magKeep[sel]
+            data.update(copy.deepcopy(orgData))   # get rid of prev phase
+            magchoice = subKeep[sel]
             spg = magchoice['SGData']['SpGrp'].replace(' ','')
-            magId = magIds[sel]
+            subId = subIds[sel]
             # generate the new phase            
             newPhase = copy.deepcopy(data)
             generalData = newPhase['General']

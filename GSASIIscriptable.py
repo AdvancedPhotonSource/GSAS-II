@@ -4617,9 +4617,10 @@ class G2Phase(G2ObjectWrapper):
             gpx.save('restr-mod.gpx')
 
         This example locates the first phase in a project file, clears any previous
-        restraints. Then it places constraints on bonds between Si and O atoms at 
+        restraints. Then it places restraints on bonds between Si and O atoms at 
         1.64 A. Each restraint is weighted 1000 times in comparison to 
-        (obs-calc)/sigma for a data point. Note that the origin atoms are identified 
+        (obs-calc)/sigma for a data point. To show how atom selection can 
+        work, the origin atoms are identified here 
         by atom object while the target atoms are identified by atom index. 
         The methods are interchangeable. If atom labels are unique, then::
 

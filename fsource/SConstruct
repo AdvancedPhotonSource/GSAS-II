@@ -56,6 +56,18 @@ def GetBinaryDir():
     #pyver = 'p{}.{}'.format(*sys.version_info[0:2])
     npver = 'n' + pyVersions[3][:pyVersions[3].find('.',2)]
     return '_'.join([prefix,bits,pyver,npver])
+
+def find(name, path):
+    '~unix find command; returns first file found'
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+def findInPython(name):
+    'find a file in the current Python directory'
+    base = os.path.split(sys.executable)[0]
+    if not sys.platform == "win32":
+        base = os.path.split(base)[0]
+    return find(name,base)
 #==========================================================================================
 # misc initializations
 # need command-line options for fortran command and fortran options
@@ -284,35 +296,42 @@ else:
 #==========================================================================================
 # use the compiler choice to set compiler options, but don't change anything
 # specified on the command line
+pythonInc = os.path.split(findInPython('Python.h'))[0]
+numpyInc = os.path.split( os.path.split(findInPython('ndarraytypes.h'))[0] )[0]
+C2SO = None
+
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
     if sys.platform.startswith("linux") and "64" in PlatformBits:
-        if 'aarch' in platform.machine():
+        if 'aarch' in platform.machine():   # 64-bit Raspberry Pi 
             if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
-        else:
+        else:                               # 64-bit Intel Linux
             if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"' # --arch="-arch x86_64"'
-    elif sys.platform.startswith("linux") and 'arm' in platform.machine():
+            C2SO = 'gcc -shared -fPIC -I ' + pythonInc + ' -I ' + numpyInc
+    elif sys.platform.startswith("linux") and 'arm' in platform.machine():  # 32-bit Raspberry Pi 
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
-    elif sys.platform.startswith("linux"):
+    elif sys.platform.startswith("linux"): # 32-bit Intel Linux
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m32'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
     elif sys.platform == "darwin": # now 64 bit only
-        if 'arm' in PlatformBits:
+        if 'arm' in PlatformBits:   # Apple Silicon
             #LDFLAGS += " -arch x86_64 -m64"
             if FORTflags == "": FORTflags = ' -w -O2'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+            C2SO = 'clang -shared -undefined dynamic_lookup -I ' + pythonInc + ' -I ' + numpyInc
         else:
             LDFLAGS += " -arch x86_64 -m64"
             if FORTflags == "": FORTflags = ' -w -O2 -m64'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'
-    elif sys.platform == "win32" and "64" in PlatformBits:
+            C2SO = 'clang -shared -undefined dynamic_lookup -I ' + pythonInc + ' -I ' + numpyInc
+    elif sys.platform == "win32" and "64" in PlatformBits:  # 64-bit Windows
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
-    elif sys.platform == "win32":
+    elif sys.platform == "win32": # 32-bit windows
     	# the next line may need to be removed. When compiling with a 32-bit machine?
 	#if FORTflags == "": FORTflags = ' -w -O2 -m32'
         if F2PYflags == "":
@@ -384,6 +403,17 @@ def generate_nist(source, target, env, for_signature):
     return [cmd, installcmd]
 env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
 
+# build c-based .pyd/.so files
+def generate_c2so(source, target, env, for_signature):
+    if sys.platform == "win32":
+        installcmd = "copy $TARGET " + InstallLoc
+    else:
+        installcmd = "mv $TARGET " + InstallLoc
+    return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
+if C2SO:
+    c2so = Builder(generator = generate_c2so, suffix = F2PYsuffix, src_suffix = '.c')
+    env.Append(BUILDERS = {'c2so' : c2so},)
+
 #==========================================================================================
 # override from command-line options
 for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflags','LDFLAGS']:
@@ -425,6 +455,15 @@ for src in glob.glob('*.for'):
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
 
+clist = []
+if C2SO:
+    # add fmask.so/.pyd from fmask.c
+    src = 'fmask.c'
+    target = 'fmask' + F2PYsuffix # xxx.pyd or xxx.so
+    out = env.c2so(target,src)
+    #Clean(target, Glob(os.path.splitext(src)[0] + "*" + F2PYsuffix)) # this picks up old- & new-style .pyd/.so names
+    clist.append(target)
+
 exelist = []
 # NIST*LATTICE programs
 for src in 'LATTIC.f','convcell.f':
@@ -451,6 +490,9 @@ for mod in modlist: print (" " + mod,)
 print ("")
 print ('Will compile these executables:',)
 for mod in exelist: print (" " + mod,)
+print ("")
+print ('Will compile these C module(s):',)
+for mod in clist: print (" " + mod,)
 print ("")
 print (80*'=')
 print("Setting environment variables:")

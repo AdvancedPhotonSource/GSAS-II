@@ -170,6 +170,11 @@ if FCompiler == 'gfortran':
         LDFLAGS += ' -static-libgfortran'
         NISTcompileFlags += ' -static-libgfortran'
         print('Static LIBGfortran requested')
+        
+C_only = False
+if ARGUMENTS.get('C_ONLY', '').upper().startswith('T'):
+    C_only = True
+    print('Build of only C source code requested')
     
 #==========================================================================================
 # help
@@ -236,6 +241,8 @@ LDFLAGS='string'   -- string of options to be used for f2py during link step
 TMP=<path> --- where <path> is something like /tmp sets builds to be performed
    in that directory. 
 
+C_ONLY=T   -- causes build to only make the new fmask.so routine
+
 Note that at present, this has been tested with 32-bit python on windows and
 Mac & 64 bit on linux. 32-bit builds with anaconda/gfortran in 32-bit Python
 is not working, at least not when installed in 64-bits Linux/Windows. 
@@ -296,9 +303,15 @@ else:
 #==========================================================================================
 # use the compiler choice to set compiler options, but don't change anything
 # specified on the command line
-pythonInc = os.path.split(findInPython('Python.h'))[0]
-numpyInc = os.path.split( os.path.split(findInPython('ndarraytypes.h'))[0] )[0]
-C2SO = None
+
+try:
+    pythonInc = os.path.split(findInPython('Python.h'))[0]
+    numpyInc = os.path.split( os.path.split(findInPython('ndarraytypes.h'))[0] )[0]
+    if C_only: print('locations:\n',pythonInc,'\n',numpyInc)
+except TypeError:
+    numpyInc = pythonInc = ''
+    print('C header files not found from',os.path.split(sys.executable)[0])
+    if C_only: sys.exit()
 
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
@@ -351,6 +364,7 @@ else:
         sys.exit()
 if tmpdir:
     F2PYflags += " --build-dir " + tmpdir
+    
 #==========================================================================================
 # Setup build Environment
 if sys.platform == "win32":
@@ -425,6 +439,7 @@ for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflag
 liblist = []
 NISTlib = []
 for sub in glob.glob('*subs'):
+    if C_only: break
     filelist = []
     for file in glob.glob(os.path.join(sub,'*.for'))+glob.glob(os.path.join(sub,'*.f')):
         #target = os.path.splitext(file)[0]+'.o'
@@ -448,6 +463,7 @@ for sub in glob.glob('*subs'):
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
+    if C_only: break
     #break # bail out early for testing
     target = os.path.splitext(src)[0] + F2PYsuffix # xxx.pyd or xxx.so
     out = env.f2py(target,src)
@@ -467,6 +483,7 @@ if C2SO:
 exelist = []
 # NIST*LATTICE programs
 for src in 'LATTIC.f','convcell.f':
+    if C_only: break
     target = os.path.splitext(src)[0] + EXEsuffix
     out = env.nist(target,src)
     Clean(out, target)

@@ -922,7 +922,7 @@ class DIFFaXcontrols(wx.Dialog):
             parmsel.Bind(wx.EVT_COMBOBOX,OnParmSel)
             parmSel.Add(parmsel,0,WACV)
             mainSizer.Add(parmSel)
-            mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '),0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '))
             parmRange =  wx.BoxSizer(wx.HORIZONTAL)
             numChoice = [str(i+1) for i in range(10)]
 #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)

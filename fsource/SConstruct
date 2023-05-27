@@ -435,9 +435,9 @@ def generate_c2so(source, target, env, for_signature):
     else:
         installcmd = "mv $TARGET " + InstallLoc
     if type(C2SO) is list:
-            return [C2SO] + [installcmd]
-        else:
-            return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
+        return [C2SO] + [installcmd]
+    else:
+        return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
 if C2SO:
     c2so = Builder(generator = generate_c2so, suffix = F2PYsuffix, src_suffix = '.c')
     env.Append(BUILDERS = {'c2so' : c2so},)

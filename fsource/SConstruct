@@ -352,7 +352,7 @@ if FCompiler == 'gfortran':
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
-        C2SO = ['cl /EHsc /c fmask.c /I  ' + pythonInc + ' /I ' + numpyInc,
+        C2SO = ['cl /EHsc /c fmask.c /I ' + os.path.normpath(pythonInc) + ' /I ' + os.path.normpath(numpyInc),
                     ] # testing in progress
     elif sys.platform == "win32": # 32-bit windows
     	# the next line may need to be removed. When compiling with a 32-bit machine?

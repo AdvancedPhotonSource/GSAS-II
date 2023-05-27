@@ -307,11 +307,16 @@ else:
 try:
     pythonInc = os.path.split(findInPython('Python.h'))[0]
     numpyInc = os.path.split( os.path.split(findInPython('ndarraytypes.h'))[0] )[0]
+    if sys.platform == "win32":
+        pythonLib = os.path.split(findInPython('python310.lib'))[0]
+        if C_only: print('locations:\n',pythonLib,'\n',numpyInc)
     if C_only: print('locations:\n',pythonInc,'\n',numpyInc)
+    if sys.platform == "win32" and C_only: print(pythonLib)
 except TypeError:
     numpyInc = pythonInc = ''
     print('C header files not found from',os.path.split(sys.executable)[0])
     if C_only: sys.exit()
+C2SO = None
 
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
@@ -319,6 +324,7 @@ if FCompiler == 'gfortran':
         if 'aarch' in platform.machine():   # 64-bit Raspberry Pi 
             if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+            C2SO = 'gcc -shared -fPIC -I ' + pythonInc + ' -I ' + numpyInc # not tested
         else:                               # 64-bit Intel Linux
             if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"' # --arch="-arch x86_64"'
@@ -326,15 +332,17 @@ if FCompiler == 'gfortran':
     elif sys.platform.startswith("linux") and 'arm' in platform.machine():  # 32-bit Raspberry Pi 
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+        C2SO = 'gcc -shared -fPIC -I ' + pythonInc + ' -I ' + numpyInc # not tested
     elif sys.platform.startswith("linux"): # 32-bit Intel Linux
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m32'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
+        C2SO = 'gcc -shared -fPIC -I ' + pythonInc + ' -I ' + numpyInc # not tested
     elif sys.platform == "darwin": # now 64 bit only
         if 'arm' in PlatformBits:   # Apple Silicon
             #LDFLAGS += " -arch x86_64 -m64"
             if FORTflags == "": FORTflags = ' -w -O2'
             if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
-            C2SO = 'clang -shared -undefined dynamic_lookup -I ' + pythonInc + ' -I ' + numpyInc
+            C2SO = 'clang -shared -undefined dynamic_lookup -I ' + pythonInc + ' -I ' + numpyInc # works
         else:
             LDFLAGS += " -arch x86_64 -m64"
             if FORTflags == "": FORTflags = ' -w -O2 -m64'
@@ -344,6 +352,8 @@ if FCompiler == 'gfortran':
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
+        C2SO = ['cl /EHsc /c fmask.c /I  ' + pythonInc + ' /I ' + numpyInc,
+                    ] # testing in progress
     elif sys.platform == "win32": # 32-bit windows
     	# the next line may need to be removed. When compiling with a 32-bit machine?
 	#if FORTflags == "": FORTflags = ' -w -O2 -m32'
@@ -417,13 +427,17 @@ def generate_nist(source, target, env, for_signature):
     return [cmd, installcmd]
 env.Append(BUILDERS = {'nist' : Builder(generator = generate_nist)},)
 
-# build c-based .pyd/.so files
+# build c-based .pyd/.so files; for now only fmask.c; more work needed
+# for Windows if more c files are used.
 def generate_c2so(source, target, env, for_signature):
     if sys.platform == "win32":
         installcmd = "copy $TARGET " + InstallLoc
     else:
         installcmd = "mv $TARGET " + InstallLoc
-    return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
+    if type(C2SO) is list:
+            return [C2SO] + [installcmd]
+        else:
+            return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
 if C2SO:
     c2so = Builder(generator = generate_c2so, suffix = F2PYsuffix, src_suffix = '.c')
     env.Append(BUILDERS = {'c2so' : c2so},)

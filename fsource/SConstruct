@@ -435,18 +435,7 @@ def generate_c2so(source, target, env, for_signature):
     else:
         installcmd = "mv $TARGET " + InstallLoc
     if type(C2SO) is list:
-        cmds = ["cl /EHsc /c fmask.c" + " /I " +
-                    r'C:\Jenkins\miniforge3\envs\py310np123\include '
-                    + " /I " +
-                    r'C:\Jenkins\miniforge3\envs\py310np123\lib\site-packages\numpy\core\include',
-                 "link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH " +
-                    r'C:\Jenkins\miniforge3\envs\py310np123\libs\python310.lib',
-                installcmd]
-        print(cmds)
-        cmds = C2SO + [installcmd]
-        print(cmds)
-        return cmds
-#        return [C2SO] + [installcmd]
+        return C2SO + [installcmd]
     else:
         return [C2SO  + ' -o $TARGET ' + str(source[0]), installcmd]
 if C2SO:

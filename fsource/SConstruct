@@ -441,7 +441,7 @@ def generate_c2so(source, target, env, for_signature):
                     r'C:\Jenkins\miniforge3\envs\py310np123\include '
                     + " /I " +
                     r'C:\Jenkins\miniforge3\envs\py310np123\lib\site-packages\numpy\core\include',
-                 "link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH" +
+                 "link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH " +
                     r'C:\Jenkins\miniforge3\envs\py310np123\libs\python310.lib',
                 installcmd]
         print(cmds)

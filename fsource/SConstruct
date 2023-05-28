@@ -351,11 +351,9 @@ if FCompiler == 'gfortran':
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
-        C2SO = ['cl /EHsc /c fmask.c /I ' + os.path.normpath(pythonInc) # + ' /I ' + os.path.normpath(numpyInc),
-
-#        'link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH ' + pythonLib,
-
-                    ] # testing in progress
+        C2SO = ['cl /EHsc /c fmask.c /I ' + os.path.normpath(pythonInc) + ' /I ' + os.path.normpath(numpyInc),
+                'link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH ' + pythonLib,
+                ]
     elif sys.platform == "win32": # 32-bit windows
     	# the next line may need to be removed. When compiling with a 32-bit machine?
 	#if FORTflags == "": FORTflags = ' -w -O2 -m32'
@@ -444,6 +442,8 @@ def generate_c2so(source, target, env, for_signature):
                  "link /DLL /OUT:fmask.pyd fmask.obj /LIBPATH " +
                     r'C:\Jenkins\miniforge3\envs\py310np123\libs\python310.lib',
                 installcmd]
+        print(cmds)
+        cmds = C2SO + [installcmd]
         print(cmds)
         return cmds
 #        return [C2SO] + [installcmd]

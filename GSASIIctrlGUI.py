@@ -3275,18 +3275,18 @@ class G2ColumnIDDialog(wx.Dialog):
         Indx = {}
         for icol,col in enumerate(self.ColumnData):
             colSizer = wx.BoxSizer(wx.VERTICAL)
-            colSizer.Add(wx.StaticText(panel,label=' Column #%d Select:'%(icol)),0,WACV)
+            colSizer.Add(wx.StaticText(panel,label=' Column #%d Select:'%(icol)))
             self.sel.append(wx.ComboBox(panel,value=' ',choices=self.ChoiceList,style=wx.CB_READONLY|wx.CB_DROPDOWN))
             colSizer.Add(self.sel[-1])
             colData = wx.TextCtrl(panel,value='\n'.join(self.ColumnData[icol]),size=(120,-1),
                 style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
             colSizer.Add(colData,1,wx.ALL|wx.EXPAND,1)
-            colSizer.Add(wx.StaticText(panel,label=' Modify by:'),0,WACV)
+            colSizer.Add(wx.StaticText(panel,label=' Modify by:'))
             mod = wx.TextCtrl(panel,size=(120,-1),value='',style=wx.TE_PROCESS_ENTER)
             mod.Bind(wx.EVT_TEXT_ENTER,OnModify)
             mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
             Indx[mod.GetId()] = [icol,colData]
-            colSizer.Add(mod,0,WACV)
+            colSizer.Add(mod)
             columnsSizer.Add(colSizer,0,wx.ALL|wx.EXPAND,10)
         Sizer.Add(columnsSizer,1,wx.ALL|wx.EXPAND,1)
         Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0) 
@@ -8953,10 +8953,8 @@ def Load2Cells(G2frame,phase):
     tableSizer = wx.FlexGridSizer(0,9,0,0)
     tableSizer.Add((-1,-1))
     for l in u'abc\u03B1\u03B2\u03B3':
-        tableSizer.Add(wx.StaticText(dlg,label=l),
-                       0,WACV|wx.ALIGN_CENTER)
-    tableSizer.Add(wx.StaticText(dlg,label='Centering'),
-                       0,WACV|wx.ALIGN_LEFT)
+        tableSizer.Add(wx.StaticText(dlg,label=l),0,WACV|wx.ALIGN_CENTER)
+    tableSizer.Add(wx.StaticText(dlg,label='Centering'),0,WACV|wx.ALIGN_LEFT)
     tableSizer.Add((-1,-1))
     for cell in range(2):
         tableSizer.Add(wx.StaticText(dlg,label='Cell '+str(cell+1)),0,wx.ALIGN_CENTER|wx.RIGHT,5)
@@ -8995,11 +8993,9 @@ def Load2Cells(G2frame,phase):
     tableSizer.Add(volMaxLbl)
     sizer.Add(tableSizer,0,wx.EXPAND)
     tableSizer = wx.FlexGridSizer(0,2,0,0)
-    tableSizer.Add(wx.StaticText(dlg,label='Search mode: '),
-                       0,WACV|wx.ALIGN_LEFT)
-    tableSizer.Add(EnumSelector(dlg,nistInput,2,
-                    ['Integral matrices', 'Fractional matrices'],
-                    ['I','F'],OnChange=setRatioMax))
+    tableSizer.Add(wx.StaticText(dlg,label='Search mode: '),0,WACV|wx.ALIGN_LEFT)
+    tableSizer.Add(EnumSelector(dlg,nistInput,2,['Integral matrices', 'Fractional matrices'],
+        ['I','F'],OnChange=setRatioMax))
     sizer.Add(tableSizer,0,wx.EXPAND)
     btnSizer = wx.BoxSizer(wx.HORIZONTAL)
     btn = wx.Button(dlg, wx.ID_ANY,'Compute')

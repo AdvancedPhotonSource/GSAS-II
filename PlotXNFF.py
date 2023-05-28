@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-#testXNFF.py
+#PlotXNFF.py
 '''
-*testXNFF: Check x-ray & neutron form factor computation*
+*PlotXNFF: Check x-ray & neutron form factor computation*
 =========================================
 
-Use this to check form factors used in neutron scattering
+Use this to check form factors used in x-ray & neutron scattering
 
 '''
 

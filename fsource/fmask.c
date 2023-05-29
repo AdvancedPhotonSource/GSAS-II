@@ -179,7 +179,8 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
   // printf("TThs [0]=%f, [-1]=%f, delta=%f\n",TThsP[0],TThsP[nth-1],deltaTT);
 
   // array to count number of pixels in each 2theta ring
-  int size2Th[nth];
+  int *size2Th = (int*) malloc(nth * sizeof(int));
+  //int size2Th[nth];
   for (int ith=0; ith < nth; ++ith) {
     size2Th[ith] = 0;
   }
@@ -193,16 +194,17 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
     size2Th[i2TTh] += 1;
   }
   // make array of pointers to lists of intensities & positions for each ring
-  int *pixIntP[nth];
-  int *pixLocP[nth];
+  //int *pixIntP[nth];
+  //int *pixLocP[nth];
+  int **pixIntP = (int**) malloc(nth * sizeof(int*));
+  int **pixLocP = (int**) malloc(nth * sizeof(int*));
   for (int ith=0; ith < nth; ++ith) {
     pixIntP[ith] = (int*) malloc(size2Th[ith] * sizeof(int));
     pixLocP[ith] = (int*) malloc(size2Th[ith] * sizeof(int));
   }
 
-  int pix2Th[nth];
   for (int ith=0; ith < nth; ++ith) {
-    pix2Th[ith] = 0;
+    size2Th[ith] = 0;
   }
   // loop over pixels and this time put them into the lists; test w/frame mask
   // but include pixels that are in outside integration range in statistics
@@ -212,16 +214,16 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
     i2TTh = (int) ((TAP[i] - TThsP[0]) / deltaTT);
     if (i2TTh < 0 || i2TTh >= nth) continue;
     // put in lists
-    pixIntP[i2TTh][pix2Th[i2TTh]] = imageP[i];
-    pixLocP[i2TTh][pix2Th[i2TTh]] = i;
-    pix2Th[i2TTh] += 1;
+    pixIntP[i2TTh][size2Th[i2TTh]] = imageP[i];
+    pixLocP[i2TTh][size2Th[i2TTh]] = i;
+    size2Th[i2TTh] += 1;
   }
   // loop over each ring where 2theta is ~same and where some pixels are in
   // allowed range; compute the median and MAD for the current ring and
   // then remove pixels that are within limits
   for (int ith=0; ith < nth; ++ith) {  // loop over rings 
     if (TThsP[ith]+deltaTT < ttmin || TThsP[ith] > ttmax) continue; // ring not needed
-    int count = pix2Th[ith];
+    int count = size2Th[ith];
     if (count < 10) continue;   // too few pixels to do any meaningful exclusion
 
     int *pixelsInt = pixIntP[ith];
@@ -259,6 +261,9 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
     free(pixIntP[ith]);
     free(pixLocP[ith]);
   } // end loop over rings
+  free(size2Th);
+  free(pixIntP);
+  free(pixLocP);
   return PyLong_FromLong(masked);
 }
 

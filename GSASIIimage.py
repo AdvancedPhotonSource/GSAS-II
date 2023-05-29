@@ -1741,30 +1741,26 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
 #     return mask
 
 def TestFastPixelMask():
-    '''Test if the fast (C++) version of Auto Pixel Masking is available.
+    '''Test if the fast (C) version of Auto Pixel Masking is available.
 
     :returns: True if the airxd.mask package can be imported; False otherwise.
     '''
     try:
-        if sys.platform == "darwin": # mac requires special version
-            from airxd.mask_mac import MASK
-        else:
-            from airxd.mask import MASK
+        import fmask
     except ModuleNotFoundError:
-        # if GSASIIpath.GetConfigValue('debug'): print('airxd not found')
+        if GSASIIpath.GetConfigValue('debug'): print('fmask not found')
         return False
-    # if GSASIIpath.GetConfigValue('debug'):
-    #     import airxd
-    #     print('airxd loaded from',airxd.__file__)
     return True
 
 def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''Find "bad" regions on an image and create a pixel mask to remove them.
-    This works by masking pixels that are well outside the range of the
-    median at that radial distance using the AIRXD C++ code
-    (https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB). Much faster than
-    AutoPixelMask.
-    Developed by Howard Yanxon, Wenqian Xu and James Weng. 
+    This works by masking pixels that are m*sigma outside the range of the
+    median at that radial distance using the using the fmask C module (based on the 
+    AIRXD C++ code https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB, developed 
+    by Howard Yanxon, Wenqian Xu and James Weng.)
+
+    This is much faster than  AutoPixelMask, which does pretty much the 
+    same computation, but uses pure Python/numpy code.
 
     Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image) 
     and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images) 
@@ -1778,15 +1774,40 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
       after integration
     :returns: a bool mask array with the same shape as Image 
     '''
+
+    try:
+        import fmask
+        if GSASIIpath.GetConfigValue('debug'): print('Loaded fmask from',fmask.__file__)
+    except:
+        return None
+    frame = Masks['Frames']
+    tam = ma.make_mask_none(Image.shape)
+    if frame:
+        tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
+    ttmin = float(Masks['SpotMask'].get('SearchMin',0.0))
+    ttmax = float(Masks['SpotMask'].get('SearchMax',180.0))
+    esdMul = float(Masks['SpotMask']['esdMul'])
+    TA = Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
+    LUtth = np.array(Controls['IOtth'])
+    TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
+
+    # fp = open('/tmp/maskdump.pickle','wb')   # make external test file 
+    # import pickle
+    # pickle.dump(tam,fp) # frame mask
+    # pickle.dump(TA,fp)  # 2theta values
+    # pickle.dump(Image,fp)  # image values 
+    # pickle.dump(TThs,fp)  # 2theta bins
+    # fp.close()
+        
+    print(' Fast mask: Spots greater or less than %.1f of median abs deviation are masked'%esdMul)
+    outMask = np.zeros_like(tam,dtype=bool).ravel()
     
-    if sys.platform == "darwin": # mac requires special version
-         from airxd.mask_mac import MASK
-    else:
-        from airxd.mask import MASK
-    mask = MASK(controls=Controls, shape=Image.shape)
-    #return mask.AutoSpotMask(Image, esdmul=Masks['SpotMask']['esdMul'])
-    # fix for bug that AIRXD.mask returns a Float array
-    return mask.AutoSpotMask(Image, esdmul=Masks['SpotMask']['esdMul']) == 1
+    if dlg: dlg.Update(10,"Fast scan in progress")
+    try:
+        masked = fmask.mask(esdMul, tam.ravel(), TA.ravel(), Image.ravel(), TThs, outMask, ttmin, ttmax)
+    except Exception as msg:
+        print('Exception in fmask.mask\n\t',msg)
+    return outMask.reshape(Image.shape)
     
 def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''Find "bad" regions on an image and creata a pixel mask to remove them.
@@ -1813,10 +1834,15 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''
     #if GSASIIpath.GetConfigValue('debug'): print('faster all-Python AutoPixelMask')
     try:
-        from scipy.stats import median_absolute_deviation as MAD
+        from scipy.stats import median_abs_deviation as newMAD # new in 1.5.0
+        def MAD(args,**kwargs):
+            kwargs['scale'] = 1.4826
+            return newMAD(args,**kwargs)
     except ImportError:
         try:
-            from scipy.stats import median_abs_deviation as MAD
+            from scipy.stats import median_absolute_deviation as MAD
+            if GSASIIpath.GetConfigValue('debug'): 
+                print('Using deprecated scipy.stats.median_absolute_deviation routine')
         except:
             print('Unable to load scipy.stats.median_abs_deviation')
             return None
@@ -1845,8 +1871,8 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
             continue
         if bin.size < 1:
             continue
-        median = np.nanmedian(bin)  
-        mad = MAD(bin, nan_policy='omit')       
+        median = np.nanmedian(bin)
+        mad = MAD(bin, nan_policy='omit')
         anom = np.abs(band-median)/mad <= esdMul
         mask |= (anom & masker)
         #print(TThs[it],sum(sum(masker))- sum(sum(anom & masker)))

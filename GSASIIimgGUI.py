@@ -558,7 +558,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
                 try:
                     pId = 0
                     oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
@@ -1813,14 +1813,19 @@ def UpdateMasks(G2frame,data):
 
         if G2img.TestFastPixelMask() and data['SpotMask'].get('FastSearch',True):
             wx.BeginBusyCursor()
+            dlg = wx.ProgressDialog("Pixel masking search",
+                        "Setting up fast scan",parent=G2frame)
+            dlg.Update(1)
+            dlg.CenterOnParent()
             time0 = time.time()
             if data['SpotMask'].get('ClearPrev',True) or data['SpotMask']['spotMask'] is None:
-                 data['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans)
+                 data['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans,dlg)
             else:
-                data['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans)
+                data['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans,dlg)
             print(' Pixel mask search time: %.2f sec'%((time.time()-time0)))
             wx.CallAfter(UpdateMasks,G2frame,data)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            dlg.Destroy()
             wx.EndBusyCursor()
             return
     
@@ -1829,7 +1834,7 @@ def UpdateMasks(G2frame,data):
 #                'NB: This can be slow (0.5 to 2 min)',
 #                'Pixel mask search', wx.OK|wx.CANCEL)
         dlg = wx.ProgressDialog("Pixel masking search for %d rings"%nChans,"Processed 2-theta rings = ",nChans+3,
-            style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+            style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
         time0 = time.time()
         mask = G2img.AutoPixelMask(G2frame.ImageZ,data,Controls,nChans,dlg)
         dlg.Destroy()
@@ -1873,21 +1878,27 @@ def UpdateMasks(G2frame,data):
                 if fast and Mask['SpotMask'].get('FastSearch',True):
                     print ('Fast pixel mask search for '+name)
                     wx.BeginBusyCursor()
+                    dlg = wx.ProgressDialog("Pixel masking search",
+                            "Setting up fast scan",parent=G2frame)
+                    dlg.Update(1)
+                    dlg.CenterOnParent()
                     time0 = time.time()
                     if Mask['SpotMask'].get('ClearPrev',True) or Mask['SpotMask']['spotMask'] is None:
                         Mask['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(
-                            G2frame.ImageZ,Mask,Controls,nChans)
+                            G2frame.ImageZ,Mask,Controls,nChans,dlg)
                     else:
                         Mask['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(
-                            G2frame.ImageZ,Mask,Controls,nChans)
+                            G2frame.ImageZ,Mask,Controls,nChans,dlg)
                     print('Pixel mask search time: %.2f sec'%((time.time()-time0)))
+                    dlg.Destroy()
                     wx.EndBusyCursor()
                     continue
                 else:
                     print ('Std pixel mask search for '+name)
                     try:
                         dlg = wx.ProgressDialog("Pixel mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
-                            style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+                            style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
+                                                    parent=G2frame)
                         time0 = time.time()
                         mask = G2img.AutoPixelMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
                         if mask is None: return  # aborted search
@@ -2097,11 +2108,11 @@ def UpdateMasks(G2frame,data):
         maxSizer.Add(autoSizer)
         return maxSizer
     
-    def OnDelBtn(event):
+    def OnDelPixMask(event):
         data['SpotMask'] = {'esdMul':3.,'spotMask':None}
         wx.CallAfter(UpdateMasks,G2frame,data)
-                
-    
+        G2plt.PlotExposedImage(G2frame,event=event)
+                    
     G2frame.dataWindow.ClearData()
     startScroll = None
     if G2frame.dataWindow:
@@ -2198,7 +2209,7 @@ def UpdateMasks(G2frame,data):
         numPix = np.count_nonzero(data['SpotMask']['spotMask'])
     spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Number of masked pixels: %d  '%numPix),0,WACV)
     delbtn = wx.Button(G2frame.dataWindow,label='Clear pixel mask')
-    delbtn.Bind(wx.EVT_BUTTON,OnDelBtn)
+    delbtn.Bind(wx.EVT_BUTTON,OnDelPixMask)
     spotSizer.Add(delbtn,0,WACV)
     mainSizer.Add(spotSizer,0)
     spotSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2220,22 +2231,22 @@ def UpdateMasks(G2frame,data):
     txt = wx.StaticText(G2frame.dataWindow,
                             label='  Pixel mask search range, 2theta min: ')
     spotSizer.Add(txt,0,WACV)
-    if data['SpotMask']['FastSearch']:
-        txt.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+#    if data['SpotMask']['FastSearch']:
+#        txt.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
     txt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,
                         loc=data['SpotMask'],
                         key='SearchMin',xmin=0.,xmax=180.,size=(40,25))
     spotSizer.Add(txt,0,WACV)
-    if data['SpotMask']['FastSearch']: txt.Enable(False)
+#    if data['SpotMask']['FastSearch']: txt.Enable(False)
     txt = wx.StaticText(G2frame.dataWindow,label='  2theta max: ')
     spotSizer.Add(txt,0,WACV)
-    if data['SpotMask']['FastSearch']:
-        txt.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+#    if data['SpotMask']['FastSearch']:
+#        txt.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
     txt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,
                         loc=data['SpotMask'],
                         key='SearchMax',xmin=0.,xmax=180.,size=(40,25))
     spotSizer.Add(txt,0,WACV)
-    if data['SpotMask']['FastSearch']: txt.Enable(False)
+#    if data['SpotMask']['FastSearch']: txt.Enable(False)
     mainSizer.Add(spotSizer,0)
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks (on plot, LB drag to move, shift-LB drag to resize, RB to delete)')

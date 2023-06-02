@@ -37,6 +37,8 @@ nistlattice = os.path.join(GSASIIpath.binaryPath,"LATTIC")
 convcell = os.path.join(GSASIIpath.binaryPath,"convcell")
 is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
+debug = False
+#debug = True
 
 centerLbl = {'P':'Primitive', 'A':'A-centered', 'B':'B-centered', 'C':'C-centered',
 	'F':'Face-centered', 'I':' Body-centered', 'R':'Rhombohedral', 'H':'Rhombohedral'}
@@ -183,7 +185,7 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
                 vol = float(re.split(r" *([\d\.-]*) *",s[2],maxsplit=1)[1])
                 celldict['output'].append((d,lat,vol,mat,'P',' ')) # note reduced cells are all primitive            
     except:
-        print('Parse error at line ',linenum)
+        print('ReduceCell parse error at line ',linenum)
         print(line)
         return celldict
     finally:
@@ -215,6 +217,8 @@ def ConvCell(redcell):
     p.stdin.close()
     # read output and parse
     err = p.stderr.read()
+    if debug and err:
+        print('ConvCell err=',err)
     line = '?'
     linenum = 0
     cell = []
@@ -222,8 +226,13 @@ def ConvCell(redcell):
     setting = ' '
     try:
         for b in p.stdout.readlines():
-            linenum += 1
             line = b.decode()
+            if '**WARNING**' in line: 
+                print('Note: Warning generated in conversion of reduced\n  cell',
+                      redcell,'\n  (Probably OK to ignore)')
+                continue
+            if not line.strip(): continue
+            linenum += 1
             if linenum == 1:
                 cell = [float(i) for i in line.split()[:6]]
                 center = line.split()[-1]
@@ -233,8 +242,13 @@ def ConvCell(redcell):
             if linenum == 2:
                 mat = np.array([float(i) for i in line.split()]).reshape(3,3)
     except:
-        print('Parse error at line ',linenum)
+        print('ConvCell parse error at line ',linenum)
         print(line)
+        if debug:
+            print("\nRemaining lines:")
+            for b1 in p.stdout.readlines():
+                print(b1.decode())
+        return None
         #return cell
     finally:
         p.terminate()
@@ -518,6 +532,9 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
                             red2convInp = inCnvCell[3]
                         redCell = ([j for j in (xformSum/xformCount)[:6]], 'P', ' ')
                         cnvCell = ConvCell(redCell[0][:6])
+                        if cnvCell is None:
+                            print('ConvCell failed on ',redCell[0][:6])
+                            continue
                         # steps to walk back conventional cell back to original
                         #c1 = G2lat.TransformCell(cnvCell[0],np.linalg.inv(cnvCell[3]))
                         #c2 = G2lat.TransformCell(c1[:6],im) # use last, as they are all equiv.
@@ -535,7 +552,7 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
 
         
     except Exception as msg:
-        print('Parse error at line ',lnum,'\n',msg)
+        print('CellSymSearch parse error at line ',lnum,'\nNote error:',msg)
         print(line)
         return celldict
     finally:
@@ -602,6 +619,9 @@ if __name__ == '__main__':  # test code
     
     cellin = [5.,5.,5.,85.,85.,85.,]
     cellList = ConvCell(cellin)
+    if cellList is None: 
+        print('ConvCell failed',cellin)
+        sys.exit()
     print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)
@@ -610,6 +630,9 @@ if __name__ == '__main__':  # test code
     print('\ntest from [5,6,7,90,105,90] C-Centered') # ==>  [5,6,7,90,105,90] C-Centered
     cellin = [3.9051,3.9051,7,99.537,99.537,100.389]
     cellList = ConvCell(cellin)
+    if cellList is None: 
+        print('ConvCell failed',cellin)
+        sys.exit()
     print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)
@@ -618,6 +641,9 @@ if __name__ == '__main__':  # test code
     print('\nHexagonal test (no change)')
     cellin = [5.,5.,7.,90.,90.,120.,]
     cellList = ConvCell(cellin)
+    if cellList is None: 
+        print('ConvCell failed',cellin)
+        sys.exit()
     print('Input reduced cell',showCell(cellin,'P',' '),'\nout',showCell(*cellList))
     mat = cellList[-1]
     print('test with\n',mat)

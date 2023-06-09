@@ -201,7 +201,9 @@ plotOpt['phaseList']  = []
 plotOpt['phaseLabels']  = {}
 plotOpt['fmtChoices']  = {}
 plotOpt['lineWid'] = '1'
-
+plotOpt['saveCSV'] = False
+plotOpt['CSVfile'] = None
+ 
 def Write2csv(fil,dataItems,header=False):
     '''Write a line to a CSV file
 
@@ -2320,6 +2322,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if event.key == KeyItem[0]:
                     KeyItem[1]()
                     break
+        elif event.key == 'v' and 'PWDR' in plottype and G2frame.SinglePlot:
+            plotOpt['CSVfile'] = G2G.askSaveFile(G2frame,'','.csv',
+                                        'Comma separated variable file')
+            if plotOpt['CSVfile']: plotOpt['saveCSV'] = True
         else:
             #print('no binding for key',event.key)
             return
@@ -3298,6 +3304,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      '/: normalize']
             else:
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
+            if G2frame.SinglePlot:
+                Page.Choice += ['v: CSV output of plot']
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
@@ -3630,7 +3638,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 lims = G2lat.Pos2dsp(Parms,lims)
             # limit lines
             Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=True,pickradius=3.))    
-            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=True,pickradius=3.)) 
+            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=True,pickradius=3.))
             # excluded region lines
             for i,item in enumerate(lims[1:]):
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=True,pickradius=3.))    
@@ -3829,6 +3837,41 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             DifLine = Plot.plot(X,D/ymax,colors[3],linewidth=1.5,
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
+                    # write a .csv file; not fully tested, but probably works where allowed
+                    if 'PWDR' in plottype and G2frame.SinglePlot and plotOpt['saveCSV']:
+                        plotOpt['saveCSV'] = False
+                        fp = open(plotOpt['CSVfile'],'w')
+                        Write2csv(fp,['"limits"',lims[0][0],lims[0][1]])
+                        l = []
+                        PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
+                        peaks = G2frame.GPXtree.GetItemPyData(PeakId)
+                        for i,item in enumerate(peaks['peaks']):
+                            if type(item) is dict: continue
+                            pos = item[0]
+                            if Page.plotStyle['qPlot']:
+                                l.append(2.*np.pi/G2lat.Pos2dsp(Parms,pos))
+                            elif Page.plotStyle['dPlot']:
+                                l.append(G2lat.Pos2dsp(Parms,pos))
+                            else:
+                                l.append(pos)
+                        if l: Write2csv(fp,['"peaks"']+l)
+                        peaks['LaueFringe'] = peaks.get('LaueFringe',{})
+                        l = []
+                        for pos in peaks['LaueFringe'].get('satellites',[]):
+                            if Page.plotStyle['qPlot']:
+                                l.append(2.*np.pi/G2lat.Pos2dsp(Parms,pos))
+                            elif Page.plotStyle['dPlot']:
+                                l.append(G2lat.Pos2dsp(Parms,pos))
+                            else:
+                                l.append(pos)
+                        if l: Write2csv(fp,['"satellites"']+l)
+
+                        Write2csv(fp,['masked X','X','obs','calc','bkg','diff'],header=True)
+                        for i in range(len(X)):
+                            Write2csv(fp,[X[i],X.data[i],Y[i],Z[i],W[i],D[i]],header=False)
+                        fp.close()
+                        print('file',plotOpt['CSVfile'],'written')
+                        
                 Page.SetToolTipString('')
                 if PickId:
                     if G2frame.GPXtree.GetItemText(PickId) == 'Peak List':

@@ -91,6 +91,31 @@ def SetPrintLevel(level):
         if mode in level.lower():
             printLevel = mode
             return
+
+def installScriptingShortcut():
+    '''Creates a file named G2script in the current Python site-packages directory.
+    This is equivalent to the "Install GSASIIscriptable shortcut" command in the GUI's
+    File menu. Once this is done, a shortcut for calling GSASIIscriptable is created, 
+    where the command:
+    
+    >>> import G2script as G2sc
+
+    will provide access to GSASIIscriptable without changing the sys.path; also see
+    :ref:`ScriptingShortcut`.
+
+    Note that this only affects the current Python installation. If more than one 
+    Python installation will be used with GSAS-II (for example because different 
+    conda environments are used), this command should be called from within each 
+    Python environment.
+
+    If more than one GSAS-II installation will be used with a Python installation, 
+    this shortcut can only be used with one of them.
+    '''
+    f = GSASIIpath.makeScriptShortcut()
+    if f:
+        G2fil.G2Print(f'success creating {f}')
+    else:
+        raise G2ScriptException('error creating G2script')
         
 def LoadG2fil():
     '''Setup GSAS-II importers. 
@@ -541,11 +566,11 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
                   'Yminmax': [Ymin, Ymax]}
     # apply user-supplied corrections to powder data
     if 'CorrectionCode' in Iparm1:
-        print('Applying corrections from instprm file')
+        G2fil.G2Print('Applying corrections from instprm file')
         corr = Iparm1['CorrectionCode'][0]
         try:
             exec(corr)
-            print('done')
+            G2fil.G2Print('done')
         except Exception as err:
             print(u'error: {}'.format(err))
             print('with commands -------------------')
@@ -715,7 +740,7 @@ def patchControls(Controls):
         if d not in Controls: Controls[d] = {}
         for k in Controls[d]:  
             if type(k) is str:
-                print("Applying patch to Controls['{}']".format(d))
+                G2fil.G2Print("Applying patch to Controls['{}']".format(d))
                 Controls[d] = {G2obj.G2VarObj(k):v for k,v in Controls[d].items()}
                 break
     conv = False
@@ -726,7 +751,7 @@ def patchControls(Controls):
                 conv = True
                 Controls['parmFrozen'][k] = [G2obj.G2VarObj(i) for i in Controls['parmFrozen'][k]]
                 break
-    if conv: print("Applying patch to Controls['parmFrozen']")
+    if conv: G2fil.G2Print("Applying patch to Controls['parmFrozen']")
     if 'newLeBail' not in Controls:
         Controls['newLeBail'] = False
     # end patch
@@ -1421,7 +1446,7 @@ class G2Project(G2ObjectWrapper):
         return []
 
     def _images(self):
-        """Returns a list of all the phases in the project.
+        """Returns a list of all the images in the project.
         """
         return [i[0] for i in self.names if i[0].startswith('IMG ')]
     
@@ -2084,7 +2109,7 @@ class G2Project(G2ObjectWrapper):
           :meth:`add_constraint_raw` as consType. Should be one of "Hist", "Phase", 
           or "HAP" ("Global" not implemented).
         """
-        print('G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()')
+        G2fil.G2Print('G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()')
         for var in vars:
             if isinstance(var, str):
                 var = self.make_var_obj(var)
@@ -2142,7 +2167,8 @@ class G2Project(G2ObjectWrapper):
 
         return G2obj.G2VarObj(phase, hist, varname, atomId)
 
-    def add_image(self, imagefile, fmthint=None, defaultImage=None, indexList=None):
+    def add_image(self, imagefile, fmthint=None, defaultImage=None,
+                      indexList=None, cacheImage=False):
         """Load an image into a project
 
         :param str imagefile: The image file to read, a filename.
@@ -2157,6 +2183,8 @@ class G2Project(G2ObjectWrapper):
           to be used from the file when a file has multiple images. A value of
           ``[0,2,3]`` will cause the only first, third and fourth images in the file
           to be included in the project. 
+        :param bool cacheImage: When True, the image is cached to save 
+          in rereading it later. Default is False (no caching). 
 
         :returns: a list of :class:`G2Image` object(s) for the added image(s) 
         """
@@ -2263,8 +2291,11 @@ class G2Project(G2ObjectWrapper):
                 'Sample z':0.0,'Sample load':0.0}
             self.names.append([TreeName]+['Comments','Image Controls','Masks','Stress/Strain'])
             self.data[TreeName] = ImgDict
-            del rd.Image
-            objlist.append(G2Image(self.data[TreeName], TreeName, self))
+            if cacheImage:
+                objlist.append(G2Image(self.data[TreeName], TreeName, self, image=rd.Image))
+            else:
+                objlist.append(G2Image(self.data[TreeName], TreeName, self))
+                del rd.Image
         return objlist
     
     def imageMultiDistCalib(self,imageList=None,verbose=False):
@@ -2719,6 +2750,9 @@ class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Has convenient accessors via @property:
     label, type, refinement_flags, coordinates, occupancy, ranId, id, adp_flag, uiso
 
+    Scripts should not try to create a :class:`G2AtomRecord` object directly as 
+    these objects are created inside a class:`G2Phase` object.
+
     Example:
 
     >>> atom = some_phase.atom("O3")
@@ -2840,6 +2874,9 @@ class G2PwdrData(G2ObjectWrapper):
           as documented for the :ref:`Powder Diffraction Tree<Powder_table>`.
           The actual histogram values are contained in the 'data' dict item,
           as documented for Data. 
+
+    Scripts should not try to create a :class:`G2PwdrData` object directly as 
+    :meth:`G2PwdrData.__init__` should be invoked from inside :class:`G2Project`.
 
     """
     def __init__(self, data, proj, name):
@@ -3673,6 +3710,9 @@ class G2Phase(G2ObjectWrapper):
         * G2Phase.name: contains the name of the phase
         * G2Phase.data: contains the phases's associated data in a dict,
           as documented for the :ref:`Phase Tree items<Phase_table>`.
+
+    Scripts should not try to create a :class:`G2Phase` object directly as 
+    :meth:`G2Phase.__init__` should be invoked from inside :class:`G2Project`.
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
@@ -4677,6 +4717,9 @@ class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the 
     results for a refinement
 
+    Scripts should not try to create a :class:`G2SeqRefRes` object directly as 
+    this object will be created when a .gpx project file is read. 
+
     As an example:: 
 
         from __future__ import division, print_function
@@ -4940,8 +4983,8 @@ class G2PDF(G2ObjectWrapper):
     """Wrapper for a PDF tree entry, containing the information needed to 
     compute a PDF and the S(Q), G(r) etc. after the computation is done. 
     Note that in a GSASIIscriptable script, instances of G2PDF will be created by 
-    calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`, not via calls 
-    to :meth:`G2PDF.__init__`.
+    calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`. 
+    Scripts should not try to create a :class:`G2PDF` object directly.
 
     Example use of :class:`G2PDF`::
 
@@ -5128,12 +5171,16 @@ blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
 'Integration block size; 256 seems to be optimal, must be <=1024 (for polymask)'
 
 def calcMaskMap(imgprms,mskprms):
-    '''Computes the mask array for a set of image controls and mask parameters
+    '''Computes a set of blocked mask arrays for a set of image controls and mask parameters. 
+    This capability is also provided with :meth:`G2Image.IntMaskMap`.
     '''
     return G2img.MakeUseMask(imgprms,mskprms,blkSize)
 
 def calcThetaAzimMap(imgprms):
-    '''Computes the array for theta-azimuth mapping for a set of image controls
+    '''Computes the set of blocked arrays for theta-azimuth mapping from 
+    a set of image controls, which can be cached and reused for  
+    integration of multiple images with the same calibration parameters. 
+    This capability is also provided with :meth:`G2Image.IntThetaAzMap`.
     '''
     return G2img.MakeUseTA(imgprms,blkSize)
 
@@ -5142,7 +5189,9 @@ class G2Image(G2ObjectWrapper):
 
     Note that in a GSASIIscriptable script, instances of G2Image will be created by 
     calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`. 
-    Scripts will not use ``G2Image()`` to call :meth:`G2Image.__init__` directly. 
+    Scripts should not try to create a :class:`G2Image` object directly as 
+    :meth:`G2Image.__init__` should be invoked from inside :class:`G2Project`.
+
     The object contains these class variables:
 
         * G2Image.proj: contains a reference to the :class:`G2Project`
@@ -5150,6 +5199,9 @@ class G2Image(G2ObjectWrapper):
         * G2Image.name: contains the name of the image
         * G2Image.data: contains the image's associated data in a dict,
           as documented for the :ref:`Image Data Structure<Image_table>`.
+        * G2Image.image: optionally contains a cached the image to 
+          save time in reloading. This is saved only when cacheImage=True
+          is specified when :meth:`G2Project.add_image` is called. 
 
     Example use of G2Image:
 
@@ -5162,7 +5214,8 @@ class G2Image(G2ObjectWrapper):
     >>> imlst[0].setControl('outAzimuths',3)
     >>> pwdrList = imlst[0].Integrate()
  
-    More detailed image processing examples are shown at :ref:`ImageProc`.
+    More detailed image processing examples are shown in the 
+    :ref:`ImageProc` section of this chapter.
 
     '''
     # parameters in that can be accessed via setControl. This may need future attention
@@ -5189,11 +5242,17 @@ class G2Image(G2ObjectWrapper):
     correct.
     ''' 
         
-    def __init__(self, data, name, proj):
+    def __init__(self, data, name, proj, image=None):
         self.data = data
         self.name = name
         self.proj = proj
+        self.image = image
 
+    def clearImageCache(self):
+        '''Clears a cached image, if one is present
+        '''
+        self.image = None
+        
     def setControl(self,arg,value):
         '''Set an Image Controls parameter in the current image.
         If the parameter is not found an exception is raised.
@@ -5389,7 +5448,7 @@ class G2Image(G2ObjectWrapper):
         '''load masks from an IMG tree entry
         '''
         return self.data['Masks']
-        
+    
     def setMasks(self,maskDict,resetThresholds=False):
         '''load masks dict (from :meth:`getMasks`) into current IMG record
 
@@ -5404,11 +5463,67 @@ class G2Image(G2ObjectWrapper):
             ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
             Imin = max(0.,np.min(ImageZ))
             Imax = np.max(ImageZ)
-            self.data['Masks']['Thresholds'] [(0,Imax),[Imin,Imax]]        
+            self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]        
 
+    def IntThetaAzMap(self):
+        '''Computes the set of blocked arrays for 2theta-azimuth mapping from 
+        the controls settings of the current image for image integration.
+        The output from this is optionally supplied as input to 
+        :meth:`~G2Image.Integrate`. Note that if not supplied, image 
+        integration will compute this information as it is needed, but this 
+        is a relatively slow computation so time can be saved by caching and 
+        reusing this computation for other images that have the 
+        same calibration parameters as the current image.
+        '''
+        return G2img.MakeUseTA(self.getControls(),blkSize)
+
+    def IntMaskMap(self):
+        '''Computes a series of masking arrays for the current image (based on 
+        mask input, but not calibration parameters or the image intensities). 
+        See :meth:`GSASIIimage.MakeMaskMap` for more details. The output from 
+        this is optionally supplied as input to :meth:`~G2Image.Integrate`).
+
+        Note this is not the same as pixel mask
+        searching (:meth:`~G2Image.GeneratePixelMask`).
+        '''
+        return G2img.MakeUseMask(self.getControls(),self.getMasks(),blkSize)
+            
+    def MaskThetaMap(self):
+        '''Computes the theta mapping matrix from the controls settings 
+        of the current image to be used for pixel mask computation
+        in :meth:`~G2Image.GeneratePixelMask`.
+        This is optional, as if not supplied, mask computation will compute
+        this, but this is a relatively slow computation and the
+        results computed here can be reused for other images that have the 
+        same calibration parameters.
+        '''
+        ImShape = self.getControls()['size']
+        return G2img.Make2ThetaAzimuthMap(self.getControls(), (0, ImShape[0]), (0, ImShape[1]))[0]
+    
+    def MaskFrameMask(self):
+        '''Computes a Frame mask from map input for the current image to be 
+        used for a pixel mask computation in 
+        :meth:`~G2Image.GeneratePixelMask`.
+        This is optional, as if not supplied, mask computation will compute
+        this, but this is a relatively slow computation and the
+        results computed here can be reused for other images that have the 
+        same calibration parameters.
+        '''
+        Controls = self.getControls()
+        Masks = self.getMasks()
+        frame = Masks['Frames']
+        if self.image is not None:
+            Image = self.image
+        else:
+            Image = _getCorrImage(Readers['Image'],self.proj,self)
+        tam = ma.make_mask_none(Image.shape)
+        if frame:
+            tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
+        return tam
+    
     def getVary(self,*args):
-        '''Return the refinement flag(s) for Image Controls parameter(s)
-        in the current image.
+        '''Return the refinement flag(s) for calibration of 
+        Image Controls parameter(s) in the current image.
         If the parameter is not found, an exception is raised.
 
         :param str arg: the name of a refinement parameter in the 
@@ -5416,7 +5531,6 @@ class G2Image(G2ObjectWrapper):
           'dep', 'det-X', 'det-Y', 'dist', 'phi', 'tilt', or 'wave'
         :param str arg1: the name of a parameter (dict entry) as before,
           optional
-
 
         :returns: a list of bool value(s)
         '''
@@ -5430,7 +5544,7 @@ class G2Image(G2ObjectWrapper):
     
     def setVary(self,arg,value):
         '''Set a refinement flag for Image Controls parameter in the 
-        current image.
+        current image that is used for fitting calibration parameters.
         If the parameter is not '*' or found, an exception is raised.
 
         :param str arg: the name of a refinement parameter in the 
@@ -5439,7 +5553,7 @@ class G2Image(G2ObjectWrapper):
           or it may be a list or tuple of names, 
           or it may be '*' in which all parameters are set accordingly.
         :param value: the value to set the parameter. The value is 
-          cast as the appropriate type from :data:`ControlList`.
+          cast as bool.
         '''
         if arg == '*':
             for a in self.data['Image Controls']['varyList']:
@@ -5477,11 +5591,18 @@ class G2Image(G2ObjectWrapper):
 
         :param str name: base name for created histogram(s). If None (default), 
           the histogram name is taken from the image name. 
-        :param list MaskMap: from :func:`calcMaskMap` 
-        :param list ThetaAzimMap: from :func:`calcThetaAzimMap`
+        :param list MaskMap: from :func:`IntMaskMap` 
+        :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
         :returns: a list of created histogram (:class:`G2PwdrData`) objects.
         '''
-        ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+        if self.image is not None:
+            ImageZ = self.image
+        else:
+            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+        # Apply a Pixel Mask to image, if present
+        Masks = self.getMasks()
+        if Masks.get('SpotMask',{'spotMask':None})['spotMask'] is not None:
+            ImageZ = ma.array(ImageZ,mask=Masks['SpotMask']['spotMask'])
         # do integration
         ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,
                 self.data['Image Controls'],self.data['Masks'],blkSize=blkSize,
@@ -5632,6 +5753,124 @@ class G2Image(G2ObjectWrapper):
             IntgOutList.append(self.proj.histogram(Aname))
         return IntgOutList
 
+    def TestFastPixelMask(self):
+        '''Tests to see if the fast (C) code for pixel masking is installed. 
+
+        :returns: A value of True is returned if fast pixel masking is 
+          available. Otherwise False is returned. 
+        '''
+        return G2img.TestFastPixelMask()
+
+    def GeneratePixelMask(self,esdMul=3.0,ttmin=0.,ttmax=180.,
+                              FrameMask=None,ThetaMap=None,
+                              fastmode=True,combineMasks=False):
+        '''Generate a Pixel mask with True at the location of pixels that are 
+        statistical outliers (in comparison with others with the same 2theta 
+        value.) The process for this is that a median is computed for pixels 
+        within a small 2theta window and then the median difference is computed 
+        from magnitude of the difference for those pixels from that median. The
+        medians are used for this rather than a standard deviation as the 
+        computation used here is less sensitive to outliers. 
+        (See :func:`GSASIIimage.AutoPixelMask` and 
+        :func:`scipy.stats.median_abs_deviation` for more details.)
+
+        Mask is placed into the G2image object where it will be 
+        accessed during integration. Note that this increases the .gpx file 
+        size significantly; use :meth:`~G2Image.clearPixelMask` to delete 
+        this if it need not be saved. 
+
+        This code is based on :func:`GSASIIimage.FastAutoPixelMask`
+        but has been modified to recycle expensive computations 
+        where possible.
+
+        :param float esdMul: Significance threshold applied to remove 
+          outliers. Default is 3. The larger this number, the fewer 
+          "glitches" that will be removed. 
+        :param float ttmin: A lower 2theta limit to be used for pixel 
+          searching. Pixels outside this region may be considered for
+          establishing the medians, but only pixels with 2theta >= :attr:`ttmin`
+          are masked. Default is 0.
+        :param float ttmax: An upper 2theta limit to be used for pixel 
+          searching. Pixels outside this region may be considered for
+          establishing the medians, but only pixels with 2theta < :attr:`ttmax`
+          are masked. Default is 180.
+        :param np.array FrameMask: An optional precomputed Frame mask 
+          (from :func:`~G2Image.MaskFrameMask`). Compute this once for 
+          a series of similar images to reduce computational time. 
+        :param np.array ThetaMap: An optional precomputed array that 
+          defines 2theta for each pixel, computed in 
+          :func:`~G2Image.MaskThetaMap`. Compute this once for 
+          a series of similar images to reduce computational time. 
+        :param bool fastmode: If True (default) fast Pixel map 
+          searching is done if the C module is available. If the 
+          module is not available or this is False, the pure Python
+          implementatruion is used. It is not clear why False is 
+          ever needed. 
+        :param bool combineMasks: When True, the current Pixel mask
+          will be combined with any previous Pixel map. If False (the
+          default), the Pixel map from the current search will 
+          replace any previous ones. The reason for use of this as 
+          True would be where different :attr:`esdMul` values are 
+          used for different regions of the image (by setting 
+          :attr:`ttmin` & :attr:`ttmax`) so that the outlier level 
+          can be tuned by combining different searches. 
+        '''
+        import math
+        sind = lambda x: math.sin(x*math.pi/180.)
+        if self.image is not None:
+            Image = self.image
+        else:
+            Image = _getCorrImage(Readers['Image'],self.proj,self)
+        Controls = self.getControls()
+        Masks = self.getMasks()
+        if FrameMask is None:
+            frame = Masks['Frames']
+            tam = ma.make_mask_none(Image.shape)
+            if frame:
+                tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
+        else:
+            tam = FrameMask
+        if ThetaMap is None:
+            TA = G2img.Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
+        else:
+            TA = ThetaMap
+        LUtth = np.array(Controls['IOtth'])
+        wave = Controls['wavelength']
+        dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
+        dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
+        x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
+        x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+        if not np.any(x0) or not np.any(x1):
+            raise Exception
+        numChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
+        if G2img.TestFastPixelMask() and fastmode:
+            import fmask
+            G2fil.G2Print(f'Fast mask: Spots greater or less than {esdMul:.1f} of median abs deviation are masked')
+            outMask = np.zeros_like(tam,dtype=bool).ravel()
+            TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
+            try:
+                masked = fmask.mask(esdMul, tam.ravel(), TA.ravel(),
+                                        Image.ravel(), TThs, outMask, ttmin, ttmax)
+            except Exception as msg:
+                print('Exception in fmask.mask\n\t',msg)
+                raise Exception(msg)
+            outMask = outMask.reshape(Image.shape)
+        else: # slow search, no sense using cache to save time
+            Masks['SpotMask']['SearchMin'] = ttmin
+            Masks['SpotMask']['SearchMax'] = ttmax
+            outMask = G2img.AutoPixelMask(Image, Masks, Controls, numChans)
+        if Masks['SpotMask'].get('spotMask') is not None and combineMasks:
+            Masks['SpotMask']['spotMask'] |= outMask
+        else:
+            Masks['SpotMask']['spotMask'] = outMask
+
+    def clearPixelMask(self):
+        '''Removes a pixel map from an image, to reduce the .gpx file 
+        size & memory use
+        '''
+        self.getMasks()['SpotMask']['spotMask'] = None
+            
+            
 ##########################
 # Command Line Interface #
 ##########################

@@ -44,10 +44,14 @@ def sfloat(S):
     return 0.0
 
 G2printLevel = 'all'
-'''This defines the level of output from calls to :func:`G2Print`, 
-which should  be used in place of print() within this module. 
-Settings for this are 'all', 'warn', 'error' or 'none'. Also see:
-:func:`G2Print` and :func:`G2SetPrintLevel`.
+'''This defines the level of output from calls to :func:`GSASIIfiles.G2Print`, 
+which should  be used in place of print() within GSASII where possible. 
+Settings for this are 'all', 'warn', 'error' or 'none'. Best to change this
+with :func:`G2SetPrintLevel`.
+
+.. seealso::
+    :func:`G2Print` 
+    :func:`G2SetPrintLevel`.
 '''
 
 def G2SetPrintLevel(level):

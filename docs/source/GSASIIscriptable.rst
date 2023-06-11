@@ -1,247 +1,284 @@
-=======================================
-*GSASIIscriptable: Scripting Interface*
-=======================================
+=========================================
+ *GSASIIscriptable: Scripting Interface*
+=========================================
 
 
 *Summary/Contents*
-==================================================
+==================
 
 Routines to use an increasing amount of GSAS-II's capabilities from scripts, 
 without use of the graphical user interface (GUI). GSASIIscriptable can create and access
 GSAS-II project (.gpx) files and can directly perform image handling and refinements.  
-The module defines wrapper classes (inheriting from :class:`G2ObjectWrapper`) for a growing number 
+The module defines wrapper classes (inheriting from :class:`~GSASIIscriptable.G2ObjectWrapper`) for a growing number 
 of data tree items.
 
 GSASIIscriptable can be used in two ways. It offers a command-line mode, but 
 the more widely used and more powerful mode of GSASIIscriptable is 
 used is via Python scripts that 
 call the module's application interface (API), see API summary that follows or the :ref:`API` 
-section. The command-line mode 
+section.
+
+While the command-line mode 
 provides access a number of features without writing Python scripts 
-via shell/batch commands (see :ref:`CommandlineInterface`) but this
+via shell/batch commands (see :ref:`CommandlineInterface`), use in practice
+seems somewhat clumsy. Command-line mode
 is no longer being developed and its use is discouraged.
 
 .. contents:: Section Contents 
 
+Installation of GSASIIscriptable
+================================
+
+GSASIIscriptable is included as part of a standard GSAS-II installation that includes the GSAS-II GUI (as described in the `installation instructions <https://subversion.xray.aps.anl.gov/trac/pyGSAS#Installationinstructions>`_). People who will will use scripting extensively will still need access to the GUI
+for some activities, since the scripting API has not yet been extended to all
+features of GSAS-II and even if that is ever completed, there will still be some things that GSAS-II does with the GUI would be almost impossible to implement without a interactive graphical view of the data.
+
+Nonetheless, there may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server.
+The minimal requirements for use of GSASIIscriptable are only Python, numpy and scipy, but additional optional requirements are described in 
+the :ref:`ScriptingRequirements`, which also provides some installation instructions.
+
+In a standard GSAS-II installation, no changes are made to Python. When the GUI is invoked, a small script or Windows batch file is used to start GSAS-II inside Python. When
+GSASIIscriptable is used, Python must be provided with the location of the GSAS-II files. There are two ways this can be done:
+
+* define the GSAS-II installation location in the Python ``sys.path``, or
+* install a reference to GSAS-II inside Python. 
+
+The latter method requires an extra installation step, but has the advantage that
+it allows writing portable GSAS-II scripts. This is discussed further in the
+:ref:`ScriptingShortcut` section of this chapter.
 
 Application Interface (API) Summary
-==================================================
+===================================
 This section of the documentation provides an overview to API, with full documentation 
 in the :ref:`API` section. The typical API use will be with a Python script, such as 
 what is found in :ref:`CodeExamples`. Most functionality is provided via the objects and methods
 summarized below.
 
-Overview of Classes 
----------------------
+Overview of Classes
+-------------------
 
 .. tabularcolumns:: |l|p{4in}|
 
-===============================    ===============================================================================================================
-class                              Encapsulates 
-===============================    ===============================================================================================================
-:class:`G2Project`                  A GSAS-II project file, provides references to objects below,
-                                    each corresponding to a tree item 
-                                    (exception is :class:`G2AtomRecord`)
-:class:`G2Phase`                    Provides phase information access 
-                                    (also provides access to atom info via :class:`G2AtomRecord`)
-:class:`G2AtomRecord`               Access to an atom within a phase
-:class:`G2PwdrData`                 Access to powder histogram info
-:class:`G2Image`                    Access to image info
-:class:`G2PDF`                      PDF histogram info
-:class:`G2SeqRefRes`                The sequential results table
-===============================    ===============================================================================================================
+=======================================   ===============================================================================================================
+class                                      Encapsulated by class 
+=======================================   ===============================================================================================================
+:class:`~GSASIIscriptable.G2Project`       A GSAS-II project file; provides references to objects below,
+                                           each corresponding to a tree item 
+                                           (exception is :class:`~GSASIIscriptable.G2AtomRecord`)
+:class:`~GSASIIscriptable.G2Phase`         Provides phase information access 
+                                           (also provides access to atom info via :class:`~GSASIIscriptable.G2AtomRecord`)
+:class:`~GSASIIscriptable.G2AtomRecord`               Access to an atom within a phase
+:class:`~GSASIIscriptable.G2PwdrData`                 Access to powder histogram info
+:class:`~GSASIIscriptable.G2Image`                    Access to image info
+:class:`~GSASIIscriptable.G2PDF`                      PDF histogram info
+:class:`~GSASIIscriptable.G2SeqRefRes`                The sequential results table
+=======================================   ===============================================================================================================
 
 Functions
----------------------
+---------
 
-A small amount of the Scriptable code does not require use of objects. 
+A small number of Scriptable routines do not require use of objects. 
 
 .. tabularcolumns:: |l|p{4in}|
 
-==================================================    ===============================================================================================================
+===================================================   ===============================================================================================================
 method                                                Use
-==================================================    ===============================================================================================================
-:func:`GenerateReflections`                            Generates a list of unique powder reflections 
-:func:`SetPrintLevel`                                  Sets the amout of output generated when running a script
-==================================================    ===============================================================================================================
+===================================================   ===============================================================================================================
+:func:`~GSASIIscriptable.GenerateReflections`         Generates a list of unique powder reflections 
+:func:`~GSASIIscriptable.SetPrintLevel`               Sets the amount of output generated when running a script 
+:func:`~GSASIIscriptable.installScriptingShortcut`    Installs GSASIIscriptable within Python as G2script
+===================================================   ===============================================================================================================
 
-Class :class:`G2Project`
----------------------------------
+Class :class:`~GSASIIscriptable.G2Project`
+---------------------------------------------
 
-  All GSASIIscriptable scripts will need to create a :class:`G2Project` object 
+  All GSASIIscriptable scripts will need to create a :class:`~GSASIIscriptable.G2Project` object 
   either for a new GSAS-II project or to read in an existing project (.gpx) file. 
   The most commonly used routines in this object are:
 
 .. tabularcolumns:: |l|p{3.in}|
 
-==================================================    ===============================================================================================================
+====================================================================    ===============================================================================================================
+method                                                                  Use
+====================================================================    ===============================================================================================================
+:meth:`~GSASIIscriptable.G2Project.save`                                Writes the current project to disk.
+
+:meth:`~GSASIIscriptable.G2Project.add_powder_histogram`                Used to read in powder diffraction data into a project file.
+
+:meth:`~GSASIIscriptable.G2Project.add_simulated_powder_histogram`      Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
+
+:meth:`~GSASIIscriptable.G2Project.add_image`                           Reads in an image into a project.
+
+:meth:`~GSASIIscriptable.G2Project.add_phase`                           Adds a phase to a project
+
+:meth:`~GSASIIscriptable.G2Project.add_PDF`                             Adds a PDF entry to a project (does not compute it)
+
+:meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` objects
+
+:meth:`~GSASIIscriptable.G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`~GSASIIscriptable.G2Phase` objects
+
+:meth:`~GSASIIscriptable.G2Project.images`                              Provides a list of images in the current project, as :class:`~GSASIIscriptable.G2Image` objects
+
+:meth:`~GSASIIscriptable.G2Project.pdfs`                                Provides a list of PDFs in the current project, as :class:`~GSASIIscriptable.G2PDF` objects
+
+:meth:`~GSASIIscriptable.G2Project.seqref`                              Returns a :class:`~GSASIIscriptable.G2SeqRefRes` object if there are Sequential Refinement results
+
+:meth:`~GSASIIscriptable.G2Project.do_refinements`                      This is passed a list of dictionaries, where each dict defines a refinement step. 
+                                                                        Passing a list with a single empty dict initiates a refinement with the current
+                                                                        parameters and flags. A refinement dict sets up a single refinement step 
+                                                                        (as described in :ref:`Project_dicts`). Also see :ref:`Refinement_recipe`.
+
+:meth:`~GSASIIscriptable.G2Project.set_refinement`                      This is passed a single dict which is used to set parameters and flags.
+                                                                        These actions can be performed also in :meth:`~GSASIIscriptable.G2Project.do_refinements`. 
+:meth:`~GSASIIscriptable.G2Project.get_Variable`                        Retrieves the value and esd for a parameter
+:meth:`~GSASIIscriptable.G2Project.get_Covariance`                      Retrieves values and covariance for a set of refined parameters
+:meth:`~GSASIIscriptable.G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
+                                                                        fit. (Also see :meth:`~GSASIIscriptable.G2Project.get_Controls` to read values.)
+:meth:`~GSASIIscriptable.G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
+:meth:`~GSASIIscriptable.G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
+:meth:`~GSASIIscriptable.G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables
+:meth:`~GSASIIscriptable.G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
+:meth:`~GSASIIscriptable.G2Project.add_EqnConstr`                       Adds an equation-type constraint on two or more variables
+:meth:`~GSASIIscriptable.G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
+====================================================================    ===============================================================================================================
+
+Class :class:`~GSASIIscriptable.G2Phase`
+-------------------------------------------
+
+
+  Another common object in GSASIIscriptable scripts is :class:`~GSASIIscriptable.G2Phase`, used to encapsulate each phase in a project, with commonly used methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+========================================================    ===============================================================================================================
+method                                                      Use
+========================================================    ===============================================================================================================
+:meth:`~GSASIIscriptable.G2Phase.set_refinements`           Provides a mechanism to set values and refinement flags for the phase. See :ref:`Phase_parameters_table` 
+                                                            for more details. This information also can be supplied within a call
+							    to :meth:`~GSASIIscriptable.G2Project.do_refinements` 
+                                                            or :meth:`~GSASIIscriptable.G2Project.set_refinement`.
+:meth:`~GSASIIscriptable.G2Phase.clear_refinements`         Unsets refinement flags for the phase. 
+:meth:`~GSASIIscriptable.G2Phase.set_HAP_refinements`       Provides a mechanism to set values and refinement flags for parameters specific to both this phase and 
+                                                            one of its histograms. See :ref:`HAP_parameters_table`. This information also can be supplied within 
+                                                            a call to :meth:`~GSASIIscriptable.G2Project.do_refinements` or :meth:`~GSASIIscriptable.G2Project.set_refinement`.
+:meth:`~GSASIIscriptable.G2Phase.clear_HAP_refinements`     Clears refinement flags specific to both this phase and one of its histograms.
+      :meth:`~GSASIIscriptable.G2Phase.getHAPvalues`        Returns values of parameters specific to both this phase and one of its histograms.
+:meth:`~GSASIIscriptable.G2Phase.copyHAPvalues`             Copies HAP settings between from one phase/histogram and to other histograms in same phase.
+:meth:`~GSASIIscriptable.G2Phase.atoms`                     Returns a list of atoms in the phase
+:meth:`~GSASIIscriptable.G2Phase.atom`                      Returns an atom from its label 
+:meth:`~GSASIIscriptable.G2Phase.histograms`                Returns a list of histograms linked to the phase
+:meth:`~GSASIIscriptable.G2Phase.get_cell`                  Returns unit cell parameters (also see :meth:`~GSASIIscriptable.G2Phase.get_cell_and_esd`)
+:meth:`~GSASIIscriptable.G2Phase.export_CIF`                Writes a CIF for the phase
+:meth:`~GSASIIscriptable.G2Phase.setSampleProfile`          Sets sample broadening parameters
+:meth:`~GSASIIscriptable.G2Phase.clearDistRestraint`        Clears any previously defined bond distance restraint(s) for the selected phase
+:meth:`~GSASIIscriptable.G2Phase.addDistRestraint`          Finds and defines new bond distance restraint(s) for the selected phase
+:meth:`~GSASIIscriptable.G2Phase.setDistRestraintWeight`    Sets the weighting factor for the bond distance restraints
+========================================================    ===============================================================================================================
+
+Class :class:`~GSASIIscriptable.G2PwdrData`
+---------------------------------------------
+
+  Another common object in GSASIIscriptable scripts is :class:`~GSASIIscriptable.G2PwdrData`, which encapsulate each powder diffraction histogram in a project, with commonly used methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+=======================================================  ===============================================================================================================
+method                                                     Use
+=======================================================  ===============================================================================================================
+:meth:`~GSASIIscriptable.G2PwdrData.set_refinements`     Provides a mechanism to set values and refinement flags for the powder histogram. See 
+                                                         :ref:`Histogram_parameters_table` for details.  
+:meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`   Unsets refinement flags for the the powder histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.residuals`           Reports R-factors etc. for the the powder histogram (also see :meth:`~GSASIIscriptable.G2PwdrData.get_wR`) 
+:meth:`~GSASIIscriptable.G2PwdrData.add_back_peak`       Adds a background peak to the histogram. Also see :meth:`~GSASIIscriptable.G2PwdrData.del_back_peak`
+                                                         and :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak`.
+:meth:`~GSASIIscriptable.G2PwdrData.fit_fixed_points`    Fits background to the specified fixed points.
+:meth:`~GSASIIscriptable.G2PwdrData.getdata`             Provides access to the diffraction data associated with the histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.reflections`         Provides access to the reflection lists for the histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.Export`              Writes the diffraction data or reflection list into a file
+:meth:`~GSASIIscriptable.G2PwdrData.add_peak`            Adds a peak to the peak list. Also see :ref:`PeakRefine`.
+:meth:`~GSASIIscriptable.G2PwdrData.set_peakFlags`       Sets refinement flags for peaks
+:meth:`~GSASIIscriptable.G2PwdrData.refine_peaks`        Starts a peak/background fitting cycle, returns refinement results
+:attr:`~GSASIIscriptable.G2PwdrData.Peaks`               Provides access to the peak list data structure
+:attr:`~GSASIIscriptable.G2PwdrData.PeakList`            Provides the peak list parameter values 
+:meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
+:meth:`~GSASIIscriptable.G2PwdrData.set_background`      Sets a background histogram that will be subtracted (point by point) from the current histogram.
+=======================================================  ===============================================================================================================
+
+Class :class:`~GSASIIscriptable.G2Image`
+-----------------------------------------
+
+  When working with images, there will be a :class:`~GSASIIscriptable.G2Image` object for each image (also see :meth:`~GSASIIscriptable.G2Project.add_image`  and :meth:`~GSASIIscriptable.G2Project.images`).
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+====================================================  ===============================================================================================================
 method                                                Use
-==================================================    ===============================================================================================================
-:meth:`G2Project.save`                                Writes the current project to disk.
-
-:meth:`G2Project.add_powder_histogram`                Used to read in powder diffraction data into a project file.
-
-:meth:`G2Project.add_simulated_powder_histogram`      Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
-
-:meth:`G2Project.add_image`                           Reads in an image into a project.
-
-:meth:`G2Project.add_phase`                           Adds a phase to a project
-
-:meth:`G2Project.add_PDF`                             Adds a PDF entry to a project (does not compute it)
-
-:meth:`G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`G2PwdrData` objects
-
-:meth:`G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`G2Phase` objects
-
-:meth:`G2Project.images`                              Provides a list of images in the current project, as :class:`G2Image` objects
-
-:meth:`G2Project.pdfs`                                Provides a list of PDFs in the current project, as :class:`G2PDF` objects
-
-:meth:`G2Project.seqref`                              Returns a :class:`G2SeqRefRes` object if there are Sequential Refinement results
-
-:meth:`G2Project.do_refinements`                      This is passed a list of dictionaries, where each dict defines a refinement step. 
-                                                      Passing a list with a single empty dict initiates a refinement with the current
-                                                      parameters and flags. A refinement dict sets up a single refinement step 
-                                                      (as described in :ref:`Project_dicts`). Also see :ref:`Refinement_recipe`.
-
-:meth:`G2Project.set_refinement`                      This is passed a single dict which is used to set parameters and flags.
-                                                      These actions can be performed also in :meth:`G2Project.do_refinements`. 
-:meth:`G2Project.get_Variable`                        Retrieves the value and esd for a parameter
-:meth:`G2Project.get_Covariance`                      Retrieves values and covariance for a set of refined parameters
-:meth:`G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
-                                                      fit. (Also see :meth:`G2Project.get_Controls` to read values.)
-:meth:`G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
-:meth:`G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
-:meth:`G2Project.add_HoldConstr`                      Adds a hold constraint on one or more variables
-:meth:`G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
-:meth:`G2Project.add_EqnConstr`                       Adds an equation-type constraint on two or more variables
-:meth:`G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
-==================================================    ===============================================================================================================
-
-Class :class:`G2Phase`
----------------------------------
+====================================================  ===============================================================================================================
+:meth:`~GSASIIscriptable.G2Image.Recalibrate`         Invokes a recalibration fit starting from the current Image Controls calibration coefficients.
+:meth:`~GSASIIscriptable.G2Image.Integrate`           Invokes an image integration All parameters Image Controls will have previously been set.
+:meth:`~GSASIIscriptable.G2Image.GeneratePixelMask`   Searches for "bad" pixels creating a pixel mask. 
+:meth:`~GSASIIscriptable.G2Image.setControl`          Set an Image Controls parameter in the current image. 
+:meth:`~GSASIIscriptable.G2Image.getControl`          Return an Image Controls parameter in the current image.
+:meth:`~GSASIIscriptable.G2Image.findControl`         Get the names of Image Controls parameters.
+:meth:`~GSASIIscriptable.G2Image.loadControls`        Load controls from a .imctrl file (also see :meth:`~GSASIIscriptable.G2Image.saveControls`).
+:meth:`~GSASIIscriptable.G2Image.loadMasks`           Load masks from a .immask file.
+:meth:`~GSASIIscriptable.G2Image.setVary`             Set a refinement flag for Image Controls parameter in the current image.
+                                                      (Also see :meth:`~GSASIIscriptable.G2Image.getVary`)
+:meth:`~GSASIIscriptable.G2Image.setCalibrant`        Set a calibrant type (or show choices) for the current image.
+:meth:`~GSASIIscriptable.G2Image.setControlFile`      Set a image to be used as a background/dark/gain map image.
+:meth:`~GSASIIscriptable.G2Image.getControls`         Returns the Image Controls dict for the current image. 
+:meth:`~GSASIIscriptable.G2Image.setControls`         Updates the Image Controls dict for the current image with specified key/value pairs.
+:meth:`~GSASIIscriptable.G2Image.getMasks`            Returns the Masks dict for the current image. 
+:meth:`~GSASIIscriptable.G2Image.setMasks`            Updates the Masks dict for the current image with specified key/value pairs.
+:meth:`~GSASIIscriptable.G2Image.IntThetaAzMap`       Computes the set of 2theta-azimuth mapping matrices to integrate the current image. 
+:meth:`~GSASIIscriptable.G2Image.IntMaskMap`          Computes the masking map for the current image for integration. 
+:meth:`~GSASIIscriptable.G2Image.MaskThetaMap`        Computes the 2theta mapping matrix to determine a pixel mask. 
+:meth:`~GSASIIscriptable.G2Image.MaskFrameMask`       Computes the Frame mask needed to determine a pixel mask. 
+:meth:`~GSASIIscriptable.G2Image.TestFastPixelMask`   Returns True if fast pixel masking is available.
+:meth:`~GSASIIscriptable.G2Image.clearImageCache`     Clears a saved image from memory, if one is present. 
+:meth:`~GSASIIscriptable.G2Image.clearPixelMask`      Clears a saved Pixel map from the project, if one is present. 
+====================================================  ===============================================================================================================
 
 
-  Another common object in GSASIIscriptable scripts is :class:`G2Phase`, used to encapsulate each phase in a project, with commonly used methods:
+Class :class:`~GSASIIscriptable.G2PDF`
+-----------------------------------------
+
+  To work with PDF entries, object :class:`~GSASIIscriptable.G2PDF`, encapsulates a PDF entry with methods:
 
 .. tabularcolumns:: |l|p{3.5in}|
 
 ==================================================    ===============================================================================================================
 method                                                Use
 ==================================================    ===============================================================================================================
-:meth:`G2Phase.set_refinements`                       Provides a mechanism to set values and refinement flags for the phase. See :ref:`Phase_parameters_table` 
-                                                      for more details. This information also can be supplied within a call to :meth:`G2Project.do_refinements` 
-                                                      or :meth:`G2Project.set_refinement`.
-:meth:`G2Phase.clear_refinements`                     Unsets refinement flags for the phase. 
-:meth:`G2Phase.set_HAP_refinements`                   Provides a mechanism to set values and refinement flags for parameters specific to both this phase and 
-                                                      one of its histograms. See :ref:`HAP_parameters_table`. This information also can be supplied within 
-                                                      a call to :meth:`G2Project.do_refinements` or :meth:`G2Project.set_refinement`.
-:meth:`G2Phase.clear_HAP_refinements`                 Clears refinement flags specific to both this phase and one of its histograms.
-:meth:`G2Phase.getHAPvalues`                          Returns values of parameters specific to both this phase and one of its histograms.
-:meth:`G2Phase.copyHAPvalues`                         Copies HAP settings between from one phase/histogram and to other histograms in same phase.
-:meth:`G2Phase.atoms`                                 Returns a list of atoms in the phase
-:meth:`G2Phase.atom`                                  Returns an atom from its label 
-:meth:`G2Phase.histograms`                            Returns a list of histograms linked to the phase
-:meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
-:meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
-:meth:`G2Phase.setSampleProfile`                      Sets sample broadening parameters
-:meth:`G2Phase.clearDistRestraint`                    Clears any previously defined bond distance restraint(s) for the selected phase
-:meth:`G2Phase.addDistRestraint`                      Finds and defines new bond distance restraint(s) for the selected phase
-:meth:`G2Phase.setDistRestraintWeight`                Sets the weighting factor for the bond distance restraints
-
+:meth:`~GSASIIscriptable.G2PDF.export`                                   Used to write G(r), etc. as a file
+:meth:`~GSASIIscriptable.G2PDF.calculate`                                Computes the PDF using parameters in the object
+:meth:`~GSASIIscriptable.G2PDF.optimize`                                 Optimizes selected PDF parameters
+:meth:`~GSASIIscriptable.G2PDF.set_background`                           Sets the histograms used for sample background, container, etc. 
+:meth:`~GSASIIscriptable.G2PDF.set_formula`                              Sets the chemical formula for the sample
 ==================================================    ===============================================================================================================
 
-Class :class:`G2PwdrData`
----------------------------------
+Class :class:`~GSASIIscriptable.G2SeqRefRes`
+-----------------------------------------------
 
-  Another common object in GSASIIscriptable scripts is :class:`G2PwdrData`, which encapsulate each powder diffraction histogram in a project, with commonly used methods:
+  To work with Sequential Refinement results, object :class:`~GSASIIscriptable.G2SeqRefRes`, encapsulates the sequential refinement table with methods:
 
 .. tabularcolumns:: |l|p{3.5in}|
 
-==================================================    ===============================================================================================================
-method                                                Use
-==================================================    ===============================================================================================================
-:meth:`G2PwdrData.set_refinements`                    Provides a mechanism to set values and refinement flags for the powder histogram. See 
-                                                      :ref:`Histogram_parameters_table` for details.  
-:meth:`G2PwdrData.clear_refinements`                  Unsets refinement flags for the the powder histogram.
-:meth:`G2PwdrData.residuals`                          Reports R-factors etc. for the the powder histogram (also see :meth:`G2PwdrData.get_wR`) 
-:meth:`G2PwdrData.add_back_peak`                      Adds a background peak to the histogram. Also see :meth:`G2PwdrData.del_back_peak` and 
-                                                      :meth:`G2PwdrData.ref_back_peak`.
-:meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
-:meth:`G2PwdrData.getdata`                            Provides access to the diffraction data associated with the histogram.
-:meth:`G2PwdrData.reflections`                        Provides access to the reflection lists for the histogram.
-:meth:`G2PwdrData.Export`                             Writes the diffraction data or reflection list into a file
-:meth:`G2PwdrData.add_peak`                           Adds a peak to the peak list. Also see :ref:`PeakRefine`.
-:meth:`G2PwdrData.set_peakFlags`                      Sets refinement flags for peaks
-:meth:`G2PwdrData.refine_peaks`                       Starts a peak/background fitting cycle, returns refinement results
-:attr:`G2PwdrData.Peaks`                              Provides access to the peak list data structure
-:attr:`G2PwdrData.PeakList`                           Provides the peak list parameter values 
-:meth:`G2PwdrData.Export_peaks`                       Writes the peak parameters to a text file 
-:meth:`G2PwdrData.set_background`                     Sets a background histogram that will be subtracted (point by point) from the current histogram.
-==================================================    ===============================================================================================================
+======================================================    ===============================================================================================================
+method                                                    Use
+======================================================    ===============================================================================================================
+:meth:`~GSASIIscriptable.G2SeqRefRes.histograms`           Provides a list of histograms used in the Sequential Refinement 
+:meth:`~GSASIIscriptable.G2SeqRefRes.get_cell_and_esd`     Returns cell dimensions and standard uncertainties for a phase and histogram from the Sequential Refinement 
+:meth:`~GSASIIscriptable.G2SeqRefRes.get_Variable`         Retrieves the value and esd for a parameter from a particular histogram in the Sequential Refinement 
+:meth:`~GSASIIscriptable.G2SeqRefRes.get_Covariance`       Retrieves values and covariance for a set of refined parameters for a particular histogram 
+======================================================    ===============================================================================================================
 
-Class :class:`G2Image`
----------------------------------
+Class :class:`~GSASIIscriptable.G2AtomRecord`
+-----------------------------------------------
 
-  When working with images, there will be a :class:`G2Image` object for each image (also see :meth:`G2Project.add_image`  and :meth:`G2Project.images`).
-
-.. tabularcolumns:: |l|p{3.5in}|
-
-==================================================    ===============================================================================================================
-method                                                Use
-==================================================    ===============================================================================================================
-:meth:`G2Image.Recalibrate`                           Invokes a recalibration fit starting from the current Image Controls calibration coefficients.
-:meth:`G2Image.Integrate`                             Invokes an image integration All parameters Image Controls will have previously been set.
-:meth:`G2Image.setControl`                            Set an Image Controls parameter in the current image.
-:meth:`G2Image.getControl`                            Return an Image Controls parameter in the current image.
-:meth:`G2Image.findControl`                           Get the names of Image Controls parameters.
-:meth:`G2Image.loadControls`                          Load controls from a .imctrl file (also see :meth:`G2Image.saveControls`).
-:meth:`G2Image.loadMasks`                             Load masks from a .immask file.
-:meth:`G2Image.setVary`                               Set a refinement flag for Image Controls parameter in the current image. (Also see :meth:`G2Image.getVary`)
-:meth:`G2Image.setCalibrant`                          Set a calibrant type (or show choices) for the current image.
-:meth:`G2Image.setControlFile`                        Set a image to be used as a background/dark/gain map image.
-==================================================    ===============================================================================================================
-
-
-Class :class:`G2PDF`
----------------------------------
-
-  To work with PDF entries, object :class:`G2PDF`, encapsulates a PDF entry with methods:
-
-.. tabularcolumns:: |l|p{3.5in}|
-
-==================================================    ===============================================================================================================
-method                                                Use
-==================================================    ===============================================================================================================
-:meth:`G2PDF.export`                                   Used to write G(r), etc. as a file
-:meth:`G2PDF.calculate`                                Computes the PDF using parameters in the object
-:meth:`G2PDF.optimize`                                 Optimizes selected PDF parameters
-:meth:`G2PDF.set_background`                           Sets the histograms used for sample background, container, etc. 
-:meth:`G2PDF.set_formula`                              Sets the chemical formula for the sample
-==================================================    ===============================================================================================================
-
-Class :class:`G2SeqRefRes`
----------------------------------
-
-  To work with Sequential Refinement results, object :class:`G2SeqRefRes`, encapsulates the sequential refinement table with methods:
-
-.. tabularcolumns:: |l|p{3.5in}|
-
-==================================================    ===============================================================================================================
-method                                                Use
-==================================================    ===============================================================================================================
-:meth:`G2SeqRefRes.histograms`                         Provides a list of histograms used in the Sequential Refinement 
-:meth:`G2SeqRefRes.get_cell_and_esd`                   Returns cell dimensions and standard uncertainies for a phase and histogram from the Sequential Refinement 
-:meth:`G2SeqRefRes.get_Variable`                       Retrieves the value and esd for a parameter from a particular histogram in the Sequential Refinement 
-:meth:`G2SeqRefRes.get_Covariance`                     Retrieves values and covariance for a set of refined parameters for a particular histogram 
-==================================================    ===============================================================================================================
-
-Class :class:`G2AtomRecord`
----------------------------------
-
-  When working with phases, :class:`G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
+  When working with phases, :class:`~GSASIIscriptable.G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
   used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
-  refinement_flags, occupancy and uiso can be used to set values. See the :class:`G2AtomRecord` docs and source code.
+  refinement_flags, occupancy and uiso can be used to set values. See the :class:`~GSASIIscriptable.G2AtomRecord` docs and source code.
 
 .. _Refinement_dicts:
 
@@ -257,21 +294,21 @@ documentation describes these dicts.
 .. _Project_dicts:
 
 Project-level Parameter Dict
------------------------------
+----------------------------
 
 As noted below (:ref:`Refinement_parameters_kinds`), there are three types of refinement parameters,
 which can be accessed individually by the objects that encapsulate individual phases and histograms
 but it will often be simplest to create a composite dictionary
 that is used at the project-level. A dict is created with keys
-"set" and "clear" that can be supplied to :meth:`G2Project.set_refinement`
-(or :meth:`G2Project.do_refinements`, see :ref:`Refinement_recipe` below) that will
+"set" and "clear" that can be supplied to :meth:`~GSASIIscriptable.G2Project.set_refinement`
+(or :meth:`~GSASIIscriptable.G2Project.do_refinements`, see :ref:`Refinement_recipe` below) that will
 determine parameter values and will determine which parameters will be refined. 
 
 The specific keys and subkeys that can be used are defined in tables 
 :ref:`Histogram_parameters_table`, :ref:`Phase_parameters_table` and :ref:`HAP_parameters_table`.
 
 Note that optionally a list of histograms and/or phases can be supplied in the call to 
-:meth:`G2Project.set_refinement`, but if not specified, the default is to use all defined
+:meth:`~GSASIIscriptable.G2Project.set_refinement`, but if not specified, the default is to use all defined
 phases and histograms. 
 
 As an example: 
@@ -288,12 +325,12 @@ As an example:
 .. _Refinement_recipe:
 
 Refinement recipe
-------------------------
+-----------------
 
 Building on the :ref:`Project_dicts`,
 it is possible to specify a sequence of refinement actions as a list of
 these dicts and supplying this list 
-as an argument to :meth:`G2Project.do_refinements`.
+as an argument to :meth:`~GSASIIscriptable.G2Project.do_refinements`.
 
 As an example, this code performs the same actions as in the example in the section above: 
 
@@ -317,7 +354,7 @@ In this example, two refinement steps will be performed:
 
 
 The keys defined in the following table
-may be used in a dict supplied to :meth:`G2Project.do_refinements`. Note that keys ``histograms``
+may be used in a dict supplied to :meth:`~GSASIIscriptable.G2Project.do_refinements`. Note that keys ``histograms``
 and ``phases`` are used to limit actions to specific sets of parameters within the project. 
 
 .. tabularcolumns:: |l|p{4in}|
@@ -354,7 +391,8 @@ phases                 Should contain a list of phase(s) to be used for the
 call                   Specifies a function to call after a refinement is completed.
                        The value supplied can be the object (typically a function)
                        that will be called or a string that will evaluate (in the
-                       namespace inside :meth:`G2Project.iter_refinements` where
+                       namespace inside
+		       :meth:`~GSASIIscriptable.G2Project.iter_refinements` where
                        ``self`` references the project.)
                        Nothing is called if this is not specified.
 callargs               Provides a list of arguments that will be passed to the function
@@ -392,7 +430,7 @@ Note that in the second from last refinement step, parameters are both set and c
 .. _Refinement_parameters_kinds:
 
 Refinement parameter types
-----------------------------
+--------------------------
 
 Note that parameters and refinement flags used in GSAS-II fall into three classes:
 
@@ -424,7 +462,7 @@ Note that parameters and refinement flags used in GSAS-II fall into three classe
 
 
 Specifying Refinement Parameters
-=================================
+================================
 
 Refinement parameter values and flags to turn refinement on and off are specified within dictionaries,
 where the details of these dicts are organized depends on the
@@ -436,8 +474,8 @@ of keys (as described below) for each of the three types of parameters.
 Histogram parameters
 --------------------
 
-This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
-and :func:`G2PwdrData.clear_refinements`. As an example, 
+This table describes the dictionaries supplied to :func:`~GSASIIscriptable.G2PwdrData.set_refinements`
+and :func:`~GSASIIscriptable.G2PwdrData.clear_refinements`. As an example, 
 
 .. code-block::  python
 
@@ -445,7 +483,7 @@ and :func:`G2PwdrData.clear_refinements`. As an example,
                          "Sample Parameters": ["Scale"],
                          "Limits": [10000, 40000]})
 
-With :meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
+With :meth:`~GSASIIscriptable.G2Project.do_refinements`, these parameters should be placed inside a dict with a key
 ``set``, ``clear``, or ``once``. Values will be set for all histograms, unless the ``histograms``
 key is used to define specific histograms. As an example: 
 
@@ -488,7 +526,7 @@ Background                                  Sample background. Value will be a d
                                             parameter for background is set to that.
                                             Note that background peaks are not handled
                                             via this; see 
-                                            :meth:`G2PwdrData.ref_back_peak` instead.
+                                            :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak` instead.
                                             When value is a dict,
                                             supply any of the following keys:
 \                     type                  The background model, e.g. 'chebyschev-1'
@@ -506,7 +544,7 @@ Background                                  Sample background. Value will be a d
                                             values for pos,int,sig & gam (fewer than 4 values 
                                             are allowed). 
 
-Instrument Parameters                       As in Sample Paramters, provide as a **list** of
+Instrument Parameters                       As in Sample Parameters, provide as a **list** of
                                             subkeys to
                                             set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
 \                     U, V, W               Gaussian peak profile terms
@@ -527,8 +565,8 @@ Instrument Parameters                       As in Sample Paramters, provide as a
 Phase parameters
 ----------------
 
-This table describes the dictionaries supplied to :func:`G2Phase.set_refinements`
-and :func:`G2Phase.clear_refinements`. With :meth:`G2Project.do_refinements`,
+This table describes the dictionaries supplied to :func:`~GSASIIscriptable.G2Phase.set_refinements`
+and :func:`~GSASIIscriptable.G2Phase.clear_refinements`. With :meth:`~GSASIIscriptable.G2Project.do_refinements`,
 these parameters should be placed inside a dict with a key
 ``set``, ``clear``, or ``once``. Values will be set for all phases, unless the ``phases``
 key is used to define specific phase(s). 
@@ -557,9 +595,9 @@ LeBail                Enables LeBail intensity extraction.
 Histogram-and-phase parameters
 ------------------------------
 
-This table describes the dictionaries supplied to :func:`G2Phase.set_HAP_refinements`
-and :func:`G2Phase.clear_HAP_refinements`. When supplied to
-:meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
+This table describes the dictionaries supplied to :func:`~GSASIIscriptable.G2Phase.set_HAP_refinements`
+and :func:`~GSASIIscriptable.G2Phase.clear_HAP_refinements`. When supplied to
+:meth:`~GSASIIscriptable.G2Project.do_refinements`, these parameters should be placed inside a dict with a key
 ``set``, ``clear``, or ``once``. Values will be set for all histograms used in each phase,
 unless the ``histograms`` and ``phases`` keys are used to define specific phases and histograms.
 
@@ -609,14 +647,14 @@ Scale                                  Phase fraction; Boolean, True to refine
 =============  ==========  ============================================================
 
 Histogram/Phase objects
-------------------------
-Each phase and powder histogram in a :class:`G2Project` object has an associated
+-----------------------
+Each phase and powder histogram in a :class:`~GSASIIscriptable.G2Project` object has an associated
 object. Parameters within each individual object can be turned on and off by calling
-:meth:`G2PwdrData.set_refinements` or :meth:`G2PwdrData.clear_refinements`
+:meth:`~GSASIIscriptable.G2PwdrData.set_refinements` or :meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`
 for histogram parameters;
-:meth:`G2Phase.set_refinements` or :meth:`G2Phase.clear_refinements`
-for phase parameters; and :meth:`G2Phase.set_HAP_refinements` or
-:meth:`G2Phase.clear_HAP_refinements`. As an example, if some_histogram is a histogram object (of type :class:`G2PwdrData`), use this to set parameters in that histogram:
+:meth:`~GSASIIscriptable.G2Phase.set_refinements` or :meth:`~GSASIIscriptable.G2Phase.clear_refinements`
+for phase parameters; and :meth:`~GSASIIscriptable.G2Phase.set_HAP_refinements` or
+:meth:`~GSASIIscriptable.G2Phase.clear_HAP_refinements`. As an example, if some_histogram is a histogram object (of type :class:`~GSASIIscriptable.G2PwdrData`), use this to set parameters in that histogram:
 
 .. code-block::  python
 
@@ -667,7 +705,7 @@ Note that the parameters must match the object type and method (phase vs. histog
 .. _AccessingOtherItems:
 
 Access to other parameter settings
-===================================
+==================================
 
 There are several hundred different types of values that can be stored in a 
 GSAS-II project (.gpx) file. All can be changed from the GUI but only a 
@@ -675,8 +713,8 @@ subset have direct mechanism implemented for change from the GSASIIscriptable
 API. In practice all parameters in a .gpx file can be edited via scripting, 
 but sometimes determining what should be set to implement a parameter 
 change can be complex. 
-Several routines, :meth:`G2Phase.getHAPentryList`, 
-:meth:`G2Phase.getPhaseEntryList` and :meth:`G2PwdrData.getHistEntryList` 
+Several routines, :meth:`~GSASIIscriptable.G2Phase.getHAPentryList`, 
+:meth:`~GSASIIscriptable.G2Phase.getPhaseEntryList` and :meth:`~GSASIIscriptable.G2PwdrData.getHistEntryList` 
 (and their related get...Value and set.Value entries), 
 provide a mechanism to discover what the GUI is changing inside a .gpx file. 
 
@@ -763,20 +801,62 @@ can be used to change the histogram type.
 .. _CodeExamples:
 
 Code Examples
-=================================
+=============
 
-.. _PeakRefine:
+.. _ScriptingShortcut:
 
+Shortcut for Scripting Access
+-----------------------------
+
+As is seen in a number of the code examples, the location where GSAS-II is
+specified in the GSAS-II script using commands such as 
+
+.. code-block::  python
+
+    import sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
+    import GSASIIscriptable as G2sc
+
+An alternative to this is to "install" the current GSAS-II installation into the current
+Python interpreter. Once this has been done a single time, this single command can be used to replace
+the three commands listed above for all future uses of GSASIIscripting:
+
+.. code-block::  python
+
+    import G2script as G2sc
+
+There are two ways this installation can be done. The most easy way is to invoke the
+"Install GSASIIscriptable shortcut" command in the GSAS-II GUI's
+File menu. Alternatively it can be accomplished from within GSASIIscriptable
+using these commands:
+
+.. code-block::  python
+
+    import sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # update this for your installation
+    import GSASIIscriptable as G2sc
+    G2sc.installScriptingShortcut()
+
+Note the shortcut only installs use of GSAS-II with the current Python
+installation. If more than one Python installation will be used with GSAS-II
+(for example because different conda environments are used), a shortcut
+should be created from within each Python environment.
+
+If more than one GSAS-II installation will be used with a Python installation, 
+a shortcut can only be used with one of them.
+
+.. _PeakRefine:  
+ 
 Peak Fitting
---------------------
+------------
 
 Peak refinement is performed with routines 
-:meth:`G2PwdrData.add_peak`, :meth:`G2PwdrData.set_peakFlags` and
-:meth:`G2PwdrData.refine_peaks`. Method :meth:`G2PwdrData.Export_peaks` and
-properties :attr:`G2PwdrData.Peaks` and :attr:`G2PwdrData.PeakList` 
+:meth:`~GSASIIscriptable.G2PwdrData.add_peak`, :meth:`~GSASIIscriptable.G2PwdrData.set_peakFlags` and
+:meth:`~GSASIIscriptable.G2PwdrData.refine_peaks`. Method :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks` and
+properties :attr:`~GSASIIscriptable.G2PwdrData.Peaks` and :attr:`~GSASIIscriptable.G2PwdrData.PeakList` 
 provide ways to access the results. Note that when peak parameters are 
-refined with :meth:`~G2PwdrData.refine_peaks`, the background may also
-be refined. Use :meth:`G2PwdrData.set_refinements` to change background 
+refined with :meth:`~GSASIIscriptable.~G2PwdrData.refine_peaks`, the background may also
+be refined. Use :meth:`~GSASIIscriptable.G2PwdrData.set_refinements` to change background 
 settings and the range of data used in the fit. See below for an example
 peak refinement script, where the data files are taken from the 
 "Rietveld refinement with CuKa lab Bragg-Brentano powder data" tutorial 
@@ -813,7 +893,7 @@ peak refinement script, where the data files are taken from the
     #gpx.save()  # gpx file is not written without this
 
 Pattern Simulation
------------------------
+------------------
 
 This shows two examples where a structure is read from a CIF, a 
 pattern is computed using a instrument parameter file to specify the 
@@ -870,7 +950,7 @@ tutorial.
     gpx.save()
 
 Simple Refinement
-----------------------
+-----------------
 
 GSASIIscriptable can be used to setup and perform simple refinements. 
 This example reads in an existing project (.gpx) file, adds a background
@@ -891,7 +971,7 @@ peak, changes some refinement flags and performs a refinement.
     gpx.set_refinement(pardict)
 
 Sequential Refinement
-----------------------
+---------------------
 
 GSASIIscriptable can be used to setup and perform sequential refinements. This example script 
 is used to take the single-dataset fit at the end of Step 1 of the 
@@ -936,7 +1016,7 @@ and turn on and off refinement flags, add histograms and setup the sequential fi
 .. _ImageProc:
 
 Image Processing
-----------------------
+----------------
 
 A sample script where an image is read, assigned calibration values from a file 
 and then integrated follows. 
@@ -995,12 +1075,12 @@ This example shows a computation similar to what is done in tutorial
 .. _MultiDist_Example:
 
 Image Calibration
-----------------------
+-----------------
 
 This example performs a number of cycles of constrained fitting. 
 A project is created with the images found in a directory, setting initial
 parameters as the images are read. The initial values 
-for the calibration are not very good, so a :meth:`G2Image.Recalibrate` is done
+for the calibration are not very good, so a :meth:`~GSASIIscriptable.G2Image.Recalibrate` is done
 to quickly improve the fit. Once that is done, a fit of all images is performed
 where the wavelength, an offset and detector orientation are constrained to 
 be the same for all images. The detector penetration correction is then added. 
@@ -1058,18 +1138,122 @@ The files used for this exercise are found in the
         img.saveControls(os.path.splitext(img.name)[0]+'.imctrl')
     gpx.save()
 
+.. _OptInteg_Example:
+
+Optimized Image Integration
+---------------------------
+
+This example shows how image integration, including pixel masking of outliers,
+can be accomplished for a series of images where the calibration and 
+other masking (Frame, Spots, etc) are the same for all images. This code has been optimized
+significantly so that computations are cached and are not repeated where possible. For one
+set of test data, processing of the first image takes ~5 seconds, but processing of subsequent
+takes on the order of 0.7 sec. 
+
+This code uses an ``import G2script as G2sc`` statement to access GSASIIscriptable
+without referencing the GSAS-II installation directory. This requires installing a reference to
+the GSAS-II location into the current a Python installation, which can be done from the GUI
+or with scripting commands, as is discussed in :ref:`ScriptingShortcut`. Here 
+function :func:`~GSASIIscriptable.installScriptingShortcut` was used to create
+the :mod:`G2script` module. That code has been retained here as comments to show what was done. 
+
+To simplify use of this script, it is assumed that the script will be placed in the same
+directory as where the data files will be collected. Other customization is done
+in variables at the beginning of the code. Note that the beamline where these data are collected
+opens the output .tif files before the data collection for that image is complete. Once the .metadata
+file has been created, the image may be read.
+
+Processing progresses as follows:
+ * Once a set of images are found, a project is created. This is never written and will be deleted after the images are processed.
+ * For each image file, routine :meth:`~GSASIIscriptable.G2Project.add_image` is used to add image(s) from that file to the project. The .tif format can only hold one image, but others can have more than one. 
+ * When the first image is processed, calibration and mask info is read; a number of computations are performed and cached.
+ * For subsequent images cached information is used.
+ * Pixel masking is performed in :meth:`~GSASIIscriptable.G2Image.GeneratePixelMask` and the mask is saved into the image.
+ * Image integration is performed in :meth:`~GSASIIscriptable.G2Image.Integrate`.
+ * Note that multiple powder patterns could be created from one image, so creation of data files is done in a loop with :meth:`~GSASIIscriptable.G2PwdrData.Export`.
+ * To reduce memory demands, cached versions of the Pixel map and the Image are deleted and the image file is moved to a separate directory so note that it has been processed. 
+ * The project (.gpx file) is deleted and recreated periodically so that the memory footprint for this script does not grow.
+   
+.. code-block::  python
+
+    import os,glob,time,shutil
+
+    #### Create G2script: do this once ################################################
+    #import sys
+    #sys.path.insert(0,'/Users/toby/software/G2/GSASII') # update with your install loc
+    #import GSASIIscriptable as G2sc
+    #G2sc.installScriptingShortcut()
+    ###################################################################################
+
+    import G2script as G2sc
+    G2sc.SetPrintLevel('warn')   # reduces output
+
+    cache = {}  # place to save intermediate computations
+    # define location & names of files
+    dataLoc = os.path.abspath(os.path.split(__file__)[0]) # data in location of this file
+    PathWrap = lambda fil: os.path.join(dataLoc,fil) # convenience function for file paths 
+    imgctrl = PathWrap('Si_ch3_d700-00000.imctrl')
+    imgmask = PathWrap('Si_ch3_d700-00000.immask')
+    globPattern = PathWrap("*_d700-*.tif")
+
+    def wait_for_metadata(tifname):
+        '''A .tif file is created before it can be read. Wait for the
+        metadata file to be created before trying to read both.
+        '''
+        while not os.path.exists(tifname + '.metadata'):
+            time.sleep(0.05)
+
+    # make a subfolder to store integrated images & integrated patterns
+    pathImg = os.path.join(dataLoc,'img') 
+    if not os.path.exists(pathImg): os.mkdir(pathImg)
+    pathxye = os.path.join(dataLoc,'xye')
+    if not os.path.exists(pathxye): os.mkdir(pathxye)
+
+    while True:	 # Loop will never end, stop with ctrl+C
+        tiflist = sorted(glob.glob(globPattern),key=lambda x: os.path.getctime(x)) # get images sorted by creation time, oldest 1st
+        if not tiflist:
+            time.sleep(0.1)
+            continue
+        gpx = G2sc.G2Project(newgpx=PathWrap('integration.gpx')) # temporary use
+        for tifname in tiflist:
+            starttime = time.time()
+            wait_for_metadata(tifname)
+            for img in gpx.add_image(tifname,fmthint="TIF",cacheImage=True):  # loop unneeded for TIF (1 image/file)
+                if not cache: # load & compute controls & 2theta values once
+                    img.loadControls(imgctrl)	# set controls/calibrations/masks
+                    img.loadMasks(imgmask)
+                    cache['Image Controls'] = img.getControls() # save controls & masks contents for quick reload
+                    cache['Masks'] = img.getMasks()
+                    cache['intMaskMap'] = img.IntMaskMap() # calc mask & TA arrays to save for integrations
+                    cache['intTAmap'] = img.IntThetaAzMap()
+                    cache['FrameMask'] = img.MaskFrameMask() # calc Frame mask & T array to save for Pixel masking
+                    cache['maskTmap'] = img.MaskThetaMap() 
+                else:
+                    img.setControls(cache['Image Controls'])
+                    img.setMasks(cache['Masks'],True)  # True: reset threshold masks
+                img.GeneratePixelMask(esdMul=3,ThetaMap=cache['maskTmap'],FrameMask=cache['FrameMask'])
+                for pwdr in img.Integrate(MaskMap=cache['intMaskMap'],ThetaAzimMap=cache['intTAmap']):
+                    pwdr.Export(os.path.join(pathxye,os.path.split(tifname)[1]),'.xye')  # '.tif in name ignored         
+                img.clearImageCache()  # save some space
+                img.clearPixelMask()
+            shutil.move(tifname, pathImg)	# move file after integration so that it is not searchable
+            shutil.move(tifname + '.metadata', pathImg)
+            print('*=== processing complete, time=',time.time()-starttime,'sec\n')
+        del gpx
+	
+    
 .. _HistExport:
 
 Histogram Export
---------------------
+----------------
 
 This example shows how to export a series of histograms from a collection of 
 .gpx (project) files. The Python ``glob()`` function is used to find all files 
 matching a wildcard in the specified directory (``dataloc``). For each file 
 there is a loop over histograms in that project and for each histogram 
-:meth:`G2PwdrData.Export` is called to write out the contents of that histogram
+:meth:`~GSASIIscriptable.G2PwdrData.Export` is called to write out the contents of that histogram
 as CSV (comma-separated variable) file that contains data positions, 
-observed, computed and backgroun intensities as well as weighting for each 
+observed, computed and background intensities as well as weighting for each 
 point and Q. Note that for the Export call, there is more than one choice of
 exporter that can write ``.csv`` extension files, so the export hint must 
 be specified. 
@@ -1094,53 +1278,6 @@ be specified.
 .. _CommandlineInterface:
 
 
-Installation of GSASIIscriptable
-=======================================
-
-It is assumed that most people using GSASIIscriptable will also want to use the GUI, for this the standard 
-`installation instructions <https://subversion.xray.aps.anl.gov/trac/pyGSAS#Installationinstructions>`_ should be followed. The GUI includes all files needed to run scriptable. 
-Noting that not all GSAS-II capabilities are not available 
-by scripting -- yet. Even if the scripting API were to be fully completed, 
-there will still be some things that GSAS-II does
-with the GUI would be almost impossible to implement without a 
-interactive graphical view of the data.
-
-Nonetheless, there may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server. As `described here
-<https://gsas-ii.readthedocs.io/en/latest/packages.html#scripting-requirements>`_ the minimal python requirements are only numpy and scipy. It is assumed that 
-anyone able to use scripting is well posed to install from the command line. 
-Below are example commands to install GSAS-II for use for scripting only.
-
-**Installing a minimal Python configuration**: Note I have chosen below 
-to use the free 
-miniconda installer from Anaconda, Inc., but there are also plenty of 
-other ways to install Python, Numpy and Scipy on Linux, Windows and MacOS. 
-For Linux a reasonable alternative is to install these packages 
-(and perhaps others as below) using the Linux dist (``apt-get`` etc.).
-
-.. code-block::  bash
-
-    bash ~/Downloads/Miniconda3-latest-<platform>-x86_64.sh -b -p /loc/pyg2script
-    source /loc/pyg2script/bin/activate
-    conda install numpy scipy matplotlib pillow h5py hdf5 svn
-
-Some discussion on these commands follows:
-
-* the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use something like ``~/pyg2script``.
-* the 2nd command (source) is needed to access Python with miniconda. 
-* the 3rd command (conda) installs all possible packages that might be used by scripting, but matplotlib, pillow, and hdf5 are not commonly needed and could be omitted. The svn package is not needed (for example on Linux) where this has been installed in another way.
-
-Once svn and Python has been installed and is in the path, use these commands to install GSAS-II:
-
-.. code-block::  bash
-
-    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
-    python /loc/GSASII/GSASIIscriptable.py
-
-Notes on these commands:
-
-* the 1st command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software. You can select something different. 
-* the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
-
 GSASIIscriptable Command-line Interface
 =======================================
 
@@ -1158,12 +1295,12 @@ To use the command-line mode is done with a command like this::
 
 The following subcommands are defined:
 
-        * create, see :func:`create`
-        * add, see :func:`add`
-        * dump, see :func:`dump`
-        * refine, see :func:`refine`
-        * export, :func:`export`
-        * browse, see :func:`IPyBrowse`
+        * create, see :func:`~GSASIIscriptable.create`
+        * add, see :func:`~GSASIIscriptable.add`
+        * dump, see :func:`~GSASIIscriptable.dump`
+        * refine, see :func:`~GSASIIscriptable.refine`
+        * export, :func:`~GSASIIscriptable.export`
+        * browse, see :func:`~GSASIIscriptable.IPyBrowse`
 
 Run::
 
@@ -1175,7 +1312,7 @@ to show the available subcommands, and inspect each subcommand with
 .. _JsonFormat:
 
 Parameters in JSON files
--------------------------
+------------------------
 
 The refine command requires two inputs: an existing GSAS-II project (.gpx) file and
 a JSON format file
@@ -1198,7 +1335,7 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 .. _API:
 
 API: Complete Documentation
-============================================================
+===========================
 
 .. automodule:: GSASIIscriptable
     :members: 

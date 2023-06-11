@@ -539,7 +539,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         '''
         CleanupMasks(masks)
         sumImg = GetImageZ(G2frame,data)
-        if not masks.get('SpotMask',{'spotMask':None})['spotMask'] is None:
+        if masks.get('SpotMask',{'spotMask':None})['spotMask'] is not None:
             sumImg = ma.array(sumImg,mask=masks['SpotMask']['spotMask'])
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA,useMask=useMask)            
         G2frame.PauseIntegration = G2frame.Integrate[-1]

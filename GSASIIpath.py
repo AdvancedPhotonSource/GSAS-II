@@ -1552,6 +1552,49 @@ def addCondaPkg():
     if currenv == "base":
         print('\nUnexpected action: adding conda to base environment???')
 
+def makeScriptShortcut():
+    '''Creates a shortcut to GSAS-II in the current Python installation
+    so that "import G2script" (or "import G2script as GSASIIscripting")
+    can be used without having to add GSASII to the path.
+
+    The new shortcut is then tested.
+
+    :returns: returns the name of the created file if successful. None
+      indicates an error. 
+    '''
+    import datetime as dt
+    for p in sys.path:
+        if 'site-packages' in p: break
+    else:
+        print('No site-packages directory found in Python path')
+        return
+    newfil = os.path.join(p,'G2script.py')
+    fp = open(newfil,'w')
+    fp.write(f'#Created in makeScriptShortcut from {__file__}')
+    fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n"))
+
+    fp.write(f"""import sys,os
+Path2GSASII='{path2GSAS2}'
+if os.path.exists(os.path.join(Path2GSASII,'GSASIIscriptable.py')):
+    print('setting up GSASIIscriptable from',Path2GSASII)
+    if Path2GSASII not in sys.path:
+        sys.path.insert(0,Path2GSASII)
+    from GSASIIscriptable import *
+else:
+    print('GSASIIscriptable not found in ',Path2GSASII)
+    print('Rerun "Install GSASIIscriptable shortcut" from inside GSAS-II')
+    sys.exit()
+""")
+    fp.close()
+    print('Created file',newfil)
+    try:
+        import G2script
+    except ImportError:
+        print('Unexpected error: import of G2script failed!')
+        return
+    return newfil
+
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''

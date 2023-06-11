@@ -731,16 +731,25 @@ class GSASII(wx.Frame):
             item = parent.Append(wx.ID_ANY,'Edit proxy...','Edit proxy internet information (used for updates)')
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
-            def OnIPython(event):
-                GSASIIpath.IPyBreak()
-            item = parent.Append(wx.ID_ANY,"IPython Console",'')
-            self.Bind(wx.EVT_MENU, OnIPython, item)
+            try: 
+                import IPython
+                item = parent.Append(wx.ID_ANY,"IPython Console",'')
+                self.Bind(wx.EVT_MENU,
+                              lambda event:GSASIIpath.IPyBreak(),
+                              item)
+            except ImportError:
+                pass
             def OnwxInspect(event):
                 import wx.lib.inspection as wxeye
                 wxeye.InspectionTool().Show()
             item = parent.Append(wx.ID_ANY,"wx inspection tool",'')
             self.Bind(wx.EVT_MENU, OnwxInspect, item)
             
+        item = parent.Append(wx.ID_ANY,"Install GSASIIscriptable shortcut",'')
+        self.Bind(wx.EVT_MENU,
+                      lambda event: GSASIIpath.makeScriptShortcut(),
+                      item)
+
         item = parent.Append(wx.ID_EXIT,'Exit\tALT+F4','Exit from GSAS-II')
         self.Bind(wx.EVT_MENU, self.ExitMain, id=item.GetId())
         

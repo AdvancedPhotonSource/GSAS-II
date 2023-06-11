@@ -232,23 +232,67 @@ such as
 
 Note that at present we are not suppling binaries for Python 3.11, but
 we are not aware of any reason why GSAS-II will not run fine with
-this. 
+this.
+
+.. _ScriptingRequirements:
+
   
-Scripting  Requirements
+Scripting Requirements
 -----------------------
 
-When using the GSAS-II scripting interface (:mod:`GSASIIscriptable`),
-only the two commonly-used Python extension packages are required:
+The GSAS-II scripting interface (:mod:`GSASIIscriptable`) will not
+run without two Python extension packages:
 
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/).
 
-Note that a few sections of the code optionally require matplotlib
-(http://matplotlib.org/contents.html), Pillow 
-(https://pillow.readthedocs.org) (or PIL,
-http://www.pythonware.com/products/pil/), or h5py + hdf5, but none of
-these are required to run scripts and the vast
+These fortunately are common and are easy to install. There are
+further scripting capabilities that will only run when a few
+additional packages are installed:
+  
+* matplotlib (http://matplotlib.org/contents.html),
+* Pillow (https://pillow.readthedocs.org) and/or
+* h5py and hdf5 
+
+but none of these are required to run scripts and the vast
 majority of scripts will not need these packages.
+
+**Installing a minimal Python configuration**:
+
+There are many ways to install a minimal Python configuration.
+Below, I show some example commands used to install using the 
+the free miniconda installer from Anaconda, Inc., but I now tend to
+use the Conda-Forge miniforge and mambaforge distributions instead. 
+However, there are also plenty of  other ways to install Python, Numpy
+and Scipy, depending on if they will be used on Linux, Windows and MacOS.
+For Linux, the standard Linux distributions provide these using
+``yum`` or ``apt-get`` etc., but these often supply package versions
+that are so new that they probably have not been tested with GSAS-II.
+
+.. code-block::  bash
+
+    bash ~/Downloads/Miniconda3-latest-<platform>-x86_64.sh -b -p /loc/pyg2script
+    source /loc/pyg2script/bin/activate
+    conda install numpy scipy matplotlib pillow h5py hdf5 svn
+
+Some discussion on these commands follows:
+
+* the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use something like ``~/pyg2script``.
+* the 2nd command (source) is needed to access Python with miniconda. 
+* the 3rd command (conda) installs all possible packages that might be used by scripting, but matplotlib, pillow, and hdf5 are not commonly needed and could be omitted. The svn package is not needed (for example on Linux) where this has been installed in another way.
+
+Once svn and Python has been installed and is in the path, use these commands to install GSAS-II:
+
+.. code-block::  bash
+
+    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
+    python /loc/GSASII/GSASIIscriptable.py
+
+Notes on these commands:
+
+* the 1st command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software. You can select something different. 
+* the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
+
 
 Optional Python Packages
 ---------------------------

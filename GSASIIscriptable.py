@@ -5441,7 +5441,10 @@ class G2Image(G2ObjectWrapper):
         '''Initialize Masks, including resetting the Thresholds values
         '''
         self.data['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
-        ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+        if self.image is not None:
+            ImageZ = self.image
+        else:
+            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         Imin = max(0.,np.min(ImageZ))
         Imax = np.max(ImageZ)
         self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
@@ -5462,7 +5465,10 @@ class G2Image(G2ObjectWrapper):
         '''
         self.data['Masks'] = copy.deepcopy(maskDict)
         if resetThresholds:
-            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+            if self.image is not None:
+                ImageZ = self.image
+            else:
+                ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
             Imin = max(0.,np.min(ImageZ))
             Imax = np.max(ImageZ)
             self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]        
@@ -5515,10 +5521,10 @@ class G2Image(G2ObjectWrapper):
         Masks = self.getMasks()
         frame = Masks['Frames']
         if self.image is not None:
-            Image = self.image
+            ImageZ = self.image
         else:
-            Image = _getCorrImage(Readers['Image'],self.proj,self)
-        tam = ma.make_mask_none(Image.shape)
+            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+        tam = ma.make_mask_none(ImageZ.shape)
         if frame:
             tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
         return tam
@@ -5576,7 +5582,10 @@ class G2Image(G2ObjectWrapper):
         This may produce a better result if run more than once.
         '''
         LoadG2fil()
-        ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+        if self.image is not None:
+            ImageZ = self.image
+        else:
+            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
 
     def Integrate(self,name=None,MaskMap=None,ThetaAzimMap=None):

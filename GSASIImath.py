@@ -4750,7 +4750,7 @@ def getTOFalpha(ins,dsp):
     return ins['alpha']/dsp
     
 def getTOFalphaDeriv(dsp):
-    '''get derivatives of TOF peak profile beta wrt alpha
+    '''get alpha derivatives of TOF peak profile
     
     :param float dsp: d-spacing of peak
     
@@ -4759,46 +4759,90 @@ def getTOFalphaDeriv(dsp):
     '''
     return 1./dsp
     
-def getPinkalpha(ins,tth):
-    '''get TOF peak profile alpha
+def getPinkNalpha(ins,tth):
+    '''get pink neutron peak alpha profile
     
     :param dict ins: instrument parameters with at least 'alpha'
       as values only
     :param float tth: 2-theta of peak
     
-    :returns: flaot getPinkalpha: peak alpha
+    :returns: float getPinkNalpha: peak alpha
     
     '''
-    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
+    return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
     
-def getPinkalphaDeriv(tth):
-    '''get derivatives of TOF peak profile beta wrt alpha
+def getPinkXalpha(ins,tth):
+    '''get pink x-ray peak alpha profile
     
-    :param float dsp: d-spacing of peak
-    
-    :returns: float getTOFalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
-    
-    '''
-    return 1.0,tand(tth/2.)
-    
-def getPinkbeta(ins,tth):
-    '''get TOF peak profile beta
-    
-    :param dict ins: instrument parameters with at least 'beat-0' & 'beta-1'
+    :param dict ins: instrument parameters with at least 'alpha'
       as values only
     :param float tth: 2-theta of peak
     
-    :returns: float getaPinkbeta: peak beta
+    :returns: float getPinkXalpha: peak alpha
+    
+    '''
+    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
+
+def getPinkNalphaDeriv(tth):
+    '''get alpha derivatives of pink neutron peak profile 
+    
+    :param float tth: 2-theta of peak
+    
+    :returns: float getPinkNalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
+    
+    '''
+    return 1.0,sind(tth/2.)
+    
+def getPinkXalphaDeriv(tth):
+    '''get alpha derivatives of pink x-ray peak profile
+    
+    :param float tth: 2-theta of peak
+    
+    :returns: float getPinkXalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
+    
+    '''
+    return 1.0,tand(tth/2.)
+
+def getPinkNbeta(ins,tth):
+    '''get pink neutron peak profile beta
+    
+    :param dict ins: instrument parameters with at least 'beta-0' & 'beta-1'
+      as values only
+    :param float tth: 2-theta of peak
+    
+    :returns: float getPinkbeta: peak beta
+    
+    '''
+    return ins['beta-0']+ins['beta-1']*sind(tth/2.)
+    
+def getPinkXbeta(ins,tth):
+    '''get pink x-ray peak profile beta
+    
+    :param dict ins: instrument parameters with at least 'beta-0' & 'beta-1'
+      as values only
+    :param float tth: 2-theta of peak
+    
+    :returns: float getPinkXbeta: peak beta
     
     '''
     return ins['beta-0']+ins['beta-1']*tand(tth/2.)
     
-def getPinkbetaDeriv(tth):
-    '''get derivatives of TOF peak profile beta wrt beta-0 & beta-1
+def getPinkNbetaDeriv(tth):
+    '''get beta derivatives of pink neutron peak profile
     
-    :param float dsp: d-spacing of peak
+    :param float tth: 2-theta of peak
     
-    :returns: list getTOFbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
+    :returns: list getPinkNbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
+    
+    '''
+    return 1.0,sind(tth/2.)
+    
+def getPinkXbetaDeriv(tth):
+    '''get beta derivatives of pink x-ray peak profile
+    
+    :param float tth: 2-theta of peak
+    
+    :returns: list getPinkXbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
     
     '''
     return 1.0,tand(tth/2.)
@@ -4857,8 +4901,12 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
-        alp = getPinkalpha(ins,pos)
-        bet = getPinkbeta(ins,pos)
+        if 'X' in Parms['Type'][0]:
+            alp = getPinkXalpha(ins,pos)
+            bet = getPinkXbeta(ins,pos)
+        else:
+            alp = getPinkNalpha(ins,pos)
+            bet = getPinkNbeta(ins,pos)
         sig = getCWsig(ins,pos)
         gam = getCWgam(ins,pos)           
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]       #default refine intensity 1st

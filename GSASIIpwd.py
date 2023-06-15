@@ -861,8 +861,10 @@ def getFWHM(pos,Inst,N=1):
     gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
     alpTOF = lambda dsp,alp: alp/dsp
     betTOF = lambda dsp,bet0,bet1,betq: bet0+bet1/dsp**4+betq/dsp**2
-    alpPink = lambda pos,alp0,alp1: alp0+alp1*tand(pos/2.)
-    betPink = lambda pos,bet0,bet1: bet0+bet1*tand(pos/2.)
+    alpPinkX = lambda pos,alp0,alp1: alp0+alp1*nptand(pos/2.)
+    betPinkX = lambda pos,bet0,bet1: bet0+bet1*nptand(pos/2.)
+    alpPinkN = lambda pos,alp0,alp1: alp0+alp1*npsind(pos/2.)
+    betPinkN = lambda pos,bet0,bet1: bet0+bet1*npsind(pos/2.)
     if 'LF' in Inst['Type'][0]:
         return 3
     elif 'T' in Inst['Type'][0]:
@@ -880,8 +882,12 @@ def getFWHM(pos,Inst,N=1):
         s = sigED(pos,Inst['A'][N],Inst['B'][N],Inst['C'][N])
         return 2.35482*s
     else:   #'B'
-        alp = alpPink(pos,Inst['alpha-0'][N],Inst['alpha-1'][N])
-        bet = betPink(pos,Inst['beta-0'][N],Inst['beta-1'][N])
+        if 'X' in Inst['Type'][0]:
+            alp = alpPinkX(pos,Inst['alpha-0'][N],Inst['alpha-1'][N])
+            bet = betPinkX(pos,Inst['beta-0'][N],Inst['beta-1'][N])
+        else:
+            alp = alpPinkN(pos,Inst['alpha-0'][N],Inst['alpha-1'][N])
+            bet = betPinkN(pos,Inst['beta-0'][N],Inst['beta-1'][N])
         s = sig(pos/2.,Inst['U'][N],Inst['V'][N],Inst['W'][N])
         g = gam(pos/2.,Inst['X'][N],Inst['Y'][N],Inst['Z'][N])
         return getgamFW(g,s)/100.+np.log(2.0)*(alp+bet)/(alp*bet)  #returns FWHM in deg
@@ -1569,13 +1575,19 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
                 else:
-                    alp = G2mth.getPinkalpha(parmDict,tth)
+                    if 'X' in dataType:                        
+                        alp = G2mth.getPinkXalpha(parmDict,tth)
+                    else:
+                        alp = G2mth.getPinkNalpha(parmDict,tth)
                 alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                 else:
-                    bet = G2mth.getPinkbeta(parmDict,tth)
+                    if 'X' in dataType:
+                        bet = G2mth.getPinkXbeta(parmDict,tth)
+                    else:
+                        bet = G2mth.getPinkNbeta(parmDict,tth)
                 bet = max(0.1,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
@@ -1830,16 +1842,24 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     alp = parmDict[alpName]
                     dada0 = dada1 = 0.0
                 else:
-                    alp = G2mth.getPinkalpha(parmDict,tth)
-                    dada0,dada1 = G2mth.getPinkalphaDeriv(tth)
+                    if 'X' in dataType:
+                        alp = G2mth.getPinkXalpha(parmDict,tth)
+                        dada0,dada1 = G2mth.getPinkXalphaDeriv(tth)
+                    else:
+                        alp = G2mth.getPinkNalpha(parmDict,tth)
+                        dada0,dada1 = G2mth.getPinkNalphaDeriv(tth)
                 alp = max(0.0001,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
                     dbdb0 = dbdb1 = 0.0
                 else:
-                    bet = G2mth.getPinkbeta(parmDict,tth)
-                    dbdb0,dbdb1 = G2mth.getPinkbetaDeriv(tth)
+                    if 'X' in dataType:
+                        bet = G2mth.getPinkXbeta(parmDict,tth)
+                        dbdb0,dbdb1 = G2mth.getPinkXbetaDeriv(tth)
+                    else:
+                        bet = G2mth.getPinkNbeta(parmDict,tth)
+                        dbdb0,dbdb1 = G2mth.getPinkNbetaDeriv(tth)
                 bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
@@ -2426,12 +2446,18 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
                     else: #'B'
-                        peak[2*j+off] = G2mth.getPinkalpha(parmDict,pos)
+                        if 'X' in Inst['Type'][0]:
+                            peak[2*j+off] = G2mth.getPinkXalpha(parmDict,pos)
+                        else:
+                            peak[2*j+off] = G2mth.getPinkNalpha(parmDict,pos)
                 elif 'bet' in parName:
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
                     else:   #'B'
-                        peak[2*j+off] = G2mth.getPinkbeta(parmDict,pos)
+                        if 'X' in Inst['Type'][0]:
+                            peak[2*j+off] = G2mth.getPinkXbeta(parmDict,pos)
+                        else:
+                            peak[2*j+off] = G2mth.getPinkNbeta(parmDict,pos)
                 elif 'sig' in parName:
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)

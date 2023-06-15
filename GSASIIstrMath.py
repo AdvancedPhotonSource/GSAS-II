@@ -3515,9 +3515,12 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         return alp,bet
         
     def GetPinkReflAlpBet(refl,im,hfx,parmDict):
-        tanPos = tand(refl[5+im]/2.0)
-        alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*tanPos)
-        bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
+        # tanPos = tand(refl[5+im]/2.0)
+        # alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*tanPos)
+        # bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
+        sinPos = sind(refl[5+im]/2.0)
+        alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
+        bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
         return alp,bet
 
     def SavePartial(phase,y):
@@ -4024,6 +4027,7 @@ def getPowderProfileDerv(args):
                     dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
             elif 'B' in calcControls[hfx+'histType']:
+                sinth = tand(pos/2.0)
                 tanth = tand(pos/2.0)
                 costh = cosd(pos/2.0)
                 lenBF = iFin-iBeg
@@ -4084,8 +4088,12 @@ def getPowderProfileDerv(args):
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],hfx+'Polariz.':[dIdpola,'int'],
-                    hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
+#                    hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
+                    hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[sinth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[sinth,'bet'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
+                if 'X' in calcControls[hfx+'histType']:
+                    names[hfx+'alpha-1'] =  [tanth,'alp']   #preserve pink x-ray definitions
+                    names[hfx+'beta-1'] = [tanth,'bet']
             elif 'E' in calcControls[hfx+'histType']:
                 dpdA,dpdTTh,dpdXE,dpdYE,dpdZE = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'2-theta':[dpdTTh,'pos'],

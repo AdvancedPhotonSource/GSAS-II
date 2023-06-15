@@ -2265,7 +2265,7 @@ def checkMagextc(HKL,SGData):
     nsum = 0.
     nA = 0
     for dhkl,phkl in zip(DHKL,PHKL):
-        if not np.allclose(dhkl,HKL):           #test for eq(5)
+        if not np.allclose(dhkl,HKL,atol=1.e-3):           #test for eq(5)
             continue
         else:
             nA += 1
@@ -2274,7 +2274,7 @@ def checkMagextc(HKL,SGData):
             Psum += pterm
     if nsum/nA > 1.:        #only need to look at nA=1 frok eq(8)
         return False
-    if np.allclose(Psum,np.zeros(3)):
+    if np.allclose(Psum,np.zeros(3),atol=1.e-3):
         return True
     else:
         if np.inner(HKL,Psum):
@@ -3607,7 +3607,7 @@ def ApplyStringOpsMom(A,SGData,SSGData,Mom):
     if Ax[0] < 0:
         NA += len(SGOps)
     M,T = SGOps[nA]
-    newMom = np.inner(Mom,M).T*SGData['SpnFlp'][NA+nC]
+    newMom = np.inner(Mom,M).T*SGData['SpnFlp'][NA+nC]*nl.det(M)
     if SSGData is not None:
         if SSGData['SSGCen'][iAx//100][3]:     #flip spin for BNS centered atoms
             newMom *= -1.

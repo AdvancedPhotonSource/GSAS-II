@@ -1227,7 +1227,7 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     section of an image (determined by iLim and jLim). 
 
     This is used in two ways. For image integration, the computation is done
-    over blocks of fixed size (typically 256 pixels) but for pixel mask
+    over blocks of fixed size (typically 128 or 256 pixels) but for pixel mask
     generation, the two-theta matrix for all pixels is computed. Note that
     for integration, this routine will be called to generate sections as needed 
     or may be called by :func:`MakeUseTA`, which creates all sections at 
@@ -1304,7 +1304,7 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
             tam[:,yline-jLim[0]] = True            
     return tam           #position mask
 
-def Fill2ThetaAzimuthMap(masks,TA,tam,image):
+def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
     '''Makes masked intensity correction arrays that depend on image 
     intensity, 2theta and azimuth. Masking is generated from the 
     combination of the following: 
@@ -1315,34 +1315,47 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     of an image (must be 1024x1024 or smaller) where the size is 
     determined the input arrays.
 
+    Note that older, less optimized, code has been left commented out below 
+    in case there are future problems or questions. 
+
     :param dict masks: GSAS-II mask settings
-    :param np.array TA: 2theta/azimuth/correction arrays
+    :param np.array TAr: 2theta/azimuth/correction arrays, reshaped
     :param np.array tam: mask array from :func:`MakeMaskMap`
     :param np.array image: image array
-    :returns: a list of 5 masked arrays with values for: azimuth, 2-theta, 
-       intensity/polarization, dist**2/d0**2, and ones
+    :returns: a list of 4 masked arrays with values for: azimuth, 2-theta, 
+       intensity/polarization, dist**2/d0**2
     '''
+    tax,tay,tad,pol = TAr    #azimuth, 2-theta, dist**2/d0**2, pol
+    # get prev. masks
+    mask = ma.getmask(image)  # Pixel mask   (N.B. mask is True if pixel is masked)
+    mask |= tam.reshape(image.shape)
+    # apply Ring & Arc masks. Note that this could be done in advance
+    # and be cached (like tam & TAr) but it is not clear this is needed
+    # often or that a lot of time is saved.
+    for tth,thick in masks['Rings']:
+        #tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
+        mask |= ((tay > max(0.01,tth-thick/2.)) & (tay < (tth+thick/2.)))
+    for tth,azm,thick in masks['Arcs']:
+        # tamt = ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))
+        # tama = ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1]))
+        # tam = ma.mask_or(tam.flatten(),tamt*tama)
+        mask |= ((tay > max(0.01,tth-thick/2.)) & (tay < (tth+thick/2.))
+                     & (tax > azm[0]) & (tax < azm[1]))
+    # apply threshold masks
     Zlim = masks['Thresholds'][1]
-    rings = masks['Rings']
-    arcs = masks['Arcs']
-    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-    tax,tay,tad,pol = np.dsplit(TA,4)    #azimuth, 2-theta, dist**2/d0**2, pol
-    for tth,thick in rings:
-        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
-    for tth,azm,thick in arcs:
-        tamt = ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))
-        tama = ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1]))
-        tam = ma.mask_or(tam.flatten(),tamt*tama)
-    taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
-    tabs = np.ones_like(taz)
-    tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
-    tax = ma.compressed(ma.array(tax.flatten(),mask=tam))   #azimuth
-    tay = ma.compressed(ma.array(tay.flatten(),mask=tam))   #2-theta
-    taz = ma.compressed(ma.array(taz.flatten(),mask=tam))   #intensity
-    tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
-    tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
-    pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
-    return tax,tay,taz/pol,tad,tabs
+    #taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
+    mask |= (image.data < Zlim[0]) | (image.data > Zlim[1])
+    
+    #tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
+    #tax = ma.compressed(ma.array(tax.flatten(),mask=tam))   #azimuth
+    #tay = ma.compressed(ma.array(tay.flatten(),mask=tam))   #2-theta
+    #taz = ma.compressed(ma.array(taz.flatten(),mask=tam))   #intensity
+    #tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
+    #tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
+    #pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
+    #return tax,tay,taz/pol,tad,tabs
+    mask = ~mask
+    return tax[mask],tay[mask],image.data[mask]/pol[mask],tad[mask]
 
 def MakeUseTA(data,blkSize=128):
     '''Precomputes the set of blocked arrays for 2theta-azimuth mapping from 
@@ -1367,7 +1380,9 @@ def MakeUseTA(data,blkSize=128):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))          #2-theta & azimuth arrays & create position mask
-            useTAj.append(TA)
+            TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
+            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            useTAj.append(TAr)
         useTA.append(useTAj)
     return useTA
 
@@ -1500,9 +1515,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
 
             t0 = time.time()
             if useTA:
-                TA = useTA[iBlk][jBlk]
+                TAr = useTA[iBlk][jBlk]
             else:
                 TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+                TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
+                TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             times[1] += time.time()-t0      #xy->th,azm
 
             t0 = time.time()
@@ -1510,10 +1527,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 tam = useMask[iBlk][jBlk]
             else:
                 tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
-            times[0] += time.time()-t0      #apply masks
+            Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
+            tax,tay,taz,tad = Fill2ThetaAzimuthMap(Masks,TAr,tam,Block)    #applies remaining masks
+            times[0] += time.time()-t0      # time mask application
             t0 = time.time()
-            Block = image[iBeg:iFin,jBeg:jFin]          #apply image spotmask here
-            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -1522,6 +1539,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                     tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
                 elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
                     tabs = G2pwd.Absorb('Fixed',muT,tay)
+                else:
+                    tabs = np.ones_like(taz)
+            else:
+                tabs = np.ones_like(taz)                
             if 'log(q)' in data.get('binType',''):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data.get('binType','').lower():
@@ -1574,8 +1595,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
 
     G2fil.G2Print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))
-    G2fil.G2Print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))
-    G2fil.G2Print ('Integration complete')
+    G2fil.G2Print ("Integration complete. Elapsed time:","%8.3fs"%(time.time()-tbeg))
     if problemEntries:
         msg = ""
         for i in problemEntries:

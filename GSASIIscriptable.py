@@ -5167,8 +5167,10 @@ class G2PDF(G2ObjectWrapper):
             PDFsaves[i] = lbl.lower() in formats.lower()
         G2fil.PDFWrite(PDFentry,fileroot,PDFsaves,self.data['PDF Controls'],inst,limits)
 
-blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
-'Integration block size; 256 seems to be optimal, must be <=1024 (for polymask)'
+blkSize = 128
+'''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses 
+less memory, must be <=1024 (for polymask/histogram3d)
+'''
 
 def calcMaskMap(imgprms,mskprms):
     '''Computes a set of blocked mask arrays for a set of image controls and mask parameters. 

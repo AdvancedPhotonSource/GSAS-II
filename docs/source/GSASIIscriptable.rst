@@ -1173,6 +1173,10 @@ Processing progresses as follows:
  * Note that multiple powder patterns could be created from one image, so creation of data files is done in a loop with :meth:`~GSASIIscriptable.G2PwdrData.Export`.
  * To reduce memory demands, cached versions of the Pixel map and the Image are deleted and the image file is moved to a separate directory so note that it has been processed. 
  * The project (.gpx file) is deleted and recreated periodically so that the memory footprint for this script does not grow.
+
+There is a possible tuning parameter that may change speed based on the speed of the CPU vs. memory
+constraints in variable :data:`GSASIIscriptable.blkSize`. This value should be a power of two and defaults to
+128. You might find that a larger or smaller value will improve performance for you. 
    
 .. code-block::  python
 
@@ -1186,6 +1190,7 @@ Processing progresses as follows:
     ###################################################################################
 
     import G2script as G2sc
+    G2sc.blkSize = 2**8  # computer-dependent tuning parameter
     G2sc.SetPrintLevel('warn')   # reduces output
 
     cache = {}  # place to save intermediate computations

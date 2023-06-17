@@ -1971,7 +1971,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
-        GL.glViewport(0,0,VS[0],VS[1])
+        if sys.platform == "darwin":
+            f = int(Page.GetContentScaleFactor())
+            GL.glViewport(0,0,f*VS[0],f*VS[1])
+        else:
+            GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
@@ -10366,7 +10370,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
-        GL.glViewport(0,0,VS[0],VS[1])
+        if sys.platform == "darwin":
+            f = int(Page.GetContentScaleFactor())
+            GL.glViewport(0,0,f*VS[0],f*VS[1])
+        else:
+            GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()
@@ -10970,7 +10978,11 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
-        GL.glViewport(0,0,VS[0],VS[1])
+        if sys.platform == "darwin":
+            f = int(Page.GetContentScaleFactor())
+            GL.glViewport(0,0,f*VS[0],f*VS[1])
+        else:
+            GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(50.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
@@ -11258,7 +11270,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
-        GL.glViewport(0,0,VS[0],VS[1])
+        if sys.platform == "darwin":
+            f = int(Page.GetContentScaleFactor())
+            GL.glViewport(0,0,f*VS[0],f*VS[1])
+        else:
+            GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
@@ -11762,7 +11778,11 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
-        GL.glViewport(0,0,VS[0],VS[1])
+        if sys.platform == "darwin":
+            f = int(Page.GetContentScaleFactor())
+            GL.glViewport(0,0,f*VS[0],f*VS[1])
+        else:
+            GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            

@@ -6062,8 +6062,7 @@ def UpdateSubstanceGrid(G2frame,data):
         
         Indx = {}
         substSizer = wx.BoxSizer(wx.VERTICAL)
-        substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Substance list: wavelength: %.5fA'%(wave)),
-            0,WACV)
+        substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Substance list: wavelength: %.5fA'%(wave)))
         for name in data['Substances']:
             G2G.HorizontalLine(substSizer,G2frame.dataWindow)    
             substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Data for '+name+':'),0)

@@ -3173,7 +3173,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(self.readDir,1,wx.EXPAND,1)
         btn3 = wx.Button(mnpnl, wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, self.SetSourceDir)
-        sizer.Add(btn3,0,wx.ALIGN_RIGHT|WACV)
+        sizer.Add(btn3,0,WACV)
         mnsizer.Add(sizer,0,wx.EXPAND,0)
         # not yet implemented
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3202,7 +3202,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(fInp3,1,wx.EXPAND)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn3,0,wx.ALIGN_RIGHT|WACV)
+        sizer.Add(btn3,0,WACV)
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s):'))
@@ -3258,7 +3258,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(fInp4,1,wx.EXPAND)
         btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn4,0,wx.ALIGN_RIGHT|WACV)
+        sizer.Add(btn4,0,WACV)
         lblsizr.Add(sizer,0,wx.EXPAND)
         mnsizer.Add(lblsizr,0,wx.EXPAND,1)
         # buttons on bottom

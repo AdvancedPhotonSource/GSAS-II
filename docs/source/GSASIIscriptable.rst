@@ -837,6 +837,19 @@ using these commands:
     import GSASIIscriptable as G2sc
     G2sc.installScriptingShortcut()
 
+An even simpler way to do this is from the command-line, from the GSAS-II directory.
+A full path for Python is only needed if if the Python to be used with GSAS-II is not in the
+path. 
+
+.. code-block::  bash
+
+		 terrier:toby> cd /home/beams1/TOBY/gsas2full/GSASII/
+		 terrier:toby> /mypath/bin/python -c "import GSASIIscriptable as G2sc; G2sc.installScriptingShortcut()"
+		 GSAS-II binary directory: /home/beams1/TOBY/gsas2full/GSASII/bindist
+		 Created file /home/beams1/TOBY/gsas2full/lib/python3.10/site-packages/G2script.py
+		 setting up GSASIIscriptable from /home/beams1/TOBY/gsas2full/GSASII
+		 success creating /home/beams1/TOBY/gsas2full/lib/python3.10/site-packages/G2script.py
+
 Note the shortcut only installs use of GSAS-II with the current Python
 installation. If more than one Python installation will be used with GSAS-II
 (for example because different conda environments are used), a shortcut
@@ -1174,7 +1187,9 @@ Processing progresses as follows:
  * To reduce memory demands, cached versions of the Pixel map and the Image are deleted and the image file is moved to a separate directory so note that it has been processed. 
  * The project (.gpx file) is deleted and recreated periodically so that the memory footprint for this script does not grow.
 
-There is a possible tuning parameter that may change speed based on the speed of the CPU vs. memory
+The speed of this code will depend on many things, but the number of pixels in the
+image is primary, as well as CPU speed. With ~9 Mb images, I have seen average times in the range of 0.7 to 0.9 sec/image, after the first image is processed and the cached arrays are computed. With the Apple M1 chip the time is closer to 0.6 sec/image.
+There is also a possible tuning parameter that may change speed based on the speed of the CPU vs. memory
 constraints in variable :data:`GSASIIscriptable.blkSize`. This value should be a power of two and defaults to
 128. You might find that a larger or smaller value will improve performance for you. 
    
@@ -1246,7 +1261,122 @@ constraints in variable :data:`GSASIIscriptable.blkSize`. This value should be a
             print('*=== processing complete, time=',time.time()-starttime,'sec\n')
         del gpx
 	
-    
+.. _MultiCoreInteg_Example:
+
+Multicore Image Integration
+---------------------------
+
+
+The previous example (:ref:`OptInteg_Example`) can be accelerated even further
+on a multicore computer using the following script. In this example, 
+the image integration is moved to a function, `integrate_tif`, that accepts
+a filename to integrate. Note that with the multiprocessing module is used, 
+the script will be read on each core that will be used, but only on the primary 
+(controller) process will this ``__name__ == '__main__'`` be True. 
+Thus the code following the if statement runs on the primary process. 
+The primary process uses the mp.Pool() statement to create a set of 
+secondary (worker) processes that are intended to run on other cores. 
+The primary process locates .tif files, if the corresponding 
+.tif.metadata is also found, both are moved to a separate directory where they 
+will be processed in a secondary process. When the secondary process starts, 
+the script is imported and then `integrate_tif` is called with the name of the 
+image file from the primary process. The `integrate_tif` routine 
+will initially have an empty cache and thus the code preceeded by 
+"load & compute controls & 2theta values" will be computed once for every 
+secondary process, which should be on an independent core. The size of the pool
+determines how many images will be processed simultaneously. 
+
+This code seems to have a maximum speed using slightly less than the 
+total number of available cores and does benefit partially from 
+hyperthreading. A two- to three-fold speedup is seen with four cores and a 
+six-fold speedup has been seen with 16 cores. 
+
+.. code-block::  python
+
+    import os,sys,glob,time,shutil
+    scriptstart = time.time()
+
+    if len(sys.argv) >= 2:
+        nodes = int(sys.argv[1])
+    else:
+        nodes = 4
+
+    if nodes == 0:
+        print('no multiprocessing')
+    else:
+        print(f'multiprocessing with {nodes} cores')
+
+    import G2script as G2sc
+    G2sc.blkSize = 2**8  # computer-dependent tuning parameter
+    #G2sc.SetPrintLevel('warn')
+
+    cache = {}  # place to save intermediate computations
+
+    # define location & names of files
+    dataLoc = '/dataserv/inttest'  # images found here
+    globPattern = os.path.join(dataLoc,"*_d700-*.tif")
+    calibLoc = os.path.abspath(os.path.split(__file__)[0]) # calib in location of this file
+    imgctrl = os.path.join(calibLoc,'Si_ch3_d700-00000.imctrl')
+    imgmask = os.path.join(calibLoc,'Si_ch3_d700-00000.immask')
+    # locations to put processed files
+    pathImg = os.path.join(dataLoc,'img') 
+    pathxye = os.path.join(dataLoc,'xye')
+
+    def integrate_tif(tifname):
+        starttime = time.time()
+        gpx = G2sc.G2Project(newgpx='integration.gpx') # temporary use, not written
+        for img in gpx.add_image(tifname,fmthint="TIF",cacheImage=True):  # loop unneeded for TIF (1 image/file)
+            img.setControl('pixelSize',[150,150])
+            if not cache: # load & compute controls & 2theta values once
+                print('Initializing cache for',tifname)
+                img.loadControls(imgctrl)	# set controls/calibrations/masks
+                img.loadMasks(imgmask)
+                cache['Image Controls'] = img.getControls() # save file contents for quick reload
+                cache['Masks'] = img.getMasks()
+                cache['intMaskMap'] = img.IntMaskMap() # calc mask & TA arrays to save for integrations
+                cache['intTAmap'] = img.IntThetaAzMap()
+                cache['FrameMask'] = img.MaskFrameMask() # calc Frame mask & T array to save for Pixel masking
+                cache['maskTmap'] = img.MaskThetaMap() 
+            else:
+                img.setControls(cache['Image Controls'])
+                img.setMasks(cache['Masks'],True)  # not using threshold masks
+            img.GeneratePixelMask(esdMul=3,ThetaMap=cache['maskTmap'],FrameMask=cache['FrameMask'])
+            for pwdr in img.Integrate(MaskMap=cache['intMaskMap'],ThetaAzimMap=cache['intTAmap']):
+                pwdr.Export(os.path.join(pathxye,os.path.split(tifname)[1]),'.xye')  # '.tif in name ignored
+            img.clearImageCache()  # save some space
+            img.clearPixelMask()
+
+        print(f'*=== image processed, time={time.time()-starttime:.3f} sec\n')
+        del gpx
+
+    if __name__ == '__main__':
+        if nodes > 0: import multiprocessing as mp
+
+        # make folder to store integrated images & integrated patterns if needed
+        if not os.path.exists(pathImg): os.mkdir(pathImg)
+        if not os.path.exists(pathxye):	os.mkdir(pathxye)
+
+        if nodes > 0: pool = mp.Pool(nodes)
+
+        while True:	 # Loop will never end, stop with ctrl+C
+            tiflist = sorted(glob.glob(globPattern),key=lambda x: os.path.getctime(x)) # get images sorted by creation time, oldest 1st
+            if not tiflist:
+                time.sleep(0.1)
+                continue
+            intlist = []  # list of images read to process
+            for tifname in tiflist:
+                if not os.path.exists(tifname + '.metadata'): continue
+                shutil.move(tifname, pathImg)	# move file before integration so that it is not found in another search
+                shutil.move(tifname + '.metadata', pathImg)
+                intlist.append(os.path.join(pathImg,os.path.split(tifname)[1]))
+            if nodes == 0:
+                for newtifname in intlist: integrate_tif(newtifname)
+            else:
+                pool.map(integrate_tif,intlist)
+
+        if nodes > 0: pool.close()
+        print(f'Total elapsed time={time.time()-scriptstart:.3f} sec')
+
 .. _HistExport:
 
 Histogram Export

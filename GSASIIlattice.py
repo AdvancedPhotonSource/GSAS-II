@@ -756,7 +756,8 @@ def makeBilbaoPhase(result,uvec,trans,ifMag=False):
     if ifMag:
         BNSlatt = phase['SGData']['SGLatt']
         if not result[1]:
-            phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
+            MSpGrp = G2spc.SplitMagSpSG(result[0])
+            phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],MSpGrp)
         phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
         if result[1]:
             BNSlatt += '_'+result[1]

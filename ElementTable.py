@@ -191,4 +191,9 @@ OrbsElTable = [
     (["As",],                     14,3, "Arsenic",     NonMetcolor,      0.120,(255,0,255)),
     (["Se",],                     15,3, "Selenium",    NonMetcolor,      0.132,(255,161,0)),
     (["Br",],                     16,3, "Bromine",     NonMetcolor,      0.141,(166,41,41)),
+    (["Y",],                       2,4, "Yittrium",    Metcolor,         0.180,(148,255,255)),
+    (["Zr",],                      3,4, "Zirconium",   Metcolor,         0.192,(148,224,224)),
+    (["Nb","Nb+3",],               4,4, "Niobium",     Metcolor,         0.204,(115,194,201)),
+    (["Mo","Mo+3","Mo+5",],        5,4, "Molybdenium", Metcolor,         0.216,(84,181,181)),
+    (["Tc",],                      6,4, "Technetium",  Metcolor,         0.228,(59,158,158)),
 ]

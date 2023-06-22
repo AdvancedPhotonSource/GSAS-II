@@ -1286,6 +1286,10 @@ will initially have an empty cache and thus the code preceeded by
 secondary process, which should be on an independent core. The size of the pool
 determines how many images will be processed simultaneously. 
 
+The script as given below uses the first argument on the command 
+line to specify the number of cores to be used, where 0 is used to 
+mean run `integrate_tif` directly rather than through a pool. This 
+facilitates timing comparisons. 
 This code seems to have a maximum speed using slightly less than the 
 total number of available cores and does benefit partially from 
 hyperthreading. A two- to three-fold speedup is seen with four cores and a 

@@ -1694,14 +1694,14 @@ def UpdatePhaseData(G2frame,Item,data):
                             continue
                         RfList[newName] = RfList[oldName]
                         del RfList[oldName]                            
-                NameTxt.SetValue(generalData['Name'])
-                # rename Restraints
-                resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-                Restraints = G2frame.GPXtree.GetItemPyData(resId)
-                i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
-                if i: G2frame.GPXtree.SetItemText(i,newName)
-                Restraints[newName] = Restraints[oldName]
-                del Restraints[oldName]
+                    NameTxt.SetValue(newName)
+                    # rename Restraints
+                    resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+                    Restraints = G2frame.GPXtree.GetItemPyData(resId)
+                    i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
+                    if i: G2frame.GPXtree.SetItemText(i,newName)
+                    Restraints[newName] = Restraints[oldName]
+                    del Restraints[oldName]
                                                 
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
@@ -4806,13 +4806,13 @@ def UpdatePhaseData(G2frame,Item,data):
         UseList = Map['RefList']
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
         if not pId:
-            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+            wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return            
         reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
         reflData = reflSets[generalData['Name']]['RefList']
         if 'Type' not in Map:
-            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+            wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return            
         Type = Map['Type']
@@ -14674,7 +14674,7 @@ of the crystal structure.
             print (' distance for atoms %s = %.3f'%(str(indx),G2mth.getRestDist(xyz,Amat)))
         else:
             print (' angle for atoms %s = %.2f'%(str(indx),G2mth.getRestAngle(xyz,Amat)))
-                                    
+
     def OnFourierMaps(event):
         generalData = data['General']
         mapData = generalData['Map']

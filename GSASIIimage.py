@@ -1326,9 +1326,14 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
        intensity/polarization, dist**2/d0**2
     '''
     tax,tay,tad,pol = TAr    #azimuth, 2-theta, dist**2/d0**2, pol
-    # get prev. masks
-    mask = ma.getmask(image)  # Pixel mask   (N.B. mask is True if pixel is masked)
-    mask |= tam.reshape(image.shape)
+    if ma.is_masked(image):
+        # get prev. masks
+        mask = ma.getmask(image)  # Pixel mask   (N.B. mask is True if pixel is masked)
+        mask |= tam.reshape(image.shape)
+        image = image.data
+    else:
+        mask = tam.reshape(image.shape)
+        
     # apply Ring & Arc masks. Note that this could be done in advance
     # and be cached (like tam & TAr) but it is not clear this is needed
     # often or that a lot of time is saved.
@@ -1344,7 +1349,7 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
     # apply threshold masks
     Zlim = masks['Thresholds'][1]
     #taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
-    mask |= (image.data < Zlim[0]) | (image.data > Zlim[1])
+    mask |= (image < Zlim[0]) | (image > Zlim[1])
     
     #tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     #tax = ma.compressed(ma.array(tax.flatten(),mask=tam))   #azimuth
@@ -1355,7 +1360,7 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
     #pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
     #return tax,tay,taz/pol,tad,tabs
     mask = ~mask
-    return tax[mask],tay[mask],image.data[mask]/pol[mask],tad[mask]
+    return tax[mask],tay[mask],image[mask]/pol[mask],tad[mask]
 
 def MakeUseTA(data,blkSize=128):
     '''Precomputes the set of blocked arrays for 2theta-azimuth mapping from 

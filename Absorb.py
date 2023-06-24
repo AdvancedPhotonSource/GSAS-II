@@ -65,8 +65,9 @@ else:
     
 [wxID_KALPHAAGKA, wxID_KALPHACOKA, wxID_KALPHACRKA, 
  wxID_KALPHACUKA, wxID_KALPHAFEKA, wxID_KALPHAMNKA, 
- wxID_KALPHAMOKA, wxID_KALPHANIKA, wxID_KALPHAZNKA, 
-] = [wx.NewId() for _init_coll_KALPHA_Items in range(9)]
+ wxID_KALPHAMOKA, wxID_KALPHANIKA, wxID_KALPHAZNKA,
+wxID_KALPHAGAKA,wxID_KALPHAINKA, 
+] = [wx.NewId() for _init_coll_KALPHA_Items in range(11)]
 
 [wxID_ABSORBABOUT] = [wx.NewId() for _init_coll_ABOUT_Items in range(1)]
 
@@ -136,12 +137,18 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         def OnZnkaMenu(event):
             self.SetWaveEnergy(1.43510)
     
+        def OnGakaMenu(event):
+            self.SetWaveEnergy(1.34134)
+    
         def OnMokaMenu(event):
             self.SetWaveEnergy(0.70926)
     
         def OnAgkaMenu(event):
             self.SetWaveEnergy(0.55936)
             
+        def OnInkaMenu(event):
+            self.SetWaveEnergy(0.51357)
+    
         parent.Append(wxID_KALPHACRKA, 'CrKa')
         parent.Append(wxID_KALPHAMNKA, 'MnKa')
         parent.Append(wxID_KALPHAFEKA, 'FeKa')
@@ -149,8 +156,10 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         parent.Append(wxID_KALPHANIKA, 'NiKa')
         parent.Append(wxID_KALPHACUKA, 'CuKa')
         parent.Append(wxID_KALPHAZNKA, 'ZnKa')
+        parent.Append(wxID_KALPHAGAKA, 'GaKa')
         parent.Append(wxID_KALPHAMOKA, 'MoKa')
         parent.Append(wxID_KALPHAAGKA, 'AgKa')
+        parent.Append(wxID_KALPHAINKA, 'InKa')
         self.Bind(wx.EVT_MENU, OnCrkaMenu, id=wxID_KALPHACRKA)
         self.Bind(wx.EVT_MENU, OnMnkaMenu, id=wxID_KALPHAMNKA)
         self.Bind(wx.EVT_MENU, OnFekaMenu, id=wxID_KALPHAFEKA)
@@ -158,8 +167,10 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Bind(wx.EVT_MENU, OnNikaMenu, id=wxID_KALPHANIKA)
         self.Bind(wx.EVT_MENU, OnCukaMenu, id=wxID_KALPHACUKA)
         self.Bind(wx.EVT_MENU, OnZnkaMenu, id=wxID_KALPHAZNKA)
+        self.Bind(wx.EVT_MENU, OnGakaMenu, id=wxID_KALPHAGAKA)
         self.Bind(wx.EVT_MENU, OnMokaMenu, id=wxID_KALPHAMOKA)
         self.Bind(wx.EVT_MENU, OnAgkaMenu, id=wxID_KALPHAAGKA)
+        self.Bind(wx.EVT_MENU, OnInkaMenu, id=wxID_KALPHAINKA)
 
     def _init_coll_ABSORB_Items(self, parent):
         parent.Append(wxID_NEW,'&New Element','Add new element')
@@ -454,7 +465,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 mu = 0
                 Text += "%s\t%s%8.2f  %s%6s  %s%6s  %s%10s%s\n" %    (
                     'Element= '+str(Els),"N = ",Elem[2]," f'=",'not valid',
-                    ' f"=','not valid',' '+Gkmu+'=','not valid')
+                    ' f"=','not valid',' '+Gkmu+'=',mu,'not valid')
             else:
                 mu = self.Zcell*Elem[2]*(r1[2]+r2[2])/2.0
                 Fop += Elem[2]*(Elem[1]+(r1[0]+r2[0])/2.0)

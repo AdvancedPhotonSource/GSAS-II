@@ -5473,7 +5473,9 @@ class GSASII(wx.Frame):
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         if Controls.get('newLeBail',False):
             dlgtxt = '''Do Le Bail refinement of intensities first?
-    recommended after major parameter changes'''
+            
+    If Yes, resets starting structure factors; recommended after major parameter changes.
+    If No, then previous structure factors are used.'''
             dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
             result = wx.ID_NO
             try:
@@ -5968,7 +5970,9 @@ class GSASII(wx.Frame):
             histNames.reverse()
         if Controls.get('newLeBail',False):
             dlgtxt = '''Do Le Bail refinement of intensities first?
-    recommended after major parameter changes'''
+            
+    If Yes, resets starting structure factors; recommended after major parameter changes.    
+    If No, then previous structure factors are used.'''
             dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
             result = wx.ID_NO
             try:

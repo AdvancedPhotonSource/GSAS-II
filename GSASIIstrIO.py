@@ -21,6 +21,7 @@ import os
 import os.path as ospath
 import time
 import math
+import random as rand
 import copy
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
@@ -3040,6 +3041,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 if resetRefList and (not hapDict.get(pfx+'LeBail') or (hapData.get('LeBail',False) and Controls.get('newLeBail',False))):
                     Scale = Histogram['Sample Parameters']['Scale'][0]      #for initializing reflection structure factors.
                     StartI = hapData['Scale'][0]*Scale
+                    #### TODO: apply random distribution to StartI - optional??
                     refList = []
                     useExt = 'magnetic' in Phases[phase]['General']['Type'] and 'N' in inst['Type'][0]
                     if Phases[phase]['General'].get('Modulated',False):
@@ -3047,31 +3049,33 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,Acorr))
                         HKLd = G2mth.sortArray(HKLd,4,reverse=True)
                         for h,k,l,m,d in HKLd:
+                            randI = rand.uniform(.5,1.5)
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
                             if m or not ext or useExt:
                                 if 'C' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,1.0,1.0,1.0])
                                         #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
                                 elif 'T' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
                                         wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                         #TODO - if tabulated put alp & bet in here
                                 elif 'B' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                     else:
                         ifSuper = False
                         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,Acorr))
                         HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
+                            randI = rand.uniform(.5,1.5)
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             if ext and 'N' in inst['Type'][0] and  'MagSpGrp' in SGData:
                                 ext = G2spc.checkMagextc([h,k,l],SGData)
@@ -3081,23 +3085,23 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,1.0,1.0,1.0])
                                     #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
                             elif 'T' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
                                     wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                             elif 'B' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI/mul, 0.0,0.0,0.0,0.0, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet, prfo,abs,ext
                             elif 'E' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,StartI, 0.0,0.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI, 0.0,0.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:

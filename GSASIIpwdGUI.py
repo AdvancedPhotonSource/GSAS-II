@@ -2461,7 +2461,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                     # PATCH?: for now at least, Source is not saved anywhere before here
                     if 'Source' not in data: data['Source'] = ['CuKa','?']
-                    choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
+                    choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','GaKa','MoKa','AgKa','InKa']
                     lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                     waveSizer.Add(lamPick,0)
@@ -2901,11 +2901,11 @@ def UpdateInstrumentGrid(G2frame,data):
     RefObj = {}
     #These from Intl. Tables C, Table 4.2.2.1, p. 177-179
     waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
-        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
-        'AgKa':[0.559363,0.563775]}
+        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'GaKa':[1.34003,1.34394],
+        'MoKa':[0.70926,0.713543],'AgKa':[0.559363,0.563775],'InKa':[0.512094,0.516525]}
     # meanwaves computed as (2*Ka1+Ka2)/3
     meanwaves = {'CuKa':1.54178,'TiKa':2.74963,'CrKa':2.29092,'FeKa':1.93728,
-        'CoKa':1.79021,'MoKa':0.71069,'AgKa':0.56083}
+        'CoKa':1.79021,'MoKa':0.71069,'AgKa':0.56083,'GaKa':1.34134,'Inka':0.51357}
     Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]        
     G2gd.SetDataMenuBar(G2frame)

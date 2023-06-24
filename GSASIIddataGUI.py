@@ -930,7 +930,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             lebail = wx.Button(DData,wx.ID_ANY,label=lbLabel)
             lebail.Bind(wx.EVT_BUTTON, OnLeBail)
             useBox.Add(lebail,0,WACV)
-        bottomSizer.Add(useBox)             #,0,wx.TOP|wx.BOTTOM|wx.LEFT,5)
+        bottomSizer.Add(useBox)
         if ifkeV:
             G2G.HorizontalLine(bottomSizer,DData)
             bottomSizer.Add(wx.StaticText(DData,label=' NB: No structure or sample broadening refinement possible from energy dispersive data'))

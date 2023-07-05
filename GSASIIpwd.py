@@ -312,12 +312,28 @@ def CalcPDF(data,inst,limits,xydata):
     IofQ = copy.deepcopy(xydata['Sample'])
     IofQ[1] = np.array([I[Ibeg:Ifin] for I in IofQ[1]])
     if data['Sample Bkg.']['Name']:
-        IofQ[1][1] += xydata['Sample Bkg.'][1][1][Ibeg:Ifin]*data['Sample Bkg.']['Mult']
+        try:   # fails if background differs in number of points
+            IofQ[1][1] += xydata['Sample Bkg.'][1][1][Ibeg:Ifin]*data['Sample Bkg.']['Mult']
+        except ValueError:
+            print("Interpolating Sample background since points don't match")
+            interpF = si.interp1d(xydata['Sample Bkg.'][1][0],xydata['Sample Bkg.'][1][1],
+                                  fill_value='extrapolate')
+            IofQ[1][1] += interpF(IofQ[1][0]) * data['Sample Bkg.']['Mult']
     if data['Container']['Name']:
         xycontainer = xydata['Container'][1][1]*data['Container']['Mult']
         if data['Container Bkg.']['Name']:
-            xycontainer += xydata['Container Bkg.'][1][1][Ibeg:Ifin]*data['Container Bkg.']['Mult']
-        IofQ[1][1] += xycontainer[Ibeg:Ifin]
+            try:
+                xycontainer += xydata['Container Bkg.'][1][1][Ibeg:Ifin]*data['Container Bkg.']['Mult']
+            except ValueError:
+                print('Number of points do not agree between Container and Container Bkg.')
+                return
+        try:   # fails if background differs in number of points
+            IofQ[1][1] += xycontainer[Ibeg:Ifin]
+        except ValueError:
+            print("Interpolating Container background since points don't match")
+            interpF = si.interp1d(xydata['Container'][1][0],xycontainer,fill_value='extrapolate')
+            IofQ[1][1] += interpF(IofQ[1][0])
+        
     data['IofQmin'] = IofQ[1][1][-1]
     IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.

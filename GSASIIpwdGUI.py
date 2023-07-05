@@ -7696,12 +7696,15 @@ def computePDF(G2frame,data):
     Xlimits = [limits[1][0],limits[0][1]]       #use lower limit but ignore upper limit 
     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
     auxPlot = G2pwd.CalcPDF(data,inst,Xlimits,xydata)
-    data['I(Q)'] = xydata['IofQ']
-    data['S(Q)'] = xydata['SofQ']
-    data['F(Q)'] = xydata['FofQ']
-    data['G(R)'] = xydata['GofR']
-    data['g(r)'] = xydata['gofr']
-    return auxPlot
+    try:
+        data['I(Q)'] = xydata['IofQ']
+        data['S(Q)'] = xydata['SofQ']
+        data['F(Q)'] = xydata['FofQ']
+        data['G(R)'] = xydata['GofR']
+        data['g(r)'] = xydata['gofr']
+        return auxPlot
+    except:   # PDF Calc aborted
+        pass
 
 def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
     '''Optimize the PDF to minimize the difference between G(r) and the expected value for

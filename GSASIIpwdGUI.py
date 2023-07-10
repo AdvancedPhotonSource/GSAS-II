@@ -1293,31 +1293,24 @@ def UpdatePeakGrid(G2frame, data):
 
         prmSizer = wx.BoxSizer(wx.HORIZONTAL)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit width'),0,WACV)
-        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitRange',
-                                    typeHint=float,nDig=(6,1),size=(60,-1),
-                                        xmin=1., xmax=20.,
-                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitRange',typeHint=float,
+            nDig=(6,1),size=(60,-1),xmin=1., xmax=20.,OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         prmSizer.Add(cVal,0,WACV)
         prmSizer.Add((15,-1))
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' fit exponent, minus side'),0,WACV)
-        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerM',
-                                    typeHint=float,nDig=(6,1),size=(60,-1),
-                                        xmin=0.5, xmax=10.,
-                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerM',typeHint=float,
+            nDig=(6,1),size=(60,-1),xmin=0.5, xmax=10.,OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         prmSizer.Add(cVal,0,WACV)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' plus side'),0,WACV)
-        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerP',
-                                    typeHint=float,nDig=(6,1),size=(60,-1),
-                                        xmin=0.5, xmax=10.,
-                                        OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
+        cVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['LaueFringe'],'fitPowerP',typeHint=float,
+            nDig=(6,1),size=(60,-1),xmin=0.5, xmax=10.,OnLeave=lambda *arg,**kw:RefreshPeakGrid(None))
         prmSizer.Add(cVal,0,WACV)
         prmVSizer.Add(prmSizer)
 
         prmSizer = wx.BoxSizer(wx.HORIZONTAL)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label='  Show '),0,WACV)
         ch = G2G.EnumSelector(G2frame.dataWindow,data['LaueFringe'],'Show',
-                                    ['None','1','2','3','4','5','6'],list(range(7)),
-                                    OnChange=RefreshPeakGrid)
+            ['None','1','2','3','4','5','6'],list(range(7)),OnChange=RefreshPeakGrid)
         prmSizer.Add(ch,0,WACV)
         prmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' satellites'),0,WACV)
         prmVSizer.Add(prmSizer)
@@ -2560,7 +2553,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(tthVal,0,WACV)
                 refFlgElem.append([key,2])                   
                 instSizer.Add(RefineBox(key),0,WACV)
-                for item in ['XE','YE','ZE','A','B','C']:
+                for item in ['XE','YE','ZE','A','B','C','X','Y','Z']:
                     nDig = (10,6,'g')
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
@@ -2782,12 +2775,10 @@ def UpdateInstrumentGrid(G2frame,data):
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'Histogram  '),0,WACV|wx.LEFT,14)
         for i,h in enumerate(histnames):
             if len(h[:5].strip()) > 20:
-                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],
-                                               dots=False,lbllen=20)
-                            ,0,WACV|wx.LEFT|wx.RIGHT,5)
+                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],dots=False,lbllen=20),
+                    0,WACV|wx.LEFT|wx.RIGHT,5)
             else:
                 fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,h[5:]),0,WACV|wx.LEFT|wx.RIGHT,5)
-
         firstRadio = wx.RB_GROUP
         # put non-editable values at top of table (plot as x but not y)
         keylist = ['num']
@@ -2828,7 +2819,7 @@ def UpdateInstrumentGrid(G2frame,data):
         elif 'B' in data['Type'][1]:
             Items = ['Azimuth','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
         elif 'E' in data['Type'][1]:
-            Items = ['2-theta','XE','YE','ZE','A','B','C']
+            Items = ['2-theta','XE','YE','ZE','A','B','C','X','Y','Z']
         elif 'T' in data['Type'][1]:            # TOF
             Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
         # display the items in the table
@@ -2916,11 +2907,12 @@ def UpdateInstrumentGrid(G2frame,data):
                 insVal['Azimuth'] = 0.0
                 insDef['Azimuth'] = 0.0
                 insRef['Azimuth'] = False
-#        if 'T' in insVal['Type']:
-#            if 'difB' not in insVal:
-#                insVal['difB'] = 0.0
-#                insDef['difB'] = 0.0
-#                insRef['difB'] = False
+        elif 'E' in insVal['Type']:
+            if 'X' not in insVal:
+                for item in ['X','Y','Z']:
+                    insVal[item] = 0.0
+                    insDef[item] = 0.0
+                    insRef[item] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)

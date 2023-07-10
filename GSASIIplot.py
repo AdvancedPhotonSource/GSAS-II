@@ -3245,8 +3245,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
             if G2frame.PickId:
                 kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
-            G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-                (G2frame,newPlot,plotType),kwargs)
+            wx.CallAfter(G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
+                (G2frame,newPlot,plotType),kwargs))
     except:         #skip a C++ error
         pass
     # now start plotting
@@ -6543,7 +6543,7 @@ def PlotPowderLines(G2frame):
 
 ##### PlotPeakWidths            
 def PlotPeakWidths(G2frame,PatternName=None):
-    ''' Plotting of instrument broadening terms as function of 2-theta
+    ''' Plotting of instrument broadening terms as function of Q
     Seen when "Instrument Parameters" chosen from powder pattern data tree.
     Parameter PatternName allows the PWDR to be referenced as a string rather than
     a wx tree item, defined in G2frame.PatternId. 
@@ -6700,36 +6700,58 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
     elif 'E' in Parms['Type'][0]:
+        Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d, \Delta E/E$',fontsize=14)
         isig = 4
+        igam = 6
         Xmin,Xmax = limits[1]
         X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
-        Q = 2.*np.pi*X*npsind(tth/2.)/12.3986
+        EtoQ = 4.*np.pi*npsind(tth/2.)/12.3986
+        Q = EtoQ*X
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-        # if np.any(data[isig] < 0.):
-        #     negWarn = True
-        s = np.sqrt(data[isig])   #var -> sig(radians)
+        s = np.sqrt(data[isig])
+        g = data[igam]
+        G = G2pwd.getgamFW(g,s)
         Y = sq8ln2*s/X
+        Z = g/X
+        W = G/X
         Plot.plot(Q,Y,color='r',label='Gaussian')
+        Plot.plot(Q,Z,color='g',label='Lorentzian')
+        Plot.plot(Q,W,color='b',label='G+L')
         
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
-        if np.any(fit[isig] < 0.):
-            negWarn = True
+        for did in [isig,igam]:
+            if np.any(fit[did] < 0.):
+                negWarn = True
         sf = np.sqrt(fit[isig])
+        gf = fit[igam]
+        Gf = G2pwd.getgamFW(gf,sf)
         Yf = sq8ln2*sf/X
+        Zf = gf/X
+        Wf = Gf/X
         Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-        
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
+
         Xp = []
         Yp = []
+        Zp = []
+        Wp = []
         for peak in peaks:
-            Xp.append(2.*np.pi*peak[0]*npsind(tth/2.)/12.3986)
+            Xp.append(EtoQ*peak[0])
             try:
                 s = math.sqrt(peak[isig])
+                g = peak[igam]
             except ValueError:
                 s = 0.01
+            G = G2pwd.getgamFW(g,s)         #/2.
             Yp.append(sq8ln2*s/peak[0])
+            Zp.append(g/peak[0])
+            Wp.append(G/peak[0])
         if len(peaks):
             Plot.plot(Xp,Yp,'+',color='r',label='G peak')
+            Plot.plot(Xp,Zp,'+',color='g',label='L peak')
+            Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()
@@ -6746,9 +6768,6 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-        # for did in [isig,igam]:
-        #     if np.any(data[did] < 0.):
-        #         negWarn = True
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn

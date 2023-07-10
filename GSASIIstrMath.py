@@ -46,6 +46,7 @@ try:  # fails on doc build
 except TypeError:
     pass
 nxs = np.newaxis
+keV = 12.397639
 
 ################################################################################
 ##### Rigid Body Models
@@ -2903,6 +2904,7 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
 def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the sample-dependent Lorentzian & Gaussian peak width contributions from 
     size & microstrain parameters
+    :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:     #All checked & OK
         costh = cosd(refl[5+im]/2.)
@@ -2937,7 +2939,37 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
                 Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
             Mgam = 0.018*refl[4+im]**2*tand(refl[5+im]/2.)*np.sqrt(Sum)/np.pi
     elif 'E' in calcControls[hfx+'histType']:
-        return 0.,0.        #wrong - fix later if wanted
+        #crystallite size
+        sinth = sind(wave/2.0)   #"wave" = 2-theta for EDX
+        if calcControls[phfx+'SizeType'] == 'isotropic':
+            Sgam = 1.e-4*keV/(2.*parmDict[phfx+'Size;i']*sinth)
+        elif calcControls[phfx+'SizeType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'SizeAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Sgam = 1.e-4*keV/(2.*parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a']*sinth)
+            Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
+        else:           #ellipsoidal crystallites
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
+            H = np.array(refl[:3])
+            lenR = G2pwd.ellipseSize(H,Sij,GB)
+            Sgam = 1.e-4*keV/(2.*sinth*lenR)
+        #microstrain                
+        if calcControls[phfx+'MustrainType'] == 'isotropic':
+            Mgam = 1.e-4*parmDict[phfx+'Mustrain;i']
+        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'MustrainAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Si = parmDict[phfx+'Mustrain;i']
+            Sa = parmDict[phfx+'Mustrain;a']
+            Mgam = 1.e-4*Si*Sa/(np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
+        else:       #generalized - P.W. Stephens model
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            Sum = 0
+            for i,strm in enumerate(Strms):
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
+            Mgam = 1.e-4*refl[4+im]**2*np.sqrt(Sum)
     elif 'T' in calcControls[hfx+'histType']:       #All checked & OK
         #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
@@ -2978,6 +3010,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
 def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the derivatives on sample-dependent Lorentzian & Gaussian peak widths contributions
     from size & microstrain parameters
+    :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     gamDict = {}
     sigDict = {}
@@ -3051,7 +3084,73 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     elif 'E' in calcControls[hfx+'histType']:
-        return {},{}            #wrong - fix later if wanted
+        sinth = sind(wave/2.0)   #"wave" = 2-theta for EDX
+        #crystallite size derivatives
+        if calcControls[phfx+'SizeType'] == 'isotropic':
+            Sgam = 1.e-4*keV/(2.*parmDict[phfx+'Size;i']*sinth)
+            gamDict[phfx+'Size;i'] = -1.e-4*keV*parmDict[phfx+'Size;mx']/(2.*sinth*parmDict[phfx+'Size;i']**2)
+            sigDict[phfx+'Size;i'] = -2.0*Sgam*wave*(1.-parmDict[phfx+'Size;mx'])**2/(2.*sinth*ateln2)
+        elif calcControls[phfx+'SizeType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'SizeAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Si = parmDict[phfx+'Size;i']
+            Sa = parmDict[phfx+'Size;a']
+            gami = 1.e-4*keV/(2.*sinth*Si*Sa)
+            sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
+            Sgam = gami*sqtrm
+            dsi = gami*Si*cosP**2/sqtrm-Sgam/Si
+            dsa = gami*Sa*sinP**2/sqtrm-Sgam/Sa
+            gamDict[phfx+'Size;i'] = dsi*parmDict[phfx+'Size;mx']
+            gamDict[phfx+'Size;a'] = dsa*parmDict[phfx+'Size;mx']
+            sigDict[phfx+'Size;i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+            sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+        else:           #ellipsoidal crystallites
+            const = 1.e-4*keV/(2.*sinth)
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
+            H = np.array(refl[:3])
+            lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
+            Sgam = const/lenR
+            for i,item in enumerate([phfx+'Size;%d'%(j) for j in range(6)]):
+                gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size;mx']
+                sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+        gamDict[phfx+'Size;mx'] = Sgam
+        sigDict[phfx+'Size;mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size;mx'])/ateln2
+                
+        #microstrain derivatives                
+        if calcControls[phfx+'MustrainType'] == 'isotropic':
+            Mgam = 1.e-4*parmDict[phfx+'Mustrain;i']
+            gamDict[phfx+'Mustrain;i'] = 1.e-4*parmDict[phfx+'Mustrain;mx']
+            sigDict[phfx+'Mustrain;i'] =  2.e-4*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/(ateln2)        
+        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'MustrainAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Si = parmDict[phfx+'Mustrain;i']
+            Sa = parmDict[phfx+'Mustrain;a']
+            gami = 1.e-4*Si*Sa*tanth
+            sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
+            Mgam = gami/sqtrm
+            dsi = -gami*Si*cosP**2/sqtrm**3
+            dsa = -gami*Sa*sinP**2/sqtrm**3
+            gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']
+            gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']
+            sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
+            sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
+        else:       #generalized - P.W. Stephens model
+            const = 1.e-4*refl[4+im]**2
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            Sum = 0
+            for i,strm in enumerate(Strms):
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
+                gamDict[phfx+'Mustrain;'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
+                sigDict[phfx+'Mustrain;'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
+            Mgam = const*np.sqrt(Sum)
+            for i in range(len(Strms)):
+                gamDict[phfx+'Mustrain;'+str(i)] *= Mgam/Sum
+                sigDict[phfx+'Mustrain;'+str(i)] *= const**2/ateln2
+        gamDict[phfx+'Mustrain;mx'] = Mgam
+        sigDict[phfx+'Mustrain;mx'] = -2.e-4*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     else:   #'T'OF - All checked & OK
         if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
             Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4+im]**2/parmDict[phfx+'Size;i']
@@ -3503,10 +3602,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     
     def GetReflSigGamED(refl,im,G,GB,phfx,calcControls,parmDict):
         sig = parmDict[hfx+'A']*refl[5+im]**2+parmDict[hfx+'B']*refl[5+im]+parmDict[hfx+'C']
-        gam = 0.001
-        # Ssig,Sgam = GetSampleSigGam(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
-        # sig += Ssig
-        # gam += Sgam
+        gam = parmDict[hfx+'X']*refl[5+im]**2+parmDict[hfx+'Y']*refl[5+im]+parmDict[hfx+'Z']
+        Ssig,Sgam = GetSampleSigGam(refl,im,parmDict[hfx+'2-theta'],G,GB,SGData,hfx,phfx,calcControls,parmDict)
+        sig += Ssig
+        gam += Sgam
         return sig,gam
         
     def GetReflAlpBet(refl,im,hfx,parmDict):
@@ -3515,9 +3614,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         return alp,bet
         
     def GetPinkReflAlpBet(refl,im,hfx,parmDict):
-        # tanPos = tand(refl[5+im]/2.0)
-        # alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*tanPos)
-        # bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*tanPos)
         sinPos = sind(refl[5+im]/2.0)
         alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
         bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
@@ -3700,7 +3796,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         refl[9+im] = parmDict[pInd]
                     except KeyError:
                         continue
-                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im])
+                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im],refl[7+im])
                 iBeg = np.searchsorted(x,refl[5+im]-fmin)
                 iFin = np.searchsorted(x,refl[5+im]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
@@ -3713,7 +3809,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if useMP:
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
                 else:
-                    fp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,.001,ma.getdata(x[iBeg:iFin]))[0]
+                    fp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,refl[7+im]*100.,ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
             
@@ -3988,7 +4084,7 @@ def getPowderProfileDerv(args):
             elif 'B' in calcControls[hfx+'histType']:
                 Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
             elif 'E' in calcControls[hfx+'histType']:
-                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im])
+                Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im],refl[7+im])
             iBeg = np.searchsorted(x,refl[5+im]-fmin)
             iFin = np.searchsorted(x,refl[5+im]+fmax)
             if not iBeg+iFin:       #peak below low limit - skip peak
@@ -4043,10 +4139,10 @@ def getPowderProfileDerv(args):
                 if lenBF < 0:   #bad peak coeff
                     break
                 dMdpk = np.zeros(shape=(4,lenBF))
-                dMdipk = G2pwd.getdPsVoigt(refl[5+im],refl[6+im]*10**4,0.001,ma.getdata(x[iBeg:iFin]))
+                dMdipk = G2pwd.getdPsVoigt(refl[5+im],refl[6+im]*10**4,refl[7+im]*100.,ma.getdata(x[iBeg:iFin]))
                 for i in range(4):
                     dMdpk[i] = refl[9+im]*dMdipk[i]
-                dervDict = {'int':dMdpk[0],'pos':-dMdpk[1],'sig':dMdpk[2]*1.e4}    
+                dervDict = {'int':dMdpk[0],'pos':-dMdpk[1],'sig':dMdpk[2]*1.e4,'gam':dMdpk[3]*100.}    
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))
                 try:
@@ -4098,6 +4194,7 @@ def getPowderProfileDerv(args):
                 dpdA,dpdTTh,dpdXE,dpdYE,dpdZE = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'2-theta':[dpdTTh,'pos'],
                     hfx+'A':[refl[5+im]**2,'sig'],hfx+'B':[refl[5+im],'sig'],hfx+'C':[1.0,'sig'],
+                    hfx+'X':[refl[5+im]**2,'gam'],hfx+'Y':[refl[5+im],'gam'],hfx+'Z':[1.0,'sig'],
                     hfx+'XE':[dpdXE,'pos'],hfx+'YE':[dpdYE,'pos'],hfx+'ZE':[dpdZE,'pos']   }
             for name in names:
                 item = names[name]
@@ -4172,8 +4269,7 @@ def getPowderProfileDerv(args):
             elif 'T' in calcControls[hfx+'histType']:   #'T'OF
                 sigDict,gamDict = GetSampleSigGamDerv(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             else: #'E'
-                sigDict = {}
-                gamDict = {}
+                sigDict,gamDict = GetSampleSigGamDerv(refl,im,parmDict[hfx+'2-theta'],G,GB,SGData,hfx,phfx,calcControls,parmDict)
             for name in gamDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']

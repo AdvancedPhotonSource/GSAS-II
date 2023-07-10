@@ -210,7 +210,7 @@ def ComputeFobsSqPink(refl,iref):
 def ComputeFobsSqED(refl,iref):
     yp = np.zeros(len(x)) # not masked
     refl8im = 0
-    Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im])
+    Wd,fmin,fmax = G2pwd.getWidthsED(refl[5+im],refl[6+im],refl[7+im])
     iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
     iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
     if not iBeg+iFin:       #peak below low limit - skip peak
@@ -220,7 +220,7 @@ def ComputeFobsSqED(refl,iref):
     elif not iBeg-iFin:     #peak above high limit - done
         return -2
     if iBeg < iFin:
-        fp,sumfp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,0.001,x[iBeg:iFin])
+        fp,sumfp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,refl[6+im]*100.,x[iBeg:iFin])
         yp[iBeg:iFin] = 100.*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
     refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin],0.0))
     return refl8im,refl[9+im]

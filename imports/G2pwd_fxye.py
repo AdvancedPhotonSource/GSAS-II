@@ -29,10 +29,11 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         self.TimeMap = {}
         self.dnames = []
         self.scriptable = True
+        self.Iparm = {} #only filled for EDS data
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filename):
-        'Validrate by checking to see if the file has BANK lines & count them'
+        'Validate by checking to see if the file has BANK lines & count them'
         #print 'ContentsValidator: '+self.formatName
         nBanks= 0
         if '2' in platform.python_version_tuple()[0]:
@@ -72,6 +73,13 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
     def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
         If multiple datasets are requested, use self.repeat and buffer caching.
+        
+        EDS data is only in the STD format (10 values per line separated by spaces); 
+        the 1st line contains at col 60 the word "Two-Theta " followed by the appropriate value. 
+        The BANK record contains the 3 values (4th not used) after 'EDS' for converting MCA 
+        channel number (c) to keV via E = A + Bc + Cc^2; these coefficients are 
+        generally predetermined by calibration of the MCA. They & 2-theta are transferred to 
+        the Instrument parameters data.
         '''
         def GetFXYEdata(File,Pos,Bank):
             File.seek(Pos)
@@ -172,6 +180,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             Ecoef = np.zeros(4)
             if 'EDS' in cons[4]:
                Ecoef = np.fromstring(' '.join(cons[5:9]),sep=' ')
+               self.Inst = {'XE':[Ecoef[0],Ecoef[0],False],'YE':[Ecoef[1],Ecoef[1],False],
+                'ZE':[Ecoef[2],Ecoef[2],False],'2-theta':[5.,5.,False]}
             while S and S[:4] != 'BANK' and S[0] != '#':
                 if 'TIME_MAP' in S or '\x1a' in S:
                     break
@@ -180,7 +190,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                         break
                     xi = start+step*j
                     if 'EDS' in Bank:   #Energy dispersive - convert CN to EkeV
-                        xi = Ecoef[0]+(Ecoef[1]+(Ecoef[2]+Ecoef[3]*j)*j)*j
+                        xi = Ecoef[0]+(Ecoef[1]+Ecoef[2]*j)*j
                     ni = max(sint(S[i:i+2]),1)
                     yi = max(sfloat(S[i+2:i+8]),0.0)
                     if yi:
@@ -414,7 +424,11 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 try:
                     self.Sample['Phi'] = float(S.split('=')[1])
                 except:
-                    pass                    
+                    pass
+        if 'EDS' in Bank:
+            S = self.comments[0].lower().split('theta')
+            if len(S) > 1:
+                self.Inst['2-theta'] = [float(S[1]),float(S[1]),False]                    
         self.Sample['Temperature'] = Temperature
         fp.close()
         return True        

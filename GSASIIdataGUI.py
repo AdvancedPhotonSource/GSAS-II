@@ -1514,6 +1514,9 @@ class GSASII(wx.Frame):
     def _Add_ImportMenu_powder(self,parent):
         '''configure the Powder Data menus accord to the readers found in _init_Imports
         '''
+        def OnAutoImport(event):
+            G2G.AutoLoadFiles(self,FileTyp='pwd')
+            
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
@@ -1526,8 +1529,6 @@ class GSASII(wx.Frame):
         item = submenu.Append(wx.ID_ANY,'Simulate a dataset','Create a powder data set entry that will be simulated')
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'Auto Import','Import data files as found')
-        def OnAutoImport(event):
-            G2G.AutoLoadFiles(self,FileTyp='pwd')
         self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
         
         item = submenu.Append(wx.ID_ANY,'Fit instr. profile from fundamental parms...','')
@@ -2033,6 +2034,8 @@ class GSASII(wx.Frame):
             Tmin1 = Tmin
             if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:                
                 Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
+            if 'PXE' in Iparm1['Type'][0]:
+                Iparm1.update(rd.Inst)
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Limits'),
                 rd.pwdparms.get('Limits',[(Tmin,Tmax),[Tmin1,Tmax]])

@@ -2108,7 +2108,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 res = G2G.BlockSelector(choices,ParentFrame=G2frame,title=head,
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
-                if 'Generic' in choices[res]:
+                if 'Generic TOF' in choices[res]:
                     dlg = G2G.MultiDataDialog(G2frame,title='Generic TOF detector bank',
                         prompts=['Total FP','2-theta',],values=[25.0,150.,],
                             limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
@@ -2545,7 +2545,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'E' in insVal['Type']:
                 key = '2-theta'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' 2-theta): (%10.6f)'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' 2-theta (%10.6f):'%(insDef[key])),0,WACV)
                 tthVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 labelLst.append(u'2-theta')
                 elemKeysLst.append([key,1])

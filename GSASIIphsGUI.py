@@ -15345,9 +15345,12 @@ of the crystal structure.
     if 'magPhases' in data:
         PatternName = data['magPhases']
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
-        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-        flag = not any(['magAtms' in i for i in UCdata[5]])
+        if (PatternId):
+            UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+            UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+            flag = not any(['magAtms' in i for i in UCdata[5]])
+        else:
+            del data['magPhases']
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,flag)
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()

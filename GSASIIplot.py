@@ -2809,8 +2809,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if mode == 'Add':
                 backDict['FixedPoints'].append(xy)
                 Plot = Page.figure.gca()
-                Plot.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,
-                                picker=True,pickradius=3.)
+                Plot.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=True,pickradius=3.)
                 Page.canvas.draw()
                 return
             elif G2frame.itemPicked is not None: # end of drag in move

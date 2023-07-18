@@ -5022,10 +5022,13 @@ def UpdatePhaseData(G2frame,Item,data):
                     style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
                 if dlg.ShowModal() == wx.ID_OK:
                     fpath,fName = os.path.split(dlg.GetPath())
-                    if fpath != G2frame.LastGPXdir:
-                        disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
-                    if os.path.exists(fName):
+                    if os.path.exists(fName): # is there a file by this name in the current directory?
                         RMCPdict['files'][fil][0] = fName
+                    else: # nope, copy it
+                        disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
+                    if not os.path.exists(fName): # sanity check
+                        print(f'Error: file {fName} not found in .gpx directory ({G2frame.LastGPXdir})')
+                        return
                     G2frame.LastImportDir = fpath    #set so next file is found in same place
                     dlg.Destroy()
                     RMCPdict['ReStart'][0] = True
@@ -15414,7 +15417,8 @@ def checkPDFfit(G2frame):
         msg = ('GSAS-II does not supply a version of PDFfit2 compatible with '+
         'this Python installation. Since Python was not installed under conda you need '+
         'to correct this for yourself. You likely need to '+
-        'install the GSL (GNU Software Library) and use "pip install diffpy.pdffit2".')
+        'install the GSL (GNU Software Library) and use "pip install diffpy.pdffit2".'+
+        ' This is best done in a separate Python installation/virtual environment.')
         G2G.G2MessageBox(G2frame,msg,'PDFfit2 not provided; No conda')
         return False
 
@@ -15446,7 +15450,10 @@ def checkPDFfit(G2frame):
             print('command line conda install did not provide package. Unexpected!')
             return False
         
-    if 'gsl' not in conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST,'gsl')[0].lower():
+    if ('gsl' not in conda.cli.python_api.run_command(
+             conda.cli.python_api.Commands.LIST,'gsl')[0].lower()
+        and
+             glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*'))):
         msg = ('The gsl (GNU Software Library), needed by PDFfit2, '+
                    ' is not installed in this Python. Do you want to have this installed?')
         dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
@@ -15474,32 +15481,9 @@ def checkPDFfit(G2frame):
         return True
     except Exception as err:
         msg = 'Failed to import PDFfit2 with error:\n'+str(err)
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
-
-    # can we install pdffit2 into our current environment?
-    msg = ('Do you want to try using conda to install PDFfit2 into the '+
-                'current Python (conda) environment, freezing the current '+
-               'configuration? (There is a low chance for success with this.)'+
-               ' The alternative is to install PDFfit2 in a separate environment.'+
-               ' This will be offered next')
-    dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-    if dlg.ShowModal() == wx.ID_YES:
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install diffpy.pdffit. This may take a few minutes...')
-            res = GSASIIpath.condaInstall(['diffpy.pdffit2','gsl',
-                                        '-c','diffpy','-c','conda-forge',
-                                           '--freeze-installed'])
-        finally:
-            wx.EndBusyCursor()
-        try: # PDFfit now runs?
-            from diffpy.pdffit2 import PdfFit
-            #pf = PdfFit()
-            return True
-        except Exception as err:
-            msg = 'Failed to import PDFfit2 with error:\n'+str(err)
-            print(msg)
+        print(msg)
+        if glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
+            G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
 
     # Last effort: With conda we should be able to create a separate Python in a separate
     # environment

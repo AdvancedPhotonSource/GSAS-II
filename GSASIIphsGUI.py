@@ -15501,9 +15501,13 @@ def checkPDFfit(G2frame):
     try:
         wx.BeginBusyCursor()
         print('Preparing to create a conda environment. This may take a few minutes...')
+        # for now use the older diffpy version of pdffit:
+        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.2 -c conda-forge -c diffpy
         res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python', 'conda', 'gsl', 'diffpy.pdffit2',
+                    ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2=1.2',
                          '-c', 'conda-forge', '-c', 'diffpy'])
+        # someday perhaps this will work:
+        #   conda create -n pdffit2 python conda gsl diffpy.pdffit2 -c conda-forge
     finally:
         wx.EndBusyCursor()
     if os.path.exists(PDFpython):

@@ -6657,6 +6657,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             rname = 'Seq_PDFfit.py'
         else:
             rname = pName+'-PDFfit.py'
+            if not os.path.exists(rname):
+                wx.MessageBox(f'File {rname} does not exist. Has the Operations/"Setup RMC" menu command been run?',
+                                  caption='Run setup',style=wx.ICON_WARNING)
+                return
         wx.MessageBox(''' For use of PDFfit2, please cite:
       PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals, 
 C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen & 
@@ -15498,7 +15502,7 @@ def checkPDFfit(G2frame):
         wx.BeginBusyCursor()
         print('Preparing to create a conda environment. This may take a few minutes...')
         res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
+                    ['python', 'conda', 'gsl', 'diffpy.pdffit2',
                          '-c', 'conda-forge', '-c', 'diffpy'])
     finally:
         wx.EndBusyCursor()
@@ -15507,7 +15511,7 @@ def checkPDFfit(G2frame):
         vars['pdffit2_exec'][1] = PDFpython
         GSASIIpath.SetConfigValue(vars)
         G2G.SaveConfigVars(vars)
-        print('config',GSASIIpath.GetConfigValue('pdffit2_exec'))
+        print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
         return True
     else:
         msg = 'Failed to install PDFfit2 with error:\n'+str(PDFpython)

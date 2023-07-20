@@ -6671,7 +6671,17 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         print (' GSAS-II project saved')
         if sys.platform.lower().startswith('win'):
             batch = open('pdffit2.bat','w')
-            # TODO: should probably include an activate command here
+            # Include an activate command here
+            p = os.path.split(PDFfit_exec)[0]
+            while p:
+                if os.path.exists(os.path.join(p,'Scripts','activate')):
+                    batch.write('call '+os.path.join(p,'Scripts','activate')+'\n')
+                    break
+                prevp = p
+                p = os.path.split(p)[0]
+                if prevp == p:
+                    print('Note, no activate command found')
+                    break
             batch.write(PDFfit_exec+' '+rname+'\n')
             # batch.write('pause')
             if 'normal' in RMCPdict['refinement']:
@@ -6680,7 +6690,18 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         else:
             batch = open('pdffit2.sh','w')
             batch.write('#!/bin/bash\n')
-            # TODO: should probably include an activate command here
+            # include an activate command here
+            p = os.path.split(PDFfit_exec)[0]
+            while p:
+                if os.path.exists(os.path.join(p,'bin','activate')):
+                    batch.write('source '+os.path.join(p,'Scripts','activate')+'\n')
+                    break
+                prevp = p
+                p = os.path.split(p)[0]
+                if prevp == p:
+                    print('Note, no activate command found')
+                    break
+
             batch.write('cd ' + os.path.split(os.path.abspath(rname))[0] + '\n')
             batch.write(PDFfit_exec + ' ' + os.path.abspath(rname) + '\n')
             batch.close()

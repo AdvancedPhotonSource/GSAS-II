@@ -803,7 +803,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
     if not G2frame.GPXtree.IsEmpty():
-        file = open(G2frame.GSASprojectfile,'wb')
+        try:
+            file = open(G2frame.GSASprojectfile,'wb')
+        except PermissionError:
+            G2G.G2MessageBox(G2frame,'Read only file','Project cannot be saved; change permission & try again')
+            return
         print ('save to file: '+G2frame.GSASprojectfile)
         # stick the file name into the tree and version info into tree so they are saved.
         # (Controls should always be created at this point)

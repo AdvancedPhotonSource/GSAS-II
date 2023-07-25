@@ -3178,6 +3178,22 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     return Val,sig
 
+def GetMag(mag,Cell):
+    '''
+    Compute magnetic moment magnitude.
+    :param list mag: atom magnetic moment parms (must be magnetic!)
+    :param list Cell: lattice parameters
+    
+    :returns: moment magnitude as float
+    
+    '''
+    G = G2lat.fillgmat(Cell)
+    ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
+    mag = np.array(mag)
+    Mag = np.sqrt(np.inner(mag,np.inner(mag,GS)))
+    return Mag    
+
 def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
                     defESD=0.01,dlg=None):
     '''Search for bond distance restraints. 

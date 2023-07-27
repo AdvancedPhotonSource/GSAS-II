@@ -8341,23 +8341,23 @@ def ChooseOrigin(G2frame,rd):
         DisAglData['OrigAtoms'] = DisAglData['TargAtoms'] = [
                         [i,]+atom[ct-1:ct+1]+atom[cx:cx+3] for
                         i,atom in enumerate(phObj['Atoms'])]
-        lbl,dis,angle = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
-        # get unique distances
-        minDis = {} 
-        for i in dis: 
-            for j,o,s,d,e in dis[i]: 
-                key = '-'.join(sorted([lbl[i],lbl[j]])) 
-                if key not in minDis: 
-                    minDis[key] = d 
-                elif d < minDis[key]: 
-                    minDis[key] = d
-        thirdShortest = sorted([minDis[k] for k in minDis])[:3][-1]
-        shortTxt = ''
-        for k in minDis:
-            if minDis[k] <= thirdShortest:
-                if shortTxt: shortTxt += ', '
-                shortTxt += "{}: {:.2f}".format(k,minDis[k])
-        txt += "   Shortest distances are "+shortTxt
+        # lbl,dis,angle = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+        # # get unique distances
+        # minDis = {} 
+        # for i in dis: 
+        #     for j,o,s,d,e in dis[i]: 
+        #         key = '-'.join(sorted([lbl[i],lbl[j]])) 
+        #         if key not in minDis: 
+        #             minDis[key] = d 
+        #         elif d < minDis[key]: 
+        #             minDis[key] = d
+        # thirdShortest = sorted([minDis[k] for k in minDis])[:3][-1]
+        # shortTxt = ''
+        # for k in minDis:
+        #     if minDis[k] <= thirdShortest:
+        #         if shortTxt: shortTxt += ', '
+        #         shortTxt += "{}: {:.2f}".format(k,minDis[k])
+        # txt += "   Shortest distances are "+shortTxt
 
     # do we know if there is a center of symmetry at origin?
     centro = None

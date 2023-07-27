@@ -26,6 +26,12 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
+if not sys.platform.startswith('win'):
+    try:
+        from dmp import dump2tmp,undumptmp
+    except:
+        print('Note: Import of dmp skipped')
+
 # declare symbol (pi) and functions allowed in expressions
 sind = sin = s = lambda x: np.sin(x*np.pi/180.)
 cosd = cos = c = lambda x: np.cos(x*np.pi/180.)

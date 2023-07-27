@@ -4066,6 +4066,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Lines = Lines
         G2frame.MagLines = magMarkers
     if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Background':
+        mag2th = [0]+[x for x,m in data[0].get('Magnification',[])][1:]
+        magmult = [m for x,m in data[0].get('Magnification',[])]
         # plot fixed background points
         backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
         try:
@@ -4073,6 +4075,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         except TypeError:
             Parms = None
         for x,y in backDict.get('FixedPoints',[]):
+            if magmult:
+                mult = magmult[np.searchsorted(mag2th, x, side = 'right')-1]
+            else:
+                mult = 1.
             # "normal" intensity modes only!
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
                 break
@@ -4090,7 +4096,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     x = G2lat.Dsp2pos(Parms,x)
                 else:
                     break
-            Plot.plot(x,y,'rD',clip_on=Clip_on,picker=True,pickradius=10.)
+            Plot.plot(x,y*mult,'rD',clip_on=Clip_on,picker=True,pickradius=10.)
 
     # plot the partials. TODO: get partials to show up in publication plot
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']

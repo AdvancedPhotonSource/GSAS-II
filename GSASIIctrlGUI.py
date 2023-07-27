@@ -5082,6 +5082,7 @@ class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix bu
                 return
             except IndexError: # has this been tested? 
                 #print row,col,value
+                if self.GetNumberRows() == 0: return
                 # add a new row
                 if row > self.GetNumberRows():
                     self.data.append([''] * self.GetNumberCols())
@@ -7347,6 +7348,11 @@ tutorialIndex = (
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
      '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
      before beginning Rietveld refinement.'''],
+     
+    ['AutoBkg', 'AutoBkg.html',  'Using the "Auto Background" feature',
+     '''This shows how to use the "Auto Background" feature in GSAS-II to get an estimate of background parameters for a 
+     series of histograms with quite significant background levels. This estimate can be used to define a set of fixed points 
+     or to define a "Fixed background histogram."'''],
      
     ['LeBail', 'LeBailSucrose.htm', 'Le Bail Intensity Extraction in GSAS-II - Sucrose',
      '''Shows the process of setting up a Le Bail fit, where reflection 

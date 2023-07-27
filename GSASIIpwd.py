@@ -2117,6 +2117,21 @@ def SetBackgroundParms(Background):
             if Background[1]['background PWDR'][2]:
                 backVary += ['BF mult',]
     return bakType,backDict,backVary
+
+def autoBkgCalc(bkgdict,ydata):
+    '''Compute the autobackground using the selected pybaselines function
+    
+    :param dict bkgdict: background parameters
+    :param np.array ydata: array of Y values
+    :returns: points for background intensity at each Y position
+    '''
+    import pybaselines.whittaker
+    lamb = int(10**bkgdict['autoPrms']['logLam'])
+    if bkgdict['autoPrms']['opt'] == 0:
+        func = pybaselines.whittaker.arpls
+    else:
+        func = pybaselines.whittaker.arpls
+    return func(ydata, lam=lamb, max_iter=10)[0]
     
 def DoCalibInst(IndexPeaks,Inst):
     

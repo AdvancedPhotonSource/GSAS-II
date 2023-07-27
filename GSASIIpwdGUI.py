@@ -1824,6 +1824,25 @@ def UpdateBackground(G2frame,data):
             data[1]['background PWDR'][2] = not data[1]['background PWDR'][2]            
 
         fileSizer = wx.BoxSizer(wx.VERTICAL)
+        fileSizer.Add((-1,5))
+        backSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Fit to fixed bkg')
+        backSizer.Add(btn,0,wx.RIGHT,3)
+        btn.Enable(len(data[1].get('FixedPoints',[])) > 5)
+        btn.Bind(wx.EVT_BUTTON,OnBkgFit)
+        
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Compute auto background')
+        backSizer.Add(btn,0,wx.RIGHT,3)
+        btn.Bind(wx.EVT_BUTTON,onAutoBack)
+
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Copy auto background')
+        backSizer.Add(btn,0,wx.RIGHT,3)
+        data[1]['autoPrms'] = data[1].get('autoPrms',{})
+        btn.Enable(bool(data[1]['autoPrms'].get('Mode')))
+        btn.Bind(wx.EVT_BUTTON,copyAutoBack)
+        fileSizer.Add(backSizer)
+        fileSizer.Add((-1,5))
+        
         fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background histogram (for point-by-point subtraction):'),0)
         if 'background PWDR' not in data[1]:
             data[1]['background PWDR'] = ['',-1.,False]
@@ -1845,7 +1864,79 @@ def UpdateBackground(G2frame,data):
             backSizer.Add(backFit,0,WACV)
         fileSizer.Add(backSizer)
         return fileSizer
-    
+
+    def onAutoBack(event):
+        '''Open a window for auto background computation
+        '''
+        bkgdict = data[1]
+        xydata = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
+        autoBackground(G2frame)
+        if bkgdict['autoPrms']['Mode'] == 'fixed':
+            xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
+            addAutoBack(G2frame,data,xydata)
+            wx.CallAfter(UpdateBackground,G2frame,data)
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        elif bkgdict['autoPrms']['Mode'] == 'fit':
+            xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
+            npts = len(xydata[0])
+            bkgdict['FixedPoints'] = [i for i in zip(
+                xydata[0].data[::npts//100],
+                xydata[4].data[::npts//100])]
+            OnBkgFit(event)
+        else:
+            wx.CallAfter(UpdateBackground,G2frame,data)
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+
+    def copyAutoBack(event):
+        '''reproduce the auto background computation on selected 
+        other histograms
+        '''
+        savePatternId = G2frame.PatternId
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        autoBkgDict = data[1].get('autoPrms')
+        if not autoBkgDict.get('Mode'):
+            G2frame.ErrorDialog('No auto bkg setting','This is unexpected, no auto bkg parms for histogram '+hst,G2frame)
+            return
+        elif autoBkgDict['Mode'] == 'fit':
+            txt = 'set fixed points from auto bkg calc'
+        else:
+            txt = 'use auto bkg calc to define Fixed Bkg histogram'
+        histList = [i for i in GetHistsLikeSelected(G2frame)
+                        if 'Autobkg for' not in i]
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
+                        f'Select histogram(s) to {txt} based on {hst}',
+                        'Compute auto bkg for...', histList)
+        try:
+            copyList = []
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections(): 
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternId = Id
+            xydata = G2frame.GPXtree.GetItemPyData(Id)[1]
+            G2frame.GPXtree.SetItemPyData
+            bkgId = G2gd.GetGPXtreeItemId(G2frame,Id,'Background')
+            G2frame.GPXtree.SetItemPyData(bkgId,copy.deepcopy(data))
+            itemData = G2frame.GPXtree.GetItemPyData(bkgId)
+            if autoBkgDict['Mode'] == 'fixed':
+                xydata[4] = G2pwd.autoBkgCalc(itemData[1],xydata[1])
+                addAutoBack(G2frame,itemData,xydata)
+            elif autoBkgDict['Mode'] == 'fit':
+                xydata[4] = G2pwd.autoBkgCalc(itemData[1],xydata[1])
+                npts = len(xydata[0])
+                itemData[1]['FixedPoints'] = [i for i in zip(
+                xydata[0].data[::npts//100],
+                xydata[4].data[::npts//100])]
+                OnBkgFit(event)
+        G2frame.PatternId = savePatternId
+        wx.CallAfter(UpdateBackground,G2frame,data)
+
     def CalcBack(PatternId=G2frame.PatternId):
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
@@ -1901,11 +1992,152 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add(BackFileSizer())
     G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.dataWindow.SetDataSize()
+
+def addAutoBack(G2frame,data,xydata):
+    '''Create a new histogram for the computed auto background and place
+    as the fixed background histogram
+    '''    
+    bkgHistName = 'PWDR Autobkg for '+G2frame.GPXtree.GetItemText(G2frame.PatternId)[5:]
+    # if histogram exists we should probably reuse it, but for now, just create a new one
+    bkgHistName = G2obj.MakeUniqueLabel(bkgHistName,G2frame.GetHistogramNames('PWDR'))
+
+    Ymin = min(xydata[4])
+    Ymax = max(xydata[4])
+    d = copy.deepcopy(G2frame.GPXtree.GetItemPyData(G2frame.PatternId))
+    d[0] = {'wtFactor': 1.0, 'Dummy': False,
+                  'ranId': ran.randint(0, sys.maxsize),
+                  'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
+                  'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
+                  'Yminmax': [Ymin, Ymax]}
+    d[1][1] = xydata[4]
+    d[1][2] = np.ones_like(xydata[4])
+    d[1][3] = np.zeros_like(xydata[4])
+    d[1][4] = np.zeros_like(xydata[4])
+    d[1][5] = np.zeros_like(xydata[4])
+    NewId = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=bkgHistName)
+    G2frame.GPXtree.SetItemPyData(NewId,d)
+                  
+    item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.PatternId)
+    while item:
+        nam = G2frame.GPXtree.GetItemText(item)
+        if nam == 'Comments':
+            d = [' # background generated with Autobkg'] 
+        elif nam == 'Background':
+            d = [['chebyschev-1',True,3,1.0,0.0,0.0],
+                     {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],
+                          'background PWDR':['',1.0,False],'FixedPoints':[]}]
+        elif nam == 'Peak List':
+            d = {'sigDict':{},'peaks':[]}
+        elif nam == 'Index Peak List':
+            d = [[], []]
+        elif nam == 'Unit Cells List':
+            d = []
+        elif nam == 'Reflection Lists':
+            d = {}                
+        else:
+            d = copy.deepcopy(G2frame.GPXtree.GetItemPyData(item))
+        G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(parent=NewId,text=nam),d)
+        item, cookie = G2frame.GPXtree.GetNextChild(G2frame.PatternId, cookie)
+
+
+    bId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Background')
+    data = G2frame.GPXtree.GetItemPyData(bId)
+    # set fixed bkg & turn off computed background
+    data[1]['background PWDR'] = [bkgHistName, 1.0, False]
+    data[0][1] = False
+    data[0][3:] = data[0][2]*[0.]
+    for p in data[1]['peaksList']:
+        p[2] = 0.
+        p[1::2] = 4*[False]
+    for p in data[1]['debyeTerms']:
+        p[0] = 0
+        p[1::2] = 3*[False]
+    G2frame.GetUsedHistogramsAndPhasesfromTree() # reindex
+
+# Autobackground Dialog
+class autoBackground(wx.Dialog):
+    '''Create a file selection widget for setting background with 
+    pybaselines, as requested by James Feng. 
+
+    :param wx.Frame G2frame: reference to the main GSAS-II frame.
+
+    '''
+    def __init__(self,G2frame,*args,**kwargs):
+        self.G2frame = G2frame
+        bId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Background')
+        data = G2frame.GPXtree.GetItemPyData(bId)
+        self.bkgdict = data[1]
+        self.xydata = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
+        npts = len(self.xydata[0])
+        # add auto bkg to background prms dict 
+        self.bkgdict['autoPrms'] = self.bkgdict.get('autoPrms',{})
+        self.bkgdict['autoPrms']['opt'] = self.bkgdict['autoPrms'].get('opt',0)
+        logLam =  min(10,float(int(10*np.log10(npts)**1.5)-9.5)/10.)
+        self.bkgdict['autoPrms']['logLam'] = self.bkgdict['autoPrms'].get('logLam',logLam)
+        self.bkgdict['autoPrms']['Mode'] = None
+        maxLam = min(15.,1.*int(3*self.bkgdict['autoPrms']['logLam']+0.9))
+        # save starting point info
+        self.startingBackground = copy.deepcopy(self.xydata[4])
+        # start process
+        wx.Dialog.__init__(self, parent=G2frame, 
+                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.CenterOnParent()
         
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self,label=' Compute autobackground'),0)
+        choices = ['arpls','iarpls']
+        subSiz = wx.BoxSizer(wx.HORIZONTAL)
+        subSiz.Add(wx.StaticText(self,label='Computation option'))
+        for w in G2G.G2RadioButtons(self,self.bkgdict['autoPrms'],'opt',choices,
+                                    OnChange=self._calcBkg):
+            subSiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL,0)
+        mainSizer.Add(subSiz)
+        siz = G2G.G2SliderWidget(self,self.bkgdict['autoPrms'],
+                                'logLam','log(Lambda)',
+                                1.,maxLam,100,self._calcBkg)
+        mainSizer.Add(siz)
+        
+        subSiz = wx.BoxSizer(wx.HORIZONTAL)
+        subSiz.Add((-1,-1),1,wx.EXPAND,1)
+        btn = wx.Button(self, wx.ID_CLOSE, label='Set Fixed\nPoints && Fit')
+        btn.Bind(wx.EVT_BUTTON,lambda event: self.EndModal(wx.ID_CLOSE))
+        subSiz.Add(btn)
+        subSiz.Add((5,-1))
+        btn = wx.Button(self, wx.ID_OK, label='Define Fixed\nBkg histogram')
+        btn.Bind(wx.EVT_BUTTON,lambda event: self.EndModal(wx.ID_OK))
+        subSiz.Add(btn)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        subSiz.Add((5,-1))
+        subSiz.Add(btn,0,wx.CENTER)
+        subSiz.Add((-1,-1),1,wx.EXPAND,1)
+        mainSizer.Add((-1,5))
+        mainSizer.Add(subSiz,0,wx.EXPAND)
+        mainSizer.Add((-1,5))
+        self.SetSizer(mainSizer)
+        mainSizer.Fit(self)
+        self._calcBkg()
+        res = self.ShowModal()
+        if res == wx.ID_CLOSE:
+            self.bkgdict['autoPrms']['Mode'] = 'fit'
+        elif res == wx.ID_OK:
+            self.bkgdict['autoPrms']['Mode'] = 'fixed'
+        else:
+            # restore the background to the starting values
+            self.xydata[4] = self.startingBackground
+            self.bkgdict['autoPrms']['Mode'] = None
+        
+    def _calcBkg(self,event=None):
+        '''respond to a change in the background parameters by recomputing 
+        the auto background
+        '''
+        self.xydata[4] = G2pwd.autoBkgCalc(self.bkgdict,self.xydata[1].data)
+        import GSASIIplot as G2plt
+        G2plt.PlotPatterns(self.G2frame,plotType='PWDR')
+    
 ################################################################################
 #####  Limits
-################################################################################           
-       
+################################################################################       
 def UpdateLimitsGrid(G2frame, data,datatype):
     '''respond to selection of PWDR Limits data tree item.
     Allows setting of limits and excluded regions in a PWDR data set

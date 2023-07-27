@@ -1,5 +1,5 @@
-GSAS-II Requirements and Options
-==========================================
+GSAS-II Requirements, Optional and Included Packages
+======================================================
 
 Supported Platforms
 --------------------------------
@@ -27,32 +27,37 @@ Details for GSAS-II use on these specific platforms follows below:
   and packages. This is getting increasingly tough. We have not tried
   Windows-11, but expect the Windows-10 distribution to run fine there.
 
-* **MacOS**: GSAS-II can run natively on Intel or ARM ("M1" or "Apple
+* **MacOS**: GSAS-II can run natively on Intel or ARM ("M1",  "M2" or "Apple
   Silicon") processors. With the native code, Mac ARM machines offer
   the highest performance seen on any platform. 
   
   For Intel processor Macs, we provide an installer. This can also be
   used on ARM-equipped Macs but native M1 code runs way
-  faster. Native ARM code installation is a bit more complex; but 
+  faster. Installation of the native ARM code is a bit more complex; but 
   detailed instructions are provided
-  (https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/MacM1Notes)
-  that require use of either the miniforge package or the homebrew
+  (https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/MacM1Notes).
+  This requires use of either the miniforge package or the homebrew
   package installer. 
   Macs older than Catalina (10.15) will likely require older
   distributions of Python.  
 
-* **Linux** (Intel-compatible): Note that GSAS-II does not get a lot of testing
+* **Linux**: Note that GSAS-II does not get a lot of testing
   in Linux by us, but is used fairly widely on this platform
-  nonetheless.  One can use the 
-  installer that we provide, but compatibility with older and very new
-  versions of Linux may require compatibility
-  library installation, not always easy to do. It may be
+  nonetheless.  We provide an installer that includes Python and
+  needed packages for Intel-compatible Linuxes, but compatibility with
+  older and very new versions of Linux can sometimes be tricky as
+  compatibility libraries may be needed -- not always easy to do. It may be
   better to use your Linux distribution's versions of Python and
   packages (typically done with a software tool such as apt or yum.)
-  You may possibly need to use pip as well. Adapt from the detailed
-  example for how to do for the 32-bit Raspberry Pi OS:
-  https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallPiLinux.  
+  You may possibly need to use pip as well. For an example on how that
+  is done see the 32-bit Raspberry Pi OS instructions:
+  https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallPiLinux.
 
+  Will GSAS-II run on Linux with other types of CPUs? That will mostly
+  depend on support for Python and wxPython on that CPU. If those run,
+  you can likely build the GSAS-II binaries with gcc &
+  gfortran. Expect to modify the SConstruct file. 
+  
 * **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
   and the 64-bit version of the Raspberry Pi OS (formerly
   called Raspbian) and compiled binaries are provided.
@@ -398,7 +403,7 @@ GSAS-II path, most commonly
 the ``.../GSASII/bin`` or ``.../GSASII/bindist`` subdirectories.
 
 
-Referenced Externally-Developed Software
+Supported Externally-Developed Software
 ----------------------------------------------------
 
 GSAS-II provides interfaces to use a number of programs developed by
@@ -431,6 +436,11 @@ beyond a standard installation are needed to access their functionality.
     between unit cells. An API has been written and this will be
     integrated into the GSAS-II GUI. 
 
+  **pybaselines**
+   Determines a background for a powder pattern in the "autobackground"
+   option. See https://pybaselines.readthedocs.io for more
+   information. 
+    
 The following web services can also be accessed from computers that
 have internet access. All software needed for this access is included
 with GSAS-II.
@@ -476,13 +486,11 @@ as part of the GSAS-II distribution and must be installed separately:
   **PDFfit2**
     For small-box fitting of PDFs; see
     https://github.com/diffpy/diffpy.pdffit2#pdffit2. This code is no 
-    longer supported by the authors, but is still quite useful. It can
-    only be run with older Python versions. It is supplied within
-    GSAS-II for Windows with Python 3.7-3.9 and for MacOS only with Python 3.7.
-    When running GSAS-II with later versions of Python, as is strongly
-    encouraged, it is best to install a separate older Python
+    longer being updated by the authors, but is still quite useful.
+    It is supplied within GSAS-II for Python 3.7.
+    It is likely best to install a separate Python
     interpreter specifically for PDFfit2. When GSAS-II is run from a
     Python installation that includes the conda package manager (the
     usual installation practice), the GUI will offer an option to
-    install PDFfit2 via a separate Python 3.7 environment when the
+    install PDFfit2 via a separate environment when the
     PDFfit2 option is selected on the Phase/RMC tab. 

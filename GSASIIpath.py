@@ -935,13 +935,11 @@ def IPyBreak_base(userMsg=None):
             print ('IPython InteractiveShellEmbed not found')
             return
     import inspect
-    from IPython import __version__
-    if __version__.startswith('8.12.'): # see https://github.com/ipython/ipython/issues/13966
-        from IPython.core import getipython
-        if getipython.get_ipython() is None:
-            ipshell = InteractiveShellEmbed.instance()
-        else:
-            ipshell = InteractiveShellEmbed()
+    #from IPython import __version__
+    #if __version__.startswith('8.12.'): # see https://github.com/ipython/ipython/issues/13966
+    from IPython.core import getipython
+    if getipython.get_ipython() is None:
+        ipshell = InteractiveShellEmbed.instance()
     else:
         ipshell = InteractiveShellEmbed()
 

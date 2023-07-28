@@ -10,7 +10,7 @@ import numpy as np
 from scipy.linalg import solve_banded, solveh_banded
 from scipy.sparse import identity, diags
 
-from . import config
+#from . import config  # removed as causes problems w/GSAS-II with no clear use
 from ._compat import _HAS_PENTAPY, _pentapy_solve
 from ._validation import _check_lam
 

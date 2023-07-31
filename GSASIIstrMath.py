@@ -507,7 +507,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         phaseRest = restraintDict[phase]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
             ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs'],['General','General'],]
+            ['ChemComp','Sites'],['Texture','HKLs'],['General','General'],
+            ['Moments','Moments']]
         for name,rest in names:
             pWsum[name] = 0.
             pWnum[name] = 0
@@ -559,6 +560,22 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                         pWt.append(wt/esd**2)                    
                         pWsum[name] += wt*((obs-calc)/esd)**2
                         pWnum[name] += 1
+                elif name == 'Moments':
+                    for i,[indx,obs,esd] in enumerate(itemRest[rest]):
+                        pNames.append(str(pId)+':'+name+':'+str(i))
+                        moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
+                        obs = 0.
+                        calcs = []
+                        for i,mom in enumerate(moms):
+                            calcs.append(G2mth.GetMag(mom,cell))
+                            obs += calcs[-1]
+                        obs /= len(indx)
+                        for calc in calcs:
+                            pVals.append(obs-calc)
+                            pWt.append(wt/esd**2)                    
+                            pWsum[name] += wt*((obs-calc)/esd)**2
+                            pWnum[name] += 1
+                    
                 elif name == 'Texture':
                     SHkeys = list(textureData['SH Coeff'][1].keys())
                     SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
@@ -690,7 +707,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         phaseRest = restraintDict.get(phase,{})
         names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
             'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
-            'ChemComp':'Sites','Texture':'HKLs'}
+            'ChemComp':'Sites','Texture':'HKLs','Moments':'Moments'}
         lasthkl = np.array([0,0,0])
         for ip,pName in enumerate(pNames): # loop over restraints
             pnames = pName.split(':')
@@ -735,6 +752,15 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                         dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
                         mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
                         deriv = mul*factors
+                elif name == 'Moments':
+                    indx,obs,esd = itemRest[names[name]][Id]
+                    dNames = []
+                    deriv = []
+                    moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
+                    for i,ind in enumerate(indx):
+                        calc = G2mth.GetMag(moms[i],cell)
+                        dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
+                        deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))                   
                 elif 'Texture' in name:
                     deriv = []
                     dNames = []
@@ -4857,7 +4883,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             raise G2obj.G2RefineCancel('Cancel pressed')
         #dlg.Raise()
     pDict,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
-    if len(pVals):
+    if len(pVals) and dlg:
         pSum = np.sum(pWt*pVals**2)
         for name in pWsum:
             if pWsum[name]:

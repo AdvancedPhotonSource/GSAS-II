@@ -1971,11 +1971,13 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
         cx,ct,cs = AtPtrs[:3]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
             ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs']]
+            ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments']]
         for name,rest in names:
+            if name not in phaseRest:
+                continue                           
             itemRest = phaseRest[name]
             if rest in itemRest and itemRest[rest] and itemRest['Use']:
-                pFile.write('\n  %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
+                pFile.write('\n %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
                 if name in ['Bond','Angle','Plane','Chiral']:
                     pFile.write('     calc       obs      sig   delt/sig  atoms(symOp): \n')
                     for indx,ops,obs,esd in itemRest[rest]:
@@ -2033,6 +2035,21 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                             pFile.write(' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f\n'%(np.sum(calcs),obs,esd))
                         except KeyError:
                             del itemRest[rest]
+                elif name == 'Moments':
+                    for item in itemRest['Moments']:
+                        nMom = len(item[0])
+                        AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],ct-1)
+                        moms = G2mth.GetAtomItemsById(Atoms,AtLookup,item[0],cx+4,3)
+                        obs = 0.
+                        pFile.write(nMom*' Atom       calc'+'     obs    esd\n')
+                        line = ''
+                        for i,mom in enumerate(moms):
+                            Mom = G2mth.GetMag(mom,cell)
+                            line += ' %s  %8.3f'%(AtNames[i],Mom)
+                            obs += Mom
+                        obs /= nMom
+                        line += '%8.3f %6.3f\n'%(obs,item[-1])
+                        pFile.write(line)
                 elif name == 'Texture' and textureData['Order']:
                     SHCoef = textureData['SH Coeff'][1]
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']

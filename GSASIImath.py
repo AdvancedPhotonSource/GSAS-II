@@ -850,6 +850,21 @@ def GetAtomFracByID(pId,parmDict,AtLookup,indx):
 #            U6 = Atom[cia+2:cia+8]
     
 
+def GetAtomMomsByID(pId,parmDict,AtLookup,indx):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    pfx = [str(pId)+'::A'+i+':' for i in ['Mx','My','Mz']]
+    Mom = []
+    for ind in indx:
+        names = [pfx[i]+str(AtLookup[ind]) for i in range(3)]
+        Mom.append([parmDict[name] for name in names])
+    return Mom
+    
 def ApplySeqData(data,seqData,PF2=False):
     '''Applies result from seq. refinement to drawing atom positions & Uijs
     
@@ -3192,7 +3207,34 @@ def GetMag(mag,Cell):
     GS = G/np.outer(ast,ast)
     mag = np.array(mag)
     Mag = np.sqrt(np.inner(mag,np.inner(mag,GS)))
-    return Mag    
+    return Mag 
+
+def GetMagDerv(mag,Cell):
+    '''
+    Compute magnetic moment derivatives numerically
+    :param list mag: atom magnetic moment parms (must be magnetic!)
+    :param list Cell: lattice parameters
+    
+    :returns: moment derivatives as floats
+    
+    '''
+    def getMag(m):
+        return np.sqrt(np.inner(m,np.inner(m,GS)))
+    
+    derv = np.zeros(3)
+    dm = 0.0001
+    twodm = 2.*dm
+    G = G2lat.fillgmat(Cell)
+    ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
+    mag = np.array(mag)
+    for i in [0,1,2]:
+        mag[i] += dm
+        Magp = getMag(mag)
+        mag[i] -= 2*dm
+        derv[i] = (Magp-getMag(mag))
+        mag[i] += dm
+    return derv/twodm
 
 def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
                     defESD=0.01,dlg=None):

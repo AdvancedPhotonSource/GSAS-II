@@ -1890,7 +1890,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 return
             Moments.ClearSelection()
             val = momentList[rows[0]][-1]
-            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for moments',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for moments',val,[0.,5.],'%.3f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1932,7 +1932,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             for item in momentList:
                 maxno = max(maxno,len(item[0]))
             colLabels = maxno*['atom','calc']+['target','esd']
-            Types = maxno*[wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2']+2*[wg.GRID_VALUE_FLOAT+':10,2',]
+            Types = maxno*[wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,3']+2*[wg.GRID_VALUE_FLOAT+':10,3',]
             for i,[indx,obs,esd] in enumerate(momentList):
                 try:
                     sum = 0.
@@ -1962,6 +1962,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                 for c in range(maxno*2+1):
                     Moments.SetReadOnly(r,c,True)
                     Moments.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                    if not c%2 and not Moments.GetCellValue(r,c):
+                        Moments.SetCellTextColour(r,c+1,VERY_LIGHT_GREY)
             Moments.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             for i in (G2G.wxID_RESTDELETE,G2G.wxID_RESTCHANGEESD):
                 G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
@@ -2296,7 +2298,7 @@ def UpdateRestraints(G2frame,data,phaseName):
     if 'General' not in restrData:
         restrData['General'] = {'wtFactor':1.0,'General':[], 'Use':True}
     General = phasedata['General']
-    if General['Type'] == 'magnetic' and 'Magnetic' not in restrData:
+    if General['Type'] == 'magnetic' and 'Moments' not in restrData:
         restrData['Moments'] = {'wtFactor':1.0,'Moments':[],'Use':True}
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)

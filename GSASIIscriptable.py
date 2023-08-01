@@ -3701,6 +3701,42 @@ class G2PwdrData(G2ObjectWrapper):
             d = d[key]
         dlast[key] = newvalue
         
+    def calc_autobkg(self,opt=0,logLam=None):
+        """Sets fixed background points using the pybaselines Whittaker 
+        algorithm.
+
+       :param int opt: 0 for 'arpls' or 1 for 'iarpls'. Default is 0.
+
+       :param float logLam: log_10 of the Lambda value used in the 
+         pybaselines.whittaker.arpls/.iarpls computation. If None (default)
+         is provided, a guess is taken for an appropriate value based 
+         on the number of points. 
+
+       :returns: the array of computed background points  
+       """
+        bkgDict = self.data['Background'][1]
+        xydata = self.data['data'][1]
+        npts = len(xydata[1])
+        bkgDict['autoPrms'] = bkgDict.get('autoPrms',{})
+        try:
+            opt = int(opt)
+        except:
+            opt = 0
+        bkgDict['autoPrms']['opt'] = opt
+        try:
+            logLam = float(logLam)
+        except:
+            logLam =  min(10,float(int(10*np.log10(npts)**1.5)-9.5)/10.)
+            print('Using default value of',logLam,'for pybaselines.whittaker.[i]arpls background computation')
+        bkgDict['autoPrms']['logLam'] = logLam
+        bkgDict['autoPrms']['Mode'] = None
+        bkgdata = G2pwd.autoBkgCalc(bkgDict,xydata[1])
+        bkgDict['FixedPoints'] = [i for i in zip(
+                xydata[0].data[::npts//100],
+                bkgdata.data[::npts//100])]
+        bkgDict['autoPrms']['Mode'] = 'fixed'
+        return bkgdata
+        
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
     The object contains these class variables:

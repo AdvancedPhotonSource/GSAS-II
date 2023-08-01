@@ -15,8 +15,7 @@ of data tree items.
 GSASIIscriptable can be used in two ways. It offers a command-line mode, but 
 the more widely used and more powerful mode of GSASIIscriptable is 
 used is via Python scripts that 
-call the module's application interface (API), see API summary that follows or the :ref:`API` 
-section.
+call the module's application interface (API), these are summarized immediately below and are documented in the :ref:`complete API documentation <API>` section.
 
 While the command-line mode 
 provides access a number of features without writing Python scripts 
@@ -24,8 +23,10 @@ via shell/batch commands (see :ref:`CommandlineInterface`), use in practice
 seems somewhat clumsy. Command-line mode
 is no longer being developed and its use is discouraged.
 
-.. contents:: Section Contents 
-
+.. contents:: Scripting Documentation Contents
+   :depth: 2
+   :backlinks: none
+	       
 Installation of GSASIIscriptable
 ================================
 
@@ -34,14 +35,14 @@ for some activities, since the scripting API has not yet been extended to all
 features of GSAS-II and even if that is ever completed, there will still be some things that GSAS-II does with the GUI would be almost impossible to implement without a interactive graphical view of the data.
 
 Nonetheless, there may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server.
-The minimal requirements for use of GSASIIscriptable are only Python, numpy and scipy, but additional optional requirements are described in 
-the :ref:`ScriptingRequirements`, which also provides some installation instructions.
+The minimal requirements for use of GSASIIscriptable are only Python, numpy and scipy, but additional optional packages that can be utilized are described in 
+the :ref:`ScriptingRequirements` section of the requirements chapter, which also provides some installation instructions.
 
 In a standard GSAS-II installation, no changes are made to Python. When the GUI is invoked, a small script or Windows batch file is used to start GSAS-II inside Python. When
 GSASIIscriptable is used, Python must be provided with the location of the GSAS-II files. There are two ways this can be done:
 
-* define the GSAS-II installation location in the Python ``sys.path``, or
-* install a reference to GSAS-II inside Python. 
+ #. define the GSAS-II installation location in the Python ``sys.path``, or
+ #. install a reference to GSAS-II inside Python. 
 
 The latter method requires an extra installation step, but has the advantage that
 it allows writing portable GSAS-II scripts. This is discussed further in the
@@ -59,23 +60,34 @@ Overview of Classes
 
 .. tabularcolumns:: |l|p{4in}|
 
-=======================================   ===============================================================================================================
-class                                      Encapsulated by class 
-=======================================   ===============================================================================================================
-:class:`~GSASIIscriptable.G2Project`       A GSAS-II project file; provides references to objects below,
+========================================   ===============================================================================================================
+Scripting class name                              Description 
+========================================   ===============================================================================================================
+:ref:`G2Project <Class_G2Project>`         :class:`~GSASIIscriptable.G2Project`:
+                                           A GSAS-II project file; provides references to objects below,
                                            each corresponding to a tree item 
                                            (exception is :class:`~GSASIIscriptable.G2AtomRecord`)
-:class:`~GSASIIscriptable.G2Phase`         Provides phase information access 
+                                           
+:ref:`G2Phase <Class_G2Phase>`             :class:`~GSASIIscriptable.G2Phase`:
+                                           Provides phase information access 
                                            (also provides access to atom info via :class:`~GSASIIscriptable.G2AtomRecord`)
-:class:`~GSASIIscriptable.G2AtomRecord`               Access to an atom within a phase
-:class:`~GSASIIscriptable.G2PwdrData`                 Access to powder histogram info
-:class:`~GSASIIscriptable.G2Image`                    Access to image info
-:class:`~GSASIIscriptable.G2PDF`                      PDF histogram info
-:class:`~GSASIIscriptable.G2SeqRefRes`                The sequential results table
-=======================================   ===============================================================================================================
+                                          
+:ref:`G2AtomRecord <Class_G2AtomRecord>`   :class:`~GSASIIscriptable.G2AtomRecord`:
+                                           Access to an atom within a phase
+                                          
+:ref:`G2PwdrData <Class_G2PwdrData>`       :class:`~GSASIIscriptable.G2PwdrData`:
+                                           Access to powder histogram info
+                                          
+:ref:`G2Image <Class_G2Image>`             :class:`~GSASIIscriptable.G2Image`: Access to image info
 
-Functions
----------
+:ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
+
+:ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`:
+                                           The sequential results table
+========================================   ===============================================================================================================
+
+Independent Functions
+----------------------
 
 A small number of Scriptable routines do not require use of objects. 
 
@@ -88,6 +100,8 @@ method                                                Use
 :func:`~GSASIIscriptable.SetPrintLevel`               Sets the amount of output generated when running a script 
 :func:`~GSASIIscriptable.installScriptingShortcut`    Installs GSASIIscriptable within Python as G2script
 ===================================================   ===============================================================================================================
+
+.. _Class_G2Project:
 
 Class :class:`~GSASIIscriptable.G2Project`
 ---------------------------------------------
@@ -142,6 +156,8 @@ method                                                                  Use
 :meth:`~GSASIIscriptable.G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
 ====================================================================    ===============================================================================================================
 
+.. _Class_G2Phase:
+
 Class :class:`~GSASIIscriptable.G2Phase`
 -------------------------------------------
 
@@ -175,6 +191,8 @@ method                                                      Use
 :meth:`~GSASIIscriptable.G2Phase.setDistRestraintWeight`    Sets the weighting factor for the bond distance restraints
 ========================================================    ===============================================================================================================
 
+.. _Class_G2PwdrData:
+
 Class :class:`~GSASIIscriptable.G2PwdrData`
 ---------------------------------------------
 
@@ -192,6 +210,8 @@ method                                                     Use
 :meth:`~GSASIIscriptable.G2PwdrData.add_back_peak`       Adds a background peak to the histogram. Also see :meth:`~GSASIIscriptable.G2PwdrData.del_back_peak`
                                                          and :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak`.
 :meth:`~GSASIIscriptable.G2PwdrData.fit_fixed_points`    Fits background to the specified fixed points.
+:meth:`~GSASIIscriptable.G2PwdrData.set_background`      Sets a background histogram that will be subtracted (point by point) from the current histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.calc_autobkg`        Estimates the background and sets the fixed background points from that.
 :meth:`~GSASIIscriptable.G2PwdrData.getdata`             Provides access to the diffraction data associated with the histogram.
 :meth:`~GSASIIscriptable.G2PwdrData.reflections`         Provides access to the reflection lists for the histogram.
 :meth:`~GSASIIscriptable.G2PwdrData.Export`              Writes the diffraction data or reflection list into a file
@@ -201,8 +221,9 @@ method                                                     Use
 :attr:`~GSASIIscriptable.G2PwdrData.Peaks`               Provides access to the peak list data structure
 :attr:`~GSASIIscriptable.G2PwdrData.PeakList`            Provides the peak list parameter values 
 :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
-:meth:`~GSASIIscriptable.G2PwdrData.set_background`      Sets a background histogram that will be subtracted (point by point) from the current histogram.
 =======================================================  ===============================================================================================================
+
+.. _Class_G2Image:
 
 Class :class:`~GSASIIscriptable.G2Image`
 -----------------------------------------
@@ -239,6 +260,7 @@ method                                                Use
 :meth:`~GSASIIscriptable.G2Image.clearPixelMask`      Clears a saved Pixel map from the project, if one is present. 
 ====================================================  ===============================================================================================================
 
+.. _Class_G2PDF:
 
 Class :class:`~GSASIIscriptable.G2PDF`
 -----------------------------------------
@@ -257,6 +279,8 @@ method                                                Use
 :meth:`~GSASIIscriptable.G2PDF.set_formula`                              Sets the chemical formula for the sample
 ==================================================    ===============================================================================================================
 
+.. _Class_G2SeqRefRes:
+
 Class :class:`~GSASIIscriptable.G2SeqRefRes`
 -----------------------------------------------
 
@@ -273,6 +297,8 @@ method                                                    Use
 :meth:`~GSASIIscriptable.G2SeqRefRes.get_Covariance`       Retrieves values and covariance for a set of refined parameters for a particular histogram 
 ======================================================    ===============================================================================================================
 
+.. _Class_G2AtomRecord:
+
 Class :class:`~GSASIIscriptable.G2AtomRecord`
 -----------------------------------------------
 
@@ -280,8 +306,54 @@ Class :class:`~GSASIIscriptable.G2AtomRecord`
   used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
   refinement_flags, occupancy and uiso can be used to set values. See the :class:`~GSASIIscriptable.G2AtomRecord` docs and source code.
 
-.. _Refinement_dicts:
+========================================================    ===============================================================================================================
+method/property                                                    Use
+========================================================    ===============================================================================================================
+:data:`~GSASIIscriptable.G2AtomRecord.label`                 Reference as :data:`G2AtomRecord.label` to get label value for atom
+                                                             (value can not be changed in script)
 
+:data:`~GSASIIscriptable.G2AtomRecord.type`                  Reference as :data:`G2AtomRecord.type` to get atom type 
+                                                             (value can not be changed in script)
+
+:data:`~GSASIIscriptable.G2AtomRecord.element`               Reference as :data:`G2AtomRecord.type` to get the element symbol
+                                                             associated with an atom
+                                                             (value can not be changed in script)
+
+:data:`~GSASIIscriptable.G2AtomRecord.refinement_flags`      Reference as :data:`G2AtomRecord.refinement_flags` to get the refinement flags
+                                                             associated with an atom or...
+                                                             
+:meth:`~GSASIIscriptable.G2AtomRecord.refinement_flags`      Call as :meth:`G2AtomRecord.type` to set the refinement flags
+                                                             associated with an atom
+
+:data:`~GSASIIscriptable.G2AtomRecord.coordinates`           Reference as :data:`G2AtomRecord.coordinates` to get the three coordinates
+                                                             associated with an atom
+                                                             (values can not be changed in script)
+
+:data:`~GSASIIscriptable.G2AtomRecord.occupancy`             Reference as :data:`G2AtomRecord.occupancy` to get the site occupancy 
+                                                             associated with an atom or...
+                                                             
+:meth:`~GSASIIscriptable.G2AtomRecord.occupancy`             Call as :meth:`G2AtomRecord.occupancy` to set the site occupancy 
+                                                             associated with an atom
+
+:data:`~GSASIIscriptable.G2AtomRecord.mult`                  Reference as :data:`G2AtomRecord.mult` to get an atom's site multiplicity
+                                                             (value can not be changed in script)
+
+:data:`~GSASIIscriptable.G2AtomRecord.ranId`                 Reference as :data:`G2AtomRecord.ranId` to get an atom's random Id number
+                                                             (value can not be changed in script)
+                                                             
+:data:`~GSASIIscriptable.G2AtomRecord.adp_flag`              Reference as :data:`G2AtomRecord.adp_flag` to get either U or I
+                                                             specifying that an atom is set as anisotropic or isotropic
+                                                             (value can not be changed in script)
+
+:data:`~GSASIIscriptable.G2AtomRecord.uiso`                  Reference as :data:`G2AtomRecord.uiso` to get the Uiso value 
+                                                             associated with an atom or...
+                                                             
+:meth:`~GSASIIscriptable.G2AtomRecord.uiso`                  Call as :meth:`G2AtomRecord.uiso` to set the Uiso value 
+                                                             associated with an atom
+
+========================================================    ===============================================================================================================
+  
+.. _Refinement_dicts:
 
 Refinement parameters
 =====================
@@ -479,7 +551,7 @@ and :func:`~GSASIIscriptable.G2PwdrData.clear_refinements`. As an example,
 
 .. code-block::  python
 
-   hist.set_refinements({"Background": {"no.coeffs": 3, "refine": True},
+   hist.set_refinements({"Background": {"no. coeffs": 3, "refine": True},
                          "Sample Parameters": ["Scale"],
                          "Limits": [10000, 40000]})
 
@@ -491,7 +563,7 @@ key is used to define specific histograms. As an example:
 
   gsas_proj.do_refinements([
       {'set': {
-          'Background': {'no.coeffs': 3, 'refine': True},
+          'Background': {'no. coeffs': 3, 'refine': True},
           'Sample Parameters': ['Scale'],
           'Limits': [10000, 40000]},
       'histograms': [1,2]}
@@ -803,6 +875,9 @@ can be used to change the histogram type.
 Code Examples
 =============
 
+.. contents:: Contents for Scripting Examples
+   :local: 
+
 .. _ScriptingShortcut:
 
 Shortcut for Scripting Access
@@ -826,7 +901,7 @@ the three commands listed above for all future uses of GSASIIscripting:
     import G2script as G2sc
 
 There are two ways this installation can be done. The most easy way is to invoke the
-"Install GSASIIscriptable shortcut" command in the GSAS-II GUI's
+"Install GSASIIscriptable shortcut" command in the GSAS-II GUI
 File menu. Alternatively it can be accomplished from within GSASIIscriptable
 using these commands:
 
@@ -1414,8 +1489,54 @@ be specified.
             print('\t',h.name,hfil+'.csv')
             h.Export(hfil,'.csv','histogram CSV')
 
-.. _CommandlineInterface:
+.. _AutoBackground:
 
+Automatic Background
+---------------------
+
+This example shows how to use the automatic background feature in GSAS-II to
+compute an approximate background and set fixed background points from that
+background. This approximately example follows that of the
+`Autobackground Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/AutoBkg/AutoBkg.html>`_. In this example, a new project is created and
+the data files from the tutorial are read. Note that scripting is not able
+to read files from inside a zip archive or use defaulted instrument parameters.
+The histograms are then processed in turn.
+The first step is to use `calc_autobkg` to compute the fixed background points.
+The refinement flag is then set for the Chebyschev polynomial terms and three
+background peaks are added with the width flag set for refinement. The first
+call to `fit_fixed_points()` will refine the three Chebyschev terms and
+the intensities of the three background peaks to fit the
+fixed background points. The refinement flags for 
+the widths of the three background peaks are then set as well and the
+refinement is repeated. The location of the third background peaks is added
+and the refinement is repeated.
+Finally, the number of Chebyschev polynomial terms is increased to six
+and the refinement is repeated.
+            
+.. code-block::  python
+
+    import os,glob
+    import G2script as G2sc
+    PathWrap = lambda fil: os.path.join('/tmp',fil)
+    gpx = G2sc.G2Project(newgpx=PathWrap('autobkg.gpx'))
+    for i in glob.glob(PathWrap('test_RampDown-*.xye')):
+        hist = gpx.add_powder_histogram(i,PathWrap('testData.instprm'))
+    for hist in gpx.histograms('PWDR'):
+        hist.calc_autobkg(logLam=3.5)
+        hist.set_refinements({"Background": {"no. coeffs": 3, "refine": True}})
+        for pk in [2.4,3.1,4.75]:
+            hist.add_back_peak(pk,1000,1000,0,[False,True,False,False])
+        hist.fit_fixed_points()
+        for i in [0,1,2]: hist.ref_back_peak(i,[False,True,True,False])
+        hist.fit_fixed_points()
+        hist.ref_back_peak(2,[True,True,True,False])
+        hist.fit_fixed_points()
+        hist.set_refinements({"Background": {"no. coeffs": 6, "refine": True}})
+        hist.fit_fixed_points()
+        gpx.save()
+
+            
+.. _CommandlineInterface:
 
 GSASIIscriptable Command-line Interface
 =======================================

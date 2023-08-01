@@ -2130,7 +2130,7 @@ def autoBkgCalc(bkgdict,ydata):
     if bkgdict['autoPrms']['opt'] == 0:
         func = pybaselines.whittaker.arpls
     else:
-        func = pybaselines.whittaker.arpls
+        func = pybaselines.whittaker.iarpls
     return func(ydata, lam=lamb, max_iter=10)[0]
     
 def DoCalibInst(IndexPeaks,Inst):

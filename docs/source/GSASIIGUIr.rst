@@ -1,5 +1,8 @@
-*GSAS-II GUI Utility Modules*
+*GSAS-II GUI Support Modules*
 ==============================
+
+The modules documented here provide GUI or graphics capabilities that
+are used in multiple sections of the GSAS-II GUI or graphics. 
 
 ---------------------------------------------
 *GSASIIctrlGUI: Custom GUI controls*

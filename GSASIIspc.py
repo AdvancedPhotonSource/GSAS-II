@@ -35,7 +35,7 @@ def SpcGroup(SGSymbol):
     :param SGSymbol: space group symbol (string) with spaces between axial fields
     :returns: (SGError,SGData)
     
-       * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
+       * SGError = 0 for no errors; >0 for errors (see :func:`SGErrors` for details)
        * SGData - is a dict (see :ref:`Space Group object<SGData_table>`) with entries:
        
              * 'SpGrp': space group symbol, slightly cleaned up

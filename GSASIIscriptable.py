@@ -1170,12 +1170,17 @@ class G2Project(G2ObjectWrapper):
         self.data[histname]['data'][0]['Dummy'] = True
         return self.histogram(histname)
     
-    def add_phase(self, phasefile, phasename=None, histograms=[],
-                      fmthint=None, mag=False):
-        """Loads a phase into the project from a .cif file
+    def add_phase(self, phasefile=None, phasename=None, histograms=[],
+                      fmthint=None, mag=False,
+                      spacegroup='P 1',cell=None):
+        """Loads a phase into the project, usually from a .cif file
 
-        :param str phasefile: The CIF file from which to import the phase.
-        :param str phasename: The name of the new phase, or None for the default
+        :param str phasefile: The CIF file (or other file type, see fmthint) 
+          that the phase will be read from. 
+          May be left as None (the default) if the phase will be constructed
+          a step at a time. 
+        :param str phasename: The name of the new phase, or None for the 
+          default. A phasename must be specified when a phasefile is not. 
         :param list histograms: The names of the histograms to associate with
             this phase. Use proj.histograms() to add to all histograms.
         :param str fmthint: If specified, only importers where the format name
@@ -1184,12 +1189,55 @@ class G2Project(G2ObjectWrapper):
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
         :param bool mag: Set to True to read a magCIF
-
+        :param str spacegroup: The space group name as a string. The  
+          space group must follow the naming rules used in 
+          :func:`GSASIIspc.SpcGroup`. Defaults to 'P 1'. Note that 
+          this is only used when phasefile is None.
+        :param list cell: a list with six unit cell constants 
+            (a, b, c, alpha, beta and gamma in Angstrom/degrees).
+ 
         :returns: A :class:`G2Phase` object representing the
             new phase.
         """
         LoadG2fil()
         histograms = [self.histogram(h).name for h in histograms]
+        if phasefile is None:
+            if phasename is None:
+                raise Exception('add_phase: phasefile and phasename cannot both be None')
+            phaseNameList = [p.name for p in self.phases()]
+            phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
+            self.data['Phases'] = self.data.get('Phases', {'data': None})
+            err,SGData=G2spc.SpcGroup(spacegroup)
+            if err != 0:
+                print('Space group error:', G2spc.SGErrors(err))
+                raise Exception('Space group error')
+            self.data['Phases'][phasename] = G2obj.SetNewPhase(
+                Name=phasename,SGData=SGData)
+            self.data['Phases'][phasename]['General']['Name'] = phasename
+            for hist in histograms:
+                self.link_histogram_phase(hist, phasename)
+
+            for obj in self.names:
+                if obj[0] == 'Phases':
+                    phasenames = obj
+                    break
+            else:
+                phasenames = [u'Phases']
+                self.names.append(phasenames)
+            phasenames.append(phasename)
+
+            data = self.data['Phases'][phasename]
+            if cell:
+                if len(cell) != 6:
+                    raise Exception('Error: Unit cell must have 6 entries')
+                data['General']['Cell'][1:7] = cell
+                data['General']['Cell'][7] = G2lat.calc_V(G2lat.cell2A(cell))
+            SetupGeneral(data, None)
+            self.index_ids()
+
+            self.update_ids()
+            return self.phase(phasename)
+        
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
 
         # TODO handle multiple phases in a file
@@ -3854,6 +3902,53 @@ class G2Phase(G2ObjectWrapper):
     def id(self, val):
         self.data['pId'] = val
 
+    def add_atom(self,x,y,z,element,lbl,occ=1.,uiso=0.01):
+        '''Adds an atom to the current phase
+
+        :param float x: atom fractional x coordinate
+        :param float y: atom fractional y coordinate
+        :param float z: atom fractional z coordinate
+        :param str element: an element symbol (capitalization is ignored). Optionally add
+          a valence (as in Ba+2)
+        :param str lbl: A label for this atom
+        :param float occ: A fractional occupancy for this atom (defaults to 1).
+        :param float uiso: A Uiso value for this atom (defaults to 0.01).
+
+        :returns: the :class:`~GSASIIscriptable.G2AtomRecord` atom object for the new atom
+        '''
+        x = float(x)
+        y = float(y)
+        z = float(z)
+        occ = float(occ)
+        uiso = float(uiso)
+        
+        generalData = self.data['General']
+        atomData = self.data['Atoms']
+        SGData = generalData['SGData']
+        
+        atId = ran.randint(0,sys.maxsize)
+        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
+
+        if generalData['Type'] == 'macromolecular':
+            atomData.append([0,lbl,'',lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
+        elif generalData['Type'] in ['nuclear','faulted',]:
+            if generalData['Modulated']:
+                atomData.append([lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.append([lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
+        elif generalData['Type'] == 'magnetic':
+            if generalData['Modulated']:
+                atomData.append([lbl,element,'',x,y,z,occ,0.,0.,0.,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.append([lbl,element,'',x,y,z,occ,0.,0.,0.,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
+
+        SetupGeneral(self.data, None)
+        #self.proj.index_ids()  # needed? 
+        #self.proj.update_ids()  # needed?
+        return self.atom(lbl)
+        
     def get_cell(self):
         """Returns a dictionary of the cell parameters, with keys:
             'length_a', 'length_b', 'length_c', 'angle_alpha', 'angle_beta', 'angle_gamma', 'volume'

@@ -182,6 +182,7 @@ method                                                      Use
 :meth:`~GSASIIscriptable.G2Phase.copyHAPvalues`             Copies HAP settings between from one phase/histogram and to other histograms in same phase.
 :meth:`~GSASIIscriptable.G2Phase.atoms`                     Returns a list of atoms in the phase
 :meth:`~GSASIIscriptable.G2Phase.atom`                      Returns an atom from its label 
+:meth:`~GSASIIscriptable.G2Phase.add_atom`                  Adds an atom to a phase
 :meth:`~GSASIIscriptable.G2Phase.histograms`                Returns a list of histograms linked to the phase
 :meth:`~GSASIIscriptable.G2Phase.get_cell`                  Returns unit cell parameters (also see :meth:`~GSASIIscriptable.G2Phase.get_cell_and_esd`)
 :meth:`~GSASIIscriptable.G2Phase.export_CIF`                Writes a CIF for the phase

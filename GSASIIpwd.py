@@ -546,6 +546,9 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
         Qdata = si.griddata(powQ,pwddata[1]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
     elif RDFcontrols['UseObsCalc'] == 'calc-back':
         Qdata = si.griddata(powQ,pwddata[3]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
+    elif RDFcontrols['UseObsCalc'] == 'auto-back':
+        auto = autoBkgCalc(background[1],pwddata[1])
+        Qdata = si.griddata(powQ,auto-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=0.)
     Qdata *= np.sin((Qpoints-minQ)*piDQ)/piDQ
     Qdata *= 0.5*np.sqrt(Qpoints)       #Qbin normalization
     dq = Qpoints[1]-Qpoints[0]

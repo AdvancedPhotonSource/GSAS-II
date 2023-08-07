@@ -226,7 +226,7 @@ class RDFDialog(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0)
         plotType = wx.BoxSizer(wx.HORIZONTAL)
         plotType.Add(wx.StaticText(self.panel,label=' Select plot type:'),0,WACV)
-        Choices = ['obs-back','calc-back','obs-calc']
+        Choices = ['obs-back','calc-back','obs-calc','auto-back']
         useOC = wx.ComboBox(self.panel,value=Choices[2],choices=Choices,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         useOC.SetValue(self.result['UseObsCalc'])

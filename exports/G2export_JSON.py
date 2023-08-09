@@ -32,9 +32,12 @@ class JsonEncoder(json.JSONEncoder):
             return {"_npmask":obj.mask.tolist(),'_npvalues':obj.tolist()}
         elif isinstance(obj, np.ndarray):
             return {"_nparray":obj.tolist()}
+        elif 'G2VarObj' in str(type(obj)):
+            return {"_GSASIIobj.G2VarObj":obj.varname()}
         else:
             print('Tell Brian to fix JsonEncoder to handle type=',type(obj),
                       '. Skipping for now')
+            #breakpoint()
             return "sorry, I don't know how to show a {} object".format(str(type(obj)))
     
 class ExportJSON(G2IO.ExportBaseclass):
@@ -54,6 +57,8 @@ class ExportJSON(G2IO.ExportBaseclass):
         self.InitExport(event)
         if self.ExportSelect(): return # set export parameters; get file name
         self.OpenFile()
+        self.Write('[\n')
+        first = True
         wx.BeginBusyCursor()
         G2frame = self.G2frame
         # crawl through the tree, dumping as we go
@@ -64,21 +69,27 @@ class ExportJSON(G2IO.ExportBaseclass):
                 name = G2frame.GPXtree.GetItemText(item)
                 #print('level 0',name)
                 data = {name:G2frame.GPXtree.GetItemPyData(item)}
-                self.Write('\n')
+                if first:
+                    first = False
+                    self.Write('\n')
+                else:
+                    self.Write('\n, ')
                 self.Write(json.dumps(
-                    "=========== '{}' Tree Item ==============".format(name)))
+                    "=========== '{}' Tree Item ==============".format(name))+',')
                 self.Write(json.dumps(data, indent=2, cls=JsonEncoder))
                 item2, cookie2 = G2frame.GPXtree.GetFirstChild(item)
                 while item2:
                     name2 = G2frame.GPXtree.GetItemText(item2)
                     #print('  level 1',name2)
-                    self.Write('\n')
+                    self.Write(',\n')
                     self.Write(json.dumps([
                         "=========== '{}' SubItem of Tree '{}' ==============".format(name2,name)]))
+                    self.Write(', ')
                     data = {name:{name2:G2frame.GPXtree.GetItemPyData(item)}}
                     self.Write(json.dumps(data, indent=2, cls=JsonEncoder))
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
         finally:
             wx.EndBusyCursor()
+        self.Write(']\n')
         self.CloseFile()

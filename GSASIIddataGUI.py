@@ -1036,8 +1036,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                         poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
                             ,0,wx.TOP|wx.BOTTOM,5)
                         poSizer.Add(SHDataSizer(POData))  #,0,wx.TOP|wx.BOTTOM,5)
-                        poSizer.Add(SHPenalty(POData))  #,0,wx.TOP|wx.BOTTOM,5)
-                        
+                        try:
+                            poSizer.Add(SHPenalty(POData))  #,0,wx.TOP|wx.BOTTOM,5)
+                        except:
+                            print('SHPenalty error occurred')
                 bottomSizer.Add(poSizer)    #,0,wx.TOP|wx.BOTTOM,5)
                 bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic': 

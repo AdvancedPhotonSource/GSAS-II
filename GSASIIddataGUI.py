@@ -530,17 +530,19 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,G2frame.hist)
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Instrument Parameters'))[0]
         reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
-        reflData = reflSets[generalData['Name']]
-        Super = generalData.get('Super',0)
         hkls = []
-        nprfo = 12
-        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
-            nprfo = 14
-        for ref in reflData['RefList']:
-            if ref[nprfo+Super] < 0.:
-                hkls += ['%d %d %d: %.3f'%(ref[0],ref[1],ref[2],ref[nprfo+Super]),]
-            if len(hkls) > 10:
-                break
+        if generalData['Name'] in reflSets:
+            reflData = reflSets[generalData['Name']]
+            if 'RefList' in reflData:
+                Super = generalData.get('Super',0)
+                nprfo = 12
+                if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
+                    nprfo = 14
+                for ref in reflData['RefList']:
+                    if ref[nprfo+Super] < 0.:
+                        hkls += ['%d %d %d: %.3f'%(ref[0],ref[1],ref[2],ref[nprfo+Super]),]
+                    if len(hkls) > 10:
+                        break
         shPenalty = wx.BoxSizer(wx.HORIZONTAL)
         shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
         shPenalty.Add(wx.ComboBox(DData,value=POData[6][0],choices=POData[6],

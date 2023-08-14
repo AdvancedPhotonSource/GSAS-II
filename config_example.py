@@ -246,9 +246,10 @@ when the GPX file is opened. Default is False.
 fullrmc_exec = None
 '''Defines the full path to a Python executable that has been configured 
 with the fullrmc package. If None (the default), GSAS-II will see if fullrmc
-can be imported into the current Python and if not a executable named fullrmc* 
-(or fullrmc*.exe on Windows) can be found in the GSAS-II binary directory 
-or in the system path.
+can be imported into the current Python (which is unlikely to ever work). 
+If that does not work, GSAS-II will search for an executable named fullrmc* 
+(or fullrmc*.exe on Windows) in the Python ``sys.path`` search path,
+which includes the GSAS-II binary directory.
 '''
 
 pdffit2_exec = None

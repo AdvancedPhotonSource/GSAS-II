@@ -77,18 +77,16 @@ added to the phase entry and constraints are generated.
 *Module G2phase_INS: Import phase from SHELX INS file*
 --------------------------------------------------------
 
-Copies a phase from SHELX ins file into the
-current project.
+Copies a phase from SHELX ins file into the current project.
 
-	       
 .. automodule:: G2phase_INS
     :members: 
 
 *Module G2phase_rmc6f: Import phase from RMCProfile*
 --------------------------------------------------------
 
-Copies a phase from FullRMC file into the current GSAS-II project.
-       
+Copies a phase from a file written by RMCProfile into the current GSAS-II project.
+
 .. automodule:: G2phase_rmc6f
     :members:
 

@@ -744,6 +744,8 @@ class GSASII(wx.Frame):
                 wxeye.InspectionTool().Show()
             item = parent.Append(wx.ID_ANY,"wx inspection tool",'')
             self.Bind(wx.EVT_MENU, OnwxInspect, item)
+            item = parent.Append(wx.ID_ANY,'Reopen current\tCtrl+0','Reread the current GSAS-II project (.gpx) file')
+            self.Bind(wx.EVT_MENU, self.OnFileReread, id=item.GetId())
             
         item = parent.Append(wx.ID_ANY,"Install GSASIIscriptable shortcut",'')
         self.Bind(wx.EVT_MENU,
@@ -4375,6 +4377,30 @@ class GSASII(wx.Frame):
             self.LastGPXdir = dirname
         else:
             print('file not found',f)        
+        
+    def OnFileReread(self, event):
+        '''reread the current GPX file; no questions asked -- no save
+        for development purposes.
+        '''
+        def _setStart(nameParent,name):
+            '''Reload the last selected tree item by name'''
+            start = self.root
+            if GetGPXtreeItemId(self,self.root,nameParent):
+                start = GetGPXtreeItemId(self,self.root,nameParent)
+            Id = GetGPXtreeItemId(self,start,name)
+            #breakpoint()
+            self.GPXtree.SelectItem(Id)
+            SelectDataTreeItem(self,Id)
+        Id = self.GPXtree.GetSelection()
+        parent = self.GPXtree.GetItemParent(Id)
+        name = self.GPXtree.GetItemText(Id)
+        nameParent = self.GPXtree.GetItemText(parent)
+        f = os.path.join(self.LastGPXdir,self.GSASprojectfile)
+        if os.path.exists(f):
+            self.OnFileOpen(event, filename=f, askSave=False)
+        else:
+            print('file not found',f)
+        wx.CallLater(100,_setStart,nameParent,name)
         
     def _SaveOld(self,askSave=True):
         '''See if we should save current project and continue 

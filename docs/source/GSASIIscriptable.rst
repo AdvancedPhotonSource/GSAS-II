@@ -303,55 +303,44 @@ method                                                    Use
 Class :class:`~GSASIIscriptable.G2AtomRecord`
 -----------------------------------------------
 
-  When working with phases, :class:`~GSASIIscriptable.G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
-  used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
-  refinement_flags, occupancy and uiso can be used to set values. See the :class:`~GSASIIscriptable.G2AtomRecord` docs and source code.
+  When working with phases, :class:`~GSASIIscriptable.G2AtomRecord` methods provide access to the contents of each atom in a phase. This provides access to atom
+  values via class "properties" that can be used to get values of much of the atoms associated settings, as below. Most can also be used to set values via
+  "setter" methods.
+  See the :class:`~GSASIIscriptable.G2AtomRecord` docs and source code.
 
 ========================================================    ===============================================================================================================
 method/property                                                    Use
 ========================================================    ===============================================================================================================
-:data:`~GSASIIscriptable.G2AtomRecord.label`                 Reference as :data:`G2AtomRecord.label` to get label value for atom
-                                                             (value can not be changed in script)
+:data:`~GSASIIscriptable.G2AtomRecord.label`                 Reference as ``<atom>.label``` to get or set label value for atom
 
-:data:`~GSASIIscriptable.G2AtomRecord.type`                  Reference as :data:`G2AtomRecord.type` to get atom type 
-                                                             (value can not be changed in script)
+:data:`~GSASIIscriptable.G2AtomRecord.type`                  Reference as ``<atom>.G2AtomRecord.type`` to get or set the atom type 
 
-:data:`~GSASIIscriptable.G2AtomRecord.element`               Reference as :data:`G2AtomRecord.type` to get the element symbol
-                                                             associated with an atom
-                                                             (value can not be changed in script)
+:data:`~GSASIIscriptable.G2AtomRecord.element`               Reference as ``<atom>.G2AtomRecord.element`` to get the element symbol
+                                                             associated with an atom (change with ``<atom>.G2AtomRecord.type``,
+                                                             see :data:`~GSASIIscriptable.G2AtomRecord.type`)
 
-:data:`~GSASIIscriptable.G2AtomRecord.refinement_flags`      Reference as :data:`G2AtomRecord.refinement_flags` to get the refinement flags
-                                                             associated with an atom or...
+:data:`~GSASIIscriptable.G2AtomRecord.refinement_flags`      Reference class property ``<atom>.G2AtomRecord.refinement_flags`` to get or set
+                                                             the refinement flags associated with an atom
                                                              
-:meth:`~GSASIIscriptable.G2AtomRecord.refinement_flags`      Call as :meth:`G2AtomRecord.type` to set the refinement flags
+:data:`~GSASIIscriptable.G2AtomRecord.coordinates`           Reference as ``<atom>.G2AtomRecord.coordinates`` to get or set the three coordinates
                                                              associated with an atom
 
-:data:`~GSASIIscriptable.G2AtomRecord.coordinates`           Reference as :data:`G2AtomRecord.coordinates` to get the three coordinates
-                                                             associated with an atom
-                                                             (values can not be changed in script)
-
-:data:`~GSASIIscriptable.G2AtomRecord.occupancy`             Reference as :data:`G2AtomRecord.occupancy` to get the site occupancy 
-                                                             associated with an atom or...
+:data:`~GSASIIscriptable.G2AtomRecord.occupancy`             Reference class property ``<atom>.G2AtomRecord.occupancy`` to get or set the 
+                                                             site occupancy associated with an atom
                                                              
-:meth:`~GSASIIscriptable.G2AtomRecord.occupancy`             Call as :meth:`G2AtomRecord.occupancy` to set the site occupancy 
-                                                             associated with an atom
+:data:`~GSASIIscriptable.G2AtomRecord.mult`                  Reference as ``<atom>.G2AtomRecord.mult`` to get an atom site multiplicity
+                                                             (value cannot be changed in script)
 
-:data:`~GSASIIscriptable.G2AtomRecord.mult`                  Reference as :data:`G2AtomRecord.mult` to get an atom's site multiplicity
-                                                             (value can not be changed in script)
-
-:data:`~GSASIIscriptable.G2AtomRecord.ranId`                 Reference as :data:`G2AtomRecord.ranId` to get an atom's random Id number
-                                                             (value can not be changed in script)
+:data:`~GSASIIscriptable.G2AtomRecord.ranId`                 Reference as ``<atom>.G2AtomRecord.ranId`` to get an atom random Id number
+                                                             (value cannot be changed in script)
                                                              
-:data:`~GSASIIscriptable.G2AtomRecord.adp_flag`              Reference as :data:`G2AtomRecord.adp_flag` to get either U or I
+:data:`~GSASIIscriptable.G2AtomRecord.adp_flag`              Reference as ``<atom>.G2AtomRecord.adp_flag`` to get either 'U' or 'I'
                                                              specifying that an atom is set as anisotropic or isotropic
-                                                             (value can not be changed in script)
+                                                             (value cannot be changed in script)
 
-:data:`~GSASIIscriptable.G2AtomRecord.uiso`                  Reference as :data:`G2AtomRecord.uiso` to get the Uiso value 
-                                                             associated with an atom or...
+:data:`~GSASIIscriptable.G2AtomRecord.uiso`                  Reference pseudo class variable ``<atom>.G2AtomRecord.uiso`` to get 
+                                                             or set the Uiso value associated with an atom
                                                              
-:meth:`~GSASIIscriptable.G2AtomRecord.uiso`                  Call as :meth:`G2AtomRecord.uiso` to set the Uiso value 
-                                                             associated with an atom
-
 ========================================================    ===============================================================================================================
   
 .. _Refinement_dicts:
@@ -693,30 +682,30 @@ HStrain                                Boolean or list/tuple, True to refine all
                                        match number of terms.
 Mustrain
 \              type                   Mustrain model. One of 'isotropic',
-                                       'uniaxial', or 'generalized'. **Should always
-                                       be included when Mustrain is used.**
+                                      'uniaxial', or 'generalized'. This should
+                                      be specified to change the model.
 \              direction              For uniaxial only. A list of three
-                                       integers,
-                                       the [hkl] direction of the axis.
+                                      integers,
+                                      the [hkl] direction of the axis.
 \              refine                 Usually boolean, set to True to refine.
-                                       or False to clear. 
-                                       For uniaxial model, can specify a value
-                                       of 'axial' or 'equatorial' to set that flag
-                                       to True or a single
-                                       boolean sets both axial and equatorial.
+                                      or False to clear. 
+                                      For uniaxial model, can specify a value
+                                      of 'axial' or 'equatorial' to set that flag
+                                      to True or a single
+                                      boolean sets both axial and equatorial.
 Size                                   
 \              type                   Size broadening model. One of 'isotropic',
-                                       'uniaxial', or 'ellipsoid'. **Should always
-                                       be specified when Size is used.**
+                                      'uniaxial', or 'ellipsoid'. This should 
+                                      be specified to change from the current.
 \              direction              For uniaxial only. A list of three
-                                       integers,
-                                       the [hkl] direction of the axis.
+                                      integers,
+                                      the [hkl] direction of the axis.
 \              refine                 Boolean, True to refine.
 \              value                  float, size value in microns 
-Pref.Ori.                              Boolean, True to refine
-Show                                   Boolean, True to refine
-Use                                    Boolean, True to refine
-Scale                                  Phase fraction; Boolean, True to refine
+Pref.Ori.                             Boolean, True to refine
+Show                                  Boolean, True to refine
+Use                                   Boolean, True to refine
+Scale                                 Phase fraction; Boolean, True to refine
 =============  ==========  ============================================================
 
 Histogram/Phase objects

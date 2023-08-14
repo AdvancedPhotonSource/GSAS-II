@@ -865,9 +865,10 @@ class G2Project(G2ObjectWrapper):
                                          'instrument_parameters.prm')
     >>> phase = proj.add_phase('my_phase.cif', histograms=[hist])
 
-    Parameters for Rietveld refinement can be turned on and off as well.
-    See :meth:`~G2Project.set_refinement`, :meth:`~G2Project.clear_refinements`,
-    :meth:`~G2Project.iter_refinements`, :meth:`~G2Project.do_refinements`.
+    Parameters for Rietveld refinement can be turned on and off at the project level 
+    as well as described in 
+    :meth:`~G2Project.set_refinement`, :meth:`~G2Project.iter_refinements` and 
+    :meth:`~G2Project.do_refinements`.
     """
     def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
         if filename is not None and newgpx is not None:
@@ -1807,7 +1808,8 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Phase.set_refinements`
             :meth:`G2Phase.clear_refinements`
             :meth:`G2Phase.set_HAP_refinements`
-            :meth:`G2Phase.clear_HAP_refinements`"""
+            :meth:`G2Phase.clear_HAP_refinements`
+        """
 
         if histogram == 'all':
             hists = self.histograms()
@@ -2795,21 +2797,25 @@ class G2Project(G2ObjectWrapper):
         return (vals,cov)
 
 class G2AtomRecord(G2ObjectWrapper):
-    """Wrapper for an atom record. Has convenient accessors via @property:
-    label, type, refinement_flags, coordinates, occupancy, ranId, id, adp_flag, uiso
+    """Wrapper for an atom record. Allows many atom properties to be access 
+    and changed. See the :ref:`Atom Records description <Atoms_table>`  
+    for the details on what information is contained in an atom record.
 
     Scripts should not try to create a :class:`G2AtomRecord` object directly as 
-    these objects are created inside a class:`G2Phase` object.
+    these objects are created via access from a :class:`G2Phase` object.
 
-    Example:
+    Example showing some uses of :class:`G2AtomRecord` methods:
 
     >>> atom = some_phase.atom("O3")
-    >>> # We can access the underlying data format
+    >>> # We can access the underlying data structure (a list):
     >>> atom.data
     ['O3', 'O-2', '', ... ]
-    >>> # We can also use wrapper accessors
+    >>> # We can also use wrapper accessors to get or change atom info:
     >>> atom.coordinates
     (0.33, 0.15, 0.5)
+    >>> atom.coordinates = [1/3, .1, 1/2]
+    >>> atom.coordinates
+    (0.3333333333333333, 0.1, 0.5)
     >>> atom.refinement_flags
     u'FX'
     >>> atom.ranId
@@ -2821,22 +2827,53 @@ class G2AtomRecord(G2ObjectWrapper):
         self.data = data
         self.cx, self.ct, self.cs, self.cia = indices
         self.proj = proj
-
+        
+#    @property
+#    def X(self):
+#        '''Get or set the associated atom's X. 
+#        Use as ``x = atom.X`` to obtain the value and 
+#        ``atom.X = x`` to set the value.
+#        '''
+#        pass
+#    @X.setter
+#    def X(self, val):
+#        pass
+        
     @property
     def label(self):
-        '''Get the associated atom's label
+        '''Get the associated atom's label. 
+        Use as ``x = atom.label`` to obtain the value and 
+        ``atom.label = x`` to set the value.
         '''
         return self.data[self.ct-1]
+    @label.setter
+    def label(self, val):
+        self.data[self.ct-1] = str(value)        
 
     @property
     def type(self):
-        '''Get the associated atom's type
+        '''Get or set the associated atom's type. Call as a variable 
+        (``x = atom.type``) to obtain the value or use 
+        ``atom.type = x`` to change the type. It is the user's 
+        responsibility to make sure that the atom type is valid; 
+        no checking is done here. 
+
+        .. seealso::
+            :meth:`element`
         '''
         return self.data[self.ct]
-
+    @type.setter
+    def type(self, val):
+        # TODO: should check if atom type is defined 
+        self.data[self.ct] = str(value)        
+    
     @property
     def element(self):
-        '''Get the associated atom's element symbol
+        '''Parses element symbol from the atom type symbol for the atom 
+        associated with the current object.
+
+        .. seealso::
+            :meth:`type`        
         '''
         import re
         try:
@@ -2847,10 +2884,11 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def refinement_flags(self):
-        '''Get or set refinement flags for the associated atom
+        '''Get or set refinement flags for the associated atom.
+        Use as ``x = atom.refinement_flags`` to obtain the flags and 
+        ``atom.refinement_flags = "XU"`` (etc) to set the value.
         '''
         return self.data[self.ct+1]
-
     @refinement_flags.setter
     def refinement_flags(self, other):
         # Automatically check it is a valid refinement
@@ -2861,55 +2899,102 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def coordinates(self):
-        '''Get the associated atom's coordinates
+        '''Get or set the associated atom's coordinates.
+        Use as ``x = atom.coordinates`` to obtain a tuple with 
+        the three (x,y,z) values and ``atom.coordinates = (x,y,z)`` 
+        to set the values.
+
+        Changes needed to adapt for changes in site symmetry have not yet been
+        implemented:
         '''
         return tuple(self.data[self.cx:self.cx+3])
-
+    @coordinates.setter
+    def coordinates(self, val):
+        if len(val) != 3:
+            raise ValueError(f"coordinates are of wrong length {val}")
+        try:
+            self.data[self.cx:self.cx+3] = [float(i) for i in val]
+        except:
+            raise ValueError(f"conversion error with coordinates {val}")
+        # TODO: should recompute the atom site symmetries here
+        
     @property
     def occupancy(self):
-        '''Get or set the associated atom's site fraction
+        '''Get or set the associated atom's site fraction. 
+        Use as ``x = atom.occupancy`` to obtain the value and 
+        ``atom.occupancy = x`` to set the value.
         '''
         return self.data[self.cx+3]
-    
     @occupancy.setter
     def occupancy(self, val):
         self.data[self.cx+3] = float(val)
 
     @property
     def mult(self):
-        '''Get the associated atom's multiplicity value
+        '''Get the associated atom's multiplicity value. Should not be 
+        changed by user. 
         '''
         return self.data[self.cs+1]
     
     @property
     def ranId(self):
-        '''Get the associated atom's Random Id number
+        '''Get the associated atom's Random Id number. Don't change this.
         '''
         return self.data[self.cia+8]
 
     @property
     def adp_flag(self):
-        '''Get the associated atom's iso/aniso setting, 'I' or 'A'
+        '''Get the associated atom's iso/aniso setting. The value
+        will be 'I' or 'A'. No API provision is offered to change
+        this.
         '''
         # Either 'I' or 'A'
         return self.data[self.cia]
 
     @property
-    def uiso(self):
-        '''Get or set the associated atom's Uiso or Uaniso value(s)
+    def ADP(self):
+        '''Get or set the associated atom's Uiso or Uaniso value(s). 
+        Use as ``x = atom.ADP`` to obtain the value(s) and 
+        ``atom.ADP = x`` to set the value(s). For isotropic atoms
+        a single float value is returned (or used to set). For 
+        anisotropic atoms a list of six values is used.
+
+        .. seealso::
+            :meth:`adp_flag`
+            :meth:`uiso`
         '''
         if self.adp_flag == 'I':
             return self.data[self.cia+1]
         else:
             return self.data[self.cia+2:self.cia+8]
-
-    @uiso.setter
-    def uiso(self, value):
+    @ADP.setter
+    def ADP(self, value):
         if self.adp_flag == 'I':
             self.data[self.cia+1] = float(value)
         else:
             assert len(value) == 6
             self.data[self.cia+2:self.cia+8] = [float(v) for v in value]
+
+    @property
+    def uiso(self):
+        '''A synonym for :meth:`ADP` to be used for Isotropic atoms. 
+        Get or set the associated atom's Uiso value. 
+        Use as ``x = atom.uiso`` to obtain the value and 
+        ``atom.uiso = x`` to set the value. A 
+        single float value is returned or used to set.
+
+        .. seealso::
+            :meth:`adp_flag`
+            :meth:`ADP`
+        '''
+        if self.adp_flag != 'I':
+            raise G2ScriptException(f"Atom {self.label} is not isotropic")
+        return self.ADP
+    @uiso.setter
+    def uiso(self, value):
+        if self.adp_flag != 'I':
+            raise G2ScriptException(f"Atom {self.label} is not isotropic")
+        self.ADP = value
 
 class G2PwdrData(G2ObjectWrapper):
     """Wraps a Powder Data Histogram. 
@@ -4193,7 +4278,7 @@ class G2Phase(G2ObjectWrapper):
             elif key == 'Mustrain':
                 for h in histograms:
                     mustrain = self.data['Histograms'][h]['Mustrain']
-                    newType = None
+                    newType = mustrain[0]
                     direction = None
                     if isinstance(val, strtypes):
                         if val in ['isotropic', 'uniaxial', 'generalized']:
@@ -4201,7 +4286,7 @@ class G2Phase(G2ObjectWrapper):
                         else:
                             raise ValueError("Not a Mustrain type: " + val)
                     elif isinstance(val, dict):
-                        newType = val.get('type', None)
+                        newType = val.get('type', newType)
                         direction = val.get('direction', None)
 
                     if newType:
@@ -4249,7 +4334,7 @@ class G2Phase(G2ObjectWrapper):
                     newSize = float(val['value'])
                 for h in histograms:
                     size = self.data['Histograms'][h]['Size']
-                    newType = None
+                    newType = size[0]
                     direction = None
                     if isinstance(val, strtypes):
                         if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
@@ -4257,7 +4342,7 @@ class G2Phase(G2ObjectWrapper):
                         else:
                             raise ValueError("Not a valid Size type: " + val)
                     elif isinstance(val, dict):
-                        newType = val.get('type', None)
+                        newType = val.get('type', size[0])
                         direction = val.get('direction', None)
 
                     if newType:

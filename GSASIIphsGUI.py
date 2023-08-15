@@ -5399,9 +5399,10 @@ def UpdatePhaseData(G2frame,Item,data):
         def fullrmcSizer(RMCPdict):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
-'''* "Atomic Stochastic Modeling & Optimization with fullrmc", B. Aoun, J. Appl. Cryst. 2022, (in press);
+'''* "Atomic Stochastic Modeling & Optimization with fullrmc", B. Aoun, J. Appl. Cryst. 2022, 55(6) 1664-1676, 
+ DOI: 10.1107/S1600576722008536;
 * "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial 
-   Intelligence", B. Aoun, Jour. Comp. Chem. (2016), 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304; 
+   Intelligence", B. Aoun, Jour. Comp. Chem. (2016), 37, 1102-1111. DOI: 10.1002/jcc.24304; 
 * www.fullrmc.com
  '''))
             # if G2pwd.findfullrmc() is None:
@@ -6923,13 +6924,13 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
 
       "Atomic Stochastic Modeling & Optimization 
       with fullrmc", B. Aoun, J. Appl. Cryst. 2022, 
-      (in press). 
+      55(6) 1664-1676, DOI: 10.1107/S1600576722008536.
 
       "Fullrmc, a Rigid Body Reverse Monte Carlo 
       Modeling Package Enabled with Machine Learning 
       and Artificial Intelligence",
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
-      DOI: https://doi.org/10.1002/jcc.24304
+      DOI: 10.1002/jcc.24304
 
       Note: A more advanced version of fullrmc can be found at www.fullrmc.com''',
                              'Please cite fullrmc')

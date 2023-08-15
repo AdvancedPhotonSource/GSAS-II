@@ -1172,10 +1172,11 @@ def HorizontalLine(sizer,parent):
     '''
     if sys.platform == "darwin": 
         #sizer.Add((-1,2))
-        line = wx.StaticLine(parent, size=(-1,18), style=wx.LI_HORIZONTAL)
+        line = wx.Panel(parent, size=(-1, 2))
+        #line.SetBackgroundColour('red')
         line.SetBackgroundColour((128,128,128))
         sizer.Add(line, 0, wx.EXPAND|wx.ALL, 0)
-        sizer.Add((-1,18))
+        sizer.Add((-1,5))
     else:
         line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
         sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)

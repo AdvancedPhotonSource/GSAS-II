@@ -4137,14 +4137,14 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
         rundata += '            elif aN[g.indexes[0]]==AB[1]:\n'
         rundata += '                g.set_move_generator(SwapGen[swaps][1])\n'
         rundata += '            sProb = SwapGen[swaps][2]\n'
-    rundata += '''for c in ENGINE.constraints:
-    if hasattr(c, '_ExperimentalConstraint__adjustScaleFactor'):
-        def _constraint_copy_needs_lut(self, *args, **kwargs):
-            result =  super(self.__class__, self)._constraint_copy_needs_lut(*args, **kwargs)
-            result['_ExperimentalConstraint__adjustScaleFactor'] = '_ExperimentalConstraint__adjustScaleFactor'
-            return result
-        c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
-'''
+#     rundata += '''for c in ENGINE.constraints:
+#     if hasattr(c, '_ExperimentalConstraint__adjustScaleFactor'):
+#         def _constraint_copy_needs_lut(self, *args, **kwargs):
+#             result =  super(self.__class__, self)._constraint_copy_needs_lut(*args, **kwargs)
+#             result['_ExperimentalConstraint__adjustScaleFactor'] = '_ExperimentalConstraint__adjustScaleFactor'
+#             return result
+#         c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
+# '''
 #    rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
     # rundata += 'wtDict = {}\n'
     # for File in Files:

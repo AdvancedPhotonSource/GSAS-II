@@ -1228,7 +1228,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colSigs += [None]
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
-    if histNames[0][:4] not in ['SASD','IMG ','REFD']:
+    if histNames[0][:4] not in ['SASD','IMG ','REFD','PDF ']:
         G2frame.colList += [[data[name]['Rvals']['GOF'] for name in histNames]]
         G2frame.colSigs += [None]
         colLabels += ['GOF']

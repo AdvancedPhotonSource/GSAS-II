@@ -457,7 +457,8 @@ def ShowVersions():
         if s in versionDict['tooNewUntested'] and not warn:
             match = compareVersions(pkgver,versionDict['tooNewUntested'][s])
             if match >= 0:
-                msg += "New version not tested; please keep us posted"
+                msg += "\n              "
+                msg += "New untested version; please keep us posted"
                 warn = True
         if s in versionDict['tooNewWarn'] and not warn:
             match = compareVersions(pkgver,versionDict['tooNewWarn'][s])
@@ -517,9 +518,12 @@ def ShowVersions():
     #    print('N.B. current binaries have been updated')
     if warn:
         print(70*'=','''
-You are suggested to install a new version of GSAS-II to address 
-problems with package(s) noted above. For installation instructions 
-see https://bit.ly/G2install
+You are running GSAS-II in a Python environment with either untested 
+or known to be problematic packages, as noted above. If you are seeing 
+problems in running GSAS-II you are suggested to install an additional 
+copy of GSAS-II from one of the gsas2full installers (see 
+https://bit.ly/G2install). This will provide a working Python 
+environment as well as the latest GSAS-II version. 
 
 For information on GSAS-II package requirements see 
 https://gsas-ii.readthedocs.io/en/latest/packages.html

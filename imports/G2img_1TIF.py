@@ -145,8 +145,11 @@ def GetTifData(filename):
         G2fil.G2Print ('Read MAR CCD tiff file: '+filename)
         marFrame = rmf.marFrame(File,byteOrd,IFD)
         image = np.array(np.asarray(marFrame.image),dtype=np.int32)
+        image = np.reshape(image,sizexy)
         if marFrame.origin:     #not upper left?
             image = np.flipud(image)
+        if marFrame.viewDirection:  #view through sample to detector instead of TOWARD_SOURCE
+            image = np.fliplr(image)
         tifType = marFrame.filetitle
         pixy = [marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0]
         head = marFrame.outputHead()

@@ -1048,9 +1048,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
-                mainSizer.Add(wx.StaticText(BondRestr,-1,
-                    'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(bondList))),0)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
+                mainSizer.Add(wx.StaticText(BondRestr,wx.ID_ANY,
+                    f'Bond restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(bondList):.2f}'
+                                        ),0)
                 Bonds.SetScrollRate(10,10)
                 Bonds.SetMinSize((-1,300))
                 mainSizer.Add(Bonds,1,wx.EXPAND,1)
@@ -1189,9 +1192,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
-                mainSizer.Add(wx.StaticText(AngleRestr,-1,
-                    'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(angleList))),0)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
+                mainSizer.Add(wx.StaticText(AngleRestr,wx.ID_ANY,
+                    f'Angle restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(angleList):.2f}'
+                                        ),0)
                 Angles.SetScrollRate(10,10)
                 Angles.SetMinSize((-1,300))
                 mainSizer.Add(Angles,1,wx.EXPAND,1)
@@ -1323,9 +1329,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
-                    'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(planeList))),0)
+                    f'Plane restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(planeList):.2f}'
+                                        ),0)
                 Planes.SetScrollRate(10,10)
                 Planes.SetMinSize((-1,300))
                 mainSizer.Add(Planes,1,wx.EXPAND,1)
@@ -1461,9 +1470,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
-                    'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(volumeList))),0)
+                    f'Chiral volume restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(volumeList):.2f}'
+                                        ),0)
                 Volumes.SetScrollRate(10,10)
                 Volumes.SetMinSize((-1,300))
                 mainSizer.Add(Volumes,1,wx.EXPAND,1)
@@ -1595,9 +1607,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+            frac = '?'
+            if 'chisq' in Rvals:
+                frac = f"{100 * chisq / Rvals['chisq']:.1f}"
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,
-                'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(torsionList))),0)
+                f'Torsion restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(torsionList):.2f}'
+                                        ),0)
             TorsionRestr.Torsions.SetScrollRate(10,10)
             TorsionRestr.Torsions.SetMinSize((-1,300))
             mainSizer.Add(TorsionRestr.Torsions,1,wx.EXPAND,1)
@@ -1728,9 +1743,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                     G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
-                    'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(ramaList))),0)
+                    f'Ramachandran restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(ramaList):.2f}'
+                                                ),0)
                 RamaRestr.Ramas.SetScrollRate(10,10)
                 RamaRestr.Ramas.SetMinSize((-1,300))
                 mainSizer.Add(RamaRestr.Ramas,1,wx.EXPAND,1)
@@ -1871,9 +1889,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.dataWindow.RestraintEdit.Enable(id=G2G.wxID_RESTDELETE,enable=True)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 #G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
+                frac = '?'
+                if 'chisq' in Rvals:
+                    frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
-                    'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(chemcompList))))
+                    f'Chemical composition restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(chemcompList):.2f}'
+                                        ),0)
                 mainSizer.Add(ChemComps)
             else:
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
@@ -1969,9 +1990,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                 G2frame.dataWindow.RestraintEdit.Enable(id=i,enable=True)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+            frac = '?'
+            if 'chisq' in Rvals:
+                frac = f"{100 * chisq / Rvals['chisq']:.1f}"
             mainSizer.Add(wx.StaticText(MomentRestr,-1,
-                'Moment restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(momentList))),0)
+                f'Moment restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(momentList):.2f}'
+                                        ),0)
             Moments.SetScrollRate(10,10)
             Moments.SetMinSize((-1,300))
             mainSizer.Add(Moments,1,wx.EXPAND,1)
@@ -2267,6 +2291,13 @@ def UpdateRestraints(G2frame,data,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     #### UpdateRestraints execution starts here
+    covdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+    Nvars = 0
+    Rvals = {}
+    if 'Rvals' in covdata:
+        Nvars = len(covdata['varyList'])
+        Rvals = covdata['Rvals']
+        
     try:
         phasedata = G2frame.GetPhaseData()[phaseName]
     except KeyError:        #delete unknown or previously deleted phases from Restraints

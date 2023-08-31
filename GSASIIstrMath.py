@@ -4883,16 +4883,20 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             raise G2obj.G2RefineCancel('Cancel pressed')
         #dlg.Raise()
     pDict,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
-    if len(pVals) and dlg:
+    pSum = 0
+    if len(pVals):
         pSum = np.sum(pWt*pVals**2)
+    if len(pVals) and dlg:
         for name in pWsum:
             if pWsum[name]:
                 print ('  Penalty function for %5d %8ss = %12.5g'%(pWnum[name],name,pWsum[name]))
-        print ('Total penalty function: %12.5g on %d terms'%(pSum,len(pVals)))
+        print ('Total restraint contribution to Chi**2: %12.5g on %d terms'%(pSum,len(pVals)))
         if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-2,'Restraints')
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
         GoOn = dlg.Update(100*pSum/np.sum(M**2),newmsg='Restraints')
+    Histograms['RestraintSum'] = pSum
+    Histograms['RestraintTerms'] = len(pVals)
     return M
 
 def calcMassFracs(varyList,covMatrix,Phases,hist,hId):

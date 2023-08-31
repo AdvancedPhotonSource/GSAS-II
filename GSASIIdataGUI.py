@@ -7862,8 +7862,16 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mainSizer.Add(simSizer)
         mainSizer.Add(but,0)
     if 'Nobs' in data[0]:
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-            ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
+        Rmsg = f" Data residual wR: {data[0]['wR']:.3f}% on {data[0]['Nobs']} observations"
+        covdata = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+        if 'Rvals' in covdata:
+            Rvals = covdata['Rvals']
+            if 'chisq' in Rvals and 'sumwYo' in data[0]:
+                # compute Chi**2 contribution from Rwp
+                chisq = (data[0]['wR']/100)**2 * data[0]['sumwYo']
+                frac = f"{100 * chisq / Rvals['chisq']:.1f}"
+                Rmsg += f". Contributes {frac}% to Chi**2"
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,Rmsg))
         if kind == 'PWDR':
             try:    #old gpx file
                 DBW = ma.getdata(data[0]['Durbin-Watson'])
@@ -8142,7 +8150,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = ('\nResiduals after last refinement:                                       \n'+
+                text = ('\nTotal residuals after last refinement:                                       \n'+
                         '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
                         Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
@@ -8154,9 +8162,16 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+                if Rvals.get('RestraintSum',0) > 0:
+                    chisq_data = (Rvals['chisq']-Rvals['RestraintSum'])/(Rvals['Nobs']-Rvals['Nvars'])
+                    lbl = '\nData-only residuals (without restraints)'
+                    lbl += f'\n\tGOF = {np.sqrt(chisq_data):.2f}'
+                    lbl += f'\n\tReduced χ**2 = {chisq_data:.2f}'
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
                 if 'Lastshft' in data and not data['Lastshft'] is None:
                     showShift = wx.Button(G2frame.dataWindow,label='Show shift/esd plot')
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)
+                    subSizer.Add((-1,10))
                     subSizer.Add(showShift)
             mainSizer.Add(subSizer)
             mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))

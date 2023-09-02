@@ -4952,14 +4952,11 @@ class GSGrid(wg.Grid):
             self.DisableCellEditControl()
                 
 ################################################################################           
-class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix but pygridtablebase doesn't exist
+class Table(wg.GridTableBase):
     '''Basic data table for use with GSgrid
     '''
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
-        if 'phoenix' in wx.version():
-            wg.GridTableBase.__init__(self)
-        else:
-            wg.PyGridTableBase.__init__(self)
+        wg.GridTableBase.__init__(self)
         self.colLabels = colLabels
         self.rowLabels = rowLabels
         self.dataTypes = types

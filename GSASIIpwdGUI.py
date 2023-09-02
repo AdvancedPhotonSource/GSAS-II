@@ -5988,11 +5988,13 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if isinstance(data,list):           #single crystal HKLF
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
-            G2frame.refTable[phase].SetScrollRate(10,10) # reflection grids (inside tab) need scroll bars 
+            #G2frame.refTable[phase].SetScrollRate(10,10) # reflection grids (inside tab) need scroll bars 
+            G2frame.refTable[phase].SetScrollRate(0,0) # no inner scroll bars 
         elif len(data[phase]):              #else dict for PWDR
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
-            G2frame.refTable[phase].SetScrollRate(10,10) # as above
+            #G2frame.refTable[phase].SetScrollRate(10,10) # as above
+            G2frame.refTable[phase].SetScrollRate(0,0) # no inner scroll bars 
         else:       #cleanup deleted phase reflection lists
             del data[phase]
             if len(data):

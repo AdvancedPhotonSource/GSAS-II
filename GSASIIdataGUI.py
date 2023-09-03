@@ -6236,6 +6236,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 self.SetScrollRate(0,0) 
                 self.SendSizeEvent()
                 return
+        elif len(Sizer.GetChildren()) == 2: # case where there is a NoteBook & help button
+            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSNoteBook):
+                self.SetScrollRate(0,0)
+                self.Layout()
+                self.SetAutoLayout(False)
+                return
         self.SetAutoLayout(True)
         self.SetScrollRate(10,10)
         self.SendSizeEvent()

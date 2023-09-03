@@ -6238,6 +6238,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 return
         elif len(Sizer.GetChildren()) == 2: # case where there is a NoteBook & help button
             if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSNoteBook):
+                # with wx4.2 (& 4.1?) AutoLayout causes all inner windows
+                # to be made large and scrolling is done at outer window
+                # this messes things up for grids inside notebooks (Reflection lists)
+                # for this case turn off AutoLayout on dataWindow, but
+                # use a Bind to redo Layout. This works for expansion but not
+                # contraction of the window. 
+                def _onResize(event):
+                    self.Layout()
+                    event.Skip()
+                self.Bind(wx.EVT_SIZE,_onResize)
                 self.SetScrollRate(0,0)
                 self.Layout()
                 self.SetAutoLayout(False)

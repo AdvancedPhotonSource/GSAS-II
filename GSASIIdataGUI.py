@@ -8161,7 +8161,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if 'Rvals' in data:
                 lbl = 'Refinement results'
             else:
-                lbl = 'No refinement results'
+                lbl = 'No refinement results' + 50*' '
             subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])

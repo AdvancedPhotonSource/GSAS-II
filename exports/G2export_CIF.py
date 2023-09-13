@@ -1680,7 +1680,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             except:
                 GOF = '?'
             WriteCIFitem(self.fp, '_refine_ls_goodness_of_fit_all',GOF)
-            DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            try:
+                DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            except:
+                DAT1 = 0
             if DAT1:
                 WriteCIFitem(self.fp, '_refine_ls_shift/su_max','%.4f'%DAT1)
 
@@ -1699,13 +1702,15 @@ class ExportCIF(G2IO.ExportBaseclass):
             # _refine_ls_restrained_S_obs
 
             # include an overall profile r-factor, if there is more than one powder histogram
-            R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
-            WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
-            WriteCIFitem(self.fp, '_refine_ls_wR_factor_obs',R)
+            try:
+                R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
+                WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
+                WriteCIFitem(self.fp, '_refine_ls_wR_factor_obs',R)
                 # _refine_ls_R_factor_all
                 # _refine_ls_R_factor_obs
-            #WriteCIFitem(self.fp, '_refine_ls_matrix_type','userblocks')
-
+                #WriteCIFitem(self.fp, '_refine_ls_matrix_type','userblocks')
+            except:
+                pass
         def WriteOverallMM(mode=None):
             '''Write out overall refinement information.
 
@@ -1740,7 +1745,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             except:
                 GOF = '?'
             WriteCIFitem(self.fp, '_refine.ls_goodness_of_fit_all',GOF)
-            DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            try:
+                DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            except:
+                DAT1 = 0
             if DAT1:
                 WriteCIFitem(self.fp, '_refine.ls_shift_over_su_max','%.4f'%DAT1)
 
@@ -1759,10 +1767,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             # _refine_ls_restrained_S_obs
 
             # include an overall profile r-factor, if there is more than one powder histogram
-            R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
-            WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
-            WriteCIFitem(self.fp, '_refine.ls_wR_factor_obs',R)
-
+            try:
+                R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
+                WriteCIFitem(self.fp, '\n# OVERALL WEIGHTED R-FACTOR')
+                WriteCIFitem(self.fp, '_refine.ls_wR_factor_obs',R)
+            except:
+                pass
+            
         def writeCIFtemplate(G2dict,tmplate,defaultname='',
                                  cifKey="CIF_template"):
             '''Write out the selected or edited CIF template
@@ -3930,7 +3941,22 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
             'Controls'].get('CellHistSelection',{})
         self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
-        if self.OverallParms['Controls']['max cyc'] > 1:
+        if not self.OverallParms['Covariance']:
+            dlg = wx.MessageDialog(
+                self.G2frame,
+                'This project does not contain refinement results, so parameter uncertainties'+
+                ' cannot be supplied.\n\n'+
+                'You are recommended to complete refinement before exporting the project.'+
+                '\nDo you wish to continue anyway? (Use No to stop export)',
+                'No refinement results',wx.YES|wx.NO)
+            dlg.CenterOnParent()
+            ret = dlg.ShowModal()
+            dlg.Destroy()
+            if ret != wx.ID_YES:
+                self.filename = ''
+                self.OpenFile(delayOpen=True)
+                return
+        elif self.OverallParms['Controls']['max cyc'] > 1:
             dlg = wx.MessageDialog(
                 self.G2frame,
                 'GSAS-II reports the maximum shift to s.u. ratio over all cycles in the last refinement,'+
@@ -3938,8 +3964,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 'Do you want to set the maximum cycles to 1 and repeat the last refinement'+
                 ' so these will be the same before creating CIF? (Use No to continue)',
                 'Max(shift/esd) in question',wx.YES|wx.NO)
-            ret = dlg.ShowModal()
             dlg.CenterOnParent()
+            ret = dlg.ShowModal()
             dlg.Destroy()
             if ret == wx.ID_YES:
                 self.OverallParms['Controls']['max cyc'] = 1

@@ -356,6 +356,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                             Orbs = G2elem.GetXsectionCoeff(ElemSym)
                             Elem = [ElemSym,Z,N,FormFac,Orbs,atomData]
                     self.Elems.append(Elem)
+            self.ifVol = False
             self.Delete.Enable(True)
             self.panel.Destroy()
             self.DrawPanel()
@@ -379,6 +380,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     self.Delete.Enable(False)
                 self.panel.Destroy()
                 self.DrawPanel()
+                self.ifVol = False
                 self.NewFPPlot = True
                 self.SetWaveEnergy(self.Wave)
         
@@ -387,7 +389,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if event.GetEventObject().GetName() == Elem[0]:
                 Elem[2] = float(event.GetEventObject().GetValue())
                 event.GetEventObject().SetValue("%8.2f" % (Elem[2]))
-                self.SetWaveEnergy(self.Wave)                
+                self.ifVol = False
+            self.SetWaveEnergy(self.Wave)                
         
     def OnSpinText1(self, event):
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
@@ -459,33 +462,39 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if Elem[1] > 78 and self.Energy+DE > self.Kev/0.16:
                 mu = self.Zcell*Elem[2]*(r1[2]+r2[2])/2.0
                 Text += "%s\t%s%8.2f  %s%6s  %s%6.3f  %s%10.2f %s\n" %    (
-                    'Element= '+str(Els),"N = ",Elem[2]," f'=",'not valid',
+                    'Element: '+str(Els),"N = ",Elem[2]," f'=",'not valid',
                     ' f"=',(r1[1]+r2[1])/2.0,' '+Gkmu+'=',mu,'barns')
             elif Elem[1] > 94 and self.Energy-DE < self.Kev/2.67:
                 mu = 0
                 Text += "%s\t%s%8.2f  %s%6s  %s%6s  %s%10s%s\n" %    (
-                    'Element= '+str(Els),"N = ",Elem[2]," f'=",'not valid',
+                    'Element: '+str(Els),"N = ",Elem[2]," f'=",'not valid',
                     ' f"=','not valid',' '+Gkmu+'=',mu,'not valid')
             else:
                 mu = self.Zcell*Elem[2]*(r1[2]+r2[2])/2.0
                 Fop += Elem[2]*(Elem[1]+(r1[0]+r2[0])/2.0)
                 Text += "%s\t%s%8.2f  %s%6.3f  %s%6.3f  %s%10.2f %s\n" %    (
-                    'Element= '+str(Els),"N = ",Elem[2]," f'=",(r1[0]+r2[0])/2.0,
+                    'Element: '+str(Els),"N = ",Elem[2]," f'=",(r1[0]+r2[0])/2.0,
                     ' f"=',(r1[1]+r2[1])/2.0,' '+Gkmu+'=',mu,'barns')
             muT += mu
         
         if self.Volume:
-            Text += "%s %s%10.4g %s" % ("Total",' '+Gkmu+'=',self.Pack*muT/self.Volume,'cm'+Pwrm1+', ')
-            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R=',self.Radius*self.Pack*muT/(10.0*self.Volume),', ')
-            Text += "%s%10.4f%s\n" % ('Transmission exp(-2'+Gkmu+'R)=', \
-                100.0*math.exp(-2*self.Radius*self.Pack*muT/(10.0*self.Volume)),'%')
+            Text += "%s %s%10.4g %s" % ("Total",' '+Gkmu+' =',self.Pack*muT/self.Volume,'cm'+Pwrm1+', ')
+            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R =',self.Radius*self.Pack*muT/(10.0*self.Volume),', ')
+            Text += "%s%10.4f%s\n" % ('Transmission exp(-2'+Gkmu+'R) =', \
+                100.0*math.exp(-2.*self.Radius*self.Pack*muT/(10.0*self.Volume)),'%')
+            if muT > 0.:
+                pene = 10./(self.Pack*muT/self.Volume)
+                if pene > 0.01: 
+                    Text += "%s %10.4g mm\n"%("1/e (~27.2%) penetration depth = ",pene)
+                else:
+                    Text += "%s %10.4g %sm\n"%("1/e (~27.2%) penetration depth = ",1000.0*pene,Gkmu)
             self.Results.SetValue(Text)
             den = Mass/(0.602*self.Volume)                
             if self.ifVol:
-                Text += '%s' % ('Theor. density=')
+                Text += '%s' % ('Theor. density =')
             else:  
-                Text += '%s' % ('Est. density=')
-            Text += '%6.3f %s%.3f %s\n' % (den,'g/cm'+Pwr3+', Powder density=',self.Pack*den,'g/cm'+Pwr3)
+                Text += '%s' % ('Est. density =')
+            Text += '%6.3f %s%.3f %s\n' % (den,'g/cm'+Pwr3+', Powder density =',self.Pack*den,'g/cm'+Pwr3)
             Text += '%s%10.2f%s\n'%('X-ray small angle scattering contrast',(28.179*Fo/self.Volume)**2,'*10'+Pwr20+'/cm'+Pwr4)
             if Fop:
                 Text += '%s%10.2f%s\n'%('Anomalous X-ray small angle scattering contrast',(28.179*Fop/self.Volume)**2,'*10'+Pwr20+'/cm'+Pwr4)

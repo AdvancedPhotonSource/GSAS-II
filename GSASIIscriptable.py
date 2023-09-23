@@ -2795,7 +2795,29 @@ class G2Project(G2ObjectWrapper):
                             self['Covariance']['data']['varyList'],
                             self['Covariance']['data']['covMatrix'])
         return (vals,cov)
+    
+    def ComputeWorstFit(self):
+        '''Computes the worst-fit parameters in a model. 
 
+        :returns: (keys, derivCalcs, varyList) where: 
+          * keys is a list of parameter names
+            where the names are ordered such that first entry in the list 
+            will produce the largest change in the fit if refined and the last
+            entry will have the smallest change; 
+          * derivCalcs is a dict where the key is a variable name and the 
+            value is a list with three partial derivative values for 
+            d(Chi**2)/d(var) where the derivatives are computed 
+            for values v-d to v; v-d to v+d; v to v+d where v is 
+            the current value for the variable and d is a small delta 
+            value chosen for that variable type;
+          * varyList is a list of the parameters that are currently set to 
+            be varied. 
+        '''
+        self.save()
+        derivCalcs,varyList = G2strMain.Refine(self.filename,None,allDerivs=True)
+        keys = sorted(derivCalcs,key=lambda x:abs(derivCalcs[x][1]),reverse=True)
+        return (keys,derivCalcs,varyList)
+        
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Allows many atom properties to be access 
     and changed. See the :ref:`Atom Records description <Atoms_table>`  

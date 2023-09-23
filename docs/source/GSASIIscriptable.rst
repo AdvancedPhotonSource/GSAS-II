@@ -154,6 +154,7 @@ method                                                                  Use
 :meth:`~GSASIIscriptable.G2Project.add_EquivConstr`                     Adds an equivalence constraint on two or more variables
 :meth:`~GSASIIscriptable.G2Project.add_EqnConstr`                       Adds an equation-type constraint on two or more variables
 :meth:`~GSASIIscriptable.G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
+:meth:`~GSASIIscriptable.G2Project.ComputeWorstFit`                     Determines the parameters that will have the greatest impact on the fit if refined
 ====================================================================    ===============================================================================================================
 
 .. _Class_G2Phase:

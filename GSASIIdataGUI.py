@@ -51,7 +51,7 @@ import scipy as sp
 import struct as st
 try:
     import wx
-#    import wx.grid as wg
+    import wx.grid as wg
     #import wx.wizard as wz
     #import wx.aui
     import wx.lib.scrolledpanel as wxscroll
@@ -837,6 +837,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRunAbsorb, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run PlotXNFF','Plot X-ray, neutron & magnetic form factors')
         self.Bind(wx.EVT_MENU, self.OnRunPlotXNFF, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Parameter Impact\tCTRL+I','Perform a derivative calculation')
+        self.Bind(wx.EVT_MENU, self.OnDerivCalc, id=item.GetId())
 
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
@@ -5482,6 +5484,45 @@ class GSASII(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
         
+    def OnDerivCalc(self,event):
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        self._cleanPartials(Controls)  # set phase partials as invalid
+        self.OnFileSave(event)
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile) # check constraints are OK
+        if errmsg:
+            print ('\nError message(s):\n',errmsg)
+            self.ErrorDialog('Error in constraints',errmsg)
+            return
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        wx.BeginBusyCursor()
+        pdlg = wx.ProgressDialog('Computing derivatives',
+                    'Impact computation in progress',100,
+                    parent=self,
+#                    style = wx.PD_ELAPSED_TIME)
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        pdlg.CenterOnParent()
+        derivCalcs,varyList = G2stMn.Refine(self.GSASprojectfile,pdlg,allDerivs=True)
+        pdlg.Destroy()
+        wx.EndBusyCursor()
+        if derivCalcs is None:
+            print('Calculation aborted')
+            return
+        # prepare table contents & display
+        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':8,4',wg.GRID_VALUE_STRING]
+        colLbls = ['variable name','varied','Derivative','Definition']
+        tbl = []
+        for x in sorted(derivCalcs,key=lambda x:abs(derivCalcs[x][1]),reverse=True):
+            if derivCalcs[x][1] == 0.0 : continue
+            if np.sign(derivCalcs[x][2]) != np.sign(derivCalcs[x][0]): continue
+            txt = G2obj.fmtVarDescr(x)
+            txt = txt.replace('Ph=','Phase: ')
+            txt = txt.replace('Pwd=','Histogram: ')
+            #print(f'{x}\t{derivCalcs[x][1]}\t{txt}')
+            tbl.append([x,x in varyList,derivCalcs[x][1],txt])
+        G2G.G2ScrolledGrid(self,'Parameter Impact Results',
+                           'Impact Results',tbl,colLbls,
+                           colTypes,maxSize=(700,400))
+
     def OnRefine(self,event):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.

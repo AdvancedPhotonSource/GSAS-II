@@ -140,6 +140,123 @@ def ReportProblems(result,Rvals,varyList):
         if 'msg' not in Rvals: Rvals['msg'] = ''
         Rvals['msg'] += msg
 
+def IgnoredLatticePrms(Phases):
+    ignore = []
+    copydict = {}
+    for p in Phases:
+        pfx = str(Phases[p]['pId']) + '::'
+        laue = Phases[p]['General']['SGData']['SGLaue']
+        axis = Phases[p]['General']['SGData']['SGUniq']
+        if laue in ['-1',]:
+            pass
+        elif laue in ['2/m',]:
+            if axis == 'a':
+                ignore += [pfx+'A4',pfx+'A5']
+            elif axis == 'b':
+                ignore += [pfx+'A3',pfx+'A5']
+            else:
+                ignore += [pfx+'A3',pfx+'A4']
+        elif laue in ['mmm',]:
+            ignore += [pfx+'A3',pfx+'A4',pfx+'A5']
+        elif laue in ['4/m','4/mmm']:
+            ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
+            copydict[pfx+'A0':[pfx+'A1']]
+        elif laue in ['6/m','6/mmm','3m1', '31m', '3']:
+            ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
+            copydict[pfx+'A0'] = [pfx+'A1',pfx+'A3']
+        elif laue in ['3R', '3mR']:
+            ignore += [pfx+'A1',pfx+'A2',pfx+'A4',pfx+'A5']
+            copydict[pfx+'A0'] = [pfx+'A1',pfx+'A2']
+            copydict[pfx+'A3'] = [pfx+'A4',pfx+'A5']
+        elif laue in ['m3m','m3']:
+            ignore += [pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
+            copydict[pfx+'A0'] = [pfx+'A1',pfx+'A2']
+    return ignore,copydict
+
+def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
+                     parmDict,varyList,calcControls,pawleyLookup,symHold,
+                     dlg=None):
+    '''Computes the derivative of the fitting function (total Chi**2) with 
+    respect to every parameter in the parameter dictionary (parmDict)
+    by applying shift below the parameter value as well as above. 
+    
+    :returns: a dict with the derivatives keyed by variable number. 
+      Derivatives are a list with three values: evaluated over
+      v-d to v; v-d to v+d; v to v+d where v is the current value for the
+      variable and d is a small delta value chosen for that variable type.
+    '''
+    import re
+    rms = lambda y: np.sqrt(np.mean(y**2))
+    G2mv.Map2Dict(parmDict,varyList)
+    begin = time.time()
+    seqList = Controls.get('Seq Data',[])
+    hId = '*'
+    if seqList:
+        hId = str(Histograms[seqList[0]]['hId'])
+#    values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
+#    if np.any(np.isnan(values)):
+#        raise G2obj.G2Exception('ERROR - nan found in LS parameters - use Calculate/View LS parms to locate')
+    latIgnoreLst,latCopyDict = IgnoredLatticePrms(Phases)
+    HistoPhases=[Histograms,Phases,restraintDict,rigidbodyDict]
+    origDiffs = G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None)
+    chiStart = rms(origDiffs)
+    origParms = copy.deepcopy(parmDict)
+    #print('after 1st calc',time.time()-begin)
+    derivCalcs = {}
+    if dlg: dlg.SetRange(len(origParms))
+    for i,prm in enumerate(origParms):
+        if dlg:
+            if not dlg.Update(i)[0]:
+                return None
+        parmDict = copy.deepcopy(origParms)
+        p,h,nam = prm.split(':')[:3]
+        if hId != '*' and h != '' and h != hId: continue
+        if (type(parmDict[prm]) is bool or type(parmDict[prm]) is str or
+                 type(parmDict[prm]) is int): continue
+        if type(parmDict[prm]) is not float and type(parmDict[prm]
+                        ) is not np.float64: 
+            print('*** unexpected type for ',prm,parmDict[prm],type(parmDict[prm]))
+            continue
+        if prm in latIgnoreLst: continue # remove unvaried lattice params
+        if re.match(r'\d:\d:D[012][012]',prm): continue   # don't need Dij terms
+        if nam in ['Vol','Gonio. radius']: continue
+        if nam.startswith('dA') and nam[2] in ['x','y','z']: continue
+        delta = max(abs(parmDict[prm])*0.0001,1e-6)
+        if nam in ['Shift','DisplaceX','DisplaceY',]:
+            delta = 0.1
+        elif nam.startswith('AUiso'):
+            delta = 1e-5
+        if nam[0] == 'A' and nam[1] in ['x','y','z']: 
+            dprm = prm.replace('::A','::dA')
+            if dprm in symHold: continue # held by symmetry
+            delta = 1e-6
+        else:
+            dprm = prm
+        #print('***',prm,type(parmDict[prm]))
+        #origVal = parmDict[dprm]
+        parmDict[dprm] -= delta
+        G2mv.Dict2Map(parmDict)
+        if dprm in latCopyDict:         # apply contraints on lattice parameters 
+            for i in latCopyDict:
+                parmDict[i] = parmDict[dprm]
+        #for i in parmDict:
+        #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
+        chiLow = rms(G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None))
+        parmDict[dprm] += 2*delta
+        G2mv.Dict2Map(parmDict)
+        if dprm in latCopyDict:         # apply contraints on lattice parameters 
+            for i in latCopyDict:
+                parmDict[i] = parmDict[dprm]
+        #for i in parmDict:
+        #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
+        chiHigh = rms(G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None))
+        #print('===>',prm,parmDict[dprm],delta)
+        #print(chiLow,chiStart,chiHigh)
+        #print((chiLow-chiStart)/delta,0.5*(chiLow-chiHigh)/delta,(chiStart-chiHigh)/delta)
+        derivCalcs[prm] = ((chiLow-chiStart)/delta,0.5*(chiLow-chiHigh)/delta,(chiStart-chiHigh)/delta)
+    print('derivative computation time',time.time()-begin)
+    return derivCalcs
+
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
     '''Core optimization routines, shared between SeqRefine and Refine
@@ -311,7 +428,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,allDerivs=False):
     '''Global refinement -- refines to minimize against all histograms. 
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
@@ -346,8 +463,11 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
+    symHold = None
+    if allDerivs: #=============  develop partial derivative map
+        symHold = []
     (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,
-         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
+         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile,symHold=symHold)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
@@ -371,6 +491,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
     # do constraint processing
     varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
     msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
+    if allDerivs: #=============  develop partial derivative map
+        varyListStart = varyList
+        varyList = None
     if msg:
         return False,{'msg':'Unable to interpret multiplier(s): '+msg}
     try:
@@ -386,19 +509,25 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False):
         Controls['parmFrozen'] = {}
     if 'FrozenList' not in Controls['parmFrozen']: 
         Controls['parmFrozen']['FrozenList'] = []
-    parmFrozenList = Controls['parmFrozen']['FrozenList']
-    frozenList = [i for i in varyList if i in parmFrozenList]
-    if len(frozenList) != 0: 
-        varyList = [i for i in varyList if i not in parmFrozenList]
-        G2fil.G2Print(
-            'Frozen refined variables (due to exceeding limits)\n\t:{}'
-            .format(frozenList))
+    if varyList is not None:
+        parmFrozenList = Controls['parmFrozen']['FrozenList']
+        frozenList = [i for i in varyList if i in parmFrozenList]
+        if len(frozenList) != 0:
+            varyList = [i for i in varyList if i not in parmFrozenList]
+            G2fil.G2Print(
+                'Frozen refined variables (due to exceeding limits)\n\t:{}'
+                .format(frozenList))
         
-    ifSeq = False
+    ifSeq = False    
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
     Rvals = {}
     G2mv.Dict2Map(parmDict)  # impose constraints initially
+    if allDerivs: #=============  develop partial derivative map
+        derivDict = AllPrmDerivs(Controls, Histograms, Phases, restraintDict,
+                     rigidbodyDict, parmDict, varyList, calcControls,
+                     pawleyLookup,symHold,dlg)
+        return derivDict,varyListStart
     
     try:
         covData = {}

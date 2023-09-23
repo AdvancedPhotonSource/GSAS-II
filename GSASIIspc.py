@@ -53,9 +53,9 @@ def SpcGroup(SGSymbol):
              * 'SGPolax': one of ' ', 'x', 'y', 'x y', 'z', 'x z', 'y z',
                'xyz', '111' for arbitrary axes
              * 'SGPtGrp': one of 32 point group symbols (with some permutations), which
-                is filled by SGPtGroup, is external (KE) part of supersymmetry point group
+               is filled by SGPtGroup, is external (KE) part of supersymmetry point group
              * 'SSGKl': default internal (Kl) part of supersymmetry point group; modified 
-                in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
+               in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
              * 'BNSlattsym': BNS lattice symbol & cenering op - used for magnetic structures
 
     """
@@ -277,7 +277,7 @@ def SGPtGroup(SGData):
     Determine point group of the space group - done after space group symbol has
     been evaluated by SpcGroup. Only short symbols are allowed
     
-    :param SGData: from :func SpcGroup
+    :param SGData: from :func:`SpcGroup`
     :returns: SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
     '''
     Flds = SGData['SpGrp'].split()

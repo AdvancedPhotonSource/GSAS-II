@@ -931,38 +931,6 @@ def ApplySeqData(data,seqData,PF2=False):
                     drawatom[dci-7] = atuiso
     return drawAtoms
     
-def FindNeighbors(phase,FrstName,AtNames,notName=''):
-    General = phase['General']
-    cx,ct,cs,cia = getAtomPtrs(phase)
-    Atoms = phase['Atoms']
-    atNames = [atom[ct-1] for atom in Atoms]
-    Cell = General['Cell'][1:7]
-    Amat,Bmat = G2lat.cell2AB(Cell)
-    atTypes = General['AtomTypes']
-    Radii = np.array(General['BondRadii'])
-    try:
-        DisAglCtls = General['DisAglCtls']    
-        radiusFactor = DisAglCtls['Factors'][0]
-    except:
-        radiusFactor = 0.85
-    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
-    Orig = atNames.index(FrstName)
-    OId = Atoms[Orig][cia+8]
-    OType = Atoms[Orig][ct]
-    XYZ = getAtomXYZ(Atoms,cx)        
-    Neigh = []
-    Ids = []
-    Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
-    dist = np.sqrt(np.sum(Dx**2,axis=1))
-    sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
-    IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))
-    for j in IndB[0]:
-        if j != Orig:
-            if AtNames[j] not in notName:
-                Neigh.append([AtNames[j],dist[j],True])
-                Ids.append(Atoms[j][cia+8])
-    return Neigh,[OId,Ids]
-
 def FindOctahedron(results):
     Octahedron = np.array([[1.,0,0],[0,1.,0],[0,0,1.],[-1.,0,0],[0,-1.,0],[0,0,-1.]])
     Polygon = np.array([result[3] for result in results])
@@ -1019,8 +987,39 @@ def FindTetrahedron(results):
     A,V = Q2AVdeg(QQ)
     return bond,std,meanDisp,stdDisp,A,V,vecDisp
     
-def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,
-                     searchType='Bond'):
+def FindNeighbors(phase,FrstName,AtNames,notName=''):
+    General = phase['General']
+    cx,ct,cs,cia = getAtomPtrs(phase)
+    Atoms = phase['Atoms']
+    atNames = [atom[ct-1] for atom in Atoms]
+    Cell = General['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    atTypes = General['AtomTypes']
+    Radii = np.array(General['BondRadii'])
+    try:
+        DisAglCtls = General['DisAglCtls']    
+        radiusFactor = DisAglCtls['Factors'][0]
+    except:
+        radiusFactor = 0.85
+    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+    Orig = atNames.index(FrstName)
+    OId = Atoms[Orig][cia+8]
+    OType = Atoms[Orig][ct]
+    XYZ = getAtomXYZ(Atoms,cx)        
+    Neigh = []
+    Ids = []
+    Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
+    dist = np.sqrt(np.sum(Dx**2,axis=1))
+    sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
+    IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))
+    for j in IndB[0]:
+        if j != Orig:
+            if AtNames[j] not in notName:
+                Neigh.append([AtNames[j],dist[j],True])
+                Ids.append(Atoms[j][cia+8])
+    return Neigh,[OId,Ids]
+
+def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,searchType='Bond'):
     '''Find neighboring atoms
     Uses Bond search criteria unless searchType is set to non-default
     '''
@@ -1058,13 +1057,13 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,
     Neigh = []
     Ids = []
     sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
-    sumR = np.reshape(np.tile(sumR,27),(27,-1))
+    sumR = np.reshape(np.tile(sumR,27),(27,-1))     #27 = 3x3x3 unit cell block
     results = []
     for xyz in XYZ:
         results.append(G2spc.GenAtom(xyz,SGData,False,Move=False))
     for iA,result in enumerate(results):
         for [Txyz,Top,Tunit,Spn] in result:
-            Dx = np.array([Txyz-Oxyz+unit for unit in Units])
+            Dx = (Txyz-np.array(Oxyz))+Units
             dx = np.inner(Dx,Amat)
             dist = np.sqrt(np.sum(dx**2,axis=1))
             IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))

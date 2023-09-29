@@ -333,19 +333,20 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
-                
-def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=False):
+                                
+def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
     ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
     :param array HKL: reflection hkl set to be considered
     :param array Bmat: inv crystal to Cartesian transfomation matrix
-    :param dict SHCdict: spin RB data
+    :param dict SHCdict: RB spin/deformation data
     :param array Tdata: atom type info
     :param str hType: histogram type
     :param dict FFtables: x-ray form factor tables
+    :param dict ORBtables: x-ray orbital form factor tables
     :param dict BLtables: neutron scattering lenghts
-    :param array FF: form factors - will be modified by adding the spin RB spherical harmonics terms
+    :param array FF: form factors - will be modified by adding the spin/deformation RB spherical harmonics terms
     :param array SQ: 1/4d^2 for the HKL set
-    :param bool ifDeriv: True if dFF/dR, dFF/dA, & dFF/dShC to be returned
+    :param bool ifDeriv: True if dFF/dcoff to be returned
     
     :returns: dict dFFdS of derivatives if ifDeriv = True
     '''
@@ -357,6 +358,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
         
     dFFdS = {}
     atFlg = []
+    Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,[1.,0.,0.,1.])
+    SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
             atFlg.append(1.0)
@@ -374,7 +377,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
             ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
-            SQR = np.repeat(SQ,HKL.shape[1])
             FF[:,iAt] = 0.
             ishl = 0
             dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
@@ -449,6 +451,38 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,ifDeriv=Fa
             dFFdS[Oiname] = dSHdOi
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
+        elif iAt in SHCdict and 'X' in hType:
+            orKeys = list(ORBtables[Atype].keys())
+            orbs = SHCdict[iAt]
+            atFlg.append(1.0)
+            FFcore = G2el.ScatFac(ORBtables[Atype][orKeys[0]],SQR)    #core
+            FFtot = np.zeros_like(FFcore)
+            for orb in orbs:
+                Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
+                kappa = orbs[orb]['kappa']
+                SQk = SQR/kappa**2
+                ff = Ne*G2el.ScatFac(ORBtables[Atype][orKeys[int(orb)+1]],SQk)
+                dffdk = G2el.ScatFacDer(ORBtables[Atype][orKeys[int(orb)+1]],SQk)
+                dSH = 0.0
+                if '<j0>' in orKeys[int(orb)+1]:
+                    dSH = 1.0
+                for term in orbs[orb]:
+                    if 'D(' in term:
+                        item = term.replace('D','C')
+                        SH = G2lat.KslCalc(item,Th,Ph)
+                        FFtot += SH*orbs[orb][term]*ff
+                        name = 'A%s%s:%d'%(term,orb,iAt)
+                        dFFdS[name] = SH*ff
+                        dSH += SH*orbs[orb][term]
+                    elif 'Ne' in term:
+                        name = 'ANe%s:%d'%(orb,iAt)
+                        dFFdS[name] = ff/Ne
+                    elif 'kappa' in term:
+                        if 'j0' in orKeys[int(orb)+1]:
+                            FFtot += ff
+                name = 'Akappa%s:%d'%(orb,iAt)
+                dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
+            FF[:,iAt] = FFcore+FFtot
         else:
             atFlg.append(0.)
     if ifDeriv:
@@ -476,6 +510,16 @@ def GetSHC(pfx,parmDict):
             elif 'Sh' in name:
                 cof = bits[2]
                 SHCdict[atid][shno][cof] = parmDict[parm]
+        if 'AD(' in parm or 'Akappa' in parm or 'ANe' in parm:       #atom deformation parms
+            items = parm.split(':')
+            atid = int(items[-1])
+            name = items[2][1:]    #strip 'A'
+            if atid not in SHCdict:
+                SHCdict[atid] = {}
+            orb = name[-1]
+            if orb not in SHCdict[atid]:
+                SHCdict[atid][orb] = {}
+            SHCdict[atid][orb][name[:-1]] = parmDict[parm] #[atom id][orb no.][deform. coef]
     return SHCdict
     
 ################################################################################
@@ -947,6 +991,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     FFtables = calcControls['FFtables']
     EFtables = calcControls['EFtables']
     BLtables = calcControls['BLtables']
+    ORBtables = calcControls['ORBtables']
     Amat,Bmat = G2lat.Gmat2AB(G)
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
@@ -1035,7 +1080,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
         if len(SHCdict):
-            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ)     #Not Amat!
+            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ)     #Not Amat!
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
@@ -1088,6 +1133,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])    # must be ops[0].T
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
+    ORBtables = calcControls['ORBtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType'] 
     Amat,Bmat = G2lat.Gmat2AB(G)
@@ -1143,7 +1189,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
-        Uniq = np.inner(H,SGMT)             # array(nSGOp,3)
+        Uniq = np.inner(H,SGMT)             # array(nSGOp,3,3)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
         sinp = np.sin(phase)        #refBlk x nOps x nAtoms
@@ -1157,7 +1203,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))     #Nref,Nops,6
         if len(SHCdict):
-            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,BLtables,FF,SQ,True)
+            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,True)
             if len(dffdSH):
                 for item in dffdSH:
                     dffdSH[item] = np.concatenate((dffdSH[item],dffdsh[item]))
@@ -1224,7 +1270,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         iBeg += blkSize
 #    print 'derv time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
-    for i in range(len(Mdata)):
+    for i in range(len(Tdata)):         #loop over atoms
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
         dFdvDict[pfx+'dAy:'+str(i)] = dFdx.T[1][i]
@@ -1237,8 +1283,11 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSH:
-            i = int(item.split(':')[1])
-            dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+            if 'SH' in item or 'O' in item:
+                i = int(item.split(':')[1])
+                dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+            else:
+                dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]

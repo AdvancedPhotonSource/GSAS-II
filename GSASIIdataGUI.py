@@ -822,6 +822,8 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         item.Enable(state) # disabled during sequential fits
         self.Bind(wx.EVT_MENU, self.OnRefinePartials, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Parameter Impact\tCTRL+I','Perform a derivative calculation')
+        self.Bind(wx.EVT_MENU, self.OnDerivCalc, id=item.GetId())
         
         item = parent.Append(wx.ID_ANY,'Save partials as csv','Save the computed partials as a csv file')
         self.Refine.append(item)
@@ -837,8 +839,6 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRunAbsorb, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Run PlotXNFF','Plot X-ray, neutron & magnetic form factors')
         self.Bind(wx.EVT_MENU, self.OnRunPlotXNFF, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'&Parameter Impact\tCTRL+I','Perform a derivative calculation')
-        self.Bind(wx.EVT_MENU, self.OnDerivCalc, id=item.GetId())
 
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
@@ -5269,6 +5269,23 @@ class GSASII(wx.Frame):
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
         return phaseNames
     
+    def GetHistogramTypes(self):
+        """ Returns a list of histogram types found in the GSASII data tree
+        
+        :return: list of histogram types
+        
+        """
+        HistogramTypes = []
+        if self.GPXtree.GetCount():
+            item, cookie = self.GPXtree.GetFirstChild(self.root)
+            while item:
+                name = self.GPXtree.GetItemText(item)
+                if name[:4] in ['PWDR','HKLF']:
+                    Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item,'Instrument Parameters'))
+                    HistogramTypes.append(Inst[0]['Type'][0])
+                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        return HistogramTypes
+    
     def GetHistogramNames(self,hType):
         """ Returns a list of histogram names found in the GSASII data tree
         Note routine :func:`GSASIIstrIO.GetHistogramNames` also exists to
@@ -5398,7 +5415,7 @@ class GSASII(wx.Frame):
         rigidbodyDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,BLtable,MFtable,maxSSwave = \
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,ORBtables,BLtable,MFtable,maxSSwave = \
             G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
@@ -5495,11 +5512,8 @@ class GSASII(wx.Frame):
             return
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         wx.BeginBusyCursor()
-        pdlg = wx.ProgressDialog('Computing derivatives',
-                    'Impact computation in progress',100,
-                    parent=self,
-#                    style = wx.PD_ELAPSED_TIME)
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        pdlg = wx.ProgressDialog('Computing derivatives','Impact computation in progress',100,
+            parent=self,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         pdlg.CenterOnParent()
         derivCalcs,varyList = G2stMn.Refine(self.GSASprojectfile,pdlg,allDerivs=True)
         pdlg.Destroy()
@@ -5517,11 +5531,9 @@ class GSASII(wx.Frame):
             txt = G2obj.fmtVarDescr(x)
             txt = txt.replace('Ph=','Phase: ')
             txt = txt.replace('Pwd=','Histogram: ')
-            #print(f'{x}\t{derivCalcs[x][1]}\t{txt}')
             tbl.append([x,x in varyList,derivCalcs[x][1],txt])
-        G2G.G2ScrolledGrid(self,'Parameter Impact Results',
-                           'Impact Results',tbl,colLbls,
-                           colTypes,maxSize=(700,400))
+        G2G.G2ScrolledGrid(self,'Parameter Impact Results','Impact Results',tbl,colLbls,colTypes,
+            maxSize=(700,400),comment=' Cite: B.H. Toby, IUCrJ, to be published')
 
     def OnRefine(self,event):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
@@ -7101,6 +7113,17 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataDrawOptions.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PostfillDataMenu()
         
+        # Phase / Deformation tab
+        G2G.Define_wxId('wxID_DEFORMSETSEL','wxID_DEFORMDISTSET')
+        self.DeformationMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.DeformationMenu)
+        self.DeformationMenu.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.DeformationEdit = wx.Menu(title='')
+        self.DeformationMenu.Append(menu=self.DeformationEdit, title='Edit Deformations')
+        self.DeformationEdit.Append(G2G.wxID_DEFORMSETSEL,'Select atom','Select atom for deformation study')
+        self.DeformationEdit.Append(G2G.wxID_DEFORMDISTSET,'Set bond parms','Set bond selection parameters')
+        self.PostfillDataMenu()
+        
         # Phase / Draw Atoms tab 
         G2G.Define_wxId('wxID_DRAWATOMSTYLE', 'wxID_DRAWATOMLABEL', 'wxID_DRAWATOMCOLOR', 'wxID_DRAWATOMRESETCOLOR',
             'wxID_DRAWVIEWPOINT', 'wxID_DRAWTRANSFORM', 'wxID_DRAWDELETE', 'wxID_DRAWFILLCELL',
@@ -7242,7 +7265,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
     # end of GSAS-II menu definitions
     
-#####  Notebook Tree Item editor ##############################################
+####  Notebook Tree Item editor ##############################################
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
@@ -7275,7 +7298,7 @@ def UpdateNotebook(G2frame,data):
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
 
-#####  Comments ###############################################################
+####  Comments ###############################################################
 def UpdateComments(G2frame,data):
     '''Place comments into the data window
     '''
@@ -7293,7 +7316,7 @@ def UpdateComments(G2frame,data):
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 
             
-#####  Controls Tree Item editor ##############################################
+####  Controls Tree Item editor ##############################################
 def UpdateControls(G2frame,data):
     '''Edit overall GSAS-II controls in main Controls data tree entry
     '''
@@ -7599,7 +7622,7 @@ def UpdateControls(G2frame,data):
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
     
-#####  Main PWDR panel ########################################################    
+####  Main PWDR panel ########################################################    
 def UpdatePWHKPlot(G2frame,kind,item):
     '''Called when the histogram main tree entry is called. Displays the
     histogram weight factor, refinement statistics for the histogram

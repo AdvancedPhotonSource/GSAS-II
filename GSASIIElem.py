@@ -16,6 +16,7 @@ import sys
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
+import copy
 import numpy as np
 import atmdata
 import GSASIImath as G2mth
@@ -99,6 +100,18 @@ def GetEFFtable(atomTypes):
             if item['Symbol'] == El.upper():
                 FFtable[El] = item
     return FFtable
+    
+def GetORBtable(atomTypes):
+    ''' returns a dictionary of orbital form factor data for atom types found in atomTypes
+
+    :param list atomTypes: list of atom types
+    :return: ORBtable, dictionary of orbital form factor data; key is atom type
+
+    '''
+    ORBtable = {}
+    for El in atomTypes:
+        ORBtable[El] = copy.deepcopy(atmdata.OrbFF[El])
+    return ORBtable
     
 def GetMFtable(atomTypes,Landeg):
     ''' returns a dictionary of magnetic form factor data for atom types found in atomTypes
@@ -421,6 +434,18 @@ def ScatFac(El, SQ):
     fb = np.array(El['fb'])
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El.get('fc',0.0)
+
+def ScatFacDer(El, SQ):
+    """compute derivative of form factor wrt SQ
+
+    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param SQ: (sin-theta/lambda)**2
+    :return: real part of form factor
+    """
+    fa = np.array(El['fa'])
+    fb = np.array(El['fb'])
+    t = -fb[:,np.newaxis]*SQ
+    return -np.sum(fa[:,np.newaxis]*fb[:,np.newaxis]*np.exp(t)[:],axis=0)
         
 def MagScatFac(El, SQ):
     """compute value of form factor
@@ -442,7 +467,109 @@ def MagScatFac(El, SQ):
     NMF0 = np.sum(nfa)+El['nfc']
     MF0 = MMF0+(2.0/El['gfac']-1.0)*NMF0
     return (MMF+(2.0/El['gfac']-1.0)*NMF)/MF0
+
+def ClosedFormFF(El,SQ,k,N):
+    """Closed form expressions for FT Slater fxns. IT B Table 1.2.7.4
+    (not used at present - doesn't make sense yet)
+    
+    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param SQ: (sin-theta/lambda)**2
+    :param k: int principal Bessel fxn order as in <jk>
+    :param N: int power
+    
+    return: form factor
+    """
+    Z = El['Z']
+    Z2 = Z**2
+    K2 = 16.0*SQ*np.pi**2
+    K2pZ2 = K2+Z2
+    K = np.sqrt(K2)
+    if not k: #==0
+        if N == 1:
+            return 1.0/K2pZ2
+        elif N == 2:
+            return 2.0*Z/K2pZ2**2
+        elif N == 3:
+            return 2.0*(3.0*Z2-K2)/K2pZ2**3
+        elif N == 4:
+            return 24.0*Z*(Z2-K2)/K2pZ2**4
+        elif N == 5:
+            return 24.0*(5.0*Z2-10.0*K2*Z2+K2**2)/K2pZ2**5
+        elif N == 6:
+            return 240.0*(K2-3.0*Z2)*(3.0*K2-Z2)/K2pZ2**6
+        elif N == 7:
+            return 720.0*(7.0*Z2**3-35.0*K2*Z2**2+21.0*Z2*K2**2-K2**3)/K2pZ2**7
+        elif N == 8:
+            return 40320.0*(Z*Z2**3-7.0*K2*Z*Z2**2+7.0*K2**2*Z*Z2-Z*K2**3)/K2pZ2**8
+    elif k == 1:
+        if N == 2:
+            return 2.0*K/K2pZ2**2
+        elif N == 3:
+            return 8.0*K*Z/K2pZ2**3
+        elif N == 4:
+            return 8.0*K*(5.0*Z2-K2)/K2pZ2**4
+        elif N == 5:
+            return 48.0*K*Z*(5.0*Z2-3.0*K2)/K2pZ2**5
+        elif N == 6:
+            return 48.0*K*(35.0*Z2**2-42.0*K2*Z2+3.0*K2**2)/K2pZ2**6
+        elif N == 7:
+            return 1920.0*K*Z*(7.0*Z2**2-14.0*K2*Z2+3.0*K2**2)/K2pZ2**7
+        elif N == 8:
+            return 5760.0*K*(21.0*Z2**3-63.0*K2*Z2**2+27.0*K2**2*Z2-K2**3)/K2pZ2**8
+    elif k == 2:
+        if N == 3:
+            return 8.0*K2/K2pZ2**3
+        elif N == 4:
+            return 48.0*K2*Z/K2pZ2**4
+        elif N == 5:
+            return 48.0*K2*(7.0*Z2-K2)/K2pZ2**5
+        elif N == 6:
+            return 384.0*K2*Z*(7.0*Z2-3.0*K2)/K2pZ2**6
+        elif N == 7:
+            return 1152.0*K2*(21.0*Z2**2-18.0*K2*Z2+K2**2)/K2pZ2**7
+        elif N == 8:
+            return 11520.0*K2*Z*(21.0*Z2**2-30.0*K2*Z2+5.0*K2**2)/K2pZ2**8
+    elif k == 3:
+        if N == 4:
+            return 48.0*K**3/K2pZ2**4
+        elif N == 5:
+            return 384.0*K**3*Z/K2pZ2**5
+        elif N == 6:
+            return 384.0*K**3*(9.0*Z2-K2)/K2pZ2**6
+        elif N == 7:
+            return 11520.0*K**3*Z*(3.0*Z2-K2)/K2pZ2**7
+        elif N == 8:
+            return 11520.0*K**3*(33.0*Z2**2-22.0*K2*Z2+K2**2)/K2pZ2**8
+    elif k == 4:
+        if N == 5:
+            return 384.0*K2**2/K2pZ2**5
+        elif N == 6:
+            return 3840.0*K2**2*Z/K2pZ2**6
+        elif N == 7:
+            return 3840.0*K2**2*(11.0*Z2-K2)/K2pZ2**7
+        elif N == 8:
+            return 46080.0*K**5*(13.0*Z2-K2)/K2pZ2**8
+    elif k == 5:
+        if N == 6:
+            return 3840.0*K**5/K2pZ2**6
+        elif N == 7:
+            return 46080.0*Z*K**5/K2pZ2**7
+        elif N == 8:
+            return 46080.0*K**5*(13.0*Z2-K2)/K2pZ2**8
+    elif k == 6:
+        if N == 7:
+            return 46080.0*K**6/K2pZ2**7
+        elif N == 8:
+            return 645120.0*Z*K2**3/K2pZ2**8
+    elif k == 7:
+        if N == 8:
+            return 645120.0*K**7/K2pZ2**8
         
+        
+            
+    
+    
+    
 def BlenResCW(Els,BLtables,wave):
     FP = np.zeros(len(Els))
     FPP = np.zeros(len(Els))

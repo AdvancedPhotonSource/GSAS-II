@@ -624,6 +624,11 @@ def CompileVarDesc():
         'Afrac': ('Atomic site fraction parameter',1e-5),
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
+        # Atom deformation parameters
+        'Akappa([0-6])'  : ' Atomic orbital softness for orbital, \\1',
+        'ANe([01])' : ' Atomic <j0> orbital population for orbital, \\1',
+        'AD\\([0-6],[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',
+        'AD\\([0-6],-[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',     #need both!
         # Hist (:h:<var>) & Phase (HAP) vars (p:h:<var>)
         'Back(.*)': 'Background term #\\1',
         'BkPkint;(.*)':'Background peak #\\1 intensity',
@@ -785,7 +790,10 @@ def getDescr(name):
         m = key.match(name)
         if m:
             reVarDesc[key]
-            return m.expand(reVarDesc[key])
+            try:
+                return m.expand(reVarDesc[key])
+            except:
+                print('Error in key: %s'%key)
     return None
 
 def getVarStep(name,parmDict=None):

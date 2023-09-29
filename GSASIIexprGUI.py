@@ -919,8 +919,7 @@ class AngleDialog(wx.Dialog):
         neigh = []
         bNames = []
         if self.Oatom:
-            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames,
-                                           searchType='Angle')[0]
+            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames,searchType='Angle')[0]
         if neigh:
             for iA,aName in enumerate(neigh):
                 for cName in neigh[iA+1:]:

@@ -201,7 +201,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     parmDict.update(rbDict)
-    (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+    (Natoms, atomIndx, phaseVary,phaseDict, pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
         GetPhaseData(Phases,RestraintDict=None,seqHistName=seqHist,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
@@ -1166,7 +1166,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
        held due to symmetry are placed in this list even if not varied. (Used 
        in G2constrGUI and for parameter impact estimates in AllPrmDerivs).
     :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-        FFtables,EFtables,BLtables,MFtables,maxSSwave (see code for details). 
+        FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave (see code for details). 
     '''
             
     def PrintFFtable(FFtable):
@@ -1192,6 +1192,24 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 fb = efdata['fb']
                 pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                     (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fa[4],fb[0],fb[1],fb[2],fb[3],fb[4]))
+                
+    def PrintORBtable(ORBtable):
+        if not len(ORBtable):
+            return
+        pFile.write('\n X-ray orbital scattering factors:\n')
+        pFile.write('   Symbol          fa                                      fb                                      fc\n')
+        pFile.write(103*'-'+'\n')
+        for Ename in ORBtable:
+            orbdata = ORBtable[Ename]
+            for item in orbdata:
+                fa = orbdata[item]['fa']
+                fb = orbdata[item]['fb']
+                if 'core' in item:                    
+                    name = ('%s %s'%(Ename,item)).ljust(13)
+                else:
+                    name = '   '+item.ljust(10)
+                pFile.write(' %13s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                    (name,fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],orbdata[item]['fc']))
                 
     def PrintMFtable(MFtable):
         pFile.write('\n <j0> Magnetic scattering factors:\n')
@@ -1376,7 +1394,26 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
                     '%10.5f'%(at[cmx+2])
                 pFile.write(line+'\n')
-        
+                
+    def PrintDeformations(General,Atoms,Deformations):
+        cx,ct,cs,cia = General['AtomPtrs']
+        pFile.write('\n Atomic deformation parameters:\n')
+        for AtDef in Deformations:
+            atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
+            DefTable = Deformations[AtDef]
+            pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
+            pFile.write(135*'-'+'\n')
+            for orb in DefTable:
+                names = orb[0].ljust(12)+ 'names : '
+                values = 12*' '+'values: '
+                refine = 12*' '+'refine: '
+                for item in orb[1]:
+                    names += item.rjust(10)
+                    values += '%10.5f'%orb[1][item][0]
+                    refine += '%10s'%str(orb[1][item][1])
+                pFile.write(names+'\n')
+                pFile.write(values+'\n')
+                pFile.write(refine+'\n')
                 
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -1588,7 +1625,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     FFtables = {}                   #scattering factors - xrays
     EFtables = {}                   #scattering factors - electrons
     MFtables = {}                   #Mag. form factors
-    BLtables = {}                   # neutrons
+    BLtables = {}                  # neutrons
+    ORBtables = {}
     Natoms = {}
     maxSSwave = {}
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
@@ -1601,6 +1639,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         General = PhaseData[name]['General']
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
+        Deformations = PhaseData[name].get('Deformations',[])
         FFtable = G2el.GetFFtable(General['AtomTypes'])
         EFtable = G2el.GetEFFtable(General['AtomTypes'])
         BLtable = G2el.GetBLtable(General)
@@ -1619,6 +1658,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
             AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)
+        DefAtm = []
+        for iAt in Deformations:
+            DefAtm.append(G2mth.GetAtomItemsById(Atoms,AtLookup,iAt,ct)[0])
+        ORBtable = G2el.GetORBtable(set(DefAtm))
+        ORBtables.update(ORBtable)
         PawleyRef = PhaseData[name].get('Pawley ref',[])
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
@@ -1803,6 +1847,18 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                             eqv[1] /= coef
                                             G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
+                            
+            if len(Deformations) and not General.get('doPawley'):
+                for iAt in Deformations:
+                    AtId = AtLookup[iAt]
+                    DefAtm = Deformations[iAt]
+                    for iorb,orb in enumerate(DefAtm):
+                        for parm in orb[1]:
+                            name = pfx+'A%s%d:%d'%(parm,iorb,AtId)
+                            phaseDict[name] = orb[1][parm][0]
+                            if orb[1][parm][1]:
+                                phaseVary.append(name)
+                    
             textureData = General['SH Texture']
             if textureData['Order']:    # and seqHistName is not None:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1821,6 +1877,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write(135*'='+'\n')
                 PrintFFtable(FFtable)
                 PrintEFtable(EFtable)
+                PrintORBtable(ORBtable)
                 PrintBLtable(BLtable)
                 if General['Type'] == 'magnetic':
                     PrintMFtable(MFtable)
@@ -1844,6 +1901,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         pFile.write(' ( 1)    %s\n'%(SGtable[0]))
                 PrintRBObjects(resRBData,vecRBData,spnRBData)
                 PrintAtoms(General,Atoms)
+                if len(Deformations):
+                    PrintDeformations(General,Atoms,Deformations)
+                    
                 if General['Type'] == 'magnetic':
                     PrintMoments(General,Atoms)
                 if General.get('Modulated',False):
@@ -1897,7 +1957,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave
+    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
     '''Returns the filled-out reciprocal cell (A) terms and their uncertainties
@@ -2318,6 +2378,32 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 pFile.write(name+'\n')
                 pFile.write(valstr+'\n')
                 pFile.write(sigstr+'\n')
+                
+    def PrintDeformationsAndSig(General,Atoms,Deformations,deformSig):
+        pFile.write('\n Atom deformations:\n')
+        cx,ct,cs,cia = General['AtomPtrs']
+        for AtDef in Deformations:
+            pFile.write(135*'-'+'\n')
+            atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
+            AtId = AtLookup[AtDef]
+            DefTable = Deformations[AtDef]
+            pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
+            pFile.write(135*'-'+'\n')
+            for iorb,orb in enumerate(DefTable):
+                names = orb[0].ljust(12)+ 'names : '
+                values = 12*' '+'values: '
+                sigstr = 12*' '+'esds  : '
+                for item in orb[1]:
+                    pName = 'A%s%d:%d'%(item,iorb,AtId)
+                    names += item.rjust(10)
+                    values += '%10.5f'%orb[1][item][0]
+                    if pName in deformSig:
+                        sigstr += '%10.5f'%deformSig[pName]
+                    else:
+                        sigstr += 10*' '
+                pFile.write(names+'\n')
+                pFile.write(values+'\n')
+                pFile.write(sigstr+'\n')
             
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -2572,6 +2658,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             atomsSig = {}
             sigKey = {}
             wavesSig = {}
+            deformSig = {}
             cx,ct,cs,cia = General['AtomPtrs']
             for i,at in enumerate(Atoms):
                 names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
@@ -2640,8 +2727,21 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
+                                    
+            Deformations = Phase.get('Deformations',{})
+            for iAt in Deformations:
+                AtId = AtLookup[iAt]
+                DefAtm = Deformations[iAt]
+                for iorb,orb in enumerate(DefAtm):
+                    for parm in orb[1]:
+                        name = 'A%s%d:%d'%(parm,iorb,AtId)
+                        orb[1][parm][0] = parmDict[pfx+name]
+                        if pfx+name in sigDict:
+                            deformSig[name] = sigDict[pfx+name]
 
             if pFile: PrintAtomsAndSig(General,Atoms,sigDict,sigKey)
+            if pFile and len(Deformations):
+                PrintDeformationsAndSig(General,Atoms,Deformations,deformSig)
             if pFile and General['Type'] == 'magnetic':
                 PrintMomentsAndSig(General,Atoms,atomsSig)
             if pFile and General.get('Modulated',False):

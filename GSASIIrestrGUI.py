@@ -288,8 +288,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
         try:
             bondlst = G2mth.searchBondRestr(Lists['origin'],Lists['target'],
-                                            bond,Factor,General['Type'],
-                                            SGData,Amat,0.01,dlg)
+                bond,Factor,General['Type'],SGData,Amat,0.01,dlg)
             for newBond in bondlst:
                 if newBond not in bondRestData['Bonds']:
                     bondRestData['Bonds'].append(newBond)
@@ -404,7 +403,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             IndBlist = []
             VectB = []
             for Tid,Ttype,Tcoord in targAtoms:
-                result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
+                result = G2spc.GenAtom(Tcoord,SGData,All=False,Move=False)
                 BsumR = (Radii[Otype][0]+Radii[Ttype][0])*Factor
                 AsumR = (Radii[Otype][1]+Radii[Ttype][1])*Factor
                 for Txyz,Top,Tunit,Spn in result:

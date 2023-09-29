@@ -58,6 +58,7 @@ import GSASIIfiles as G2fl
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
+import numpy.ma as ma
 import atmdata
 import ISODISTORT as ISO
 
@@ -10045,8 +10046,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 val += '_' + str(i)
             choices.append(val)
         if not choices: return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,
-                    'Select atoms','Choose atoms to select',choices)
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select atoms','Choose atoms to select',choices)
         indx = []
         if dlg.ShowModal() == wx.ID_OK:
             indx = dlg.GetSelections()
@@ -10705,6 +10705,152 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         mainSizer.Add(PlaneSizer(),0,)
 
         SetPhaseWindow(drawOptions,mainSizer)
+        
+####  Deformation form factor routines ################################################################
+
+    def SetDefDist(event):
+        generalData = data['General']
+        DisAglCtls = {}
+        if 'DisAglCtls' in generalData:
+            DisAglCtls = generalData['DisAglCtls']
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Angle=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            generalData['DisAglCtls'] = dlg.GetData()
+        UpdateDeformation()
+        event.StopPropagation()
+        
+    def SelDeformAtom(event):
+        'select deformation atom using a filtered listbox'
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        choices = []
+        types = []
+        Ids = []
+        for atom in data['Atoms']:
+            if atom[ct] in atmdata.OrbFF:
+                choices.append(atom[ct-1])
+                types.append(atom[ct])
+                Ids.append(atom[cia+8])
+        if not choices: return      #no atoms in phase!
+        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select atom','Choose atom to select',choices)
+        indx = -1
+        if dlg.ShowModal() == wx.ID_OK:
+            indx = dlg.GetSelection()
+            orbs = atmdata.OrbFF[types[indx]]
+            data['Deformations'][Ids[indx]] = []
+            for orb in orbs:
+                if 'core' in orb:
+                    continue        #skip core - has no parameters
+                else:
+                    if 'j0' in orb:
+                        data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
+                    elif 'j' in orb:
+                        orbDict = {'kappa':[1.0,False],}
+                        Order = int(orb.split('>')[0][-1])
+                        cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
+                        cofNames = [name.replace('C','D') for name in cofNames]
+                        cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
+                        for name in cofNames:
+                            if str(Order) in name and '0' not in name:
+                                negname = name.replace(',',',-')
+                                cofTerms.update({negname:[0.0,False]})
+                        orbDict.update(cofTerms)
+                        data['Deformations'][Ids[indx]].append([orb,orbDict])
+        dlg.Destroy()
+        if indx < 0: return
+        drawAtoms.ClearSelection()        
+        drawAtoms.SelectRow(indx,True)
+        G2plt.PlotStructure(G2frame,data)
+        UpdateDeformation()
+        event.StopPropagation()
+
+    def UpdateDeformation():
+        
+        def OnDeformRef(event):
+            Obj = event.GetEventObject()
+            dId,oId,dkey = Indx[Obj.GetId()]
+            deformationData[dId][oId][1][dkey][1] = not deformationData[dId][oId][1][dkey][1]
+
+        def OnDelAtm(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            del deformationData[dId]
+            UpdateDeformation()
+        
+        # UpdateDeformation exectable code starts here
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        atomData = data['Atoms']
+        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+        AtNames = [atom[ct-1] for atom in atomData]
+        deformationData = data['Deformations']
+        
+        if deformation.GetSizer():
+            deformation.GetSizer().Clear(True)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(deformation,label=' Atomic deformation data:'),0,WACV)
+        # add help button to bring up help web page - at right side of window
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(deformation,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,wx.EXPAND)
+        Indx = {}
+        
+        for dId in deformationData:
+            atom = atomData[AtLookUp[dId]]
+            neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(deformation,label=' For atom %s, site sym %s:'%(atom[ct-1],atom[cs])),0,WACV)
+            names = []
+            if not len(neigh[0]):
+                lineSizer.Add(wx.StaticText(deformation,label=' No neighbors found; Do Set bond parms to expand search'),0,WACV)
+            else:
+                names = [item[0] for item in neigh[0]]
+                lineSizer.Add(wx.StaticText(deformation,label=' Neighbors: '+str(names)),0,WACV)
+            delAtm = wx.Button(deformation,label='Delete')
+            delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
+            Indx[delAtm.GetId()] = dId
+            lineSizer.Add(delAtm,0,WACV)
+            mainSizer.Add(lineSizer)
+            orbSizer = wx.FlexGridSizer(0,9,2,2)
+            for iorb,orb in enumerate(deformationData[dId]):
+                orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' kappa:'))
+                orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.,xmax=10.))
+                Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+                Tcheck.SetValue(orb[1]['kappa'][1])
+                Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+                Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
+                orbSizer.Add(Tcheck)
+                if '<j0>' in orb[0]:
+                    orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
+                    orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['Ne'],0,nDig=(8,3),xmin=0.,xmax=10.))
+                    Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+                    Tcheck.SetValue(orb[1]['Ne'][1])
+                    Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+                    Indx[Tcheck.GetId()] = [dId,iorb,'Ne']
+                    orbSizer.Add(Tcheck)
+                    for i in range(3): orbSizer.Add((5,5),0)
+                    continue
+                nItem = 0
+                for item in orb[1]:
+                    if 'D' in item:
+                        nItem += 1
+                        orbSizer.Add(wx.StaticText(deformation,label=item+':'))
+                        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3)))
+                        Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+                        Tcheck.SetValue(orb[1][item][1])
+                        Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+                        Indx[Tcheck.GetId()] = [dId,iorb,item]
+                        orbSizer.Add(Tcheck)
+                        if nItem in [2,4,6,8,10]:
+                            for i in range(3): orbSizer.Add((5,5),0)
+                for i in range(3): orbSizer.Add((5,5),0)
+                    
+            mainSizer.Add(orbSizer)    
+            G2G.HorizontalLine(mainSizer,deformation)
+
+        SetPhaseWindow(deformation,mainSizer)
 
 ####  Texture routines ################################################################################        
     def UpdateTexture():
@@ -15025,6 +15171,10 @@ of the crystal structure.
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DrawAtomsMenu)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
             UpdateDrawAtoms()
+        elif text == 'Deformation':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DeformationMenu)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
+            UpdateDeformation()
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()
@@ -15156,6 +15306,11 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, SelDrawList, id=G2G.wxID_DRAWSETSEL)
         G2frame.Bind(wx.EVT_MENU, DrawLoadSel, id=G2G.wxID_DRAWLOADSEL)
         
+        # Deformation form factors
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DeformationMenu)
+        G2frame.Bind(wx.EVT_MENU, SelDeformAtom, id=G2G.wxID_DEFORMSETSEL)
+        G2frame.Bind(wx.EVT_MENU, SetDefDist, id=G2G.wxID_DEFORMDISTSET)
+        
         # RB Models
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.RigidBodiesMenu)
         G2frame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2G.wxID_AUTOFINDRESRB)
@@ -15284,6 +15439,8 @@ of the crystal structure.
         data['RMC'] = {'RMCProfile':{},'fullrmc':{},'PDFfit':{}}
     if 'ISODISTORT' not in data:
         data['ISODISTORT'] = {}
+    if 'Deformations' not in data:
+        data['Deformations'] = {}
 #end patch    
 
     global rbAtmDict   
@@ -15323,6 +15480,12 @@ of the crystal structure.
     G2frame.phaseDisplay.gridList.append(drawAtoms)
     G2frame.phaseDisplay.AddPage(drawAtomsList,'Draw Atoms')
     Pages.append('Draw Atoms')
+    
+    if any('X' in item for item in G2frame.GetHistogramTypes()):
+        deformation = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(deformation,'Deformation')
+        
+        Pages.append('Deformation')
     
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)

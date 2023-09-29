@@ -384,7 +384,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
     rbIds = rigidbodyDict.get('RBIds', {'Vector': [], 'Residue': [],'Spin':[]})
     rbVary, rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict, Print=False)
     parmDict.update(rbDict)
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
         G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     parmDict.update(phaseDict)
     # get Hist and HAP info
@@ -445,6 +445,20 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
+        elif 'Akappa' in name:
+            namelist = ['Akappa%d'%i for i in range(6)]
+        elif 'ANe' in name:
+            namelist = ['ANe0','ANe1']
+        elif 'AD(1' in name:
+            orb = name.split(':')[2][-1]
+            namelist = ['AD(1,0)'+orb,'AD(1,1)'+orb,'AD(1,-1)'+orb]
+        elif 'AD(2' in name:
+            orb = name.split(':')[2][-1]
+            namelist = ['AD(2,0)'+orb,'AD(2,1)'+orb,'AD(2,-1)'+orb,'AD(2,2)'+orb,'AD(2,-2)'+orb]
+        elif 'AD(4' in name:
+            orb = name.split(':')[2][-1]
+            namelist = ['AD(4,0)'+orb,'AD(4,1)'+orb,'AD(4,-1)'+orb,'AD(4,2)'+orb,'AD(4,-2)'+orb,
+                'AD(4,3)'+orb,'AD(4,-3)'+orb,'AD(4,4)'+orb,'AD(4,-4)'+orb]
         elif 'AM' in name:
             namelist = ['AMx','AMy','AMz']
         elif items[-1] in ['A0','A1','A2','A3','A4','A5']:
@@ -1581,7 +1595,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
 
     # create a list of the phase variables
     symHolds = []
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,BLtable,MFtable,maxSSwave) = \
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,ORBtables,BLtable,MFtable,maxSSwave) = \
         G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False,symHold=symHolds)
     phaseList = []
     for item in phaseDict:
@@ -1680,9 +1694,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     errmsg,warnmsg = WarnConstraintLimit()  # check limits & constraints
     if errmsg:
         G2frame.ErrorDialog('Constraint Error',
-                            'Error in constraints.\nCheck console output for more information'+
-                            ' or press "Show Errors" & "Show Warnings" buttons',
-                            parent=G2frame)
+            'Error in constraints.\nCheck console output for more information'+
+            ' or press "Show Errors" & "Show Warnings" buttons',
+            parent=G2frame)
         if seqhistnum is None:
             print ('\nError message(s):\n',errmsg)
         else:

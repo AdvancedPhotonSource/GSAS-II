@@ -4633,7 +4633,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt
             if dlg:
-                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4662,7 +4662,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 #            print 'matrix build time: %.3f'%(time.time()-time0)
 
             if dlg:
-                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4755,7 +4755,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals']['wRb'] = min(100.,100.*ma.sqrt(sumwYB2/sumwYmB2))
             Histogram['Residuals']['wRmin'] = min(100.,100.*ma.sqrt(Histogram['Residuals']['Nobs']/Histogram['Residuals']['sumwYo']))
             if dlg:
-                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4905,7 +4905,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Nrej += nrej
             Next += next
             if dlg:
-                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4922,7 +4922,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Rw = min(100.,np.sqrt(np.sum(M**2)/SumwYo)*100.)
     if dlg:
         if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-1,'overall')
-        GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))
+        GoOn = dlg.Update(int(Rw),newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))
         if type(GoOn) is tuple:
             if not GoOn[0]:
                 parmDict['saved values'] = values
@@ -4943,7 +4943,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(-2,'Restraints')
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
-        GoOn = dlg.Update(100*pSum/np.sum(M**2),newmsg='Restraints')
+        GoOn = dlg.Update(int(100.*pSum/np.sum(M**2)),newmsg='Restraints')
     Histograms['RestraintSum'] = pSum
     Histograms['RestraintTerms'] = len(pVals)
     return M

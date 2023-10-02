@@ -10847,37 +10847,39 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         types = []
         Ids = []
         for atom in data['Atoms']:
-            if atom[ct] in atmdata.OrbFF:
+            if atom[ct] in atmdata.OrbFF and atom[cia+8] not in data['Deformations']:
                 choices.append(atom[ct-1])
                 types.append(atom[ct])
                 Ids.append(atom[cia+8])
         if not choices: return      #no atoms in phase!
-        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select atom','Choose atom to select',choices)
-        indx = -1
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select atom','Choose atom to select',choices)
+        indxes = []
         if dlg.ShowModal() == wx.ID_OK:
-            indx = dlg.GetSelection()
-            orbs = atmdata.OrbFF[types[indx]]
-            data['Deformations'][Ids[indx]] = []
-            for orb in orbs:
-                if 'core' in orb:
-                    continue        #skip core - has no parameters
-                else:
-                    if 'j0' in orb:
-                        data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
-                    elif 'j' in orb:
-                        orbDict = {'kappa':[1.0,False],}
-                        Order = int(orb.split('>')[0][-1])
-                        cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
-                        cofNames = [name.replace('C','D') for name in cofNames]
-                        cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
-                        for name in cofNames:
-                            if str(Order) in name and '0' not in name:
-                                negname = name.replace(',',',-')
-                                cofTerms.update({negname:[0.0,False]})
-                        orbDict.update(cofTerms)
-                        data['Deformations'][Ids[indx]].append([orb,orbDict])
+            indxes = dlg.GetSelections()
+            for indx in indxes:
+                orbs = atmdata.OrbFF[types[indx]]
+                data['Deformations'][Ids[indx]] = []
+                for orb in orbs:
+                    if 'core' in orb:
+                        continue        #skip core - has no parameters
+                    else:
+                        if 'j0' in orb:
+                            data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
+                        elif 'j' in orb:
+                            orbDict = {'kappa':[1.0,False],}
+                            Order = int(orb.split('>')[0][-1])
+                            cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
+                            cofNames = [name.replace('C','D') for name in cofNames]
+                            cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
+                            for name in cofNames:
+                                if str(Order) in name and '0' not in name:
+                                    negname = name.replace(',',',-')
+                                    cofTerms.update({negname:[0.0,False]})
+                            orbDict.update(cofTerms)
+                            data['Deformations'][Ids[indx]].append([orb,orbDict])
         dlg.Destroy()
-        if indx < 0: return
+        if not len(indxes):
+            return
         drawAtoms.ClearSelection()        
         drawAtoms.SelectRow(indx,True)
         G2plt.PlotStructure(G2frame,data)

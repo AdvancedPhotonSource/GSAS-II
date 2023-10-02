@@ -510,7 +510,7 @@ def GetSHC(pfx,parmDict):
             elif 'Sh' in name:
                 cof = bits[2]
                 SHCdict[atid][shno][cof] = parmDict[parm]
-        if 'AD(' in parm or 'Akappa' in parm or 'ANe' in parm:       #atom deformation parms
+        if pfx+'AD(' in parm or pfx+'Akappa' in parm or pfx+'ANe' in parm:       #atom deformation parms
             items = parm.split(':')
             atid = int(items[-1])
             name = items[2][1:]    #strip 'A'
@@ -520,7 +520,9 @@ def GetSHC(pfx,parmDict):
             if orb not in SHCdict[atid]:
                 SHCdict[atid][orb] = {}
             SHCdict[atid][orb][name[:-1]] = parmDict[parm] #[atom id][orb no.][deform. coef]
-    return SHCdict
+    if len(SHCdict):
+        return {pfx:SHCdict,}
+    else: return {}
     
 ################################################################################
 ##### Penalty & restraint functions 
@@ -1038,7 +1040,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
-    SHCdict = GetSHC(pfx,parmDict)
+    SHCdict = GetSHC(pfx,parmDict)  #this is pfx keyed dict!
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
@@ -1079,8 +1081,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
-        if len(SHCdict):
-            MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ)     #Not Amat!
+        if pfx in SHCdict:
+            MakeSpHarmFF(Uniq,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ)     #Not Amat!
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
@@ -1167,7 +1169,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
-    SHCdict = GetSHC(pfx,parmDict)
+    SHCdict = GetSHC(pfx,parmDict)      #this is dict with pf as key
     dffdSH = {}
 #reflection processing begins here - big arrays!
     iBeg = 0
@@ -1202,8 +1204,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))     #Nref,Nops,6
-        if len(SHCdict):
-            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,True)
+        if pfx in SHCdict:
+            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,True)
             if len(dffdSH):
                 for item in dffdSH:
                     dffdSH[item] = np.concatenate((dffdSH[item],dffdsh[item]))
@@ -1226,14 +1228,14 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-        dfadff = fa[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq
+        dfadff = fa[0]*Tcorr*atFlg/fot           #ignores resonant scattering? no sum on Uniq; array(refBlk,nEqv,nAtom)
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-            dfbdff = fb[0]*Tcorr*atFlg/fot         #ignores resonant scattering? no sum on Uniq
+            dfbdff = fb[0]*Tcorr*atFlg/fot         #ignores resonant scattering? no sum on Uniq; array(refBlk,nEqv,nAtom)
             dfbdba = np.sum(-sinp*Tcorr,axis=-2)
             dfadfl = np.sum(np.sum(-fotp*sinp,axis=-1),axis=-1)
             dfbdfl = np.sum(np.sum(fotp*cosp,axis=-1),axis=-1)
@@ -1260,7 +1262,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/len(SGMT)
-            dFdff[iBeg:iFin] = (2.*SA[:,nxs,nxs]*dfadff+2.*SB[:,nxs,nxs]*dfbdff)      #not summed on Uniq yet
+            dFdff[iBeg:iFin] = (2.*SA[:,nxs,nxs]*dfadff+2.*SB[:,nxs,nxs]*dfbdff)      #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
@@ -1284,10 +1286,11 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSH:
             if 'SH' in item or 'O' in item:
-                i = int(item.split(':')[1])
-                dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+                if i == int(item.split(':')[1]):
+                    dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
             else:
-                dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=-1)
+                if i == int(item.split(':')[1]):
+                    dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
@@ -4123,7 +4126,7 @@ def getPowderProfileDerv(args):
                 try:
                     aname = name.split(pfx)[1][:2]
                     if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
-                        'Tm','Xm','Ym','Zm','U1','U2','U3','MX','MY','MZ']: continue # skip anything not an atom or rigid body param
+                        'Tm','Xm','Ym','Zm','U1','U2','U3','MX','MY','MZ','AN','Ak','AD']: continue # skip anything not an atom or rigid body param
                 except IndexError:
                     continue
             nonatomvarylist.append(name)
@@ -4133,7 +4136,7 @@ def getPowderProfileDerv(args):
                 try:
                     aname = name.split(pfx)[1][:2]
                     if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
-                        'Tm','Xm','Ym','Zm','U1','U2','U3','MX','MY','MZ']: continue # skip anything not an atom or rigid body param
+                        'Tm','Xm','Ym','Zm','U1','U2','U3','MX','MY','MZ','AN','Ak','AD']: continue # skip anything not an atom or rigid body param
                 except IndexError:
                     continue
             nonatomdependentVars.append(name)

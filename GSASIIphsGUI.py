@@ -2960,6 +2960,126 @@ def UpdatePhaseData(G2frame,Item,data):
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
         
+    def OnTransform2Std(event):
+        import SUBGROUPS
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(generalData['SGData'])
+        if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
+            msg = "Nothing to do. Structure is already set in the standard setting."
+            G2G.G2MessageBox(G2frame,msg,'No change needed')
+            return
+        G2frame.OnFileSave(None) # save
+        orgFilName = G2frame.GSASprojectfile
+        ophsnam = data['General']['Name']
+        # get starting unit cell contents
+        ocomp = {}
+        for atom in data['Atoms']:
+            if atom[ct] in ocomp:
+                ocomp[atom[ct]] += atom[cs+1]
+            else:
+                ocomp[atom[ct]] = atom[cs+1]
+        ovol = data['General']['Cell'][7]
+        # get restraints & clear geometrical restraints
+        resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame,resId,ophsnam)
+        if ophsnam in Restraints:
+            Restraints[ophsnam]['Bond']['Bonds'] = []
+            Restraints[ophsnam]['Angle']['Angles'] = []
+        # create a new phase
+        phaseName = f'{ophsnam}-std'
+        newPhase = copy.deepcopy(data)
+        newPhase['ranId'] = ran.randint(0,sys.maxsize),
+        if 'magPhases' in data: del newPhase['magPhases']
+        generalData = newPhase['General']
+        generalData['Name'] = phaseName
+        generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+        generalData['Cell'][1:] = G2lat.TransformCell(generalData['Cell'][1:-1],xmat)
+        uvec = np.array(xoff)
+        vvec = np.array([0.,0.,0.])
+        newPhase['MagXform'] = (xmat,xoff,vvec)
+        newPhase,atCodes = G2lat.TransformPhase(data,newPhase,xmat,uvec,vvec,False)
+        Atoms = newPhase['Atoms']
+        Atms = []
+        AtCods = []
+        atMxyz = []
+        for ia,atom in enumerate(Atoms):
+            atom[0] += '_%d'%ia
+            atom[2] = ''                    #clear away refinement flags
+            SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
+            Atms.append(atom)
+            AtCods.append(atCodes[ia])
+            CSI = G2spc.GetCSxinel(SytSym)
+            atMxyz.append([SytSym,CSI[0]])
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        UseList = newPhase['Histograms']
+        detTrans = np.abs(nl.det(xmat))
+        newPhase['Drawing'] = []
+        for hist in UseList:
+            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+            # reset Dij & microstrain terms where # of terms changes
+            if len(UseList[hist]['Mustrain'][4]) != NShkl:
+                UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+            if len(UseList[hist]['HStrain'][0]) != NDij:
+                UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+            newPhase['General']['Map'] = mapDefault.copy()
+        # phase name rename
+        newName = generalData['Name'] = phaseName
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        phaseNameList = usedHistograms.keys() # phase names in use
+        generalData['Name'] = newName
+        G2frame.GPXtree.SetItemText(Item,generalData['Name'])
+        # change phase name key in Reflection Lists for each histogram
+        for hist in data['Histograms']:
+            ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+            rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
+            if not rt: continue
+            RfList = G2frame.GPXtree.GetItemPyData(rt)
+            RfList[newName] = []
+            if ophsnam in RfList:
+                del RfList[ophsnam]
+        # copy restraints w/o the geometry-based ones
+        if ophsnam in Restraints:
+            Restraints[newName] = Restraints[ophsnam]
+            del Restraints[ophsnam]
+        if resId: G2frame.GPXtree.SetItemText(resId,newName)
+        data.update(newPhase)
+        # save new file
+        G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_std.gpx'
+        #G2frame.OnFileSaveas(event)
+        G2IO.ProjFileSave(G2frame)
+        # get transformed contents
+        ncomp = {}
+        for atom in data['Atoms']:
+            if atom[ct] in ncomp:
+                ncomp[atom[ct]] += atom[cs+1]
+            else:
+                ncomp[atom[ct]] = atom[cs+1]
+        nvol = data['General']['Cell'][7]
+        o = ', '.join([f'{i}:{j}' for i,j in ocomp.items()])
+        n = ', '.join([f'{i}:{j}' for i,j in ncomp.items()])
+        msg = f"""New project file, {G2frame.GSASprojectfile} created.
+
+        Before & after transform, unit cell contents/volume:
+
+        Before {o}, {ovol:.2f} A^3
+        After  {n}, {nvol:.2f} A^3
+        """
+        G2G.G2MessageBox(G2frame,msg,'Transform complete')
+        
+        # Restore the original saved project
+        G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
+        # reopen tree to the original phase
+        def _ShowPhase():
+            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            G2frame.GPXtree.Expand(phId)        
+            phId = G2gd.GetGPXtreeItemId(G2frame,phId,ophsnam)
+            G2frame.GPXtree.SelectItem(phId)
+        wx.CallLater(100,_ShowPhase)
+        
     def OnCompareCells(event):
         G2G.Load2Cells(G2frame,data)
         
@@ -15209,6 +15329,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, OnTransform2Std, id=G2G.wxID_TRANSFORMSTD)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)

@@ -6958,6 +6958,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
+        G2G.Define_wxId('wxID_TRANSFORMSTD')
+        self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTD,'Std setting','Create a copy of this phase transformed into the standard setting')
         self.GeneralCalc.Append(G2G.wxID_COMPARECELLS,'Compare Cells','Compare Unit Cells using NIST*LATTICE')
         self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare polyhedra','Compare polyhedra to ideal octahedra/tetrahedra')
         self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)   
@@ -8318,8 +8320,15 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if len(data['G(R)']):
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
-            G2frame.dataWindow.GetSizer().Add(
-                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
+            if len(G2frame.GetPhaseNames()) == 1: # if there is only one phase, select it
+                item, cookie = G2frame.GPXtree.GetFirstChild(item)
+                data = G2frame.GPXtree.GetItemPyData(item)
+                G2phG.UpdatePhaseData(G2frame,item,data)
+                wx.CallAfter(self.GPXtree.SelectItem,item)
+            else:
+                G2frame.dataWindow.GetSizer().Add(
+                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
+                                      'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
             data = G2frame.GPXtree.GetItemPyData(item)
             G2frame.dataWindow.helpKey = 'Cluster Analysis'

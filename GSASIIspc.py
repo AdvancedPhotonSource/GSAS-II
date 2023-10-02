@@ -682,6 +682,7 @@ def GetGenSym(SGData):
     LattSym = ('P','A','B','C','I','F','R')
     
     '''
+    BNSsym = {}
     OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]

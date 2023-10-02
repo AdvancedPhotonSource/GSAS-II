@@ -276,12 +276,68 @@ def parseBilbaoCheckLattice(page):
             continue
         found.append((acell,cellmat))
     return found
+                
+def GetStdSGset(SGData=None, oprList=[]):
+    '''Determine the standard setting for a space group from either
+    a list of symmetry operators or a space group object using the 
+    Bilbao Crystallographic Server utility IDENTIFY GROUP 
 
+    :param list oprList: a list of symmetry operations (example: 
+       ['x,y,z', '-x,-y,-z']). Supply either this or SGData, not both. 
+    :param SGData: from :func:`GSASIIspc.SpcGroup` 
+       Supply either this or oprList, not both.
+
+    :returns: (sgnum, sgnam, xformM, offsetV) where:
+
+      * sgnum is the space group number, 
+      * sgnam is the space group short H-M name (as used in GSAS-II)
+      * xformM is 3x3 numpy matrix relating the old cell & coordinates to the new
+      * offsetV is the vector of offset to be applied to the coordinates
+
+      Note that the new cell is given by G2lat.TransformCell([a,b,...],xformM)
+    '''
+    import re
+    Site='https://www.cryst.ehu.es/cgi-bin/cryst/programs/checkgr.pl'
+
+    if not bool(oprList) ^ bool(SGData):
+        raise ValueError('GetStdSGset: Muat specify oprList or SGData and not both')
+    elif SGData:
+        SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(SGData)
+        oprList = [x.lower() for x in SymOpList]
+
+    print('''
+      Using Bilbao Crystallographic Server utility IDENTIFY GROUP. Please cite:
+      Symmetry-Based Computational Tools for Magnetic Crystallography,
+      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
+      Annu. Rev. Mater. Res. 2015. 45,217-48.
+      doi: 10.1146/annurev-matsci-070214-021008
+    ''')
+    postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
+    page = G2IO.postURL(Site,postdict)
+
+    # scrape the HTML output for the new space group # and the xform info
+    try:
+        sgnum = int(re.search('\(No. (\d+)\)',page).group(1))
+    except Exception as msg:
+        print('error:',msg)
+        return [None,None,None,None]
+    sgnam = G2spc.spgbyNum[sgnum]
+    
+    xform = re.split(r'parclose\.png',re.split(r'paropen\.png',page)[1])[0] # pull out section w/Xform matrix
+    mat = re.split(r'</pre>',re.split('<pre>',xform)[1])[0].split('\n')
+    offsetV = [eval(m.split()[3]) for m in mat]
+    xformM = np.array([[float(i) for i in m.split()[:3]] for m in mat])
+    return sgnum, sgnam, xformM.T, offsetV
 
 def test():
+    '''This tests that routines in Bilbao Crystallographic Server 
+    are accessible and produce output that we can parse. The output 
+    is displayed but not checked to see that it agrees with what 
+    has been provided previously.
+    '''    
     SGData = G2spc.SpcGroup('f d -3 m')[1]
     
-    print('test SUBGROUPSMAG')            
+    print('test SUBGROUPSMAG')
     results,baseList = GetNonStdSubgroupsmag(SGData,('0','0','0',' ',' ',' ',' ',' ',' ',' '))
     print(results)
     if results:
@@ -292,7 +348,7 @@ def test():
                 print('altList:',altList)
                 print('superList: ',supList)
                 
-    print('test SUBGROUPS')
+    print('\n\ntest SUBGROUPS')
     results,baseList = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     print(results)
     if results:
@@ -303,7 +359,12 @@ def test():
                 print('altList:',altList)
                 print('superList: ',supList)
                 
-        
+    print('\n\ntest Bilbao IDENTIFY GROUP')
+    sgnum,sgsym,xmat,xoff = GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])
+    if sgnum:
+        print(f'Space group R3c (rhomb) transforms to std setting: {sgsym} (#{sgnum})')
+        print('  xform matrix',xmat)
+        print('  coord offset:',xoff)
 
 if __name__ == '__main__':
     # run self-tests

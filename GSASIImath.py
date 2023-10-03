@@ -1056,7 +1056,10 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,sea
     Oxyz = XYZ[Orig]
     Neigh = []
     Ids = []
-    sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
+    try:
+        sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
+    except KeyError: #missing atom type in radii table!
+        return Neigh,[OId,Ids]
     sumR = np.reshape(np.tile(sumR,27),(27,-1))     #27 = 3x3x3 unit cell block
     results = []
     for xyz in XYZ:

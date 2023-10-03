@@ -10871,10 +10871,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
                             cofNames = [name.replace('C','D') for name in cofNames]
                             cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
-                            for name in cofNames:
-                                if str(Order) in name and '0' not in name:
-                                    negname = name.replace(',',',-')
-                                    cofTerms.update({negname:[0.0,False]})
+                            # for name in cofNames:
+                            #     if str(Order) in name and '0' not in name:
+                            #         negname = name.replace(',',',-')
+                            #         cofTerms.update({negname:[0.0,False]})
                             orbDict.update(cofTerms)
                             data['Deformations'][Ids[indx]].append([orb,orbDict])
         dlg.Destroy()

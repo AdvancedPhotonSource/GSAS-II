@@ -6831,9 +6831,59 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
+        
+#### PlotDeform ######################################################################################
+def PlotDeform(G2frame,general,atName,atType,deform,neigh):
+    ''' Plot deformation atoms & neighbors
+    '''
+    SHC = {}
+    for item in deform:
+        if 'j<0>' in item[0]:
+            continue
+        for trm in item[1]:
+            if 'D(' in trm:
+                SHC[trm.replace('D','C')] = [item[1][trm][0],True,1.0]
+    plotType = atName+' deformation'
+    G2frame.G2plotNB.Delete(plotType)
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
+    if not new:
+        if not Page.IsShown():
+            Page.Show()
+    PHI = np.linspace(0.,360.,31,True)
+    PSI = np.linspace(0.,180.,31,True)
+    X = 0.5*np.outer(npcosd(PHI),npsind(PSI))
+    Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
+    Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+    PHI3,PSI3 = np.mgrid[0:31,0:31]   #[azm,pol]
+    PHI3 = PHI3.flatten()*180./30  #azimuth 0-360 incl
+    PSI3 = PSI3.flatten()*360./30  #polar 0-180 incl
+    
+#    np.seterr(all='ignore')
+    P  = np.ones((31,31))
+    for shc in SHC:
+        P += G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31))
+    color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
+    Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
+    for atm in neigh[0]:
+        x,y,z = atm[3]
+        color = np.array(general['Color'][general['AtomTypes'].index(atm[1])])/255.
+        Plot.plot_surface(X+x,Y+y,Z+z,rstride=1,cstride=1,color=color,linewidth=1)
+    xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+    XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+    Plot.set_xlim3d(XYZlim)
+    Plot.set_ylim3d(XYZlim)
+    Plot.set_zlim3d(XYZlim)
+    try:
+        Plot.set_aspect('equal')
+    except NotImplementedError:
+        pass
+    
+    
+    Page.canvas.draw()
+
     
 #### PlotSizeStrainPO ################################################################################
-def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
+def PlotSizeStrainPO(G2frame,data,hist=''):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
     
@@ -6876,9 +6926,6 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
-    # if Start:                   #initialize the spherical harmonics qlmn arrays
-    #     ptx.pyqlmninit()
-    #     Start = False
     cell = generalData['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
     useList = data['Histograms']

@@ -30,6 +30,9 @@ Sources:
            O2- x-ray scattering factor from Tokonami (1965) Acta Cryst 19, 486
 
            At wts from 14th ed Nuclides & Isotopes, 1989 GE Co.
+           
+           Orbital form factors from fitting Table 2.2D in International Tables for x-ray Crystallography Vol IV
+           by Cromer & Waber (1974)
 
 '''
 XrayFF = {

@@ -1169,7 +1169,7 @@ def MakeHistPhaseWin(G2frame):
         'display the DData info'
         G2frame.HistPhaseLastSel = phaseList[page]
         data = G2frame.GPXtree.GetItemPyData(phaseIds[page])
-        G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
+        G2plt.PlotSizeStrainPO(G2frame,data,hist='')            
         UpdateDData(G2frame,DData[page],data)
         
     #### G2frame.dataWindow.DataMenu/"Edit Phase" menu routines (note similar routines in GSASIIphsGUI.py)

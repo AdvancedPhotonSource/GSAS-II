@@ -10871,10 +10871,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
                             cofNames = [name.replace('C','D') for name in cofNames]
                             cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
-                            # for name in cofNames:
-                            #     if str(Order) in name and '0' not in name:
-                            #         negname = name.replace(',',',-')
-                            #         cofTerms.update({negname:[0.0,False]})
+                            for name in cofNames:
+                                if str(Order) in name and '0' not in name:
+                                    negname = name.replace(',',',-')
+                                    cofTerms.update({negname:[0.0,False]})
                             orbDict.update(cofTerms)
                             data['Deformations'][Ids[indx]].append([orb,orbDict])
         dlg.Destroy()
@@ -10892,6 +10892,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId,oId,dkey = Indx[Obj.GetId()]
             deformationData[dId][oId][1][dkey][1] = not deformationData[dId][oId][1][dkey][1]
+            
+        def OnPlotAtm(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            atom = atomData[AtLookUp[dId]]
+            neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)
+            deform = deformationData[dId]
+            G2plt.PlotDeform(G2frame,generalData,atom[ct-1],atom[ct],deform,neigh)            
 
         def OnDelAtm(event):
             Obj = event.GetEventObject()
@@ -10930,6 +10938,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             else:
                 names = [item[0] for item in neigh[0]]
                 lineSizer.Add(wx.StaticText(deformation,label=' Neighbors: '+str(names)),0,WACV)
+            plotAtm = wx.Button(deformation,label='Plot')
+            plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
+            Indx[plotAtm.GetId()] = dId
+            lineSizer.Add(plotAtm,0,WACV)
             delAtm = wx.Button(deformation,label='Delete')
             delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
             Indx[delAtm.GetId()] = dId
@@ -15264,7 +15276,7 @@ of the crystal structure.
             UpdateGeneral()
         elif text == 'Data': # only when conf 'SeparateHistPhaseTreeItem' is False
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
-            G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
+            G2plt.PlotSizeStrainPO(G2frame,data,hist='')            
             G2ddG.UpdateDData(G2frame,DData,data)
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.AtomsMenu)

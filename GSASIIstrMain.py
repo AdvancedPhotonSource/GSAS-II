@@ -803,7 +803,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     G2mv.InitVars()
-    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,ORBtables,MFtables,maxSSwave) = \
         G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName='All')
     for item in phaseVary:
         if '::A0' in item:
@@ -832,7 +832,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,BLtables,MFtables,maxSSwave) = \
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave) = \
             G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False,pFile=printFile,seqHistName=histogram)
         ifPrint = False
         if dlg:
@@ -842,6 +842,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
         calcControls['EFtables'] = EFtables
+        calcControls['ORBtables'] = ORBtables
         calcControls['BLtables'] = BLtables
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave

@@ -4634,7 +4634,10 @@ class GSASII(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK: 
                 GSASprojectfile = dlg.GetPath()
-                GSASprojectfile = G2IO.FileDlgFixExt(dlg,GSASprojectfile)
+                if not os.path.exists(GSASprojectfile):
+                    print(f'File not found {GSASprojectfile}')
+                    dlg.Destroy()
+                    return
                 self.LastGPXdir = dlg.GetDirectory()
         finally:
             dlg.Destroy()
@@ -8324,7 +8327,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 data = G2frame.GPXtree.GetItemPyData(item)
                 G2phG.UpdatePhaseData(G2frame,item,data)
-                wx.CallAfter(self.GPXtree.SelectItem,item)
+                wx.CallAfter(G2frame.GPXtree.SelectItem,item)
             else:
                 G2frame.dataWindow.GetSizer().Add(
                     wx.StaticText(G2frame.dataWindow,wx.ID_ANY,

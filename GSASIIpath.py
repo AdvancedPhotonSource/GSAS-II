@@ -1214,26 +1214,30 @@ def MacStartGSASII(g2script,project=''):
       which opens a new project
     '''
     if project and os.path.splitext(project)[1] != '.gpx':
-        print('file {} cannot be used. Not GSAS-II project (.gpx) file'.format(project))
+        print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
         return
     if project and not os.path.exists(project):
-        print('file {} cannot be found.'.format(project))
+        print(f'file {project} cannot be found.')
         return 
     elif project:
         project = os.path.abspath(project)
+        if not os.path.exists(project): 
+            print(f'lost project {project} with abspath')
+            raise Exception(f'lost project {project} with abspath')
     g2script = os.path.abspath(g2script)
     pythonapp = sys.executable
     if os.path.exists(pythonapp+'w'): pythonapp += 'w'
-    script = '''
-set python to "{}"
-set appwithpath to "{}"
-set filename to "{}"
+    script = f'''
+set python to "{pythonapp}"
+set appwithpath to "{g2script}"
+set filename to "{project}"
+set filename to the quoted form of the POSIX path of filename
 
 tell application "Terminal"
      activate
      do script python & " " & appwithpath & " " & filename & "; exit"
 end tell
-'''.format(pythonapp,g2script,project)
+'''
     subprocess.Popen(["osascript","-e",script])
 
 def MacRunScript(script):

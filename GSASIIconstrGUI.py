@@ -1097,6 +1097,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Sizer1.Add(wx.StaticText(panel,label='No holds generated'))
             Sizer1.Add((-1,10))
             symGen,SymErr,SymHelp = G2mv.GetSymEquiv(seqmode,seqhistnum)
+            symGenD,SymErrD,SymHelpD = G2mv.GetDroppedSym(seqmode,seqhistnum)
+            
             if len(symGen) == 0:
                 Sizer1.Add(wx.StaticText(panel,label='No equivalences generated'))
                 return Sizer1
@@ -1106,6 +1108,23 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             Sizer1.Add(Sizer)
             helptext = ''
             for sym,(warnmsg,note),helptext in zip(symGen,SymErr,SymHelp):
+                if warnmsg:
+                    if helptext: helptext += '\n\n'
+                    helptext += warnmsg
+                if helptext:
+                    ch = G2G.HelpButton(panel,helptext)
+                    Sizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+                else:
+                    Sizer.Add((-1,-1))
+                Sizer.Add(wx.StaticText(panel,wx.ID_ANY,'EQUIV'),
+                    0,WACV|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,2)
+                Sizer.Add(wx.StaticText(panel,wx.ID_ANY,sym),0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
+                if note:
+                    Sizer.Add(wx.StaticText(panel,wx.ID_ANY,note),0,WACV|wx.ALIGN_LEFT|wx.RIGHT|wx.LEFT,2)
+                else:
+                    Sizer.Add((-1,-1))
+                Sizer.Add((-1,-1))
+            for sym,(warnmsg,note),helptext in zip(symGenD,SymErrD,SymHelpD):
                 if warnmsg:
                     if helptext: helptext += '\n\n'
                     helptext += warnmsg

@@ -2595,6 +2595,7 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     '''
     
     dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width-20, height))
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
@@ -2603,11 +2604,12 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     for i,line in enumerate(txt.split('\n')):
         cols = max(cols,line.count('\t')+1)
 
-    txtSizer = wx.GridBagSizer()
+    txtSizer = wx.GridBagSizer(0,9)
     for i,line in enumerate(txt.split('\n')):
         if line.strip().endswith(':'):
             st = wx.StaticText(spanel,wx.ID_ANY,line)
             txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
+            st.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
             continue
         elif line.strip().startswith('**') and line.strip().endswith('**'):
             st = wx.StaticText(spanel,wx.ID_ANY,line,style=wx.ALIGN_CENTER)

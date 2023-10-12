@@ -74,6 +74,10 @@ saveVaryList = []
 processed. This is set in :func:`GenerateConstraints` and updated in 
 :func:`Map2Dict`. Used in :func:`VarRemapShow`
 '''
+droppedSym = []
+'''A list of symmetry generated equivalences that have been converted to 
+constraint equations in :func:`CheckEquivalences`
+'''
 #------------------------------------------------------------------------------------
 # Global vars set in :func:`GenerateConstraints`. Used for intermediate processing of
 # constraints.
@@ -128,6 +132,12 @@ def InitVars():
     global holdParmList,holdParmType
     holdParmList = []
     holdParmType = {}
+    global droppedSym
+    droppedSym = []
+    global constrVarList,indepVarList,depVarList
+    constrVarList = []
+    indepVarList = []
+    depVarList = []
 
 def VarKeys(constr):
     """Finds the keys in a constraint that represent parameters
@@ -764,7 +774,12 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         #msg += '\n    ' + _FormatConstraint(constrDict[-1],fixedList[-1])
         removeList.append(cnum)
     # Drop equivalences where noted
+    global droppedSym
+    droppedSym = []
     if removeList:
+        for i in set(removeList):
+            if symGenList[i]: 
+                droppedSym.append((dependentParmList[i],indParmList[i],arrayList[i],invarrayList[i]))
         for i in sorted(set(removeList),reverse=True):
             del dependentParmList[i],indParmList[i],arrayList[i],invarrayList[i],symGenList[i]
     # Drop variables from remaining equivalences
@@ -1420,7 +1435,7 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     s = ''
     depVars = constrParms['dep-equiv']+constrParms['dep-constr']
     if len(depVars) > 0:
-        s += '\nDependent parameters, determined by constraints (also set as Hold):\n'
+        s += '\nDependent parameters from constraints & equivalences:\n'
         for v in sorted(depVars):
             s += '    ' + v + '\n'
     first = True
@@ -1496,15 +1511,31 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
             else:
                 freeOut += ln + '\n'
     if userOut:
-        s += '\nEquivalences:\n' + userOut
+        s += '\nUser-supplied equivalences:\n' + userOut
+    if droppedSym:
+        for varlist,mapvars,multarr,invmultarr in droppedSym:
+            for i,mv in enumerate(mapvars):
+                if len(varlist) == 1:
+                    s1 = '   ' + str(mv) + ' is equivalent to '
+                else:
+                    s1 = '   ' + str(mv) + ' is equivalent to parameters: '
+                j = 0
+                for v,m in zip(varlist,invmultarr):
+                    if debug: print ('v,m[0]: ',v,m[0])
+                    if j > 0: s1 += ' & '
+                    j += 1
+                    s1 += str(v)
+                    if m != 1:
+                        s1 += " / " + '{:.4f}'.format(m[0])
+                symOut += s1 + '\t *recast as equation*\n'        
+    if symOut:
+        s += '\nSymmetry-generated equivalences:\n' + symOut
     if consOut:
         s += '\nConstraint Equations:\n' + consOut
     if varOut:
         s += '\nNew Variable assignments:\n' + varOut
     if freeOut:
-        s += '\nGenerated Degrees of Freedom:\n' + freeOut
-    if symOut:
-        s += '\nSymmetry-generated equivalences:\n' + symOut
+        s += '\nGenerated constraint equations:\n' + freeOut
     if not (userOut or consOut or varOut or symOut):
         return s + '\nNo constraints or equivalences in use'
     elif inputOnly:
@@ -1519,8 +1550,11 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
             lineOut = '  {} = '.format(mv)
             j = 0 # number of terms shown
             for m,v in zip(invmultarr[i,:],mapvars):
-                if m == 0: continue
-                if v == 0: continue
+                if np.isclose(m,0): continue
+                try:
+                    if np.isclose(float(v),0): continue
+                except:
+                    pass
                 if v in varyList: varied = True
                 try:
                     constrVal += m*v  # v is a constant; add to offset
@@ -1591,6 +1625,70 @@ def GetSymEquiv(seqmode,seqhistnum):
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
         dependentParmList,indParmList,arrayList,invarrayList,symGenList):
         if not symFlag: continue
+        for i,mv in enumerate(mapvars):
+            cnstr = [[1,G2obj.G2VarObj(mv)]]
+            if multarr is None:
+                s1 = ''
+                s2 = ' = ' + str(mv)
+                j = 0
+                helptext = 'Variable {:} '.format(mv) + " ("+ G2obj.fmtVarDescr(mv) + ")"
+                if len(varlist) == 1:
+                    cnstr.append([invmultarr[0][0],G2obj.G2VarObj(varlist[0])])
+                    # format the way Bob prefers
+                    if invmultarr[0][0] == 1: 
+                        s1 = str(varlist[0]) + ' = ' + str(mv)
+                    else:
+                        s1 = str(varlist[0]) + ' = ' + str(
+                            invmultarr[0][0]) + ' * '+ str(mv)
+                    s2 = ''
+                    
+                    m = 1./invmultarr[0][0]
+                    var1 = str(varlist[0])
+                    helptext += "\n\nis equivalent to "
+                    if m == 1:
+                        helptext += '\n  {:} '.format(var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                    else:
+                        helptext += '\n  {:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                else:
+                    helptext += "\n\nis equivalent to the following:"
+                    for v,m in zip(varlist,invmultarr):
+                        cnstr.append([m,G2obj.G2VarObj(v)])
+                        #if debug: print ('v,m[0]: ',v,m[0])
+                        if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
+                        if j > 0: s1 += ' =  '
+                        j += 1
+                        s1 += str(v)
+                        if m != 1:
+                            s1 += " / " + str(m[0])
+                            helptext += '\n  {:3g} * {:} '.format(m,v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                        else:
+                            helptext += '\n  {:} '.format(v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                err,msg,note = getConstrError(cnstr+[None,None,'e'],seqmode,seqhistnum)
+                symerr.append([msg,note])
+                symout.append(s1+s2)
+                symhelp.append(helptext)
+            else:
+                s = '  %s = ' % mv
+                j = 0
+                for m,v in zip(multarr[i,:],varlist):
+                    if m == 0: continue
+                    if j > 0: s += ' + '
+                    j += 1
+                    s += '(%s * %s)' % (m,v)
+                print ('unexpected sym op='+s)
+    return symout,symerr,symhelp
+
+def GetDroppedSym(seqmode,seqhistnum):
+    '''Return automatically generated (equivalence) relationships that were
+    converted to constraint equations
+
+    :returns: a list of strings containing the details of the equivalences
+    '''
+    symout = []
+    symerr = []
+    symhelp = []
+    global droppedSym
+    for varlist,mapvars,multarr,invmultarr in droppedSym:
         for i,mv in enumerate(mapvars):
             cnstr = [[1,G2obj.G2VarObj(mv)]]
             if multarr is None:

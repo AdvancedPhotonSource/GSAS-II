@@ -8327,7 +8327,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 data = G2frame.GPXtree.GetItemPyData(item)
                 G2phG.UpdatePhaseData(G2frame,item,data)
-                wx.CallAfter(G2frame.GPXtree.SelectItem,item)            else:
+                wx.CallAfter(G2frame.GPXtree.SelectItem,item)
+            else:
                 G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,
                     wx.ID_ANY,'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':

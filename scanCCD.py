@@ -46,14 +46,10 @@ class scanCCD(wx.Frame):
             size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='scanCCD')
         self.scanCCDMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(help='Open scanCCD image files (*.tif)', id=wxID_FILEOPEN,
-             kind=wx.ITEM_NORMAL,text='Open scanCCD files')
-        self.File.Append(help='Integrate scanCCD images',id=wxID_INTEGRATE,
-             kind=wx.ITEM_NORMAL,text='Integrate scanCCD images')
-        self.File.Append(help='Output fxye file from integration',id=wxID_OUTPUT,
-             kind=wx.ITEM_NORMAL,text='Output pattern')
-        self.File.Append(help='Exit from scanCCD', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
-            text='Exit')
+        self.File.Append(wxID_FILEOPEN,'Open scanCCD files','Open scanCCD image files (*.tif)')
+        self.File.Append(wxID_INTEGRATE,'Integrate scanCCD images','Integrate scanCCD images')
+        self.File.Append(wxID_OUTPUT,'Output pattern','Output fxye file from integration')
+        self.File.Append(wxID_FILEEXIT,'Exit','Exit from scanCCD')
         self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnImageIntegrate,id=wxID_INTEGRATE)
         self.Bind(wx.EVT_MENU,self.OnOutput,id=wxID_OUTPUT)

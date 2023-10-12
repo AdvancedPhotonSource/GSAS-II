@@ -2727,15 +2727,12 @@ def SphHarmAng(L,M,P,Th,Ph):
     :returns ylmp value/array: as reals
     '''
     
-    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
-    norm = np.sqrt((2.*L+1.)/(2.*np.pi))
+    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree; includes (-1)**M Condon-Shortly phase
     
-    if M == 0:
-        return norm*np.real(ylmp)/SQ2
-    if P>0:
-        return norm*np.real(ylmp)
+    if M >= 0:
+        return P*np.real(ylmp)
     else:
-        return -norm*np.imag(ylmp)
+        return P*np.imag(ylmp)
     
 def CubicSHarm(L,M,Th,Ph):
     '''Calculation of the cubic harmonics given in Table 3 in M.Kara & K. Kurki-Suonio, 

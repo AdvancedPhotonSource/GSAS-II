@@ -10908,6 +10908,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             UpdateDeformation()
         
         # UpdateDeformation exectable code starts here
+        alpha = ['A','B','C','D','E','F','G','H',]
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -10935,9 +10936,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             names = []
             if not len(neigh[0]):
                 lineSizer.Add(wx.StaticText(deformation,label=' No neighbors found; Do Set bond parms to expand search'),0,WACV)
-            else:
-                names = [item[0] for item in neigh[0]]
+            elif len(neigh[0]) < 9:
+                names = ['%s=%s'%(alpha[i],item[0].replace(' ','')) for i,item in enumerate(neigh[0])]
                 lineSizer.Add(wx.StaticText(deformation,label=' Neighbors: '+str(names)),0,WACV)
+            else:
+                names = 'Too many neighbors - change atom radii to fix'
             plotAtm = wx.Button(deformation,label='Plot')
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId

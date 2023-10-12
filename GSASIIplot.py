@@ -6842,7 +6842,10 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
             continue
         for trm in item[1]:
             if 'D(' in trm:
-                SHC[trm.replace('D','C')] = [item[1][trm][0],True,1.0]
+                if '<j1>' in item[0]:
+                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,-1.0]
+                else:
+                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,1.0]
     plotType = atName+' deformation'
     G2frame.G2plotNB.Delete(plotType)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
@@ -6855,13 +6858,15 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     PHI3,PSI3 = np.mgrid[0:31,0:31]   #[azm,pol]
-    PHI3 = PHI3.flatten()*180./30  #azimuth 0-360 incl
-    PSI3 = PSI3.flatten()*360./30  #polar 0-180 incl
+    PHI3 = PHI3.flatten()*360./30  #azimuth 0-360 incl
+    PSI3 = PSI3.flatten()*180./30  #polar 0-180 incl
     
 #    np.seterr(all='ignore')
-    P  = np.ones((31,31))
+    P  = np.zeros((31,31))
     for shc in SHC:
-        P += G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31))
+        P += np.abs(2.*SHC[shc][0]*G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31)))
+    if not np.any(P):
+        P = np.ones((31,31))
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:
@@ -6873,6 +6878,9 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
     Plot.set_xlim3d(XYZlim)
     Plot.set_ylim3d(XYZlim)
     Plot.set_zlim3d(XYZlim)
+    Plot.set_xlabel(r'X, '+Angstr)
+    Plot.set_ylabel(r'Y, '+Angstr)
+    Plot.set_zlabel(r'Z, '+Angstr)
     try:
         Plot.set_aspect('equal')
     except NotImplementedError:

@@ -15,6 +15,7 @@ import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIimage as G2img
 import GSASIIplot as G2plt
+import GSASIIfiles as G2fil
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
@@ -44,6 +45,7 @@ class scanCCD(wx.Frame):
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='scanCCD', parent=parent,
             size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='scanCCD')
+        self._init_Imports()
         self.scanCCDMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
         self.File.Append(wxID_FILEOPEN,'Open scanCCD files','Open scanCCD image files (*.tif)')
@@ -73,6 +75,10 @@ class scanCCD(wx.Frame):
         self.Hxyw = []
         self.data = {'color':'Paired','range':[[0,1000],[0,1000]]}
 
+    def _init_Imports(self):
+        self.ImportImageReaderlist = G2fil.LoadImportRoutines('img','Images')
+        self.ImportMenuId = {} # needed?
+        
     def ExitMain(self, event):
         sys.exit()
         

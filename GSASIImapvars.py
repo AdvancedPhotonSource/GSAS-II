@@ -768,7 +768,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         # msg = '\nChanging equivalence:\n    ' + _showEquiv(
         #     dependentParmList[cnum],indParmList[cnum],invarrayList[cnum])
         for dep,mult in zip(dependentParmList[cnum],invarrayList[cnum]):
-            constrDict += [{indvar:-1.,dep:mult[0]}]
+            constrDict += [{indvar:-1.,dep:1./mult[0]}]
             fixedList += ['0.0']
         #msg += '\n  to constraint(s):'
         #msg += '\n    ' + _FormatConstraint(constrDict[-1],fixedList[-1])

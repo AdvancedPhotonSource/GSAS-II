@@ -2595,8 +2595,8 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     '''
     
     dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-    dlg.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width-20, height))
+    spanel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
 
@@ -2643,7 +2643,7 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
     txtSizer.AddGrowableCol(0)  #to fill screen
     spanel.SetSizer(txtSizer)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-    btn = wx.Button(dlg, wx.ID_CLOSE) 
+    btn = wx.Button(dlg, wx.ID_CLOSE)
     btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
     btnsizer.Add(btn)
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)

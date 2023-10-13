@@ -1773,6 +1773,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                 coef = equivs[equiv][0][1]
                                 for eqv in equivs[equiv][1:]:
                                     eqv[1] /= coef
+                                    eqv[1] = 1./eqv[1]
                                     G2mv.StoreEquivalence(name,(eqv,))
                 if 'M' in at[ct+1]:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(at[cx:cx+3],SGData)

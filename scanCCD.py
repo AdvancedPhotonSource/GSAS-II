@@ -73,7 +73,8 @@ class scanCCD(wx.Frame):
         self.itemPicked = None
         self.Image = []
         self.Hxyw = []
-        self.data = {'color':'Paired','range':[[0,1000],[0,1000]]}
+        self.data = {'color':'GSPaired','range':[[0,1000],[0,1000]]}
+        self.ImportImageReaderlist = G2fil.LoadImportRoutines('img','Images')
 
     def _init_Imports(self):
         self.ImportImageReaderlist = G2fil.LoadImportRoutines('img','Images')

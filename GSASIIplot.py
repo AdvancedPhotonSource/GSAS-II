@@ -6840,12 +6840,10 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
     for item in deform:
         if 'j<0>' in item[0]:
             continue
+        kappa = item[1]['kappa'][0]
         for trm in item[1]:
             if 'D(' in trm:
-                if '<j1>' in item[0]:
-                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,-1.0]
-                else:
-                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,1.0]
+                SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]
     plotType = atName+' deformation'
     G2frame.G2plotNB.Delete(plotType)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
@@ -6864,7 +6862,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
 #    np.seterr(all='ignore')
     P  = np.zeros((31,31))
     for shc in SHC:
-        P += np.abs(2.*SHC[shc][0]*G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31)))
+        P += np.abs(2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31)))
     if not np.any(P):
         P = np.ones((31,31))
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.

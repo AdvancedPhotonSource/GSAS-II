@@ -10953,7 +10953,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
                 orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' kappa:'))
-                orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.,xmax=10.))
+                orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
                 Tcheck = wx.CheckBox(deformation,-1,'Refine?')
                 Tcheck.SetValue(orb[1]['kappa'][1])
                 Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -10974,7 +10974,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     if 'D' in item:
                         nItem += 1
                         orbSizer.Add(wx.StaticText(deformation,label=item+':'))
-                        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3)))
+                        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3),xmin=-2.,xmax=2.))
                         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
                         Tcheck.SetValue(orb[1][item][1])
                         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)

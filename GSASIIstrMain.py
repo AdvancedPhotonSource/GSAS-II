@@ -707,6 +707,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['EFtables'] = EFtables
+    calcControls['ORBtables'] = ORBtables
     calcControls['BLtables'] = BLtables
     calcControls['MFtables'] = MFtables
     calcControls['maxSSwave'] = maxSSwave

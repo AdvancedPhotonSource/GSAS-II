@@ -16,14 +16,14 @@ import GSASIIpath
 import numpy as np
 GSASIIpath.SetVersionNumber("$Revision$")
 class SFRM_ReaderClass(G2obj.ImportImage):
-    '''Routine to read a Read Bruker Advance image data .sfrm file.
+    '''Routine to read a Read Bruker Advance image data .sfrm/.grfm file.
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.sfrm',),
+            extensionlist=('.sfrm','.gfrm'),
             strictExtension=True,
-            formatName = 'SFRM image',
-            longFormatName = 'Bruker SFRM Binary Data Format image file'
+            formatName = 'SFRM/GRFM image',
+            longFormatName = 'Bruker SFRM/GFRM Binary Data Format image file'
             )
 
     def ContentsValidator(self, filename):        
@@ -44,7 +44,7 @@ def GetSFRMData(self,filename):
     'Read cbf compressed binarydetector data sfrm file'
     
     if GSASIIpath.GetConfigValue('debug'):
-        print ('Read cbf compressed binary detector data sfrm file: '+filename)
+        print ('Read cbf compressed binary detector data file: '+filename)
     File = open(filename,'rb')
     sizexy = [0,0]
     pixSize = [135.3,135.3]     #Pixium4700?
@@ -61,6 +61,7 @@ def GetSFRMData(self,filename):
     head = np.array(list(stream[:imageBeg].split('CFR:')[0]))
     head = head.reshape(-1,80)
     lines = []
+    mult = 1
     for line in head:
         line = ''.join(line)
         lines.append(line)
@@ -90,6 +91,8 @@ def GetSFRMData(self,filename):
             N4byte = 4*int(fields[2])
             if N4byte%16:
                 N4byte = (N4byte//16+1)*16
+        elif 'LINEAR' in line:
+            mult = 10
     if frmt == 86:
         lines = ['FORMAT 86 Bruker files currently not readible by GSAS-II',]
         return lines,0,0,0
@@ -98,19 +101,21 @@ def GetSFRMData(self,filename):
     cent[0] += dist*np.tan(np.pi*twoth/180.)
     File.seek(imageBeg)
     img = File.read(nxy)
-    img2byte = File.read(N2byte)
-    img4byte = File.read(N4byte)
-    time0 = time.time()
     img = np.array(np.frombuffer(img,dtype='u1'),dtype=np.int32)
-    img2byte = np.array(np.frombuffer(img2byte,dtype='u2'),dtype=np.int32)
-    img4byte = np.array(np.frombuffer(img4byte,dtype='u4'),dtype=np.int32)
-    ins2byte = np.argwhere(img==255)
-    for j,i in enumerate(list(ins2byte)):
-        img[i] = img2byte[j]
-    ins4byte = np.argwhere(img==65535)
-    for j,i in enumerate(list(ins4byte)):
-        img[i] = img4byte[j]
-    image = np.reshape(img,(sizexy[1],sizexy[0]))
+    if N2byte:
+        img2byte = File.read(N2byte)
+        img2byte = np.array(np.frombuffer(img2byte,dtype='u2'),dtype=np.int32)
+        ins2byte = np.argwhere(img==255)
+        for j,i in enumerate(list(ins2byte)):
+            img[i] = img2byte[j]
+    if N4byte:
+        img4byte = File.read(N4byte)
+        img4byte = np.array(np.frombuffer(img4byte,dtype='u4'),dtype=np.int32)
+        ins4byte = np.argwhere(img==65535)
+        for j,i in enumerate(list(ins4byte)):
+            img[i] = img4byte[j]
+    time0 = time.time()
+    image = np.reshape(img,(sizexy[1],sizexy[0]))*mult
     print ('import time: %.3f'%(time.time()-time0))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'det2theta':0.0,
             'size':sizexy,'target':target,'tilt':-twoth,'rotation':90.,'twoth':str(round(twoth,1))}

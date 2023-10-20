@@ -1399,6 +1399,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Atomic deformation parameters:\n')
         for AtDef in Deformations:
+            if AtDef < 0:
+                continue
             atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
             DefTable = Deformations[AtDef]
             pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
@@ -1660,6 +1662,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)
         DefAtm = []
         for iAt in Deformations:
+            if iAt < 0:
+                continue
             DefAtm.append(G2mth.GetAtomItemsById(Atoms,AtLookup,iAt,ct)[0])
         ORBtable = G2el.GetORBtable(set(DefAtm))
         ORBtables.update(ORBtable)
@@ -1850,7 +1854,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             
             if len(Deformations) and not General.get('doPawley'):
                 for iAt in Deformations:
+                    if iAt < 0:
+                        #### capture UVmat here????
+                        continue
                     AtId = AtLookup[iAt]
+                    phaseDict[pfx+'UVmat:%d'%AtId] = Deformations[-iAt]['UVmat']
                     DefAtm = Deformations[iAt]
                     for iorb,orb in enumerate(DefAtm):
                         for parm in orb[1]:
@@ -2383,6 +2391,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         pFile.write('\n Atom deformations:\n')
         cx,ct,cs,cia = General['AtomPtrs']
         for AtDef in Deformations:
+            if AtDef < 0:
+                continue
             pFile.write(135*'-'+'\n')
             atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
             AtId = AtLookup[AtDef]
@@ -2730,6 +2740,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                     
             Deformations = Phase.get('Deformations',{})
             for iAt in Deformations:
+                if iAt < 0:
+                    continue
                 AtId = AtLookup[iAt]
                 DefAtm = Deformations[iAt]
                 for iorb,orb in enumerate(DefAtm):

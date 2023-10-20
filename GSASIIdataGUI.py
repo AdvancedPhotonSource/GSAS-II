@@ -5525,7 +5525,7 @@ class GSASII(wx.Frame):
             print('Calculation aborted')
             return
         # prepare table contents & display
-        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':8,4',wg.GRID_VALUE_STRING]
+        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':8,4',wg.GRID_VALUE_STRING]
         colLbls = ['variable name','varied','Derivative','Definition']
         tbl = []
         for x in sorted(derivCalcs,key=lambda x:abs(derivCalcs[x][1]),reverse=True):
@@ -5534,7 +5534,7 @@ class GSASII(wx.Frame):
             txt = G2obj.fmtVarDescr(x)
             txt = txt.replace('Ph=','Phase: ')
             txt = txt.replace('Pwd=','Histogram: ')
-            tbl.append([x,x in varyList,derivCalcs[x][1],txt])
+            tbl.append([x,(' T' if x in varyList else '  '),derivCalcs[x][1],txt])
         G2G.G2ScrolledGrid(self,'Parameter Impact Results','Impact Results',tbl,colLbls,colTypes,
             maxSize=(700,400),comment=' Cite: B.H. Toby, IUCrJ, to be published')
 
@@ -7972,8 +7972,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For incommensurate phase '+name+u':'))
                     for m,(Rf2,Rf,Nobs) in enumerate(zip(data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])):
                         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                            u' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
-                            (m,Rf2,Rf,Nobs)))
+                            u' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '%(m,Rf2,Rf,Nobs)))
                 else:
                     mainSizer.Add((5,5),)
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For phase '+name+u':'))

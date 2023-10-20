@@ -6684,9 +6684,7 @@ class G2RefinementProgress(wx.Dialog):
       is displayed.  
     '''
     def __init__(self, title='Refinement progress', message='All data Rw =',
-                     maximum=101, parent=None, trialMode=False,
-                     seqLen=0, seqShow=3,
-                     style=None):
+        maximum=101, parent=None, trialMode=False,seqLen=0, seqShow=3,style=None):
 
         self.trialRw = trialMode # used for Levenberg-Marquardt fitting
         self.SeqLen = seqLen

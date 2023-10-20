@@ -787,6 +787,8 @@ def GetAtomsById(atomData,atomLookUp,IdList):
     '''
     atoms = []
     for Id in IdList:
+        if Id < 0:
+            continue
         atoms.append(atomData[atomLookUp[Id]])
     return atoms
     
@@ -806,6 +808,8 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     if not isinstance(IdList,list):
         IdList = [IdList,]
     for Id in IdList:
+        if Id < 0:
+            continue
         if numItems == 1:
             Items.append(atomData[atomLookUp[Id]][itemLoc])
         else:
@@ -5827,7 +5831,7 @@ import scipy.cluster.hierarchy as SCH
 ################################################################################
 
 def Cart2Polar(X,Y,Z):
-    ''' convert Cartesian to polar coordinates
+    ''' convert Cartesian to polar coordinates in deg
     '''
     
     R = np.sqrt(X**2+Y**2+Z**2)
@@ -5836,13 +5840,22 @@ def Cart2Polar(X,Y,Z):
     return R,Az,Pl
     
 def Polar2Cart(R,Az,Pl):
-    '''Convert polar to Cartesian coordinates
+    '''Convert polar angles in deg to Cartesian coordinates
     '''
 
     X = R*sind(Pl)*cosd(Az)
     Y = R*sind(Pl)*sind(Az)
     Z = R*cosd(Pl)
-    return Y,-X,Z
+    return X,Y,Z
+
+def RotPolbyM(R,Az,Pl,M):
+    '''Rotate polar coordinates by rotation matrix
+    '''
+    X,Y,Z = Polar2Cart(R,Az,Pl)
+    XYZ = np.vstack((X,Y,Z)).T
+    nXYZ = np.inner(XYZ,M).T
+    return(Cart2Polar(nXYZ[0],nXYZ[1],nXYZ[2]))
+
 
 def RotPolbyQ(R,Az,Pl,Q):
     '''Rotate polar coordinates by quaternion

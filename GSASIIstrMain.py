@@ -174,8 +174,7 @@ def IgnoredLatticePrms(Phases):
     return ignore,copydict
 
 def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
-                     parmDict,varyList,calcControls,pawleyLookup,symHold,
-                     dlg=None):
+    parmDict,varyList,calcControls,pawleyLookup,symHold,dlg=None):
     '''Computes the derivative of the fitting function (total Chi**2) with 
     respect to every parameter in the parameter dictionary (parmDict)
     by applying shift below the parameter value as well as above. 
@@ -197,7 +196,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
 #    if np.any(np.isnan(values)):
 #        raise G2obj.G2Exception('ERROR - nan found in LS parameters - use Calculate/View LS parms to locate')
     latIgnoreLst,latCopyDict = IgnoredLatticePrms(Phases)
-    HistoPhases=[Histograms,Phases,restraintDict,rigidbodyDict]
+    HistoPhases = [Histograms,Phases,restraintDict,rigidbodyDict]
     origDiffs = G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None)
     chiStart = rms(origDiffs)
     origParms = copy.deepcopy(parmDict)
@@ -210,11 +209,12 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
                 return None
         parmDict = copy.deepcopy(origParms)
         p,h,nam = prm.split(':')[:3]
+        if 'UVmat' in nam:
+            continue
         if hId != '*' and h != '' and h != hId: continue
         if (type(parmDict[prm]) is bool or type(parmDict[prm]) is str or
                  type(parmDict[prm]) is int): continue
-        if type(parmDict[prm]) is not float and type(parmDict[prm]
-                        ) is not np.float64: 
+        if type(parmDict[prm]) is not float and type(parmDict[prm]) is not np.float64: 
             print('*** unexpected type for ',prm,parmDict[prm],type(parmDict[prm]))
             continue
         if prm in latIgnoreLst: continue # remove unvaried lattice params
@@ -230,6 +230,8 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
             dprm = prm.replace('::A','::dA')
             if dprm in symHold: continue # held by symmetry
             delta = 1e-6
+        if nam in ['A0','A1','A2','A3','A4','A5'] and 'PWDR' not in Histograms.keys():
+            continue
         else:
             dprm = prm
         #print('***',prm,type(parmDict[prm]))
@@ -256,7 +258,6 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
         derivCalcs[prm] = ((chiLow-chiStart)/delta,0.5*(chiLow-chiHigh)/delta,(chiStart-chiHigh)/delta)
     print('derivative computation time',time.time()-begin)
     return derivCalcs
-
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
@@ -440,7 +441,10 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
-    printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
+    if allDerivs:
+        printFile = open(ospath.splitext(GPXfile)[0]+'.junk','w')
+    else:
+        printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     G2stIO.ShowBanner(printFile)
     varyList = []
     parmDict = {}
@@ -496,7 +500,6 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     if allDerivs: #=============  develop partial derivative map
         varyListStart = varyList
         varyList = None
-
     if msg:
         return False,{'msg':'Unable to interpret multiplier(s): '+msg}
     try:
@@ -528,11 +531,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     G2mv.Dict2Map(parmDict)  # impose constraints initially
     if allDerivs: #=============  develop partial derivative map
         derivDict = AllPrmDerivs(Controls, Histograms, Phases, restraintDict,
-                     rigidbodyDict, parmDict, varyList, calcControls,
-                     pawleyLookup,symHold,dlg)
+            rigidbodyDict, parmDict, varyList, calcControls,pawleyLookup,symHold,dlg)
+        printFile.close() #closes the .junk file
         return derivDict,varyListStart
-
-    
     try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histograms,Phases,restraintDict,

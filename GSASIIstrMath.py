@@ -362,6 +362,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
     SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
+            Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),Bmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
@@ -454,10 +455,14 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
         elif iAt in SHCdict and 'X' in hType:
             orKeys = list(ORBtables[Atype].keys())
             orbs = SHCdict[iAt]
+            UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
+            Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
             FFcore = G2el.ScatFac(ORBtables[Atype][orKeys[0]],SQR)    #core
             FFtot = np.zeros_like(FFcore)
             for orb in orbs:
+                if 'UVmat' in orb:
+                    continue
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
                 kappa = orbs[orb]['kappa']
                 SQk = SQR/kappa**2
@@ -520,6 +525,12 @@ def GetSHC(pfx,parmDict):
             if orb not in SHCdict[atid]:
                 SHCdict[atid][orb] = {}
             SHCdict[atid][orb][name[:-1]] = parmDict[parm] #[atom id][orb no.][deform. coef]
+        if pfx+'UVmat' in parm:
+            items = parm.split(':')
+            atid = int(items[-1])
+            if -atid not in SHCdict:
+                SHCdict[-atid] = {}
+            SHCdict[-atid]['UVmat'] = parmDict[parm]
     if len(SHCdict):
         return {pfx:SHCdict,}
     else: return {}
@@ -4539,8 +4550,8 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             x,y,w,yc,yb,yd = Histogram['Data']
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            dMdv,depDerivDict = getPowderProfileDerv([parmDict,x[xB:xF],
-                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
+            dMdv,depDerivDict = getPowderProfileDerv([parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,
+                calcControls,pawleyLookup,dependentVars])
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
             dMdvh = np.sqrt(w[xB:xF])*dMdv
         elif 'HKLF' in histogram[:4]:
@@ -4636,7 +4647,10 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt
             if dlg:
-                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if 'G2' in str(type(dlg)):
+                    GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                else:
+                    GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4665,7 +4679,10 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 #            print 'matrix build time: %.3f'%(time.time()-time0)
 
             if dlg:
-                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if 'G2' in str(type(dlg)):
+                    GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                else:
+                    GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4758,7 +4775,10 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals']['wRb'] = min(100.,100.*ma.sqrt(sumwYB2/sumwYmB2))
             Histogram['Residuals']['wRmin'] = min(100.,100.*ma.sqrt(Histogram['Residuals']['Nobs']/Histogram['Residuals']['sumwYo']))
             if dlg:
-                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if 'G2' in str(type(dlg)):
+                    GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                else:
+                    GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')
@@ -4814,7 +4834,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 SSnobs = np.zeros(10)
             nobs = 0
             nrej = 0
-            next = 0
+            Nexti = 0
             maxH = 0
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
@@ -4849,7 +4869,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
                                 nrej += 1
                             else:   #sp.gp.extinct
-                                next += 1
+                                Nexti += 1
             else:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[5+im] > 0.:
@@ -4884,7 +4904,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
                                 nrej += 1
                             else:   #sp.gp.extinct
-                                next += 1
+                                Nexti += 1
             Scale = sumFo2/sumFc2
             if (Scale < 0.8 or Scale > 1.2) and phfx+'Scale' in varylist:
                 print ('New scale: %.4f'%(Scale*parmDict[phfx+'Scale']))
@@ -4898,7 +4918,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals'][phfx+'Rf^2'] = 100.*sumdF2/sumFo2
             Histogram['Residuals'][phfx+'Nref'] = nobs
             Histogram['Residuals'][phfx+'Nrej'] = nrej
-            Histogram['Residuals'][phfx+'Next'] = next
+            Histogram['Residuals'][phfx+'Next'] = Nexti
             if im:
                 Histogram['Residuals'][phfx+'SSRf'] = 100.*sumSSdF[:maxH+1]/sumSSFo[:maxH+1]
                 Histogram['Residuals'][phfx+'SSRf^2'] = 100.*sumSSdF2[:maxH+1]/sumSSFo2[:maxH+1]
@@ -4906,9 +4926,12 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 Histogram['Residuals']['SSwR'] = np.sqrt(sumSSwdf2[:maxH+1]/sumSSwYo[:maxH+1])*100.                
             Nobs += nobs
             Nrej += nrej
-            Next += next
+            Next += Nexti
             if dlg:
-                GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if 'G2' in str(type(dlg)):
+                    GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                else:
+                    GoOn = dlg.Update(int(Histogram['Residuals']['wR']),newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
                 if type(GoOn) is tuple:
                     if not GoOn[0]:
                         raise G2obj.G2RefineCancel('Cancel pressed')

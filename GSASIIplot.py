@@ -6833,12 +6833,16 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.canvas.draw()
         
 #### PlotDeform ######################################################################################
-def PlotDeform(G2frame,general,atName,atType,deform,neigh):
+def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
     ''' Plot deformation atoms & neighbors
     '''
     SHC = {}
+#    Nek3 = 1.0
+    Nek3 = 0.0
     for item in deform:
-        if 'j<0>' in item[0]:
+        if '<j0>' in item[0]:
+            # if 's' in item[0] or 'd' in item[0]:
+            #     Nek3 = item[1]['Ne'][0]*item[1]['kappa'][0]**3
             continue
         kappa = item[1]['kappa'][0]
         for trm in item[1]:
@@ -6855,16 +6859,16 @@ def PlotDeform(G2frame,general,atName,atType,deform,neigh):
     X = 0.5*np.outer(npcosd(PHI),npsind(PSI))
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
-    PHI3,PSI3 = np.mgrid[0:31,0:31]   #[azm,pol]
-    PHI3 = PHI3.flatten()*360./30  #azimuth 0-360 incl
-    PSI3 = PSI3.flatten()*180./30  #polar 0-180 incl
-    
+    XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
+    XYZ = np.inner(XYZ.T,UVmat).T
+    RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
 #    np.seterr(all='ignore')
-    P  = np.zeros((31,31))
+    P  = np.zeros((31,31))*Nek3
     for shc in SHC:
-        P += np.abs(2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,PHI3,PSI3).reshape((31,31)))
+        P += 2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,RAP[1],RAP[2]).reshape((31,31))
     if not np.any(P):
         P = np.ones((31,31))
+    P = np.abs(P)
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:

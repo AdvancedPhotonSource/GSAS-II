@@ -86,6 +86,8 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+sqt2 = np.sqrt(2.)
+sqt3 = np.sqrt(3.)
 
 # previous rigid body selections
 prevResId = None
@@ -10859,6 +10861,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             for indx in indxes:
                 orbs = atmdata.OrbFF[types[indx]]
                 data['Deformations'][Ids[indx]] = []
+                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Z','UVmat':np.eye(3)}
                 for orb in orbs:
                     if 'core' in orb:
                         continue        #skip core - has no parameters
@@ -10899,13 +10902,58 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             atom = atomData[AtLookUp[dId]]
             neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)
             deform = deformationData[dId]
-            G2plt.PlotDeform(G2frame,generalData,atom[ct-1],atom[ct],deform,neigh)            
+            UVmat = deformationData[-dId]['UVmat']
+            G2plt.PlotDeform(G2frame,generalData,atom[ct-1],atom[ct],deform,UVmat,neigh)            
 
         def OnDelAtm(event):
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             del deformationData[dId]
             UpdateDeformation()
+            
+        def OnUvec(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            if Obj.GetValue() == deformationData[-dId]['V']:
+                Obj.SetValue(deformationData[-dId]['U'])
+            else:
+                MX = UVvec[dId][Obj.GetSelection()]
+                MZ = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+                UVmat = np.array([MX,MY,MZ])
+                if np.any(np.isnan(UVmat)):
+                    Obj.SetValue(deformationData[-dId]['U'])
+                    G2G.G2MessageBox(G2frame,'ERROR: U-vector zero or parallel to V','Invalid vector choice')
+                    return
+                if nl.det(UVmat) < 0.:  #ensure right hand
+                    UVmat *= -1.
+                deformationData[-dId]['U'] =  Obj.GetValue()
+                data['Deformations'][-dId]['UVmat'] = UVmat
+            
+        def OnVvec(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            if Obj.GetValue() == deformationData[-dId]['U']:
+                Obj.SetValue(deformationData[-dId]['V'])
+            else:
+                MX = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
+                MZ = UVvec[dId][Obj.GetSelection()]
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+                UVmat = np.array([MX,MY,MZ])
+                if np.any(np.isnan(UVmat)):
+                    Obj.SetValue(deformationData[-dId]['V'])
+                    G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
+                    return
+                if nl.det(UVmat) < 0.:  #ensure right hand
+                    UVmat *= -1.
+                deformationData[-dId]['V'] =  Obj.GetValue()
+                data['Deformations'][-dId]['UVmat'] = UVmat
         
         # UpdateDeformation exectable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
@@ -10927,20 +10975,40 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         topSizer.Add(G2G.HelpButton(deformation,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(topSizer,0,wx.EXPAND)
         Indx = {}
-        
+        UVchoice = {}
+        UVvec = {}
         for dId in deformationData:
+            if dId < 0: #skip orientation data for atom orbitals
+                continue
+            #patch
+            if 'UVmat' not in deformationData[-dId]:
+                deformationData[-dId] = {'U':'X','V':'Z','UVmat':np.eye(3)}
+            #end patch
             atom = atomData[AtLookUp[dId]]
-            neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)
+            neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)[0]
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(deformation,label=' For atom %s, site sym %s:'%(atom[ct-1],atom[cs])),0,WACV)
             names = []
-            if not len(neigh[0]):
+            if not len(neigh):
                 lineSizer.Add(wx.StaticText(deformation,label=' No neighbors found; Do Set bond parms to expand search'),0,WACV)
-            elif len(neigh[0]) < 9:
-                names = ['%s=%s'%(alpha[i],item[0].replace(' ','')) for i,item in enumerate(neigh[0])]
+            elif len(neigh) < 9:
+                names = ['%s=%s'%(alpha[i],item[0].replace(' ','')) for i,item in enumerate(neigh)]
                 lineSizer.Add(wx.StaticText(deformation,label=' Neighbors: '+str(names)),0,WACV)
             else:
                 names = 'Too many neighbors - change atom radii to fix'
+            Nneigh = len(neigh)
+            if Nneigh > 2:
+                Nneigh += 1
+            Nneigh = min(4,Nneigh)
+            UVchoice[dId] = ['X','Y','Z','X+Y','X+Y+Z','A','B','A+B','A+B+C']
+            UVvec[dId] = [[1.,0.,0.],[0.,1.,0.],[0.,0.,1.],[1.,1.,0.]/sqt2,[1.,1.,1.]/sqt3,]
+            if Nneigh >= 1:
+                UVvec[dId] += [neigh[0][3]/neigh[0][2],]         #A
+            if Nneigh >= 2:
+                UVvec[dId] += [neigh[1][3]/neigh[1][2],(neigh[0][3]+neigh[1][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2),]    #B, A+B
+            if Nneigh == 4:
+                UVvec[dId] += [(neigh[0][3]+neigh[1][3]+neigh[2][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2+neigh[2][2]**2),] #A+B+C
+                               
             plotAtm = wx.Button(deformation,label='Plot')
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId
@@ -10950,6 +11018,20 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Indx[delAtm.GetId()] = dId
             lineSizer.Add(delAtm,0,WACV)
             mainSizer.Add(lineSizer)
+            mainSizer.Add(wx.StaticText(deformation,label=" Orbital Cartesian axes: X'=U, Y'=UxV & Z'=Ux(UxV)"))
+            oriSizer = wx.BoxSizer(wx.HORIZONTAL)
+            oriSizer.Add(wx.StaticText(deformation,label=' Select orbital U vector: '),0,WACV)
+            Uvec = wx.ComboBox(deformation,value=deformationData[-dId]['U'],choices=UVchoice[dId][:Nneigh+5],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Uvec.Bind(wx.EVT_COMBOBOX,OnUvec)
+            Indx[Uvec.GetId()] = dId
+            oriSizer.Add(Uvec,0,WACV)
+            oriSizer.Add(wx.StaticText(deformation,label=' Select orbital V vector: '),0,WACV)
+            Vvec = wx.ComboBox(deformation,value=deformationData[-dId]['V'],choices=UVchoice[dId][:Nneigh+5],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Vvec.Bind(wx.EVT_COMBOBOX,OnVvec)
+            Indx[Vvec.GetId()] = dId
+            oriSizer.Add(Vvec,0,WACV)
+            mainSizer.Add(oriSizer)
+            
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
                 orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' kappa:'))

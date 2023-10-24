@@ -1813,10 +1813,10 @@ def Map2Dict(parmDict,varyList):
         if multarr is None: continue
         # evaluate constraints in the forward direction
         A = np.array([parmDict[var] for var in varlist])
-#        z = zip(mapvars,np.dot(multarr,A))
+        z = zip(mapvars,np.dot(multarr,A))
         # add/replace in parameter dict
-#        parmDict.update([i for i in z if type(i[0]) is not float])
-        parmDict.update([i for i in zip(mapvars,np.dot(multarr,A)) if ':' in i[0]])
+        parmDict.update([i for i in z if type(i[0]) is not float and ':' in i[0]])
+#        parmDict.update([i for i in zip(mapvars,np.dot(multarr,A)) if ':' in i[0]])
     global saveVaryList
     if varyList is not None:
         saveVaryList = copy.copy(varyList)

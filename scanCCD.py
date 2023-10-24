@@ -354,7 +354,7 @@ class scanCCD(wx.Frame):
                 value=int(100*data['range'][1]/data['range'][0]))
             maxSizer.Add(self.maxSel,1,wx.EXPAND)
             self.maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
-            self.maxVal = wx.TextCtrl(parent=self.SCCDPanel,value='%d'%(data['range'][1]))
+            self.maxVal = wx.TextCtrl(parent=self.SCCDPanel,value='%d'%(data['range'][1]),style=wx.TE_PROCESS_ENTER)
             self.maxVal.Bind(wx.EVT_TEXT_ENTER,OnMaxValue)
             self.maxVal.Bind(wx.EVT_KILL_FOCUS,OnMaxValue)
             maxSizer.Add(self.maxVal,0,wx.ALIGN_CENTER_VERTICAL)    
@@ -373,13 +373,13 @@ class scanCCD(wx.Frame):
             
             zSizer = wx.FlexGridSizer(0,4,5,5)
             zSizer.Add(wx.StaticText(self.SCCDPanel,label='Upper intensity mask:'),0,wx.ALIGN_CENTER_VERTICAL)
-            zMax = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['Zmax']))
+            zMax = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['Zmax']),style=wx.TE_PROCESS_ENTER)
             zMax.Bind(wx.EVT_TEXT_ENTER,OnZValue)
             zMax.Bind(wx.EVT_KILL_FOCUS,OnZValue)
             ObjIndx[zMax.GetId()] = 'Zmax'
             zSizer.Add(zMax)
             zSizer.Add(wx.StaticText(self.SCCDPanel,label='Intensity subtraction:'),0,wx.ALIGN_CENTER_VERTICAL)
-            zMin = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['Zmin']))
+            zMin = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['Zmin']),style=wx.TE_PROCESS_ENTER)
             ObjIndx[zMin.GetId()] = 'Zmin'
             zMin.Bind(wx.EVT_TEXT_ENTER,OnZValue)
             zMin.Bind(wx.EVT_KILL_FOCUS,OnZValue)
@@ -413,19 +413,19 @@ class scanCCD(wx.Frame):
             
             zeroSizer = wx.FlexGridSizer(0,6,5,5)
             zeroSizer.Add(wx.StaticText(self.SCCDPanel,label='X-zero:'),0,wx.ALIGN_CENTER_VERTICAL)
-            zMax = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['Zeros'][0]))
+            zMax = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['Zeros'][0]),style=wx.TE_PROCESS_ENTER)
             zMax.Bind(wx.EVT_TEXT_ENTER,OnZeroValue)
             zMax.Bind(wx.EVT_KILL_FOCUS,OnZeroValue)
             ObjIndx[zMax.GetId()] = ['Zeros',0]
             zeroSizer.Add(zMax)
             zeroSizer.Add(wx.StaticText(self.SCCDPanel,label='Y-zero:'),0,wx.ALIGN_CENTER_VERTICAL)
-            zMin = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['Zeros'][1]))
+            zMin = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['Zeros'][1]),style=wx.TE_PROCESS_ENTER)
             ObjIndx[zMin.GetId()] = ['Zeros',1]
             zMin.Bind(wx.EVT_TEXT_ENTER,OnZeroValue)
             zMin.Bind(wx.EVT_KILL_FOCUS,OnZeroValue)
             zeroSizer.Add(zMin)
             zeroSizer.Add(wx.StaticText(self.SCCDPanel,label='mm per deg:'),0,wx.ALIGN_CENTER_VERTICAL)
-            zpdeg = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['mm/deg']))
+            zpdeg = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['mm/deg']),style=wx.TE_PROCESS_ENTER)
             ObjIndx[zpdeg.GetId()] = ['mm/deg']
             zpdeg.Bind(wx.EVT_TEXT_ENTER,OnZpdgValue)
             zpdeg.Bind(wx.EVT_KILL_FOCUS,OnZpdgValue)
@@ -448,7 +448,7 @@ class scanCCD(wx.Frame):
             TBLRsizer = wx.FlexGridSizer(0,4,5,5)
             for i,item in enumerate(['Bottom','Top']): 
                 TBLRsizer.Add(wx.StaticText(self.SCCDPanel,label=item+' limit, pixels:'),0,wx.ALIGN_CENTER_VERTICAL)
-                TBlim = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['TBlimits'][i]))
+                TBlim = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['TBlimits'][i]),style=wx.TE_PROCESS_ENTER)
                 TBlim.Bind(wx.EVT_TEXT_ENTER,OnTBLRValue)
                 TBlim.Bind(wx.EVT_KILL_FOCUS,OnTBLRValue)
                 ObjIndx[TBlim.GetId()] = ['TBlimits',i]
@@ -476,8 +476,8 @@ class scanCCD(wx.Frame):
             
             scanSizer = wx.FlexGridSizer(0,6,5,5)
             for i,item in enumerate(['Lower 2-th','Upper 2-th','2-th step']):
-                scanSizer.Add(wx.StaticText(self.SCCDPanel,label=item+':'),0,wx.ALIGN_CENTER_VERTICAL)
-                scanParm = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['2thScan'][i]))
+                scanSizer.Add(wx.StaticText(self.SCCDPanel,label=item+':'))
+                scanParm = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['2thScan'][i]),style=wx.TE_PROCESS_ENTER)
                 scanParm.Bind(wx.EVT_TEXT_ENTER,OnScanValue)
                 scanParm.Bind(wx.EVT_KILL_FOCUS,OnScanValue)
                 ObjIndx[scanParm.GetId()] = [i]
@@ -485,12 +485,12 @@ class scanCCD(wx.Frame):
             return scanSizer                
                         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(ColorSizer(self.data),0,wx.ALIGN_CENTER_VERTICAL)        
-        mainSizer.Add(MaxSizer(self.data),0,wx.ALIGN_LEFT|wx.EXPAND)
-        mainSizer.Add(ZSizer(self.data),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(ZeroSizer(self.data),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(ScanSizer(self.data),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(TBLRSizer(self.data),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(ColorSizer(self.data))        
+        mainSizer.Add(MaxSizer(self.data))
+        mainSizer.Add(ZSizer(self.data))
+        mainSizer.Add(ZeroSizer(self.data))
+        mainSizer.Add(ScanSizer(self.data))
+        mainSizer.Add(TBLRSizer(self.data))
         self.SCCDPanel.SetSizer(mainSizer)
         mainSizer.Layout()    
         fitSize = mainSizer.Fit(self.SCCDPanel)
@@ -524,8 +524,7 @@ class scanCCD(wx.Frame):
                         vecB = np.array([npcosd(tth)*self.data['radius'],npsind(tth)*self.data['radius'],(ypos-self.data['Zeros'][1])])
                         vecB /= nl.norm(vecB)
                         tth2 = npacosd(np.dot(vecA,vecB))*tth/abs(tth)
-                        self.plotNB.status.SetFields(\
-                            ['','Detector x,y =%9.3fmm %9.3fmm, 2-th =%9.3f I = %6d'%(xpos,ypos,tth2,Int)])
+                        self.plotNB.status.SetStatusText('Detector x,y =%9.3fmm %9.3fmm, 2-th =%9.3f I = %6d'%(xpos,ypos,tth2,Int),1)
                             
         def OnPick(event):
             if self.itemPicked is not None: return
@@ -575,7 +574,7 @@ class scanCCD(wx.Frame):
         TBlimit = np.array(self.data['TBlimits'])*scalex
         LRlimit = np.array(self.data['LRlimits'])*scaley
 
-        self.plotNB.status.SetFields(['',''])
+        self.plotNB.status.SetStatusText('',1)
         Zmin = self.data['Zmin']
         Zmax = self.data['Zmax']
         Zeros = self.data['Zeros']

@@ -337,6 +337,13 @@ def GetTifData(filename):
         dt = np.dtype(np.float32)
         dt = dt.newbyteorder(byteOrd)
         image = np.array(np.frombuffer(File.read(Npix*4),dtype=np.uint32),dtype=np.int32)
+    elif sizexy == [1024,402]:
+        pixy = [56.,56.]
+        File.seek(8)
+        dt = np.dtype(np.float32)
+        dt = dt.newbyteorder(byteOrd)
+        image = np.array(np.frombuffer(File.read(Npix*2),dtype=np.uint16),dtype=np.int32)
+        
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)
@@ -347,10 +354,12 @@ def GetTifData(filename):
            
     if image is None:
         lines = ['not a known detector tiff file',]
+        File.close()    
         return lines,0,0,0
         
     if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
         lines = ['not a known detector tiff file',]
+        File.close()    
         return lines,0,0,0
     if GSASIIpath.GetConfigValue('debug'):
         G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))

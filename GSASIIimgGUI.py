@@ -94,7 +94,8 @@ def GetImageZ(G2frame,data,newRange=False):
                 Ddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Did,'Image Controls'))
                 dformatName = Ddata.get('formatName','')
                 Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-                darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
+#                darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
+                darkImage = np.array(G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName),dtype='int32')
                 if darkImg is not None:                
                     sumImg += np.array(darkImage*darkScale,dtype='int32')
             else:
@@ -109,7 +110,8 @@ def GetImageZ(G2frame,data,newRange=False):
                 Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
                 Bdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Bid,'Image Controls'))
                 bformatName = Bdata.get('formatName','')
-                backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
+#                backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
+                backImage = np.array(G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype='int32')
                 if darkImg and backImage is not None:
                     backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
                 if backImage is not None:

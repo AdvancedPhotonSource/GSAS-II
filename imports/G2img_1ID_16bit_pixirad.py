@@ -70,7 +70,8 @@ class TIF_ReaderClass(G2obj.ImportImage):
             return False
         self.Data.update({'samplechangerpos':None,'det2theta':0.0})
         self.LoadImage(ParentFrame,filename)
-        print('self.data =',self.Data)
+        if DEBUG: 
+            print('self.data =',self.Data)
         return True
 
 def GetTifData(filename):
@@ -91,6 +92,7 @@ def GetTifData(filename):
     wavelength = None
     distance = None
     polarization = None
+    DEBUG = False
     try:
         Meta = open(filename+'.metadata','r')
         head = Meta.readlines()
@@ -160,7 +162,8 @@ def GetTifData(filename):
     time0 = time.time()
 
 
-    print(IFD) #prints the tiff tags, good for making sure the format is good
+    if DEBUG: 
+        print(IFD) #prints the tiff tags, good for making sure the format is good
     '''This is the code that was changed from the original GSASII tiff reading
     script, only populates the image variable if certain parameters are met
     '''
@@ -170,7 +173,7 @@ def GetTifData(filename):
             pixy = [62.,62.]                                                      #sets the pixel size
             print ('Read 1ID normalized 16bit Pixirad tiff file: '+filename)
             File.seek(0)                                                        #goto first pixel
-            image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int16) 
+            image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)  #result must be 32 bt like all the others
             
     if image is None:
         print('Image is improperly formatted in some way, confirm that this tiff file is being uses properly with the 1ID workflow')

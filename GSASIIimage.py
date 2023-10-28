@@ -1537,7 +1537,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             times[0] += time.time()-t0      # time mask application
             t0 = time.time()
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
-            tax = np.where(tax < LRazm[0],tax+360.,tax)
+            tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
             if data.get('SampleAbs',[0.0,''])[1]:
                 if 'Cylind' in data['SampleShape']:
                     muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal

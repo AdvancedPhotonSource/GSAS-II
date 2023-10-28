@@ -95,7 +95,8 @@ def GetTifData(filename):
                 G2fil.G2Print('error reading metadata: '+line)
         Meta.close()
     except IOError:
-        G2fil.G2Print ('no metadata file found - will try to read file anyway')
+        if DEBUG:
+            G2fil.G2Print ('no metadata file found - will try to read file anyway')
         head = ['no metadata file found',]
         
     tag = File.read(2)
@@ -361,7 +362,8 @@ def GetTifData(filename):
         lines = ['not a known detector tiff file',]
         File.close()    
         return lines,0,0,0
-    if GSASIIpath.GetConfigValue('debug'):
+#    if GSASIIpath.GetConfigValue('debug'):
+    if DEBUG:
         G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center

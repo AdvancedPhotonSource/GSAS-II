@@ -110,7 +110,6 @@ def GetImageZ(G2frame,data,newRange=False):
                 Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
                 Bdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Bid,'Image Controls'))
                 bformatName = Bdata.get('formatName','')
-#                backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
                 backImage = np.array(G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype='int32')
                 if darkImg and backImage is not None:
                     backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
@@ -128,8 +127,9 @@ def GetImageZ(G2frame,data,newRange=False):
                 sumImg = sumImg*GMimage/1000
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
+    Imin = np.min(sumImg)
     if 'range' not in data or newRange:
-        data['range'] = [(0,Imax),[0,Imax]]
+        data['range'] = [(Imin,Imax),[Imin,Imax]]
     return np.asarray(sumImg,dtype='int32')
 
 def UpdateImageData(G2frame,data):

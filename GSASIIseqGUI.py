@@ -1479,7 +1479,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # remove selected columns from table
     saveColLabels = colLabels[:]
     if G2frame.SeqTblHideList is None:      #set default hides
-        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item]
+        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Backg' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
     #******************************************************************************

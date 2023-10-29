@@ -6549,8 +6549,15 @@ def UpdateModelsGrid(G2frame,data):
                     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
                 
                 G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
+                saveDict = {}
+                for item in parmDict:
+                    if ';' in item:
+                        trm = item.split(';')[1]
+                        if trm in ['FFVolume','StrFact','FormFact']:
+                            continue
+                    saveDict.update({item:parmDict[item]})
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                    'covMatrix':covMatrix,'title':name,'parmDict':parmDict}
+                    'covMatrix':covMatrix,'title':name,'parmDict':saveDict}
             else:
                 dlg.Destroy()
                 print (' ***** Small angle sequential refinement successful *****')

@@ -2229,7 +2229,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
         G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
-    elif 'L' in datatype or 'R' in datatype:                   #SASD & REFD data menu commands
+    elif 'A' in datatype or 'R' in datatype:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDLimitMenu)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_SASDLIMITCOPY)
     Draw() 
@@ -3424,6 +3424,8 @@ def UpdateSampleGrid(G2frame,data):
         TextTable.update({key:Controls[key] for key in Controls if key.startswith('FreePrm')})
         # add a few extra
         TextTable.update({'Type':'Diffractometer type','InstrName':'Instrument Name',})
+        if 'SASD' in histList[0] or 'REFD' in histList[0]:
+            TextTable.update({'Materials':'Materials',})
         # Assemble a list of dict entries that would be labeled in the Sample
         # params data window (drop ranId and items not used).
         keyList = [i for i in data.keys() if i in TextTable]
@@ -3441,7 +3443,7 @@ def UpdateSampleGrid(G2frame,data):
         if not selectedKeys: return # nothing to copy
         copyDict = {}
         for parm in selectedKeys:
-            copyDict[parm] = data[parm]
+            copyDict[parm] = copy.deepcopy(data[parm])
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
         try:
@@ -3451,7 +3453,7 @@ def UpdateSampleGrid(G2frame,data):
                     item = histList[i]
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
                     sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
-                    sampleData.update(copy.deepcopy(copyDict))
+                    sampleData.update(copyDict)
         finally:
             dlg.Destroy()            
         G2plt.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
@@ -6969,7 +6971,7 @@ def UpdateModelsGrid(G2frame,data):
             else:
                 logv = np.log10(value)
                 valMinMax = [logv-1,logv+1]
-                sldrObj.SetRange(slMult*valMinMax[0],slMult*valMinMax[1])
+                sldrObj.SetScaledRange(slMult*valMinMax[0],slMult*valMinMax[1])
                 sldrObj.SetValue(slMult*logv)
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)

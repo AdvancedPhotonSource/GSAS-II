@@ -6340,7 +6340,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         Do not use argument= for these as the argument names are different for classic & phoenix
         '''
         
-##### GSAS-II Menu items
+#### GSAS-II Menu items
         # Main menu
         G2frame = self.GetTopLevelParent()
         G2frame.GSASIIMenu = wx.MenuBar()

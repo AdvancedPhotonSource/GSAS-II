@@ -2564,6 +2564,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 instData['Bank'] = [1,1,0]
             if 'Source' not in instData:
                 instData['Source'] = ['','']
+            if 'Z' not in instData:
+                instData['Z'] = [0.,0.,0]
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
                 instData.update(copyData)
             else:

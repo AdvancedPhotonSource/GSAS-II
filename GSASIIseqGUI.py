@@ -1062,9 +1062,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if not len(Histograms) and not len(Phases):   #PDF or IMG histogrms not PWDR
+    ifPWDR = True
+    if not len(Histograms) and not len(Phases):   #SASD, REFD, PDF or IMG histogrms not PWDR or HKLF
         histNames = [name for name in data['histNames']]
         Controls = {}
+        ifPWDR = False
     else:        
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
         # create a place to store Pseudo Vars & Parametric Fit functions, if not present
@@ -1479,7 +1481,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # remove selected columns from table
     saveColLabels = colLabels[:]
     if G2frame.SeqTblHideList is None:      #set default hides
-        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Backg' in item]
+        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item and ifPWDR]
         G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
     #******************************************************************************

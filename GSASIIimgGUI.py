@@ -2089,7 +2089,7 @@ def UpdateMasks(G2frame,data):
         # Imin = sv0 * (Imax-Imin0-1) / 100 + Imin0
         DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1) # Imax-Imin0-1
         sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
-        minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
+        minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,xmin=-100,
             xmax=Range[0][1],typeHint=int,OnLeave=OnNewVal)
         slideSizer.Add(minVal,0,WACV)
         minSel = G2G.G2Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv0)

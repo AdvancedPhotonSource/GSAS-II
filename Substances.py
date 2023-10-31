@@ -31,6 +31,7 @@ Substances = {
 'Teflon':{'Elements':{'C':{'Num':1.},'F':{'Num':2.}},'Density':2.25,},
 'Mylar':{'Elements':{'C':{'Num':5.},'H':{'Num':4.},'O':{'Num':2.}},'Density':1.38,},
 'Iron':{'Elements':{'Fe':{'Num':4.}},'Density':7.87,},
+'Fe3C':{'Elements':{'Fe':{'Num':3.},'C':{'Num':1.}},'Volume':38.8,},
 'FeO-wustite':{'Elements':{'Fe':{'Num':4.},'O':{'Num':4.}},'Volume':79.285},
 'Fe2O3-hematite':{'Elements':{'Fe':{'Num':12.},'O':{'Num':18.}},'Volume':301.689},
 'Fe3O4-magnetite':{'Elements':{'Fe':{'Num':24.},'O':{'Num':32.}},'Volume':591.921},

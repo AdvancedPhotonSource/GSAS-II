@@ -3516,7 +3516,7 @@ def UpdateSampleGrid(G2frame,data):
         
     def OnVolFrac(invalid,value,tc):
         Id = Info[tc.GetId()]
-        data['Materials'][not Id][key] = 1.-value
+        data['Materials'][not Id]['VolFrac'] = 1.-value
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def OnCopy1Val(event):
@@ -3694,6 +3694,7 @@ def UpdateSampleGrid(G2frame,data):
             subSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Volume fraction: '),0,WACV)
             volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,'VolFrac',
                 xmin=0.,xmax=1.,nDig=(10,3),typeHint=float,OnLeave=OnVolFrac)
+            Info[volfrac.GetId()] = Id
             subSizer.Add(volfrac,0,WACV)
             try:
                 material = Substances['Substances'][item['Name']]
@@ -7160,8 +7161,7 @@ def UpdateModelsGrid(G2frame,data):
         rhoMat = Substances['Substances'][data['Particle']['Matrix']['Name']].get('XAnom density',0.0)        
         topSizer.Add(matsel,0,WACV)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Volume fraction: '),0,WACV)
-        volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Particle']['Matrix']['VolFrac'],0,
-                typeHint=float)
+        volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Particle']['Matrix']['VolFrac'],0,typeHint=float)
         topSizer.Add(volfrac,0,WACV)
         volVar = wx.CheckBox(G2frame.dataWindow,label=' Refine?')
         volVar.SetValue(data['Particle']['Matrix']['VolFrac'][1])

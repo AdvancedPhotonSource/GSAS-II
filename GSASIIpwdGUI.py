@@ -6437,6 +6437,7 @@ def UpdateModelsGrid(G2frame,data):
         
     def OnCopyModel(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        wtFactor = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['wtFactor']
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
@@ -6451,7 +6452,9 @@ def UpdateModelsGrid(G2frame,data):
         finally:
             dlg.Destroy()        
         for item in copyList:
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)            
+            ProfDict = G2frame.GPXtree.GetItemPyData(Id)[0]
+            ProfDict['wtFactor'] = wtFactor
             newdata = copy.deepcopy(data)
             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Models'),newdata)
             if newdata['BackFile']:

@@ -398,6 +398,9 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
                 if not S:
                     break
                 text = S.split()
+                if not text:
+                    break
+                print(line,text)
                 if text[0] == 'lambda':
                     wave = float(text[1])
                 continue

@@ -7,6 +7,7 @@
 # $Id$
 ########### SVN repository information ###################
 from __future__ import division, print_function
+import re
 import numpy as np
 import numpy.linalg as nl
 import GSASIIspc as G2spc
@@ -14,6 +15,8 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 submagSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
+bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
+pseudosym = 'pseudosym/nph-pseudosym'
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 
@@ -328,6 +331,114 @@ def GetStdSGset(SGData=None, oprList=[]):
     offsetV = [eval(m.split()[3]) for m in mat]
     xformM = np.array([[float(i) for i in m.split()[:3]] for m in mat])
     return sgnum, sgnam, xformM.T, offsetV
+
+def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None):
+    '''Perform a search for a supergroup consistent with a phase
+    using the Bilbao Pseudosymmetry search (PSEUDO) program, see
+    C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
+    and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
+    Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
+    226(2), 186-196 DOI:10.1524/zkri.2011.1321.
+    '''
+    
+    print('''
+      Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+      program; Please cite:
+      C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
+      and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
+      Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
+      226(2), 186-196 DOI:10.1524/zkri.2011.1321.
+    ''')
+
+    postdict = {
+        "formulae":'',
+        "cifile":'',
+        "filename":"",
+        "what":'minsup',
+        "maxik":'1',
+        "onlythisik":'1',
+        "mysuper2":'211',
+        "x1":'1',
+        "x2":'0',
+        "x3":'0',
+        "y1":'0',
+        "y2":'1',
+        "y3":'0',
+        "z1":'0',
+        "z2":'0',
+        "z3":'1',
+        "x4":'0',
+        "y4":'0',
+        "z4":'0',
+        "submit":'Show',}
+
+    postdict["maxdelta"] = f'{maxdelta:.1f}'
+    if angtol: # and monoclinic/triclinic
+        postdict["what"] = 'minsup'
+        postdict["angtol"] = f'{angtol:.1f}'
+    else:
+        postdict["angtol"] = '5'
+    postdict["stru"] = f'# Space Group ITA number\n{sgnum}\n'
+    postdict["stru"] += '# Lattice parameters\n'
+    postdict["stru"] += ' '.join([f"{i}" for i in phase['General']['Cell'][1:7]])
+    postdict["stru"] += f"\n# number of atoms & atoms\n{len(phase['Atoms'])}\n"
+    cx,ct,cs,cia = phase['General']['AtomPtrs']
+    for i,atom in enumerate(phase['Atoms'],1):
+        el = ''.join([i for i in atom[ct] if i.isalpha()])   # strip to element symbol
+        postdict["stru"] += f"{el:4s} {i} - {atom[cx]:.5f} {atom[cx+1]:.5f} {atom[cx+2]:.5f}\n"
+        
+    savedcookies = {}
+    page0 = G2IO.postURL(bilbaoSite+pseudosym,postdict,getcookie=savedcookies)
+    open(f'/tmp/pseudosym0.html','w').write(page0)
+
+    # scan output for values to be used next
+    valsdict = {} # base for all supergroups 
+    csdict = {}   # supergroups w/default selection value
+    rowdict = {}  # information in table row for each supergroup
+    for row in page0.split('<input'):
+        field = row.split('>')[0]
+        if 'name=' not in field: continue
+        if 'value=' not in field: continue
+        name = value = None
+        for item in field.split():
+            if '=' not in item: continue
+            key,val = item.split('=')
+            if key.lower() == 'name':
+                name = val.replace('"','')
+            if key.lower() == 'value':
+                value = val.replace('"','')
+            if name == 'cs' and value is not None:
+                csdict[value] = "checked" in field
+                tr = [i.split('>',1)[1].split('</td')[0] for i in row.split('<td')]
+                tr[6] = tr[6].replace('<br>','\n')
+                tr = [re.sub(r'\<.*?\>','',i).strip() for i in tr]
+                rowdict[value] = tr[1:7] + [not 'invalid' in tr[7]]
+                break
+            elif name is not None and value is not None:
+                if name in valsdict and type(valsdict[name]) is str:
+                    valsdict[name] = [valsdict[name],value]
+                elif name in valsdict:
+                    valsdict[name] += [value]
+                else:
+                    valsdict[name] = value
+                break
+    return valsdict,csdict,rowdict,savedcookies
+            
+def BilbaoSymSearch2(valsdict,csdict,savedcookies):
+    structures = {}
+    for num in csdict:
+        if csdict[num]:
+            #print(f"processing {num}")
+            postdict = {}
+            postdict.update(valsdict)
+            postdict['cs'] = num
+            page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,usecookie=savedcookies)
+            superdat = page1.split('Idealized structure (supergroup setting')
+            if len(superdat) >= 2:
+                structures[num] = superdat[1].split('<pre>')[1].split('</pre'
+                                    )[0].replace('\t',' ').split('\n')
+    return structures
+
 
 def test():
     '''This tests that routines in Bilbao Crystallographic Server 

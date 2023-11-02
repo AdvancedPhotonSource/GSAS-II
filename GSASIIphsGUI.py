@@ -2962,6 +2962,141 @@ def UpdatePhaseData(G2frame,Item,data):
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
         
+    def OnSuperSearch(event):
+        import SUBGROUPS
+        #
+        # needs a progress window
+        ophsnam = data['General']['Name']
+        pgbar = wx.ProgressDialog('Supergroup Search',
+            f'Searching for supergroup(s) consistent with phase {ophsnam}',5,
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
+                parent=G2frame)
+        pgbar.CenterOnParent()
+        G2frame.OnFileSave(None) # save project so we can later restore to this
+        orgFilName = G2frame.GSASprojectfile
+        # get restraints & clear geometrical restraints
+        resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame,resId,ophsnam)
+        if ophsnam in Restraints:
+            Restraints[ophsnam]['Bond']['Bonds'] = []
+            Restraints[ophsnam]['Angle']['Angles'] = []
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        # get starting unit cell contents
+        ocomp = {}
+        for atom in data['Atoms']:
+            if atom[ct] in ocomp:
+                ocomp[atom[ct]] += atom[cs+1]
+            else:
+                ocomp[atom[ct]] = atom[cs+1]
+        ovol = data['General']['Cell'][7]
+        o = ', '.join([f'{i}:{j}' for i,j in ocomp.items()])
+        msg = f"Before transform, unit cell contents/volume:\n {o}, {ovol:.2f} A^3"
+        GoOn = pgbar.Update(1,newmsg=
+            f'Searching for supergroup(s) consistent with phase {ophsnam}'+
+            '\nTesting structure for standard setting')
+        if not GoOn: return
+        wx.GetApp().Yield()
+        # need to convert non-standard space group settings
+        print('*** Checking space group setting')
+        sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(data['General']['SGData'])
+        newPhase = copy.deepcopy(data)
+        if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
+            print('*** Structure in standard setting')
+        else:
+            print('*** Transforming structure to standard setting')
+            newPhase['ranId'] = ran.randint(0,sys.maxsize),
+            newPhase['General']['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+            newPhase['General']['Cell'][1:] = G2lat.TransformCell(newPhase['General']['Cell'][1:-1],xmat)
+            uvec = np.array(xoff)
+            vvec = np.array([0.,0.,0.])
+            newPhase['MagXform'] = (xmat,xoff,vvec)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,xmat,uvec,vvec,False)
+        # search with a standard space group setting
+        GoOn = pgbar.Update(2,newmsg=
+            f'Searching for supergroup(s) consistent with phase {ophsnam}'+
+            '\nSearching with phase')
+        if not GoOn: return
+        wx.GetApp().Yield()
+        valsdict,csdict,rowdict,savedcookies = SUBGROUPS.BilbaoSymSearch1(sgnum,newPhase)
+        print(f'*** Retrieving {sum(csdict.values())} transformed structures')
+        GoOn = pgbar.Update(3,newmsg=
+            f'Searching for supergroup(s) consistent with phase {ophsnam}'+
+            '\nProcessing new settings')
+        if not GoOn: return
+        wx.GetApp().Yield()
+        structDict = SUBGROUPS.BilbaoSymSearch2(valsdict,csdict,savedcookies)
+        GoOn = pgbar.Update(4,newmsg=
+            f'Searching for supergroup(s) consistent with phase {ophsnam}'+
+            '\nPlacing new settings into files')
+        if not GoOn: return
+        wx.GetApp().Yield()
+        for s in structDict.values():   # loop over supergroup settings
+            # create a new phase
+            try: 
+                sgnum = int(s[0].strip())
+                sgsym = G2spc.spgbyNum[sgnum]
+                sgname = sgsym.replace(" ","")
+            except:
+                print(f'Problem with processing record:\n{s}')
+                continue
+            newPhase = copy.deepcopy(data)
+            newPhase['ranId'] = ran.randint(0,sys.maxsize),
+            if 'magPhases' in data: del newPhase['magPhases']
+            generalData = newPhase['General']
+            generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+            generalData['Cell'][1:7] = [float(i) for i in s[1].split()]
+            generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
+            Atoms = newPhase['Atoms'] = []
+            ncomp = {}
+            for a in s[3:]:
+                if not a.strip(): continue
+                try: 
+                    elem,num,wyc,x,y,z = a.split()
+                    atom = []
+                    atom.append(elem+num)
+                    atom.append(elem)
+                    atom.append('')
+                    for i in x,y,z: atom.append(float(i))
+                    atom.append(1.0)
+                    SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
+                    atom.append(SytSym)
+                    atom.append(Mult)
+                    if atom[1] in ncomp:
+                        ncomp[atom[ct]] += Mult
+                    else:
+                        ncomp[atom[ct]] = Mult
+                    atom.append('I')
+                    atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+                    atom.append(ran.randint(0,sys.maxsize))
+                    Atoms.append(atom)
+                except:
+                    print(f'error in atom line {a}')
+            data.update(newPhase)
+            # save new file
+            G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_super_'+sgname+'.gpx'
+            G2IO.ProjFileSave(G2frame)
+            # get transformed contents
+            nvol = generalData['Cell'][7]
+            n = ', '.join([f'{i}:{j}' for i,j in ncomp.items()])
+            msg += f"\n\n{sgsym}: project file created as {G2frame.GSASprojectfile}"
+            msg += f"\n  after transform, unit cell contents/volume:\n {n}, {nvol:.2f} A^3"
+        pgbar.Destroy()
+        G2G.G2MessageBox(G2frame,msg,'\nSupergroup search complete')
+        # Restore the original saved project
+        def _ShowPhase():
+            # reopen tree to the original phase
+            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            G2frame.GPXtree.Expand(phId)        
+            phId = G2gd.GetGPXtreeItemId(G2frame,phId,ophsnam)
+            G2frame.GPXtree.SelectItem(phId)
+        def _GetPhase():
+            # Restore the original saved project
+            G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
+            wx.CallLater(100,_ShowPhase)
+        wx.CallLater(100,_GetPhase)
+            
     def OnTransform2Std(event):
         import SUBGROUPS
         generalData = data['General']
@@ -3030,7 +3165,7 @@ def UpdatePhaseData(G2frame,Item,data):
         # phase name rename
         newName = generalData['Name'] = phaseName
         phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
+        #phaseNameList = usedHistograms.keys() # phase names in use
         generalData['Name'] = newName
         G2frame.GPXtree.SetItemText(Item,generalData['Name'])
         # change phase name key in Reflection Lists for each histogram
@@ -3356,7 +3491,7 @@ def UpdatePhaseData(G2frame,Item,data):
             # phase name rename
             newName = generalData['Name'] = f"{phsnam}_{magchoice['No.']}_{spg}"
             phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-            phaseNameList = usedHistograms.keys() # phase names in use
+            #phaseNameList = usedHistograms.keys() # phase names in use
             generalData['Name'] = newName
             G2frame.GPXtree.SetItemText(Item,generalData['Name'])
             # change phase name key in Reflection Lists for each histogram
@@ -15429,6 +15564,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnTransform2Std, id=G2G.wxID_TRANSFORMSTD)
+        G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)

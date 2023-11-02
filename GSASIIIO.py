@@ -2185,14 +2185,18 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def postURL(URL,postdict):
-    '''Posts a set of values as from a web form. If access fails to an https 
-    site the access is retried with http.
+def postURL(URL,postdict,getcookie=None,usecookie=None):
+    '''Posts a set of values as from a web form using the "get" protocol. 
+    If access fails to an https site, the access is retried with http.
 
     :param str URL: the URL to post; typically something 
        like 'http://www.../dir/page?'
     :param dict postdict: contains keywords and values, such
        as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
+    :param dict getcookie: dict to save cookies created in call, or None
+       (default) if not needed. 
+    :param dict usecookie: dict containing cookies to be used in call, 
+       or None (default) if not needed.
     :returns: a string with the response from the web server or None
        if access fails.
     '''
@@ -2209,10 +2213,12 @@ def postURL(URL,postdict):
         r = None
         repeat = False
         try:
-            r = requests.get(URL,params=postdict)
+            r = requests.get(URL,params=postdict,cookies=usecookie)
             if r.status_code == 200:
                 print('request OK')
                 page = r.text
+                if getcookie is not None:
+                    getcookie.update(r.cookies)
                 return page # success
             else:
                 print('request to {} failed. Reason={}'.format(URL,r.reason))

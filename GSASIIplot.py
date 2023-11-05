@@ -6860,9 +6860,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
-    XYZ = np.inner(XYZ.T,UVmat).T
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
-#    np.seterr(all='ignore')
     P  = np.zeros((31,31))*Nek3
     for shc in SHC:
         P += 2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,RAP[1],RAP[2]).reshape((31,31))
@@ -6872,7 +6870,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:
-        x,y,z = atm[3]
+        x,y,z = np.inner(atm[3],UVmat)
         color = np.array(general['Color'][general['AtomTypes'].index(atm[1])])/255.
         Plot.plot_surface(X+x,Y+y,Z+z,rstride=1,cstride=1,color=color,linewidth=1)
     xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
@@ -7474,7 +7472,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Page.canvas.draw()
    
 #### PlotCovariance ################################################################################
-def PlotCovariance(G2frame,Data):
+def PlotCovariance(G2frame,Data,Cube=False):
     '''Plots the covariance matrix. Also shows values for parameters 
     and their standard uncertainties (esd's) or the correlation between 
     variables.
@@ -7514,7 +7512,9 @@ def PlotCovariance(G2frame,Data):
                     covFile.write('\n')
                 covFile.write('\n\n\n')
             covFile.close()
-        wx.CallAfter(PlotCovariance,G2frame,Data)
+        elif event.key == 'c':
+            Page.cube = not Page.cube
+        wx.CallAfter(PlotCovariance,G2frame,Data,Page.cube)
 
     def OnMotion(event):
         if event.button:
@@ -7547,6 +7547,7 @@ def PlotCovariance(G2frame,Data):
         print ('No covariance matrix available')
         return
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Covariance','mpl')
+    Page.cube = Cube
     if not new:
         if not Page.IsShown():
             Page.Show()
@@ -7564,15 +7565,19 @@ def PlotCovariance(G2frame,Data):
     title = G2obj.StripUnicode(' for\n'+Data['title'],'') # matplotlib 1.x does not like unicode
     Page.newAtomDict = Data.get('newAtomDict',{})
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
-    Page.Choice = ['s: to change colors','p: to save covariance as text file']
+    Page.Choice = ['c: toggle v-cov cube plot','s: to change colors','p: to save covariance as text file']
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.status.SetStatusText('',0)
     G2frame.G2plotNB.status.SetStatusText('',1)
     G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     if Page.varyList:
         acolor = GetColorMap(G2frame.VcovColor)
-        Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
-            vmin=-1.,vmax=1.)   #,extent=[0.5,nVar+.5,0.5,nVar+.5])
+        if Page.cube:
+            Img = Plot.imshow(Page.covArray**3,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
+                vmin=-1.,vmax=1.)   #,extent=[0.5,nVar+.5,0.5,nVar+.5])
+        else:
+            Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
+                vmin=-1.,vmax=1.)   #,extent=[0.5,nVar+.5,0.5,nVar+.5])
         imgAx = Img.axes
         if step:
             imgAx.set_yticks(np.arange(nVar)[::step])
@@ -7581,7 +7586,10 @@ def PlotCovariance(G2frame,Data):
             imgAx.set_yticks(np.arange(nVar))
             imgAx.set_yticklabels(Page.varyList)
         Page.figure.colorbar(Img)
-        Plot.set_title('V-Cov matrix'+title)
+        if Page.cube:
+            Plot.set_title('V-Cov matrix**3'+title)
+        else:
+            Plot.set_title('V-Cov matrix'+title)
         Plot.set_xlabel('Variable number')
         Plot.set_ylabel('Variable name')
     Page.canvas.draw()

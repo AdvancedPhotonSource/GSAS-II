@@ -6424,11 +6424,11 @@ def UpdateModelsGrid(G2frame,data):
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
                 'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
                 'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
-                'Unified':{'G':[1.e3,False],'Rg':[100,False],'B':[1.e-5,False],'P':[4,False],'Cutoff':[1e-5,False],},
-                'Porod':{'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
-                'Monodisperse':{'Volume':[0.05,False],'Radius':[100,False],},   #OK for spheres
-                'Bragg':{'PkInt':[100,False],'PkPos':[0.2,False],
-                    'PkSig':[10,False],'PkGam':[10,False],},        #reasonable 31A peak
+                'Unified':{'G':[1.e3,False],'Rg':[100.,False],'B':[1.e-5,False],'P':[4.,False],'Cutoff':[1.e-5,False],},
+                'Porod':{'B':[1.e-4,False],'P':[4.,False],'Cutoff':[1.e-5,False],},
+                'Monodisperse':{'Volume':[0.05,False],'Radius':[100.,False],},   #OK for spheres
+                'Bragg':{'PkInt':[100.,False],'PkPos':[0.2,False],
+                    'PkSig':[10.,False],'PkGam':[10.,False],},        #reasonable 31A peak
                 })
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)

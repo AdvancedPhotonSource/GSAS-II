@@ -416,6 +416,17 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
                     if line: line += ','
                     line += G2fil.FormatValue(val,digits)
                 self.Write(line)            
+            
+        if 'Size Calc' in self.Histograms[TreeName]['Models']:
+            Rbins,Dist = self.Histograms[TreeName]['Models']['Size Calc']
+            
+            for i in range(len(Rbins)):
+                if len(Rbins[i]):
+                    self.Write('Calc size dist for model %d'%i)
+                    WriteList(self,['diam','dist'])
+                    for rbin,dist in zip(Rbins[i],Dist[i]):
+                        self.Write('%s,%s'%(G2fil.FormatValue(2.*rbin,[13,3,'g']),G2fil.FormatValue(dist,[13,3,'g'])))
+
         self.Write('"Small angle data"')
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
         for parm in Parms:
@@ -428,12 +439,8 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
             self.Write(line)
         WriteList(self,("q","y_obs","y_sig","y_calc","y_bkg"))
         digitList = 5*((13,5,'g'),)
-        for vallist in zip(histblk['Data'][0],
-                       histblk['Data'][1],
-                       1./np.sqrt(histblk['Data'][2]),
-                       histblk['Data'][3],
-                       histblk['Data'][4],
-                       ):
+        for vallist in zip(histblk['Data'][0],histblk['Data'][1],
+            1./np.sqrt(histblk['Data'][2]),histblk['Data'][3],histblk['Data'][4],):
             line = ""
             for val,digits in zip(vallist,digitList):
                 if line: line += ','

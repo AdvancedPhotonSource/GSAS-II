@@ -1273,6 +1273,7 @@ def getPsVoigt(pos,sig,gam,xdata):
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
+    param xdata: array; profile points for peak to be calculated
     
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
@@ -1290,6 +1291,7 @@ def getdPsVoigt(pos,sig,gam,xdata):
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
+    param xdata: array; profile points for peak to be calculated
 
     returns: arrays: function and derivatives of pos, sig & gam
     NB: the pos derivative has the opposite sign compared to that in other profile functions 

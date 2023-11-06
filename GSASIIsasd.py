@@ -445,8 +445,8 @@ def SchulzZimmCume(x,pos,args):
     '''
     scale = args[0]
     nP = 500
-    xMin = np.fmax([0.,pos-4.*scale])
-    xMax = np.fmin([pos+4.*scale,1.e5])
+    xMin = np.fmax(0.,pos-4.*scale)
+    xMax = np.fmin(pos+4.*scale,1.e5)
     X = np.linspace(xMin,xMax,nP,True)
     fxn = LSWDist(X,pos)
     mat = np.outer(np.ones(nP),fxn)
@@ -1576,7 +1576,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
         elif 'Bragg' in distFxn:
             parmDict = level[controls['DistType']]
             Ic[Ibeg:Ifin] += parmDict['PkInt'][0]*G2pwd.getPsVoigt(parmDict['PkPos'][0],
-                parmDict['PkSig'][0],parmDict['PkGam'][0],Q[Ibeg:Ifin])
+                parmDict['PkSig'][0],parmDict['PkGam'][0],Q[Ibeg:Ifin])[0]
             Rbins.append([])
             Dist.append([])
     Ic[Ibeg:Ifin] += Back[0]

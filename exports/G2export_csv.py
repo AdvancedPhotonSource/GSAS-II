@@ -425,7 +425,7 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
                     self.Write('Calc size dist for model %d'%i)
                     WriteList(self,['diam','dist'])
                     for rbin,dist in zip(Rbins[i],Dist[i]):
-                        self.Write('%s,%s'%(G2fil.FormatValue(2.*rbin,[13,3,'g']),G2fil.FormatValue(dist,[13,3,'g'])))
+                        self.Write('%13.4g,%13.4g'%(2.*rbin,dist))
 
         self.Write('"Small angle data"')
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]

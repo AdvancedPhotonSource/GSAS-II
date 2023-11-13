@@ -1834,7 +1834,10 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     
     def OnPlotSel(event):
         ClusData['plots'] = plotsel.GetValue()
-        G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
+        if ClusData['plots'] == 'Suprise':
+            G2plt.PlotClusterXYZ(G2frame,None,None,ClusData,PlotName='Suprise')
+        else:
+            G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
         
     def ScikitSizer():
         
@@ -2014,6 +2017,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     ClusData['OutMethod'] = ClusData.get('OutMethod','Isolation Forest')
     ClusData['MinkP'] = ClusData.get('MinkP','2')
     #end patch
+    
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2039,6 +2043,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Distance Cluster Analysis:'))
             mainSizer.Add(MethodSizer())
+            YM = None
             if len(ClusData['ConDistMat']):
                 YM = SSD.squareform(ClusData['ConDistMat'])
                 U,s,VT = nl.svd(YM) #s are the Eigenvalues
@@ -2065,9 +2070,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             plotSizer = wx.BoxSizer(wx.HORIZONTAL)
             plotSizer.Add(wx.StaticText(G2frame.dataWindow,label='Plot selection: '),0,WACV)
             if ClusData['CLuZ'] is None:
-                choice = ['All','Distances','3D PCA','2D PCA','Diffs']
+                choice = ['All','Distances','3D PCA','2D PCA','Diffs','Suprise']
             else:
-                choice = ['All','Distances','Dendrogram','2D PCA','3D PCA','Diffs']
+                choice = ['All','Distances','Dendrogram','2D PCA','3D PCA','Diffs','Suprise']
             plotsel = wx.ComboBox(G2frame.dataWindow,choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             plotsel.SetValue(str(ClusData['plots']))
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)

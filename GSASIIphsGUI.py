@@ -11024,7 +11024,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         UpdateDeformation()
         event.StopPropagation()
 
-    def UpdateDeformation():
+    def UpdateDeformation(AtdId):
         
         def OnDeformRef(event):
             Obj = event.GetEventObject()
@@ -11044,24 +11044,39 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             del deformationData[dId]
-            UpdateDeformation()
+            UpdateDeformation(dId)
+            
+        def OnMatSel(event):
+            "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            deformationData[-dId]['MUV'] = Obj.GetValue()
+            UpdateDeformation(dId)
             
         def OnUvec(event):
+            "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             if Obj.GetValue() == deformationData[-dId]['V']:
                 Obj.SetValue(deformationData[-dId]['U'])
             else:
                 MX = UVvec[dId][Obj.GetSelection()]
-                MZ = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
-                MY = np.cross(MZ,MX)
-                MY /= nl.norm(MY)
-                MZ = np.cross(MX,MY)
-                MZ /= nl.norm(MZ)
+                if 'A' in deformationData[-dId]['MUV']:
+                    MY = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+                    MZ = np.cross(MX,MY)
+                    MZ /= nl.norm(MZ)
+                    MY = np.cross(MZ,MX)
+                    MY /= nl.norm(MY)
+                else:
+                    MZ = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+                    MY = np.cross(MZ,MX)
+                    MY /= nl.norm(MY)
+                    MZ = np.cross(MX,MY)
+                    MZ /= nl.norm(MZ)
                 UVmat = np.array([MX,MY,MZ])
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['U'])
-                    G2G.G2MessageBox(G2frame,'ERROR: U-vector zero or parallel to V','Invalid vector choice')
+                    G2G.G2MessageBox(G2frame,'ERROR: Z: U-vector zero or parallel to V','Invalid vector choice')
                     return
                 if nl.det(UVmat) < 0.:  #ensure right hand
                     UVmat *= -1.
@@ -11069,17 +11084,25 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 data['Deformations'][-dId]['UVmat'] = UVmat
             
         def OnVvec(event):
+            "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             if Obj.GetValue() == deformationData[-dId]['U']:
                 Obj.SetValue(deformationData[-dId]['V'])
             else:
                 MX = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
-                MZ = UVvec[dId][Obj.GetSelection()]
-                MY = np.cross(MZ,MX)
-                MY /= nl.norm(MY)
-                MZ = np.cross(MX,MY)
-                MZ /= nl.norm(MZ)
+                if 'A' in deformationData[-dId]['MUV']:
+                    MY = UVvec[dId][Obj.GetSelection()]
+                    MZ = np.cross(MX,MY)
+                    MZ /= nl.norm(MZ)
+                    MY = np.cross(MZ,MX)
+                    MY /= nl.norm(MY)
+                else:
+                    MZ = UVvec[dId][Obj.GetSelection()]
+                    MY = np.cross(MZ,MX)
+                    MY /= nl.norm(MY)
+                    MZ = np.cross(MX,MY)
+                    MZ /= nl.norm(MZ)
                 UVmat = np.array([MX,MY,MZ])
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['V'])
@@ -11089,6 +11112,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UVmat *= -1.
                 deformationData[-dId]['V'] =  Obj.GetValue()
                 data['Deformations'][-dId]['UVmat'] = UVmat
+                
+        def OnAtSel(event):
+            dId = atomList[atSel.GetValue()]
+            UpdateDeformation(dId)
         
         # UpdateDeformation exectable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
@@ -11099,25 +11126,31 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
         AtNames = [atom[ct-1] for atom in atomData]
         deformationData = data['Deformations']
-        
+        dId = AtdId
         if deformation.GetSizer():
             deformation.GetSizer().Clear(True)
+        atomList = {}
+        for item in deformationData:
+            if item in AtLookUp:
+                atom = atomData[AtLookUp[item]]
+                atomList.update({atom[ct-1]:item})
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(deformation,label=' Atomic deformation data:'),0,WACV)
+        topSizer.Add(wx.StaticText(deformation,label=' Atomic deformation data: Select atom '),0,WACV)
+        atSel = wx.ComboBox(deformation,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+        topSizer.Add(atSel,0,WACV)
         # add help button to bring up help web page - at right side of window
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(deformation,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(topSizer,0,wx.EXPAND)
-        Indx = {}
-        UVchoice = {}
-        UVvec = {}
-        for dId in deformationData:
-            if dId < 0: #skip orientation data for atom orbitals
-                continue
+        if dId:
+            Indx = {}
+            UVchoice = {}
+            UVvec = {}
             #patch
-            if 'UVmat' not in deformationData[-dId]:
-                deformationData[-dId] = {'U':'X','V':'Z','UVmat':np.eye(3)}
+            if 'UVmat' not in deformationData[-dId] or 'MUV' not in deformationData[-dId]:
+                deformationData[-dId] = {'U':'X','V':'Y','UVmat':np.eye(3),'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV"}
             #end patch
             atom = atomData[AtLookUp[dId]]
             neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)[0]
@@ -11153,7 +11186,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Indx[delAtm.GetId()] = dId
             lineSizer.Add(delAtm,0,WACV)
             mainSizer.Add(lineSizer)
-            mainSizer.Add(wx.StaticText(deformation,label=" Orbital Cartesian axes: X'=U, Y'=UxV & Z'=Ux(UxV)"))
+            matSizer = wx.BoxSizer(wx.HORIZONTAL)
+            Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
+            matSizer.Add(wx.StaticText(deformation,label=' Orbital Cartesian axes:'),0,WACV)
+            matSel = wx.ComboBox(deformation,choices=Mchoice,value=deformationData[-dId]['MUV'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
+            Indx[matSel.GetId()] = dId
+            matSizer.Add(matSel,0,WACV)
+            mainSizer.Add(matSizer)
             oriSizer = wx.BoxSizer(wx.HORIZONTAL)
             oriSizer.Add(wx.StaticText(deformation,label=' Select orbital U vector: '),0,WACV)
             Uvec = wx.ComboBox(deformation,value=deformationData[-dId]['U'],choices=UVchoice[dId][:Nneigh+5],style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -15528,7 +15568,7 @@ of the crystal structure.
         elif text == 'Deformation':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DeformationMenu)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
-            UpdateDeformation()
+            UpdateDeformation(None)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()

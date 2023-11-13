@@ -7874,8 +7874,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
         'Update to show edits to mag factors in window and plot'
         wx.CallAfter(UpdatePWHKPlot,G2frame,kind,G2frame.PatternId)
 
-    # Start of UpdatePWHKPlot
+    #### Start of UpdatePWHKPlot
     data = G2frame.GPXtree.GetItemPyData(item)
+    if kind == 'PWDR':              # Compute a "data entropy" factor?
+        Limits = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,item,'Limits'))
+        iBeg = np.searchsorted(data[1][0],Limits[1][0])
+        iFin = np.searchsorted(data[1][0],Limits[1][1])+1
+        meanI = np.mean(data[1][1][iBeg:iFin])
+        S = -1.0+np.sum(np.log(meanI**2/(data[1][1][iBeg:iFin]-meanI)**2))/(iFin-iBeg)
 #patches
     if not data:
         return
@@ -7919,6 +7925,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.SetValue(str(data[0]['Compression']))
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
+
+    if kind == 'PWDR':
+        wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Suprise" factor: %.3f'%S))
     wtSizer.Add((-1,-1),1,wx.EXPAND)
     wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(wtSizer,0,wx.EXPAND)

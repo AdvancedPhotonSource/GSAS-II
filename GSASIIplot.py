@@ -12017,10 +12017,11 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     Page.Choice = None
     np.seterr(all='ignore')
         
-    Imin = np.min(YM)
-    Imax = np.max(YM)
-    Ndata = len(CLuDict['Files'])
-    neighD = [YM[i][i+1] for i in range(Ndata-1)]
+    if YM is not None:
+        Imin = np.min(YM)
+        Imax = np.max(YM)
+        Ndata = len(CLuDict['Files'])
+        neighD = [YM[i][i+1] for i in range(Ndata-1)]
     Codes = copy.copy(CLuDict['codes'])
     if Codes is not None:
         Codes = np.where(Codes<0,5,Codes)
@@ -12034,12 +12035,23 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_title(Title+' distances')
         Plot.set_xlabel('Data set',fontsize=12)
         Plot.set_ylabel('Data set',fontsize=12)
+    elif CLuDict['plots'] == 'Suprise':
+        Suprise = []
+        for I in CLuDict['DataMatrix']:
+            meanI = np.mean(I)
+            N = I.shape[0]
+            S = -1.0+np.sum(np.log(meanI**2/(I-meanI)**2))/N
+            Suprise.append(S)
+        Plot.plot(Suprise)
+        Plot.set_title('Suprise factor')
+        Plot.set_xlabel('Data no.',fontsize=12)
+        Plot.set_ylabel('Suprise factor',fontsize=12)
     elif CLuDict['plots'] == 'Dendrogram':
         CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=Plot)
         Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
         Plot.set_xlabel(r''+'data set no.',fontsize=12)
         Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
-    elif CLuDict['plots'] == 'Diffs':
+    elif CLuDict['plots'] == 'Diffs' and YM is not None:
         Plot.plot(neighD)
         Plot.set_title('Distance to next data set')
         Plot.set_xlabel('Data no.',fontsize=12)
@@ -12086,9 +12098,10 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
                 ax2.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)
         ax2.set_xlabel('PCA axis-1',fontsize=12)
         ax2.set_ylabel('PCA axis-2',fontsize=12)
-        ax4.plot(neighD)
-        ax4.set_xlabel('Data no.',fontsize=12)
-        ax4.set_ylabel('dist to next',fontsize=12)
+        if YM is not None:
+            ax4.plot(neighD)
+            ax4.set_xlabel('Data no.',fontsize=12)
+            ax4.set_ylabel('dist to next',fontsize=12)
         if CLuDict['CLuZ'] is not None:
             CLR = SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
             ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))

@@ -2185,7 +2185,7 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def postURL(URL,postdict,getcookie=None,usecookie=None):
+def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None):
     '''Posts a set of values as from a web form using the "get" protocol. 
     If access fails to an https site, the access is retried with http.
 
@@ -2213,7 +2213,11 @@ def postURL(URL,postdict,getcookie=None,usecookie=None):
         r = None
         repeat = False
         try:
-            r = requests.get(URL,params=postdict,cookies=usecookie)
+            if timeout is not None:
+                r = requests.get(URL,params=postdict,cookies=usecookie,
+                                     timeout=timeout)
+            else:
+                r = requests.get(URL,params=postdict,cookies=usecookie)
             if r.status_code == 200:
                 print('request OK')
                 page = r.text
@@ -2222,14 +2226,27 @@ def postURL(URL,postdict,getcookie=None,usecookie=None):
                 return page # success
             else:
                 print('request to {} failed. Reason={}'.format(URL,r.reason))
-        except Exception as msg:     #ConnectionError?
-            print('connection error - not on internet?')
+        except requests.exceptions.ConnectionError as msg:
+            if 'time' in str(msg) and 'out' in str(msg): 
+                print(f'server timeout accessing {URL}')
+                print(msg)
+            else:
+                print('connection error - not on internet?')
+                if URL.startswith('https:'):
+                    print('Retry with http://')
+                    repeat = True
+                    URL = URL.replace('https:','http:')
+        except requests.exceptions.Timeout:
+            print(f'timeout accessing {URL}')
+        except requests.exceptions.ReadTimeout:
+            print(f'timeout reading from {URL}')
+        except requests.exceptions.ConnectTimeout:
+            print(f'timeout accessing {URL}')
+        except Exception as msg:    # other error
+            print(f'Error accessing {URL}')
             if GSASIIpath.GetConfigValue('debug'): print(msg)
         finally:
             if r: r.close()
-        if URL.startswith('https:'):
-            repeat = True
-            URL = URL.replace('https:','http:')
     else:
         return None
 

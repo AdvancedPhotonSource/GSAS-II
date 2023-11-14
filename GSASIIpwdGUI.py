@@ -4896,6 +4896,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         sizer.Add((-1,15))
         sizer.Add(wx.StaticText(dlg,label=msg))
         sizer.Add((-1,15))
+        sizer.Add(wx.StaticText(dlg,label=(
+            ('Starting cell: '+3*'{:.3f}, '+3*'{:.2f}, ').format(
+                *controls[6:12]))))
+        sizer.Add((-1,15))
         tableSizer = wx.FlexGridSizer(0,2,0,0)
         tableSizer.Add(wx.StaticText(dlg,label='Cell length tolerance (A) '),
             0,WACV|wx.ALIGN_LEFT)
@@ -4905,10 +4909,14 @@ def UpdateUnitCellsGrid(G2frame, data):
             0,WACV|wx.ALIGN_LEFT)
         w = G2G.ValidatedTxtCtrl(dlg,nistInput,1,nDig=(6,1))
         tableSizer.Add(w)
-        tableSizer.Add(wx.StaticText(dlg,label='Cell volume range (ratio) '),
-            0,WACV|wx.ALIGN_LEFT)
-        w = G2G.ValidatedTxtCtrl(dlg,nistInput,2)
-        tableSizer.Add(w)
+        #
+        # next option makes it too easy to create a really
+        # long-running (infinite?) computation. Removed for now.
+        #
+        #tableSizer.Add(wx.StaticText(dlg,label='Cell volume range (ratio) '),
+        #    0,WACV|wx.ALIGN_LEFT)
+        #w = G2G.ValidatedTxtCtrl(dlg,nistInput,2)
+        #tableSizer.Add(w)
         tableSizer.Add(wx.StaticText(dlg,label='Search mode: Generate '),
             0,WACV|wx.ALIGN_LEFT)
         tableSizer.Add(G2G.EnumSelector(dlg,nistInput,3,
@@ -5205,6 +5213,24 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+    # def OnRunSuper(event):
+    #     pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    #     controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+    #     sym = controls[13].replace(' ','')
+    #     symlist = [i.replace(' ','')  for i in G2spc.spgbyNum[1:]]
+    #     if sym in symlist:
+    #         spgnum = 1 + symlist.index(sym)
+    #     else:
+    #         wx.MessageBox('Sorry, Bilbao "Minimal Supergroups of Space Groups" requires a standard setting',
+    #                 caption='Need standard setting',style=wx.ICON_EXCLAMATION)
+    #         return
+    #     dlg = wx.ProgressDialog('SUPERGROUP results','creating window',100,
+    #             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+    #     xforms = kSUB.GetSupergroup(spgnum,dlg)
+    #     dlg.Destroy()
+    #     cell = controls[6:12]
+    #     breakpoint()
 
     #### UpdateUnitCellsGrid code starts here
     G2frame.ifGetExclude = False

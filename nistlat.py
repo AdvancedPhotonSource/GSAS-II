@@ -147,6 +147,9 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
     cellline = '{:10.4f}{:10.4f}{:10.4f}{:10.3f}{:10.3f}{:10.3f}'.format(*cellin)
     inp = "RSS      1\n"
     inp += "{:1d}  {:1d}{:1d}   {}{}{}\n".format(mode,2,deltaV,center,setting,cellline)
+    if os.path.exists('NIST10'): # cleanup
+        print("Removing old NIST10 file")
+        os.remove('NIST10')
     p = subprocess.Popen([nistlattice],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -209,6 +212,9 @@ def ConvCell(redcell):
           cell is multiplied by mat.
     '''
     inp = "{:10.5f}{:10.5f}{:10.5f}{:10.4f}{:10.4f}{:10.4f}".format(*redcell)
+    if os.path.exists('NIST10'): # cleanup
+        print("Removing old NIST10 file")
+        os.remove('NIST10')
     p = subprocess.Popen([convcell],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -304,6 +310,9 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     for i in range(2):
         inp += "          {:10.5f}{:10.5f}{:10.5f}{:10.4f}{:10.4f}{:10.4f}\n".format(
             *rcVmat[i][0])
+    if os.path.exists('NIST10'): # cleanup
+        print("Removing old NIST10 file")
+        os.remove('NIST10')
     p = subprocess.Popen([nistlattice],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -422,6 +431,9 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     inp += "R{:1d} {:2d}     {:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}\n".format(
             mode,deltaV,*tolerance)
     inp += "{:1d}  {:1d}{:1d}   {}{}{}\n".format(mode,2,deltaV,center,setting,cellline)
+    if os.path.exists('NIST10'): # cleanup
+        print("Removing old NIST10 file")
+        os.remove('NIST10')
     p = subprocess.Popen([nistlattice],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,

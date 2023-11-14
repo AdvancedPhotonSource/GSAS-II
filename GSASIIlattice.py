@@ -126,7 +126,7 @@ def A2Gmat(A,inverse=True):
 def Gmat2A(G):
     """Extract A from reciprocal metric tensor (G)
 
-    :param G: reciprocal maetric tensor (3x3 numpy array
+    :param G: reciprocal metric tensor (3x3 numpy array)
     :return: A = [G11,G22,G33,2*G12,2*G13,2*G23]
 
     """

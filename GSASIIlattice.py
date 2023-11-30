@@ -38,6 +38,7 @@ try:  # fails on doc build
     SQ2 = np.sqrt(2.)
     RSQPI = 1./np.sqrt(np.pi)
     R2pisq = 1./(2.*np.pi**2)
+    Forpi = 4.0*np.pi
 except TypeError:
     pass
 nxs = np.newaxis
@@ -2726,8 +2727,7 @@ def SphHarmAng(L,M,P,Th,Ph):
     
     :returns ylmp value/array: as reals
     '''
-    
-    ylmp = spsp.sph_harm(abs(M),L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
     
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2

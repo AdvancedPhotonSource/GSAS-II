@@ -10973,7 +10973,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Angle=False)
         if dlg.ShowModal() == wx.ID_OK:
             generalData['DisAglCtls'] = dlg.GetData()
-        UpdateDeformation()
+        UpdateDeformation(None)
         event.StopPropagation()
         
     def SelDeformAtom(event):
@@ -11021,7 +11021,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         drawAtoms.ClearSelection()        
         drawAtoms.SelectRow(indx,True)
         G2plt.PlotStructure(G2frame,data)
-        UpdateDeformation()
+        UpdateDeformation(None)
         event.StopPropagation()
 
     def UpdateDeformation(AtdId):
@@ -11044,14 +11044,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             del deformationData[dId]
-            UpdateDeformation(dId)
+            wx.CallAfter(UpdateDeformation,None)
             
         def OnMatSel(event):
             "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             deformationData[-dId]['MUV'] = Obj.GetValue()
-            UpdateDeformation(dId)
+            wx.CallAfter(UpdateDeformation,dId)
             
         def OnUvec(event):
             "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
@@ -11115,7 +11115,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 
         def OnAtSel(event):
             dId = atomList[atSel.GetValue()]
-            UpdateDeformation(dId)
+            wx.CallAfter(UpdateDeformation,dId)
         
         # UpdateDeformation exectable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
@@ -11134,17 +11134,23 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if item in AtLookUp:
                 atom = atomData[AtLookUp[item]]
                 atomList.update({atom[ct-1]:item})
+        AtChoice = ' '
+        if dId is not None:
+            AtChoice = atomData[AtLookUp[dId]][ct-1]
+        elif len(atomList):
+            AtChoice = list(atomList.keys())[0]
+            dId = atomList[AtChoice]
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(deformation,label=' Atomic deformation data: Select atom '),0,WACV)
-        atSel = wx.ComboBox(deformation,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
         atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
         topSizer.Add(atSel,0,WACV)
         # add help button to bring up help web page - at right side of window
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(deformation,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(topSizer,0,wx.EXPAND)
-        if dId:
+        if dId is not None:
             Indx = {}
             UVchoice = {}
             UVvec = {}
@@ -11242,7 +11248,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 for i in range(3): orbSizer.Add((5,5),0)
                     
             mainSizer.Add(orbSizer)    
-            G2G.HorizontalLine(mainSizer,deformation)
 
         SetPhaseWindow(deformation,mainSizer)
 

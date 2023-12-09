@@ -2185,8 +2185,9 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None):
-    '''Posts a set of values as from a web form using the "get" protocol. 
+def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None,mode='get'):
+    '''Posts a set of values as from a web form using the "get" or "post" 
+    protocols. 
     If access fails to an https site, the access is retried with http.
 
     :param str URL: the URL to post; typically something 
@@ -2197,6 +2198,8 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None):
        (default) if not needed. 
     :param dict usecookie: dict containing cookies to be used in call, 
        or None (default) if not needed.
+    :param str mode: either 'get' (default) or 'post'. Determines how
+       the request will be submitted. 
     :returns: a string with the response from the web server or None
        if access fails.
     '''
@@ -2207,19 +2210,24 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None):
         # macs; it should not!
         print('Warning: failed to import requests. Python config error')
         return None
-        
+
+    if mode == 'get':
+        reqopt = requests.get
+    else:
+        reqopt = requests.post
+    
     repeat = True
     while repeat:
         r = None
         repeat = False
         try:
             if timeout is not None:
-                r = requests.get(URL,params=postdict,cookies=usecookie,
+                r = reqopt(URL,params=postdict,cookies=usecookie,
                                      timeout=timeout)
             else:
-                r = requests.get(URL,params=postdict,cookies=usecookie)
+                r = reqopt(URL,params=postdict,cookies=usecookie)
             if r.status_code == 200:
-                print('request OK')
+                if GSASIIpath.GetConfigValue('debug'): print('request OK',reqopt)
                 page = r.text
                 if getcookie is not None:
                     getcookie.update(r.cookies)

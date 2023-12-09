@@ -2800,16 +2800,19 @@ class G2Project(G2ObjectWrapper):
         '''Computes the worst-fit parameters in a model. 
 
         :returns: (keys, derivCalcs, varyList) where: 
+
           * keys is a list of parameter names
             where the names are ordered such that first entry in the list 
             will produce the largest change in the fit if refined and the last
-            entry will have the smallest change; 
+            entry will have the smallest change;
+ 
           * derivCalcs is a dict where the key is a variable name and the 
             value is a list with three partial derivative values for 
             d(Chi**2)/d(var) where the derivatives are computed 
             for values v-d to v; v-d to v+d; v to v+d where v is 
             the current value for the variable and d is a small delta 
             value chosen for that variable type;
+
           * varyList is a list of the parameters that are currently set to 
             be varied. 
         '''

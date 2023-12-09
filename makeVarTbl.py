@@ -59,7 +59,10 @@ def main():
                         explain[nextChar] = s
                         regList[reg] = nextChar
                         exmplDig[nextChar] = reg[0]
-                        nextChar += 1
+                        if nextChar == 90:
+                            nextChar = 97
+                        else:
+                            nextChar += 1
                     if termcount > 1:
                         sym = '\\ :math:`\\scriptstyle '+chr(regList[reg])+'_'+str(j)+'`\\ '
                     else:

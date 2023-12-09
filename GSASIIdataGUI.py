@@ -7651,7 +7651,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 G2frame,[inp] * len(inp), range(len(inp)), names,
                 header='Edit simulation range',
                 minvals=(0.5,1.0,0.0001),
-                maxvals=(200.,200.,.001),
+                maxvals=(500.,500.,.001),
                 )            
         else:
             inp = [

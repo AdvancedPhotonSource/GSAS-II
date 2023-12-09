@@ -421,12 +421,19 @@ def ShowVersions():
     import matplotlib as mpl
     import OpenGL as ogl
     import GSASIIpath
+    pkgList = [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
+                   ('scipy',sp), ('OpenGL',ogl)]
+    if GSASIIpath.GetConfigValue('debug'):
+        try:
+            import IPython
+            pkgList.append(('IPython',IPython))
+        except:
+            pass
     print ("Python/module versions loaded:")
     version = '?'
     versionDict['errors'] = ''
     warn = False
-    for s,m in [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
-                    ('scipy',sp), ('OpenGL',ogl)]:
+    for s,m in pkgList:
         msg = ''
         if s == 'Python':
             pkgver = platform.python_version()

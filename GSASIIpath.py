@@ -962,32 +962,37 @@ def exceptHook(*args):
     
     This routine is only used when debug=True is set in config.py    
     '''
-    import IPython.core
-    if sys.platform.startswith('win'):
-        IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
-    else:
-        IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
 
     try: 
         from IPython.terminal.embed import InteractiveShellEmbed
+        import IPython.core
+        if sys.platform.startswith('win'):
+            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
+        else:
+            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
+        from IPython.core import getipython
+        if getipython.get_ipython() is None:
+            ipshell = InteractiveShellEmbed.instance()
+        else:
+            ipshell = InteractiveShellEmbed()
     except ImportError:
-        try:
-            # try the IPython 0.12 approach
-            from IPython.frontend.terminal.embed import InteractiveShellEmbed
-        except ImportError:
-            print ('IPython InteractiveShellEmbed not found')
-            return
+        print ('IPython not installed or is really old')
+        return
+
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
     msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
     savehook = sys.excepthook # save the exception hook
-    try: # try IPython 5 call 1st
-        class c(object): pass
-        pseudomod = c() # create something that acts like a module
-        pseudomod.__dict__ = frame.f_locals
-        InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
-    except:
-        InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
+    try:
+        ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
+    except DeprecationWarning: # IPython <=7
+        try: # IPython >=5
+            class c(object): pass
+            pseudomod = c() # create something that acts like a module
+            pseudomod.__dict__ = frame.f_locals
+            InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
+        except: # 'IPython <5
+            InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def DoNothing():

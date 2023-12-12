@@ -6844,7 +6844,8 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
             # if 's' in item[0] or 'd' in item[0]:
             #     Nek3 = item[1]['Ne'][0]*item[1]['kappa'][0]**3
             continue
-        kappa = item[1]['kappa'][0]
+        if 'kappa' in item[1]:
+            kappa = item[1]['kappa'][0]
         for trm in item[1]:
             if 'D(' in trm:
                 SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]

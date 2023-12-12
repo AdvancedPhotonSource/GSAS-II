@@ -453,21 +453,27 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:
-            orKeys = list(ORBtables[Atype].keys())
+            orKeys = [item for item in ORBtables[Atype] if item not in ['ZSlater','NSlater','SZE','popCore','popVal']]
             orbs = SHCdict[iAt]
             UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
             Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
-            FFcore = G2el.ScatFac(ORBtables[Atype][orKeys[0]],SQR)    #core
+            orbTable = ORBtables[Atype][orKeys[0]] 
+            ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+            FFcore = G2el.ScatFac(ffOrb,SQR)    #core
             FFtot = np.zeros_like(FFcore)
             for orb in orbs:
                 if 'UVmat' in orb:
                     continue
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
-                kappa = orbs[orb]['kappa']
-                SQk = SQR/kappa**2
-                ff = Ne*G2el.ScatFac(ORBtables[Atype][orKeys[int(orb)+1]],SQk)
-                dffdk = G2el.ScatFacDer(ORBtables[Atype][orKeys[int(orb)+1]],SQk)
+                if 'kappa' in orbs[orb]:
+                    kappa = orbs[orb]['kappa']
+                    SQk = SQR/kappa**2
+                    korb = orb
+                orbTable = ORBtables[Atype][orKeys[int(orb)+1]]
+                ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+                ff = Ne*G2el.ScatFac(ffOrb,SQk)
+                dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0
                 if '<j0>' in orKeys[int(orb)+1]:
                     dSH = 1.0
@@ -482,11 +488,13 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     elif 'Ne' in term:
                         name = 'ANe%s:%d'%(orb,iAt)
                         dFFdS[name] = ff/Ne
-                    elif 'kappa' in term:
                         if 'j0' in orKeys[int(orb)+1]:
                             FFtot += ff
-                name = 'Akappa%s:%d'%(orb,iAt)
-                dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
+                name = 'Akappa%s:%d'%(korb,iAt)
+                if name in dFFdS:
+                    dFFdS[name] += -2.0*Ne*SQk*dSH*dffdk/kappa
+                else:
+                    dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
             FF[:,iAt] = FFcore+FFtot
         else:
             atFlg.append(0.)

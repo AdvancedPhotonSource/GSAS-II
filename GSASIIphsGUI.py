@@ -10997,14 +10997,24 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 orbs = atmdata.OrbFF[types[indx]]
                 data['Deformations'][Ids[indx]] = []
                 data['Deformations'][-Ids[indx]] = {'U':'X','V':'Z','UVmat':np.eye(3)}
+                newj0 = True
+                newjn = True
                 for orb in orbs:
                     if 'core' in orb:
                         continue        #skip core - has no parameters
                     else:
                         if 'j0' in orb:
-                            data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
+                            if newj0:
+                                data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
+                                newj0 = False
+                            else:
+                                data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False]}])   #no sp. harm for j0 terms; one kappa only
                         elif 'j' in orb:
-                            orbDict = {'kappa':[1.0,False],}
+                            if newjn:
+                                orbDict = {'kappa':[1.0,False],}
+                                newjn = False
+                            else:
+                                orbDict = {}
                             Order = int(orb.split('>')[0][-1])
                             cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
                             cofNames = [name.replace('C','D') for name in cofNames]
@@ -11215,15 +11225,23 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
-                orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' kappa:'))
-                orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
-                Tcheck = wx.CheckBox(deformation,-1,'Refine?')
-                Tcheck.SetValue(orb[1]['kappa'][1])
-                Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
-                Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
-                orbSizer.Add(Tcheck)
+                if 'kappa' in orb[1]:
+                    name = ' kappa: '
+                    if '<j0>' not in orb[0]:
+                        for i in range(3): orbSizer.Add((5,5),0)
+                        name = " kappa': "
+                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+name))
+                    orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
+                    Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+                    Tcheck.SetValue(orb[1]['kappa'][1])
+                    Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+                    Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
+                    orbSizer.Add(Tcheck)
                 if '<j0>' in orb[0]:
-                    orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
+                    if 'kappa' not in orb[1]:
+                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+                    else:
+                        orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
                     orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['Ne'],0,nDig=(8,3),xmin=0.,xmax=10.))
                     Tcheck = wx.CheckBox(deformation,-1,'Refine?')
                     Tcheck.SetValue(orb[1]['Ne'][1])
@@ -11233,6 +11251,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for i in range(3): orbSizer.Add((5,5),0)
                     continue
                 nItem = 0
+                if 'kappa' not in orb[1]:
+                    for i in range(3): orbSizer.Add((5,5),0)
                 for item in orb[1]:
                     if 'D' in item:
                         nItem += 1

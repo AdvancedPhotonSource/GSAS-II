@@ -257,6 +257,8 @@ class testDeriv(wx.Frame):
                 G2mv.Dict2Map(self.parmDict)
                 first = True
                 for i in self.parmDict:
+                    if 'UVmat' in i:
+                        continue
                     if orig[i] != self.parmDict[i] and i != name:
                         if first:
                             print('Propagated changes from this shift')

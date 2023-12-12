@@ -1202,6 +1202,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         for Ename in ORBtable:
             orbdata = ORBtable[Ename]
             for item in orbdata:
+                if item in ['ZSlater','NSlater','SZE','popCore','popVal']:
+                    continue
                 fa = orbdata[item]['fa']
                 fb = orbdata[item]['fb']
                 if 'core' in item:                    
@@ -1410,7 +1412,13 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 values = 12*' '+'values: '
                 refine = 12*' '+'refine: '
                 for item in orb[1]:
-                    names += item.rjust(10)
+                    if 'kappa' in item:
+                        name = 'kappa'.rjust(10)
+                        if '<j0>' not in orb[0]:
+                            name = "kappa'".rjust(10)
+                        names += name
+                    else:
+                        names += item.rjust(10)
                     values += '%10.5f'%orb[1][item][0]
                     refine += '%10s'%str(orb[1][item][1])
                 pFile.write(names+'\n')
@@ -2405,7 +2413,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr = 12*' '+'esds  : '
                 for item in orb[1]:
                     pName = 'A%s%d:%d'%(item,iorb,AtId)
-                    names += item.rjust(10)
+                    if 'kappa' in item:
+                        name = 'kappa'.rjust(10)
+                        if '<j0>' not in orb[0]:
+                            name = "kappa'".rjust(10)
+                        names += name
+                    else:
+                        names += item.rjust(10)
                     values += '%10.5f'%orb[1][item][0]
                     if pName in deformSig:
                         sigstr += '%10.5f'%deformSig[pName]

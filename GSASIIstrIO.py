@@ -212,8 +212,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
     if msg:
         return 'Unable to interpret multiplier(s): '+msg,''
-    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
-                                                              seqHistNum=hId)
+    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,seqHistNum=hId)
     G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     return errmsg, warnmsg
     
@@ -3245,6 +3244,8 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                                 if limits[0] < pos < limits[1]:
                                     refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI, 0.0,0.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr
+                    if len(refList) == 0:
+                        raise G2obj.G2Exception(' Ouch #8: no reflections in data range - rethink PWDR limits')
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]

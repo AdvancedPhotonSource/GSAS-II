@@ -2189,7 +2189,7 @@ class GSASII(wx.Frame):
                     self,[inp] * len(inp),range(len(inp)),names,
                     header='Enter simulation name and range',
                     minvals=(None,.5,1.0,0.0001),
-                    maxvals=(None,500.,500.,.001),
+                    maxvals=(None,500.,500.,.0025),
                     sizevals=((225,-1),)
                     )
             else:
@@ -4211,8 +4211,7 @@ class GSASII(wx.Frame):
         selItem = self.GPXtree.GetSelection()
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         if not self.GPXtree.GetCount():
-            G2G.G2MessageBox(self,'No tree items to be deleted',
-                                 'Nothing to delete')
+            G2G.G2MessageBox(self,'No tree items to be deleted','Nothing to delete')
             return            
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         used = False
@@ -7658,7 +7657,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 G2frame,[inp] * len(inp), range(len(inp)), names,
                 header='Edit simulation range',
                 minvals=(0.5,1.0,0.0001),
-                maxvals=(500.,500.,.001),
+                maxvals=(500.,500.,.0025),
                 )            
         else:
             inp = [

@@ -2189,7 +2189,7 @@ class GSASII(wx.Frame):
                     self,[inp] * len(inp),range(len(inp)),names,
                     header='Enter simulation name and range',
                     minvals=(None,.5,1.0,0.0001),
-                    maxvals=(None,500.,500.,.0025),
+                    maxvals=(None,500.,500.,.01),
                     sizevals=((225,-1),)
                     )
             else:
@@ -7657,7 +7657,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 G2frame,[inp] * len(inp), range(len(inp)), names,
                 header='Edit simulation range',
                 minvals=(0.5,1.0,0.0001),
-                maxvals=(500.,500.,.0025),
+                maxvals=(500.,500.,.01),
                 )            
         else:
             inp = [

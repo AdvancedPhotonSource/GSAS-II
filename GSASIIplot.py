@@ -1012,8 +1012,7 @@ def changePlotSettings(G2frame,Plot):
 
     txtChoices = [str(i) for i in range (8,26)]
     lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
-    dlg = wx.Dialog(G2frame.plotFrame,
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    dlg = wx.Dialog(G2frame.plotFrame,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
     vbox = wx.BoxSizer(wx.VERTICAL)
     hbox = wx.BoxSizer(wx.HORIZONTAL)
     hbox.Add(wx.StaticText(dlg,wx.ID_ANY,'Text size'),0,wx.ALL)

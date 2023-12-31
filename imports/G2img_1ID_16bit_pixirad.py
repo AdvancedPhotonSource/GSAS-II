@@ -60,6 +60,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
             import PIL.Image as PI
             self.Image = PI.open(filename,mode='r')
             self.Npix = self.Image.size
+            self.Data = {}
             if ParentFrame:
                 self.SciPy = True
                 self.Comments = ['no metadata']

@@ -468,23 +468,25 @@ def MagScatFac(El, SQ):
     MF0 = MMF0+(2.0/El['gfac']-1.0)*NMF0
     return (MMF+(2.0/El['gfac']-1.0)*NMF)/MF0
 
-def ClosedFormFF(El,SQ,k,N):
+#def SlaterFF(El,SQ,k,N):
+    
+
+def ClosedFormFF(Z,SQ,k,N):
     """Closed form expressions for FT Slater fxns. IT B Table 1.2.7.4
     (not used at present - doesn't make sense yet)
     
-    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param Z: element zeta factor 
     :param SQ: (sin-theta/lambda)**2
     :param k: int principal Bessel fxn order as in <jk>
     :param N: int power
     
     return: form factor
     """
-    Z = El['Z']
     Z2 = Z**2
     K2 = 16.0*SQ*np.pi**2
     K2pZ2 = K2+Z2
     K = np.sqrt(K2)
-    if not k: #==0
+    if k == 0:
         if N == 1:
             return 1.0/K2pZ2
         elif N == 2:

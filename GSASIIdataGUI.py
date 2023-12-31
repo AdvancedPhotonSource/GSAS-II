@@ -7933,7 +7933,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        wtSizer.Add(comp,0,WACV)
 
     if kind == 'PWDR':
-        wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Suprise" factor: %.3f'%S))
+        wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Surprise" factor: %.3f'%S))
     wtSizer.Add((-1,-1),1,wx.EXPAND)
     wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(wtSizer,0,wx.EXPAND)

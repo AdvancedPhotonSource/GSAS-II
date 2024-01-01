@@ -483,9 +483,10 @@ modQ        (list) modulation/propagation vector
 modSymb     (list of str) Modulation symbols
 ==========  ====================================================
 
-
 Phase Information
 --------------------
+
+.. _Phase_Information:
 
 .. index::
    single: Phase information record description

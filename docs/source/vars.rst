@@ -35,6 +35,14 @@
      - Atomic site multiplicity value.
    * - AM\ :math:`\scriptstyle M`\  (example: ``AMx``)
      - Atomic magnetic moment parameter, \ :math:`\scriptstyle M`\ ; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
+   * - Akappa\ :math:`\scriptstyle O`\  (example: ``Akappa0``)
+     -  Atomic orbital softness for orbital, \ :math:`\scriptstyle O`\ ; where \ :math:`\scriptstyle O`\  is one of the characters 0, - or 6.
+   * - ANe\ :math:`\scriptstyle P`\  (example: ``ANe0``)
+     -  Atomic <j0> orbital population for orbital, \ :math:`\scriptstyle P`\ ; where \ :math:`\scriptstyle P`\  is one of the characters 0 or 1.
+   * - AD\ :math:`\scriptstyle O_0`\ ,\ :math:`\scriptstyle O_1`\ \ :math:`\scriptstyle O_0`\  (example: ``AD0,00``)
+     -  Atomic sp. harm. coeff for orbital, \1; where \ :math:`\scriptstyle O_0`\  is one of the characters 0, - or 6 and \ :math:`\scriptstyle O_1`\  is one of the characters 0, - or 6 and \ :math:`\scriptstyle O_0`\  is one of the characters 0, - or 6.
+   * - AD\ :math:`\scriptstyle O_0`\ ,-\ :math:`\scriptstyle O_1`\ \ :math:`\scriptstyle O_0`\  (example: ``AD0,-00``)
+     -  Atomic sp. harm. coeff for orbital, \1; where \ :math:`\scriptstyle O_0`\  is one of the characters 0, - or 6 and \ :math:`\scriptstyle O_1`\  is one of the characters 0, - or 6 and \ :math:`\scriptstyle O_0`\  is one of the characters 0, - or 6.
    * - Back\ :math:`\scriptstyle J`\  (example: ``Back11``)
      - Background term #\ :math:`\scriptstyle J`\ ; where \ :math:`\scriptstyle J`\  is the background term number.
    * - BkPkint;\ :math:`\scriptstyle J`\  (example: ``BkPkint;11``)
@@ -47,8 +55,8 @@
      - Background peak #\ :math:`\scriptstyle J`\  Cauchy width; where \ :math:`\scriptstyle J`\  is the background peak number.
    * - BF mult
      - Background file multiplier.
-   * - Bab\ :math:`\scriptstyle O`\  (example: ``BabA``)
-     - Babinet solvent scattering coef. \ :math:`\scriptstyle O`\ ; where \ :math:`\scriptstyle O`\  is one of the characters A or U.
+   * - Bab\ :math:`\scriptstyle Q`\  (example: ``BabA``)
+     - Babinet solvent scattering coef. \ :math:`\scriptstyle Q`\ ; where \ :math:`\scriptstyle Q`\  is one of the characters A or U.
    * - D\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\  (example: ``D11``)
      - Anisotropic strain coef. \ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - Extinction
@@ -77,8 +85,8 @@
      - Absorption coef.
    * - LayerDisp
      - Bragg-Brentano Layer displacement.
-   * - Displace\ :math:`\scriptstyle P`\  (example: ``DisplaceX``)
-     - Debye-Scherrer sample displacement \ :math:`\scriptstyle P`\ ; where \ :math:`\scriptstyle P`\  is one of the characters X or Y.
+   * - Displace\ :math:`\scriptstyle R`\  (example: ``DisplaceX``)
+     - Debye-Scherrer sample displacement \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X or Y.
    * - Lam
      - Wavelength.
    * - I(L2)\\/I(L1)
@@ -87,10 +95,10 @@
      - Polarization correction.
    * - SH/L
      - FCJ peak asymmetry correction.
-   * - \ :math:`\scriptstyle Q`\  (example: ``U``)
-     - Gaussian instrument broadening \ :math:`\scriptstyle Q`\ ; where \ :math:`\scriptstyle Q`\  is one of the characters U, V or W.
-   * - \ :math:`\scriptstyle R`\  (example: ``X``)
-     - Cauchy instrument broadening \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle S`\  (example: ``U``)
+     - Gaussian instrument broadening \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters U, V or W.
+   * - \ :math:`\scriptstyle T`\  (example: ``X``)
+     - Cauchy instrument broadening \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
    * - Zero
      - Debye-Scherrer zero correction.
    * - Shift
@@ -109,38 +117,38 @@
      - Debye model Uiso.
    * - RBV\ :math:`\scriptstyle J`\  (example: ``RBV11``)
      - Vector rigid body parameter.
-   * - RBVO\ :math:`\scriptstyle S`\  (example: ``RBVOa``)
-     - Vector rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBVO\ :math:`\scriptstyle U`\  (example: ``RBVOa``)
+     - Vector rigid body orientation parameter \ :math:`\scriptstyle U`\ ; where \ :math:`\scriptstyle U`\  is one of the characters a, i, j or k.
    * - RBVP\ :math:`\scriptstyle M`\  (example: ``RBVPx``)
      - Vector rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
    * - RBVf
      - Vector rigid body site fraction.
-   * - RBV\ :math:`\scriptstyle T_0`\ \ :math:`\scriptstyle U_0`\ \ :math:`\scriptstyle U_1`\  (example: ``RBVT11``)
-     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
+   * - RBV\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\  (example: ``RBVT11``)
+     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle V_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle W_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle W_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBVU
      - Residue rigid body group Uiso param.
-   * - RBRO\ :math:`\scriptstyle S`\  (example: ``RBROa``)
-     - Residue rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBRO\ :math:`\scriptstyle U`\  (example: ``RBROa``)
+     - Residue rigid body orientation parameter \ :math:`\scriptstyle U`\ ; where \ :math:`\scriptstyle U`\  is one of the characters a, i, j or k.
    * - RBRP\ :math:`\scriptstyle M`\  (example: ``RBRPx``)
      - Residue rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
    * - RBRTr;\ :math:`\scriptstyle J`\  (example: ``RBRTr;11``)
      - Residue rigid body torsion parameter.
    * - RBRf
      - Residue rigid body site fraction.
-   * - RBR\ :math:`\scriptstyle T_0`\ \ :math:`\scriptstyle U_0`\ \ :math:`\scriptstyle U_1`\  (example: ``RBRT11``)
-     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle T_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle U_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle U_1`\  is one of the characters 1, 2, 3, A or B.
+   * - RBR\ :math:`\scriptstyle V_0`\ \ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\  (example: ``RBRT11``)
+     - Residue rigid body group disp. param.; where \ :math:`\scriptstyle V_0`\  is one of the characters T, L or S and \ :math:`\scriptstyle W_0`\  is one of the characters 1, 2, 3, A or B and \ :math:`\scriptstyle W_1`\  is one of the characters 1, 2, 3, A or B.
    * - RBRU
      - Residue rigid body group Uiso param.
    * - RBSAtNo
      - Atom number for spinning rigid body.
-   * - RBSO\ :math:`\scriptstyle S`\  (example: ``RBSOa``)
-     - Spinning rigid body orientation parameter \ :math:`\scriptstyle S`\ ; where \ :math:`\scriptstyle S`\  is one of the characters a, i, j or k.
+   * - RBSO\ :math:`\scriptstyle U`\  (example: ``RBSOa``)
+     - Spinning rigid body orientation parameter \ :math:`\scriptstyle U`\ ; where \ :math:`\scriptstyle U`\  is one of the characters a, i, j or k.
    * - RBSP\ :math:`\scriptstyle M`\  (example: ``RBSPx``)
      - Spinning rigid body \ :math:`\scriptstyle M`\  position parameter; where \ :math:`\scriptstyle M`\  is one of the characters x, y or z.
    * - RBSShRadius
      - Spinning rigid body shell radius.
-   * - RBSShC\ :math:`\scriptstyle V`\  (example: ``RBSShC1``)
-     - Spinning rigid body sph. harmonics term; where \ :math:`\scriptstyle V`\  is one of the characters 1, -, 2 or 0 ,, 1, -, 2 or 0.
+   * - RBSShC\ :math:`\scriptstyle X`\  (example: ``RBSShC1``)
+     - Spinning rigid body sph. harmonics term; where \ :math:`\scriptstyle X`\  is one of the characters 1, -, 2 or 0 ,, 1, -, 2 or 0.
    * - constr\ :math:`\scriptstyle G`\  (example: ``constr10``)
      - Generated degree of freedom from constraint; where \ :math:`\scriptstyle G`\  is one or more digits (0, 1,... 9).
    * - nv-(.+)
@@ -159,20 +167,20 @@
      - ZigZag/Block min location.
    * - Tmax
      - ZigZag/Block max location.
-   * - \ :math:`\scriptstyle R`\ max (example: ``Xmax``)
-     - ZigZag/Block max value for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
-   * - \ :math:`\scriptstyle R`\ sin (example: ``Xsin``)
-     - Sin position wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
-   * - \ :math:`\scriptstyle R`\ cos (example: ``Xcos``)
-     - Cos position wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle T`\ max (example: ``Xmax``)
+     - ZigZag/Block max value for \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle T`\ sin (example: ``Xsin``)
+     - Sin position wave for \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
+   * - \ :math:`\scriptstyle T`\ cos (example: ``Xcos``)
+     - Cos position wave for \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
    * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ sin (example: ``U11sin``)
      - Sin thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
    * - U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ cos (example: ``U11cos``)
      - Cos thermal wave for U\ :math:`\scriptstyle N_0`\ \ :math:`\scriptstyle N_1`\ ; where \ :math:`\scriptstyle N_0`\  is one of the characters 1, 2 or 3 and \ :math:`\scriptstyle N_1`\  is one of the characters 1, 2 or 3.
-   * - M\ :math:`\scriptstyle R`\ sin (example: ``MXsin``)
-     - Sin mag. moment wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
-   * - M\ :math:`\scriptstyle R`\ cos (example: ``MXcos``)
-     - Cos mag. moment wave for \ :math:`\scriptstyle R`\ ; where \ :math:`\scriptstyle R`\  is one of the characters X, Y or Z.
+   * - M\ :math:`\scriptstyle T`\ sin (example: ``MXsin``)
+     - Sin mag. moment wave for \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
+   * - M\ :math:`\scriptstyle T`\ cos (example: ``MXcos``)
+     - Cos mag. moment wave for \ :math:`\scriptstyle T`\ ; where \ :math:`\scriptstyle T`\  is one of the characters X, Y or Z.
    * - PDFpos
      - PDF peak position.
    * - PDFmag
@@ -227,8 +235,8 @@
      - Bragg peak sigma.
    * - PkGam
      - Bragg peak gamma.
-   * - e\ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\  (example: ``e11``)
-     - strain tensor e\ :math:`\scriptstyle W_0`\ \ :math:`\scriptstyle W_1`\ ; where \ :math:`\scriptstyle W_0`\  is one of the characters 1 or 2 and \ :math:`\scriptstyle W_1`\  is one of the characters 1 or 2.
+   * - e\ :math:`\scriptstyle Y_0`\ \ :math:`\scriptstyle Y_1`\  (example: ``e11``)
+     - strain tensor e\ :math:`\scriptstyle Y_0`\ \ :math:`\scriptstyle Y_1`\ ; where \ :math:`\scriptstyle Y_0`\  is one of the characters 1 or 2 and \ :math:`\scriptstyle Y_1`\  is one of the characters 1 or 2.
    * - Dcalc
      - Calc. d-spacing.
    * - Back
@@ -241,14 +249,14 @@
      - phase weight fraction.
    * - alpha
      - TOF profile term.
-   * - alpha-\ :math:`\scriptstyle X`\  (example: ``alpha-0``)
-     - Pink profile term; where \ :math:`\scriptstyle X`\  is one of the characters 0 or 1.
-   * - beta-\ :math:`\scriptstyle Y`\  (example: ``beta-0``)
-     - TOF/Pink profile term; where \ :math:`\scriptstyle Y`\  is one of the characters 0, 1 or q.
-   * - sig-\ :math:`\scriptstyle Z`\  (example: ``sig-0``)
-     - TOF profile term; where \ :math:`\scriptstyle Z`\  is one of the characters 0, 1, 2 or q.
-   * - dif\ :math:`\scriptstyle [`\  (example: ``difA``)
-     - TOF to d-space calibration; where \ :math:`\scriptstyle [`\  is one of the characters A, B or C.
+   * - alpha-\ :math:`\scriptstyle P`\  (example: ``alpha-0``)
+     - Pink profile term; where \ :math:`\scriptstyle P`\  is one of the characters 0 or 1.
+   * - beta-\ :math:`\scriptstyle Z`\  (example: ``beta-0``)
+     - TOF/Pink profile term; where \ :math:`\scriptstyle Z`\  is one of the characters 0, 1 or q.
+   * - sig-\ :math:`\scriptstyle a`\  (example: ``sig-0``)
+     - TOF profile term; where \ :math:`\scriptstyle a`\  is one of the characters 0, 1, 2 or q.
+   * - dif\ :math:`\scriptstyle b`\  (example: ``difA``)
+     - TOF to d-space calibration; where \ :math:`\scriptstyle b`\  is one of the characters A, B or C.
    * - C\ :math:`\scriptstyle G_0`\ ,\ :math:`\scriptstyle G_1`\  (example: ``C10,10``)
      - spherical harmonics preferred orientation coef.; where \ :math:`\scriptstyle G_0`\  is one or more digits (0, 1,... 9) and \ :math:`\scriptstyle G_1`\  is one or more digits (0, 1,... 9).
    * - Pressure

@@ -418,7 +418,10 @@ def import_generic(filename, readerlist, fmthint=None, bank=None):
             if bank is None:
                 rd.selections = []
             else:
-                rd.selections = [bank-1]
+                try:
+                    rd.selections = [i-1 for i in bank]
+                except TypeError:
+                    rd.selections = [bank-1]
             rd.dnames = []
             rd.ReInitialize()
             # Rewind file
@@ -426,9 +429,9 @@ def import_generic(filename, readerlist, fmthint=None, bank=None):
             if not rd.ContentsValidator(filename):
                 # Report error
                 G2fil.G2Print("Warning: File {} has a validation error, continuing".format(filename))
-            if len(rd.selections) > 1:
-                raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
-                                .format(filename,len(rd.selections)))
+            #if len(rd.selections) > 1:
+            #    raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
+            #                    .format(filename,len(rd.selections)))
 
             block = 0
             rdbuffer = {}
@@ -528,6 +531,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     except ValueError:
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
         G2fil.G2Print('Instrument parameters read:',reader.instmsg)
+    except TypeError:  # instprm is None, get iparms from reader
+        Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
@@ -929,21 +934,24 @@ class G2Project(G2ObjectWrapper):
             raise AttributeError("No file name to save to")
         SaveDictToProjFile(self.data, self.names, self.filename)
 
-    def add_powder_histogram(self, datafile, iparams, phases=[], fmthint=None,
-                                 databank=None, instbank=None):
-        """Loads a powder data histogram into the project.
-
-        Automatically checks for an instrument parameter file, or one can be
-        provided. Note that in unix fashion, "~" can be used to indicate the
-        home directory (e.g. ~/G2data/data.fxye).
+    def add_powder_histogram(self, datafile, iparams=None, phases=[],
+                                 fmthint=None,
+                                 databank=None, instbank=None, multiple=False):
+        """Loads a powder data histogram or multiple powder histograms 
+        into the project.
 
         Note that the data type (x-ray/CW neutron/TOF) for the histogram 
         will be set from the instrument parameter file. The instrument
         geometry is assumed to be Debye-Scherrer except for 
         dual-wavelength x-ray, where Bragg-Brentano is assumed. 
 
-        :param str datafile: The powder data file to read, a filename.
-        :param str iparams: The instrument parameters file, a filename.
+        :param str datafile: A filename with the powder data file to read.
+          Note that in unix fashion, "~" can be used to indicate the
+          home directory (e.g. ~/G2data/data.fxye).
+        :param str iparams: A filenme for an instrument parameters file, 
+            or a pair of instrument parameter dicts from :func:`load_iprms`.
+            This may be omitted for readers that provide the instrument 
+            parameters in the file. (Only a few importers do this.)
         :param list phases: A list of phases to link to the new histogram,
            phases can be references by object, name, rId or number.
            Alternately, use 'all' to link to all phases in the project. 
@@ -955,41 +963,54 @@ class G2Project(G2ObjectWrapper):
         :param int databank: Specifies a dataset number to read, if file contains 
           more than set of data. This should be 1 to read the first bank in 
           the file (etc.) regardless of the number on the Bank line, etc.
-          Default is None which means there should only be one dataset in the 
-          file. 
+          Default is None which means the first dataset in the file is read. 
+          When multiple is True, optionally a list of dataset numbers can 
+          be supplied here.
         :param int instbank: Specifies an instrument parameter set to read, if 
           the instrument parameter file contains more than set of parameters. 
           This will match the INS # in an GSAS type file so it will typically 
           be 1 to read the first parameter set in the file (etc.) 
           Default is None which means there should only be one parameter set 
           in the file.
-
+        :param bool multiple: If False (default) only one dataset is read, but if 
+          specified as True, all selected banks of data (see databank)
+          are read in. 
         :returns: A :class:`G2PwdrData` object representing
-            the histogram
+            the histogram, or if multiple is True, a list of :class:`G2PwdrData`
+            objects is returned.
         """
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
-        iparams = os.path.abspath(os.path.expanduser(iparams))
+        try:
+            iparams = os.path.abspath(os.path.expanduser(iparams))
+        except:
+            pass
         pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,bank=databank)
-        histname, new_names, pwdrdata = load_pwd_from_reader(
-                                          pwdrreaders[0], iparams,
+        if not multiple: pwdrreaders = pwdrreaders[0:1]
+        histlist = []
+        for r in pwdrreaders:
+            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparams,
                                           [h.name for h in self.histograms()],bank=instbank)
-        if histname in self.data:
-            G2fil.G2Print("Warning - redefining histogram", histname)
-        elif self.names[-1][0] == 'Phases':
-            self.names.insert(-1, new_names)
+            if histname in self.data:
+                G2fil.G2Print("Warning - redefining histogram", histname)
+            elif self.names[-1][0] == 'Phases':
+                self.names.insert(-1, new_names)
+            else:
+                self.names.append(new_names)
+            self.data[histname] = pwdrdata
+            self.update_ids()
+
+            if phases == 'all':
+                phases = self.phases()
+            for phase in phases:
+                phase = self.phase(phase)
+                self.link_histogram_phase(histname, phase)
+            histlist.append(self.histogram(histname))
+
+        if multiple:
+            return histlist
         else:
-            self.names.append(new_names)
-        self.data[histname] = pwdrdata
-        self.update_ids()
-
-        if phases == 'all':
-            phases = self.phases()
-        for phase in phases:
-            phase = self.phase(phase)
-            self.link_histogram_phase(histname, phase)
-
-        return self.histogram(histname)
+            return histlist[0]
 
     def clone_powder_histogram(self, histref, newname, Y, Yerr=None):
         '''Creates a copy of a powder diffraction histogram with new Y values.

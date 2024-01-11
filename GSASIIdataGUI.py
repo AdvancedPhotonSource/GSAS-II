@@ -2889,9 +2889,11 @@ class GSASII(wx.Frame):
         
         phasemenu = wx.Menu()
         item = menu.AppendSubMenu(phasemenu,'Phase as','Export phase or sometimes phases')
+        self.ExportNonSeq.append([menu,item.Id])
 
         powdermenu = wx.Menu()
         item = menu.AppendSubMenu(powdermenu,'Powder data as','Export powder diffraction histogram(s)')
+        self.ExportNonSeq.append([menu,item.Id])
         
         sasdmenu = wx.Menu()
         item = menu.AppendSubMenu(sasdmenu,'Small angle data as','Export small angle histogram(s)')

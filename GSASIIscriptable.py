@@ -1086,12 +1086,14 @@ class G2Project(G2ObjectWrapper):
         :param float Tstep: Step size in 2theta or deltaT/T (TOF) for simulated dataset. 
            Default is to compute this from Npoints.
         :param float wavelength: Wavelength for CW instruments, overriding the value
-           in the instrument parameters file if specified.
+           in the instrument parameters file if specified. For single-wavelength histograms, 
+           this should be a single float value, for K alpha 1,2 histograms, this should 
+           be a list or tuple with two values. 
         :param float scale: Histogram scale factor which multiplies the pattern. Note that
            simulated noise is added to the pattern, so that if the maximum intensity is
-           small, the noise will mask the computed pattern. The scale 
-           needs to be a large number for CW neutrons.
-           The default, None, provides a scale of 1 for x-rays and TOF; 10,000 for CW neutrons
+           small, the noise will mask the computed pattern. The scale needs to be a large 
+           number for neutrons.
+           The default, None, provides a scale of 1 for x-rays, 10,000 for CW neutrons
            and 100,000 for TOF.
         :param list phases: Phases to link to the new histogram. Use proj.phases() to link to
            all defined phases.
@@ -1099,7 +1101,7 @@ class G2Project(G2ObjectWrapper):
            default is None, corresponding to load the first bank.
         :param int Νpoints: the number of data points to be used for computing the 
             diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
-            both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
+            both Npoints and Tstep. Due to roundoff the actual number of points used may differ
             by +-1 from Npoints. Must be below 25,000. 
 
         :returns: A :class:`G2PwdrData` object representing the histogram
@@ -1181,6 +1183,24 @@ class G2Project(G2ObjectWrapper):
             pwdrdata['Sample Parameters']['Scale'][0] = 10000.
         elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNT'):
             pwdrdata['Sample Parameters']['Scale'][0] = 100000.
+        if wavelength is not None:
+            if 'Lam1' in pwdrdata['Instrument Parameters'][0]:
+                # have alpha 1,2 here
+                try:
+                    pwdrdata['Instrument Parameters'][0]['Lam1'][0] = float(wavelength[0])
+                    pwdrdata['Instrument Parameters'][0]['Lam1'][1] = float(wavelength[0])
+                    pwdrdata['Instrument Parameters'][0]['Lam2'][0] = float(wavelength[1])
+                    pwdrdata['Instrument Parameters'][0]['Lam2'][1] = float(wavelength[1])
+                except:
+                    raise G2ScriptException("add_simulated_powder_histogram Error: only one wavelength with alpha 1+2 histogram?")
+            elif 'Lam' in pwdrdata['Instrument Parameters'][0]:
+                try:
+                    pwdrdata['Instrument Parameters'][0]['Lam'][0] = float(wavelength)
+                    pwdrdata['Instrument Parameters'][0]['Lam'][1] = float(wavelength)
+                except:
+                    raise G2ScriptException("add_simulated_powder_histogram Error: invalid wavelength?")
+            else:
+                raise G2ScriptException("add_simulated_powder_histogram Error: can't set a wavelength for a non-CW dataset")
         self.data[histname] = pwdrdata
         self.update_ids()
 

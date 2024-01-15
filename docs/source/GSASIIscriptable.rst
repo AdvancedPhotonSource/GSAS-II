@@ -172,15 +172,18 @@ method                                                      Use
 ========================================================    ===============================================================================================================
 :meth:`~GSASIIscriptable.G2Phase.set_refinements`           Provides a mechanism to set values and refinement flags for the phase. See :ref:`Phase_parameters_table` 
                                                             for more details. This information also can be supplied within a call
-							    to :meth:`~GSASIIscriptable.G2Project.do_refinements` 
+                                                            to :meth:`~GSASIIscriptable.G2Project.do_refinements` 
                                                             or :meth:`~GSASIIscriptable.G2Project.set_refinement`.
 :meth:`~GSASIIscriptable.G2Phase.clear_refinements`         Unsets refinement flags for the phase. 
 :meth:`~GSASIIscriptable.G2Phase.set_HAP_refinements`       Provides a mechanism to set values and refinement flags for parameters specific to both this phase and 
                                                             one of its histograms. See :ref:`HAP_parameters_table`. This information also can be supplied within 
-                                                            a call to :meth:`~GSASIIscriptable.G2Project.do_refinements` or :meth:`~GSASIIscriptable.G2Project.set_refinement`.
+                                                            a call to :meth:`~GSASIIscriptable.G2Project.do_refinements` or
+                                                            :meth:`~GSASIIscriptable.G2Project.set_refinement`.
 :meth:`~GSASIIscriptable.G2Phase.clear_HAP_refinements`     Clears refinement flags specific to both this phase and one of its histograms.
-      :meth:`~GSASIIscriptable.G2Phase.getHAPvalues`        Returns values of parameters specific to both this phase and one of its histograms.
+:meth:`~GSASIIscriptable.G2Phase.getHAPvalues`              Returns values of parameters specific to both this phase and one of its histograms.
 :meth:`~GSASIIscriptable.G2Phase.copyHAPvalues`             Copies HAP settings between from one phase/histogram and to other histograms in same phase.
+:meth:`~GSASIIscriptable.G2Phase.HAPvalue`                  Sets or retrieves values for some of the parameters specific to both this phase and 
+                                                            one or more of its histograms. 
 :meth:`~GSASIIscriptable.G2Phase.atoms`                     Returns a list of atoms in the phase
 :meth:`~GSASIIscriptable.G2Phase.atom`                      Returns an atom from its label 
 :meth:`~GSASIIscriptable.G2Phase.add_atom`                  Adds an atom to a phase

@@ -4685,20 +4685,21 @@ class G2Phase(G2ObjectWrapper):
 
         :returns: the value of the parameter, when argument newValue is not specified.
 
-        example::
+        .. seealso::
+            :meth:`~G2Phase.set_HAP_refinements`
+
+        Example::
 
             val = ph0.HAPvalue('Scale')
             val = ph0.HAPvalue('Scale',targethistlist=[0])
             ph0.HAPvalue('Scale',2.5)
 
-          The first command returns the phase fraction if only one histogram 
-          is associated with the current phase, or raises an exception. 
-          The second command returns the phase fraction from the first histogram 
-          associated with the current phase. The third command sets the phase 
-          fraction for all histograms associated with the current phase.
+        The first command returns the phase fraction if only one histogram 
+        is associated with the current phase, or raises an exception. 
+        The second command returns the phase fraction from the first histogram 
+        associated with the current phase. The third command sets the phase 
+        fraction for all histograms associated with the current phase.
 
-        .. seealso::
-            :meth:`~G2Phase.set_HAP_refinements`
         """
         doSet = not newValue is None
 
@@ -4761,7 +4762,7 @@ class G2Phase(G2ObjectWrapper):
             copied. The default is None, which causes all items
             to be copied. 
 
-        example::
+        Example::
 
             HAPdict = ph0.getHAPvalues(0)
             ph1.setHAPvalues(HAPdict,use=['HStrain','Size'])

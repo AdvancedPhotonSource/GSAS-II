@@ -8,14 +8,19 @@
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import re
+import copy
+import random as ran
+import sys
+import os
 import numpy as np
 import numpy.linalg as nl
 import GSASIIspc as G2spc
 import GSASIIIO as G2IO
+import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
+submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
 pseudosym = 'pseudosym/nph-pseudosym'
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
@@ -251,7 +256,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
 def subBilbaoCheckLattice(spgNum,cell,tol=5):
     '''submit a unit cell to  Bilbao PseudoLattice
     '''
-    psSite = "http://www.cryst.ehu.es/cgi-bin/cryst/programs/pseudosym/nph-pseudolattice"
+    psSite = bilbaoSite + "pseudosym/nph-pseudolattice"
     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
@@ -279,7 +284,13 @@ def parseBilbaoCheckLattice(page):
             continue
         found.append((acell,cellmat))
     return found
-                
+
+GetStdSGsetCite = '''Using Bilbao Crystallographic Server utility IDENTIFY GROUP. Please cite:
+Symmetry-Based Computational Tools for Magnetic Crystallography,
+J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and 
+M.I. Aroyo, Annu. Rev. Mater. Res. 2015. 45,217-48.
+doi: 10.1146/annurev-matsci-070214-021008'''
+
 def GetStdSGset(SGData=None, oprList=[]):
     '''Determine the standard setting for a space group from either
     a list of symmetry operators or a space group object using the 
@@ -300,7 +311,7 @@ def GetStdSGset(SGData=None, oprList=[]):
       Note that the new cell is given by G2lat.TransformCell([a,b,...],xformM)
     '''
     import re
-    Site='https://www.cryst.ehu.es/cgi-bin/cryst/programs/checkgr.pl'
+    Site = bilbaoSite + 'checkgr.pl'
 
     if not bool(oprList) ^ bool(SGData):
         raise ValueError('GetStdSGset: Muat specify oprList or SGData and not both')
@@ -308,15 +319,12 @@ def GetStdSGset(SGData=None, oprList=[]):
         SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(SGData)
         oprList = [x.lower() for x in SymOpList]
 
-    print('''
-      Using Bilbao Crystallographic Server utility IDENTIFY GROUP. Please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: 10.1146/annurev-matsci-070214-021008
-    ''')
+    print('\n'+GetStdSGsetCite+'\n')
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
     page = G2IO.postURL(Site,postdict)
+    if not page:
+        print('error:','No response')
+        return [None,None,None,None]
 
     # scrape the HTML output for the new space group # and the xform info
     try:
@@ -332,23 +340,194 @@ def GetStdSGset(SGData=None, oprList=[]):
     xformM = np.array([[float(i) for i in m.split()[:3]] for m in mat])
     return sgnum, sgnam, xformM.T, offsetV
 
-def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None):
+def GetSupergroup(SGnum,dlg=None):
+    '''Get supergroups for a space group in a standard setting 
+    using the Bilbao Crystallographic Server utility "Minimal 
+    Supergroups of Space Groups" (minsup)
+
+    This routine does not work properly yet and 
+    is not currently implemented in GSAS-II.
+
+    :param int SGnum: a space group number (1-230)
+
+    :returns: a list of supergroups where each entry in the list contains 
+      [sgnum, sgnam, index, xtype, url, xformlist) where: 
+
+      * sgnum is the space group number, 
+      * sgnam is the space group short H-M name (no spacing, not GSAS-II usage)
+      * index (int) is the change in asymmetric unit size
+      * xtype (char) is the transformation type (t,k) 
+      * url is a link to compute the subgroup transformations
+      * xformlist is a list containing all the subgroup transformations. 
+        xformlist contains [(M,V), (M,V),... ]   where:
+
+        * M is 3x3 numpy matrix relating the old cell & coordinates to the new
+        * V is the vector of offset to be applied to the coordinates
+
+        Note that the new cell is given by G2lat.TransformCell([a,b,...],M)
+    '''
+    import re
+    Site = bilbaoSite + 'nph-minsup'
+    if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
+    out = G2IO.postURL(Site,{'gnum':f'{SGnum:}'})
+    if not out: return None
+        
+    if dlg: dlg.Update(1,newmsg='Initial table of supergroups returned')
+    lines = out.split('HM symbol')[1].split('/table')[0].split('<tr')
+    xforms = []
+    for l in lines[1:]:
+        ls = l.split('<td>')
+        if len(ls) < 8: continue
+        spg = re.sub(r'</?[a-zA-Z]+>','',ls[3])
+        try:
+            spgnum = int(ls[4].split('>')[1].split('<')[0])
+        except:
+            spgnum = 0
+        try:
+            index = int(re.sub(r'</?[a-zA-Z]+>','',ls[5]))
+        except:
+            index = 0
+        xformtype = re.sub(r'</?[a-zA-Z]+>','',ls[6])
+        click = l.split('click')[1].split('value="')[1].split('"')[0]
+        xforms.append([spgnum,spg,index,xformtype,click])
+
+    if dlg: dlg.SetRange(2+len(xforms))
+    for i,line in enumerate(xforms):
+        click = line[-1]
+        print(SGnum,click)
+        out1 = G2IO.postURL(Site,{'gnum':SGnum,'show':'show','click':click})
+        if not out1: return None
+        #open(f'/tmp/{click}.html','w').write(out1)
+        #open(f'/tmp/last.html','w').write(out1)
+        if dlg: dlg.Update(2+i,newmsg=f'processing {line[1]}, #{i+1} of {len(xforms)}')
+        mvlist = []
+        for s in [i.split('</pre>')[0] for i in out1.split('<pre>')[1::2]]:
+            mvc = np.array(s.split()).reshape(3,4) 
+            mc,vc = mvc[:,:-1],mvc[:,-1]  # separate matrix & vector
+            # cast as float if possible
+            try:
+                m = np.array([float(eval(i)) for i in mc.flatten()]).reshape(3,3)
+            except:
+                m = mc
+            try:
+                v = np.array([float(eval(i)) for i in vc.flatten()])
+            except:
+                v = vc
+            mvlist.append((m,v))
+        line.append(mvlist)
+    return xforms
+
+def applySym(xform,cell):
+    '''Determine a unit cell according to a supergroup transformation
+    computed with the Bilbao Crystallographic Server utility "Minimal 
+    Supergroups of Space Groups" (minsup) utility. 
+
+    The required symmetry is applied to the cell and the cell is 
+    scaled so that the unit cell volume is unchanged beyond the 
+    scaling in the transformation matrix. 
+
+    This is not used in GSAS-II at present. Some additional
+    thought is likely needed to to drop unit cells that are too 
+    far from the required lattice symmetry.
+    
+    :param list xform: a list of transformations from :func:`GetSupergroup`
+    :param list cell: the unit cell to be transformmed. 
+
+    :returns: a list of two cells for each transformation matrix in xform. 
+      The first cell in each pair is the scaled cell where lattice 
+      symmetry has been applied, while the second cell is the direct 
+      transform of the input cell. 
+    '''
+    
+    SGData = G2spc.SpcGroup(G2spc.spgbyNum[xform[0]])[1]
+    v = G2lat.calc_V(G2lat.cell2A(cell[:6])) # current cell volume
+    gmat = G2lat.cell2Gmat(cell[:6])[0] # reciprocal cell tensor
+    
+    cellsList = []
+    for x in reversed(xform[-1]):
+        m = x[0]
+        vrat = abs(np.linalg.det(m)) # size ratio for new cell
+        newg = G2lat.prodMGMT(gmat,m)  # xform the inverse cell & get the A vector
+        origA = G2lat.Gmat2A(newg)
+        A = copy.copy(origA)
+        print('raw',[f"{i:.4f}" for i in G2lat.A2cell(A)])
+        # apply lattice symmetry to A
+        if SGData['SGLaue'] in ['2/m',]:
+            if SGData['SGUniq'] == 'a':
+                newA = [A[0],A[1],A[2],0,0,A[5]]
+            elif SGData['SGUniq'] == 'b':
+                newA = [A[0],A[1],A[2],0,A[4],0]
+            else:
+                newA = [A[0],A[1],A[2],A[3],0,0]
+        elif SGData['SGLaue'] in ['mmm',]:
+            newA = [A[0],A[1],A[2],0,0,0]
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            A[0] = (A[0]+A[1])/2.
+            newA = [A[0],A[0],A[2],0,0,0]
+        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+            A[0] = (A[0]+A[1]+A[3])/3.
+            newA = [A[0],A[0],A[2],A[0],0,0]
+        elif SGData['SGLaue'] in ['3R', '3mR']:
+            A[0] = (A[0]+A[1]+A[2])/3.
+            A[3] = (A[3]+A[4]+A[5])/3.
+            newA = [A[0],A[0],A[0],A[3],A[3],A[3]]
+        elif SGData['SGLaue'] in ['m3m','m3']:
+            newA = [A[0],A[0],A[0],0,0,0]
+        else:
+            newA = copy.copy(A)
+        # scale the symmetry-enforced A unit cell to match the expected size
+        vadj = (G2lat.calc_V(newA)*vrat/v)**(2/3)
+        scalA = [i*vadj for i in newA]
+        cellsList.append((
+            list(G2lat.A2cell(scalA)) + [G2lat.calc_V(scalA)],
+            list(G2lat.A2cell(origA)) + [G2lat.calc_V(origA)],
+            ))
+    return cellsList
+
+BilbaoSymSearchCite = '''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
+and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
+Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
+226(2), 186-196 DOI:10.1524/zkri.2011.1321.'''
+
+def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
     '''Perform a search for a supergroup consistent with a phase
     using the Bilbao Pseudosymmetry search (PSEUDO) program, see
     C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
     and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
     Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
     226(2), 186-196 DOI:10.1524/zkri.2011.1321.
+
+    The phase must be in a standard setting. 
+
+    :param int sgnum: A space group number (1-230)
+    :param dict phase: a GSAS-II phase object (see 
+        :ref:`Phase Information<Phase_Information>`). Note that the 
+        phase must be in a standard setting (see :func:`GetStdSGset`).
+    :param float maxdelta: Allowed distance tolerance in pseudosym search (default 2) 
+    :param float angtol: Allowed tolerance for cell angles, used for finding 
+      possible unit cells in from triclinic or monoclinic cells, ignored 
+      otherwise. Defaults to None, which will cause 5 degrees to be used. 
+    :param list pagelist: a list to contain references to the text of web
+        pages created by the Bilbao web site. If None (default) the web 
+        pages are not saved.
+    :returns: valsdict,csdict,rowdict,savedcookies where the contents
+      will change depending on the space group, but valsdict
+      will contain values to be used in the next call to Bilbao and 
+      savedcookies will contain a cookie needed for this as well. 
+        
+      * For monoclinic and triclinic unit cells: csdict will be None and 
+        rowdict (rowlist) will be a list containing unit cells of higher 
+        symmetry matching the input unit cell to be used for searching
+        for supergroups. 
+        
+      * For higher symmetry unit cells, csdict will be used to select 
+        which entries will be used in the next search and rowdict 
+        contain possible supergroup settings.
     '''
     
-    print('''
-      Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
-      program; Please cite:
-      C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
-      and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
-      Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
-      226(2), 186-196 DOI:10.1524/zkri.2011.1321.
-    ''')
+    print('\n'+BilbaoSymSearchCite+'\n')
 
     postdict = {
         "formulae":'',
@@ -370,14 +549,14 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None):
         "x4":'0',
         "y4":'0',
         "z4":'0',
+        "angtol":'5',
         "submit":'Show',}
 
     postdict["maxdelta"] = f'{maxdelta:.1f}'
-    if angtol: # and monoclinic/triclinic
-        postdict["what"] = 'minsup'
-        postdict["angtol"] = f'{angtol:.1f}'
-    else:
-        postdict["angtol"] = '5'
+    if sgnum <= 14: 
+        postdict["what"] = 'pseudocell'
+        if angtol: # and monoclinic/triclinic
+            postdict["angtol"] = f'{angtol:.1f}'
     postdict["stru"] = f'# Space Group ITA number\n{sgnum}\n'
     postdict["stru"] += '# Lattice parameters\n'
     postdict["stru"] += ' '.join([f"{i}" for i in phase['General']['Cell'][1:7]])
@@ -386,15 +565,46 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None):
     for i,atom in enumerate(phase['Atoms'],1):
         el = ''.join([i for i in atom[ct] if i.isalpha()])   # strip to element symbol
         postdict["stru"] += f"{el:4s} {i} - {atom[cx]:.5f} {atom[cx+1]:.5f} {atom[cx+2]:.5f}\n"
-        
+#    if GSASIIpath.GetConfigValue('debug'): print(postdict["stru"])
     savedcookies = {}
     page0 = G2IO.postURL(bilbaoSite+pseudosym,postdict,getcookie=savedcookies)
-    open(f'/tmp/pseudosym0.html','w').write(page0)
-
-    # scan output for values to be used next
+    if not page0: return None
+    if pagelist is not None:
+        pagelist[0] = page0
+    return scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
+        
+def scanBilbaoSymSearch1(page0,postdict):
+    #open(f'/tmp/pseudosym0.html','w').write(page0)
     valsdict = {} # base for all supergroups 
     csdict = {}   # supergroups w/default selection value
     rowdict = {}  # information in table row for each supergroup
+    if postdict["what"] == 'pseudocell':
+        form = page0.split('Lattice Pseudosymmetry')[1].split('<form')[1].split('</form')[0]
+        valsdict["id"] = form.split('name="id"')[1].split('value="')[1].split('"')[0]
+        valsdict["tol"] = postdict["angtol"]
+        valsdict["idcell"] = form.split('name="idcell"')[1].split('value="')[1].split('"')[0]
+        valsdict["what"] = 'minsup-lattice'
+        valsdict["formulae"] = postdict["formulae"]
+        valsdict["maxdelta"] = postdict["maxdelta"]
+        valsdict["submit"] = 'Show'
+        rowList = []
+        for line in form.split('<tr')[2:]:
+            items = line.split('<td')
+            # parse table row
+            row = [items[2].split('value=')[1].split('"')[1]]  # "lattice" #
+            row.append(items[3].split('>')[1].split('<')[0]) # lattice type
+            row += items[4].split('<pre>')[1].split('<')[0].split('\n') # ideal & as xformed lattice
+            row.append(np.array([
+                float(eval(i)) for i in 
+                    items[5].split('<pre>')[1].split('<')[0]
+                    .replace('[','').replace(']','').split()
+                    ]).reshape(3,3))                
+            row.append(items[6].split('>')[1].split('<')[0]) # strain
+            row.append(items[7].split('>')[1].split('<')[0]) # tol
+            rowList.append(row)
+        return [valsdict,None,rowList]
+            
+    # scan output for values to be used next
     for row in page0.split('<input'):
         field = row.split('>')[0]
         if 'name=' not in field: continue
@@ -422,23 +632,240 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None):
                 else:
                     valsdict[name] = value
                 break
-    return valsdict,csdict,rowdict,savedcookies
-            
-def BilbaoSymSearch2(valsdict,csdict,savedcookies):
+    return [valsdict,csdict,rowdict]
+
+def BilbaoLowSymSea1(valsdict,row,savedcookies,pagelist=None):
+    '''Using a candidate higher symmetry unit cell from 
+    :func:`BilbaoSymSearch1` for monoclinic and triclinic cells, 
+    create a list of possible supergroups. 
+    Those that match the possible lattice types
+    are marked for potential follow-up to see if coordinates can be
+    are consistent with that symmetry. 
+    
+    :returns: latticeList,valsdict,tbl where 
+    
+     * latticeList: a list of the possible Bravais lattice types
+     * valsdict: a dict with values needed for the next web form
+     * tbl a list of supergroups with four values per entry, 
+         True/False if the lattice type matches, 
+         a label with the space group number and the index (sg@ind),
+         the space group number and a lattice type (cell & centering)
+    '''
+    postdict = {}
+    postdict.update(valsdict)
+    num = row[0]
+    if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num}")
+    postdict['lattice'] = num
+    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+                                     usecookie=savedcookies,timeout=90.)
+    if not page1: return None,None,None,None
+
+    lbl = f'cell{num}'
+    if pagelist is not None:
+        pagelist[lbl] = page1
+    if 'Possible lattices:' not in page1: return 3*[None]
+    if '<form' not in page1: return 3*[None]
+    latticeList = page1.split('Possible lattices:')[1].split('<')[0].strip().split(',')
+    form = page1.split('<form')[1].split('</form')[0]
+    valsdict = {}
+    for key in ('id','polares','idcell','what','formulae','maxdelta','lattice','subcosets'):
+        valsdict[key] = form.split(f'name={key}')[1].split('"')[1]
+    tbl = []
+    for l in form.split('<tr'):
+        line = l.split('</tr')[0]
+        if 'super_numind' not in line: continue
+        items = line.split('<td')
+        super_numind = items[2].split('value=')[1].split('>')[0]
+        super_numind = super_numind.replace('checked','').strip()
+        sg = items[3].split('center">')[1].split('</td')[0]
+        sg = sg.replace('<i>','').replace('</i>','')
+        sg = sg.replace('<sub>','').replace('</sub>','')
+        lattice = items[5].split('>')[1].split('<')[0]
+        tbl.append([(lattice in latticeList),super_numind,sg,lattice])
+    return lbl,latticeList,valsdict,tbl
+
+def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
+    '''For a selected cell & supergroup from :func:`BilbaoLowSymSea1`, 
+    see if the coordinates are consistent with the supergroup
+    '''
+    postdict = {}
+    postdict.update(valsdict)
+    postdict['super_numind'] = row[1]
+    if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num} supergroup {row[1]}")
+    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+                                     usecookie=savedcookies,timeout=90.)
+    if page1 is None: return '',None
+    lbl = f'cell{num}_{row[1]}'
+    if pagelist is not None: 
+        pagelist[lbl] = page1
+    superdat = page1.split('Idealized structure (supergroup setting')
+    if len(superdat) >= 2:
+        return lbl,superdat[1].split('<pre>')[1].split('</pre')[0].replace('\t',' ').split('\n')
+    return lbl,None
+
+def BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
+                         pagelist=None,dlg=None,ophsnam='?'):
+    '''Perform a supergroup search from the list of identified supergroups 
+    found in BilbaoSymSearch1 (typically where the cell is higher symmetry 
+    than monoclinic or triclinic; see :func:`BilbaoLowSymSea1` and
+    :func:`BilbaoLowSymSea2` for the low symmetry case.) 
+    '''
     structures = {}
-    for num in csdict:
+    for i,num in enumerate(sorted(csdict)):
+        if dlg:
+            GoOn = dlg.Update(i+1,newmsg=
+                        f'Searching for supergroup(s) consistent with phase {ophsnam}'+
+                            f'\nProcessing supergroup #{num}')
+            if not GoOn: return {}
         if csdict[num]:
-            #print(f"processing {num}")
+            if GSASIIpath.GetConfigValue('debug'): print(f"processing {num}")
             postdict = {}
             postdict.update(valsdict)
             postdict['cs'] = num
-            page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,usecookie=savedcookies)
-            superdat = page1.split('Idealized structure (supergroup setting')
-            if len(superdat) >= 2:
-                structures[num] = superdat[1].split('<pre>')[1].split('</pre'
+            page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+                                     usecookie=savedcookies,timeout=90.)
+            if pagelist is not None:
+                pagelist[num] = page1
+            if page1 is None:
+                structures[num] = "No response, likely web timeout"
+            else:
+                searchRes = page1.split('Case #')[1].split('/table')[0]         
+                superdat = page1.split('Idealized structure (supergroup setting')
+                if len(superdat) >= 2:
+                    structures[num] = superdat[1].split('<pre>')[1].split('</pre'
                                     )[0].replace('\t',' ').split('\n')
+                elif '>tol' in searchRes: 
+                    structures[num] = f"coordinates inconsistent with symmetry {rowdict[num][0]}"
     return structures
 
+def find2SearchAgain(pagelist,req='@'):
+    '''Scan through web pages from supergroup tests and pull out 
+    where coordinates pass the tests to be potentially used to search 
+    entries to be used to search for a higher symmetry setting.
+    '''
+    dicts = {}
+    for key,page in pagelist.items():
+        if key == 0: continue
+        if req and req not in key: continue
+        if page is None: continue
+        if '<form' not in page: continue
+        if 'Continue to search for pseudosymmetry' not in page: continue
+        for f in page.split('<form')[1:]:
+            if 'Continue to search for pseudosymmetry' not in f: continue
+            d = {}
+            for field in f.split('<input')[1:]:
+                k = field.split('name=')[1].split()[0]
+                if 'value="' in field:
+                    v = field.split('value="')[1].split('"')[0]
+                else:
+                    v = field.split('value=')[1].split('>')[0]
+                d[k] = v
+            k = key
+            i = 0
+            while k in dicts:
+                i += 1
+                k = key + '_' + str(i)
+            dicts[k] = d
+    return dicts
+
+def BilbaoReSymSearch(key,postdict,pagelist=None):
+    '''Perform a supergroup search on a result from previously 
+    identified supergroup that was found in :func:`find2SearchAgain`
+    from the returned web pages. Provides results about the same as from 
+    :func:`BilbaoSymSearch1`
+
+    :returns: valsdict,csdict,rowdict,savedcookies where valsdict
+      will contain values to be used in the next call to Bilbao and 
+      savedcookies will contain a cookie needed for this as well. 
+
+        csdict will be used to select 
+        which entries will be used in the next search and rowdict 
+        contains possible supergroup settings.
+
+    '''
+    savedcookies = {}
+    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,timeout=90.,getcookie=savedcookies)
+    if pagelist is not None:
+        pagelist[key] = page1
+    valsdict,csdict,rowdict = scanBilbaoSymSearch1(page1,postdict)
+    return valsdict,csdict,rowdict,savedcookies
+#    csdict1 = {key+'_'+i:f for i,f in csdict.items()}
+#    rowdict1 = {key+'_'+i:f for i,f in rowdict.items()}
+#    return valsdict,csdict1,rowdict1,savedcookies
+
+def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
+    if newData is None:
+        print(phlbl,'empty structure')
+        return
+    elif type(newData) is str:
+        msgs[phlbl] = newData
+        return
+    # create a new phase
+    try: 
+        sgnum = int(newData[0].strip())
+        sgsym = G2spc.spgbyNum[sgnum]
+        sgname = sgsym.replace(" ","")
+    except:
+        print(f'Problem with processing record:\n{newData}')
+        return
+    newPhase = copy.deepcopy(phData)
+    newPhase['ranId'] = ran.randint(0,sys.maxsize),
+    if 'magPhases' in phData: del newPhase['magPhases']
+    generalData = newPhase['General']
+    generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+    generalData['Cell'][1:7] = [float(i) for i in newData[1].split()]
+    generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    Atoms = newPhase['Atoms'] = []
+    ncomp = {}
+    for a in newData[3:]:
+        if not a.strip(): continue
+        try: 
+            elem,n,wyc,x,y,z = a.split()
+            atom = []
+            atom.append(elem+n)
+            atom.append(elem)
+            atom.append('')
+            for i in x,y,z: atom.append(float(i))
+            atom.append(1.0)
+            SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
+            atom.append(SytSym)
+            atom.append(Mult)
+            if atom[1] in ncomp:
+                ncomp[atom[ct]] += Mult
+            else:
+                ncomp[atom[ct]] = Mult
+            atom.append('I')
+            atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+            atom.append(ran.randint(0,sys.maxsize))
+            Atoms.append(atom)
+        except:
+            print(f'error in atom line {a}')
+        #finally: pass
+    phData.update(newPhase)
+    # save new file
+    G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_super_'+sgname+'.gpx'
+    while os.path.exists(G2frame.GSASprojectfile):
+        s = re.split(r'_([\d]+)\.gpx',G2frame.GSASprojectfile)
+        if len(s) == 1:
+            G2frame.GSASprojectfile = os.path.splitext(G2frame.GSASprojectfile)[0] + '_1.gpx'
+        else:
+            num = 10
+            try:
+                num = int(s[1]) + 1
+            except:
+                pass
+            G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
+    G2IO.ProjFileSave(G2frame)
+    # get transformed contents
+    nvol = generalData['Cell'][7]
+    n = ', '.join([f'{i}:{j}' for i,j in ncomp.items()])
+    msgs[phlbl] = (
+        f"space group {sgsym}: project file created as {G2frame.GSASprojectfile}" +
+        f"\n  after transform, unit cell contents/volume:\n {n}, {nvol:.2f} A^3"
+        )
+    return G2frame.GSASprojectfile
 
 def test():
     '''This tests that routines in Bilbao Crystallographic Server 

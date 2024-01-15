@@ -4654,6 +4654,88 @@ class G2Phase(G2ObjectWrapper):
             d[1][1] = float(val2)
             if LGmix is not None: d[1][2] = float(LGmix)            
 
+    def HAPvalue(self, param=None, newValue=None, targethistlist='all'):
+        """Retrieves or sets individual HAP parameters for one histogram or 
+        multiple histograms.
+
+
+        :param str param: is a parameter name, which can be 'Scale' (phase 
+          fraction), 'Use', 'Extinction' or 'LeBail'. 
+          If not specified or invalid
+          an exception is generated showing the list of valid parameters.
+          At present, these HAP parameters cannot be access with this function:
+          'Pref.Ori.', 'Size', 'Mustrain', 'HStrain', 'Babinet'. On request this
+          might be addressed in the future. Some of these values can be set via
+          :meth:`G2Phase.set_HAP_refinements`. 
+        :param newValue: the value to use when setting the HAP parameter for the 
+          appropriate histogram(s). Will be converted to the proper type or
+          an exception will be generated if not possible. If not specified, 
+          and only one histogram is selected, the value is retrieved and 
+          returned. 
+        :param list targethistlist: a list of histograms where each item in the
+            list can be a histogram object (:class:`G2PwdrData`), 
+            a histogram name or the index number of the histogram.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
+            If the string 'all' (default), then all histograms in the phase 
+            are used. 
+
+            targethistlist must correspond to a single histogram if a value
+            is to be returned (when argument newValue is not specified).
+
+        :returns: the value of the parameter, when argument newValue is not specified.
+
+        example::
+
+            val = ph0.HAPvalue('Scale')
+            val = ph0.HAPvalue('Scale',targethistlist=[0])
+            ph0.HAPvalue('Scale',2.5)
+
+          The first command returns the phase fraction if only one histogram 
+          is associated with the current phase, or raises an exception. 
+          The second command returns the phase fraction from the first histogram 
+          associated with the current phase. The third command sets the phase 
+          fraction for all histograms associated with the current phase.
+
+        .. seealso::
+            :meth:`~G2Phase.set_HAP_refinements`
+        """
+        doSet = not newValue is None
+
+        if targethistlist == 'all':
+            targethistlist = self.histograms()
+        boolParam = ('Use','LeBail')
+        refFloatParam = ('Scale','Extinction')
+        useBool = False
+        useFloat = False
+        if param in boolParam:
+            useBool = True
+        elif param in refFloatParam:
+            useFloat = True
+        else:
+            s = ''
+            for i in boolParam+refFloatParam:
+                if s != '': s += ', '
+                s += f'"{i}"'
+            raise G2ScriptException('Invalid parameter. Valid choices are: '+s)
+        if not doSet and len(targethistlist) > 1: 
+            raise G2ScriptException(f'Unable to report value from {len(targethistlist)} histograms')
+        for h in targethistlist:
+            h = self._decodeHist(h)
+            if h not in self.data['Histograms']:
+                G2fil.G2Print('Warning: histogram {} not in phase {}'.format(h,self.name))
+                continue
+            if not doSet and useBool:
+                return self.data['Histograms'][h][param]        
+            elif not doSet and useFloat:
+                return self.data['Histograms'][h][param][0]
+            elif useBool:
+                self.data['Histograms'][h][param] = bool(newValue)
+            elif useFloat:
+                self.data['Histograms'][h][param][0] = float(newValue)
+            else:
+                print('unexpected action')
+                
     def setHAPvalues(self, HAPdict, targethistlist='all', skip=[], use=None):
         """Copies HAP parameters for one histogram to a list of other histograms.
         Use skip or use to select specific entries to be copied or not used.

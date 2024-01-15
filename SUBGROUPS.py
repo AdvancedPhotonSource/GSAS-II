@@ -571,6 +571,7 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
     if not page0: return None
     if pagelist is not None:
         pagelist[0] = page0
+    if page0 is None: return None
     return scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
         
 def scanBilbaoSymSearch1(page0,postdict):
@@ -787,11 +788,9 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
     page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,timeout=90.,getcookie=savedcookies)
     if pagelist is not None:
         pagelist[key] = page1
+    if page1 is None: return {},{},{},savedcookies
     valsdict,csdict,rowdict = scanBilbaoSymSearch1(page1,postdict)
     return valsdict,csdict,rowdict,savedcookies
-#    csdict1 = {key+'_'+i:f for i,f in csdict.items()}
-#    rowdict1 = {key+'_'+i:f for i,f in rowdict.items()}
-#    return valsdict,csdict1,rowdict1,savedcookies
 
 def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     if newData is None:

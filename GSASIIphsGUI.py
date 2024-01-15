@@ -3246,6 +3246,8 @@ def UpdatePhaseData(G2frame,Item,data):
         # processing for OnSuperSearch starts here
         import SUBGROUPS
         fileList = []
+        ReSearch = {}
+        gpxList = []
         ophsnam = data['General']['Name']
         pgbar = wx.ProgressDialog('Supergroup Search',
             f'Searching for supergroup(s) consistent with phase {ophsnam}',5,
@@ -3353,14 +3355,14 @@ def UpdatePhaseData(G2frame,Item,data):
                             msgs[lbl1] = f'Coordinates inconsistent with space group {row1[2]}'
             finally:
                 pgbar.Destroy()
+            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist)
         else: # not monoclinic or triclinic
             ans = _selectSuperGroups(rowdict,csdict,'from starting structure')
             if ans == wx.ID_CANCEL: return
             structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
+            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
 
         # searches completed.
-        ReSearch = {}
-        gpxList = []
         if len(structDict) != 0:  # were new structures generated?
             # new phases will need different restraints clear them (probably
             # should clear constraints too)
@@ -3371,7 +3373,6 @@ def UpdatePhaseData(G2frame,Item,data):
             for num,s in structDict.items():   # loop over supergroup settings
                 f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
                 if f: gpxList.append(f)
-            ReSearch = SUBGROUPS.find2SearchAgain(pagelist)
         ans = showFinalSuperResults(G2frame,msgs,pagelist,fileList,ReSearch)
         for i in fileList: os.unlink(i) # cleanup tmp web pages
         fileList = []

@@ -247,10 +247,9 @@ environment this command can be used::
 I'm using this to create my latest development environment::
   
   source /Users/toby/mamba310/bin/activate
-  conda create -n py311 python=3.11 ipython conda scipy spyder-kernels pyopengl scons imageio h5py numpy pillow requests sphinx matplotlib jupyter wxpython  
-
-  
-
+  conda create -n py311 python=3.11 ipython conda scipy spyder-kernels
+  pyopengl scons imageio h5py numpy pillow requests sphinx
+  sphinx-rtd-theme matplotlib jupyter wxpython 
 
 .. _ScriptingRequirements:
 

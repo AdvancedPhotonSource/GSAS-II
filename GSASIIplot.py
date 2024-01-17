@@ -2664,7 +2664,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         data[1][1] = max(xy[0],data[1][0])
                 G2frame.GPXtree.SetItemPyData(LimitId,data)
                 G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+                G2frame.GPXtree.SelectItem(LimitId)
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
             else:                                                   #picked a limit line
                 # prepare to animate move of line
                 G2frame.itemPicked = pick

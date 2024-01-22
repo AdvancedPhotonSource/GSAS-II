@@ -22,6 +22,7 @@ GSASIIpath.SetBinaryPath()
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
 submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
 pseudosym = 'pseudosym/nph-pseudosym'
+timeout=150  # time to wait for www.cryst.ehu.es to respond; 2.5 minutes
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 
@@ -260,7 +261,7 @@ def subBilbaoCheckLattice(spgNum,cell,tol=5):
     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
-    page = G2IO.postURL(psSite,datastr)
+    page = G2IO.postURL(psSite,datastr,timeout=timeout)
     if not page:
         print('connection error - not on internet?')
         return None
@@ -321,7 +322,7 @@ def GetStdSGset(SGData=None, oprList=[]):
 
     print('\n'+GetStdSGsetCite+'\n')
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
-    page = G2IO.postURL(Site,postdict)
+    page = G2IO.postURL(Site,postdict,timeout=timeout)
     if not page:
         print('error:','No response')
         return [None,None,None,None]
@@ -345,8 +346,7 @@ def GetSupergroup(SGnum,dlg=None):
     using the Bilbao Crystallographic Server utility "Minimal 
     Supergroups of Space Groups" (minsup)
 
-    This routine does not work properly yet and 
-    is not currently implemented in GSAS-II.
+    This routine is not fully tested and is not currently implemented.
 
     :param int SGnum: a space group number (1-230)
 
@@ -369,7 +369,7 @@ def GetSupergroup(SGnum,dlg=None):
     import re
     Site = bilbaoSite + 'nph-minsup'
     if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
-    out = G2IO.postURL(Site,{'gnum':f'{SGnum:}'})
+    out = G2IO.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
     if not out: return None
         
     if dlg: dlg.Update(1,newmsg='Initial table of supergroups returned')
@@ -395,7 +395,8 @@ def GetSupergroup(SGnum,dlg=None):
     for i,line in enumerate(xforms):
         click = line[-1]
         print(SGnum,click)
-        out1 = G2IO.postURL(Site,{'gnum':SGnum,'show':'show','click':click})
+        out1 = G2IO.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
+                                ,timeout=timeout)
         if not out1: return None
         #open(f'/tmp/{click}.html','w').write(out1)
         #open(f'/tmp/last.html','w').write(out1)
@@ -491,7 +492,8 @@ and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic
 Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
 226(2), 186-196 DOI:10.1524/zkri.2011.1321.'''
 
-def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
+def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None,
+                         pagelist=None, keepCell=False):
     '''Perform a search for a supergroup consistent with a phase
     using the Bilbao Pseudosymmetry search (PSEUDO) program, see
     C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
@@ -512,6 +514,9 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
     :param list pagelist: a list to contain references to the text of web
         pages created by the Bilbao web site. If None (default) the web 
         pages are not saved.
+    :param bool keepCell: if False (default) and the cell is monoclinic 
+        or triclinic, a search is made for higher symmetry cells. If True,
+        the search is made with the current cell. 
     :returns: valsdict,csdict,rowdict,savedcookies where the contents
       will change depending on the space group, but valsdict
       will contain values to be used in the next call to Bilbao and 
@@ -553,7 +558,7 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
         "submit":'Show',}
 
     postdict["maxdelta"] = f'{maxdelta:.1f}'
-    if sgnum <= 14: 
+    if sgnum <= 14 and not keepCell: 
         postdict["what"] = 'pseudocell'
         if angtol: # and monoclinic/triclinic
             postdict["angtol"] = f'{angtol:.1f}'
@@ -567,7 +572,8 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None, pagelist=None):
         postdict["stru"] += f"{el:4s} {i} - {atom[cx]:.5f} {atom[cx+1]:.5f} {atom[cx+2]:.5f}\n"
 #    if GSASIIpath.GetConfigValue('debug'): print(postdict["stru"])
     savedcookies = {}
-    page0 = G2IO.postURL(bilbaoSite+pseudosym,postdict,getcookie=savedcookies)
+    page0 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+                             getcookie=savedcookies,timeout=timeout)
     if not page0: return None
     if pagelist is not None:
         pagelist[0] = page0
@@ -658,7 +664,7 @@ def BilbaoLowSymSea1(valsdict,row,savedcookies,pagelist=None):
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num}")
     postdict['lattice'] = num
     page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
-                                     usecookie=savedcookies,timeout=90.)
+                                     usecookie=savedcookies,timeout=timeout)
     if not page1: return None,None,None,None
 
     lbl = f'cell{num}'
@@ -694,7 +700,7 @@ def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
     postdict['super_numind'] = row[1]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num} supergroup {row[1]}")
     page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
-                                     usecookie=savedcookies,timeout=90.)
+                                     usecookie=savedcookies,timeout=timeout)
     if page1 is None: return '',None
     lbl = f'cell{num}_{row[1]}'
     if pagelist is not None: 
@@ -724,7 +730,7 @@ def BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
             postdict.update(valsdict)
             postdict['cs'] = num
             page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
-                                     usecookie=savedcookies,timeout=90.)
+                                     usecookie=savedcookies,timeout=timeout)
             if pagelist is not None:
                 pagelist[num] = page1
             if page1 is None:
@@ -785,7 +791,8 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
 
     '''
     savedcookies = {}
-    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,timeout=90.,getcookie=savedcookies)
+    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict
+                             ,getcookie=savedcookies,timeout=timeout)
     if pagelist is not None:
         pagelist[key] = page1
     if page1 is None: return {},{},{},savedcookies
@@ -844,7 +851,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     phData.update(newPhase)
     # save new file
     G2frame.GSASprojectfile = os.path.splitext(orgFilName
-                            )[0]+'_super_'+sgname+'.gpx'
+                            )[0]+'_super_'+sgname.replace('/','$')+'.gpx'
     while os.path.exists(G2frame.GSASprojectfile):
         s = re.split(r'_([\d]+)\.gpx',G2frame.GSASprojectfile)
         if len(s) == 1:

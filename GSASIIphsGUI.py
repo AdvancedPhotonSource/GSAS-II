@@ -26,7 +26,7 @@ import wx
 import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
-import math
+#import math
 import copy
 import time
 import sys
@@ -1421,7 +1421,6 @@ def FindBondsDrawCell(data,cell):
     '''uses numpy & masks - very fast even for proteins!
     allows different cell as input from seq. refinements
     '''
-    import numpy.ma as ma
     cx,ct,cs,ci = data['Drawing']['atomPtrs']
     hydro = data['Drawing']['showHydrogen']
     atomData = data['Drawing']['Atoms']
@@ -2962,12 +2961,12 @@ def UpdatePhaseData(G2frame,Item,data):
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
         
-    #### Supercell generation routines
     def OnSuperSearch(event):
         '''Search for a supergroup matching the current phase using the 
         Bilboa Pseudosymmetry search (PSEUDO) program
         '''
         def _showWebPage(event):
+            'Show a web page when the user presses the "show" button'
             import tempfile
             num = event.GetEventObject().IndexNum
             tmp = tempfile.NamedTemporaryFile(suffix='.html',
@@ -2978,7 +2977,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
-        def _selectSuperGroups(rowdict,csdict,msg):
+        def _selectSuperGroups(rowdict,csdict,msg,depth=0,key=0):
+            '''Present the user with a set of supergroups and allow
+            selection of ones to be tested. Used initially with higher
+            symmetry cells and again later to recheck structures that
+            have been cast into spacegroups.
+            '''
             width = 450
             dlg = wx.Dialog(G2frame,wx.ID_ANY,'Supergroup Choices',
                                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -2989,12 +2993,16 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add((-1,5))
             G2G.HorizontalLine(mainSizer,dlg)
             txt = wx.StaticText(dlg,wx.ID_ANY,
-                    'Searched for subgroups with model '+msg)
+                    'Searched for subgroups of model '+msg)
             txt.Wrap(width)
             mainSizer.Add(txt)
+            if depth > 0:
+                mainSizer.Add((-1,5))
+                mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                    f'This is a {depth}-level supergroup of the original parent model'))
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_ANY,label='Show') 
-            btn.IndexNum = 0
+            btn.IndexNum = key
             btn.Bind(wx.EVT_BUTTON,_showWebPage)
             showSizer.Add(btn)
             showSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
@@ -3043,7 +3051,11 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg.CenterOnParent()
             ans = dlg.ShowModal()
             return ans
-        def _selectSuperCell(rowdict,csdict):
+        def _selectHiSymCell(rowdict,csdict):
+            '''Present the user with a set of higher symmetry cells that are 
+            consistent with the starting cell. Used with monoclinic and triclinic
+            starting cells only.
+            '''
             width = 450
             dlg = wx.Dialog(G2frame,wx.ID_ANY,'Supercell Choices',
                                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -3103,23 +3115,23 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg.CenterOnParent()
             ans = dlg.ShowModal()
             return ans
+        def _GetPhase():
+            'After search complete reload the project from the saved .gpx file'
+            G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
+            wx.CallLater(100,_ShowPhase)
         def _ShowPhase():
-            # reopen tree to the original phase
+            'After search complete and project is reloaded, reopen tree to the original phase'
             phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
             G2frame.GPXtree.Expand(phId)        
             phId = G2gd.GetGPXtreeItemId(G2frame,phId,ophsnam)
             G2frame.GPXtree.SelectItem(phId)
-        def _GetPhase():
-            # Restore the original saved project
-            G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
-            wx.CallLater(100,_ShowPhase)
         def _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist):
-            print(f'*** Retrieving {sum(csdict.values())} transformed structures')
+            'Use the Bilbao site to test selected supergroups'
+            print(f'*** Testing {sum(csdict.values())} transformed structures')
             pgbar = wx.ProgressDialog('Supergroup Search',
                     f'Searching for supergroup(s) consistent with phase {ophsnam}',
-                    len(csdict)+2,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
-                    parent=G2frame)
+                    len(csdict)+2,parent=G2frame,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             try: 
                 pgbar.CenterOnParent()
                 structDict = SUBGROUPS.BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
@@ -3132,18 +3144,17 @@ def UpdatePhaseData(G2frame,Item,data):
             finally: 
                 pgbar.Destroy()
             return structDict
-        
-        def showFinalSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,masterkey=0):
+        def showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,parentpage,msg=None):
             '''Show a summary with info from a search of supergroups in 
             :func:`OnSuperSearch` (in :func:`UpdatePhaseData`)
             '''
             import SUBGROUPS
             def _showWebPage(event):
                 import tempfile
-                num = event.GetEventObject().IndexNum
+                f = event.GetEventObject().webFile
                 tmp = tempfile.NamedTemporaryFile(suffix='.html',
                                 delete=False)
-                open(tmp.name,'w').write(pagelist[num].replace(
+                open(tmp.name,'w').write(f.replace(
                         '<head>',
                         '<head><base href="https://www.cryst.ehu.es/">',
                         ))
@@ -3154,21 +3165,16 @@ def UpdatePhaseData(G2frame,Item,data):
                                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             dlg.SetSizer(mainSizer)
-            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                            SUBGROUPS.BilbaoSymSearchCite))
-            if masterkey == 0:
-                txt = wx.StaticText(dlg,wx.ID_ANY,
-                            'Starting from input structure. '+msgs[masterkey])
-            else:
-                txt = wx.StaticText(dlg,wx.ID_ANY,
-                                    'Starting from '+msgs[masterkey])
+            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,SUBGROUPS.BilbaoSymSearchCite))
+            if msg:
+                txt = wx.StaticText(dlg,wx.ID_ANY,'Starting from '+msg.replace('\n',' '))
             txt.Wrap(width)
             mainSizer.Add((-1,10))
             mainSizer.Add(txt)
             mainSizer.Add((-1,5))
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_ANY,label='Show') 
-            btn.IndexNum = masterkey
+            btn.webFile = parentpage
             btn.Bind(wx.EVT_BUTTON,_showWebPage)
             showSizer.Add(btn)
             showSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' Web page with supergroup search results'))
@@ -3178,26 +3184,26 @@ def UpdatePhaseData(G2frame,Item,data):
             sSizer.Add((30,0))  # indent results
             spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width, 200))
             txtSizer = wx.BoxSizer(wx.VERTICAL)
-            if len(msgs) == 1:  # prevent an empty panel
+            smsgs = sorted([i for i in pagelist if i !=0])
+            if len(smsgs) == 0:  # prevent an empty panel
                 txtSizer.Add(wx.StaticText(spanel,wx.ID_ANY,
                             '*** No higher symmetry candidate structures found ***'))
                 txtSizer.Add((-1,10))
-            for num in sorted([i for i in pagelist if i !=masterkey]):
-                page = pagelist[num]
+            for num in smsgs:
                 if num in msgs:
                     if '@' not in num: G2G.HorizontalLine(txtSizer,spanel)
                     txt = wx.StaticText(spanel,wx.ID_ANY,f'Case {num}: ' + msgs[num])
                     txt.Wrap(width-50)
                     txtSizer.Add(txt)
-                    if page is None:
+                    if pagelist[num] is None:
                         txtSizer.Add((-1,10))
                         continue
-                elif page is not None:
+                elif pagelist[num] is not None:
                     txt = wx.StaticText(spanel,wx.ID_ANY,
                                         f'Processing for case {num} incomplete')
                     txt.Wrap(width-50)
                     txtSizer.Add(txt)
-                elif page is None:
+                elif pagelist[num] is None:
                     txtSizer.Add((-1,5))
                     txtSizer.Add(wx.StaticText(spanel,wx.ID_ANY,
                                         f'Processing of case {num} failed'))
@@ -3207,7 +3213,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 showSizer = wx.BoxSizer(wx.HORIZONTAL)
                 if '@' in num: showSizer.Add((20,-1))
                 btn = wx.Button(spanel, wx.ID_ANY,label='Show') 
-                btn.IndexNum = num
+                btn.webFile = pagelist[num]
                 btn.Bind(wx.EVT_BUTTON,_showWebPage)
                 showSizer.Add(btn)
                 showSizer.Add(wx.StaticText(spanel,wx.ID_ANY,' Web page with transform info'))
@@ -3243,7 +3249,60 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg.Destroy()
             return ans
 
-        # processing for OnSuperSearch starts here
+        def _showSummary(G2frame,msgs,gpxList):
+            '''Summarize the final results from all steps'''
+            
+            width = 500
+            dlg = wx.Dialog(G2frame,wx.ID_ANY,'Final Supergroup Search Results',
+                                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            dlg.SetSizer(mainSizer)
+            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                            SUBGROUPS.BilbaoSymSearchCite))
+            mainSizer.Add((-1,10))
+            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                f'From the starting model, {len(gpxList)} possible supergroups were located.'))
+            if 0 in msgs:
+                txt = wx.StaticText(dlg,wx.ID_ANY,msgs[0]
+                                .replace('/volume:\n',' && volume:').replace('\n',' '))
+                txt.Wrap(width-50)
+                mainSizer.Add(txt)
+            spanel = wxscroll.ScrolledPanel(dlg, wx.ID_ANY, size=(width, 200))
+            txtSizer = wx.BoxSizer(wx.VERTICAL)
+            G2G.HorizontalLine(mainSizer,dlg)
+            mainSizer.Add((-1,4))
+            for m in gpxList:
+                if m == 0: continue
+                msg = 'Found ' + m.replace('\n  after','. After').replace('/volume:\n',' && volume:')
+                txt = wx.StaticText(spanel,wx.ID_ANY,msg)
+                txt.Wrap(width-50)
+                txtSizer.Add(txt)
+                txtSizer.Add((-1,4))
+                G2G.HorizontalLine(txtSizer,spanel)
+            spanel.SetSizer(txtSizer)
+            mainSizer.Add(spanel,1,wx.ALL|wx.EXPAND,1)
+            btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+            btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue") 
+            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btnsizer.Add(btn)
+            mainSizer.Add((-1,10))
+            mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+            dlg.SetSizer(mainSizer)
+            mainSizer.Fit(dlg)
+            spanel.SetAutoLayout(1)
+            spanel.SetupScrolling()
+            dlg.CenterOnParent()
+            ans = dlg.ShowModal()
+            dlg.Destroy()
+            return ans
+        def fmtCell(cell):
+            s = ''
+            for i in cell[0:3]: s += f"{i:.3f}, "
+            for i in cell[3:5]: s += f"{i:.2f}, "
+            s += f"{cell[5]:.2f}"
+            return s
+
+        #### processing for OnSuperSearch starts here ####
         import SUBGROUPS
         fileList = []
         ReSearch = {}
@@ -3257,7 +3316,7 @@ def UpdatePhaseData(G2frame,Item,data):
         try: 
             G2frame.OnFileSave(None) # save project on disk to restore to this later
             orgFilName = G2frame.GSASprojectfile
-            # get restraints & clear geometrical restraints
+            # get restraints for later use (to clear them)
             resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
             Restraints = G2frame.GPXtree.GetItemPyData(resId)
             resId = G2gd.GetGPXtreeItemId(G2frame,resId,ophsnam)
@@ -3271,9 +3330,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     ocomp[atom[ct]] = atom[cs+1]
             ovol = data['General']['Cell'][7]
             o = ', '.join([f'{i}:{j}' for i,j in ocomp.items()])
-            # msg = f"Before transform, unit cell contents/volume:\n {o}, {ovol:.2f} A^3"
             msgs = {}
-            msgs[0] = f"Before transform, unit cell contents/volume:\n {o}, {ovol:.2f} A^3"
+            msgs[0] = "initial structure: cell = "
+            msgs[0] += fmtCell(data['General']['Cell'][1:7]) + '.\n '
+            msgs[0] += f"Space group {data['General']['SGData']['SpGrp']}.\n"
+            startSet = msgs[0].replace('\n','')
+            msgs[0] += f" Before transform, unit cell contents/volume:\n {o}, {ovol:.2f} A^3"
+
+            # fix non-standard space group settings
             GoOn = pgbar.Update(1,newmsg=
                 f'Searching for supergroup(s) consistent with phase {ophsnam}'+
                 '\nTesting structure for standard setting')
@@ -3289,16 +3353,21 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     print('*** Transforming structure to standard setting')
                     newPhase['ranId'] = ran.randint(0,sys.maxsize),
-                    newPhase['General']['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+                    newPhase['General']['SGData'] = G2spc.SpcGroup(sgsym)[1]
                     newPhase['General']['Cell'][1:] = G2lat.TransformCell(newPhase['General']['Cell'][1:-1],xmat)
                     uvec = np.array(xoff)
                     vvec = np.array([0.,0.,0.])
                     newPhase['MagXform'] = (xmat,xoff,vvec)
                     newPhase,atCodes = G2lat.TransformPhase(data,newPhase,xmat,uvec,vvec,False)
+                    startSet = "transformed starting structure: cell = "
+                    startSet += fmtCell(newPhase['General']['Cell'][1:7])
+                    startSet += f". Space group {newPhase['General']['SGData']['SpGrp']}."
+                    
             except:
                 G2G.G2MessageBox(G2frame,'Standard setting check failed. Try again later.',
                                  'Unexpected error')
                 return
+            
             # search with a standard space group setting
             GoOn = pgbar.Update(2,newmsg=
                 f'Searching for supergroup(s) consistent with phase {ophsnam}'+
@@ -3310,15 +3379,31 @@ def UpdatePhaseData(G2frame,Item,data):
                 sgnum,newPhase,pagelist=pagelist)
         finally: 
             pgbar.Destroy()
-            
-        if csdict is None:   # this was monoclinic or triclinic
+
+        # process initial PSEUDO results
+        if csdict is None and len(rowdict) == 0:   # this was monoclinic or triclinic
+            # look for supergroups of the current cell
+            pgbar = wx.ProgressDialog('Supergroup Search',
+                    f'Searching for supergroup(s) consistent with phase {ophsnam}',
+                    1+len(rowdict),
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE,
+                    parent=G2frame)
+            try: 
+                pgbar.CenterOnParent()
+                wx.GetApp().Yield()
+                valsdict,csdict,rowdict,savedcookies = SUBGROUPS.BilbaoSymSearch1(
+                    sgnum,newPhase,pagelist=pagelist,keepCell=True)
+            finally:
+                pgbar.Destroy()
+            ans = _selectSuperGroups(rowdict,csdict,'from '+startSet+
+                        '\n*** Note, no higher symmetry cells found.')
+            if ans == wx.ID_CANCEL: return
+            structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
+            if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
+        elif csdict is None:   # this was monoclinic or triclinic
             structDict = {}
             csdict = len(rowdict)*[True]
-            if len(rowdict) == 0: 
-                # Hmmm, should we look for supergroups of the current cell?
-                G2G.G2MessageBox(G2frame,'No higher symmetry cells found','no cells found')
-                return
-            ans = _selectSuperCell(rowdict,csdict)
+            ans = _selectHiSymCell(rowdict,csdict)
             if ans == wx.ID_CANCEL: return
             pgbar = wx.ProgressDialog('Supergroup Search',
                     f'Searching for supergroup(s) consistent with phase {ophsnam}',
@@ -3357,7 +3442,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 pgbar.Destroy()
             if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist)
         else: # not monoclinic or triclinic
-            ans = _selectSuperGroups(rowdict,csdict,'from starting structure')
+            ans = _selectSuperGroups(rowdict,csdict,'from '+startSet)
             if ans == wx.ID_CANCEL: return
             structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
             if len(structDict) != 0: ReSearch = SUBGROUPS.find2SearchAgain(pagelist,'')
@@ -3372,24 +3457,27 @@ def UpdatePhaseData(G2frame,Item,data):
             # Now generate .gpx files and show results
             for num,s in structDict.items():   # loop over supergroup settings
                 f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
-                if f: gpxList.append(f)
-        ans = showFinalSuperResults(G2frame,msgs,pagelist,fileList,ReSearch)
+                if f: gpxList.append(msgs[num])
+        ans = showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,pagelist[0],msgs[0])
         for i in fileList: os.unlink(i) # cleanup tmp web pages
         fileList = []
     
-        # repeat search on any identified supergroups, if selected
-#        for i in fileList: os.unlink(i) # cleanup tmp web pages
+        # repeat search on any identified (& selected) supergroups
+        repeatcount = 0
         while ReSearch:
+            repeatcount += 1
             NextSearch = {}
             for key in ReSearch:
                 #print(key,'in ReSearch')
                 pagelist = {}
                 if key.startswith('use_'): continue
                 if not ReSearch.get('use_'+key,False): continue
+                fromMsg = msgs[key]
+                del msgs[key]
                 # need a status bar here
                 if GSASIIpath.GetConfigValue('debug'): print(f"processing {key}")
                 pgbar = wx.ProgressDialog('Supergroup Search',
-                    f'Searching for supergroup(s) from {key}',
+                    f'Searching for supergroup(s) from case {key}',
                     1,
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE,
                     parent=G2frame)
@@ -3400,35 +3488,40 @@ def UpdatePhaseData(G2frame,Item,data):
                         key,ReSearch[key],pagelist=pagelist)
                 finally:
                     pgbar.Destroy()
-                ans = _selectSuperGroups(rowdict,csdict,'with '+key+', '+msgs.get(key,'?'))
+                ans = _selectSuperGroups(rowdict,csdict,
+                    f'case {key}, {fromMsg}',repeatcount,key=key)
+                parentpage = pagelist[key]
+                del pagelist[key]
                 structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
                 for num,s in structDict.items():   # loop over supergroup settings
                     f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
-                    if f: gpxList.append(f)
-                foundstr = SUBGROUPS.find2SearchAgain(pagelist,'')
-                ans = showFinalSuperResults(G2frame,msgs,pagelist,fileList,foundstr,masterkey=key)
+                    if f:
+                        gpxList.append(msgs[num])
+                fndStruct = SUBGROUPS.find2SearchAgain(pagelist,'')
+                if not fndStruct: continue
+                ans = showSuperResults(G2frame,msgs,pagelist,fileList,fndStruct,parentpage,fromMsg)
                 # rename the msg & structure entry to have a reference to the parent
-                for k in foundstr:
+                for k in fndStruct:
                     if k.startswith('use_'): continue
-                    if not foundstr.get('use_'+k,False): continue
+                    if not fndStruct.get('use_'+k,False): continue
                     nkey = key + '_' + k
-                    NextSearch[nkey] = foundstr[k]
+                    NextSearch[nkey] = fndStruct[k]
                     NextSearch['use_'+nkey] = True
                     msgs[nkey] = msgs.pop(k)
             ReSearch = NextSearch
             
         for i in fileList: os.unlink(i) # cleanup tmp web pages
 
-        # need final message
+        # show final message
         if len(gpxList):
-            msg = f'From the starting model, {len(gpxList)} possible supergroups were located, '
-            msg += 'with the following projects files created:\n'
-            for f in gpxList:
-                msg += '\n\t' + f
+            _showSummary(G2frame, msgs, gpxList)
+            print(f'Search done, from {msgs[0]}\n{len(gpxList)} supergroups located:\n')
+            for i in gpxList: print(i)
         else:
-            msg = 'No possible supergroups were found to match the starting model.'
-        print('done, created files',gpxList)
-        G2G.G2MessageBox(G2frame,msg,'Search complete')
+            G2G.G2MessageBox(G2frame,
+                    'No possible supergroups were found to match the starting model.',
+                    'Search complete')
+            print('Search done, no supergroups located')
             
         # Restore the original saved project
         wx.CallLater(100,_GetPhase)
@@ -6186,7 +6279,7 @@ def UpdatePhaseData(G2frame,Item,data):
 
             generalData = data['General']
             cx,ct,cs,cia = generalData['AtomPtrs']
-            atomData = data['Atoms']
+            #atomData = data['Atoms']
             # atNames = [atom[ct-1] for atom in atomData]
             # ifP1 = False
             # if generalData['SGData']['SpGrp'] == 'P 1':
@@ -7144,7 +7237,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 dlg.Destroy()
             if result == wx.ID_YES:
                 wx.BeginBusyCursor()
-                res = G2pwd.fullrmcDownload()
+                G2pwd.fullrmcDownload()
                 wx.EndBusyCursor()
             else:
                 RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
@@ -7304,9 +7397,10 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             batch.close()
         if 'sequential' in RMCPdict['refinement']:
             Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDFfit2 results')
-            if Id:
-                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
-            else:
+#            if Id:
+#                saveSeqResult = G2frame.GPXtree.GetItemPyData(Id)
+#            else:
+            if not Id:
                 SeqResult = {}
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDFfit2 results')
             G2Names = [item.name for item in ISOdict['G2ModeList']]

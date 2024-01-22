@@ -4841,7 +4841,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnLatSym(event):
-        'Run Bilbao PsuedoLattice cell search'
+        'Run Bilbao PseudoLattice cell search'
         # look up a space group matching Bravais lattice (should not matter which one) 
         bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
                        'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
@@ -5213,24 +5213,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-
-    # def OnRunSuper(event):
-    #     pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-    #     controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
-    #     sym = controls[13].replace(' ','')
-    #     symlist = [i.replace(' ','')  for i in G2spc.spgbyNum[1:]]
-    #     if sym in symlist:
-    #         spgnum = 1 + symlist.index(sym)
-    #     else:
-    #         wx.MessageBox('Sorry, Bilbao "Minimal Supergroups of Space Groups" requires a standard setting',
-    #                 caption='Need standard setting',style=wx.ICON_EXCLAMATION)
-    #         return
-    #     dlg = wx.ProgressDialog('SUPERGROUP results','creating window',100,
-    #             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-    #     xforms = kSUB.GetSupergroup(spgnum,dlg)
-    #     dlg.Destroy()
-    #     cell = controls[6:12]
-    #     breakpoint()
 
     #### UpdateUnitCellsGrid code starts here
     G2frame.ifGetExclude = False

@@ -2185,7 +2185,8 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None,mode='get'):
+def postURL(URL,postdict,getcookie=None,usecookie=None,
+                timeout=None,retry=3,mode='get'):
     '''Posts a set of values as from a web form using the "get" or "post" 
     protocols. 
     If access fails to an https site, the access is retried with http.
@@ -2198,6 +2199,12 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None,mode='get'):
        (default) if not needed. 
     :param dict usecookie: dict containing cookies to be used in call, 
        or None (default) if not needed.
+    :param int timeout: specifies a timeout period for the get or post (default 
+      is None, which means the timeout period is set by the server). The value 
+      when specified is the time in seconds to wait before giving up on the 
+      request. 
+    :param int retry: the number of times to retry the request, if it times out.
+      This is only used if timeout is specified. The default is 3. 
     :param str mode: either 'get' (default) or 'post'. Determines how
        the request will be submitted. 
     :returns: a string with the response from the web server or None
@@ -2217,7 +2224,9 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None,mode='get'):
         reqopt = requests.post
     
     repeat = True
+    count = 0
     while repeat:
+        count += 1
         r = None
         repeat = False
         try:
@@ -2238,6 +2247,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,timeout=None,mode='get'):
             if 'time' in str(msg) and 'out' in str(msg): 
                 print(f'server timeout accessing {URL}')
                 print(msg)
+                if timeout is not None and count <= retry: repeat = True
             else:
                 print('connection error - not on internet?')
                 if URL.startswith('https:'):

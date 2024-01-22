@@ -2186,7 +2186,7 @@ def ReadDIFFaX(DIFFaXfile):
     return Layer
 
 def postURL(URL,postdict,getcookie=None,usecookie=None,
-                timeout=None,retry=3,mode='get'):
+                timeout=None,retry=2,mode='get'):
     '''Posts a set of values as from a web form using the "get" or "post" 
     protocols. 
     If access fails to an https site, the access is retried with http.
@@ -2202,9 +2202,11 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
     :param int timeout: specifies a timeout period for the get or post (default 
       is None, which means the timeout period is set by the server). The value 
       when specified is the time in seconds to wait before giving up on the 
-      request. 
+      request.
     :param int retry: the number of times to retry the request, if it times out.
-      This is only used if timeout is specified. The default is 3. 
+      This is only used if timeout is specified. The default is 2. Note that
+      if retry is left at the default value (2), The timeout is increased by
+      25% for the second try.
     :param str mode: either 'get' (default) or 'post'. Determines how
        the request will be submitted. 
     :returns: a string with the response from the web server or None
@@ -2236,7 +2238,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             else:
                 r = reqopt(URL,params=postdict,cookies=usecookie)
             if r.status_code == 200:
-                if GSASIIpath.GetConfigValue('debug'): print('request OK',reqopt)
+                if GSASIIpath.GetConfigValue('debug'): print('request OK')
                 page = r.text
                 if getcookie is not None:
                     getcookie.update(r.cookies)
@@ -2246,18 +2248,35 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         except requests.exceptions.ConnectionError as msg:
             if 'time' in str(msg) and 'out' in str(msg): 
                 print(f'server timeout accessing {URL}')
-                print(msg)
-                if timeout is not None and count <= retry: repeat = True
+                if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
+                if timeout is not None and count < retry:
+                    if retry == 2:
+                        timeout *= 1.25
+                        print(f'retry with timout={timeout} sec')
+                    repeat = True
             else:
                 print('connection error - not on internet?')
                 if URL.startswith('https:'):
                     print('Retry with http://')
                     repeat = True
                     URL = URL.replace('https:','http:')
-        except requests.exceptions.Timeout:
+        except requests.exceptions.Timeout as msg:
             print(f'timeout accessing {URL}')
-        except requests.exceptions.ReadTimeout:
+            if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
+            if timeout is not None and count <= retry: repeat = True
+        except requests.exceptions.ReadTimeout as msg:
             print(f'timeout reading from {URL}')
+            if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
         except requests.exceptions.ConnectTimeout:
             print(f'timeout accessing {URL}')
         except Exception as msg:    # other error

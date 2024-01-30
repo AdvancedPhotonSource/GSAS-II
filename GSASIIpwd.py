@@ -4146,6 +4146,33 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
             result['_ExperimentalConstraint__adjustScaleFactor'] = '_ExperimentalConstraint__adjustScaleFactor'
             return result
         c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
+    if c.__class__.__name__ in ('ReducedStructureFactorConstraint', 'StructureFactorConstraint'):
+        def _constraint_copy_needs_lut(self, *args, **kwargs):
+            result =  fPDF.PairDistributionConstraint._constraint_copy_needs_lut(self, *args, **kwargs)
+            result.pop('_PairDistributionConstraint__histogramSize', None)
+            result.pop('_PairDistributionConstraint__shellVolumes', None)
+            result.pop('_PairDistributionConstraint__shellCenters', None)
+            result.pop('_PairDistributionConstraint__windowArray', None)
+            result.pop('_PairDistributionConstraint__experimentalDistances', None)
+            result.pop('_PairDistributionConstraint__experimentalPDF', None)
+            result.pop('_PairDistributionConstraint__minimumDistance', None)
+            result.pop('_PairDistributionConstraint__maximumDistance', None)
+            result.pop('_PairDistributionConstraint__distanceBin', None)
+            result.pop('_shapeFuncParams', None)
+            result.pop('_shapeArray', None)
+            result['_StructureFactorConstraint__Gr2SqMatrix'] = '_StructureFactorConstraint__Gr2SqMatrix'
+            result['_StructureFactorConstraint__histogramSize'] = '_StructureFactorConstraint__histogramSize'
+            result['_StructureFactorConstraint__shellVolumes'] = '_StructureFactorConstraint__shellVolumes'
+            result['_StructureFactorConstraint__shellCenters'] = '_StructureFactorConstraint__shellCenters'
+            result['_StructureFactorConstraint__windowArray'] = '_StructureFactorConstraint__windowArray'
+            result['_StructureFactorConstraint__experimentalQValues'] = '_StructureFactorConstraint__experimentalQValues'
+            result['_StructureFactorConstraint__experimentalSF'] = '_StructureFactorConstraint__experimentalSF'
+            result['_StructureFactorConstraint__minimumDistance'] = '_StructureFactorConstraint__minimumDistance'
+            result['_StructureFactorConstraint__maximumDistance'] = '_StructureFactorConstraint__maximumDistance'
+            result['_StructureFactorConstraint__distanceBin'] = '_StructureFactorConstraint__distanceBin'
+            return result
+        c._constraint_copy_needs_lut = types.MethodType(_constraint_copy_needs_lut, c)
+
 '''
     # rundata += '\n# set weights -- do this now so values can be changed without a restart\n'
     # rundata += 'wtDict = {}\n'

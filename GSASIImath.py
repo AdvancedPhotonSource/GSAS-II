@@ -1545,6 +1545,36 @@ def getDensity(generalData):
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
     
+def phaseContents(phase):
+    '''Compute the unit cell and asymmetric unit contents for a phase.
+
+    This has been tested only on type='nuclear' phases and 
+    might need adaptation for phases of other types, if the 
+    phase type does not have an occupancy defined. 
+
+    :param dict phase: the dict for a phase, as found in the 
+      data tree 
+    :returns: acomp,ccomp where acomp is the asymmetric unit contents and 
+      ccomp is the contents of the unit cell
+    '''
+    generalData = phase['General']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    ccomp = {} # contents of cell
+    acomp = {} # contents of asymmetric unit
+    for atom in phase['Atoms']:
+        if atom[ct] not in ccomp:
+            ccomp[atom[ct]] = 0        
+            acomp[atom[ct]] = 0        
+        ccomp[atom[ct]] += atom[cs+1]*atom[cx+3]
+        acomp[atom[ct]] += atom[cx+3]
+    return acomp,ccomp
+
+def fmtPhaseContents(compdict):
+    '''Format results from :func:`phaseContents`
+    '''
+    n = ', '.join([f'{i}({compdict[i]})' for i in sorted(compdict)])
+    return f"contents: {n}"
+
 def getWave(Parms):
     '''returns wavelength from Instrument parameters dictionary
     
@@ -6060,7 +6090,7 @@ def make2Quat(A,B):
         Q[1:] = V1*S
         D *= 2.
     return Q,D
-    
+
 def annealtests():
     from numpy import cos
     # minimum expected at ~-0.195

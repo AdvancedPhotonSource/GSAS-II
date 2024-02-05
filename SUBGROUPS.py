@@ -17,6 +17,8 @@ import numpy.linalg as nl
 import GSASIIspc as G2spc
 import GSASIIIO as G2IO
 import GSASIIlattice as G2lat
+import GSASIIElem as G2elem
+import GSASIImath as G2mth
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
@@ -800,6 +802,15 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
     return valsdict,csdict,rowdict,savedcookies
 
 def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
+    '''create a .gpx file from a structure from the BilbaoSite pseudosym site
+    saved in newData
+    '''
+    def fmtCell(cell):
+        s = ''
+        for i in cell[0:3]: s += f"{i:.3f}, "
+        for i in cell[3:5]: s += f"{i:.2f}, "
+        s += f"{cell[5]:.2f}"
+        return s
     if newData is None:
         print(phlbl,'empty structure')
         return
@@ -823,7 +834,6 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
     cx,ct,cs,cia = generalData['AtomPtrs']
     Atoms = newPhase['Atoms'] = []
-    ncomp = {}
     for a in newData[3:]:
         if not a.strip(): continue
         try: 
@@ -837,10 +847,6 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
             SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
             atom.append(SytSym)
             atom.append(Mult)
-            if atom[1] in ncomp:
-                ncomp[atom[ct]] += Mult
-            else:
-                ncomp[atom[ct]] = Mult
             atom.append('I')
             atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
             atom.append(ran.randint(0,sys.maxsize))
@@ -849,6 +855,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
             print(f'error in atom line {a}')
         #finally: pass
     phData.update(newPhase)
+    G2elem.SetupGeneral(phData,phData['General']['Mydir'])  # fixup composition info
     # save new file
     G2frame.GSASprojectfile = os.path.splitext(orgFilName
                             )[0]+'_super_'+sgname.replace('/','$')+'.gpx'
@@ -865,12 +872,14 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
             G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
     G2IO.ProjFileSave(G2frame)
     # get transformed contents
-    nvol = generalData['Cell'][7]
-    n = ', '.join([f'{i}:{j}' for i,j in ncomp.items()])
-    msgs[phlbl] = (
-        f"space group {sgsym}: project file created as {G2frame.GSASprojectfile}" +
-        f"\n  after transform, unit cell contents/volume:\n {n}, {nvol:.2f} A^3"
-        )
+    nacomp,nccomp = G2mth.phaseContents(phData)
+    msgs[phlbl] = f"With space group {sgsym} and cell={fmtCell(generalData['Cell'][1:7])}"
+    msgs[phlbl] += f", vol={generalData['Cell'][7]:.2f} A^3"
+    msgs[phlbl] += f", project file created as {G2frame.GSASprojectfile}"
+
+    msgs[phlbl] += f". After transform, unit cell {G2mth.fmtPhaseContents(nccomp)}"
+    msgs[phlbl] += f", density={G2mth.getDensity(generalData)[0]:.2f} g/cm^3"
+    msgs[phlbl] += f". Asymmetric unit {G2mth.fmtPhaseContents(nacomp)} ({len(phData['Atoms'])} atoms)."
     return G2frame.GSASprojectfile
 
 def test():

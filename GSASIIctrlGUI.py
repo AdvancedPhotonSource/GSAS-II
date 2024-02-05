@@ -2902,8 +2902,33 @@ class SingleIntDialog(SingleFloatDialog):
 
 ################################################################################
 class MultiDataDialog(wx.Dialog):
-    'Dialog to obtain multiple values from user'
-    def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],formats=['%.5g',]):
+    '''Dialog to obtain multiple values from user
+
+    :param wx.Frame parent: parent frame for dialog to be created
+    :param str title: title to place on top of window
+    :param list prompts: a string to describe each item
+    :param list values: a set of initial values for each item
+    :param list limits: A nested list with an upper and lower value 
+       for each item
+    :param list format: an "old-style" format string used to display 
+       each item value
+    :param str header: a string to be placed at the top of the 
+       window, if specified
+     example::
+
+        dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
+                prompts=['lattice constants tolerance',
+                         'coordinate tolerance',
+                         'occupancy tolerance'],
+                values=[0.001,0.01,0.1],
+                limits=3*[[0.,2.]],formats=3*['%.5g'],
+                header=isoCite)
+        dlg.ShowModal()
+        latTol,coordTol,occTol = dlg.GetValues()
+        dlg.Destroy()
+'''
+    def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
+                     formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -2911,6 +2936,7 @@ class MultiDataDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.formats = formats
+        self.header = header
         self.Draw()
         
     def Draw(self):
@@ -2951,6 +2977,13 @@ class MultiDataDialog(wx.Dialog):
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if self.header:
+            txt = wx.StaticText(self.panel,wx.ID_ANY,self.header)
+            txt.Wrap(400)
+            mainSizer.Add(txt)
+            mainSizer.Add((-1,5))
+            HorizontalLine(mainSizer,self.panel)
+            mainSizer.Add((-1,5))
         lineSizer = wx.FlexGridSizer(0,2,5,5)
         for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
@@ -2995,6 +3028,7 @@ class MultiDataDialog(wx.Dialog):
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
         btnSizer.Add(OkBtn)
+        OkBtn.SetDefault()
         btnSizer.Add(CancelBtn)
         btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)

@@ -714,8 +714,12 @@ mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 
 def SetupGeneral(data, dirname):
-    '''Initialize the General sections of the Phase tree contents
-    Called by SetupGeneral in GSASIIphsGUI and in GSASIIscriptable.SetupGeneral
+    '''Initialize the General sections of the Phase tree contents. Should
+    be done after changes to the Atoms array.
+
+    Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`), 
+    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`SUBGROUPS.saveNewPhase`,
+    and in :func:`GSASIIscriptable.SetupGeneral`.
     '''
     generalData = data['General']
     atomData = data['Atoms']

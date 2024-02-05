@@ -4299,9 +4299,10 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if DelList:
             SelectDataTreeItem(self,selItem)
-            self.GPXtree.UpdateSelection()
-            # self.GPXtree.SelectItem(self.root)
-            # self.GPXtree.SelectItem(selItem)
+            try: # fails if previously selected item is deleted
+                self.GPXtree.UpdateSelection()
+            except:            
+                self.GPXtree.SelectItem(self.root)
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the
@@ -6977,7 +6978,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOSUB,'Make subgroup project file(s)','Requires subcell search in PWDR/Unit Cells')
         G2G.Define_wxId('wxID_SUPERSRCH')
-        self.GeneralCalc.Append(G2G.wxID_SUPERSRCH,'Supergroup search','Search for settings of this phase in higher symmetry')
+        self.GeneralCalc.Append(G2G.wxID_SUPERSRCH,'Bilbao Supergroup search','Search for settings of this phase in higher symmetry')
+        G2G.Define_wxId('wxID_ISOSRCH')
+        self.GeneralCalc.Append(G2G.wxID_ISOSRCH,'ISOCIF Supergroup search','Search for settings of this phase in higher symmetry')
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         

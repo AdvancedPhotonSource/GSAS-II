@@ -2777,7 +2777,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 pass
             compSizer.Add(atmselSizer,0)
             return compSizer
-            
 
         # UpdateGeneral execution starts here
         phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
@@ -2960,6 +2959,236 @@ def UpdatePhaseData(G2frame,Item,data):
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
+        
+    def OnISOSearch(event):
+        '''Search for a higher symmetry structure consistent with the 
+        current phase using the ISOCIF web service 
+        '''
+        def _showWebPage(event):
+            'Show a web page when the user presses the "show" button'
+            import tempfile
+            txt = event.GetEventObject().page
+            tmp = tempfile.NamedTemporaryFile(suffix='.html',
+                        delete=False)
+            open(tmp.name,'w').write(txt.replace(
+                '<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',
+                ))
+            fileList.append(tmp.name)
+            G2G.ShowWebPage('file://'+tmp.name,G2frame)
+        import tempfile
+        import re
+        import requests
+        import G2export_CIF
+        isosite="https://stokes.byu.edu/iso/"
+        upscript='isocifuploadfile.php'
+        isoscript='isocifform.php'
+        isoCite = '''For use of this supergroup search, please cite H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISOCIF, ISOTROPY Software Suite, iso.byu.edu.'''
+        latTol,coordTol,occTol = 0.001, 0.01, 0.1
+        oacomp,occomp = G2mth.phaseContents(data)
+        ophsnam = data['General']['Name']
+        fileList = []
+        # write a CIF as a scratch file
+        obj = G2export_CIF.ExportPhaseCIF(G2frame)
+        obj.InitExport(None)
+        obj.currentExportType='phase'
+        obj.loadTree()
+        tmp = tempfile.NamedTemporaryFile(suffix='.cif',delete=False)
+        try:
+            obj.dirname,obj.filename = os.path.split(tmp.name)
+            obj.phasenam = data['General']['Name']
+            obj.Writer('',data['General']['Name'])
+            # isocif upload
+            files = {'toProcess': open(tmp.name,'rb')}
+            values = {'submit':'OK','input':'uploadcif'}
+            r0 = requests.post(isosite+upscript, files=files, data=values)
+            # get the filename out from the upload response
+            for f in r0.text.split('INPUT')[1:]:
+                if 'filename' in f: break
+            else:
+                G2G.G2MessageBox(G2frame,
+                    f'ISOCIF upload problem\nHTML output={r0.text}',
+                    'Upload Error')
+                return
+            isofile = f.split('VALUE')[1].split('"')[1]
+        finally:
+            os.unlink(tmp.name)
+            
+        # CIF uploaded, now process
+        values1 = {'submit':'OK','input':'uploadcif','filename':isofile}
+        r1 = requests.post(isosite+isoscript, data=values1)
+
+        # from processed page, pull out form
+        try:
+            form = re.split('</form',
+                [i for i in re.split('<form',r1.text,flags=re.IGNORECASE)
+                     if 'Detect higher' in i][0],
+                flags=re.IGNORECASE)[0]
+        except IndexError:
+            tmp1 = tempfile.NamedTemporaryFile(suffix='.html')
+            open(tmp1.name,'w').write(r1.text.replace(
+                '<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',
+                ))
+            G2G.ShowWebPage('file://'+tmp1.name,G2frame)
+            G2G.G2MessageBox(G2frame,
+                    'ISOCIF CIF processing problem, showing ISOCIF web page',
+                    'ISOCIF Error')
+            return
+
+        formDict = {}
+        for f in form.split('<'):
+            try:
+                name = re.split('name=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                value = re.split('value=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                formDict[name] = value
+            except IndexError:
+                pass
+
+        repeat = True
+        while repeat:
+            repeat = False
+            dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
+                                prompts=['lattice constants tolerance',
+                                     'coordinate tolerance',
+                                     'occupancy tolerance'],
+                                values=[latTol,coordTol,occTol],
+                                limits=3*[[0.,2.]],formats=3*['%.5g'],
+                                header=isoCite)
+            res = dlg.ShowModal()
+            latTol,coordTol,occTol = dlg.GetValues()
+            dlg.Destroy()
+            if res != wx.ID_OK:
+                for i in fileList: os.unlink(i) # cleanup tmp web pages
+                return
+            formDict['acclat'], formDict['accpos'], formDict['accocc'] = latTol,coordTol,occTol
+            r2 = requests.post(isosite+isoscript, data=formDict)
+            # now parse out structural info from r2 and insert into current phase
+            structure = r2.text.split('</H1>')[1].split('<p>')[2]
+            atomList = []
+            change = True
+            for l in structure.split('\n')[1:]:
+                l = l.split('<')[0]
+                if 'No change in actual' in l:
+                    change = False
+                elif 'Space Group:' in l:
+                    sgnum,sglbl,shname = l.split(':')[1].split()
+                elif 'Lattice parameters:' in l:
+                    cell = [float(i.split(',')[0].split('<')[0]) for i in l.split('=')[1:]]
+                elif ':' in l or not l.strip():
+                    pass
+                else:  # must be an atom record
+                    try:
+                        nam = l.split()[0]
+                        exec(l.split('),')[1].replace(',',';').strip())
+                        xyz = [float(i) for i in eval(l.split('(')[1].split(')')[0])]
+                        atomList.append([nam,xyz])
+                    except:
+                        if GSASIIpath.GetConfigValue('debug'):
+                            print(f'could not parse "{l}"')
+            if change:
+                dlg = wx.Dialog(G2frame,wx.ID_ANY,'Supergroup found',
+                                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                mainSizer = wx.BoxSizer(wx.VERTICAL)
+                dlg.SetSizer(mainSizer)
+                msg = f'A supergroup structure in space group {sglbl} was found  with {len(atomList)} atoms in the asymmetric unit. '
+                newPhase = makeIsoNewPhase(data,cell,atomList,sglbl,sgnum)
+                nacomp,nccomp = G2mth.phaseContents(newPhase)
+                msg += f"Unit cell {G2mth.fmtPhaseContents(nccomp)}"
+                msg += f", vol={newPhase['General']['Cell'][7]:.2f} A^3"
+                msg += f", density={G2mth.getDensity(newPhase['General'])[0]:.2f} g/cm^3."
+                msg += f"\nAsymmetric unit {G2mth.fmtPhaseContents(nacomp)}."
+                
+                msg += f"\n\nOriginal structure is in space group {data['General']['SGData']['SpGrp']}"
+                msg += f" and has {len(data['Atoms'])} atoms. "
+                msg += f"Unit cell {G2mth.fmtPhaseContents(occomp)}"
+                msg += f", vol={data['General']['Cell'][7]:.2f} A^3"
+                msg += f", density={G2mth.getDensity(data['General'])[0]:.2f} g/cm^3."
+                msg += f"\nAsymmetric unit {G2mth.fmtPhaseContents(oacomp)}."
+                txt = wx.StaticText(dlg,wx.ID_ANY,msg)
+                txt.Wrap(450)
+                mainSizer.Add(txt)
+                mainSizer.Add((-1,10))
+                showSizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn = wx.Button(dlg, wx.ID_ANY,label='Show') 
+                btn.page = r2.text
+                btn.Bind(wx.EVT_BUTTON,_showWebPage)
+                showSizer.Add(btn)
+                showSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                ' Web page with ISOCIF search results'))
+                mainSizer.Add(showSizer)
+                mainSizer.Add((-1,5))
+                G2G.HorizontalLine(mainSizer,dlg)
+                mainSizer.Add((-1,10))
+                mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                                'Choose an action:'))
+                mainSizer.Add((-1,10))
+                btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn = wx.Button(dlg, wx.ID_CANCEL, label="Quit") 
+                btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+                btnsizer.Add(btn)
+                btnsizer.Add((5,5))
+                btn = wx.Button(dlg, wx.ID_CLOSE, label="Change tolerances") 
+                btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CLOSE))
+                btnsizer.Add(btn)
+                btnsizer.Add((5,5))
+                btn = wx.Button(dlg, wx.ID_OK, label="Create GSAS-II project\nwith this supergroup") 
+                btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+                btn.SetDefault()
+                btnsizer.Add(btn)
+                mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+                
+                mainSizer.Fit(dlg)
+                dlg.CenterOnParent()
+                ans = dlg.ShowModal()
+                dlg.Destroy()
+                #breakpoint()
+                if ans == wx.ID_CANCEL:
+                    for i in fileList: os.unlink(i) # cleanup tmp web pages
+                    return
+                if ans == wx.ID_CLOSE:
+                    repeat = True
+                    continue
+                break
+            else:
+                dlg = wx.MessageDialog(G2frame,'A higher symmetry structure was not found, repeat search with different tolerances?',
+                                        'Repeat?',wx.YES|wx.NO)
+                try:
+                    dlg.CenterOnParent()
+                    repeat = wx.ID_YES == dlg.ShowModal()
+                    if not repeat:
+                        for i in fileList: os.unlink(i) # cleanup tmp web pages
+                        return
+                finally:
+                    dlg.Destroy()
+                    
+        # now create a new .gpx file
+        G2frame.OnFileSave(None) # save project on disk to restore to this later
+        orgFilName = G2frame.GSASprojectfile
+        # get restraints for later use (to clear them)
+        resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame,resId,ophsnam)
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        if ophsnam in Restraints:
+            Restraints[ophsnam]['Bond']['Bonds'] = []
+            Restraints[ophsnam]['Angle']['Angles'] = []
+        f = saveIsoNewPhase(G2frame,data,newPhase,orgFilName)
+
+        wx.MessageBox(f"{isoCite}\n\nCreated project in space group {sglbl} as file {f}", 
+                          style=wx.ICON_INFORMATION,caption='File created')
+        for i in fileList: os.unlink(i) # cleanup tmp web pages
+        def _GetPhase():
+            'After search complete reload the project from the saved .gpx file'
+            G2frame.OnFileOpen(None,filename=orgFilName,askSave=False)
+            wx.CallLater(100,_ShowPhase)
+        def _ShowPhase():
+            'After search complete and project is reloaded, reopen tree to the original phase'
+            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            G2frame.GPXtree.Expand(phId)        
+            phId = G2gd.GetGPXtreeItemId(G2frame,phId,ophsnam)
+            G2frame.GPXtree.SelectItem(phId)
+        wx.CallLater(100,_GetPhase)
         
     def OnSuperSearch(event):
         '''Search for a supergroup matching the current phase using the 
@@ -3224,7 +3453,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     reSizer = wx.BoxSizer(wx.HORIZONTAL)
                     reSizer.Add((20,-1))
                     redo = G2G.G2CheckBoxFrontLbl(spanel,
-                                    ' Search again with this result?',
+                                    ' Search again for supergroups of this result?',
                                     ReSearch,key)
                     reSizer.Add(redo)
                     txtSizer.Add(reSizer)
@@ -3322,20 +3551,15 @@ def UpdatePhaseData(G2frame,Item,data):
             resId = G2gd.GetGPXtreeItemId(G2frame,resId,ophsnam)
             cx,ct,cs,cia = data['General']['AtomPtrs']
             # get starting unit cell contents
-            ocomp = {}
-            for atom in data['Atoms']:
-                if atom[ct] in ocomp:
-                    ocomp[atom[ct]] += atom[cs+1]
-                else:
-                    ocomp[atom[ct]] = atom[cs+1]
-            ovol = data['General']['Cell'][7]
-            o = ', '.join([f'{i}:{j}' for i,j in ocomp.items()])
+            oacomp,occomp = G2mth.phaseContents(data)
             msgs = {}
-            msgs[0] = "initial structure: cell = "
-            msgs[0] += fmtCell(data['General']['Cell'][1:7]) + '.\n '
-            msgs[0] += f"Space group {data['General']['SGData']['SpGrp']}.\n"
-            startSet = msgs[0].replace('\n','')
-            msgs[0] += f" Before transform, unit cell contents/volume:\n {o}, {ovol:.2f} A^3"
+            msgs[0] = f"initial structure: cell = {fmtCell(data['General']['Cell'][1:7])}"
+            msgs[0] += f", vol={data['General']['Cell'][7]:.2f} A^3"
+            msgs[0] += f", Space group {data['General']['SGData']['SpGrp']}. "
+            msgs[0] += f"Before any transform, unit cell {G2mth.fmtPhaseContents(occomp)}"
+            msgs[0] += f", density={G2mth.getDensity(data['General'])[0]:.2f} g/cm^3"
+            msgs[0] += f". Asymmetric unit {G2mth.fmtPhaseContents(oacomp)} ({len(data['Atoms'])} atoms)."
+            startSet = msgs[0]
 
             # fix non-standard space group settings
             GoOn = pgbar.Update(1,newmsg=
@@ -3354,21 +3578,23 @@ def UpdatePhaseData(G2frame,Item,data):
                     print('*** Transforming structure to standard setting')
                     newPhase['ranId'] = ran.randint(0,sys.maxsize),
                     newPhase['General']['SGData'] = G2spc.SpcGroup(sgsym)[1]
-                    newPhase['General']['Cell'][1:] = G2lat.TransformCell(newPhase['General']['Cell'][1:-1],xmat)
+                    newPhase['General']['Cell'][1:] = G2lat.TransformCell(
+                        newPhase['General']['Cell'][1:-1],xmat)
                     uvec = np.array(xoff)
                     vvec = np.array([0.,0.,0.])
                     newPhase['MagXform'] = (xmat,xoff,vvec)
-                    newPhase,atCodes = G2lat.TransformPhase(data,newPhase,xmat,uvec,vvec,False)
+                    newPhase,atCodes = G2lat.TransformPhase(
+                        data,newPhase,xmat,uvec,vvec,False)
                     startSet = "transformed starting structure: cell = "
                     startSet += fmtCell(newPhase['General']['Cell'][1:7])
                     startSet += f". Space group {newPhase['General']['SGData']['SpGrp']}."
-                    
             except:
-                G2G.G2MessageBox(G2frame,'Standard setting check failed. Try again later.',
-                                 'Unexpected error')
+                G2G.G2MessageBox(G2frame,
+                        'Standard setting check failed. Try again later.',
+                        'Unexpected error')
                 return
-            
-            # search with a standard space group setting
+
+            # search from a standard space group setting
             GoOn = pgbar.Update(2,newmsg=
                 f'Searching for supergroup(s) consistent with phase {ophsnam}'+
                 '\nSearching with phase')
@@ -16061,6 +16287,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnTransform2Std, id=G2G.wxID_TRANSFORMSTD)
         G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
+        G2frame.Bind(wx.EVT_MENU, OnISOSearch, id=G2G.wxID_ISOSRCH)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
@@ -16564,3 +16791,72 @@ def checkPDFfit(G2frame):
             'PDFfit2 install error')
         return False
 
+def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
+    '''create a new phase from a supergroup structure generated by ISOCIF
+    '''
+    if len(atomList) == 0:
+        print(sglbl,'empty structure')
+        return
+    # create a new phase
+    try: 
+        sgnum = int(sgnum)
+        sgsym = G2spc.spgbyNum[sgnum]
+        sgname = sgsym.replace(" ","")
+    except:
+        print(f'Problem with processing space group name {sglbl} and number {sgnum}')
+        return
+    newPhase = copy.deepcopy(phData)
+    newPhase['ranId'] = ran.randint(0,sys.maxsize),
+    if 'magPhases' in phData: del newPhase['magPhases']
+    generalData = newPhase['General']
+    generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+    generalData['Cell'][1:7] = cell
+    generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    Atoms = newPhase['Atoms'] = []
+    for nam,(x,y,z) in atomList:
+        try: 
+            atom = []
+            atom.append(nam)
+            if nam[1].isdigit():
+                atom.append(nam[0:1])
+            else:
+                atom.append(nam[0:2])
+            atom.append('')
+            for i in x,y,z: atom.append(float(i))
+            atom.append(1.0)
+            SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
+            atom.append(SytSym)
+            atom.append(Mult)
+            atom.append('I')
+            atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+            atom.append(ran.randint(0,sys.maxsize))
+            Atoms.append(atom)
+        except Exception as msg:
+            print(f'{msg} error in atom {nam}')
+    G2elem.SetupGeneral(newPhase,generalData['Mydir'])  # fixup composition info
+    return newPhase
+
+def saveIsoNewPhase(G2frame,phData,newPhase,orgFilName):
+    '''save the new phase generated by ISOCIF created in :func:`makeIsoNewPhase` 
+    into a GSAS-II project (.gpx) file
+    '''
+    import re
+    phData.update(newPhase)
+    # save new file
+    sgname = newPhase['General']['SGData']['SpGrp'].replace(' ','')
+    G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_super_'+sgname.replace('/','$')+'.gpx'
+    while os.path.exists(G2frame.GSASprojectfile):
+        s = re.split(r'_([\d]+)\.gpx',G2frame.GSASprojectfile)
+        if len(s) == 1:
+            G2frame.GSASprojectfile = os.path.splitext(G2frame.GSASprojectfile)[0] + '_1.gpx'
+        else:
+            num = 10
+            try:
+                num = int(s[1]) + 1
+            except:
+                pass
+            G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
+    G2IO.ProjFileSave(G2frame)
+    return G2frame.GSASprojectfile

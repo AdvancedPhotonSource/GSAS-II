@@ -4587,6 +4587,8 @@ class ExportCIF(G2IO.ExportBaseclass):
 class ExportProjectCIF(ExportCIF):
     '''Used to create a CIF of an entire project
 
+    also called directly in :func:`GSASIIIO.ExportSequentialFullCIF`
+
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
@@ -4611,6 +4613,8 @@ class ExportPhaseCIF(ExportCIF):
     '''Used to create a simple CIF with one phase. Uses exact same code as
     :class:`ExportCIF` except that `phaseOnly` is set for the Exporter
     Shows up in menu as Quick CIF.
+
+    also called directly in OnISOSearch in GSASIIphsGUI
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''

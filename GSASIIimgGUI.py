@@ -1626,10 +1626,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2frame.autoIntFrame = None
     def OnAutoInt(event):
         if G2frame.autoIntFrame: # ensure only one open at a time
+            print('Auto-integration window already open')
             G2frame.autoIntFrame.Raise()
             return
-        else:
-            print('Auto-integration window already open')
         PollTime = GSASIIpath.GetConfigValue('Autoint_PollTime',30.)
         G2frame.autoIntFrame = AutoIntFrame(G2frame,PollTime=PollTime)
         # debug code to reload code for window on each use
@@ -1637,7 +1636,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         #reload(GSASIIimgGUI)
         #G2frame.autoIntFrame = GSASIIimgGUI.AutoIntFrame(G2frame,PollTime=PollTime)
 
-        G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close 
+        G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close
     G2frame.Bind(wx.EVT_MENU, OnAutoInt, id=G2G.wxID_IMAUTOINTEG)
     def OnIntPDFtool(event):
         import subprocess
@@ -3107,7 +3106,23 @@ class AutoIntFrame(wx.Frame):
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
-        self.fmtlist = G2IO.ExportPowderList(G2frame)
+        # get image controls to find image type (PWDR vs SASD)
+        ic = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+            G2frame,G2frame.Image, 'Image Controls'))
+        self.ImageType = ic['type']
+        # get exporters based on image type
+        if self.ImageType == 'SASD':
+            self.fmtlist = [ [],[] ]
+            for obj in G2frame.exporterlist:
+                if 'sasd' in obj.exporttype:
+                    try:
+                        obj.Writer
+                        self.fmtlist[0].append(obj.extension)
+                        self.fmtlist[1].append(obj.formatName)
+                    except AttributeError:
+                        pass
+        else:
+            self.fmtlist = G2IO.ExportPowderList(G2frame)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
         self.imageBase = G2frame.Image
@@ -3506,7 +3521,26 @@ class AutoIntFrame(wx.Frame):
                 if self.multipleFmtChoices.get(fmt):
                     hint = self.multipleFmtChoices.get(fmt)
                 fil = os.path.join(self.params['outdir'],subdir,fileroot)
-                G2IO.ExportPowder(G2frame,treename,fil+'.x','.'+fmt,hint=hint) # dummy extension (.x) is replaced before write)
+                if self.ImageType == 'SASD':
+                    ffil = fil + '.' + fmt
+                    for obj in G2frame.exporterlist:
+                        #print(obj.extension,obj.exporttype)
+                        if obj.extension == '.'+fmt and 'sasd' in obj.exporttype:
+                            if hint and hint not in obj.formatName: continue
+                            try:
+                                obj.currentExportType = 'sasd'
+                                obj.loadTree()
+                                obj.Writer(treename,ffil)
+                                print('wrote file '+ffil)
+                                break
+                            except AttributeError:
+                                continue
+                            except Exception as msg:
+                                print(f'Export Routine for .{fmt} failed\nerror={msg}.')
+                    else:
+                        print(f'{fmt} not found: unexpected error')
+                else:
+                    G2IO.ExportPowder(G2frame,treename,fil+'.x','.'+fmt,hint=hint) # dummy extension (.x) is replaced before write)
                 
     def EnableButtons(self,flag):
         '''Relabels and enable/disables the buttons at window bottom when auto-integration is running

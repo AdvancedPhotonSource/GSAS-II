@@ -1427,7 +1427,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn.Enable(len(errmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, 'Show Warnings')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-            btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg))
+            btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg.replace('&','&&')))
             btn.Enable(len(warnmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)

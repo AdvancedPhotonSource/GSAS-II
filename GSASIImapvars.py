@@ -274,19 +274,22 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     errmsg = ''  # save error messages here. If non-blank, constraints cannot be used.
     warning = '' # save informational text messages here.
 
-    # Process the equivalences; If there are conflicting parameters, move them into constraints
-    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict,seqHistNum=seqHistNum)
-    
     # find parameters used in constraint equations & new var assignments (all are dependent)
     global constrVarList 
     constrVarList = []
+    for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
+        constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
+
+    # Process the equivalences; If there are conflicting parameters, move them into constraints
+    warning = CheckEquivalences(constrDict,varyList,fixedList,parmDict,seqHistNum=seqHistNum)
+    
 
     # look through "Constr" and "New Var" constraints looking for zero multipliers and
     # Hold, Unvaried & Undefined parameters
     skipList = []
     invalidParms = []
     for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
-        constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
+        #constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
         valid = 0          # count of good parameters
         # error reporting
         zeroList = []      # parameters with zero multipliers
@@ -677,7 +680,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                     StoreHold(var,'Equiv fixed')
             else:
                 msg = '  All parameters set as "Hold" '
-            msg += "\n   and ignoring equivalence"
+            msg += "\n   Will ignore equivalence"
             warnEqv(msg,cnum)
             removeList.append(cnum)
             continue
@@ -705,7 +708,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                 continue
             else:
                 msg = 'No parameters varied '
-            msg += "\nand ignoring equivalence"
+            msg += "\n  Will ignore equivalence"
             warnEqv(msg,cnum)
             removeList.append(cnum)
             continue
@@ -1193,7 +1196,7 @@ def getConstrError(constrLst,seqmode,seqhst):
             for i,v in enumerate(varList):
                 if i != 0: msg += ', '
                 msg += v
-            return False,msg,"Equivalence Ignored."
+            return False,msg,"Ignored: not varied"
         
         # hold parameters
         s = ''
@@ -1224,11 +1227,11 @@ def getConstrError(constrLst,seqmode,seqhst):
         if gotNotVary and gotVary:  # mix of varied and unvaried parameters
             if msg: msg += '. '
             msg += 'Unvaried parameter(s): '+s+"; remainder set Hold. All parameters fixed."
-            return False,msg, 'Equivalence Ignored.'
+            return False,msg, 'Ignored: not all varied'
         elif gotNotVary:
             if msg: msg += '. '
             msg += 'All parameters not varied. Equivalence Ignored.'
-            return False,msg, 'Equivalence Ignored.'
+            return False,msg, 'Ignored: not varied'
             
         # undefined parameters
         undef = 0
@@ -1416,7 +1419,7 @@ def _showEquiv(varlist,mapvars,invmultarr,longmsg=False):
         j = 0
         for v,m in zip(varlist,invmultarr):
             if debug: print ('v,m[0]: ',v,m[0])
-            if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
+            if len(s1.split('\n')[-1]) > 60: s1 += '\n        '
             if j > 0: s1 += ' & '
             j += 1
             s1 += str(v)
@@ -1436,7 +1439,7 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     depVars = constrParms['dep-equiv']+constrParms['dep-constr']
     if len(depVars) > 0:
         s += '\nDependent parameters from constraints & equivalences:\n'
-        for v in sorted(depVars):
+        for v in sorted(set(depVars)):
             s += '    ' + v + '\n'
     first = True
     for v in sorted(holdParmList):

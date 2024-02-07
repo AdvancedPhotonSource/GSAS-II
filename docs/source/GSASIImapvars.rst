@@ -314,15 +314,15 @@ When constraints are processed, the following steps are used:
    module's globals using :func:`StoreEquivalence`.
 
 #. Constraints/equivalences are then checked for possible conflicts with
-   :func:`GenerateConstraints`, this requires grouping the constraints, 
-   as described below.
-
-#. :func:`GenerateConstraints` is then called to 
-   create the constraints that will be used, 
-   :ref:`see below <GenerateConstraints>` for more details. 
-
-#. For debugging constraints, :func:`VarRemapShow` can be called after 
-   :func:`GenerateConstraints` to display the generated constraints. 
+   :func:`GenerateConstraints` which in turn calls :func:`CheckEquivalences`. 
+   These routines group the constraints
+   and possibly reorganize them, as discussed below for
+   :func:`GenerateConstraints` (:ref:`discussed here <GenerateConstraints>`)
+   and for :func:`CheckEquivalences` (:ref:`discussed here <CheckEquivalences>`).
+	
+#. Note that for debugging, :func:`VarRemapShow` can be called at any point
+   after :func:`GenerateConstraints` has been called. This will display the
+   generated constraints. 
 
 .. _ProcessConstraints:
 
@@ -546,12 +546,15 @@ Equivalence Checking and Reorganization (:func:`CheckEquivalences`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Equivalences need to be checked for usages that could be internally conflicted 
-or have possible conflicts with other constraints. 
+or have possible conflicts with other constraints. Function :func:`CheckEquivalences`
+is called within :func:`GenerateConstraints` to diagnose and where
+possible resolve such uses, as discussed below. 
 
 **Mixed parameter use:**
 
- **Note** that cycling through the equivalences may be needed to find all mixed-use 
- parameters, see below.
+ **Note** that multiple passes, cycling through the equivalences may
+ be needed to find all mixed-use parameters, as will be discussed
+ further, below.
 
 * A parameter should not show up as a dependent variable in two equivalence expressions, 
   such as:: 

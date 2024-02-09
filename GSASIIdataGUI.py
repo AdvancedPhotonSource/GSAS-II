@@ -409,7 +409,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {} 
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.11','wx': '4.2.1'}  # still catching up to wx4.2.0
+versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.2'}  
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():

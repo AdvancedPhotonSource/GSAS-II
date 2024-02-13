@@ -60,14 +60,21 @@ def GetBinaryDir():
 def find(name, path):
     '~unix find command; returns first file found'
     for root, dirs, files in os.walk(path):
-        if name in files:
-            return os.path.join(root, name)
+        if sys.platform == "win32" or sys.platform == "darwin":
+            if name.lower() in [i.lower() for i in files]:
+                return os.path.join(root, name)
+        else:
+            if name in files:
+                return os.path.join(root, name)
 def findInPython(name):
     'find a file in the current Python directory'
     base = os.path.split(sys.executable)[0]
     if not sys.platform == "win32":
         base = os.path.split(base)[0]
-    return find(name,base)
+    n = find(name,base)
+    if not n: raise Exception(f'{name} not found')
+    print(f'{name} found as {n}')
+    return n
 #==========================================================================================
 # misc initializations
 # need command-line options for fortran command and fortran options
@@ -308,7 +315,8 @@ try:
     pythonInc = os.path.split(findInPython('Python.h'))[0]
     numpyInc = os.path.split( os.path.split(findInPython('ndarraytypes.h'))[0] )[0]
     if sys.platform == "win32":
-        pythonLib = findInPython('python310.lib')
+        ver = str(sys.version_info.major)+str(sys.version_info.minor)
+        pythonLib = findInPython(f'python{ver}.lib')
         if C_only: print('locations:\n',pythonLib,'\n',numpyInc)
     if sys.platform == "win32" and C_only: print(pythonLib)
 except TypeError:

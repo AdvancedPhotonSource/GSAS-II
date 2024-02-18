@@ -597,13 +597,10 @@ def ClosedFormFF(Z,SQ,k,N):
     elif k == 7:
         if N == 8:
             return 645120.0*K**7/K2pZ2**8
-        
-        
-            
-    
-    
     
 def BlenResCW(Els,BLtables,wave):
+    ''' Computes resonant scattering lengths - single wavelength version (CW)
+    '''
     FP = np.zeros(len(Els))
     FPP = np.zeros(len(Els))
     for i,El in enumerate(Els):
@@ -624,6 +621,8 @@ def BlenResCW(Els,BLtables,wave):
     return FP,FPP
     
 def BlenResTOF(Els,BLtables,wave):
+    ''' Computes resonant scattering lengths - multiple wavelength version (TOF)
+    '''
     FP = np.zeros((len(Els),len(wave)))
     FPP = np.zeros((len(Els),len(wave)))
     BL = [BLtables[el][1] for el in Els]

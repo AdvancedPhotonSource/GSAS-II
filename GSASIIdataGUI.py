@@ -409,7 +409,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {} 
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.2'}  
+versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.2'}
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -499,23 +499,8 @@ def ShowVersions():
         print ("  Max threads:%s"%mkl.get_max_threads())
     except:
         pass
-    rev = GSASIIpath.svnGetRev()
-    if rev is None: 
-        "no SVN"
-    else:
-        rev = "SVN version {}".format(rev)
-    print ("Latest GSAS-II revision (from .py files): {} ({})".format(
-        GSASIIpath.GetVersionNumber(),rev))
-    # patch 11/2020: warn if GSASII path has not been updated past v4576.
-    # For unknown reasons on Mac with gsas2full, there have been checksum
-    # errors in the .so files that prevented svn from completing updates.
-    # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
-    # has not been retrieved, so warn. Keep for a year or so. 
-    try:
-        GSASIIpath.svnChecksumPatch
-    except:
-        print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
-    # end patch
+    print(GSASIIpath.getG2VersionInfo())
+    
     prog = 'convcell'
     if sys.platform.startswith('win'): prog += '.exe'
     if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
@@ -524,8 +509,8 @@ def ShowVersions():
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print('N.B. current binaries have been updated')
     if warn:
-        print(70*'=','''
-You are running GSAS-II in a Python environment with either untested 
+        print(70*'=')
+        print('''You are running GSAS-II in a Python environment with either untested 
 or known to be problematic packages, as noted above. If you are seeing 
 problems in running GSAS-II you are suggested to install an additional 
 copy of GSAS-II from one of the gsas2full installers (see 
@@ -533,8 +518,8 @@ https://bit.ly/G2install). This will provide a working Python
 environment as well as the latest GSAS-II version. 
 
 For information on GSAS-II package requirements see 
-https://gsas-ii.readthedocs.io/en/latest/packages.html
-''',70*'=','\n')
+https://gsas-ii.readthedocs.io/en/latest/packages.html''')
+        print(70*'=','\n')
 
 def TestOldVersions():
     '''Test the versions of required Python packages, etc.
@@ -738,7 +723,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES,"&Preferences",'')
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
-        if GSASIIpath.whichsvn():
+        if GSASIIpath.HowIsG2Installed() == 'svn':
             item = parent.Append(wx.ID_ANY,'Edit proxy...','Edit proxy internet information (used for updates)')
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):

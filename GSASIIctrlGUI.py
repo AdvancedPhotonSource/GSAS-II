@@ -2914,7 +2914,8 @@ class MultiDataDialog(wx.Dialog):
        each item value
     :param str header: a string to be placed at the top of the 
        window, if specified
-     example::
+
+    example::
 
         dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
                 prompts=['lattice constants tolerance',

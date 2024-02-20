@@ -5461,10 +5461,7 @@ class MyHelp(wx.Menu):
             wxadv = wx
         info = wxadv.AboutDialogInfo()
         info.Name = 'GSAS-II'
-        ver = GSASIIpath.svnGetRev()
-        if not ver:
-            ver = GSASIIpath.GetVersionNumber()
-        info.SetVersion(ver)
+        info.SetVersion(GSASIIpath.getG2VersionInfo())
         #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
         info.Copyright = ('(c) ' + time.strftime('%Y') +
 ''' Argonne National Laboratory
@@ -5685,30 +5682,6 @@ For DIFFaX use cite:
         GPX = self.frame.GSASprojectfile
         GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
         return
-
-    # def OnSelectBranch(self,event):
-    #     '''Allow the user to select branch of GSAS-II or return to trunk
-    #     N.B. Name of branch to use is hard-coded here. Must contain a slash
-    #     '''
-    #     testbranch = '/branch/2frame'
-    #     if not GSASIIpath.svnTestBranch():
-    #         dlg = wx.MessageDialog(self.frame,
-    #                                'Switching to test GSAS-II version',
-    #                                'Confirm Switch',
-    #                                wx.OK|wx.CANCEL)
-    #         if dlg.ShowModal() != wx.ID_OK: return
-    #         branch = testbranch
-    #     else:
-    #         dlg = wx.MessageDialog(self.frame,
-    #                                'Switching back to standard GSAS-II version',
-    #                                'Confirm Switch',
-    #                                wx.OK|wx.CANCEL)
-    #         if dlg.ShowModal() != wx.ID_OK: return
-    #         branch = 'trunk'
-    #     print('start switch')
-    #     self.frame.OnFileSave(event)
-    #     GPX = self.frame.GSASprojectfile
-    #     GSASIIpath.svnUpdateProcess(projectfile=GPX,branch=branch)
 
 ################################################################################
 class HelpButton(wx.Button):

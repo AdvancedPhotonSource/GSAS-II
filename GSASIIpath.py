@@ -193,8 +193,24 @@ def getG2VersionInfo():
     if HowIsG2Installed().startswith('git'):
         g2repo = git.Repo(path2GSAS2)
         commit = g2repo.head.commit
-        tim = datetime.datetime.ctime(commit.committed_datetime)
-        return f"GSAS-II version of {tim} (git {commit.hexsha[:6]})"
+        ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
+        now = datetime.datetime.now().replace(
+            tzinfo=commit.committed_datetime.tzinfo)
+        delta = now - commit.committed_datetime
+        age = delta.total_seconds()/(60*60*24.)
+        tags = g2repo.git.tag('--points-at',commit).split('\n')
+        # for some reason this includes the hash, which we don't need
+        tags = [i for i in tags if not commit.hexsha.startswith(i)]
+        tags = [i for i in tags if i.isnumeric()]
+        version = "of "
+        if len(tags) >= 1:
+            version = f"#{tags[0]} "
+        msg = ''
+        if age > 60:
+            msg = "\n**** This version is really old. Please update ****"
+        elif age > 5:
+            msg = "\n**** Please consider updating"
+        return f"GSAS-II version {version} {ctim} ({age:.1f} days old). Git: {commit.hexsha[:6]}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is None: 
@@ -214,6 +230,8 @@ def getG2VersionInfo():
         # end patch
             
         return f"Latest GSAS-II revision: {GetVersionNumber()} ({rev})"
+    else:
+        return f"GSAS-II installed manually, last revision: {GetVersionNumber()}"
 
 #==============================================================================
 #==============================================================================
@@ -274,8 +292,9 @@ def gitHash2Tags(repo_path,githash=None):
         commit = g2repo.head.object
     else:
         commit = g2repo.commit(githash)
-    return [i.name for i in g2repo.tags if i.commit == commit]
-
+    #return [i.name for i in g2repo.tags if i.commit == commit] # slow with a big repo
+    return g2repo.git.tag('--points-at',commit).split('\n')
+    
 def gitTag2Hash(repo_path,gittag):
     '''Provides the hash number for a git tag.
     Note that if `gittag` cannot be located because it does not 
@@ -345,8 +364,8 @@ def gitCheckForUpdates(repo_path,fetch=True):
     return remotecommits,localcommits,fetched
 
 def gitHistory(repo_path,values='tag'):
-    '''Provides the history of commits to master, starting from the
-    current head, either as tags or hash values
+    '''Provides the history of commits to the master, either as tags 
+    or hash values
 
     :param str repo_path: location where GSAS-II has been installed
     :param str values: specifies what type of values are returned. 
@@ -359,7 +378,7 @@ def gitHistory(repo_path,values='tag'):
       not have any associated tag(s), that entry is omitted from the list.
     '''
     g2repo = git.Repo(repo_path)
-    history = [i.hexsha for i in g2repo.iter_commits('HEAD')]
+    history = [i.hexsha for i in g2repo.iter_commits('master')]
     if values.lower().startswith('h'):
         return history
     elif values.lower().startswith('t'):

@@ -17,16 +17,29 @@ import sys
 import platform
 import glob
 import subprocess
-import datetime
+import datetime as dt
 try:
     import numpy as np
 except ImportError:
     print("skipping numpy in GSASIIpath")
 try:
-    import git
     import requests
+    try:
+        import git
+    except ImportError as msg:
+        if 'Failed to initialize' in msg.msg:
+            print('The gitpython package is unable to locate a git installation.')
+            print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
+        elif 'No module' in msg.msg:
+            print('Python gitpython module not installed')
+        else:
+            print(f'gitpython failed to import, but why? Error:\n{msg}')
+    except Exception as msg:
+        print(f'git import failed with unexpected error:\n{msg}')
 except:
-    print('Note, git or requests package not found')
+    print('Python requests package not installed (required for GSAS-II\n'+
+          'to install/update from git)')
+
     
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
@@ -194,7 +207,7 @@ def getG2VersionInfo():
         g2repo = git.Repo(path2GSAS2)
         commit = g2repo.head.commit
         ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
-        now = datetime.datetime.now().replace(
+        now = dt.datetime.now().replace(
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
@@ -206,10 +219,20 @@ def getG2VersionInfo():
         if len(tags) >= 1:
             version = f"#{tags[0]} "
         msg = ''
-        if age > 60:
-            msg = "\n**** This version is really old. Please update ****"
-        elif age > 5:
-            msg = "\n**** Please consider updating"
+        if g2repo.head.is_detached:
+            msg = ("\n" +
+            "**** You have reverted to a past version of GSAS-II. Please \n"
+            +
+            "contact the developers with what is preferred in this version ****"
+                    )
+        else:
+            rc,lc,_ = gitCheckForUpdates(path2GSAS2,fetch=False)
+            if age > 60 and len(rc) > 0:
+                msg = f"\n**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
+            elif age > 5 and len(rc) > 0:
+                msg = f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
+            elif len(rc) > 0:
+                msg = f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
         return f"GSAS-II version {version} {ctim} ({age:.1f} days old). Git: {commit.hexsha[:6]}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
@@ -318,8 +341,11 @@ def gitTestGSASII(repo_path,verbose=True):
        * -1: path is not found
        * -2: no git repository at path
        * -3: unable to access repository
-       * -4: repository has local changes (uncommitted)
-       *  0: no problems noted
+
+       * value&1==1: repository has local changes (uncommitted/stashed)
+       * value&2==2: repository has been regressed (detached head)
+
+       * value==0:   no problems noted
     '''
     if not os.path.exists(repo_path): 
         if verbose: print(f'Warning: Directory {repo_path} not found')
@@ -332,8 +358,10 @@ def gitTestGSASII(repo_path,verbose=True):
     except Exception as msg:
         if verbose: print(f'Warning: Failed to open repository. Error: {msg}')
         return -3
-    if g2repo.is_dirty(): return -4
-    return 0
+    code = 0
+    if g2repo.is_dirty(): code += 1
+    if g2repo.head.is_detached: code += 2
+    return code
 
 def gitCheckForUpdates(repo_path,fetch=True):
     '''Provides a list of the commits made locally and those in the local copy of the repo
@@ -363,6 +391,13 @@ def gitCheckForUpdates(repo_path,fetch=True):
     remotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
     return remotecommits,localcommits,fetched
 
+def gitDoBackgroundUpdate():
+    '''Launch a background process to update the GSAS-II repository,
+    but don't actually update GSAS-II. This will record the results of that
+    process in ~/GSASII_bkgUpdate.log (in %HOME% on Windows) 
+    '''
+    subprocess.Popen([sys.executable, __file__, '--git-update'])
+
 def gitHistory(repo_path,values='tag'):
     '''Provides the history of commits to the master, either as tags 
     or hash values
@@ -388,25 +423,6 @@ def gitHistory(repo_path,values='tag'):
         return [tagmap[i] for i in history if i in tagmap]
     else:
         raise ValueError(f'gitHistory has invalid value specified: {value}')
-
-def gitResetGSASII(repo_path,verbose=True):
-    '''Reset an existing GSAS-II installation to the latest version
-    of GSAS-II, wiping out any locally made changes to those files.
-    Use this if GSAS-II files have been left in a situation where 
-    an error prevents GSAS-II from starting or updating.
-
-    :param str repo_path: location where GSAS-II has been installed
-    :param bool verbose: When True (default) lots of messages are printed. 
-      Otherwise this routine will not print anything. 
-    :returns: True if the repository is found and has been reset, False
-      if no repository is at that location.
-    '''
-    if os.path.exists(os.path.join(repo_path,'.git')): 
-        git.Repo(repo_path).git.reset('--hard','origin/master')
-        return True
-    else:
-        if verbose: print(f'Warning: Repository {repo_path} not found')
-        return False
 
 def getGitBinaryReleases():
     '''Retrieves the binaries and download urls of the latest release
@@ -1983,34 +1999,256 @@ pdbBreak = DoNothing
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''
-    LoadConfig()
-    import time
-    time.sleep(1) # delay to give the main process a chance to exit
-    # perform an update and restart GSAS-II
-    try:
-        project,version = sys.argv[1:3]
-    except ValueError:
-        project = None
-        version = 'trunk'
-    loc = os.path.dirname(__file__)
-    if version == 'trunk':
-        svnSwitch2branch('')
-    elif '/' in version:
-        svnSwitch2branch(version)
-    elif version:
-        print("Regress to version "+str(version))
-        svnUpdateDir(loc,version=version)
+    # check what type of update is being called for
+    gitUpdate = False
+    preupdateType = None
+    updateType = None
+    regressversion = None
+    help = False
+    project = None
+    version = None
+    
+    for arg in sys.argv[1:]:
+        if '--git-fetch' in arg:   # pulls latest updates from server but does not apply them
+            updateType = 'fetch'
+        elif '--git-reset' in arg:   # restores locally changed GSAS-II files to distributed versions also updates
+            gitUpdate = True
+            if preupdateType:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            preupdateType = 'reset'
+        elif '--git-stash' in arg:   # saves locally changed GSAS-II files in "stash"
+            argsplit = arg.split('=')
+            if len(argsplit) == 1:
+                message = None
+            elif len(argsplit) == 2:
+                message=argsplit[1]
+                if message.startswith('"') and message.endswith('"'):
+                    message = message.strip('"')
+                if message.startswith("'") and message.endswith("'"):
+                    message = message.strip("'")
+                message = message.replace('"',"'") # double quote not allowed
+            else:
+                print('invalid form for --git-stash')
+                help = True
+                break
+            gitUpdate = True
+            if preupdateType:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            preupdateType = 'stash'
+        elif '--git-update' in arg:  # update to latest downloaded version
+            gitUpdate = True
+            if updateType:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            updateType = 'update'
+        elif '--git-regress' in arg:
+            argsplit = arg.split('=')
+            if len(argsplit) != 2:
+                print('invalid form for --git-regress')
+                help = True
+                break
+            gitversion = argsplit[1]
+            # make sure the version or tag supplied is valid and convert to
+            # a full sha hash
+            g2repo = git.Repo(path2GSAS2)
+            try:
+                regressversion = g2repo.commit(gitversion).hexsha
+            except git.BadName:
+                print(f'invalid version specified ({version}) for GitHub regression')
+                help = True
+                break
+            if updateType:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            updateType = 'regress'
+            gitUpdate = True
+        elif '--help' in arg:
+            help = True
+            break
+        elif os.path.exists(arg):   # svn args parsed later; this is just checking
+            project = arg
+            pass
+        else:   # for old-style svn update
+            if arg.isdecimal() or not arg: 
+                #version = arg
+                pass
+            else:
+                print(f'unknown arg {arg}')
+                help = True
+        if gitUpdate and version:
+            print('Conflicting arguments (git & svn opts combined?)')
+            help = True
+
+    if help or len(sys.argv) == 1:
+        print('''Options when running GSASIIpath.py standalone
+
+to update/regress repository from svn repository:
+   python GSASIIpath.py <project> <version>
+            where <project> is an optional path reference to a .gpx file
+            and <version> is a specific GSAS-II version to install 
+                (default is latest)
+
+to update/regress repository from git repository:
+   python GSASIIpath.py option 
+       where option will be one or more of the following:
+            --git-fetch            downloads lastest changes from repo
+                                   any other options will be ignored
+
+            --git-stash="message"  saves local changes 
+            --git-reset            discards local changes 
+            --git-update
+            --git-regress=version
+       Note: --git-fetch and --git-stash cannot be used together. Likewise
+            --git-update and --git-regress cannot be used together.
+            However either --git-fetch or --git-stash can be used 
+            with either --git-update or --git-regress.
+''')
+        sys.exit()
+
+    if updateType == 'fetch':
+        # download the latest updates from GitHub to the local repository
+        # in background while GSAS-II runs no updates are applied
+        logfile = os.path.join(os.path.expanduser('~'),'GSASII_bkgUpdate.log')
+        mode = 'a'
+        # don't let log file get too large (20K bytes)
+        if os.path.exists(logfile) and os.path.getsize(logfile) > 20000:
+            mode = 'w'
+        # if file open fails, there is probably a concurent update process
+        try:
+            fp = open(logfile,mode)
+        except:
+            print('background git update was unable to open log file')
+            sys.exit()
+        fp.write('Starting background git update')
+        fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n"))
+        try:
+            import git
+        except:
+            fp.write('git import failed')
+            fp.close()
+            sys.exit()
+        try:
+            g2repo = git.Repo(path2GSAS2)
+            g2repo.remote().fetch()
+            fp.write(f'Updates fetched\n')
+        except Exception as msg:
+            fp.write(f'Update failed with message {msg}\n')
+
+        if g2repo.head.is_detached:
+            fp.write(f'Status: reverted to an old install\n')
+        else:
+            try:
+                rc,lc,_ = gitCheckForUpdates(path2GSAS2,fetch=False)
+                if len(rc) == 0:
+                    fp.write('Status: no unapplied commits\n')
+                else:
+                    fp.write(f'Status: unapplied commits now {len(rc)}\n')
+            except Exception as msg:
+                fp.write(f'\ngitCheckForUpdates failed with message {msg}\n')
+        fp.write('update done at')
+        fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n\n"))
+        sys.exit()
+
+    if gitUpdate:
+        import time
+        time.sleep(1) # delay to give the main process a chance to exit
+                      # so we don't change code for a running process
+                      # windows does not like that
+        try:
+            import git
+        except:
+            print('git import failed')
+            sys.exit()
+        try:
+            g2repo = git.Repo(path2GSAS2)
+        except Exception as msg:
+            print(f'Update failed with message {msg}\n')
+            sys.exit()
+
+    if preupdateType == 'reset':
+        # --git-reset   (preupdateType = 'reset')
+        print('Restoring locally-updated GSAS-II files to original status')
+        git.Repo(path2GSAS2).git.reset('--hard','origin/master')
+    elif preupdateType == 'stash':
+        # --git-stash   (preupdateType = 'stash')
+        print('Stashing locally-updated GSAS-II files')
+        if message:
+            g2repo.git.stash(f'-m"{message}"')
+        else:
+            g2repo.git.stash()
+            
+    # Update to the latest GSAS-II version. This assumes that a fetch has
+    # been done prior, or this will only update to the last time that
+    # it was done.
+    if updateType == 'update':
+        # --git-update  (updateType = 'update')
+        if g2repo.is_dirty():
+            print('Cannot update a directory with locally-made changes')
+            sys.exit()
+        print('Updating to latest GSAS-II version')
+        if g2repo.head.is_detached:
+            g2repo.git.switch('master')
+        g2repo.git.merge('--ff-only')
+
+    # Update or regress to a specific GSAS-II version.
+    # this will always cause a "detached head" status
+    elif updateType == 'regress':
+        # --git-regress (updateType = 'regress')
+        if g2repo.is_dirty():
+            print('Cannot regress a directory with locally-made changes')
+            sys.exit()
+        print(f'Regressing to git hash {regressversion[:6]}')
+        g2repo.git.checkout(regressversion)
+
+    if gitUpdate:
+        # now restart GSAS-II with the new version
+        G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
+        if project:
+            print("Restart GSAS-II with project file "+str(project))
+            subprocess.Popen([sys.executable,G2scrpt,project])
+        else:
+            print("Restart GSAS-II without a project file ")
+            subprocess.Popen([sys.executable,G2scrpt])
+        print ('exiting update process')
+        sys.exit()
     else:
-        print("Update to current version")
-        svnUpdateDir(loc)
-    ex = sys.executable
-    if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
-        if os.path.exists(ex+'w'): ex += 'w'
-    if project:
-        print("Restart GSAS-II with project file "+str(project))
-        subprocess.Popen([ex,os.path.join(loc,'GSASII.py'),project])
-    else:
-        print("Restart GSAS-II without a project file ")
-        subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
-    print ('exiting update process')
-    sys.exit()
+        # this is the old svn update process
+        LoadConfig()
+        import time
+        time.sleep(1) # delay to give the main process a chance to exit
+        # perform an update and restart GSAS-II
+        try:
+            project,version = sys.argv[1:3]
+        except ValueError:
+            project = None
+            version = 'trunk'
+        loc = os.path.dirname(__file__)
+        if version == 'trunk':
+            svnSwitch2branch('')
+        elif '/' in version:
+            svnSwitch2branch(version)
+        elif version:
+            print("Regress to version "+str(version))
+            svnUpdateDir(loc,version=version)
+        else:
+            print("Update to current version")
+            svnUpdateDir(loc)
+        ex = sys.executable
+        if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
+            if os.path.exists(ex+'w'): ex += 'w'
+        if project:
+            print("Restart GSAS-II with project file "+str(project))
+            subprocess.Popen([ex,os.path.join(loc,'GSASII.py'),project])
+        else:
+            print("Restart GSAS-II without a project file ")
+            subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
+        print ('exiting update process')
+        sys.exit()

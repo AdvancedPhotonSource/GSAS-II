@@ -657,7 +657,66 @@ def CheckLeBail(Phases):
             except KeyError:    #HKLF & old gpx files
                 pass
     return False
-        
+
+def DoNoFit(GPXfile,key):
+    '''Compute the diffraction pattern with no refinement of parameters.
+
+    TODO: At present, this will compute intensities all diffraction patterns
+    in the project, but this likely can be made faster by dropping
+    all the histograms except key from Histograms.
+
+    :param str GPXfile: G2 .gpx file name
+    :param str key: name of histogram to be computed
+    :returns: the computed diffraction pattern for the selected histogram
+    '''
+    import GSASIImpsubs as G2mp
+    G2mp.InitMP()
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
+
+    parmDict = {}
+    Controls = G2stIO.GetControls(GPXfile)
+    calcControls = {}
+    calcControls.update(Controls)
+    constrDict,fixedList = G2stIO.ReadConstraints(GPXfile)
+    restraintDict = {}
+    Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    if not Phases:
+        G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
+        return False,{'msg':'No phases'}
+    if not Histograms:
+        G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
+        return False,{'msg':'No data'}
+    if key not in Histograms:
+        print(f"Error: no histogram by name {key}")
+        return
+    #TODO: Histograms = {key:Histograms[key]}
+    rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,
+         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,Print=False)
+    calcControls['atomIndx'] = atomIndx
+    calcControls['Natoms'] = Natoms
+    calcControls['FFtables'] = FFtables
+    calcControls['EFtables'] = EFtables
+    calcControls['ORBtables'] = ORBtables
+    calcControls['BLtables'] = BLtables
+    calcControls['MFtables'] = MFtables
+    calcControls['maxSSwave'] = maxSSwave
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Controls=calcControls,Print=False)
+    calcControls.update(controlDict)
+    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+    calcControls.update(controlDict)
+    parmDict.update(rbDict)
+    parmDict.update(phaseDict)
+    parmDict.update(hapDict)
+    parmDict.update(histDict)
+    G2stIO.GetFprime(calcControls,Histograms)
+    
+    M = G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,None)
+    return Histograms[key]['Data'][3]
+
 def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     '''Fit LeBail intensities without changes to any other refined parameters.
     This is a stripped-down version of :func:`Refine` that does not perform 

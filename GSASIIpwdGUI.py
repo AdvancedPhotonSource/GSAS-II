@@ -320,6 +320,17 @@ def IsHistogramInAnyPhase(G2frame,histoName):
     else:
         return False
 
+def GetPhasesforHistogram(G2frame,histoName):
+    '''Returns phases (if any) associated with provided Histogram 
+    Returns a list of phase dicts
+    '''
+    phList = []
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    for ph in Phases:
+        if histoName in Phases[ph]['Histograms']:
+            phList.append(Phases[ph])
+    return phList
+
 def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.
@@ -781,26 +792,20 @@ def UpdatePeakGrid(G2frame, data):
             dlg.Destroy()
     
     def OnUnDo(event):
-        'Undo a peak fit'
-        DoUnDo()
-        G2frame.dataWindow.UnDo.Enable(False)
-        
-    def DoUnDo():
         'Undo a peak fit - reads a saved file from PeakFit'
-        print ('Undo last refinement')
         file = open(G2frame.undofile,'rb')
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item),cPickle.load(file))
-            if G2frame.dataWindow.GetName() == item:
-                if item == 'Background':
-                    UpdateBackground(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
-                elif item == 'Instrument Parameters':
-                    UpdateInstrumentGrid(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
-                elif item == 'Peak List':
-                    UpdatePeakGrid(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
+            Id = G2gd.GetGPXtreeItemId(G2frame,PatternId, item)
+            oldvals = cPickle.load(file)
+            G2frame.GPXtree.SetItemPyData(Id,oldvals)
+            if item == 'Peak List':
+                data.update(G2frame.GPXtree.GetItemPyData(Id))
             print (item+' recovered')
         file.close()
+        G2frame.dataWindow.UnDo.Enable(False)
+        wx.CallAfter(UpdatePeakGrid,G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def SaveState():
         'Saves result of a peaak fit for possible UnDo'
@@ -898,6 +903,27 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2frame.GPXtree.SelectItem(Id)
         
+    def OnDelPeaks(event):
+        'Delete selected peaks from the Peak fit table'
+        if G2frame.dataWindow.XtraPeakMode.IsChecked(): # which table?
+            tbl = data['xtraPeaks']
+        else:
+            tbl = data['peaks']
+        choices = [f"{i[0]:.2f}" for i in tbl]
+        if not choices: return
+        sel = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select peaks to delete',
+                'Delete peaks',choices)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+        finally:
+            dlg.Destroy()
+        for i in sorted(sel,reverse=True):
+            del tbl[i]
+        UpdatePeakGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        
     def OnClearPeaks(event):
         'Clear the Peak fit table'
         dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
@@ -927,7 +953,6 @@ def UpdatePeakGrid(G2frame, data):
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         data = Pattern[1]
         wtFactor = Pattern[0]['wtFactor']
-        bxye = GetFileBackground(G2frame,data,background,scale=False)
         overallInfo = {}
         peaks['LaueFringe'] = peaks.get('LaueFringe',{})
         peaks['LaueFringe']['satellites'] = []
@@ -946,7 +971,23 @@ def UpdatePeakGrid(G2frame, data):
                     pks = list(range(-lines,0)) + list(range(1,lines+1))
                     peaks['LaueFringe']['satellites'].extend(
                         G2pwd.LaueSatellite(i[0],wave,peaks['LaueFringe']['clat'],peaks['LaueFringe']['ncell'],pks))
-        peaksplus = peaks['peaks'] + [overallInfo]
+                    
+        if G2frame.dataWindow.XtraPeakMode.IsChecked(): # adding peaks to computed pattern
+            histoName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+# do zero cycle refinement
+            import GSASIIstrMain as G2stMn
+            # recompute current pattern for current histogram, set as fixed background
+            bxye = G2stMn.DoNoFit(G2frame.GSASprojectfile,histoName)
+            peaksplus = peaks['xtraPeaks'] + [{}]
+            # dummy out background parameters (are not used so can't be refined)
+            background = [['chebyschev-1', False, 1, 0.0], {
+                'nDebye': 0,'debyeTerms': [],'nPeaks': 0,'peaksList': [],
+                'background PWDR': ['', 1.0, False],
+                'FixedPoints': [],'autoPrms': {}}]
+            #breakpoint() ##################################################
+        else:
+            peaksplus = peaks['peaks'] + [overallInfo]
+            bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
@@ -1066,9 +1107,10 @@ def UpdatePeakGrid(G2frame, data):
                 return
         finally:
             dlg.Destroy()
+        tbl = reflGrid.GetTable().data
         for r in rows:
             for lbl,c in refOpts.items():
-                data['peaks'][r][c] = lbl in sels
+                tbl[r][c] = lbl in sels
         UpdatePeakGrid(G2frame,data)
         
     def OnRefineSelected(event):
@@ -1076,10 +1118,17 @@ def UpdatePeakGrid(G2frame, data):
         '''
         rows = list(set([row for row,col in reflGrid.GetSelectedCells()] +
                         reflGrid.GetSelectedRows()))
+        tbl = reflGrid.GetTable().data
         if not rows:
-            wx.MessageBox('No selected rows. You must select rows or cells before using this command',
-                          caption='No selected peaks')
-            return
+            choices = [f"{i[0]:.2f}" for i in tbl]
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select peaks to refine',
+                'select peaks',choices)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    rows = dlg.GetSelections()
+            finally:
+                dlg.Destroy()
+        if not rows: return
         SelectVars(rows)
 
     def OnRefineAll(event):
@@ -1110,10 +1159,11 @@ def UpdatePeakGrid(G2frame, data):
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
+                tbl = reflGrid.GetTable().data
                 if sel == 0:
-                    for row in range(reflGrid.GetNumberRows()): data['peaks'][row][c]=True
+                    for r in range(reflGrid.GetNumberRows()): tbl[r][c]=True
                 else:
-                    for row in range(reflGrid.GetNumberRows()): data['peaks'][row][c]=False
+                    for r in range(reflGrid.GetNumberRows()): tbl[r][c]=False
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
 
     def RefreshPeakGrid(event):
@@ -1124,6 +1174,10 @@ def UpdatePeakGrid(G2frame, data):
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
             OnPeakFit(noFit=True)
+            
+    def RefreshPeakWindow(event):
+        wx.CallAfter(UpdatePeakGrid,G2frame,data)
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
         
     def OnSetPeakWidMode(event):
         '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 
@@ -1155,26 +1209,91 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2G.wxID_LSQPEAKFIT)
     G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2G.wxID_LSQONECYCLE)
     G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2G.wxID_SEQPEAKFIT)
+    G2frame.Bind(wx.EVT_MENU, OnDelPeaks, id=G2G.wxID_DELPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2G.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2G.wxID_RESETSIGGAM)
     G2frame.Bind(wx.EVT_MENU, OnSetPeakWidMode, id=G2G.wxID_SETUNVARIEDWIDTHS)
-    OnSetPeakWidMode(None)
-    if data['peaks']:
-        G2frame.dataWindow.AutoSearch.Enable(False)
-        G2frame.dataWindow.PeakCopy.Enable(True)
-        G2frame.dataWindow.PeakFit.Enable(True)
-        G2frame.dataWindow.PFOneCycle.Enable(True)
-        G2frame.dataWindow.SeqPeakFit.Enable(True)
+    G2frame.Bind(wx.EVT_MENU, RefreshPeakWindow, id=G2G.wxID_XTRAPEAKMODE)
+    # get info in phases associated with current histogram
+    data['xtraPeaks'] = data.get('xtraPeaks',[])
+    histoName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+    phCount = 0
+    # isHistMag = False
+    for ph in GetPhasesforHistogram(G2frame,histoName):
+         phCount += 1
+    #     if ph['General']['Type'] == 'magnetic':
+    #        isHistMag = True
+    #        break
+    if phCount == 0: # no phases for this histogram
+        G2frame.dataWindow.XtraPeakMode.Enable(False)
     else:
-        G2frame.dataWindow.PeakFit.Enable(False)
-        G2frame.dataWindow.PeakCopy.Enable(False)
-        G2frame.dataWindow.PFOneCycle.Enable(False)
-        G2frame.dataWindow.AutoSearch.Enable(True)
-        G2frame.dataWindow.SeqPeakFit.Enable(False)
+        G2frame.dataWindow.XtraPeakMode.Enable(True)
+    OnSetPeakWidMode(None)
+    # can peaks be refined?
+    pkmode = False
+    if G2frame.dataWindow.XtraPeakMode.IsChecked():
+        if data['xtraPeaks']: pkmode = True
+    elif data['peaks']:
+        pkmode = True
+    for item in (G2frame.dataWindow.PeakCopy,
+                     G2frame.dataWindow.PeakFit,
+                     G2frame.dataWindow.PFOneCycle,
+                     G2frame.dataWindow.SeqPeakFit):
+        item.Enable(pkmode)
+    G2frame.dataWindow.AutoSearch.Enable(not pkmode)
     G2frame.PickTable = []
     rowLabels = []
     PatternId = G2frame.PatternId
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
+    if G2frame.dataWindow.XtraPeakMode.IsChecked():
+        G2frame.dataWindow.ClearData()
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        if 'N' in Inst['Type'][0]:
+            lbl = 'List of k-vector/impurity or subgroup defining peaks'
+        else:
+            lbl = 'List of impurity or subgroup peaks'
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)    
+        topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+        mainSizer.Add(topSizer,0,wx.EXPAND)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+        krowLabels = [str(i+1) for i,j in enumerate(data['xtraPeaks'])]
+        kcolLabels = []
+        Types = []
+        for _,f,l in zip(*G2pwd.getHeaderInfo(Inst['Type'][0])):
+            kcolLabels.append(l)
+            Types.append(wg.GRID_VALUE_FLOAT + f.replace('%',':').replace('f','').replace('.',','))
+            kcolLabels.append('refine')
+            Types.append(wg.GRID_VALUE_BOOL)
+        T = []
+        # put k-vecs in order
+        for peak in data['xtraPeaks']:
+            T.append(peak[0])
+        D = dict(zip(T,data['xtraPeaks']))
+        T.sort()
+        if 'T' in Inst['Type'][0]:  #want big TOF's first
+            T.reverse()
+        X = []
+        for key in T: X.append(D[key])
+        data['xtraPeaks'] = X
+        G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
+        kPeakTable = G2G.Table(data['xtraPeaks'],rowLabels=krowLabels,
+                                          colLabels=kcolLabels,types=Types)
+        G2frame.dataWindow.currentGrids = []
+        reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+        reflGrid.SetTable(kPeakTable, True)
+        setBackgroundColors()                         
+        reflGrid.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshPeakGrid)
+        reflGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+        reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
+        reflGrid.AutoSizeColumns(False)
+        G2frame.reflGrid = reflGrid
+        mainSizer.Add(reflGrid,0,wx.ALL,10)
+        G2frame.dataWindow.SetSizer(mainSizer)
+        G2frame.dataWindow.SetDataSize()
+        return
+
     # Create the header on the Peak Table
     for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
     colLabels = []

@@ -6681,6 +6681,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PeakEdit.Append(G2G.wxID_PEAKSAVE,'Save peaks...','Save peak list to file')
         self.SeqPeakFit = self.PeakEdit.Append(G2G.wxID_SEQPEAKFIT,'Seq PeakFit', 
             'Sequential Peak fitting for all histograms' )
+        G2G.Define_wxId('wxID_DELPEAKS')
+        self.PeakEdit.Append(G2G.wxID_DELPEAKS,'Delete peaks','Delete selected peaks from the list' )
         self.PeakEdit.Append(G2G.wxID_CLEARPEAKS,'Clear peaks','Clear the peak list' )
         self.movePeak = self.PeakEdit.Append(wx.ID_ANY,'Move selected peak',
             'Select a peak in the table, then use this to move it with the mouse.')
@@ -6690,6 +6692,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'When unvaried, Generate sigma & gamma from UVWXY...',
                 kind=wx.ITEM_CHECK)
         self.setPeakMode.Check(True)
+        G2G.Define_wxId('wxID_XTRAPEAKMODE')
+        self.XtraPeakMode = self.PeakEdit.Append(G2G.wxID_XTRAPEAKMODE,
+                'Add impurity/subgrp/magnetic peaks',
+                'Set positions of magnetic, impurity or subgroup peaks',
+                kind=wx.ITEM_CHECK)
+        self.XtraPeakMode.Check(False)
         
         self.PostfillDataMenu()
         self.UnDo.Enable(False)
@@ -8442,11 +8450,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.GPXtree.SetItemPyData(item,data)
 #end patch
         # if GSASIIpath.GetConfigValue('debug'):
-        #     import importlib as imp
-        #     imp.reload(G2pdG)
-        #     imp.reload(G2pwd)
-        #     #imp.reload(G2plt)
-        #     print('reloading G2pwdGUI and G2pwd')
+        #    from importlib import reload
+        #    reload(G2pdG)
+        #    imp.reload(G2pwd)
+        #    reload(G2plt)
+        #    print('reloading G2pwdGUI & G2plt')
         G2pdG.UpdatePeakGrid(G2frame,data)
         newPlot = False
         if hasattr(G2frame,'Contour'):

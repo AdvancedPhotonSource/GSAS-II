@@ -2460,7 +2460,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
             else:
                 pickIdText = '?' # unexpected
-            if pickIdText in ['Index Peak List','Unit Cells List','Reflection Lists'] and len(G2frame.HKL):
+            tickMarkList = ['Index Peak List','Unit Cells List',
+                                'Reflection Lists']
+            if pickIdText in tickMarkList and len(G2frame.HKL):
                 found = []
                 indx = -1
                 if pickIdText in ['Index Peak List','Unit Cells List',]:
@@ -2525,12 +2527,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         OnPick(None)
         
     def onMovePeak(event):
-        selectedPeaks = list(set([row for row,col in G2frame.phaseDisplay.GetSelectedCells()] +
-            G2frame.phaseDisplay.GetSelectedRows()))
+        reflGrid = G2frame.reflGrid
+        selectedPeaks = list(set([row for row,col in reflGrid.GetSelectedCells()] +
+            reflGrid.GetSelectedRows()))
         if len(selectedPeaks) != 1:
-            G2G.G2MessageBox(G2frame,'You must select one peak in the table first. # selected ='+
-                str(len(selectedPeaks)),'Select one peak')
-            return
+            tbl = reflGrid.GetTable().data
+            choices = [f"{i[0]:.2f}" for i in tbl]
+            dlg = G2G.G2SingleChoiceDialog(G2frame,'Select peak to move',
+                'select peak',choices)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selectedPeaks = [dlg.GetSelection()]
+            finally:
+                dlg.Destroy()
+        if len(selectedPeaks) != 1: return
         G2frame.itemPicked = G2frame.Lines[selectedPeaks[0]+2] # 1st 2 lines are limits
         G2frame.G2plotNB.Parent.Raise()
         OnPick(None)
@@ -2628,8 +2638,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
-                data['peaks'].append(XY)
-                data['sigDict'] = {}    #now invalid
+                if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                    data['xtraPeaks'] = data.get('xtraPeaks',[])
+                    data['xtraPeaks'].append(XY)
+                    data['sigDict'] = {}    #now invalid
+                else:
+                    data['peaks'].append(XY)
+                    data['sigDict'] = {}    #now invalid
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a peak list line
@@ -2876,15 +2891,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif lineNo > 1+nxcl:
                 PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.GPXtree.GetItemPyData(PeakId)
+                if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                    tbl = peaks['xtraPeaks']
+                else:
+                    tbl = peaks['peaks']
                 if event.button == 3:
-                    del peaks['peaks'][lineNo-2-nxcl]
+                    del tbl[lineNo-2-nxcl]
                 else:
                     if Page.plotStyle['qPlot']:
-                        peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
+                        tbl[lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                     elif Page.plotStyle['dPlot']:
-                        peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,xpos)
+                        tbl[lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
-                        peaks['peaks'][lineNo-2-nxcl][0] = xpos
+                        tbl[lineNo-2-nxcl][0] = xpos
                     peaks['sigDict'] = {}        #no longer valid
                 G2pdG.UpdatePeakGrid(G2frame,peaks)
         elif G2frame.GPXtree.GetItemText(PickId) in ['Models',] and xpos:
@@ -3849,7 +3868,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         l = []
                         PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                         peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                        for i,item in enumerate(peaks['peaks']):
+                        if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                            tbl = peaks['xtraPeaks']
+                        else:
+                            tbl = peaks['peaks']
+                        for i,item in enumerate(tbl):
                             if type(item) is dict: continue
                             pos = item[0]
                             if Page.plotStyle['qPlot']:
@@ -3882,22 +3905,35 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
                         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
-                        selectedPeaks = list(set(
-                            [row for row,col in G2frame.reflGrid.GetSelectedCells()] +
-                            G2frame.reflGrid.GetSelectedRows()))
-                        G2frame.dataWindow.movePeak.Enable(len(selectedPeaks) == 1) # allow peak move from table when one peak is selected
-                        for i,item in enumerate(peaks['peaks']):
-                            if type(item) is dict: continue
-                            if i in selectedPeaks:
-                                Ni = N+1
-                            else:
-                                Ni = N
-                            plotVline(Page,Plot,Lines,Parms,item[0],'b',True)
-                            if Ni == N+1:
-                                Lines[-1].set_lw(Lines[-1].get_lw()+1)
+                        if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                            peaks['xtraPeaks'] = peaks.get('xtraPeaks',[])
+                            tbl = peaks['xtraPeaks']
+                            color = 'r'
+                        else:
+                            tbl = peaks['peaks']
+                            color = 'b'
+                        try:
+                            selectedPeaks = list(set(
+                                [row for row,col in G2frame.reflGrid.GetSelectedCells()] +
+                                G2frame.reflGrid.GetSelectedRows()))
+#                            G2frame.dataWindow.movePeak.Enable(len(selectedPeaks) == 1) # allow peak move from table when one peak is selected
+                            for i,item in enumerate(tbl):
+                                if type(item) is dict: continue
+                                if i in selectedPeaks:
+                                    Ni = N+1
+                                else:
+                                    Ni = N
+                                plotVline(Page,Plot,Lines,Parms,item[0],color,True)
+                                if Ni == N+1:
+                                    Lines[-1].set_lw(Lines[-1].get_lw()+1)
+                        except:
+                            pass
                         peaks['LaueFringe'] = peaks.get('LaueFringe',{})
+                        SatLines = []
                         for pos in peaks['LaueFringe'].get('satellites',[]):
-                            plotVline(Page,Plot,Lines,Parms,pos,'k',False)
+                            plotVline(Page,Plot,SatLines,Parms,pos,'k',False)
+#                        for pos in peaks['xtraPeaks']:
+#                            plotVline(Page,Plot,Lines,Parms,pos[0],'r',False)
                     if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.SetToolTipString(tip)
@@ -3983,7 +4019,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 
-            'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode):
+                  'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode
+                  or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
+                    G2frame.GPXtree.GetItemText(PickId) == 'Peak List')
+                ):
+            print
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)

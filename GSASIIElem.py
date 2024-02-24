@@ -611,9 +611,9 @@ def BlenResCW(Els,BLtables,wave):
             T0 = Emev-E0
             T1 = Emev-E1
             T2 = Emev-E2
-            D0 = T0**2+gam**2
-            D1 = T1**2+gam**2
-            D2 = T2**2+gam**2
+            D0 = T0**2+gam**2/4.
+            D1 = T1**2+gam**2/4.
+            D2 = T2**2+gam**2/4.
             FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL['BW-LS'][0]
             FPP[i] = -Im*(1/D0+A/D1+B/D2)
         else:
@@ -633,9 +633,9 @@ def BlenResTOF(Els,BLtables,wave):
             T0 = Emev-E0
             T1 = Emev-E1
             T2 = Emev-E2
-            D0 = T0**2+gam**2
-            D1 = T1**2+gam**2
-            D2 = T2**2+gam**2
+            D0 = T0**2+gam**2/4.
+            D1 = T1**2+gam**2/4.
+            D2 = T2**2+gam**2/4.
             FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL[i]['BW-LS'][0]
             FPP[i] = -Im*(1/D0+A/D1+B/D2)
         else:

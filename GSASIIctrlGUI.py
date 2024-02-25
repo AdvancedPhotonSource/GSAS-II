@@ -5252,7 +5252,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
 #####  Get an output file or directory ################################################################################
 def askSaveFile(G2frame,defnam,extension,longFormatName,parent=None):
-    '''Ask the user to supply a file name
+    '''Ask the user to supply a file name; used for svn
 
     :param wx.Frame G2frame: The main GSAS-II window
     :param str defnam: a default file name
@@ -5487,7 +5487,6 @@ For DIFFaX use cite:
         and perform that update if requested.
         '''
         if GSASIIpath.HowIsG2Installed().startswith('git'):
-            print('not implemented')
             gitCheckUpdates(self.frame)
         elif GSASIIpath.HowIsG2Installed().startswith('svn'):
             svnCheckUpdates(self.frame)
@@ -5503,7 +5502,6 @@ For DIFFaX use cite:
         '''Allow the user to select a specific version of GSAS-II
         '''
         if GSASIIpath.HowIsG2Installed().startswith('git'):
-            print('not implemented')
             gitSelectVersion(self.frame)
         elif GSASIIpath.HowIsG2Installed().startswith('svn'):
             svnSelectVersion(self.frame)
@@ -6855,6 +6853,7 @@ class G2RefinementProgress(wx.Dialog):
 ################################################################################
 class downdate(wx.Dialog):
     '''Dialog to allow a user to select a version of GSAS-II to install
+    svn version
     '''
     def __init__(self,parent=None):
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
@@ -6932,6 +6931,165 @@ class downdate(wx.Dialog):
     def getVersion(self):
         'Get the version number in the dialog'
         return self.spin.GetValue()
+
+################################################################################
+class gitVersionSelector(wx.Dialog):
+    '''Dialog to allow a user to select a version of GSAS-II to install
+    from a git repository
+    '''
+    def __init__(self,parent=None):
+        import git
+        self.g2repo = git.Repo(path2GSAS2)
+        self.githistory = GSASIIpath.gitHistory('hash',self.g2repo)
+        # patch Feb 2024: don't allow access to versions that are too old
+        # since they are hard-coded to use svn
+        import datetime
+        tz = self.g2repo.commit(self.githistory[0]).committed_datetime.tzinfo
+        cutoff = datetime.datetime(2024,2,20,tzinfo=tz)   # 20-feb-2024
+        self.githistory = [h for h in self.githistory if
+                        self.g2repo.commit(h).committed_datetime > cutoff]
+        # end patch 
+        self.initial_commit = self.g2repo.commit('head')
+        self.initial_commit_info = self.docCommit(self.initial_commit)
+        
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',
+                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        remoteupdates,localupdates = GSASIIpath.gitCountRegressions(self.g2repo)
+        self.verselection = remoteupdates
+        sizer.Add((-1,10))
+        #label = wx.StaticText(
+        #    self,  wx.ID_ANY,
+        #    'Select a specific GSAS-II version to install'
+        #    )
+        msg = 'This allows you to revert back to a previous GSAS-II version '
+        msg += 'to compare results between versions and temporarily bypass '
+        msg += 'bugs. If there is something that works better in an older '
+        msg += 'GSAS-II version, be sure to test the latest version and '
+        msg += 'if the problem remains, report it so that it can be fixed.'
+        label = wx.StaticText(self, wx.ID_ANY, msg)
+        label.Wrap(400)
+        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        sizer.Add((-1,20))
+        
+        sizer.Add(wx.StaticText(self, wx.ID_ANY,
+                                    '      Currently installed version:'))
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add((50,-1))
+
+        initpnl = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=(450,90),
+            style = wx.SUNKEN_BORDER)
+        ssizer = wx.BoxSizer(wx.HORIZONTAL)
+        txt = wx.StaticText(initpnl,  wx.ID_ANY, self.initial_commit_info)
+        txt.Wrap(435)
+        ssizer.Add(txt)
+        initpnl.SetSizer(ssizer)
+        initpnl.SetAutoLayout(1)
+        initpnl.SetupScrolling()
+        sizer1.Add(initpnl)
+        sizer.Add(sizer1)
+        
+        sizer.Add((-1,20))
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(
+            wx.StaticText(self,  wx.ID_ANY,
+                          'Select how many versions to regress: '),
+            0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        self.spin = wx.SpinCtrl(self, wx.ID_ANY,size=(150,-1))
+        self.spin.SetRange(-len(self.githistory)+1, 0)
+        self.spin.SetValue(-self.verselection)
+        self.Bind(wx.EVT_SPINCTRL, self._onSpin, self.spin)
+        self.Bind(wx.EVT_KILL_FOCUS, self._onSpin, self.spin)
+        sizer1.Add(self.spin)
+        sizer.Add(sizer1)
+        sizer.Add((-1,20))
+
+        sizer.Add(wx.StaticText(self, wx.ID_ANY,
+                                    '      Selected version to install:'))
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add((50,-1))
+        
+        self.spanel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=(450,90),
+            style = wx.SUNKEN_BORDER)
+        ssizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.text = wx.StaticText(self.spanel, wx.ID_ANY, "")
+        ssizer.Add(self.text)
+        self.spanel.SetSizer(ssizer)
+        self.spanel.SetAutoLayout(1)
+        self.spanel.SetupScrolling()
+        sizer1.Add(self.spanel)
+        sizer.Add(sizer1)
+
+        sizer.Add((-1,20))
+        sizer.Add(
+            wx.StaticText(
+                self,  wx.ID_ANY,
+                'Press "Continue" after selecting a version to continue;\n'
+                'Press "Cancel" to stop regression.'),
+            0, wx.EXPAND|wx.ALL, 10)
+        sizer.Add((-1,5))
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(self, wx.ID_OK, "Continue")
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+        siz = self.GetSize()
+        siz[0] = max(siz[0],500)
+        self.SetSize(siz)
+        self.CenterOnParent()
+        self._onSpin(None)
+
+    def _onSpin(self,event):
+        'Called to load info about the selected version in the dialog'
+        if event: event.Skip()
+        try:
+            commit_info = self.docCommit(self.githistory[-self.spin.GetValue()])
+            self.text.SetLabel(commit_info)
+            self.text.Wrap(435)
+        except IndexError:
+            return
+        self.spanel.SetAutoLayout(1)
+        self.spanel.SetupScrolling()
+
+    def getVersion(self):
+        '''Gets the selected version that should be installed
+
+        :return: returns one of three values:
+
+         * 0: if the newest version is selected, so that the 
+           installation should be updated rather than regressed
+         * None: if the currently installed version is selected,
+           so that nothing need be done
+         * A hexsha string: the regressed version that should be 
+           selected.
+        '''
+        if self.spin.GetValue() == 0:
+            return 0
+        commit = self.githistory[-self.spin.GetValue()]
+        if self.g2repo.commit(commit) == self.initial_commit:
+            return None
+        return commit
+    
+    def docCommit(self,commit):
+        '''Provides a string with information about a specific git commit.
+
+        :returns: a multi-line string
+        '''
+        import datetime
+        fmtdate = lambda c:"{:%d-%b-%Y %H:%M}".format(c.committed_datetime)
+        commit = self.g2repo.commit(commit)  # converts a hash, if supplied
+        msg = f'git {commit.hexsha[:10]} from {fmtdate(commit)}'
+        tags = self.g2repo.git.tag('--points-at',commit).split('\n')
+        if tags != ['']:
+            msg += f"\ntags: {', '.join(tags)}"
+        msg += '\ncomment: ' + commit.message
+        return msg
+    
 
 ################################################################################
 class SortableLstCtrl(wx.Panel):
@@ -8923,7 +9081,247 @@ class ScrolledStaticText(wx.StaticText):
         self.msgpos += 1
         if self.msgpos >= len(self.fullmsg): self.msgpos = 0
 
-def gitCheckUpdates(G2frame): pass
+def gitFetch(G2frame):
+    wx.BeginBusyCursor()
+    pdlg = wx.ProgressDialog('Updating','Performing git update',11,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
+                    parent=G2frame)
+    pdlg.CenterOnParent()
+    if hasattr(G2frame,'UpdateTask'):     # check if git update has completed
+        count = 0
+        while G2frame.UpdateTask.poll() is None:
+            count += 1
+            if count > 10:
+                G2MessageBox(G2frame,
+                    'Background git update has not completed, try again later', 
+                    title='Warning')
+                pdlg.Destroy()
+                wx.EndBusyCursor()
+                return
+            time.sleep(1)
+            ok,_ = pdlg.Update(count)
+            wx.GetApp().Yield()
+            if not ok:
+                pdlg.Destroy()
+                wx.EndBusyCursor()
+                return
+    if GSASIIpath.GetConfigValue('debug'): print('background update complete')
+    # try update one more time just to make sure
+    GSASIIpath.gitGetUpdate('immediate')
+    pdlg.Destroy()
+    wx.EndBusyCursor()
+            
+def gitCheckUpdates(G2frame):
+    '''Used to update to the latest GSAS-II version, but checks for a variety
+    of repository conditions that could make this process more complex. If 
+    there are uncommitted local changes, these changes must be cached or 
+    deleted first. If there are local changes that have been committed or a new 
+    branch has been created, the user (how obstensibly must know use of git)
+    will probably need to do this manually. If GSAS-II has previously been 
+    regressed (using :func:`gitSelectVersion`), then this is noted as well.
+
+    When all is done, function :func:`GSASIIpath.gitStartUpdate` is called to 
+    actually perform the update.
+    '''
+    gitFetch(G2frame)  # download latest updates from server
+
+    status = GSASIIpath.gitTestGSASII()
+    if status < 0:
+        G2MessageBox(G2frame,
+                    'Problem with git access to GSAS-II. Seek help or reinstall',
+                    title='git error')
+        return
+    localChanges = bool(status & 5) # If True need to select between
+                                    # --git-stash or --git-reset
+                                    # False: neither should be used
+    
+    if status&8:  # not on local branch
+        if localChanges:
+            G2MessageBox(G2frame,
+                    'You have made a local branch and have uncommited changes. Save, stash or restore then before an update can be done.',
+                    title='update not possible')
+            return
+        else:
+            msg = ('You have made a local branch and have switched to that.'+
+                   ' Do you want to update anyway? Doing so will return'+
+                   ' you to the master branch. This may be better handled'+
+                   ' manually.\n\nPress "Yes" to continue with update\n'+
+                   'Press "Cancel" to stop the update.')
+        dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
+                wx.YES|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+        ans = dlg.ShowModal()
+        dlg.Destroy()
+        if ans == wx.ID_CANCEL: return
+
+    regressmsg = ''
+    if status&2:  # detached head
+        remoteupdates,localupdates = GSASIIpath.gitCountRegressions()
+        if localupdates:
+            msg = ("Your copy of GSAS-II has been regressed. You are "+
+                    f"{remoteupdates} versions behind the current. "+
+                    f"WARNING: you have committed {localupdates} "+
+                    "changes locally. Your local commits will be difficult "+
+                    "to locate if you update. SUGGESTION: if your changes "+
+                    "are meaningful, create a new git branch and return "+
+                    "to the master branch.\n\n"+
+                    'Press "Yes" to continue, stranding your local changes\n'+
+                    'Press "Cancel" to stop the update.')
+            dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
+                    wx.YES|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+            ans = dlg.ShowModal()
+            dlg.Destroy()
+            if ans == wx.ID_CANCEL: return
+        regressmsg = f"Your copy of GSAS-II has been regressed. You are {remoteupdates} versions behind the current.\n\n"
+    else:
+        # on head, standard update, is update needed or blocked by local changes
+        rc,lc,_ = GSASIIpath.gitCheckForUpdates(False)
+        if len(rc) == 0:
+            G2MessageBox(G2frame,
+                    'Your copy of GSAS-II is up to date. No update is needed.',
+                    title='no updates')
+            return
+        if len(lc) != 0:
+            msg = ('You have made local changes and committed them '+
+                   'into the master branch. GUI-based updates cannot '+
+                   'be made. You should perform a git merge manually')
+            G2MessageBox(G2frame,msg,title='Do manual update')
+            return
+
+    cmds = ['--git-update']
+    if localChanges:
+        if gitAskLocalChanges(G2frame,cmds): return
+    if gitAskSave(G2frame,regressmsg,cmds): return
+    # launch changes and restart
+    GSASIIpath.gitStartUpdate(cmds)
+
+def gitAskLocalChanges(G2frame,cmds):
+    msg = ('You have locally-made changes to the GSAS-II source '+
+            'code files. Do you want to discard these changes?\n\n'+
+            'If you select "Yes" the changes will be overwritten '+
+            'before the update.\nIf you select "No" the changes will '+
+            'be archived (git stash).\nSelect "Cancel" '+
+            ' to discontinue the update process.')
+    dlg = wx.MessageDialog(G2frame, msg, 'Save/Discard Local Changes?',
+            wx.YES_NO|wx.CANCEL|wx.NO_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return True
+    elif ans == wx.ID_YES:
+        cmds += ['--git-reset']
+    else:
+        cmds += ['--git-stash']
+    return False
+
+def gitAskSave(G2frame,regressmsg,cmds):
+    # before doing update, need to save project
+    msg = ('Before continuing, do you want to save your project? '+
+           'Select "Yes" to save, "No" to skip the save, or "Cancel"'+
+           ' to discontinue the update process.\n\n'+
+           'If "Yes", GSAS-II will reopen the project after the update. '+
+           'The update will now begin unless Cancel is pressed.')
+    dlg = wx.MessageDialog(G2frame, regressmsg+msg,
+                'Save Project and Start Update?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return True
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if ans: 
+            cmds += [G2frame.GSASprojectfile]
+        return False
+    
+def gitSelectVersion(G2frame):
+    '''Used to regress to a previous GSAS-II version, checking first 
+    for a variety of repository conditions that could make this process 
+    more complex. If there are uncommitted local changes, these changes 
+    must be cached or deleted before a different version can be installed. 
+    If there are local changes that have been committed or a new 
+    branch has been created, the user (how obstensibly must know use of git)
+    will probably need to do this manually. If GSAS-II has previously been 
+    regressed (using :func:`gitSelectVersion`), then this is noted as well.
+
+    When all is done, function :func:`GSASIIpath.gitStartUpdate` is called to 
+    actually perform the update.
+    '''
+    # get updates from server
+    gitFetch(G2frame)  # download latest updates from server
+
+    status = GSASIIpath.gitTestGSASII()
+    if status < 0:
+        G2MessageBox(G2frame,
+                    'Problem with git access to GSAS-II. Seek help or reinstall',
+                    title='git error')
+        return
+    localChanges = bool(status & 5) # If True need to select between
+                                    # --git-stash or --git-reset
+                                    # False: neither should be used
+    if status&8:  # not on local branch
+        if localChanges:
+            msg =  ('You have switched to a local branch and have '+
+                    'uncommited changes. Save, stash or restore and switch '+
+                    'back to the master branch. Regression is not possible '+
+                    'from the GUI when on any other branch.')
+        else:
+            msg =  ('You have made and switched to a local branch. '+
+                    'You must manually switch back to the master branch.'+
+                    ' Regression is not possible '+
+                    'from the GUI when on any other branch.')
+        G2MessageBox(G2frame,msg,title='update not possible')
+        return
+
+    regressmsg = ''
+    if status&2:  # detached head
+        remoteupdates,localupdates = GSASIIpath.gitCountRegressions()
+        if localupdates:
+            msg = ("Your copy of GSAS-II has been regressed. You are "+
+                    f"{remoteupdates} versions behind the current. "+
+                    f"WARNING: you have committed {localupdates} "+
+                    "changes locally. Your local commits will be difficult "+
+                    "to locate if you update. SUGGESTION: if your changes "+
+                    "are meaningful, create a new git branch and return "+
+                    "to the master branch.\n\n"+
+                    'Press "Yes" to continue, stranding your local changes\n'+
+                    'Press "Cancel" to stop the update.')
+            dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
+                    wx.YES|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+            ans = dlg.ShowModal()
+            dlg.Destroy()
+            if ans == wx.ID_CANCEL: return
+        regressmsg = f"Your copy of GSAS-II has been regressed. You are {remoteupdates} versions behind the current.\n\n"
+    else:
+        # on head, standard update, is update blocked by local changes
+        rc,lc,_ = GSASIIpath.gitCheckForUpdates(False)
+        if len(lc) != 0:
+            msg = ('You have made local changes and committed them '+
+                   'into the master branch. GUI-based regression cannot '+
+                   'be done. You should perform a "git checkout" to the '+
+                   'desired version manually')
+            G2MessageBox(G2frame,msg,title='Do manual update')
+            return
+        
+    # browse and select a version here
+    dlg = gitVersionSelector()
+    ans = dlg.ShowModal()
+    if ans == wx.ID_CANCEL: return
+    githash = dlg.getVersion()
+    if githash is None:
+        print('Nothing to be done')
+        return
+    if githash == 0:
+        print('select newest GSAS-II version')
+        cmds = ['--git-update']
+    else:
+        cmds = [f'--git-regress={githash}']
+
+    if localChanges:
+        if gitAskLocalChanges(G2frame,cmds): return
+    if gitAskSave(G2frame,regressmsg,cmds): return
+
+    # launch changes and restart
+    GSASIIpath.gitStartUpdate(cmds)
     
 def svnCheckUpdates(G2frame):
     '''Check if the GSAS-II repository has an update for the current 
@@ -9059,8 +9457,6 @@ def svnCheckUpdates(G2frame):
     else:
         GSASIIpath.svnUpdateProcess()
     return
-
-def gitSelectVersion(G2frame): pass
 
 def svnSelectVersion(G2frame):
     '''Allow the user to select a specific version of GSAS-II from the 

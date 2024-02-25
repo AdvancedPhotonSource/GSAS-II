@@ -1,0 +1,12 @@
+# GSAS-II settings, perhaps to be moved
+config.py
+
+# manages GSAS-II version info for non-git installs
+#git_verinfo.py
+
+# created on MacOS by makeMacApp.py
+GSAS-II.app/
+GSAS-II.py
+
+# cruft from MacOS
+.DS_Store

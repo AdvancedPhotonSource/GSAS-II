@@ -690,6 +690,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
         pass
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
+    application.main.UpdateTask = GSASIIpath.GetRepoUpdatesInBackground()
 
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):

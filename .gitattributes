@@ -1,0 +1,5 @@
+# create a version-containing file to replace the svn revision string
+
+* filter=createVersionFile
+
+

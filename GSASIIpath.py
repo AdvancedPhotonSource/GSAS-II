@@ -316,10 +316,12 @@ def getG2VersionInfo():
 
 #==============================================================================
 #==============================================================================
-# routines to interface with git
+# routines to interface with git.
+# next lines define where GitHub repositories are found
 #g2URL = "https://github.com/AdvancedPhotonSource/GSASII-copy.git"
 g2URL = "https://github.com/GSASII/codetest.git"
 G2binURL = "https://api.github.com/repos/GSASII/binarytest"
+gitOwner,gitRepo = 'GSASII', 'TutorialTest'
 
 BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
@@ -763,7 +765,81 @@ def gitStartUpdate(cmdopts):
                                       f'{" ".join(cmd)}')
     subprocess.Popen(cmd)
     sys.exit()
-    
+
+def dirGitHub(dirlist,orgName=gitOwner, repoName=gitRepo):
+    '''Obtain a the contents of a GitHub repository directory using 
+    the GitHub REST API.
+
+    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
+      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str orgName: the name of the GitHub organization
+    :param str repoName: the name of the GitHub repository
+    :returns: a list of file names or None if the dirlist info does not 
+      reference a directory
+
+    examples::
+
+        dirGitHub([], 'GSASII', 'TutorialTest')
+        dirGitHub(['TOF Sequential Single Peak Fit', 'data'])
+
+    The first example will get the contents of the top-level 
+    directory for the specified repository 
+
+    The second example will provide the contents of the 
+    "TOF Sequential Single Peak Fit"/data directory. 
+    '''
+    dirname = ''
+    for item in dirlist:
+        dirname += item + '/'
+    URL = f"https://api.github.com/repos/{orgName}/{repoName}/contents/{dirname}"
+    r = requests.get(URL, allow_redirects=True)
+    try:
+        return [rec['name'] for rec in r.json()]
+    except:
+        return None
+
+def rawGitHubURL(dirlist,filename,orgName=gitOwner, repoName=gitRepo,
+                 branchname="master"):
+    '''Create a link that can be used to view/downlaod the raw version of 
+    file in a GitHub repository. 
+
+    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
+      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str filename: the name of the file
+    :param str orgName: the name of the GitHub organization
+    :param str repoName: the name of the GitHub repository
+    :param str branchname: the name of the GitHub branch. Defaults 
+       to "master".
+
+    :returns: a URL-encoded URL
+    '''
+    import urllib.parse  # not used very often, import only when needed
+    dirname = ''
+    for item in dirlist:
+        # it's not clear that the URLencode is needed for the directory name
+        dirname += urllib.parse.quote(item) + '/'
+        #filename = urllib.parse.quote(filename)
+    return f"https://raw.githubusercontent.com/{orgName}/{repoName}/{branchname}/{dirname}{filename}"
+
+def downloadDirContents(dirlist,targetDir,orgName=gitOwner, repoName=gitRepo):
+    filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
+    if filList is None:
+        print(f'Directory {"/".join(dirlist)!r} does not have any files')
+        return None
+    for fil in filList:
+        if fil.lower() == 'index.html': continue
+        URL = rawGitHubURL(dirlist,fil,orgName=orgName,repoName=repoName)
+        r = requests.get(URL, allow_redirects=True)
+        outfil = os.path.join(targetDir,fil)
+        if r.status_code == 200:
+            open(outfil, 'wb').write(r.content)
+            print(f'wrote {outfil}')
+        elif r.status_code == 404:
+            print(f'Warning: {fil} is likley a subdirectory of directory {"/".join(dirlist)!r}')
+        else:
+            print(f'Unexpected web response for {fil}: {r.status_code}')
+    return
+
 #==============================================================================
 #==============================================================================
 # routines to interface with subversion

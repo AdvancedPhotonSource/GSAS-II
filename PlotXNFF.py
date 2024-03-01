@@ -10,6 +10,9 @@ Use this to check form factors used in x-ray & neutron scattering
 
 import sys
 import wx
+# the next line removes the need for pythonw. Thanks to Matt Newville!
+# appears unneaded from wx 4.2.1 on
+if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
@@ -134,3 +137,13 @@ class PlotXNFF(wx.Frame):
         
         self.plotNB.Show()
         
+if __name__ == "__main__":
+    import GSASIIplot as G2plt
+    app = wx.App()
+    GSASIIpath.InvokeDebugOpts()
+    frm = wx.Frame(None) # create a frame
+    frm.Show(False)
+    win = PlotXNFF(frm)
+    win.Show()
+    win.Bind(wx.EVT_WINDOW_DESTROY,lambda event: sys.exit())
+    app.MainLoop()

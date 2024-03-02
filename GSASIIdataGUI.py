@@ -2405,7 +2405,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
 
     def EditProxyInfo(self,event):
-        '''Edit the proxy information used by subversion
+        '''Edit the proxy information used by subversion (svn only, not used with git)
         '''
         h,p,e = host,port,etc = GSASIIpath.getsvnProxy()
         labels = ['Proxy address','proxy port']

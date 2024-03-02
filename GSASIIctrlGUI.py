@@ -5598,9 +5598,11 @@ def updateNotifier(G2frame,fileVersion):
         txtbox.SetBackgroundColour(wx.Colour(0,0,0))
         tblSizer.Add(txtbox,0,wx.EXPAND)
     size = (700,500)
-    rev = GSASIIpath.svnGetRev()
-    if rev is None: rev = GSASIIpath.GetVersionNumber()
-    if rev is None: return
+    rev = GSASIIpath.GetVersionNumber()
+    try:
+        int(rev)
+    except:
+        pass
     lastNotice = max(GSASIIpath.GetConfigValue('lastUpdateNotice',0),fileVersion)
     show = None               # first version number to show
     allProjects = False       # if True notice is shown for all projects, otherwise only once
@@ -7563,11 +7565,11 @@ tutorialCatalog = [l for l in tutorialIndex if len(l) >= 3]
 # A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
 def OpenTutorial(parent):
     if GSASIIpath.HowIsG2Installed().startswith('git'):
-        return OpengitTutorial(parent)
+        return OpenGitTutorial(parent)
     else:
-        return OpensvnTutorial(parent)
+        return OpenSvnTutorial(parent)
 
-class OpensvnTutorial(wx.Dialog):
+class OpenSvnTutorial(wx.Dialog):
     '''Open a tutorial web page, optionally copying the web page, screen images and
     data file(s) to the local disk.
     '''
@@ -7897,7 +7899,7 @@ class OpensvnTutorial(wx.Dialog):
         except KeyError:
             pass
         
-class OpengitTutorial(wx.Dialog):
+class OpenGitTutorial(wx.Dialog):
     '''Open a tutorial web page from the git repository, 
     optionally copying the tutorial's exercise data file(s) to 
     the local disk.

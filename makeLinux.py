@@ -31,9 +31,14 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     # find the main GSAS-II script if not on command line
     if len(sys.argv) == 1:
         script = os.path.abspath(os.path.join(
-            os.path.split(__file__)[0],
+            os.path.dirname(__file__),
             "GSASII.py"
             ))
+        # when invoked from gitstrap.py, __file__ will appear in the wrong directory
+        if not os.path.exists(script):
+            script = os.path.abspath(os.path.join(
+                os.path.dirname(__file__),'GSASII',"GSASII.py"))
+            print(f'patching script to {script}')        
     elif len(sys.argv) == 2:
         script = os.path.abspath(sys.argv[1])
     else:

@@ -51,8 +51,14 @@ if __name__ == '__main__':
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
     G2script = os.path.join(gsaspath,'GSASII.py')
+    # when invoked from gitstrap.py, __file__ will appear in the wrong directory
+    if not os.path.exists(G2script):
+        gsaspath = os.path.join(gsaspath,'GSASII')
+        G2script = os.path.join(gsaspath,'GSASII.py')
+        print(f'patching gsaspath to {gsaspath}')
     #
     # Hmmm, perhaps we should not create these files in the GSASII directory, which is "owned" by git
+    # TODO: maybe address in the future
     #
     G2bat = os.path.join(gsaspath,'RunGSASII.bat')
     G2icon = os.path.join(gsaspath,'gsas2.ico')

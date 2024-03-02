@@ -21,6 +21,7 @@ import scipy.optimize # addresses problem with build for wx on Pi
 try:
     import wx
     # the next line removes the need for pythonw. Thanks to Matt Newville!
+    # appears unneaded from wx 4.2.1 on
     if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 # importing the following wx modules at the same time as wx seems to eliminate 
 # the "Debug: Adding duplicate image handler for 'Windows bitmap file'"

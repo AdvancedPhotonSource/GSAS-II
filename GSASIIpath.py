@@ -763,7 +763,11 @@ def gitStartUpdate(cmdopts):
     cmd = [sys.executable, __file__] + cmdopts
     if GetConfigValue('debug'): print('Starting updates with command\n\t'+
                                       f'{" ".join(cmd)}')
-    subprocess.Popen(cmd)
+    proc = subprocess.Popen(cmd)
+    # on windows the current process needs to end so that the source files can
+    # be written over. On unix the current process needs to stay running
+    # so the child is not killed.
+    if sys.platform != "win32": proc.wait()
     sys.exit()
 
 def dirGitHub(dirlist,orgName=gitOwner, repoName=gitRepo):

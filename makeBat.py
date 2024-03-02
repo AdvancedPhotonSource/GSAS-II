@@ -47,10 +47,13 @@ if __name__ == '__main__':
     except ImportError:
         import winreg
     app = None # delay starting wx until we need it. Likely not needed. 
-    gsaspath = os.path.split(sys.argv[0])[0]
+    gsaspath = os.path.dirname(__file__)
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
     G2script = os.path.join(gsaspath,'GSASII.py')
+    #
+    # Hmmm, perhaps we should not create these files in the GSASII directory, which is "owned" by git
+    #
     G2bat = os.path.join(gsaspath,'RunGSASII.bat')
     G2icon = os.path.join(gsaspath,'gsas2.ico')
     pythonexe = os.path.realpath(sys.executable)
@@ -62,11 +65,13 @@ if __name__ == '__main__':
         pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
         print("  now pythonexe="+pythonexe)
     # create a GSAS-II script
-    fp = open(os.path.join(G2bat),'w')
+    fp = open(G2bat,'w')
     fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
     activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
     print("Looking for",activate)
+    # for a non-base conda install, it might be better to use the activate in
+    # the base, but for now let's use the one we find relative to our python
     if os.path.exists(activate):
         activate = os.path.realpath(activate)
         if ' ' in activate:
@@ -75,7 +80,7 @@ if __name__ == '__main__':
             activate = 'call '+ activate + '\n'
         print('adding activate to .bat file ({})'.format(activate))
     else:
-        print('Anaconda activate not found')
+        print('conda activate not found')
         activate = ''
     pexe = pythonexe
     if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
@@ -165,7 +170,7 @@ if __name__ == '__main__':
             print('GSAS-II shortcut exists!')
             if app is None:
                 app = wx.App()
-                app.MainLoop()
+                #app.MainLoop()
             dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
                 wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             dlg.Raise()
@@ -192,4 +197,3 @@ if __name__ == '__main__':
         print('Unexpected error making desktop shortcut. Please report:')
         import traceback
         print(traceback.format_exc())
-    

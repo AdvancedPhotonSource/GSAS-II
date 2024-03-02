@@ -505,7 +505,7 @@ def ShowVersions():
     if sys.platform.startswith('win'): prog += '.exe'
     if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
         versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
-        warn = True
+        #warn = True
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print('N.B. current binaries have been updated')
     if warn:

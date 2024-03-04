@@ -36,11 +36,6 @@ Script = '''@REM Script to start GSAS-II on Windows
 pause
 
 '''
-print(f"running from file {__file__}")
-if __file__.lower().endswith("makebat.py"):
-    invokedDirectly = True
-else:
-    invokedDirectly = False
     
 app = None # delay starting wx until we need it. Likely not needed. 
 if __name__ == '__main__':
@@ -51,6 +46,14 @@ if __name__ == '__main__':
             import _winreg as winreg
         except ImportError:
             print('winreg not found')
+
+    if __file__.lower().endswith("makebat.py"):
+        print(f"running from file {__file__!r}")
+        invokedDirectly = True
+    else:
+        print(f"running makeBat.py indirectly inside {__file__!r}")
+        invokedDirectly = False
+
     gsaspath = os.path.dirname(__file__)
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
@@ -88,7 +91,7 @@ if __name__ == '__main__':
             activate = 'call "'+ activate + '"\n'
         else:
             activate = 'call '+ activate + '\n'
-        print('adding activate to .bat file ({})'.format(activate))
+        print(f'adding activate to .bat file ({activate})')
     else:
         print('conda activate not found')
         activate = ''
@@ -203,7 +206,7 @@ if __name__ == '__main__':
             #shobj.WorkingDirectory = wDir # could specify a default project location here
             shobj.IconLocation = G2icon
             shobj.save()
-            print(f'Created shortcut {shortbase} to start GSAS-II on desktop')
+            print(f'Created shortcut {shortbase!r} to start GSAS-II on desktop')
         else:
             print('No shortcut for this GSAS-II created on desktop')
     except ImportError:

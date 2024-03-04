@@ -1905,40 +1905,40 @@ def LoadConfig(printInfo=True):
         print(60*'*')
         configDict = {'Clip_on':True}
 
-def MacStartGSASII(g2script,project=''):
-    '''Start a new instance of GSAS-II by opening a new terminal window and starting
-    a new GSAS-II process. Used on Mac OS X only.
+# def MacStartGSASII(g2script,project=''):
+#     '''Start a new instance of GSAS-II by opening a new terminal window and starting
+#     a new GSAS-II process. Used on Mac OS X only.
 
-    :param str g2script: file name for the GSASII.py script
-    :param str project: GSAS-II project (.gpx) file to be opened, default is blank
-      which opens a new project
-    '''
-    if project and os.path.splitext(project)[1] != '.gpx':
-        print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
-        return
-    if project and not os.path.exists(project):
-        print(f'file {project} cannot be found.')
-        return 
-    elif project:
-        project = os.path.abspath(project)
-        if not os.path.exists(project): 
-            print(f'lost project {project} with abspath')
-            raise Exception(f'lost project {project} with abspath')
-    g2script = os.path.abspath(g2script)
-    pythonapp = sys.executable
-    if os.path.exists(pythonapp+'w'): pythonapp += 'w'
-    script = f'''
-set python to "{pythonapp}"
-set appwithpath to "{g2script}"
-set filename to "{project}"
-set filename to the quoted form of the POSIX path of filename
+#     :param str g2script: file name for the GSASII.py script
+#     :param str project: GSAS-II project (.gpx) file to be opened, default is blank
+#       which opens a new project
+#     '''
+#     if project and os.path.splitext(project)[1] != '.gpx':
+#         print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
+#         return
+#     if project and not os.path.exists(project):
+#         print(f'file {project} cannot be found.')
+#         return 
+#     elif project:
+#         project = os.path.abspath(project)
+#         if not os.path.exists(project): 
+#             print(f'lost project {project} with abspath')
+#             raise Exception(f'lost project {project} with abspath')
+#     g2script = os.path.abspath(g2script)
+#     pythonapp = sys.executable
+#     if os.path.exists(pythonapp+'w'): pythonapp += 'w'
+#     script = f'''
+# set python to "{pythonapp}"
+# set appwithpath to "{g2script}"
+# set filename to "{project}"
+# set filename to the quoted form of the POSIX path of filename
 
-tell application "Terminal"
-     activate
-     do script python & " " & appwithpath & " " & filename & "; exit"
-end tell
-'''
-    subprocess.Popen(["osascript","-e",script])
+# tell application "Terminal"
+#      activate
+#      do script python & " " & appwithpath & " " & filename & "; exit"
+# end tell
+# '''
+#     subprocess.Popen(["osascript","-e",script])
 
 def MacRunScript(script):
     '''Start a bash script in a new terminal window.

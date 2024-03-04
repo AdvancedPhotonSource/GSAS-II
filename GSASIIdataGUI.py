@@ -709,9 +709,9 @@ class GSASII(wx.Frame):
         '''
         item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project (.gpx) file')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
-        if sys.platform == "darwin": 
-            item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project (.gpx) file in a separate process')
-            self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
+        # if sys.platform == "darwin": 
+        item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project (.gpx) file in a separate process')
+        self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project (.gpx) file')
         self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Open w/project browser\tCtrl+B','Use project browser to a GSAS-II project (.gpx) file')            
@@ -4637,8 +4637,9 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')
-        GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
-
+        #GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
+        G2G.openInNewTerm(GSASprojectfile)
+        
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
         '''

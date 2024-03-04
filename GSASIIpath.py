@@ -2506,13 +2506,14 @@ to update/regress repository from git repository:
 
     if gitUpdate:
         # now restart GSAS-II with the new version
-        G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
+        # G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
         if project:
             print(f"Restart GSAS-II with project file {project!r}")
-            subprocess.Popen([sys.executable,G2scrpt,project])
+            # subprocess.Popen([sys.executable,G2scrpt,project])
         else:
             print("Restart GSAS-II without a project file ")
-            subprocess.Popen([sys.executable,G2scrpt])
+            # subprocess.Popen([sys.executable,G2scrpt])
+        G2G.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
         

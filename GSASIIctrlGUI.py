@@ -9320,7 +9320,7 @@ def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
         g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
     
     if sys.platform == "darwin":
-        if project is not None:
+        if project:
             script = f'''
 set python to "{pythonapp}"
 set appwithpath to "{g2script}"

@@ -19,33 +19,38 @@ version = "$Id$"
 import os, sys
 import datetime
 
-Script = '''@echo ========================================================================
+Script = '''@REM Script to start GSAS-II on Windows
+@echo =========================================================================
 @echo                General Structure Analysis System-II
 @echo              by Robert B. Von Dreele and Brian H. Toby
-@echo                Argonne National Laboratory(C), 2010
+@echo              Argonne National Laboratory(C), 2006-2014
 @echo  This product includes software developed by the UChicago Argonne, LLC,
 @echo             as Operator of Argonne National Laboratory.
 @echo                            Please cite:
 @echo      B.H. Toby and R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)
-@echo                   for small angle use also cite:
-@echo      R.B. Von Dreele, J. Appl. Cryst. 47, 1784-9 (2014)
-@echo                   for DIFFaX use also cite:
-@echo      M.M.J. Treacy, J.M. Newsam and M.W. Deem, 
-@echo                   Proc. Roy. Soc. Lond. 433A, 499-520 (1991)
-@echo ========================================================================
+@echo  + other papers for DIFFax, small angle, Bilboa, ISODISTORT,... as shown
+@echo =========================================================================
 @
 {:s}{:s} {:s} "%~1"
 @REM To keep the window from disappearing with any error messages
 pause
 
 '''
-
+print(f"running from file {__file__}")
+if __file__.lower().endswith("makebat.py"):
+    invokedDirectly = True
+else:
+    invokedDirectly = False
+    
 app = None # delay starting wx until we need it. Likely not needed. 
 if __name__ == '__main__':
     try:
-        import _winreg as winreg
-    except ImportError:
         import winreg
+    except ImportError:
+        try:
+            import _winreg as winreg
+        except ImportError:
+            print('winreg not found')
     gsaspath = os.path.dirname(__file__)
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
@@ -91,21 +96,12 @@ if __name__ == '__main__':
     if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
     G2s = G2script
     if ' ' in G2s: G2s = '"'+G2script+'"'
-    # is mingw-w64\bin present? If so add it to path.
-    #d = os.path.split(pexe)[0]
-    #mdir = os.path.join(d,'Library','mingw-w64','bin')
-    #if os.path.exists(mdir):
-    #    fp.write('@path={};%path%\n'.format(mdir))
     fp.write(Script.format(activate,pexe,G2s))
     fp.close()
     print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
     
     new = False
     oldBat = ''
-    try: # patch for FileNotFoundError not in Python 2.7
-        FileNotFoundError
-    except NameError:
-        FileNotFoundError = Exception
     # this code does not appear to work properly when paths have spaces
     try:
         oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project') # throws FileNotFoundError
@@ -120,7 +116,9 @@ if __name__ == '__main__':
         if oldBat:
             print('old GPX assignment',oldBat, 'not found; registry entry will be made for new one')
         new = True
-    if not new:
+    except NameError:
+        pass
+    if invokedDirectly and not new:
         try:
             if oldBat != G2bat:
                 if app is None:
@@ -134,21 +132,26 @@ if __name__ == '__main__':
                 dlg.Destroy()
         finally:
             pass
+    elif not invokedDirectly:  # force if we can't ask
+        new = True
     if new:
         # Associate a script and icon with .gpx files
-        gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\.gpx')
-        winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II.project')
-        winreg.CloseKey(gpxkey)
-        gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
-        winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II project')
-        iconkey = winreg.CreateKey(gpxkey, 'DefaultIcon')
-        winreg.SetValue(iconkey, None, winreg.REG_SZ, G2icon)
-        openkey = winreg.CreateKey(gpxkey, r'shell\open\command')
-        winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+' "%1"')
-        winreg.CloseKey(iconkey)
-        winreg.CloseKey(openkey)
-        winreg.CloseKey(gpxkey)
-        print('Assigned icon and batch file to .gpx files in registery')
+        try:
+            gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\.gpx')
+            winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II.project')
+            winreg.CloseKey(gpxkey)
+            gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
+            winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II project')
+            iconkey = winreg.CreateKey(gpxkey, 'DefaultIcon')
+            winreg.SetValue(iconkey, None, winreg.REG_SZ, G2icon)
+            openkey = winreg.CreateKey(gpxkey, r'shell\open\command')
+            winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+' "%1"')
+            winreg.CloseKey(iconkey)
+            winreg.CloseKey(openkey)
+            winreg.CloseKey(gpxkey)
+            print('Assigned icon and batch file to .gpx files in registry')
+        except:
+            print('Error assigning icon and batch file to .gpx files')
     else:
         print('old assignment of icon and batch file in registery is retained')
 
@@ -159,7 +162,7 @@ if __name__ == '__main__':
     except ImportError:
         print('Module pywin32 not present, login again to see file types properly')
     except:
-        print('Unexpected error on explorer refresh. Please report:')
+        print('Unexpected error on explorer refresh.')
         import traceback
         print(traceback.format_exc())
 
@@ -173,19 +176,26 @@ if __name__ == '__main__':
         save = True
         if win32com.shell.shell.SHGetFileInfo(shortcut,0,0)[0]:
             print('GSAS-II shortcut exists!')
-            if app is None:
-                import wx
-                app = wx.App()
-            dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
-                wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            dlg.Raise()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    shortcut = dlg.GetPath()
-                else:
-                    save = False
-            finally:
-                dlg.Destroy()
+            if invokedDirectly:
+                if app is None:
+                    import wx
+                    app = wx.App()
+                dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
+                    wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+                dlg.Raise()
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        shortcut = dlg.GetPath()
+                    else:
+                        save = False
+                finally:
+                    dlg.Destroy()
+            else:
+                # set an installation location
+                distdir = os.path.split(os.path.dirname(gsaspath))[1]
+                if distdir == '\\' or distdir == '': distdir = '/'
+                shortbase = f"GSAS-II from {distdir}.lnk"
+                shortcut = os.path.join(desktop, shortbase)
         if save:
             shell = win32com.client.Dispatch('WScript.Shell')
             shobj = shell.CreateShortCut(shortcut)
@@ -193,12 +203,12 @@ if __name__ == '__main__':
             #shobj.WorkingDirectory = wDir # could specify a default project location here
             shobj.IconLocation = G2icon
             shobj.save()
-            print('Created shortcut to start GSAS-II on desktop')
+            print(f'Created shortcut {shortbase} to start GSAS-II on desktop')
         else:
             print('No shortcut for this GSAS-II created on desktop')
     except ImportError:
         print('Module pywin32 not present, will not make desktop shortcut')
     except:
-        print('Unexpected error making desktop shortcut. Please report:')
+        print('Unexpected error making desktop shortcut.')
         import traceback
         print(traceback.format_exc())

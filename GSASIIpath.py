@@ -2513,7 +2513,8 @@ to update/regress repository from git repository:
         else:
             print("Restart GSAS-II without a project file ")
             # subprocess.Popen([sys.executable,G2scrpt])
-        G2G.openInNewTerm(project)
+        import GSASIIctrlGUI
+        GSASIIctrlGUI.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
         

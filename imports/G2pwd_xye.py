@@ -32,11 +32,11 @@ class xye_ReaderClass(G2obj.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         '''Look through the file for expected types of lines in a valid Topas 
-        Fit2D or pyFAI file. Alas the latter two formats are somewhat in 
+        Fit2D or BNL/pyFAI file. Alas the latter two formats are somewhat in 
         conflict. 
         '''
         gotCcomment = False
-        self.minimalHeader = False   # indicates a .chi file from pyFAI 
+        self.minimalHeader = False   # indicates a .chi file from BNL's pyFAI 
         # which has less header info than from Fit2D
         begin = True
         self.GSAS = False
@@ -138,7 +138,8 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             # or WinPLOTR style, a '!'
             if begin:
                 if self.Chi:
-                    if self.minimalHeader and S.strip().startswith('#') and i < 4:
+                    if self.minimalHeader and S.strip().startswith('#') and i < 6:
+                        self.comments.append(S[:-1])
                         continue
                     elif self.minimalHeader:
                         begin = False

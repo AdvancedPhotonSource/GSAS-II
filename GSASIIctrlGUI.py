@@ -9342,7 +9342,6 @@ tell application "Terminal"
      do script python & " " & appwithpath & " " & "; exit"
 end tell
 '''
-        print('script=',script)
         subprocess.Popen(["osascript","-e",script])
     elif sys.platform.startswith("win"):
         cmds = [pythonapp, g2script]

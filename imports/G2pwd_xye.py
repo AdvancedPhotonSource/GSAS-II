@@ -31,8 +31,13 @@ class xye_ReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
-        'Look through the file for expected types of lines in a valid Topas file'
+        '''Look through the file for expected types of lines in a valid Topas 
+        Fit2D or pyFAI file. Alas the latter two formats are somewhat in 
+        conflict. 
+        '''
         gotCcomment = False
+        self.minimalHeader = False   # indicates a .chi file from pyFAI 
+        # which has less header info than from Fit2D
         begin = True
         self.GSAS = False
         self.Chi = False
@@ -46,7 +51,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         if2theta = False
         ifQ = False
         for i,S in enumerate(fp):
-            if not S:
+            if not S:     # may not start with a blank line
                 break
             if i > 1000: break
             if begin:
@@ -54,6 +59,9 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     if i < 4:
                         if  '2-theta' in S.lower():
                             if2theta = True
+                        elif  'chi_2theta' in S.lower(): # probably pyFAI w/o data type, assume 2theta
+                            if2theta = True
+                            self.minimalHeader = True
                         elif  'q ' in S.lower():
                             ifQ = True
                             wave = ''
@@ -130,11 +138,15 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             # or WinPLOTR style, a '!'
             if begin:
                 if self.Chi:
-                    if i < 4:
+                    if self.minimalHeader and S.strip().startswith('#') and i < 4:
+                        continue
+                    elif self.minimalHeader:
+                        begin = False
+                    elif i < 4:
                         continue
                     else:
                         begin = False
-                else:        
+                else:
                     if gotCcomment and S.find('*/') > -1:
                         self.comments.append(S[:-1])
                         begin = False

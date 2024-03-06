@@ -216,7 +216,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.brml',),
-            strictExtension=False,
+            strictExtension=True,
             formatName = 'Bruker brml',
             longFormatName = 'Bruker .brml powder data file'
             )
@@ -233,7 +233,10 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
                 G2G.G2MessageBox(self,msg,'Install xmltodict Error')
                 return False
-            import xmltodict as xml
+            try:
+                import xmltodict as xml
+            except:
+                return False
         try:
             import zipfile as ZF        
             with ZF.ZipFile(filename, 'r') as zipObj:

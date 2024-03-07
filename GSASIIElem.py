@@ -600,6 +600,7 @@ def ClosedFormFF(Z,SQ,k,N):
     
 def BlenResCW(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - single wavelength version (CW)
+    returns bo+b' and b"'
     '''
     FP = np.zeros(len(Els))
     FPP = np.zeros(len(Els))
@@ -622,6 +623,7 @@ def BlenResCW(Els,BLtables,wave):
     
 def BlenResTOF(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - multiple wavelength version (TOF)
+    returns bo+b' and b"'
     '''
     FP = np.zeros((len(Els),len(wave)))
     FPP = np.zeros((len(Els),len(wave)))

@@ -89,7 +89,7 @@ class PlotXNFF(wx.Frame):
                     b0 = np.ones_like(lams)*BLtable[isotope][1]['SL'][0]
                 bp,bpp = G2el.BlenResTOF([isotope,],BLtable,lams)
                 fplot.plot(lams,b0,label=isotope+El+' b0')
-                fplot.plot(lams,bp[0],label=isotope+El+" b'")
+                fplot.plot(lams,bp[0]-b0,label=isotope+El+" b'")
                 fplot.plot(lams,bpp[0],label=isotope+El+' b"')
                 
             fplot.legend(loc='best')

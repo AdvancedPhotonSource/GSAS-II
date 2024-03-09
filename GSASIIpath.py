@@ -1755,8 +1755,11 @@ def InvokeDebugOpts():
 def TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path
     '''
-    if not os.path.exists(fpth): return False
-    if not glob.glob(os.path.join(fpth,'pyspg.*')): return False
+    try:
+        if not os.path.exists(fpth): return False
+        if not glob.glob(os.path.join(fpth,'pyspg.*')): return False
+    except:
+        return False
     savpath = sys.path[:]
     sys.path = [fpth]
     # test to see if a shared library can be used
@@ -1787,12 +1790,13 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
       to load, an attempt is made to download the binaries
       (default is False).
 
-      TODO: this is not implemented at present and is not used in 
-      any of the calls to SetBinaryPath
+      TODO: the loadBinary option  not implemented at present and is 
+      not used in any of the calls to SetBinaryPath
     '''
     # do this only once no matter how many times it is called
-    global BinaryPathLoaded,binaryPath
+    global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if BinaryPathLoaded: return
+    if BinaryPathFailed: return
     try:
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
@@ -1849,10 +1853,11 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         binaryPath = binpath
         BinaryPathLoaded = True
     elif not loadBinary:
-        #raise Exception('*** ERROR: Unable to find GSAS-II binaries. Cannot continue')
-        print('*** ERROR: Unable to find GSAS-II binaries. Cannot continue')
+        print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
+        BinaryPathFailed = True
         return None
     else:                                                  # try loading them 
+        BinaryPathFailed = True
         raise Exception("**** ERROR GSAS-II binary libraries not found and loadBinary not"+
                         "\nimplemented in SetBinaryPath, GSAS-II cannot run ****""")
         # if printInfo:
@@ -2265,6 +2270,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("  "+files)
         print("*"*75)
 
+BinaryPathFailed = False
 BinaryPathLoaded = False
 binaryPath = ''
 IPyBreak = DoNothing

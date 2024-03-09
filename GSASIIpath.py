@@ -653,8 +653,9 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''    
     bindir = GetBinaryPrefix(pyver)
     if npver:
-        inpver = npver
+        inpver = intver(npver)
     else:
+        npver = np.__version__
         inpver = intver(np.__version__)
     # get binaries matching the required install, approximate match for numpy
     URLdict = getGitBinaryReleases()
@@ -670,18 +671,18 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     elif inpver < min(intVersionsList):
         vsel = min(intVersionsList)
         if verbose: print(
-                f'Warning: The installed numpy, version, {np.__version__},'
+                f'Warning: The requested numpy, version, {npver},'
                 f' is older than\n\tthe oldest dist version, {fmtver(vsel)}')
     elif inpver >= max(intVersionsList):
         vsel = max(intVersionsList)
         if verbose and inpver == max(intVersionsList):
             print(
-                f'The current numpy version, {np.__version__},'
+                f'The requested numpy version, {npver},'
                 f' matches the binary dist, version {fmtver(vsel)}')
         elif verbose:
             print(
                 f'Note: using a binary dist for numpy version {fmtver(vsel)} '
-                f'which is older than the installed numpy, version {np.__version__}')
+                f'which is older than the requested numpy, version {npver}')
     else:
         vsel = min(intVersionsList)
         for v in intVersionsList:
@@ -689,8 +690,8 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
                 vsel = v
             else:
                 if verbose: print(
-                        f'FYI: Selecting dist version {fmtver(v)}'
-                        f' as the installed numpy, version, {np.__version__},'
+                        f'FYI: Selecting dist version {fmtver(vsel)}'
+                        f' as the requested numpy, version, {npver},'
                         f'\n\tis older than the next dist version {fmtver(v)}')
                 break
     return URLdict[versions[vsel]]

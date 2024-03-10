@@ -70,7 +70,7 @@ if __name__ == '__main__':
             tzinfo=commit.committed_datetime.tzinfo)
         commit0 = commit.hexsha
         tags0 = g2repo.git.tag('--points-at',commit).split('\n')
-        history = list(g2repo.iter_commits('head'))
+        history = list(g2repo.iter_commits('HEAD'))
         for i in history[1:]:
             tags = g2repo.git.tag('--points-at',i)
             if not tags: continue

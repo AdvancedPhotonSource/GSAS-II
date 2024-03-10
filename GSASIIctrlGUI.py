@@ -6951,7 +6951,7 @@ class gitVersionSelector(wx.Dialog):
         self.githistory = [h for h in self.githistory if
                         self.g2repo.commit(h).committed_datetime > cutoff]
         # end patch 
-        self.initial_commit = self.g2repo.commit('head')
+        self.initial_commit = self.g2repo.commit('HEAD')
         self.initial_commit_info = self.docCommit(self.initial_commit)
         
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',

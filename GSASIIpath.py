@@ -214,7 +214,7 @@ def GetVersionNumber():
     '''
     if HowIsG2Installed().startswith('git'):
         g2repo = git.Repo(path2GSAS2)
-        for h in list(g2repo.iter_commits('head'))[:50]: # (don't go too far back)
+        for h in list(g2repo.iter_commits('HEAD'))[:50]: # (don't go too far back)
             tags = g2repo.git.tag('--points-at',h).split('\n')
             try:
                 for item in tags:

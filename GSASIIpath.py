@@ -192,7 +192,7 @@ def HowIsG2Installed():
         return 'git'
     except:
         pass
-    if svnGetRev(): return 'svn'
+    if svnGetRev(verbose=False): return 'svn'
     return 'noVCS'
         
 def GetVersionNumber():

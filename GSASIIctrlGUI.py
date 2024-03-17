@@ -5578,7 +5578,7 @@ class HelpButton(wx.Button):
 updateNoticeDict = {4919:True}  # example: {1234:True, 5000:False}
 '''A dict with versions that should be noted. The value associated with the
 tag is if all older projects should show the warning, or only the first 
-to be opened. Version info is found in file versioninfo.txt. 
+to be opened. 
 '''
 def updateNotifier(G2frame,fileVersion):
     '''Posts an update notice when a a specially tagged GSAS-II version 
@@ -5622,7 +5622,13 @@ def updateNotifier(G2frame,fileVersion):
                     show = min(show,lastNotice)
     if show is None: return
 
-    fp = open(os.path.join(GSASIIpath.path2GSAS2,'versioninfo.txt'),'r')
+    filnam = os.path.join(GSASIIpath.path2GSAS2,'inputs','versioninfo.txt')
+    if not os.path.exists(filnam):  # patch 3/2024 for svn dir organization
+        filnam = os.path.join(GSASIIpath.path2GSAS2,'versioninfo.txt')    
+    if not os.path.exists(filnam):
+        print('Warning: file versioninfo.txt not found')
+        return
+    fp = open(filnam, 'r')
     vers = None
     noticeDict = {}
     for line in fp: 
@@ -6941,7 +6947,7 @@ class gitVersionSelector(wx.Dialog):
     '''
     def __init__(self,parent=None):
         import git
-        self.g2repo = git.Repo(path2GSAS2)
+        self.g2repo = GSASIIpath.openGitRepo(path2GSAS2)
         self.githistory = GSASIIpath.gitHistory('hash',self.g2repo)
         # patch Feb 2024: don't allow access to versions that are too old
         # since they are hard-coded to use svn

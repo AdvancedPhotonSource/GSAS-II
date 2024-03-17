@@ -664,14 +664,13 @@ class GSASIItoolbar(Toolbar):
         pass
             
     def AddToolBarTool(self,label,title,filename,callback):
-        G2path = os.path.split(os.path.abspath(__file__))[0]
-    
-        bmpFilename = os.path.normpath(os.path.join(G2path, filename))
-        if not os.path.exists(bmpFilename):
-            print('Could not find bitmap file "%s"; skipping' % bmpFilename)
+        bmpFilename = GSASIIpath.getIconFile(filename)
+        if bmpFilename is None:
+            print(f'Could not find bitmap file {filename!r}; skipping')
             bmp = wx.EmptyBitmap(32,32)
         else:
             bmp = wx.Bitmap(bmpFilename)
+#            bmp = wx.Bitmap(bmpFilename,type=wx.BITMAP_TYPE_ANY) # probably better
         if 'phoenix' in wx.version():
             button = self.AddTool(wx.ID_ANY, label, bmp, title)
         else:
@@ -4673,7 +4672,13 @@ in a cmd.exe window to do this.
             dest_wks.from_list(col=i-1, data=valueList[i].tolist(), lname=colNamesList[i-1])
 
         # Create graph object, to which data will be added
-        graph = op.new_graph(template=os.path.join(GSASIIpath.path2GSAS2,'OriginTemplate2.otpu'))
+        template = os.path.join(GSASIIpath.path2GSAS2,'inputs','OriginTemplate2.otpu')
+        if not os.path.exists(template):  # patch 3/2024 for svn dir organization
+            template = os.path.join(GSASIIpath.path2GSAS2,'OriginTemplate2.otpu')
+        if not os.path.exists(template):
+            print('Error: OriginTemplate2.otpu not found')
+            return
+        graph = op.new_graph(template=template)
         graph.lname = refinementName + "_G"
         gl = graph[0]
 

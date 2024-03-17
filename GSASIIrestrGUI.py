@@ -82,7 +82,12 @@ def UpdateRestraints(G2frame,data,phaseName):
 #    global Pages
     
     def getMacroFile(macName):
-        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
+        defDir = os.path.join(GSASIIpath.path2GSAS2,'inputs','GSASIImacros')
+        if not os.path.exists(defDir): # patch 3/2024 for svn dir organization
+            defDir = os.path.join(GSASIIpath.path2GSAS2,'GSASIImacros')
+        if not os.path.exists(defDir):
+            print('Warning: GSASIImacros directory not found')
+            return
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' restraint macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)

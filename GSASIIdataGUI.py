@@ -3254,9 +3254,8 @@ class GSASII(wx.Frame):
         self.ExportLookup = {}
         self.exporterlist = []
         self._init_ctrls(parent)
-        self.Image = wx.Image(
-            os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),
-            wx.BITMAP_TYPE_ICO)
+        self.Image = wx.Image(GSASIIpath.getIconFile('gsas2.ico'),
+                                  wx.BITMAP_TYPE_ICO)
         if "wxMSW" in wx.PlatformInfo:
             img = self.Image.Scale(16, 16).ConvertToBitmap()
         elif "wxGTK" in wx.PlatformInfo:

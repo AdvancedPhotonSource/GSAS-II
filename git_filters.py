@@ -13,8 +13,12 @@ import sys
 import datetime as dt
 import git
 
-# get location of this file; assumed to be path to repository
-path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+# get location of the GSAS-II files
+# assumed to be the parent of location of this file
+path2GSAS2 = os.path.dirname(os.path.dirname(
+    os.path.abspath(os.path.expanduser(__file__))))
+# and the repo is in the parent of that
+path2repo = os.path.dirname(path2GSAS2)
 
 if __name__ == '__main__':
 
@@ -59,10 +63,10 @@ if __name__ == '__main__':
     if actionName == 'record':
         # create a file with GSAS-II version infomation
         try:
-            g2repo = git.Repo(path2GSAS2)
+            g2repo = git.Repo(path2repo)
         except:
             print('Launch of gitpython for version file failed'+
-                      f' with path {path2GSAS2}')
+                      f' with path {path2repo}')
             sys.exit()
         commit = g2repo.head.commit
         ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
@@ -97,8 +101,9 @@ if __name__ == '__main__':
         fp.close()
         print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')
         sys.exit()
+
     elif actionName == 'tag':
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = git.Repo(path2repo)
         if g2repo.active_branch.name != 'master':
             print(f'Not on master branch {commit0[:6]!r}')
             sys.exit()

@@ -123,7 +123,9 @@ def LoadConfigFile(filename):
     '''
     info = []
     for path in sys.path:
-        fil = os.path.join(path,filename)
+        fil = os.path.join(path,'inputs',filename)
+        if not os.path.exists(fil):  # patch 3/2024 for svn dir organization
+            fil = os.path.join(path,filename)
         if not os.path.exists(fil): continue
         try:
             i = 0
@@ -177,23 +179,38 @@ def GetBinaryPrefix(pyver=None):
 #==============================================================================
 #==============================================================================
 # hybrid routines that use git & svn (to be revised to remove svn someday)
+G2_installed_result = None
 def HowIsG2Installed():
-    '''Determines if GSAS-II was installed with git, svn or none of the above
+    '''Determines if GSAS-II was installed with git, svn or none of the above.
+    Result is cached to avoid time needed for multiple calls of this.
 
-    :returns: 'github' if installed from the GSAS-II GitHub repository (defined in g2URL),
-      or 'git' if installed from git, but not the GSAS-II repository, 
-      or 'svn' is installed from an svn repository (assumed as defined in g2home)
-      or 'noVCS' if installed without a connection to a version control system
+    :returns: 
+      * a string starting with 'git' from git, 
+        if installed from the GSAS-II GitHub repository (defined in g2URL), 
+        the string is 'github', if the post-3/2024 directory structure is
+        in use '-rev' is appended.
+      * or 'svn' is installed from an svn repository (assumed as defined in g2home)
+      * or 'noVCS' if installed without a connection to a version control system
     '''
+    global G2_installed_result
+    if G2_installed_result is not None: return G2_installed_result
     try:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
+        if os.path.samefile(os.path.dirname(g2repo.common_dir),path2GSAS2):
+            rev = ''
+        else:
+            rev = '-rev'
         if g2URL in g2repo.remote().urls:
-            return 'github'
-        return 'git'
+            return 'github'+rev
+        G2_installed_result = 'git'+rev
+        return G2_installed_result
     except:
         pass
-    if svnGetRev(verbose=False): return 'svn'
-    return 'noVCS'
+    if svnGetRev(verbose=False):
+        G2_installed_result = 'svn'
+        return G2_installed_result
+    G2_installed_result = 'noVCS'
+    return G2_installed_result
         
 def GetVersionNumber():
     '''Obtain a version number for GSAS-II from git, svn or from the 
@@ -213,7 +230,7 @@ def GetVersionNumber():
     :returns: an int value usually, but a value of 'unknown' might occur 
     '''
     if HowIsG2Installed().startswith('git'):
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
         for h in list(g2repo.iter_commits('HEAD'))[:50]: # (don't go too far back)
             tags = g2repo.git.tag('--points-at',h).split('\n')
             try:
@@ -250,7 +267,7 @@ def GetVersionNumber():
     
 def getG2VersionInfo():
     if HowIsG2Installed().startswith('git'):
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
         ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
         now = dt.datetime.now().replace(
@@ -325,6 +342,14 @@ gitOwner,gitRepo = 'GSASII', 'TutorialTest'
 
 BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
+
+def openGitRepo(repo_path):
+    try:  # patch 3/2024 for svn dir organization
+        return git.Repo(path2GSAS2)
+    except git.InvalidGitRepositoryError:
+        pass
+    return git.Repo(os.path.dirname(path2GSAS2))
+        
 def gitLookup(repo_path,gittag=None,githash=None):
     '''Return information on a particular checked-in version
     of GSAS-II. 
@@ -342,7 +367,7 @@ def gitLookup(repo_path,gittag=None,githash=None):
         * message is the check-in message (str)
         * date_time is the check-in date as a datetime object
     '''
-    g2repo = git.Repo(repo_path)
+    g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
         raise ValueError("Cannot specify a hash and a tag")
     if gittag is not None:
@@ -372,7 +397,7 @@ def gitHash2Tags(githash=None,g2repo=None):
     :returns: a list of tags (each a string)
     '''
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     if githash is None:
         commit = g2repo.head.object
     else:
@@ -393,7 +418,7 @@ def gitTag2Hash(gittag,g2repo=None):
     :returns: a str value with the hex hash for the commit.
     '''
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     return g2repo.tag(gittag).commit.hexsha
 
 def gitTestGSASII(verbose=True,g2repo=None):
@@ -424,7 +449,7 @@ def gitTestGSASII(verbose=True,g2repo=None):
             if verbose: print(f'Warning: Repository {path2GSAS2} not found')
             return -2
         try:
-            g2repo = git.Repo(path2GSAS2)
+            g2repo = openGitRepo(path2GSAS2)
         except Exception as msg:
             if verbose: print(f'Warning: Failed to open repository. Error: {msg}')
             return -3
@@ -465,7 +490,7 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
     '''
     fetched = False
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     if g2repo.head.is_detached:
         return (None,None,None)
     if fetch:
@@ -494,7 +519,7 @@ def countDetachedCommits(g2repo=None):
     None is returned if no connection is found
     '''
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     if not g2repo.head.is_detached:
         return 0,g2repo.commit()
     # is detached head in master branch?
@@ -526,7 +551,7 @@ def gitCountRegressions(g2repo=None):
       (I don't see how this could happen) then only mastercount will be None.
     '''
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     # get parent of current head that is in master branch
     detachedcount,parent = countDetachedCommits(g2repo)
     if detachedcount is None: return None,None
@@ -556,7 +581,7 @@ def gitGetUpdate(mode='Background'):
     if mode == 'Background':
         return subprocess.Popen([sys.executable, __file__, '--git-fetch'])
     else:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
         g2repo.remote().fetch()
         if GetConfigValue('debug'): print(f'Updates fetched')
 
@@ -578,7 +603,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
       list of tags (if any) is provided
     '''
     if g2repo is None:
-        g2repo = git.Repo(path2GSAS2)
+        g2repo = openGitRepo(path2GSAS2)
     history = list(g2repo.iter_commits('master'))
     if values.lower().startswith('h'):
         return [i.hexsha for i in history]
@@ -992,13 +1017,19 @@ def whichsvn():
                 pass        
     svnLocCache = None
 
+svn_version = None
 def svnVersion(svn=None):
-    '''Get the version number of the current subversion executable
+    '''Get the version number of the current subversion executable.
+    The result is cached, as this takes a bit of time to run and 
+    is done a fair number of times.
 
     :returns: a string with a version number such as "1.6.6" or None if
       subversion is not found.
 
     '''
+    global svn_version
+    if svn_version is not None:
+        return svn_version
     if not svn: svn = whichsvn()
     if not svn: return
 
@@ -1013,7 +1044,8 @@ def svnVersion(svn=None):
         for i in cmd: s += i + ' '
         print(s)
         return None
-    return out.strip()
+    svn_version = out.strip()
+    return svn_version
 
 def svnVersionNumber(svn=None):
     '''Get the version number of the current subversion executable
@@ -2209,7 +2241,22 @@ def addCondaPkg():
         print('\nUnexpected action: adding conda to base environment???')
 #==============================================================================
 #==============================================================================
+# routines for reorg of GSAS-II directory layout
+def getIconFile(imgfile):
+    '''Looks in either the main GSAS-II install location (old) or subdirectory 
+    icons (after reorg) for an icon
 
+    :returns: the full path for the icon file
+    '''
+    if os.path.exists(os.path.join(path2GSAS2,'icons',imgfile)):
+        return os.path.join(path2GSAS2,'icons',imgfile)
+    if os.path.exists(os.path.join(path2GSAS2,imgfile)): # patch 3/2024 for svn dir organization
+        return os.path.join(path2GSAS2,imgfile)
+    print(f'getIconFile Warning: file {imgfile} not found')
+    return None
+
+#==============================================================================
+#==============================================================================
 def makeScriptShortcut():
     '''Creates a shortcut to GSAS-II in the current Python installation
     so that "import G2script" (or "import G2script as GSASIIscripting")
@@ -2341,7 +2388,7 @@ if __name__ == '__main__':
             gitversion = argsplit[1]
             # make sure the version or tag supplied is valid and convert to
             # a full sha hash
-            g2repo = git.Repo(path2GSAS2)
+            g2repo = openGitRepo(path2GSAS2)
             try:
                 regressversion = g2repo.commit(gitversion).hexsha
             except git.BadName:
@@ -2429,7 +2476,7 @@ to update/regress repository from git repository:
             fp.close()
             sys.exit()
         try:
-            g2repo = git.Repo(path2GSAS2)
+            g2repo = openGitRepo(path2GSAS2)
             g2repo.remote().fetch()
             fp.write(f'Updates fetched\n')
         except Exception as msg:
@@ -2463,7 +2510,7 @@ to update/regress repository from git repository:
             print('git import failed')
             sys.exit()
         try:
-            g2repo = git.Repo(path2GSAS2)
+            g2repo = openGitRepo(path2GSAS2)
         except Exception as msg:
             print(f'Update failed with message {msg}\n')
             sys.exit()
@@ -2472,7 +2519,7 @@ to update/regress repository from git repository:
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')
-        git.Repo(path2GSAS2).git.reset('--hard','origin/master')
+        openGitRepo(path2GSAS2).git.reset('--hard','origin/master')
         try:
             if g2repo.active_branch.name != 'master': 
                 g2repo.git.switch('master')

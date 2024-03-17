@@ -332,11 +332,13 @@ def GetXsectionCoeff(El):
     C1 = 0.02721
     ElS = El.upper()
     ElS = ElS.ljust(2)
-    filename = os.path.join(os.path.split(__file__)[0],'Xsect.dat')
+    filename = os.path.join(GSASIIpath.path2GSAS2,'inputs','Xsect.dat')
+    if not os.path.exists(filename):  # patch 3/2024 for svn dir organization
+        filename = os.path.join(GSASIIpath.path2GSAS2,'Xsect.dat')
     try:
         xsec = open(filename,'r')
     except:
-        print ('**** ERROR - File Xsect.dat not found in directory %s'%os.path.split(filename)[0])
+        print (f'**** ERROR - File Xsect.dat not found in directory {os.path.dirname(filename)}')
         sys.exit()
     S = '1'
     Orbs = []

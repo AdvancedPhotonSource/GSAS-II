@@ -9365,8 +9365,7 @@ end tell
                 found = shutil.which(term)
                 if not found: continue
             except AttributeError:
-                print(f'shutil.which() failed (why?); assuming {term} present'
-)
+                print(f'shutil.which() failed (why?); assuming {term} present')
                 found = True
             if term == "gnome-terminal":
                 #terminal = 'gnome-terminal -t "GSAS-II console" --'

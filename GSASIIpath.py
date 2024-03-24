@@ -448,11 +448,15 @@ def gitTestGSASII(verbose=True,g2repo=None):
         if not os.path.exists(path2GSAS2): 
             if verbose: print(f'Warning: Directory {path2GSAS2} not found')
             return -1
-        if not os.path.exists(os.path.join(path2GSAS2,'.git')): 
+        if os.path.exists(os.path.join(path2GSAS2,'..','.git')):
+            path2repo = os.path.join(path2GSAS2,'..')  # expected location
+        elif os.path.exists(os.path.join(path2GSAS2,'.git')):
+            path2repo = path2GSAS2
+        else:
             if verbose: print(f'Warning: Repository {path2GSAS2} not found')
             return -2
         try:
-            g2repo = openGitRepo(path2GSAS2)
+            g2repo = openGitRepo(path2repo)
         except Exception as msg:
             if verbose: print(f'Warning: Failed to open repository. Error: {msg}')
             return -3

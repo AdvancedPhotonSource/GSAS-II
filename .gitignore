@@ -8,5 +8,17 @@ config.py
 GSAS-II.app/
 GSAS-II.py
 
+# created by gitstrap.py
+GSASII-bin
+
+# created by docs/build/conf.py
+version.rst
+vars.rst
+docs/build/
+
+# cruft from Python
+__pycache__
+
 # cruft from MacOS
 .DS_Store
+

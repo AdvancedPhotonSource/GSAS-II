@@ -1,3 +1,0 @@
-This directory is intended as a potential home for a single set of GSAS-II binaries selected to match the OS, python & numpy versions, copied from the GSAS-II svn server either by bootstrap.py or GSASIIpath.py.
-
-This file also keeps this directory from being removed in the packaging process.

@@ -1,8 +1,0 @@
-This directory is intended as a potential home for all GSAS-II binaries, copied over
-from the GSAS-II svn server when the bootstrap.py -server switch is
-used with this command:
-
-     svn switch https://subversion.xray.aps.anl.gov/pyGSAS/Binaries AllBinaries --ignore-ancestry
-
-This file also keeps this directory from being removed in the
-conda packaging process which seems to not include empty directories

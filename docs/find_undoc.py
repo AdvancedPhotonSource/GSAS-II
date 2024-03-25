@@ -1,38 +1,33 @@
-'''Find Python files in GSASII that are not referenced in the sphinx documentation
+'''Find Python files in GSASII that are not referenced in the sphinx 
+documentation. Git-reorg version.
 '''
 import glob
 import os.path
-import subprocess as sp
+import git
 
 # get list of documented files (misses out on data files -- with no functions or classes)
 import glob
-loc = os.path.split(os.path.realpath(__file__))[0] # where is the documentation?
+loc = os.path.dirname(os.path.realpath(__file__)) # where is the documentation?
+G2loc = os.path.join(loc,'..')
 
 # prepare a list of the files that show up in the documentation already
 # look for a reference in the .rst files
 documented = []
-for fil in glob.glob('source/*.rst'):
+for fil in glob.glob(os.path.join(loc,'source/*.rst')):
     for line in open(fil,'r').readlines():
         if line.strip().startswith('.. automodule::'):
             documented.append(line.strip().split('::')[1].strip())
 
-# old method looks for an html version of the source
-# documented = [os.path.splitext(os.path.split(fil)[1])[0] for 
-#               fil in glob.iglob(os.path.join(loc,'build/html/_modules/','*.html'))]
-                      
-# loop over python files referenced in subversion
-proc = sp.Popen(["svn","list",
-                 os.path.join(loc,'..'),
-                 os.path.join(loc,'..','exports'),
-                 os.path.join(loc,'..','imports'),
-                 ],stdout=sp.PIPE)
 undoc = []
-for fil in proc.stdout.readlines():
-    fil = fil.strip()
-    #print fil+'...',
-    if os.path.splitext(fil.strip())[1] != ".py": continue
+G2repo = git.Repo(G2loc)
+for entry in G2repo.commit().tree.traverse():
+    fil = entry.path
+    if not fil.endswith('.py'): continue
+    if os.path.dirname(fil) not in (
+            'GSASII','GSASII/imports','GSASII/exports','GSASII/install'):
+        continue
     if os.path.splitext(os.path.split(fil)[1])[0] in documented:
-        #print fil+' doc'
+        #print(fil+' doc')
         continue
     else:
         print(fil+' undocumented')

@@ -65,27 +65,14 @@ It is called by bootstrap.py during the GSAS-II installation process.
 .. automodule:: makeLinux
     :members: 
 
-*makeTutorial: Make Tutorial Web Page*
-========================================
-
-Provides a script to reates an HTML page
-(``GSASII/help/Tutorials.html``) listing all the tutorials defined in
-variable
-:data:`GSASIIctrlGUI.tutorialIndex`. Run this after adding new tutorials to that
-catalog.
-
-.. automodule:: makeTutorial
-    :members: 
-
-*makeVarTbl: Make Variables Table*
-========================================
+*makeVarTbl: Make Table of Variable Names*
+============================================
 
 This creates a table of variable names from the definitions supplied
-in :func:`GSASIIobj.CompileVarDesc` which is used as input for the
-Sphinx documentation
-(in the :ref:`GSAS-II Variable Names table <VarNames_table>`).
-This is run as part of the Sphinx build from inside docs/source/conf.py.
-
+in :func:`GSASIIobj.CompileVarDesc`. This table is used in the
+Sphinx documentation as the :ref:`GSAS-II Variable Names table <VarNames_table>`.
+This is run as part of the Sphinx build from inside ``docs/source/conf.py``.
+ 
 .. automodule:: makeVarTbl
     :members: 
        
@@ -112,3 +99,30 @@ A GUI program for testing the 3+1 superspace group symmetry generation routines.
        
 .. automodule:: testSSymbols
     :members: 
+
+
+*Other scripts*
+========================================
+
+A few scripts are also placed in the GSAS-II auxiliary repositories 
+
+``GSASII-buildtools/install/gitstrap.py``
+
+    Used to install the GSAS-II package, including the appropriate
+    binary files. May be used directly to install GSAS-II from inside
+    Python in an appropriately configured Python installation, or
+    is also used to obtain or update the GSAS-II files in a conda
+    installation. 
+
+``GSASII-buildtools/install/setgitversion.py``
+
+   Used during the gsas2full (& gsas2complete) build process
+   to modify the g2complete & g2full .template files to reflect the
+   versions of Python & packages that should be used for builds. 
+
+``GSASII-tutorials/scripts/makeGitTutorial.py``
+
+   Provides a script to creates the HTML page
+   (``GSASII/help/Tutorials.html``) that lists all the tutorials defined in
+   variable :data:`GSASIIctrlGUI.tutorialIndex`. Run this after adding
+   new tutorials to that catalog.

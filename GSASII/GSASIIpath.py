@@ -41,13 +41,10 @@ except:
           'to install/update from git)')
 
 # hard-coded github repo locations
-#G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSASIIbuildtools"
-G2binURL = "https://api.github.com/repos/GSASII/GSASIIbuildtools"
-#g2URL = "https://github.com/AdvancedPhotonSource/GSAS-II.git"
-g2URL = "https://github.com/GSASII/codetest.git"
+G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools"
+g2URL = "https://github.com/AdvancedPhotonSource/GSAS-II.git"
 # tutorial repo owner & Repo name
-#gitTutorialOwn,gitTutorialRepo = 'AdvancedPhotonSource', 'GSASIITutorials'
-gitTutorialOwn,gitTutorialRepo = 'GSASII', 'GSASIITutorials'
+gitTutorialOwn,gitTutorialRepo = 'AdvancedPhotonSource', 'GSAS-II-Tutorials'
     
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
@@ -838,7 +835,7 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
 
 def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRepo,
                  branchname="master"):
-    '''Create a link that can be used to view/downlaod the raw version of 
+    '''Create a URL that can be used to view/downlaod the raw version of 
     file in a GitHub repository. 
 
     :param str dirlist: a list of sub-directories `['parent','child',sub']` 
@@ -860,6 +857,9 @@ def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRe
     return f"https://raw.githubusercontent.com/{orgName}/{repoName}/{branchname}/{dirname}{filename}"
 
 def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
+    '''Download the entire contents of a directory from a repository 
+    on GitHub. Used to download data for a tutorial.
+    '''
     filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
     if filList is None:
         print(f'Directory {"/".join(dirlist)!r} does not have any files')
@@ -873,7 +873,7 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
             open(outfil, 'wb').write(r.content)
             print(f'wrote {outfil}')
         elif r.status_code == 404:
-            print(f'Warning: {fil} is likley a subdirectory of directory {"/".join(dirlist)!r}')
+            print(f'Warning: {fil} is likely a subdirectory of directory {"/".join(dirlist)!r}')
         else:
             print(f'Unexpected web response for {fil}: {r.status_code}')
     return

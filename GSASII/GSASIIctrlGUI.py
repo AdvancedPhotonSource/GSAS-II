@@ -7325,7 +7325,8 @@ def ShowWebPage(URL,frame):
             webbrowser.open(pfx+URL, new=0, autoraise=True)
 
 #### Tutorials support ################################################################################
-G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
+#G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
+G2TutURL = "https://advancedphotonsource.github.io/GSAS-II-tutorials/"
 tutorialIndex = (
     # tutorial dir,      web page file name,      title for page,  description
 ['Getting started'], #######################################################
@@ -7737,7 +7738,8 @@ class OpenSvnTutorial(wx.Dialog):
         j = indices[selected]
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
         fulldir = os.path.join(self.tutorialPath,tutorialCatalog[j][0])
-        URL = G2BaseURL+'/Tutorials/'+tutorialCatalog[j][0]+'/'
+        #URL = G2BaseURL+'/Tutorials/'+tutorialCatalog[j][0]+'/'
+        URL = G2TutURL + tutorialCatalog[j][0]+'/'
         if GSASIIpath.svnInstallDir(URL,fulldir):
             ShowWebPage(fullpath,self.frame)
         else:
@@ -7777,7 +7779,8 @@ class OpenSvnTutorial(wx.Dialog):
         tutdir = tutorialCatalog[selected][0]
         tutfil = tutorialCatalog[selected][1]
         # open web page remotely, don't worry about data
-        URL = G2BaseURL+'/Tutorials/'+tutdir+'/'+tutfil
+        #URL = G2BaseURL+'/Tutorials/'+tutdir+'/'+tutfil
+        URL = G2TutURL + tutdir + '/' +tutfil
         self.EndModal(wx.ID_OK)
         ShowWebPage(URL,self.frame)
         
@@ -7858,7 +7861,8 @@ class OpenSvnTutorial(wx.Dialog):
                 GSASIIpath.svnUpdateDir(os.path.join(self.tutorialPath,i[0]))
             else:
                 fulldir = os.path.join(self.tutorialPath,i[0])
-                URL = G2BaseURL+'/Tutorials/'+i[0]+'/'
+                #URL = G2BaseURL+'/Tutorials/'+i[0]+'/'
+                URL = G2TutURL + i[0] + '/'
                 if not GSASIIpath.svnInstallDir(URL,fulldir):
                     if fail: fail += ', '
                     fail += i[0]
@@ -8057,7 +8061,8 @@ class OpenGitTutorial(wx.Dialog):
         tutdir = tutorialCatalog[selected][0]
         tutfil = tutorialCatalog[selected][1]
         # open web page remotely, don't worry about data
-        URL = G2BaseURL+'/Tutorials/'+tutdir+'/'+tutfil
+        #URL = G2BaseURL+'/Tutorials/'+tutdir+'/'+tutfil
+        URL = G2TutURL + tutdir + '/' + tutfil
         wx.CallAfter(self.EndModal,wx.ID_OK)
         ShowWebPage(URL,self.frame)
         return tutdir

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-07-10 09:25:23 -0500 (Mon, 10 Jul 2023) $
+# $Author: vondreele $
+# $Revision: 5625 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImpsubs.py $
+# $Id: GSASIImpsubs.py 5625 2023-07-10 14:25:23Z vondreele $
 ########### SVN repository information ###################
 '''
 The routines here are called either directly when GSAS-II is used without multiprocessing
@@ -26,7 +26,7 @@ import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5625 $")
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
 

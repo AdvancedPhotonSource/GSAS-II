@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIseqGUI - Sequential Results Display routines
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-11-13 14:28:09 -0600 (Mon, 13 Nov 2023) $
+# $Author: vondreele $
+# $Revision: 5700 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIseqGUI.py $
+# $Id: GSASIIseqGUI.py 5700 2023-11-13 20:28:09Z vondreele $
 ########### SVN repository information ###################
 '''
 Routines for Sequential Results & Cluster Analysis dataframes follow. 
@@ -24,7 +24,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5700 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIdataGUI as G2gd

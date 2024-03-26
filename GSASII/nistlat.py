@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-11-14 10:44:24 -0600 (Tue, 14 Nov 2023) $
+# $Author: toby $
+# $Revision: 5701 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/nistlat.py $
+# $Id: nistlat.py 5701 2023-11-14 16:44:24Z toby $
 ########### SVN repository information ###################
 '''
 This implements an interface to the NIST*LATTICE code using 

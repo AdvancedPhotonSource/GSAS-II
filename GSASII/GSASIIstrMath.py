@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-12-12 12:48:03 -0600 (Tue, 12 Dec 2023) $
+# $Author: vondreele $
+# $Revision: 5706 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrMath.py $
+# $Id: GSASIIstrMath.py 5706 2023-12-12 18:48:03Z vondreele $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIstrMath` routines, used for refinement computations 
@@ -21,7 +21,7 @@ import scipy.special as sp
 import multiprocessing as mp
 import pickle
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5706 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

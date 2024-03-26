@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSAS-II autointegration routines
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
+# $Author: toby $
+# $Revision: 5577 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIntPDFtool.py $
+# $Id: GSASIIIntPDFtool.py 5577 2023-05-11 23:08:12Z toby $
 ########### SVN repository information ###################
 '''
 '''
@@ -28,7 +28,7 @@ import wx.grid as wg
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 import GSASIIIO as G2IO
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj

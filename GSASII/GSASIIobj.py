@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIobj - data objects for GSAS-II
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-09-29 15:47:55 -0500 (Fri, 29 Sep 2023) $
+# $Author: vondreele $
+# $Revision: 5663 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $
+# $Id: GSASIIobj.py 5663 2023-09-29 20:47:55Z vondreele $
 ########### SVN repository information ###################
 
 '''
@@ -29,7 +29,7 @@ import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import numpy as np
 
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5663 $")
 
 DefaultControls = {
     'deriv type':'analytic Hessian',

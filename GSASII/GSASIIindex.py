@@ -2,11 +2,11 @@
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-09 21:43:48 -0500 (Tue, 09 May 2023) $
+# $Author: toby $
+# $Revision: 5572 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIindex.py $
+# $Id: GSASIIindex.py 5572 2023-05-10 02:43:48Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIindex` follow. 
@@ -17,7 +17,7 @@ import math
 import time
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5572 $")
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc

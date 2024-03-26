@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII image calculations: Image calibration, masking & integration routines.
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-10-28 16:43:36 -0500 (Sat, 28 Oct 2023) $
+# $Author: vondreele $
+# $Revision: 5687 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIimage.py $
+# $Id: GSASIIimage.py 5687 2023-10-28 21:43:36Z vondreele $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIimage` follow. 
@@ -23,7 +23,7 @@ from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5687 $")
 try:
     import GSASIIplot as G2plt
 except ImportError: # expected in scriptable w/o matplotlib and/or wx

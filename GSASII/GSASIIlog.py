@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIlog - Routines used to track and replay "actions"
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-09 21:43:48 -0500 (Tue, 09 May 2023) $
+# $Author: toby $
+# $Revision: 5572 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIlog.py $
+# $Id: GSASIIlog.py 5572 2023-05-10 02:43:48Z toby $
 ########### SVN repository information ###################
 '''
 Module to provide logging services, e.g. track and replay "actions"

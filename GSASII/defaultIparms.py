@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #defaultIparms
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-07-18 09:34:20 -0500 (Tue, 18 Jul 2023) $
+# $Author: vondreele $
+# $Revision: 5629 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/defaultIparms.py $
+# $Id: defaultIparms.py 5629 2023-07-18 14:34:20Z vondreele $
 ########### SVN repository information ###################
 '''
 Defines some default instrument parameters.

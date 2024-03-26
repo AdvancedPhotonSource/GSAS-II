@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-10 14:59:50 -0500 (Wed, 10 May 2023) $
+# $Author: toby $
+# $Revision: 5574 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIfpaGUI.py $
+# $Id: GSASIIfpaGUI.py 5574 2023-05-10 19:59:50Z toby $
 ########### SVN repository information ###################
 '''NIST XRD Fundamental Parameters interface routines follow:
 '''

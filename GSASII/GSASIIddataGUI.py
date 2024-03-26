@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-10-09 08:44:52 -0500 (Mon, 09 Oct 2023) $
+# $Author: vondreele $
+# $Revision: 5669 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIddataGUI.py $
+# $Id: GSASIIddataGUI.py 5669 2023-10-09 13:44:52Z vondreele $
 ########### SVN repository information ###################
 '''Routines for Data tab in Phase dataframe follows. 
 '''
@@ -14,7 +14,7 @@ import copy
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5669 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIplot as G2plt

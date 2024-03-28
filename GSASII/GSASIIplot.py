@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
-# $Author: toby $
-# $Revision: 5767 $
+# $Date: 2024-03-27 16:10:16 -0500 (Wed, 27 Mar 2024) $
+# $Author: vondreele $
+# $Revision: 5773 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIplot.py $
-# $Id: GSASIIplot.py 5767 2024-03-17 17:50:24Z toby $
+# $Id: GSASIIplot.py 5773 2024-03-27 21:10:16Z vondreele $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIplot` follow. 
@@ -44,7 +44,7 @@ except (ImportError, ValueError) as err:
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
-GSASIIpath.SetVersionNumber("$Revision: 5767 $")
+GSASIIpath.SetVersionNumber("$Revision: 5773 $")
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
@@ -2123,6 +2123,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
+        elif event.key == 'F' and 'PWDR' in plottype:
+            Page.plotStyle['font'] = not Page.plotStyle.get('font',False)
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -3298,7 +3300,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
-                'c: contour on','x: toggle excluded regions','g: toggle grid',
+                'c: contour on','x: toggle excluded regions','F: toggle axis font',
+                'g: toggle grid',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
                 Page.Choice += ['o: remove obs, calc,... from legend',]
@@ -3859,6 +3862,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             DifLine = Plot.plot(X,D/ymax,colors[3],linewidth=1.5,
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
+                    
+                    if Page.plotStyle.get('font',False):
+                        Plot.tick_params(labelsize=14)
+                    else:
+                        Plot.tick_params(reset=True)
                     # write a .csv file; not fully tested, but probably works where allowed
                     if 'PWDR' in plottype and G2frame.SinglePlot and plotOpt['saveCSV']:
                         plotOpt['saveCSV'] = False
@@ -4022,7 +4030,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                   or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
                     G2frame.GPXtree.GetItemText(PickId) == 'Peak List')
                 ):
-            print
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)

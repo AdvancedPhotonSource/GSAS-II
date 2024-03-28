@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-03-06 17:39:33 -0600 (Wed, 06 Mar 2024) $
-# $Author: toby $
-# $Revision: 5754 $
+# $Date: 2024-03-26 14:10:57 -0500 (Tue, 26 Mar 2024) $
+# $Author: vondreele $
+# $Revision: 5772 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_xye.py $
-# $Id: G2pwd_xye.py 5754 2024-03-06 23:39:33Z toby $
+# $Id: G2pwd_xye.py 5772 2024-03-26 19:10:57Z vondreele $
 ########### SVN repository information ###################
 '''
 '''
@@ -17,7 +17,7 @@ import GSASIIpath
 
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
-GSASIIpath.SetVersionNumber("$Revision: 5754 $")
+GSASIIpath.SetVersionNumber("$Revision: 5772 $")
 class xye_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye/.chi file'
     def __init__(self):
@@ -95,7 +95,8 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                                 try:
                                     self.Wave = float(wave[0])
                                 except:
-                                    self.Wave = 0.965   #special for POWGEN "pink" CW data
+#                                    self.Wave = 1.5   #special for POWGEN "pink" CW data
+                                    self.Wave = 0.965   #special for POWGEN 1.A frame "pink" CW data
                         continue       #ignore comments, if any
                     elif S.startswith('TITLE'):
                         continue

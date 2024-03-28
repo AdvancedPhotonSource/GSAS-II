@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
+# $Author: toby $
+# $Revision: 5576 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_shelx.py $
+# $Id: G2export_shelx.py 5576 2023-05-11 19:22:54Z toby $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_shelx` follow:
 '''
 from __future__ import division, print_function
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5576 $")
 import GSASIIIO as G2IO
 import GSASIIspc as G2spc
 

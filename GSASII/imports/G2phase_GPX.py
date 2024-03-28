@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
+# $Author: toby $
+# $Revision: 5577 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_GPX.py $
+# $Id: G2phase_GPX.py 5577 2023-05-11 23:08:12Z toby $
 ########### SVN repository information ###################
 '''
 '''
@@ -23,7 +23,7 @@ try:
     import GSASIIctrlGUI as G2G
 except ImportError:
     pass
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'

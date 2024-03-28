@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-08-09 08:23:55 -0500 (Wed, 09 Aug 2023) $
+# $Author: toby $
+# $Revision: 5643 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_JSON.py $
+# $Id: G2export_JSON.py 5643 2023-08-09 13:23:55Z toby $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_JSON` follow:
 
@@ -17,7 +17,7 @@ import json
 import wx
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5643 $")
 import GSASIIIO as G2IO
 
 class JsonEncoder(json.JSONEncoder):

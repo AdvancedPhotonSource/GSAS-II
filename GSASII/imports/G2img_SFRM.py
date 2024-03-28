@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-10-21 21:12:26 -0500 (Sat, 21 Oct 2023) $
+# $Author: toby $
+# $Revision: 5684 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_SFRM.py $
+# $Id: G2img_SFRM.py 5684 2023-10-22 02:12:26Z toby $
 ########### SVN repository information ###################
 '''
 '''
@@ -15,7 +15,7 @@ import os
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5684 $")
 class SFRM_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read Bruker Advance image data .sfrm/.grfm file.
     '''

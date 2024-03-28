@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-11-02 11:44:46 -0500 (Thu, 02 Nov 2023) $
+# $Author: vondreele $
+# $Revision: 5696 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sfact.py $
+# $Id: G2sfact.py 5696 2023-11-02 16:44:46Z vondreele $
 ########### SVN repository information ###################
 '''
 '''
@@ -13,7 +13,7 @@ import sys
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5696 $")
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'

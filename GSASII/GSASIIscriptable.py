@@ -2782,6 +2782,8 @@ class G2Project(G2ObjectWrapper):
         :returns: a list of parameters or None if no refinement has been
           performed. 
         '''
+        if 'parmDict' not in self['Covariance']['data']:
+            raise G2ScriptException('No parameters found in project, has a refinement been run?')
         try:
             return list(self['Covariance']['data']['parmDict'].keys())
         except:
@@ -2797,6 +2799,8 @@ class G2Project(G2ObjectWrapper):
           (value, None) if the variable is in a constraint or is not 
           refined or None if the parameter is not found. 
         '''
+        if 'parmDict' not in self['Covariance']['data']:
+            raise G2ScriptException('No parameters found in project, has a refinement been run?')
         if var not in self['Covariance']['data']['parmDict']:
             return None
         val = self['Covariance']['data']['parmDict'][var]
@@ -2830,6 +2834,8 @@ class G2Project(G2ObjectWrapper):
         if missing:
             G2fil.G2Print('Warning: Variable(s) {} were not found in the varyList'.format(missing))
             return None
+        if 'parmDict' not in self['Covariance']['data']:
+            raise G2ScriptException('No parameters found in project, has a refinement been run?')
         vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
         import GSASIImath as G2mth
         cov = G2mth.getVCov(varList,

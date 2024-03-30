@@ -281,9 +281,19 @@ def getG2VersionInfo():
         age = delta.total_seconds()/(60*60*24.)
         tags = g2repo.git.tag('--points-at',commit).split('\n')
         tags = [i for i in tags if i.isnumeric()]
-        gversion = "of "
+        # get sequential version # (tag)
+        gversion = ""
         if len(tags) >= 1:
-            gversion = f"#{tags[0]} "
+            gversion = f"#{tags[0]}"
+        else:
+            for h in list(g2repo.iter_commits(commit))[:50]: # (don't go too far back)
+                for t in g2repo.git.tag('--points-at',h).split('\n'):
+                    if t.isnumeric():
+                        gversion = f"last tag #{t}"
+                        break
+                if gversion: break
+            else:
+                gversion = "#?" # if all else fails
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -301,7 +311,7 @@ def getG2VersionInfo():
                 msg = f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
                 msg = f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"GSAS-II version {gversion} {ctim} ({age:.1f} days old). Git: {commit.hexsha[:6]}{msg}"
+        return f"  GSAS-II:    {commit.hexsha[:6]} from {ctim} ({age:.1f} days old). Version: {gversion}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is None: 

@@ -18,7 +18,9 @@ use GSAS-II, please see the tutorials, which can be accessed from the
 GSAS-II Help menu or from this web page:
 https://subversion.xray.aps.anl.gov/pyGSAS/trunk/help/Tutorials.html.
 
-**Argonne Information:**: Argonne has assigned Software Invention #SF-22-147 to GSAS-II.
+For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
+
+**Invention Information:** Argonne has assigned Software Invention #SF-22-147 to GSAS-II.
 
 .. only:: html
 

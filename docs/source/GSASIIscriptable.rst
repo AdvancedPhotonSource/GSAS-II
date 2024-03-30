@@ -1,3 +1,5 @@
+.. _GSASIIscriptable:
+
 =========================================
  *GSASIIscriptable: Scripting Interface*
 =========================================

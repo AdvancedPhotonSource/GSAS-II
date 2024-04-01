@@ -13,10 +13,12 @@ data structures used in GSAS-II are defined in module :mod:`GSASIIobj`.
 
 For information on downloading/installing GSAS-II, please see
 the GSAS-II home page:
-https://subversion.xray.aps.anl.gov/trac/pyGSAS. To learn how to
+https://advancedphotonsource.github.io/GSAS-II-tutorials.
+To learn how to
 use GSAS-II, please see the tutorials, which can be accessed from the
 GSAS-II Help menu or from this web page:
-https://subversion.xray.aps.anl.gov/pyGSAS/trunk/help/Tutorials.html.
+https://advancedphotonsource.github.io/GSAS-II-tutorials/tutorials.html.
+
 
 For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
 

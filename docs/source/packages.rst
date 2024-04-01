@@ -77,32 +77,22 @@ Details for GSAS-II use on these specific platforms follows below:
 
 Version Control
 -----------------------
-The master version of the source code for GSAS-II currently resides on
-an APS-run subversion server,
-https://subversion.xray.aps.anl.gov/pyGSAS and the subversion (svn)
+The master version of the source code for GSAS-II resides on
+GitHub at URL and the git 
 version control system (VCS) is usually used to install the files needed by GSAS-II. When
 GSAS-II is installed in this manner, the software can be easily
-updated, as svn commands can load only the changed sections of files
-that need to be updated. It is likewise possible to use svn to regress
+updated, as git commands can download only the changed sections of files
+that need to be updated. It is likewise possible to use git to regress
 to an older version of GSAS-II, though there are some limitations on
 how far back older versions of GSAS-II will be with current versions
-of Python. While svn is not required for use of GSAS-II, special
+of Python. While git is not required for use of GSAS-II, special
 procedures must be used to install GSAS-II without it and once
-installed without svn, updates of GSAS-II must be done manually. 
+installed without git, updates of GSAS-II must be done manually. 
 
-In progress is a migration from use of subversion VCS and the APS server,
-to use of the git VCS with software hosting on GitHub.com.
-GitHub provides better tools for
-community software development and git is a much more modern VCS
-system, though there are aspects of svn that I will miss, but svn is
-not being used as much and this makes it becoming steadly difficult to
-distribute with svn. Once GSAS-II has been made to work with git, the
-plan is that for a limited period, GSAS-II will be updated on both the
-APS subversion server and GitHub, but at some point it will become
-necessary to reinstall GSAS-II with a git-based distribution in order
-to use current versions of Python and updates to GSAS-II. While git
-will also is not be required for use of GSAS-II, special
-procedures will need to be used to install and update GSAS-II without it.
+We are currently in a transition period in its migration from
+the previous subversion server to GitHub and updates will be
+made in parallel to both
+servers.
 
 Python Requirements
 -----------------------
@@ -194,9 +184,7 @@ optional packages are:
 * gitpython: (https://gitpython.readthedocs.io and
   https://github.com/gitpython-developers/GitPython). This 
   this package provides a bridge between the git version control
-  system and Python. It is not currently required, but GSAS-II will
-  transition to using git in place of subversion, and at that time git
-  and the requests package will be required for the standard
+  system and Python. It is required for the standard GSAS-II
   installation process and for GSAS-II to update itself from GitHub.
   If your computer does not already have git in the path, also include
   the git package to obtain that binary (if you are not sure, it does
@@ -225,23 +213,6 @@ optional packages are:
   environment for GSAS-II 
   (`conda create -n <env> package-list...`), it will not be added
   to that environment unless you request it specifically.  
-
-The following conda package is used where possible in GSAS-II but it provides a
-command-line tool rather than a Python package.
-  
-* svn: the GSAS-II code utilizes the subversion
-  program for software installation and updates. GSAS-II can be manually
-  installed without it, but updates will also need to be done
-  manually. Thus, GSAS-II works much better when
-  subversion is available. The Anaconda distribution had provided
-  subversion in a package named svn, but this is so no longer being updated. With
-  the conda-forge repository we now use, it is only available for
-  Linux (where it really is not needed since it is easy to install
-  there) and the package is named subversion. (For the Mac the
-  supplied subversion package lacks the ability to reach the GSAS-II
-  repository via the internet and is thus not used.) 
-  For MacOS and Windows, the GSAS-II gsas2full self-installer now
-  provides binaries for the svn program.
   
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
@@ -252,13 +223,13 @@ command-line tool rather than a Python package.
   Python interpreter on Linux after
   miniconda/miniforge/mambaforge/anaconda has been installed::
 
-    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio subversion requests -c conda-forge
+    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge
     
   or to put a Python configured for GSAS-II into a separate conda
   environment (below named ``g2python``, but any name can be used), use
   command::
 
-    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda subversion requests -c conda-forge 
+    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda requests -c conda-forge 
 
  For Windows/Mac/Raspberry Pi, omit subversion from the previous
  commands are::
@@ -308,7 +279,7 @@ run without two Python extension packages:
 * SciPy (http://docs.scipy.org/doc/scipy/reference/).
 
 These fortunately are common and are easy to install. There are
-further scripting capabilities that will only run when a few
+some relatively minor scripting capabilities that will only run when a few
 additional packages are installed:
   
 * matplotlib (http://matplotlib.org/contents.html),
@@ -334,24 +305,26 @@ that are so new that they probably have not been tested with GSAS-II.
 
     bash ~/Downloads/Miniconda3-latest-<platform>-x86_64.sh -b -p /loc/pyg2script
     source /loc/pyg2script/bin/activate
-    conda install numpy scipy matplotlib pillow h5py hdf5 svn
+    conda install numpy scipy matplotlib pillow h5py hdf5
 
 Some discussion on these commands follows:
 
 * the 1st command (bash) assumes that the appropriate version of Miniconda has been downloaded from https://docs.conda.io/en/latest/miniconda.html and ``/loc/pyg2script`` is where I have selected for python to be installed. You might want to use something like ``~/pyg2script``.
 * the 2nd command (source) is needed to access Python with miniconda. 
-* the 3rd command (conda) installs all possible packages that might be used by scripting, but matplotlib, pillow, and hdf5 are not commonly needed and could be omitted. The svn package is not needed (for example on Linux) where this has been installed in another way.
+* the 3rd command (conda) installs all possible packages that might be
+  used by scripting, but matplotlib, pillow, and hdf5 are not commonly
+  needed and could be omitted.
 
-Once svn and Python has been installed and is in the path, use these commands to install GSAS-II:
+Once Python has been installed and is in the path, use these commands to install GSAS-II:
 
 .. code-block::  bash
 
-    svn co https://subversion.xray.aps.anl.gov/pyGSAS/trunk /loc/GSASII
-    python /loc/GSASII/GSASIIscriptable.py
+    git clone https://github.com/AdvancedPhotonSource/GSAS-II.git /loc/GSAS-II
+    python /loc/GSAS-II/GSASII/GSASIIscriptable.py
 
 Notes on these commands:
 
-* the 1st command (svn) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software. You can select something different. 
+* the 1st command (git) is used to download the GSAS-II software. ``/loc/GSASII`` is the location where I decided to install the software. You can select something different. 
 * the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
 
 
@@ -372,7 +345,9 @@ Required Binary Files
 --------------------------------
 
 As noted before, GSAS-II also requires that some code be compiled.
-For the following platforms, binary images are provided:
+For the following platforms, binary images are provided at
+https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1
+for Python 3.11 and NumPy 1.26:
 
   * Windows-10: 64-bit Intel-compatible processors. [Prefix `win_64_`\ ]
   * MacOS: Intel processors. [Prefix `mac_64_`\ ]
@@ -382,13 +357,14 @@ For the following platforms, binary images are provided:
     [Prefixes `linux_arm32_` and `linux_arm64_`\ ]
 
 Note that these binaries must match the major versions of both Python and
-numpy; binaries for only a small number of combinations are provided.
-A full list of what is available can be seen by looking at the
-contents of the directory at web address
+NumPy; binaries for some older versions combinations of Python and
+NumPy only a small number of combinations can be found in the older
+svn repository for GSAS-II:
 https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser/Binaries,
 noting that a subdirectory name will be `prefix`\ _p\ `X.X`\ _n\ `Y.Y` where
 `prefix` is noted above and `X.X` is the Python version and `Y.Y` is the numpy
 version.
+
 Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of
 Python/NumPy, compilation will be need to be done by the user.

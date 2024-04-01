@@ -35,9 +35,8 @@ except ImportError:
 import time
 import glob
 import copy
-import ast
+#import ast
 import random as ran
-import webbrowser     # could postpone this for quicker startup
 import numpy as np
 
 import matplotlib as mpl
@@ -5479,7 +5478,7 @@ For DIFFaX use cite:
   M.M.J. Treacy, J.M. Newsam & M.W. Deem, 
   Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
 '''
-        info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
+        info.WebSite = ("https://gsasii.github.io","GSAS-II home page")
         wxadv.AboutBox(info)
 
     def OnCheckUpdates(self,event):
@@ -7255,6 +7254,7 @@ def ShowHelp(helpType,frame):
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(helplink)
     else:
+        import webbrowser     # postpone this until now for quicker startup
         wb = webbrowser
         if sys.platform == "darwin": # on Mac, use a OSXscript so that file anchors work
             # Get the default browser, this will fail in py2.7 and might fail, so 
@@ -7312,6 +7312,7 @@ def ShowWebPage(URL,frame):
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(URL)
     else:
+        import webbrowser     # postpone this until now for quicker startup
         if URL.startswith('http'): 
             pfx = ''
         elif sys.platform.lower().startswith('win'):
@@ -7325,7 +7326,6 @@ def ShowWebPage(URL,frame):
             webbrowser.open(pfx+URL, new=0, autoraise=True)
 
 #### Tutorials support ################################################################################
-#G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 G2TutURL = "https://advancedphotonsource.github.io/GSAS-II-tutorials/"
 tutorialIndex = (
     # tutorial dir,      web page file name,      title for page,  description
@@ -9462,7 +9462,13 @@ def gitCheckUpdates(G2frame):
     When all is done, function :func:`GSASIIpath.gitStartUpdate` is called to 
     actually perform the update.
     '''
-    gitFetch(G2frame)  # download latest updates from server
+    try:
+        gitFetch(G2frame)  # download latest updates from server
+    except:
+        G2MessageBox(G2frame,
+                    'Unable to access updates: no internet connection?',
+                    title='git error')
+        return
 
     status = GSASIIpath.gitTestGSASII()
     if status < 0:

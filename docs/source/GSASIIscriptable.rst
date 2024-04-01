@@ -32,7 +32,7 @@ is no longer being developed and its use is discouraged.
 Installation of GSASIIscriptable
 ================================
 
-GSASIIscriptable is included as part of a standard GSAS-II installation that includes the GSAS-II GUI (as described in the `installation instructions <https://subversion.xray.aps.anl.gov/trac/pyGSAS#Installationinstructions>`_). People who will will use scripting extensively will still need access to the GUI
+GSASIIscriptable is included as part of a standard GSAS-II installation that includes the GSAS-II GUI (as described in the `installation instructions <https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html>`_). People who will will use scripting extensively will still need access to the GUI
 for some activities, since the scripting API has not yet been extended to all
 features of GSAS-II and even if that is ever completed, there will still be some things that GSAS-II does with the GUI would be almost impossible to implement without a interactive graphical view of the data.
 

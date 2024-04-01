@@ -62,11 +62,9 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://subversion.xray.aps.anl.gov/trac/pyGSAS"
-#Homepage = "https://github.com/AdvancedPhotonSource/GSAS-II"
-#"Bug Tracker" = "https://github.com/AdvancedPhotonSource/GSAS-II/issues"
+Homepage = "https://advancedphotonsource.github.io/GSAS-II-tutorials"
+"Bug Tracker" = "https://github.com/AdvancedPhotonSource/GSAS-II/issues"
 #Discussions = "https://github.com/AdvancedPhotonSource/GSAS-II/discussions"
-Changelog = "https://subversion.xray.aps.anl.gov/trac/pyGSAS/timeline"
 #Changelog = "https://github.com/AdvancedPhotonSource/GSAS-II/releases"
 
 #[project.scripts]

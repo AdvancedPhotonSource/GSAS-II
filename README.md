@@ -29,7 +29,48 @@
 
 <!-- prettier-ignore-end -->
 
-## Description
+## Summary
+GSAS-II is used to analyze all types of x-ray and neutron
+diffraction data, including single-crystal, powder, 
+constant-wavelength, pink-beam and time-of-flight, lab,
+synchrotron, spallation and reactor sources, including Rietveld
+analysis. It can handle large numbers of datasets. 
+GSAS-II is free open source software.
+
+## URLs
+* The
+  [home page for GSAS-II](https://advancedphotonsource.github.io/GSAS-II-tutorials)
+  has recently been moved to GitHub, but some content may still be
+  only at
+  [the old location](https://subversion.xray.aps.anl.gov/trac/pyGSAS).
+  Note the new [installation instructions](https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html).
+
+* This repo is the main repository for the GSAS-II source code, but
+  note that there is a separate repo for the 
+  [GSAS-II installation tools](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools)
+  and another for
+  [GSAS-II web content](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools
+  ) (including tutorials). The
+  [old subversion site](https://subversion.xray.aps.anl.gov/pyGSAS)
+  and its
+  [associated web site](https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser)
+  will be maintained for the immediate future. 
+* Code documentation: https://gsasii.readthedocs.io.
+
+## Please Cite
+If you use GSAS-II in any part of your project, please cite it in your
+publications. This is the most valuable way you can demonstrate your support of
+the project.  Note that some sections of program utilize work by
+others and will display citations for that. If you use those sections,
+please cite those papers as well.  
+The primary citation for GSAS-II is:
+
+    Toby, B. H., & Von Dreele, R. B. (2013). "GSAS-II: the genesis of
+    a modern open-source all purpose crystallography software
+    package". Journal of Applied Crystallography, 46(2),
+    544-549. ​doi:10.1107/S0021889813003531 
+
+## Full Description
 GSAS-II is a unique and comprehensive Python project for
 the calibration, reduction and analysis of all types of x-ray and neutron
 diffraction data, including single-crystal and powder data, including
@@ -71,47 +112,10 @@ large numbers of data sets,
 measured with parametric changes in measurement settings, to be fit
 single refinement with subsequent parametric fitting. 
 
-GSAS-II is freely distributed as open source software and runs on Windows,
+GSAS-II is freely distributed as open source software; see the license file for
+more details. GSAS-II runs on Windows,
 MacOS, Linux and Raspberry Pi computers. It currently receives >600
 citations/year. 
-
-## Please Cite
-If you use GSAS-II in any part of your project, please cite it in your
-publications. This is the most valuabe way you can demonstrate your support of
-the project.  Note that some sections of program utilize work by
-others and will display citations for that. If you use those sections,
-please cite those papers as well.  
-The primary citation for GSAS-II is:
-
-    Toby, B. H., & Von Dreele, R. B. (2013). "GSAS-II: the genesis of
-    a modern open-source all purpose crystallography software
-    package". Journal of Applied Crystallography, 46(2),
-    544-549. ​doi:10.1107/S0021889813003531 
-
-## URLs
-* At present the home page for the software is here:
-  https://subversion.xray.aps.anl.gov/trac/pyGSAS. Note installation
-  instructions and tutorials at that URL.
-
-* The main svn repository for the source code is:
-  https://subversion.xray.aps.anl.gov/pyGSAS, but can be browsed here:
-  https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser 
-* GSAS-II is in the process of a migration to GitHub. At present
-  several "sandbox" development repositories are found in
-  https://github.com/GSASII but these are all temporary.
-* The permanent home for GSAS-II after migration is complete will be
-  https://github.com/AdvancedPhotonSource/GSAS-II. At present a manually
-  maintained "mirror" of the master svn repo is found here: 
-  https://github.com/AdvancedPhotonSource/GSASII-copy. This copy may
-  not always have the latest changes checked into svn, but will always
-  match a recent release. Branches may be used to try out different
-  PRs prior to the code update into svn. 
-
-* Documentation: https://subversion.xray.aps.anl.gov/pyGSAS
-* Code documentation: https://gsasii.readthedocs.io.
-
-GSAS-II is free and open source software, see the license file for
-  more details. 
 
 <!--   commented out for now
      Features

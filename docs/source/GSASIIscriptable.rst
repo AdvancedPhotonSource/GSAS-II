@@ -944,7 +944,7 @@ be refined. Use :meth:`~GSASIIscriptable.G2PwdrData.set_refinements` to change b
 settings and the range of data used in the fit. See below for an example
 peak refinement script, where the data files are taken from the 
 "Rietveld refinement with CuKa lab Bragg-Brentano powder data" tutorial 
-(in https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/LabData/data/).
+(in https://advancedphotonsource.github.io/GSAS-II-tutorials/LabData/data/).
 
 .. code-block::  python
 
@@ -988,7 +988,7 @@ The pattern is computed over a 2θ range of 5 to 120 degrees
 with 1000 points. 
 The pattern and reflection list are written into files. 
 Data files are found in the 
-`Scripting Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
+`Scripting Tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/PythonScript/data/>`_.
 
 .. code-block::  python
 
@@ -1014,7 +1014,7 @@ This example uses bank#2 from a TOF neutron instrument parameter file.
 The pattern is computed over a TOF range of 14 to 35 milliseconds with 
 the default of 2500 points. 
 This uses the same CIF as in the example before, but the instrument is found in the  
-`TOF-CW Joint Refinement Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/TOF-CW Joint Refinement/data>`_
+`TOF-CW Joint Refinement Tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/TOF-CW Joint Refinement/data>`_
 tutorial. 
 
 .. code-block::  python
@@ -1059,7 +1059,7 @@ Sequential Refinement
 
 GSASIIscriptable can be used to setup and perform sequential refinements. This example script 
 is used to take the single-dataset fit at the end of Step 1 of the 
-`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`_
+`Sequential Refinement tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/SeqRefine/SequentialTutorial.htm>`_
 and turn on and off refinement flags, add histograms and setup the sequential fit, which is then run:
 
 .. code-block::  python
@@ -1105,7 +1105,7 @@ Image Processing
 A sample script where an image is read, assigned calibration values from a file 
 and then integrated follows. 
 The data files are found in the 
-`Scripting Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
+`Scripting Tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/PythonScript/data/>`_.
 
 .. code-block::  python
 
@@ -1122,7 +1122,7 @@ The data files are found in the
     gpx.save()
 
 This example shows a computation similar to what is done in tutorial 
-`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_
+`Area Detector Calibration with Multiple Distances <https://advancedphotonsource.github.io/GSAS-II-tutorials/DeterminingWavelength/DeterminingWavelength.html>`_
 
 .. code-block::  python
 
@@ -1173,9 +1173,9 @@ points on diffraction rings to use for calibration and the number of "ring picks
 increase. The calibration is repeated until that stops increasing significantly (<10%). 
 Detector control files are then created. 
 The files used for this exercise are found in the
-`Area Detector Calibration Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/data/>`_
+`Area Detector Calibration Tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/DeterminingWavelength/data/>`_
 (see 
-`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_ ). 
+`Area Detector Calibration with Multiple Distances <https://advancedphotonsource.github.io/GSAS-II-tutorials/DeterminingWavelength/DeterminingWavelength.html>`_ ). 
 
 .. code-block::  python
 
@@ -1493,7 +1493,7 @@ Automatic Background
 This example shows how to use the automatic background feature in GSAS-II to
 compute an approximate background and set fixed background points from that
 background. This approximately example follows that of the
-`Autobackground Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/AutoBkg/AutoBkg.html>`_. In this example, a new project is created and
+`Autobackground Tutorial <https://advancedphotonsource.github.io/GSAS-II-tutorials/AutoBkg/AutoBkg.html>`_. In this example, a new project is created and
 the data files from the tutorial are read. Note that scripting is not able
 to read files from inside a zip archive or use defaulted instrument parameters.
 The histograms are then processed in turn.

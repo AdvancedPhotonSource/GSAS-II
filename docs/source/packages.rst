@@ -7,62 +7,69 @@ Supported Platforms
 It should be possible to run GSAS-II on any computer where Python 3.7+ and
 the appropriate required packages are available, as discussed below,
 but GSAS-II also requires that some code must be compiled.
-For the following platforms, binary images for this compiled code are provided:
+For the following platforms, binary images for this compiled code are
+curently provided:
 
   * Windows-10: 64-bit Intel-compatible processors 
   * MacOS: Intel processors 
   * MacOS: ARM processors, aka Apple Silicon (M1, etc) 
   * Linux: 64-bit Intel-compatible processors
-  * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS only)
+  * Linux: ARM processors (64-bit Raspberry Pi OS only)
 
 Details for GSAS-II use on these specific platforms follows below:
 
-* **Windows**: Installation kits are provided for 
-  64-bit Windows-10. An installation kit with older Python versions
-  is provided for 32-bit Windows-10; this installer cannot be updated
-  to provide newer Python versions than the supplied versions but GSAS-II
-  will be updated if installed on a computer with internet
-  access.  Running GSAS-II on older versions of Windows is
-  likely possible, but to do so one must locate compatible versions of Python
-  and packages. This is getting increasingly tough. We have not tried
-  Windows-11, but expect the Windows-10 distribution to run fine there.
+* **Windows**: self-Installation kits are provided for 
+  64-bit Windows-10 and -11
+  `here
+  <https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest>`_.
+  Less testing has been done with
+  Windows-11, but both appear to working interchangabley with respect
+  to GSAS-II. 
 
-* **MacOS**: GSAS-II can run natively on Intel or ARM ("M1",  "M2" or "Apple
-  Silicon") processors. With the native code, Mac ARM machines offer
-  the highest performance seen on any platform. 
+  In theory it should be possible to run GSAS-II on older versions of
+  Windows, including 32-bit OS versions, but no current instaion kit
+  can be provided. Installing GSAS-II will require locating a
+  compatible version (or compiling) Python and the required
+  packages. It may be necessary to recompile the GSAS-II binaries. 
+
+* **MacOS**: GSAS-II can run natively on Intel (or ARM ("M1"-"M3" aka "Apple
+  Silicon") processors with relatively current versions of MacOS, with
+  self-installers that can be run from the command-line available for download `here
+  <https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest>`_.
+  The Intel version will run on both types of Mac processors, but the
+  native ARM versions offer  the highest GSAS-II performance we see on
+  any platform.
   
-  For Intel processor Macs, we provide an installer. This can also be
-  used on ARM-equipped Macs but native M1 code runs way
-  faster. Installation of the native ARM code is a bit more complex; but 
-  detailed instructions are provided
-  (https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/MacM1Notes).
-  This requires use of either the miniforge package or the homebrew
-  package installer. 
-  Macs older than Catalina (10.15) will likely require older
+  It appears that this installer can be used with MacOS versions 11.0
+  and later.  Macs older than Catalina (10.15) will likely require older
   distributions of Python.  
 
-* **Linux**: Note that GSAS-II does not get a lot of testing
+* **Intel Linux**: Note that GSAS-II does not get a lot of testing
   in Linux by us, but is used fairly widely on this platform
-  nonetheless.  We provide an installer that includes Python and
+  nonetheless.  We provide an installer `here
+  <https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest>`_
+  that includes Python and
   needed packages for Intel-compatible Linuxes, but compatibility with
   older and very new versions of Linux can sometimes be tricky as
   compatibility libraries may be needed -- not always easy to do. It may be
   better to use your Linux distribution's versions of Python and
-  packages (typically done with a software tool such as apt or yum.)
-  You may possibly need to use pip as well. For an example on how that
-  is done see the 32-bit Raspberry Pi OS instructions:
-  https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallPiLinux.
+  packages (typically done with a software tool such as apt or yum or
+  pip. See
+  https://advancedphotonsource.github.io/GSAS-II-tutorials/install-pip.html
+  for more information.  
 
+* **Non-Intel Linux**:
   Will GSAS-II run on Linux with other types of CPUs? That will mostly
-  depend on support for Python and wxPython on that CPU. If those run,
-  you can likely build the GSAS-II binaries with gcc &
+  depend on support for Python and wxPython on that CPU. If those can
+  be used, you can likely build the GSAS-II binaries with gcc &
   gfortran. Expect to modify the SConstruct file. 
   
-* **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
+  **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
   and the 64-bit version of the Raspberry Pi OS (formerly
-  called Raspbian) and compiled binaries are provided.
-  It may be possible to use these binaries with Ubuntu Linux for
-  this platform, but this has not been tried.
+  called Raspbian) and compiled binaries are provided at present for
+  both, but the 32-bit support may not continue. It is expected that
+  these binaries will also function on Ubuntu Linux for Raspberry Pi,
+  but this has not been tried. 
   The performance of GSAS-II on a Raspberry Pi is not blindingly fast,
   but one can indeed run GSAS-II on a motherboard that costs only $15
   (perhaps even one that costs $5) and uses <5 Watts! 
@@ -71,9 +78,15 @@ Details for GSAS-II use on these specific platforms follows below:
   (currently including models 3A+, 3B, 3B+, 4, 400, CM3, CM3+, CM4,
   and Zero 2 W) .  With the 32-bit Raspberry Pi OS, which does run on
   all Raspberry Pi models, it is necessary to use the OS distribution's
-  versions of Python and its packages. Instructions are provided here:
-  https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallPiLinux. 
-
+  versions of Python and its packages, `see here   for more information
+  <https://advancedphotonsource.github.io/GSAS-II-tutorials/install-pip.html>`_.
+  With
+  64-bit Pi OS it may be possible for us to provide a GSAS2FULL installer
+  (which will need to include a custom-supplied wxPython wheel, since
+  that is not available in conda-forge) or else pip must be used to
+  download and build wx. Please let us know if you are intending to
+  use GSAS-II on a Raspberry Pi for a classroom, etc and would need
+  this. 
 
 Version Control
 -----------------------
@@ -89,10 +102,9 @@ of Python. While git is not required for use of GSAS-II, special
 procedures must be used to install GSAS-II without it and once
 installed without git, updates of GSAS-II must be done manually. 
 
-We are currently in a transition period in its migration from
-the previous subversion server to GitHub and updates will be
-made in parallel to both
-servers.
+We are currently in a transition period to GitHub from
+a previous subversion server. As we migrate to GitHub, updates will be
+made in parallel to both servers.
 
 Python Requirements
 -----------------------
@@ -108,11 +120,14 @@ as defined in variable :attr:`GSASIIdataGUI.versionDict`,
 but for new installations we are currently recommending the following
 interpreter/package versions: 
 
- * Python 3.10 is recommended, but 3.7 or later is fine. 
+ * Python 3.11 is recommended. GSAS-II should run with any Python
+   version from 3.7 or later, but you will need to locate (from the
+   old subversion server) or locate binaries to match that Python version. 
  * wxPython 4.2 or later is recommended, but with Python <=3.9 any
-   wx4.x version should be OK. However,
-   do expect problems with Py>=3.10 and anything older than wx4.2.0.
- * NumPy 1.26 recommended, but anything from 1.17 on is likely fine
+   wx4.x version should be OK. However, there may be problems with
+   newer sections of the GUI with wx <4.0.
+ * NumPy 1.26 recommended, but anything from 1.17 on is likely fine,
+   but does need to approximately match the GSAS-II binaries. 
  * matplotlib 3.6 is recommended, but 3.4 or later is preferred. 
  * pyOpenGL: no version-related problems have been seen.
  * SciPy: no version-related problems have been seen, but in at least one
@@ -123,41 +138,26 @@ For more details on problems noted with specific versions of Python
 and Python packages, see comments below and details here:
 :attr:`GSASIIdataGUI.versionDict`,
    
-Note that GSAS-II is being developed using Python 3.9, 3.10 and
-3.11. No testing has yet been done with Python 3.12.  We are no longer
+Note that GSAS-II is currently being developed using Python 3.11. We
+are seeing compilation problems with Python 3.12 that will be addressed
+later via the build migration to meson.  We are no longer
 supporting Python 2.7 and <=3.6, and strongly encourage that
 systems running GSAS-II under these older Python versions reinstall
 Python. Typically this is done by reinstalling GSAS-II from a current self-installer. 
 
 There are a number of ways to install Python plus the packages
-needed by GSAS-II. We prefer the conda package manager and the conda
-self-installers. We 
-now use the community-supported conda-forge library of Python packages
-(https://conda-forge.org/) for almost all supported platforms (see below.)
-Note that we no longer use the Anaconda Python (https://www.anaconda.com/)
-distribution because wxPython is not available with modern Python versions.
+needed by GSAS-II. See
+https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html
+and links therein for a discussion of installation. 
 
-An alternative approach to installing Python is to use the standard
-Python installation process, where Python is downloaded
-without any of the extension packages from the main Python site,
-https://www.python.org/downloads/ and then use the included pip
-program to install the needed packages from the https://pypi.org/. 
-
-There are additional installation mechanisms specific to certain
-platforms. 
-On MacOS, homebrew can be used for Python and most
-needed packages, while on Linux, the native package installers
-(apt-get or yum, etc.) offer the same. Any packages not provided in
-that fashion can be installed with Python's pip mechanism. 
-
-Package requirements depend on how GSAS-II will be run, as will be
+Python package requirements depend on how GSAS-II will be run, as will be
 discussed in the next section. In order to run
 the GUI for GSAS-II, a much larger number of packages are
 required. Several more packages are optional, but some functionally will
-not be available without those optional packages. To run GSAS-II on a
+not be available without those optional packages.
+Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
-and without a GUI, will require far fewer packages, which will be
-discussed in the subsequent section.
+and without a GUI.
 
 GUI Requirements
 ----------------
@@ -218,53 +218,23 @@ optional packages are:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is
   homebrew. Homebrew is a good option on MacOS. However, we recommend  use
-  of the miniconda or mambaconda self installers from
+  of the miniforge self-installers from
   conda-forge. Here is a typical conda command used to install a GSAS-II compatible
-  Python interpreter on Linux after
-  miniconda/miniforge/mambaforge/anaconda has been installed::
+  Python interpreter after miniforge has been installed::
 
-    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge
+       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge git gitpython
+
+  for development environments, it is useful to have build and
+  debugging tools available, so here is a more extensive list of
+  useful packages::
     
-  or to put a Python configured for GSAS-II into a separate conda
-  environment (below named ``g2python``, but any name can be used), use
-  command::
+     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests ipython conda spyder-kernels scons sphinx sphinx-rtd-theme jupyter git gitpython
 
-    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda requests -c conda-forge 
-
- For Windows/Mac/Raspberry Pi, omit subversion from the previous
- commands are::
-
-    conda install python=3.10 wxpython numpy scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge
-   
- and::
-
-    conda create -n g2python python=3.10 wxpython numpy scipy matplotlib pyopengl  pillow h5py imageio conda requests -c conda-forge 
-
-Before starting GSAS-II under conda remember to activate using:
-``<path>\Scripts\activate``  (windows);
-``source <path>/bin/activate`` (Mac/Linux),
-or when an environment is used, add that name, (such as ``g2python``),
-such as 
-``<path>\Scripts\activate g2python``  (windows);
-``source <path>/bin/activate g2python`` (Mac/Linux),
-
-
-Note that at present we are not suppling binaries for Python 3.11, but
-we are not aware of any reason why GSAS-II will not run fine with
-this.
 
 To find out what packages have been directly installed in a conda
 environment this command can be used::
   
   conda env export --from-history -n <env>
-
-I'm using this to create my latest development environment::
-  
-  source /Users/toby/mamba310/bin/activate
-
-  conda create -n py311 python=3.11 ipython conda scipy spyder-kernels
-  pyopengl scons imageio h5py numpy pillow requests sphinx
-  sphinx-rtd-theme matplotlib jupyter wxpython gitpython git
 
 .. _ScriptingRequirements:
 
@@ -346,37 +316,22 @@ Required Binary Files
 
 As noted before, GSAS-II also requires that some code be compiled.
 For the following platforms, binary images are provided at
-https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1
+https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest
 for Python 3.11 and NumPy 1.26:
 
-  * Windows-10: 64-bit Intel-compatible processors. [Prefix `win_64_`\ ]
-  * MacOS: Intel processors. [Prefix `mac_64_`\ ]
-  * MacOS: ARM processors, aka Apple Silicon (M1, etc). [Prefix `mac_arm_`\ ]
-  * Linux: 64-bit Intel-compatible processors. [Prefix `linux_64_`\ ]
-  * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS only).
-    [Prefixes `linux_arm32_` and `linux_arm64_`\ ]
+  * Windows-10: 64-bit Intel-compatible processors.
+  * MacOS: Intel processors.
+  * MacOS: ARM processors, aka Apple Silicon (M1, etc). 
+  * Linux: 64-bit Intel-compatible processors. 
+  * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS and
+    Ubuntu for Raspberry Pi).
 
 Note that these binaries must match the major versions of both Python and
-NumPy; binaries for some older versions combinations of Python and
-NumPy only a small number of combinations can be found in the older
-svn repository for GSAS-II:
-https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser/Binaries,
-noting that a subdirectory name will be `prefix`\ _p\ `X.X`\ _n\ `Y.Y` where
-`prefix` is noted above and `X.X` is the Python version and `Y.Y` is the numpy
-version.
-
+NumPy; 
 Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of
-Python/NumPy, compilation will be need to be done by the user.
-This will require the GNU Fortran (gfortran)
-compiler (https://gcc.gnu.org/fortran/) as well as the Python SCons
-package. General instructions are provided for Linux: 
-https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallLinux#CompilingFortranCode;
-Windows: https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/CompilingWindows
-and MacOS:
-https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallMacHardWay,
-but these may be out of date or require adaptation. 
-
+Python/NumPy, compilation will be need to be done by the user. See
+the `compilation information <https://advancedphotonsource.github.io/GSAS-II-tutorials/compile.html>`_ for more information. 
 
 Supported Externally-Developed Software
 ----------------------------------------------------

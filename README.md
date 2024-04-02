@@ -49,8 +49,7 @@ GSAS-II is free open source software.
   note that there is a separate repo for the 
   [GSAS-II installation tools](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools)
   and another for
-  [GSAS-II web content](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools
-  ) (including tutorials). The
+  [GSAS-II web content](https://github.com/AdvancedPhotonSource/GSAS-II-tutorials) (including tutorials). The
   [old subversion site](https://subversion.xray.aps.anl.gov/pyGSAS)
   and its
   [associated web site](https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser)

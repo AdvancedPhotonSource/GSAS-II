@@ -8,7 +8,7 @@ It should be possible to run GSAS-II on any computer where Python 3.7+ and
 the appropriate required packages are available, as discussed below,
 but GSAS-II also requires that some code must be compiled.
 For the following platforms, binary images for this compiled code are
-curently provided:
+currently provided:
 
   * Windows-10: 64-bit Intel-compatible processors 
   * MacOS: Intel processors 
@@ -23,11 +23,11 @@ Details for GSAS-II use on these specific platforms follows below:
   `here
   <https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest>`_.
   Less testing has been done with
-  Windows-11, but both appear to working interchangabley with respect
+  Windows-11, but both appear to working interchangeably with respect
   to GSAS-II. 
 
   In theory it should be possible to run GSAS-II on older versions of
-  Windows, including 32-bit OS versions, but no current instaion kit
+  Windows, including 32-bit OS versions, but no current installation kit
   can be provided. Installing GSAS-II will require locating a
   compatible version (or compiling) Python and the required
   packages. It may be necessary to recompile the GSAS-II binaries. 
@@ -222,14 +222,13 @@ optional packages are:
   conda-forge. Here is a typical conda command used to install a GSAS-II compatible
   Python interpreter after miniforge has been installed::
 
-       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests -c conda-forge git gitpython
+       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests git gitpython -c conda-forge
 
   for development environments, it is useful to have build and
   debugging tools available, so here is a more extensive list of
   useful packages::
     
-     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests ipython conda spyder-kernels scons sphinx sphinx-rtd-theme jupyter git gitpython
-
+     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests ipython conda spyder-kernels scons sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
 
 To find out what packages have been directly installed in a conda
 environment this command can be used::
@@ -264,7 +263,7 @@ majority of scripts will not need these packages.
 There are many ways to install a minimal Python configuration.
 Below, I show some example commands used to install using the 
 the free miniconda installer from Anaconda, Inc., but I now tend to
-use the Conda-Forge miniforge and mambaforge distributions instead. 
+use the Conda-Forge miniforge distributions instead. 
 However, there are also plenty of  other ways to install Python, Numpy
 and Scipy, depending on if they will be used on Linux, Windows and MacOS.
 For Linux, the standard Linux distributions provide these using
@@ -307,7 +306,7 @@ Optional Python Packages
   developers, since the prepared documentation on
   https://gsas-ii.readthedocs.io is usually reasonably up to date.  
 
- * SCons (https://scons.org/) is used to compile the relatively small amount of
+* SCons (https://scons.org/) is used to compile the relatively small amount of
    Fortran code that is included with GSAS-II. Use of this is
    discussed in the next section of this chapter.
 

@@ -24,21 +24,29 @@ except ImportError:
     print("skipping numpy in GSASIIpath")
 try:
     import requests
-    try:
-        import git
-    except ImportError as msg:
-        if 'Failed to initialize' in msg.msg:
-            print('The gitpython package is unable to locate a git installation.')
-            print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
-        elif 'No module' in msg.msg:
-            print('Python gitpython module not installed')
-        else:
-            print(f'gitpython failed to import, but why? Error:\n{msg}')
-    except Exception as msg:
-        print(f'git import failed with unexpected error:\n{msg}')
 except:
-    print('Python requests package not installed (required for GSAS-II\n'+
-          'to install/update from git)')
+    print('Python requests package not installed (required for web access')
+
+# fix up path before using git. Needed when using conda without
+#   activate (happens on MacOS w/GSAS-II.app)
+pyPath = os.path.dirname(os.path.realpath(sys.executable))
+if sys.platform != "win32" and pyPath not in os.environ['PATH'].split(':'):
+    os.environ['PATH'] = pyPath + ':' + os.environ['PATH']
+    
+try:
+    import git
+except ImportError as msg:
+    if 'Failed to initialize' in msg.msg:
+        print('The gitpython package is unable to locate a git installation.')
+        print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
+    elif 'No module' in msg.msg:
+        print('Python gitpython module not installed')
+    else:
+        print(f'gitpython failed to import, but why? Error:\n{msg}')
+    print('Note: git and gitpython are required for GSAS-II to self-update')
+except Exception as msg:
+    print(f'git import failed with unexpected error:\n{msg}')
+    print('Note: git and gitpython are required for GSAS-II to self-update')
 
 # hard-coded github repo locations
 G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools"

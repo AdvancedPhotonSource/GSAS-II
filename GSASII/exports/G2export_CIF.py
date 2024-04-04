@@ -1301,11 +1301,11 @@ def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None
             s += ' '
             s += PutInCol(val,9)
             WriteCIFitem(fp,s.rstrip())
-            WriteCIFitem(fp,'      https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py')
+            WriteCIFitem(fp,'      https://github.com/AdvancedPhotonSource/GSAS-II/blob/master/GSASII/atmdata.py')
             if keV:
                 Orbs = G2el.GetXsectionCoeff(elem.split('+')[0].split('-')[0])
                 FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
-                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP))
+                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://github.com/AdvancedPhotonSource/GSAS-II/blob/master/GSASII/atmdata.py'.format(FP,FPP))
         else:
             WriteCIFitem(fp,s.rstrip())
         if formula: formula += " "
@@ -1435,11 +1435,11 @@ def WriteCompositionMM(fp, phasedict, phasenam, parmDict, quickmode=True, keV=No
             s += ' '
             s += PutInCol(val,9)
             WriteCIFitem(fp,s.rstrip())
-            WriteCIFitem(fp,'      https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py')
+            WriteCIFitem(fp,'      https://github.com/AdvancedPhotonSource/GSAS-II/blob/master/GSASII/atmdata.py')
             if keV:
                 Orbs = G2el.GetXsectionCoeff(elem.split('+')[0].split('-')[0])
                 FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
-                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP))
+                WriteCIFitem(fp,'  {:8.3f}{:8.3f}   https://github.com/AdvancedPhotonSource/GSAS-II/blob/master/GSASII/atmdata.py'.format(FP,FPP))
         else:
             WriteCIFitem(fp,s.rstrip())
         if formula: formula += " "
@@ -4557,7 +4557,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                 s += PutInCol(elem,4)
                                 Orbs = G2el.GetXsectionCoeff(elem)
                                 FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
-                                s += '  {:8.3f}{:8.3f}   https://subversion.xray.aps.anl.gov/pyGSAS/trunk/atmdata.py'.format(FP,FPP)
+                                s += '  {:8.3f}{:8.3f}   https://github.com/AdvancedPhotonSource/GSAS-II/blob/master/GSASII/atmdata.py'.format(FP,FPP)
                                 WriteCIFitem(self.fp,s.rstrip())
                             WriteCIFitem(self.fp,'')
                         if MM:

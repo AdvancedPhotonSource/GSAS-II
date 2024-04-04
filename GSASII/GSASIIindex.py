@@ -2,11 +2,11 @@
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
 ########### SVN repository information ###################
-# $Date: 2023-05-09 21:43:48 -0500 (Tue, 09 May 2023) $
-# $Author: toby $
-# $Revision: 5572 $
+# $Date: 2024-03-30 08:47:38 -0500 (Sat, 30 Mar 2024) $
+# $Author: vondreele $
+# $Revision: 5774 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIindex.py $
-# $Id: GSASIIindex.py 5572 2023-05-10 02:43:48Z toby $
+# $Id: GSASIIindex.py 5774 2024-03-30 13:47:38Z vondreele $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIindex` follow. 
@@ -17,7 +17,7 @@ import math
 import time
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5572 $")
+GSASIIpath.SetVersionNumber("$Revision: 5774 $")
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
@@ -970,12 +970,12 @@ def monoCellReduce(ibrav,A):
         anew = math.sqrt(np.dot(np.dot(va,g),va))
         cnew = math.sqrt(np.dot(np.dot(vc,g),vc))
         if cnew < c:
-            cang = np.dot(np.dot(uc,g),v)/(a*cnew)
+            cang = np.dot(np.dot(uc,g),vc)/(a*cnew)
             beta = acosd(-abs(cang))
             if beta < 90.: beta = 180.-beta     #always want obtuse beta
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
         if anew < a:
-            cang = np.dot(np.dot(ua,g),v)/(c*anew)
+            cang = np.dot(np.dot(ua,g),va)/(c*anew)
             beta = acosd(-abs(cang))
             if beta < 90.: beta = 180.-beta     #always want obtuse beta
             A = G2lat.cell2A([anew,b,c,90,beta,90])

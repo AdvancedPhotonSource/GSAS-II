@@ -28,7 +28,8 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 # 1) add a new object class (e.g. G2PDF)
 # 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
 # 3) add a new method to add the object into a project (G2Project.add_PDF)
-# 4) add to documentation in section :class:`G2Project`
+#   in ../docs/source/GSASIIscriptable.rst
+# 4) add to documentation in section :class:`G2Project` 
 # 5) add a new documentation section for the new class
 #============================================================================
 
@@ -127,6 +128,7 @@ def LoadG2fil():
     Readers['Pwdr'] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
     Readers['Phase'] = G2fil.LoadImportRoutines("phase", "Phase")
     Readers['Image'] = G2fil.LoadImportRoutines("img", "Image")
+    Readers['HKLF'] = G2fil.LoadImportRoutines('sfact','Struct_Factor')
 
     # initialize exports
     for obj in G2fil.LoadExportRoutines(None):
@@ -309,15 +311,15 @@ def make_empty_project(author=None, filename=None):
     output = {'Constraints': {'data': {'HAP': [], 'Hist': [], 'Phase': [],
                                        'Global': []}},
               'Controls': {'data': controls_data},
-              u'Covariance': {'data': {}},
-              u'Notebook': {'data': ['']},
-              u'Restraints': {'data': {}},
-              u'Rigid bodies': {'data': {'RBIds': {'Residue': [], 'Vector': []},
+              'Covariance': {'data': {}},
+              'Notebook': {'data': ['']},
+              'Restraints': {'data': {}},
+              'Rigid bodies': {'data': {'RBIds': {'Residue': [], 'Vector': []},
                                 'Residue': {'AtInfo': {}},
                                 'Vector':  {'AtInfo': {}}}}}
 
-    names = [[u'Notebook'], [u'Controls'], [u'Covariance'],
-             [u'Constraints'], [u'Restraints'], [u'Rigid bodies']]
+    names = [['Notebook'], ['Controls'], ['Covariance'],
+             ['Constraints'], ['Restraints'], ['Rigid bodies']]
 
     return output, names
 
@@ -577,7 +579,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
             exec(corr)
             G2fil.G2Print('done')
         except Exception as err:
-            print(u'error: {}'.format(err))
+            print('error: {}'.format(err))
             print('with commands -------------------')
             print(corr)
             print('---------------------------------')
@@ -586,16 +588,16 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     reader.Sample['ranId'] = valuesdict['ranId']
 
     # Ending keys:
-    # [u'Reflection Lists',
-    #  u'Limits',
+    # ['Reflection Lists',
+    #  'Limits',
     #  'data',
-    #  u'Index Peak List',
-    #  u'Comments',
-    #  u'Unit Cells List',
-    #  u'Sample Parameters',
-    #  u'Peak List',
-    #  u'Background',
-    #  u'Instrument Parameters']
+    #  'Index Peak List',
+    #  'Comments',
+    #  'Unit Cells List',
+    #  'Sample Parameters',
+    #  'Peak List',
+    #  'Background',
+    #  'Instrument Parameters']
     Tmin = np.min(reader.powderdata[0])
     Tmax = np.max(reader.powderdata[0])
     Tmin1 = Tmin
@@ -606,27 +608,27 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
         {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 
         'peaksList': [],'background PWDR':['',1.0,False]}]
 
-    output_dict = {u'Reflection Lists': {},
-                   u'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin1, Tmax]]),
-                   u'data': [valuesdict, reader.powderdata, HistName],
-                   u'Index Peak List': [[], []],
-                   u'Comments': reader.comments,
-                   u'Unit Cells List': [],
-                   u'Sample Parameters': reader.Sample,
-                   u'Peak List': {'peaks': [], 'sigDict': {}},
-                   u'Background': reader.pwdparms.get('Background', default_background),
-                   u'Instrument Parameters': [Iparm1, Iparm2],
+    output_dict = {'Reflection Lists': {},
+                   'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin1, Tmax]]),
+                   'data': [valuesdict, reader.powderdata, HistName],
+                   'Index Peak List': [[], []],
+                   'Comments': reader.comments,
+                   'Unit Cells List': [],
+                   'Sample Parameters': reader.Sample,
+                   'Peak List': {'peaks': [], 'sigDict': {}},
+                   'Background': reader.pwdparms.get('Background', default_background),
+                   'Instrument Parameters': [Iparm1, Iparm2],
                    }
 
-    names = [u'Comments',
-             u'Limits',
-             u'Background',
-             u'Instrument Parameters',
-             u'Sample Parameters',
-             u'Peak List',
-             u'Index Peak List',
-             u'Unit Cells List',
-             u'Reflection Lists']
+    names = ['Comments',
+             'Limits',
+             'Background',
+             'Instrument Parameters',
+             'Sample Parameters',
+             'Peak List',
+             'Index Peak List',
+             'Unit Cells List',
+             'Reflection Lists']
 
     # TODO controls?? GSASII.py:1664-7
 
@@ -1264,7 +1266,7 @@ class G2Project(G2ObjectWrapper):
                     phasenames = obj
                     break
             else:
-                phasenames = [u'Phases']
+                phasenames = ['Phases']
                 self.names.append(phasenames)
             phasenames.append(phasename)
 
@@ -1297,7 +1299,7 @@ class G2Project(G2ObjectWrapper):
         phObj['General']['Name'] = phasename
 
         if 'Phases' not in self.data:
-            self.data[u'Phases'] = { 'data': None }
+            self.data['Phases'] = { 'data': None }
         assert phasename not in self.data['Phases'], "phase names should be unique"
         self.data['Phases'][phasename] = phObj
 
@@ -1332,7 +1334,7 @@ class G2Project(G2ObjectWrapper):
                 phasenames = obj
                 break
         else:
-            phasenames = [u'Phases']
+            phasenames = ['Phases']
             self.names.append(phasenames)
         phasenames.append(phasename)
 
@@ -1343,6 +1345,57 @@ class G2Project(G2ObjectWrapper):
         self.update_ids()
         return self.phase(phasename)
 
+    def add_single_histogram(self, datafile, phase=None, fmthint=None):
+        """Loads a powder data histogram or multiple powder histograms 
+        into the project.
+
+        :param str datafile: A filename with the single crystal data file 
+          to read. Note that in unix fashion, "~" can be used to indicate the
+          home directory (e.g. ~/G2data/data.hkl).
+        :param phases: A phase to link to the new histogram. A
+           phase can be referenced by object, name, rId or number.
+           If not specified, no phase will be linked.
+        :param str fmthint: If specified, only importers where the format name
+          (reader.formatName, as shown in Import menu) contains the
+          supplied string will be tried as importers. If not specified, 
+          an error will be generated, as the file format will not distinguish 
+          well between different data types.
+        :returns: A :class:`G2Single` object representing
+            the histogram
+        """
+        LoadG2fil()
+        datafile = os.path.abspath(os.path.expanduser(datafile))
+        if fmthint is None:
+            choices = ', '.join(['"'+i.formatName+'"' for i in Readers['HKLF']])
+            raise ValueError("add_single_histogram: A value is required for the fmthint parameter"+
+                                 f'\n\nChoices are: {choices}')
+        readers = import_generic(datafile, Readers['HKLF'],fmthint=fmthint)
+        histlist = []
+        for r in readers:  # only expect 1
+            histname = 'HKLF ' + G2obj.StripUnicode(
+                os.path.split(r.readfilename)[1],'_')
+            #HistName = G2obj.MakeUniqueLabel(HistName, existingnames)            
+            newnames = [histname,'Instrument Parameters','Reflection List']
+            if histname in self.data:
+                G2fil.G2Print("Warning - redefining histogram", histname)
+            elif self.names[-1][0] == 'Phases':
+                self.names.insert(-1, newnames)  # add histogram into tree before phases
+            else:
+                self.names.append(newnames)
+            data = [{
+                'wtFactor': 1.0,
+                'Dummy': False,
+                'ranId': ran.randint(0, sys.maxsize),
+                'histTitle': ''},r.RefDict]
+            self.data[histname] = {
+                'data':data,
+                'Instrument Parameters':r.Parameters,
+                'Reflection List': {}
+                }
+            self.update_ids()
+            if phase is None: return
+            self.link_histogram_phase(histname, phase)
+                
     def link_histogram_phase(self, histogram, phase):
         """Associates a given histogram and phase.
 
@@ -1356,7 +1409,20 @@ class G2Project(G2ObjectWrapper):
         generalData = phase['General']
 
         if hist.name.startswith('HKLF '):
-            raise NotImplementedError("HKLF not yet supported")
+            phase['Histograms'][hist.name] = {
+                'Histogram': hist.name,
+                'Show': False,
+                'Scale': [1.0, True],
+                'Type': hist.data['data'][1]['Type'],
+                'Babinet': {'BabA': [0.0, False], 'BabU': [0.0, False]},
+                'Extinction': ['Lorentzian','None',{
+                    'Tbar': 0.1,
+                    'Cos2TM': 0.955,
+                    'Eg': [1e-10, False],
+                    'Es': [1e-10, False],
+                    'Ep': [1e-10, False]}],
+                'Flack': [0.0, False],
+                'Twins': [[np.eye(3),[1.0, False, 0],]]}
         elif hist.name.startswith('PWDR '):
             hist['Reflection Lists'][generalData['Name']] = {}
             UseList = phase['Histograms']
@@ -1433,31 +1499,38 @@ class G2Project(G2ObjectWrapper):
     def histogram(self, histname):
         """Returns the histogram named histname, or None if it does not exist.
 
-        :param histname: The name of the histogram (str), or ranId or index.
-        :returns: A :class:`G2PwdrData` object, or None if
-            the histogram does not exist
+        :param histname: The name of the histogram (str), or ranId or 
+          (for powder) the histogram index.
+        :returns: A :class:`G2PwdrData` object, or :class:`G2Single` object, or 
+           None if the histogram does not exist
 
         .. seealso::
             :meth:`~G2Project.histograms`
             :meth:`~G2Project.phase`
             :meth:`~G2Project.phases`
         """
-        if isinstance(histname, G2PwdrData):
+        if isinstance(histname, G2PwdrData) or isinstance(histname, G2Single):
             if histname.proj == self:
                 return histname
             else:
-                raise Exception('Histogram object (G2PwdrData) is not in current project')
+                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
         if histname in self.data:
-            return G2PwdrData(self.data[histname], self, histname)
+            if histname.startswith('HKLF '):
+                return G2Single(self.data[histname], self, histname)
+            elif histname.startswith('PWDR '):
+                return G2PwdrData(self.data[histname], self, histname)
         try:
             # see if histname is an id or ranId
             histname = int(histname)
         except ValueError:
             return
-
         for histogram in self.histograms():
-            if histogram.id == histname or histogram.ranId == histname:
-                return histogram
+            if histogram.name.startswith('HKLF '):
+                if histogram.data['data'][0]['ranId'] == histname:
+                    return histogram
+            elif histogram.name.startswith('PWDR '):
+                if histogram.id == histname or histogram.ranId == histname:
+                    return histogram
 
     def histograms(self, typ=None):
         """Return a list of all histograms, as :class:`G2PwdrData` objects
@@ -1465,7 +1538,8 @@ class G2Project(G2ObjectWrapper):
         For now this only finds Powder/Single Xtal histograms, since that is all that is
         currently implemented in this module.
 
-        :param ste typ: The prefix (type) the histogram such as 'PWDR '. If None
+        :param ste typ: The prefix (type) the histogram such as 'PWDR ' for
+          powder or 'HKLF ' for single crystal. If None
           (the default) all known histograms types are found. 
         :returns: a list of objects
 
@@ -2889,7 +2963,7 @@ class G2AtomRecord(G2ObjectWrapper):
     >>> atom.coordinates
     (0.3333333333333333, 0.1, 0.5)
     >>> atom.refinement_flags
-    u'FX'
+    'FX'
     >>> atom.ranId
     4615973324315876477
     >>> atom.occupancy
@@ -4449,7 +4523,7 @@ class G2Phase(G2ObjectWrapper):
                 for h in histograms:
                     self.data['Histograms'][h]['Scale'][1] = bool(val)
             else:
-                G2fil.G2Print(u'Warning: Unknown HAP key: '+key)
+                G2fil.G2Print('Warning: Unknown HAP key: '+key)
 
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and
@@ -4513,7 +4587,7 @@ class G2Phase(G2ObjectWrapper):
                     for h in histograms:
                         self.data['Histograms'][h]['Scale'][1] = False
                 else:
-                    G2fil.G2Print(u'Warning: Unknown HAP key: '+key)
+                    G2fil.G2Print('Warning: Unknown HAP key: '+key)
 
     def _decodeHist(self,hist):
         '''Convert a histogram reference to a histogram name string
@@ -5538,6 +5612,42 @@ class G2PDF(G2ObjectWrapper):
             PDFsaves[i] = lbl.lower() in formats.lower()
         G2fil.PDFWrite(PDFentry,fileroot,PDFsaves,self.data['PDF Controls'],inst,limits)
 
+class G2Single(G2ObjectWrapper):
+    """Wrapper for a HKLF tree entry, containing a single crystal histogram
+    Note that in a GSASIIscriptable script, instances of G2Single will be 
+    created by calls to :meth:`G2Project.histogram`, 
+    :meth:`G2Project.histograms`, or :meth:`G2Project.add_single_histogram`.
+    Scripts should not try to create a :class:`G2Single` object directly.
+
+    This object contains these class variables:
+        * G2Single.proj: contains a reference to the :class:`G2Project`
+          object that contains this histogram 
+        * G2Single.name: contains the name of the histogram
+        * G2Single.data: contains the histogram's associated data in a dict,
+          as documented for the :ref:`Single Crystal Tree Item<Xtal_table>`.
+          This contains the actual histogram values, as documented for Data.
+
+    Example use of :class:`G2Single`::
+
+        gpx0 = G2sc.G2Project('HTO_base.gpx')
+        gpx0.add_single_histogram('HTO_xray/xtal1/xs2555a.hkl',0,fmthint='Shelx HKLF 4')
+        gpx0.save('HTO_scripted.gpx')
+
+    This opens an existing GSAS-II project file and adds a single 
+    crystal dataset that is linked to the first phase and saves it
+    under a new name.
+
+    .. seealso::
+        :meth:`~G2Project.add_single_histogram`
+        :meth:`~G2Project.histogram`
+        :meth:`~G2Project.histograms`
+        :meth:`~G2Project.link_histogram_phase`
+    """
+    def __init__(self, data, proj, name):
+        self.data = data
+        self.name = name
+        self.proj = proj
+        
 blkSize = 128
 '''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses 
 less memory, must be <=1024 (for polymask/histogram3d)
@@ -6126,9 +6236,9 @@ class G2Image(G2ObjectWrapper):
             else:
                 G2fil.G2Print('Adding "{}" to project'.format(Aname))
                 self.proj.names.append([Aname]+
-                        [u'Comments',u'Limits',u'Background',u'Instrument Parameters',
-                         u'Sample Parameters', u'Peak List', u'Index Peak List',
-                         u'Unit Cells List', u'Reflection Lists'])
+                        ['Comments','Limits','Background','Instrument Parameters',
+                         'Sample Parameters', 'Peak List', 'Index Peak List',
+                         'Unit Cells List', 'Reflection Lists'])
             HistDict['data'] = [valuesdict,
                     [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
             self.proj.data[Aname] = HistDict

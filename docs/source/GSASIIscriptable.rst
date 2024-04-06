@@ -69,17 +69,19 @@ Scripting class name                              Description
                                            A GSAS-II project file; provides references to objects below,
                                            each corresponding to a tree item 
                                            (exception is :class:`~GSASIIscriptable.G2AtomRecord`)
-                                           
+
 :ref:`G2Phase <Class_G2Phase>`             :class:`~GSASIIscriptable.G2Phase`:
                                            Provides phase information access 
                                            (also provides access to atom info via :class:`~GSASIIscriptable.G2AtomRecord`)
-                                          
+
 :ref:`G2AtomRecord <Class_G2AtomRecord>`   :class:`~GSASIIscriptable.G2AtomRecord`:
                                            Access to an atom within a phase
-                                          
+
 :ref:`G2PwdrData <Class_G2PwdrData>`       :class:`~GSASIIscriptable.G2PwdrData`:
                                            Access to powder histogram info
-                                          
+
+:ref:`G2Single <Class_G2Single>`           :class:`~GSASIIscriptable.G2Single`: Access to single crystal histogram info
+
 :ref:`G2Image <Class_G2Image>`             :class:`~GSASIIscriptable.G2Image`: Access to image info
 
 :ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
@@ -128,6 +130,8 @@ method                                                                  Use
 :meth:`~GSASIIscriptable.G2Project.add_phase`                           Adds a phase to a project
 
 :meth:`~GSASIIscriptable.G2Project.add_PDF`                             Adds a PDF entry to a project (does not compute it)
+
+:meth:`~GSASIIscriptable.G2Project.add_single_histogram`                Used to read in a single crystal diffraction dataset into a project file.
 
 :meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` objects
 
@@ -229,6 +233,22 @@ method                                                     Use
 :attr:`~GSASIIscriptable.G2PwdrData.PeakList`            Provides the peak list parameter values 
 :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
 =======================================================  ===============================================================================================================
+
+.. _Class_G2Single:
+
+Class :class:`~GSASIIscriptable.G2Single`
+---------------------------------------------
+
+  A less object in GSASIIscriptable scripts is :class:`~GSASIIscriptable.G2Single`, which encapsulate each single crystal diffraction histogram in a project, with commonly used methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+=======================================================  ===============================================================================================================
+method                                                     Use
+=======================================================  ===============================================================================================================
+(nothing yet defined)
+=======================================================  ===============================================================================================================
+
 
 .. _Class_G2Image:
 

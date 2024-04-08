@@ -24,3 +24,6 @@ __pycache__
 
 # GSAS binaries
 GSASII/bindist
+
+# Local dev env files
+.vscode

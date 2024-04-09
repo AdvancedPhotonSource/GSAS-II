@@ -32,7 +32,11 @@ import numpy as np
 import sys
 from scipy.optimize import linear_sum_assignment
 import math
-from kvec_general import parallel_proc
+try:
+    from kvec_general import parallel_proc
+    gen_option_avail = True
+except ModuleNotFoundError:
+    gen_option_avail = False
 import time
 
 
@@ -226,6 +230,11 @@ class kVector:
         self.kstep = kstep
         self.kscope = kscope
         self.processes = processes
+
+        if self.option == 2 and not gen_option_avail:
+            err_msg = "The general search option is not available. "
+            err_msg += "Please install the `kvec_general` module."
+            raise ModuleNotFoundError(err_msg)
 
         if kstep is None:
             self.kstep = [.01, .01, .01]

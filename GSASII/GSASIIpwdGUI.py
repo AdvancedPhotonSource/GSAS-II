@@ -5707,18 +5707,28 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for k in range(6):
                     hkl_refls.append([i, j, k])
 
-        k_search = kvs.kVector(
-            brav_sym,
-            lat_vectors,
-            atom_coords,
-            atom_ids,
-            hkl_refls,
-            xtra_peaks_d,
-            tol_val,
-            option=kvs_option,
-            kstep=kstep,
-            processes=num_procs
-        )
+        try:
+            k_search = kvs.kVector(
+                brav_sym,
+                lat_vectors,
+                atom_coords,
+                atom_ids,
+                hkl_refls,
+                xtra_peaks_d,
+                tol_val,
+                option=kvs_option,
+                kstep=kstep,
+                processes=num_procs
+            )
+        except ModuleNotFoundError:
+            err_title = "Module not found"
+            err_msg = "The `kvec_general` module is not found. Please install "
+            err_msg += "the module before running the k-vector search with "
+            err_msg += "option-2."
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
         k_opt = k_search.kOptFinder()
         k_opt_dist = k_opt[1]
         k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]

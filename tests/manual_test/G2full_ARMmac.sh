@@ -59,7 +59,7 @@ else
 fi
 
 download_binaries() {
-	python - <<END
+	$condaHome/bin/python - <<END
 def download_binaries():
     import urllib.request
     import tarfile

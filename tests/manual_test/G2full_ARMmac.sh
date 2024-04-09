@@ -65,7 +65,7 @@ def download_binaries():
     import tarfile
     import os
     
-    thetarfile = "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/mac_arm_p3.11_n1.26.tgz"
+    thetarfile = "https://powder.ornl.gov/files/mac_arm_p3.11_n1.26.tgz"
     
     os.chdir("${WORKSPACE}/GSAS2-code/GSASII/bindist")
     

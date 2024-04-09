@@ -5708,6 +5708,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                     hkl_refls.append([i, j, k])
 
         try:
+            # if we choose option-2, we need to use the `kvec_general` module
+            # Otherwise, the computation time would be unacceptably long.
             k_search = kvs.kVector(
                 brav_sym,
                 lat_vectors,

@@ -132,10 +132,6 @@ class kVector:
                    Default: 0
     :param kstep: (optional) step of k values for searching over the k grid.
                   Default: [.01, .01, .01]
-    :param kscope: (optional) scope of k to search over, in the conventional
-                   setting, specifying the range of searching along the x, y
-                   and z direction, respectively.
-                   Default: [0., 1.5, 0., 1.5, 0., 1.5]
     :param processes: (optional) the number of processes for parallel
                       processing.
                       Default: 1
@@ -217,7 +213,6 @@ class kVector:
                  numbers: list, nucPeaks: list, superPeaks: list,
                  threshold: float, option: int = 0,
                  kstep: list = None,
-                 kscope: list = None,
                  processes: int = 1):
         self.bravfSym = bravfSym
         self.cell = cell
@@ -228,7 +223,6 @@ class kVector:
         self.threshold = threshold
         self.option = option
         self.kstep = kstep
-        self.kscope = kscope
         self.processes = processes
 
         if self.option == 2 and not gen_option_avail:
@@ -238,8 +232,6 @@ class kVector:
 
         if kstep is None:
             self.kstep = [.01, .01, .01]
-        if kscope is None:
-            self.kscope = [0., 1.5, 0., 1.5, 0., 1.5]
 
         rep_prim_latt = self.kpathFinder()["reciprocal_primitive_lattice"]
         if "P" in bravfSym:

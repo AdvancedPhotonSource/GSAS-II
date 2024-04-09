@@ -5649,21 +5649,19 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.EndBusyCursor()
             return
 
-        # grab all the nucleus peaks associated with the selected phase for the selected
-        # histogram.
-        nuc_peaks = [list(ref[:3])[:] + [ref[4]] for ref in refDict[phase_sel]["RefList"]]
-
         _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         Phase = Phases[phase_sel]
 
         # grab the Bravais lattice type
         #
-        # given the lattice type and lattice system, the Bravais lattice type can be
-        # determined. see the comparison table in the Wikipedia link below for the
-        # correspondence,
+        # given the lattice type and lattice system, the Bravais lattice type
+        # can be determined. see the comparison table in the Wikipedia link
+        # below for the correspondence,
+        #
         # https://en.wikipedia.org/wiki/Crystal_system
-        # here, we need to assign the Bravais lattice with specific names as inputs for
-        # the `seekpath` routine.
+        #
+        # here, we need to assign the Bravais lattice with specific names as
+        # inputs for the `seekpath` routine.
         lat_type = Phase["General"]["SGData"]["SGLatt"]
         lat_sym = Phase["General"]["SGData"]["SGSys"]
         if lat_sym == "trigonal":
@@ -5673,7 +5671,8 @@ def UpdateUnitCellsGrid(G2frame, data):
 
         # grab all atomic coordinates in the P1 symmetry
         #
-        # define some matrix as necessary inputs for generating the P1 structure.
+        # define some matrix as necessary inputs for generating the P1
+        # structure.
         Trans = np.eye(3)
         Uvec = np.zeros(3)
         Vvec = np.zeros(3)
@@ -5682,7 +5681,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         newPhase = copy.deepcopy(Phase)
         newPhase['ranId'] = ran.randint(0, sys.maxsize)
         newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-        newPhase, _ = G2lat.TransformPhase(Phase, newPhase, Trans, Uvec, Vvec, False)
+        newPhase, _ = G2lat.TransformPhase(
+            Phase,
+            newPhase,
+            Trans,
+            Uvec,
+            Vvec,
+            False
+        )
         atoms_pointer = newPhase['General']['AtomPtrs']
 
         atom_coords = list()
@@ -5693,8 +5699,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             type_tmp = atom[atoms_pointer[1]]
             atom_types.append(type_tmp)
 
-        # this will turn each of the atom types into a unique integer number, which is
-        # required by the `seekpath` routine
+        # this will turn each of the atom types into a unique integer number,
+        # which is required by the `seekpath` routine
         atom_ids = kvs.unique_id_gen(atom_types)
 
         # grab the parent unit cell and construct the lattice vectors
@@ -5748,6 +5754,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             cells[-1] += [0, False, False]
             # G2frame.OnFileSave(event) # forces save of project
         wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
+
     def OnClearCells(event):
         'remove previous search results'
         data[2] = []

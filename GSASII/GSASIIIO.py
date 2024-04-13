@@ -1294,7 +1294,7 @@ class ExportBaseclass(object):
                     'Project does not contain any single crystal data.')
                 return True
             elif len(self.xtalDict) == 1:
-                self.histnam = self.xtalDict.values()
+                self.histnam = list(self.xtalDict.values())
             elif self.multiple:
                 choices = sorted(self.xtalDict.values())
                 hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)

@@ -564,25 +564,22 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
-            phasDict = histblk['Reflection Lists'][phasenam]
-            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
-            if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
-                refList = phasDict['RefList']
-                for refItem in refList:
-                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
-                    self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,i))                
-            else:
-                WriteList(self,("h","k","l",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
-                refList = phasDict['RefList']
-                for refItem in refList:
-                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
-                    self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,i))
+        phasDict = histblk['Data']
+        tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+        if phasDict.get('Super',False):
+            WriteList(self,("h","k","l","m",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in phasDict['RefList']:
+                h,k,l,m,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:12]
+                self.Write(fmt.format(h,k,l,m,dsp,Fobs,Fcalc,phase,mult,Icorr))
+        else:
+            WriteList(self,("h","k","l",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in phasDict['RefList']:
+                h,k,l,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:12]
+                self.Write(fmt.format(h,k,l,dsp,Fobs,Fcalc,phase,mult,Icorr))
         self.CloseFile()
-        print(hist+' written to file '+self.fullname)                        
+        print(f'{hist!r} written to file {self.filename} in {self.fullpath}')
 
 class ExportStrainCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data

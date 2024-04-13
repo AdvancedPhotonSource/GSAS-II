@@ -158,9 +158,9 @@ John Badger, J. Appl. Cryst. (2019) 52, 937-944.
 .. automodule:: G2shapes
     :members:
        
-------------------------------------------
-*tutorialIndex: index to GSAS-II tutorials
-------------------------------------------
+--------------------------------------------
+*tutorialIndex: index to GSAS-II tutorials*
+--------------------------------------------
 
 tutorialIndex Contents
 ------------------------------------

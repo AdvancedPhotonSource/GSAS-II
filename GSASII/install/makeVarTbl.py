@@ -1,21 +1,22 @@
 import os
 import re
 import copy
-print('Running makeVarTbl.py')
+print('Importing makeVarTbl.py')
 
 def main():
     import GSASIIobj as G2obj
     '''Gets the parameter table using :func:`G2obj.CompileVarDesc()` and then 
     creates file ``docs/source/vars.rst``. Run from Sphinx build in conf.py.
     '''
+    home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    print(f'home = {home}')
     # compile regular expressions
     parenRE = re.compile(r'\)|\(')
     bracketRE = re.compile(r'\[|\]')
     # get parameter table
     G2obj.CompileVarDesc()
-    home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     varstblloc = os.path.join(home,'docs','source','vars.rst')
-    print('creating file',os.path.normpath(varstblloc))
+    print(f'creating file {os.path.normpath(varstblloc)}')
     fp = open(varstblloc,'w')
     fp.write('''.. 
     This file is created using makeVarTbl.py. Edit that, not this file.
@@ -125,4 +126,5 @@ def main():
     fp.close()
 
 if __name__ == '__main__':
+    print('Running makeVarTbl.py')
     main()

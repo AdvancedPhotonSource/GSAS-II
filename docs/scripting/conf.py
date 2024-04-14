@@ -78,7 +78,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-root_doc = 'scrpt-index'
+#root_doc = 'index'
 
 # General information about the project.
 project = u'GSAS-II'
@@ -254,7 +254,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('scrpt-index', 'GSASIIscripting.tex', u'GSAS-II Scripting Documentation',
+  ('index', 'GSASIIscripting.tex', u'GSAS-II Scripting Documentation',
    u'Robert B. Von Dreele and Brian H. Toby', 'manual'),
 ]
 

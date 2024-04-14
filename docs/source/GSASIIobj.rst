@@ -25,7 +25,7 @@ and ``n`` is the atom parameter number
 If a parameter does not depend on a histogram, phase or atom, ``h``, ``p`` and/or ``n`` will be omitted, 
 so ``p::<var>:n``, ``:h:<var>`` and ``p:h:<var>`` are all valid names.
 
-.. include:: vars.rst
+.. include:: ../source/vars.rst
 
 .. _Constraints_table:
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-01-15 15:24:19 -0600 (Mon, 15 Jan 2024) $
+# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
 # $Author: toby $
-# $Revision: 5716 $
+# $Revision: 5776 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIscriptable.py $
-# $Id: GSASIIscriptable.py 5716 2024-01-15 21:24:19Z toby $
+# $Id: GSASIIscriptable.py 5776 2024-04-13 02:06:19Z toby $
 ########### SVN repository information ###################
 #
 """

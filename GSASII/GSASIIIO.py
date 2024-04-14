@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-01-22 12:08:46 -0600 (Mon, 22 Jan 2024) $
+# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
 # $Author: toby $
-# $Revision: 5720 $
+# $Revision: 5776 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $
-# $Id: GSASIIIO.py 5720 2024-01-22 18:08:46Z toby $
+# $Id: GSASIIIO.py 5776 2024-04-13 02:06:19Z toby $
 ########### SVN repository information ###################
 '''
 Misc routines for input and output, including image reading follow. 
@@ -39,7 +39,7 @@ import sys
 import re
 import random as ran
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5720 $")
+GSASIIpath.SetVersionNumber("$Revision: 5776 $")
 try:
     import GSASIIdataGUI as G2gd
 except ImportError:

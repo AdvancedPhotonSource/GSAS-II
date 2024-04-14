@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
+# $Date: 2024-04-03 21:44:28 -0500 (Wed, 03 Apr 2024) $
 # $Author: toby $
-# $Revision: 5722 $
+# $Revision: 5775 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $
-# $Id: G2export_CIF.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: G2export_CIF.py 5775 2024-04-04 02:44:28Z toby $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_CIF` follow:
 '''
@@ -40,7 +40,7 @@ except ImportError:
     wx = Placeholder()
     wxscroll = Placeholder()
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5722 $")
+GSASIIpath.SetVersionNumber("$Revision: 5775 $")
 import GSASIIIO as G2IO
 try:
     import GSASIIctrlGUI as G2G

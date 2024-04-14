@@ -232,7 +232,7 @@ rst_prolog = u"""\
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GSASIIdoc'
+htmlhelp_basename = 'GSASIIscripting'
 
 
 # -- Options for LaTeX output --------------------------------------------------

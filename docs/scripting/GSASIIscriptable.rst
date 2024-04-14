@@ -1,0 +1,1 @@
+../source/GSASIIscriptable.rst

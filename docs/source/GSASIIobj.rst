@@ -936,7 +936,8 @@ Single Crystal Reflection Data Structure
 
 For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
-The columns in that array are documented below.
+The columns in that array are documented below for
+non-superspace phases. 
 
 .. tabularcolumns:: |l|p{4in}|
 
@@ -956,6 +957,12 @@ The columns in that array are documented below.
                 :math:`F_{obs}^2` or :math:`F_{calc}^2`
                 gives Iobs or Icalc
 ==========  ====================================================
+
+Note that the "T" in the second set of :math:`F^2T` values stands for
+"true," where the values are on an absolute scale through application
+of the scale factor. Note that for 3+1 superspace phases, there are
+four Miller indicies h, k, l, m. Thus, every subsequent item is extended by one
+column (the d-space has index 4,...). 
 
 .. _Image_table:
 

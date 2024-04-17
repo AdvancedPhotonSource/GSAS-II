@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-12-12 12:48:03 -0600 (Tue, 12 Dec 2023) $
+# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
 # $Author: vondreele $
-# $Revision: 5706 $
+# $Revision: 5777 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrMath.py $
-# $Id: GSASIIstrMath.py 5706 2023-12-12 18:48:03Z vondreele $
+# $Id: GSASIIstrMath.py 5777 2024-04-16 13:03:40Z vondreele $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIstrMath` routines, used for refinement computations 
@@ -21,7 +21,7 @@ import scipy.special as sp
 import multiprocessing as mp
 import pickle
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5706 $")
+GSASIIpath.SetVersionNumber("$Revision: 5777 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -3329,13 +3329,13 @@ def GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
         d = 1./np.sqrt(G2lat.calc_rDsq(np.array([h,k,l]),A))
     refl[4+im] = d
     if 'C' in calcControls[hfx+'histType'] or 'B' in calcControls[hfx+'histType']:
-        pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
+        pos = 2.0*asind(wave/(2.0*d))
         const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
-        if 'Bragg' in calcControls[hfx+'instType']:
-            pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
-                parmDict[hfx+'Transparency']*sind(pos)*100.0)            #trans(=1/mueff) in cm
+        if 'Bragg' in calcControls[hfx+'instType']:           #trans(=1/mueff) in cm
+            pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+parmDict[hfx+'Transparency']*sind(pos)*100.0) 
         else:               #Debye-Scherrer - simple but maybe not right
-            pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+(parmDict[hfx+'DisplaceY']+parmDict[phfx+'LayerDisp'])*sind(pos))
+            pos -= 2.0*const*(parmDict[hfx+'DisplaceX']*cosd(pos)+(parmDict[hfx+'DisplaceY']+parmDict[phfx+'LayerDisp'])*sind(pos))
+        pos += parmDict[hfx+'Zero']
     elif 'E' in calcControls[hfx+'histType']:
         pos = 12.397639/(2.0*d*sind(parmDict[hfx+'2-theta']/2.0))+parmDict[hfx+'ZE']+parmDict[hfx+'YE']*d+parmDict[hfx+'XE']*d**2
     elif 'T' in calcControls[hfx+'histType']:
@@ -3371,8 +3371,8 @@ def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
             dpdTr = -shft*sind(pos)*100.0
             return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.,dpdV
         else:               #Debye-Scherrer - simple but maybe not right
-            dpdXd = -shft*cosd(pos)
-            dpdYd = -shft*sind(pos)
+            dpdXd = -2.0*shft*cosd(pos)
+            dpdYd = -2.0*shft*sind(pos)
             return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd,dpdV
     elif 'E' in calcControls[hfx+'histType']:
         tth = parmDict[hfx+'2-theta']/2.0

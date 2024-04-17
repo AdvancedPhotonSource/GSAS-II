@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
-# $Author: toby $
-# $Revision: 5767 $
+# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Author: vondreele $
+# $Revision: 5777 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5767 2024-03-17 17:50:24Z toby $
+# $Id: GSASIIdataGUI.py 5777 2024-04-16 13:03:40Z vondreele $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5767 $")
+GSASIIpath.SetVersionNumber("$Revision: 5777 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -2008,6 +2008,8 @@ class GSASII(wx.Frame):
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
+            elif 'PNB' in Iparm1['Type'][0]:
+                Iparm1['Lam'][1] = rd.Wave
             Ymin = np.min(rd.powderdata[1])                 
             Ymax = np.max(rd.powderdata[1])                 
             valuesdict = {

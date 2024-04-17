@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpwdGUI - powder data display routines
 ########### SVN repository information ###################
-# $Date: 2024-02-21 22:58:44 -0600 (Wed, 21 Feb 2024) $
-# $Author: toby $
-# $Revision: 5737 $
+# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Author: vondreele $
+# $Revision: 5777 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwdGUI.py $
-# $Id: GSASIIpwdGUI.py 5737 2024-02-22 04:58:44Z toby $
+# $Id: GSASIIpwdGUI.py 5777 2024-04-16 13:03:40Z vondreele $
 ########### SVN repository information ###################
 '''GUI routines for PWDR datadree subitems follow.
 '''
@@ -31,7 +31,7 @@ else:
     import pickle as cPickle
 import scipy.interpolate as si
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5737 $")
+GSASIIpath.SetVersionNumber("$Revision: 5777 $")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
@@ -73,6 +73,9 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+npsind = lambda x: np.sin(x*np.pi/180.)
+npasind = lambda x: 180.*np.arcsin(x)/math.pi
+npcosd = lambda x: np.cos(x*math.pi/180.)
     
 ################################################################################
 ###### class definitions
@@ -2404,33 +2407,47 @@ def UpdateInstrumentGrid(G2frame,data):
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
+        Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+        if 'Debye' not in Sample['Type']:
+            G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
+            return
         if not len(IndexPeaks[0]):
-            G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
+            G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
         if not np.any(IndexPeaks[1]):
-            G2frame.ErrorDialog('Can not calibrate','Peak positions not refined')
+            G2frame.ErrorDialog('Cannot calibrate','Peak positions not refined')
             return False
         Ok = False
         for peak in IndexPeaks[0]:
             if peak[2] and peak[3]:
                 Ok = True
         if not Ok:
-            G2frame.ErrorDialog('Can not calibrate','Index Peak List not indexed')
+            G2frame.ErrorDialog('Cannot calibrate','Index Peak List not indexed')
             return            
-        if G2pwd.DoCalibInst(IndexPeaks,data):
+        if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
+            const = 0.0
+            if 'C' in data['Type'][0] or 'B' in data['Type'][0]:
+                const = 18.e-2/(np.pi*Sample['Gonio. radius'])
+                # const = 10**-3/Sample['Gonio. radius']
             XY = []
             Sigs = []
             for ip,peak in enumerate(IndexPeaks[0]):
+                shft = 0.0
                 if peak[2] and peak[3]:
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    XY.append([peak[-1],peak[0],binwid])
+                    if const:
+                        # DThX = npasind(const*Sample['DisplaceX'][0]*npcosd(peak[0]))
+                        # DThY = -npasind(const*Sample['DisplaceY'][0]*npsind(peak[0]))
+                        # shft = DThX+DThY
+                        shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                    XY.append([peak[-1],peak[0]-shft,binwid])
                     Sigs.append(IndexPeaks[1][ip])
             if len(XY):
                 XY = np.array(XY)
                 G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
-            G2frame.ErrorDialog('Can not calibrate','Nothing selected for refinement')
+            G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement')
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file

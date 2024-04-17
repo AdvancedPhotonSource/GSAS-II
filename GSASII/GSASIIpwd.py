@@ -1,11 +1,11 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-01-30 14:19:34 -0600 (Tue, 30 Jan 2024) $
-# $Author: toby $
-# $Revision: 5721 $
+# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Author: vondreele $
+# $Revision: 5777 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 5721 2024-01-30 20:19:34Z toby $
+# $Id: GSASIIpwd.py 5777 2024-04-16 13:03:40Z vondreele $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -33,8 +33,8 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5721 $"
-GSASIIpath.SetVersionNumber("$Revision: 5721 $")
+filversion = "$Revision: 5777 $"
+GSASIIpath.SetVersionNumber("$Revision: 5777 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -2138,7 +2138,7 @@ def autoBkgCalc(bkgdict,ydata):
         func = pybaselines.whittaker.iarpls
     return func(ydata, lam=lamb, max_iter=10)[0]
     
-def DoCalibInst(IndexPeaks,Inst):
+def DoCalibInst(IndexPeaks,Inst,Sample):
     
     def SetInstParms():
         dataType = Inst['Type'][0]
@@ -2151,15 +2151,29 @@ def DoCalibInst(IndexPeaks,Inst):
             if parm in ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
                 if Inst[parm][2]:
                     insVary.append(parm)
+        if 'C' in dataType or 'B' in dataType and 'Debye' in Sample['Type']:
+            insNames.append('radius')
+            insVals.append(Sample['Gonio. radius'])
+            insNames.append('DisplaceX')
+            insVals.append(Sample['DisplaceX'][0])
+            if Sample['DisplaceX'][1]:
+                insVary.append('DisplaceX')
+            insNames.append('DisplaceY')
+            insVals.append(Sample['DisplaceY'][0])
+            if Sample['DisplaceY'][1]:
+                insVary.append('DisplaceY')
         instDict = dict(zip(insNames,insVals))
         return dataType,instDict,insVary
         
-    def GetInstParms(parmDict,Inst,varyList):
+    def GetInstParms(parmDict,varyList):
         for name in Inst:
             Inst[name][1] = parmDict[name]
+        for name in Sample:
+            if name in ['DisplaceX','DisplaceY']:
+                Sample[name][0] = parmDict[name]
         
-    def InstPrint(Inst,sigDict):
-        print ('Instrument Parameters:')
+    def InstPrint(sigDict):
+        print ('Instrument/Sample Parameters:')
         if 'C' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
             ptfmt = "%12.6f"
         else:
@@ -2175,13 +2189,30 @@ def DoCalibInst(IndexPeaks,Inst):
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
+        for parm in Sample:
+            if parm in  ['DisplaceX','DisplaceY']:
+                ptlbls += "%s" % (parm.center(12))
+                ptstr += ptfmt % (Sample[parm][0])
+                if parm in sigDict:
+                    sigstr += ptfmt % (sigDict[parm])
+                else:
+                    sigstr += 12*' '
         print (ptlbls)
         print (ptstr)
         print (sigstr)
         
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
         parmDict.update(zip(varyList,values))
-        return np.sqrt(peakWt)*(G2lat.getPeakPos(dataType,parmDict,peakDsp)-peakPos)
+        calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)-parmDict['Zero']
+        if 'C' in dataType or 'B' in dataType:
+            const = 18.e-2/(np.pi*parmDict['radius'])
+            shft = -const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
+            # DThX = npasind(10**-3*parmDict['DisplaceX']*npcosd(calcPos)/parmDict['radius'])
+            # DThY = -npasind(10**-3*parmDict['DisplaceY']*npsind(calcPos)/parmDict['radius'])
+            # shft = DThX+DThY+parmDict['Zero']
+            return np.sqrt(peakWt)*(calcPos+shft-peakPos)
+        else:
+            return np.sqrt(peakWt)*(calcPos-peakPos)
 
     peakPos = []
     peakDsp = []
@@ -2190,7 +2221,6 @@ def DoCalibInst(IndexPeaks,Inst):
         if peak[2] and peak[3] and sig > 0.:
             peakPos.append(peak[0])
             peakDsp.append(peak[-1])    #d-calc
-#            peakWt.append(peak[-1]**2/sig**2)   #weight by d**2
             peakWt.append(1./(sig*peak[-1]))   #
     peakPos = np.array(peakPos)
     peakDsp = np.array(peakDsp)
@@ -2224,8 +2254,8 @@ def DoCalibInst(IndexPeaks,Inst):
             G2fil.G2Print ('**** Refinement failed - singular matrix ****')
         
     sigDict = dict(zip(varyList,sig))
-    GetInstParms(parmDict,Inst,varyList)
-    InstPrint(Inst,sigDict)
+    GetInstParms(parmDict,varyList)
+    InstPrint(sigDict)
     return True
 
 def getHeaderInfo(dataType):

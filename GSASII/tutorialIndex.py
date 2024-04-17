@@ -154,7 +154,9 @@ tutorialIndex = (
      '''Small box modeling of G(r); fitting G(r) from nanoparticles'''],
 
 ['PDF 3: fullrmc Stochastic PDF & S(Q) Modeling'], #######################################################
-    ['fullrmc-SF6', 'fullrmc-SF6.html','RMC & Rigid Body Modeling with fullrmc',
+    ['fullrmc-Ni', 'fullrmc-Ni.html','RMC & Rigid Body Modeling with fullrmc-I',
+     '''Big box modeling with real space diffraction data for Ni'''],
+    ['fullrmc-SF6', 'fullrmc-SF6.html','RMC & Rigid Body Modeling with fullrmc-II',
      '''Multiple approaches to big box modeling for real and reciprocal space diffraction data for SF6'''],
 
 ['Stacking Fault Modeling'], #######################################################

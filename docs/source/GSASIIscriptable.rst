@@ -222,8 +222,8 @@ method                                                     Use
 =======================================================  ===============================================================================================================
 :meth:`~GSASIIscriptable.G2PwdrData.set_refinements`     Provides a mechanism to set values and refinement flags for the powder histogram. See 
                                                          :ref:`Histogram_parameters_table` for details.  
-:meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`   Unsets refinement flags for the the powder histogram.
-:meth:`~GSASIIscriptable.G2PwdrData.residuals`           Reports R-factors etc. for the the powder histogram (also see :meth:`~GSASIIscriptable.G2PwdrData.get_wR`) 
+:meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`   Unsets refinement flags for the powder histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.residuals`           Reports R-factors etc. for the powder histogram (also see :meth:`~GSASIIscriptable.G2PwdrData.get_wR`) 
 :meth:`~GSASIIscriptable.G2PwdrData.add_back_peak`       Adds a background peak to the histogram. Also see :meth:`~GSASIIscriptable.G2PwdrData.del_back_peak`
                                                          and :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak`.
 :meth:`~GSASIIscriptable.G2PwdrData.fit_fixed_points`    Fits background to the specified fixed points.
@@ -252,7 +252,9 @@ Class :class:`~GSASIIscriptable.G2Single`
 =======================================================  ===============================================================================================================
 method                                                     Use
 =======================================================  ===============================================================================================================
-(nothing yet defined)
+:meth:`~GSASIIscriptable.G2Single.set_refinements`        Provides a mechanism to set refinement flags for the single crystal histogram. See 
+                                                          :ref:`Histogram_parameters_table` for details.  
+:meth:`~GSASIIscriptable.G2Single.clear_refinements`      Unsets refinement flags for the single crystal powder histogram.
 =======================================================  ===============================================================================================================
 
 

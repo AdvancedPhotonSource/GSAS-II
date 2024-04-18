@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-01-15 15:24:19 -0600 (Mon, 15 Jan 2024) $
-# $Author: toby $
-# $Revision: 5716 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIscriptable.py $
-# $Id: GSASIIscriptable.py 5716 2024-01-15 21:24:19Z toby $
-########### SVN repository information ###################
 #
 """
 Classes and routines defined in :mod:`GSASIIscriptable` follow. 

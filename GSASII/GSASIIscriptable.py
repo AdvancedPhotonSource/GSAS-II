@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
+# $Date: 2024-01-15 15:24:19 -0600 (Mon, 15 Jan 2024) $
 # $Author: toby $
-# $Revision: 5776 $
+# $Revision: 5716 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIscriptable.py $
-# $Id: GSASIIscriptable.py 5776 2024-04-13 02:06:19Z toby $
+# $Id: GSASIIscriptable.py 5716 2024-01-15 21:24:19Z toby $
 ########### SVN repository information ###################
 #
 """
@@ -1497,7 +1497,8 @@ class G2Project(G2ObjectWrapper):
         OK,Msg = G2strMain.SeqRefine(self.filename,None)
 
     def histogram(self, histname):
-        """Returns the histogram named histname, or None if it does not exist.
+        """Returns the histogram object associated with histname, or None 
+        if it does not exist.
 
         :param histname: The name of the histogram (str), or ranId or 
           (for powder) the histogram index.
@@ -1532,6 +1533,47 @@ class G2Project(G2ObjectWrapper):
                 if histogram.id == histname or histogram.ranId == histname:
                     return histogram
 
+    def histType(self, histname):
+        """Returns the type for histogram object associated with histname, or 
+        None if it does not exist.
+
+        :param histname: The name of the histogram (str), or ranId or 
+          (for powder) the histogram index.
+        :returns: 'PWDR' for a Powder histogram, 
+           'HKLF' for a single crystal histogram, or
+           None if the histogram does not exist
+
+        .. seealso::
+            :meth:`~G2Project.histogram`
+        """
+        if isinstance(histname, G2PwdrData):
+            if histname.proj == self:
+                return 'PWDR'
+            else:
+                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
+        if isinstance(histname, G2Single):
+            if histname.proj == self:
+                return 'HKLF'
+            else:
+                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
+        if histname in self.data:
+            if histname.startswith('HKLF '):
+                return 'HKLF'
+            elif histname.startswith('PWDR '):
+                return 'PWDR'
+        try:
+            # see if histname is an id or ranId
+            histname = int(histname)
+        except ValueError:
+            return
+        for histogram in self.histograms():
+            if histogram.name.startswith('HKLF '):
+                if histogram.data['data'][0]['ranId'] == histname:
+                    return 'HKLF'
+            elif histogram.name.startswith('PWDR '):
+                if histogram.id == histname or histogram.ranId == histname:
+                    return 'PWDR'
+                
     def histograms(self, typ=None):
         """Return a list of all histograms, as :class:`G2PwdrData` objects
 
@@ -1895,7 +1937,8 @@ class G2Project(G2ObjectWrapper):
                     raise G2ScriptException("Error: call value {} is not callable".format(fxn))
 
     def set_refinement(self, refinement, histogram='all', phase='all'):
-        """Apply specified refinements to a given histogram(s) or phase(s).
+        """Set refinment flags at the project level to specified histogram(s)
+        or phase(s).
 
         :param dict refinement: The refinements to be conducted
         :param histogram: Specifies either 'all' (default), a single histogram or
@@ -1924,6 +1967,7 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Phase.clear_refinements`
             :meth:`G2Phase.set_HAP_refinements`
             :meth:`G2Phase.clear_HAP_refinements`
+            :meth:`G2Single.set_refinements`
         """
 
         if histogram == 'all':
@@ -1957,19 +2001,27 @@ class G2Project(G2ObjectWrapper):
         pwdr_set = {}
         phase_set = {}
         hap_set = {}
+        xtal_set = {}
+        # divide the refinement set commands across the various objects
         for key, val in refinement.get('set', {}).items():
-            # Apply refinement options
             if G2PwdrData.is_valid_refinement_key(key):
                 pwdr_set[key] = val
             elif G2Phase.is_valid_refinement_key(key):
                 phase_set[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
                 hap_set[key] = val
+            elif G2Single.is_valid_refinement_key(key):
+                xtal_set[key] = val
             else:
                 raise ValueError("Unknown refinement key", key)
 
         for hist in hists:
-            hist.set_refinements(pwdr_set)
+            if isinstance(hist, G2PwdrData):
+                hist.set_refinements(pwdr_set)
+            elif isinstance(hist, G2Single):
+                hist.set_refinements(xtal_set)
+            else:
+                raise KeyError(f"set_refinement error: unknown hist type {hist}")
         for phase in phases:
             phase.set_refinements(phase_set)
         for phase in phases:
@@ -1978,6 +2030,7 @@ class G2Project(G2ObjectWrapper):
         pwdr_clear = {}
         phase_clear = {}
         hap_clear = {}
+        xtal_clear = {}
         for key, val in refinement.get('clear', {}).items():
             # Clear refinement options
             if G2PwdrData.is_valid_refinement_key(key):
@@ -1985,12 +2038,17 @@ class G2Project(G2ObjectWrapper):
             elif G2Phase.is_valid_refinement_key(key):
                 phase_clear[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
-                hap_set[key] = val
+                hap_clear[key] = val   # was _set, seems wrong
+            elif G2Single.is_valid_refinement_key(key):
+                xtal_clear[key] = val
             else:
                 raise ValueError("Unknown refinement key", key)
 
         for hist in hists:
-            hist.clear_refinements(pwdr_clear)
+            if isinstance(hist, G2PwdrData):
+                hist.clear_refinements(pwdr_clear)
+            else:
+                hist.clear_refinements(xtal_clear)
         for phase in phases:
             phase.clear_refinements(phase_clear)
         for phase in phases:
@@ -3459,6 +3517,8 @@ class G2PwdrData(G2ObjectWrapper):
         '''
         if isinstance(hist, G2PwdrData):
             return hist.name
+        elif isinstance(hist, G2Single):
+            return hist.name
         elif hist in [h.name for h in self.proj.histograms()]:
             return hist
         elif type(hist) is int:
@@ -3501,7 +3561,7 @@ class G2PwdrData(G2ObjectWrapper):
             raise ValueError("Invalid key in set_background:", key)
         
     def set_refinements(self, refs):
-        """Sets the histogram refinement parameter 'key' to the specification 'value'.
+        """Sets the PWDR histogram refinement parameter 'key' to the specification 'value'.
 
         :param dict refs: A dictionary of the parameters to be set. See the 
                           :ref:`Histogram_parameters_table` table for a description of
@@ -3582,7 +3642,7 @@ class G2PwdrData(G2ObjectWrapper):
             self.data['Background'][0][1] = orig
 
     def clear_refinements(self, refs):
-        """Clears the refinement parameter 'key' and its associated value.
+        """Clears the PWDR refinement parameter 'key' and its associated value.
 
         :param dict refs: A dictionary of parameters to clear.
           See the :ref:`Histogram_parameters_table` table for what can be specified. 
@@ -4392,10 +4452,13 @@ class G2Phase(G2ObjectWrapper):
             histograms = self.data['Histograms'].keys()
         else:
             histograms = [self._decodeHist(h) for h in histograms 
-                          if self._decodeHist(h) in self.data['Histograms']]    
+                          if self._decodeHist(h) in self.data['Histograms']]
         if not histograms:
             G2fil.G2Print("Warning: Skipping HAP set for phase {}, no selected histograms".format(self.name))
             return
+        # remove non-PWDR (HKLF) histograms
+        histograms = [i for i in histograms if self.proj.histType(i) == 'PWDR']
+        if not histograms: return
         for key, val in refs.items():
             if key == 'Babinet':
                 try:
@@ -4593,6 +4656,8 @@ class G2Phase(G2ObjectWrapper):
         '''Convert a histogram reference to a histogram name string
         '''
         if isinstance(hist, G2PwdrData):
+            return hist.name
+        elif isinstance(hist, G2Single):
             return hist.name
         elif hist in self.data['Histograms']:
             return hist
@@ -5648,6 +5713,73 @@ class G2Single(G2ObjectWrapper):
         self.name = name
         self.proj = proj
         
+    @staticmethod
+    def is_valid_refinement_key(key):
+        valid_keys = ["Single xtal"]
+        return key in valid_keys
+    
+    def set_refinements(self, refs):
+        """Sets the HKLF histogram refinement parameter 'key' to the 
+        specification 'value'.
+
+        :param dict refs: A dictionary of the parameters to be set. See the 
+                          :ref:`Histogram_parameters_table` table for a description of
+                          what these dictionaries should be.
+
+        Example::
+
+            hist.set_refinements({'Scale':True,'Es':False,'Flack':True})
+        """
+        # find the phase associated with this histogram (there is at most one)
+        for p in self.proj.phases():
+            if self.name in p.data['Histograms']:
+                phase = p
+                break
+        else:  # no phase matches
+            raise ValueError(f'set_refinements error: no phase found for {self.name!r}')
+        d = phase.data['Histograms'][self.name]
+        for key, value in refs.items():
+            if key in d:  # Scale & Flack
+                d[key][1] = value
+            elif key in d['Babinet']:  # BabA & BabU
+                d['Babinet'][key][1] = value
+            elif key in d['Extinction'][2]:  # Eg, Es, Ep
+                d['Extinction'][2][key][1] = value        
+            else:
+                raise ValueError(f'set_refinements: {key} is unknown')
+        
+    def clear_refinements(self, refs):
+        """Clears the HKLF refinement parameter 'key' and its associated value.
+
+        :param dict refs: A dictionary of parameters to clear.
+          See the :ref:`Histogram_parameters_table` table for what can be specified. 
+
+        Example::
+
+            hist.clear_refinements(['Scale','Es','Flack'])
+            hist.clear_refinements({'Scale':True,'Es':False,'Flack':True})
+
+        Note that the two above commands are equivalent: the values specified 
+        in the dict in the second command are ignored. 
+        """
+        # find the phase associated with this histogram (there is at most one)
+        for p in self.proj.phases():
+            if self.name in p.data['Histograms']:
+                phase = p
+                break
+        else:  # no phase matches
+            raise ValueError(f'clear_refinements error: no phase found for {self.name!r}')
+        d = phase.data['Histograms'][self.name]
+        for key in refs:
+            if key in d:  # Scale & Flack
+                d[key][1] = False
+            elif key in d['Babinet']:  # BabA & BabU
+                d['Babinet'][key][1] = False
+            elif key in d['Extinction'][2]:  # Eg, Es, Ep
+                d['Extinction'][2][key][1] = False
+            else:
+                raise ValueError(f'clear_refinements: {key} is unknown')
+
 blkSize = 128
 '''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses 
 less memory, must be <=1024 (for polymask/histogram3d)

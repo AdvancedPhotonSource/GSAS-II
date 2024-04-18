@@ -133,8 +133,14 @@ method                                                                  Use
 
 :meth:`~GSASIIscriptable.G2Project.add_single_histogram`                Used to read in a single crystal diffraction dataset into a project file.
 
-:meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` objects
+:meth:`~GSASIIscriptable.G2Project.histogram`                           Finds a histogram from an object, name or random id reference, returning a
+                                                                        a :class:`~GSASIIscriptable.G2PwdrData` or :class:`~GSASIIscriptable.G2Single` object.
 
+:meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` or
+                                                                        as :class:`~GSASIIscriptable.G2Single` objects.
+
+:meth:`~GSASIIscriptable.G2Project.histType`                            Determines the histogram type from an object, name or random id reference.
+                                                                        
 :meth:`~GSASIIscriptable.G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`~GSASIIscriptable.G2Phase` objects
 
 :meth:`~GSASIIscriptable.G2Project.images`                              Provides a list of images in the current project, as :class:`~GSASIIscriptable.G2Image` objects
@@ -591,18 +597,21 @@ separated by commas to save space in the table.
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
-===================== ====================  =================================================
+===================== ====================  ==============================================================
 key                   subkey                explanation
-===================== ====================  =================================================
+===================== ====================  ==============================================================
 Limits                                      The range of 2-theta (degrees) or TOF (in 
                                             microsec) range of values to use. Can
                                             be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
+                                            Available for powder histograms only.
 \                     low                   Sets the low limit
 \                     high                  Sets the high limit
 
 Sample Parameters                           Should be provided as a **list** of subkeys
-                                            to set or clear,\e.g. ['DisplaceX', 'Scale']
+                                            to set or clear refinement flags for,
+                                            e.g. ['DisplaceX', 'Scale']
+                                            Available for powder histograms only.
 \                     Absorption
 \                     Contrast
 \                     DisplaceX             Sample displacement along the X direction
@@ -612,10 +621,11 @@ Sample Parameters                           Should be provided as a **list** of 
 Background                                  Sample background. Value will be a dict or 
                                             a boolean. If True or False, the refine 
                                             parameter for background is set to that.
+                                            Available for powder histograms only.
                                             Note that background peaks are not handled
                                             via this; see 
-                                            :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak` instead.
-                                            When value is a dict,
+                                            :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak` 
+                                            instead. When value is a dict,
                                             supply any of the following keys:
 \                     type                  The background model, e.g. 'chebyschev-1'
 \                     refine                The value of the refine flag, boolean
@@ -633,8 +643,9 @@ Background                                  Sample background. Value will be a d
                                             are allowed). 
 
 Instrument Parameters                       As in Sample Parameters, provide as a **list** of
-                                            subkeys to
-                                            set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
+                                            subkeys to set or clear refinement flags,
+                                            e.g. ['X', 'Y', 'Zero', 'SH/L']
+                                            Available for powder histograms only.
 \                     U, V, W               Gaussian peak profile terms
 \                     X, Y, Z               Lorentzian peak profile terms
 \                     alpha, beta-0,        TOF profile terms 
@@ -646,7 +657,16 @@ Instrument Parameters                       As in Sample Parameters, provide as 
 \                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
 \                     Polariz.              Polarization parameter
 \                     Lam                   Lambda, the incident wavelength
-===================== ====================  =================================================
+
+Single xtal                                 As in Sample Parameters, provide as a **list** of
+                                            subkeys to set or clear refinement flags,
+                                            e.g. [...].
+                                            Available for single crystal histograms only.
+\                     Scale                 Single crystal scale factor
+\                     BabA, BabU            Babinet A & U parameters
+\                     Eg, Es, Ep            Extinction parameters
+\                     Flack                 Flack absolute configuration parameter
+===================== ====================  ==============================================================
 
 .. _Phase_parameters_table:
 

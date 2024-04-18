@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
-# $Author: toby $
-# $Revision: 5776 $
+# $Date: 2023-11-06 12:10:30 -0600 (Mon, 06 Nov 2023) $
+# $Author: vondreele $
+# $Revision: 5699 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 5776 2024-04-13 02:06:19Z toby $
+# $Id: G2export_csv.py 5699 2023-11-06 18:10:30Z vondreele $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_csv` follow:
 '''
@@ -15,7 +15,7 @@ from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5776 $")
+GSASIIpath.SetVersionNumber("$Revision: 5699 $")
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
@@ -570,7 +570,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
             WriteList(self,("h","k","l","m",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
             fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
             for refItem in phasDict['RefList']:
-                h,k,l,m,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:12]
+                h,k,l,m,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:13]
                 self.Write(fmt.format(h,k,l,m,dsp,Fobs,Fcalc,phase,mult,Icorr))
         else:
             WriteList(self,("h","k","l",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))

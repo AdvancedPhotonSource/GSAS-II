@@ -665,11 +665,17 @@ def getGitBinaryReleases():
       download a tar containing that binary distribution. 
     '''
     # Get first page of releases
-    releases = requests.get(
-        url=f"{G2binURL}/releases", 
-        headers=BASE_HEADER
-    ).json()
-    
+    releases = []
+    tries = 0
+    while len(releases) == 0: # this has been known to fail
+        tries += 1
+        if tries > 5: raise requests.RequestException(
+                f'Could not get {G2binURL} releases')
+        releases = requests.get(
+            url=f"{G2binURL}/releases", 
+            headers=BASE_HEADER
+        ).json()
+
     # Get assets of latest release
     assets = requests.get(
         url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",

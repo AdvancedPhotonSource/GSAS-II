@@ -667,35 +667,33 @@ def getGitBinaryReleases():
     # Get first page of releases
     releases = []
     tries = 0
-    while len(releases) == 0: # this has been known to fail, so retry
+    while tries < 5: # this has been known to fail, so retry
         tries += 1
-        if tries > 5: raise requests.RequestException(
-                f'Could not get {G2binURL} releases')
         releases = requests.get(
             url=f"{G2binURL}/releases", 
             headers=BASE_HEADER
         ).json()
-    try:
-        releases[-1]
-    except:
-        print(len(releases))
-        print(type(releases))
-        print(releases)
-        
-    # Get assets of latest release
-    assets = requests.get(
-        url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
-        headers=BASE_HEADER
-    ).json()
+        try:        
+            # Get assets of latest release
+            assets = requests.get(
+                url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
+                headers=BASE_HEADER
+                ).json()
 
-    versions = []
-    URLs = []
-    for asset in assets:
-        if asset['name'].endswith('.tgz'):
-            versions.append(asset['name'][:-4]) # Remove .tgz tail
-            URLs.append(asset['browser_download_url'])
+            versions = []
+            URLs = []
+            for asset in assets:
+                if asset['name'].endswith('.tgz'):
+                    versions.append(asset['name'][:-4]) # Remove .tgz tail
+                    URLs.append(asset['browser_download_url'])
 
-    return dict(zip(versions,URLs))
+            return dict(zip(versions,URLs))
+        except:
+            print('Attempt to download GSAS-II binary releases failed, sleeping for 5 sec and then retrying')
+            import time
+            time.sleep(5)
+
+    raise requests.RequestException(f'Could not get {G2binURL} releases')
 
 def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''Identify the best GSAS-II binary download location from the 

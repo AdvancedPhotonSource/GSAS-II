@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-11-06 12:10:30 -0600 (Mon, 06 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5699 $
+# $Date: 2024-04-18 09:43:08 -0500 (Thu, 18 Apr 2024) $
+# $Author: toby $
+# $Revision: 5781 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 5699 2023-11-06 18:10:30Z vondreele $
+# $Id: G2export_csv.py 5781 2024-04-18 14:43:08Z toby $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_csv` follow:
 '''
@@ -15,7 +15,7 @@ from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5699 $")
+GSASIIpath.SetVersionNumber("$Revision: 5781 $")
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth

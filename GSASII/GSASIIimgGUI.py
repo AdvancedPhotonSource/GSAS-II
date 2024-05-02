@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - image data display routines
 ########### SVN repository information ###################
-# $Date: 2024-02-07 17:00:54 -0600 (Wed, 07 Feb 2024) $
-# $Author: toby $
-# $Revision: 5724 $
+# $Date: 2024-04-30 15:20:21 -0500 (Tue, 30 Apr 2024) $
+# $Author: vondreele $
+# $Revision: 5783 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIimgGUI.py $
-# $Id: GSASIIimgGUI.py 5724 2024-02-07 23:00:54Z toby $
+# $Id: GSASIIimgGUI.py 5783 2024-04-30 20:20:21Z vondreele $
 ########### SVN repository information ###################
 '''Image GUI routines follow.
 '''
@@ -24,7 +24,7 @@ import matplotlib as mpl
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5724 $")
+GSASIIpath.SetVersionNumber("$Revision: 5783 $")
 import GSASIIimage as G2img
 import GSASIImath as G2mth
 import GSASIIElem as G2elem
@@ -1914,7 +1914,6 @@ def UpdateMasks(G2frame,data):
                 print('Invalid limits - pixel mask search not done')
                 if GSASIIpath.GetConfigValue('debug'): print(msg)
         G2plt.PlotExposedImage(G2frame,event=None)
-        
 
     def OnDeleteSpotMask(event):
         data['Points'] = []
@@ -2113,6 +2112,16 @@ def UpdateMasks(G2frame,data):
         data['SpotMask'] = {'esdMul':3.,'spotMask':None}
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
+        
+    def OnAzimuthPlot(event):
+        GkTheta = chr(0x03f4)
+        Obj = event.GetEventObject()
+        ringId = int(Obj.locationcode.split('+')[2])
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
+        image = GetImageZ(G2frame,Controls)
+        RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)
+        G2plt.PlotXY(G2frame,[RingInt,],labelX='Azimuth',labelY='Intensity',newPlot=True,
+            Title='Ring Mask Intensity: 2%s=%.2f'%(GkTheta,data['Rings'][ringId][0]),lines=True)
                     
     G2frame.dataWindow.ClearData()
     startScroll = None
@@ -2275,9 +2284,10 @@ def UpdateMasks(G2frame,data):
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         lbl.SetForegroundColour(wx.Colour(50,50,50))
         mainSizer.Add(lbl,0,wx.EXPAND,0)
-        littleSizer = wx.FlexGridSizer(0,3,0,5)
+        littleSizer = wx.FlexGridSizer(0,4,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' 2-theta,deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' thickness, deg'),0,WACV)
+        littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
         for i in range(len(Rings)):
             if Rings[i]:
@@ -2292,6 +2302,9 @@ def UpdateMasks(G2frame,data):
                 ringDelete = G2G.G2LoggedButton(G2frame.dataWindow,label='delete?',
                     locationcode='Delete+Rings+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(ringDelete,0,WACV)
+                ringPlot = G2G.G2LoggedButton(G2frame.dataWindow,label='Azimuth plot?',
+                    locationcode='Plot+Rings+'+str(i),handler=OnAzimuthPlot)
+                littleSizer.Add(ringPlot,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if Arcs:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Arc masks')

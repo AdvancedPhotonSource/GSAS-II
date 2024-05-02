@@ -667,7 +667,7 @@ def getGitBinaryReleases():
     # Get first page of releases
     releases = []
     tries = 0
-    while len(releases) == 0: # this has been known to fail
+    while len(releases) == 0: # this has been known to fail, so retry
         tries += 1
         if tries > 5: raise requests.RequestException(
                 f'Could not get {G2binURL} releases')
@@ -675,7 +675,13 @@ def getGitBinaryReleases():
             url=f"{G2binURL}/releases", 
             headers=BASE_HEADER
         ).json()
-
+    try:
+        releases[-1]
+    except:
+        print(len(releases))
+        print(type(releases))
+        print(releases)
+        
     # Get assets of latest release
     assets = requests.get(
         url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",

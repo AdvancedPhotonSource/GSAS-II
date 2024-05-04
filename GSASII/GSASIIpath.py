@@ -686,15 +686,30 @@ def getGitBinaryReleases():
                 if asset['name'].endswith('.tgz'):
                     versions.append(asset['name'][:-4]) # Remove .tgz tail
                     URLs.append(asset['browser_download_url'])
-
+            # Cache the binary releases for later use in case GitHub 
+            # prevents us from using a query to get them
+            fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
+            for key in dict(zip(versions,URLs)):
+                fp.write(f'{key} : {res[key]}\n')
+            fp.close()
             return dict(zip(versions,URLs))
         except:
-            print('Attempt to download GSAS-II binary releases failed, sleeping for 5 sec and then retrying')
+            print('Attempt to download GSAS-II binary releases failed, sleeping for 30 sec and then retrying')
             import time
-            time.sleep(5)
+            time.sleep(30)
 
-    raise requests.RequestException(f'Could not get {G2binURL} releases')
-
+    print(f'Could not get releases from {G2binURL}. Using cache')
+    res = {}
+    try:
+        fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'r')
+        for line in fp.readlines():
+            key,val = line.split(':',1)[:2]
+            res[key.strip()] = val.strip()
+        fp.close()
+        return res
+    except:
+        raise IOError('Cache read of releases failed too.')
+    
 def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''Identify the best GSAS-II binary download location from the 
     distributions in the latest release section of the github repository 

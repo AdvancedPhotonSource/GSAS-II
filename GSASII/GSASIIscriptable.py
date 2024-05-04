@@ -301,16 +301,19 @@ def make_empty_project(author=None, filename=None):
     if author:
         controls_data['Author'] = author
 
-    output = {'Constraints': {'data': {'HAP': [], 'Hist': [], 'Phase': [],
-                                       'Global': []}},
+    output = {'Constraints': {'data': {'Hist': [], 'HAP': [], 'Phase': [],
+                                       'Global': [],
+                                       '_seqmode':'auto-wildcard',
+                                       '_seqhist':0}},
               'Controls': {'data': controls_data},
               'Covariance': {'data': {}},
               'Notebook': {'data': ['']},
               'Restraints': {'data': {}},
-              'Rigid bodies': {'data': {'RBIds': {'Residue': [], 'Vector': []},
-                                'Residue': {'AtInfo': {}},
-                                'Vector':  {'AtInfo': {}}}}}
-
+              'Rigid bodies': {'data':
+                    {'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
+                         "Spin": {},
+                         'RBIds':{'Vector':[], 'Residue':[],'Spin':[]}}}
+             }
     names = [['Notebook'], ['Controls'], ['Covariance'],
              ['Constraints'], ['Restraints'], ['Rigid bodies']]
 
@@ -1416,6 +1419,8 @@ class G2Project(G2ObjectWrapper):
                     'Ep': [1e-10, False]}],
                 'Flack': [0.0, False],
                 'Twins': [[np.eye(3),[1.0, False, 0],]]}
+            import GSASIImath as G2mth
+            G2mth.UpdateHKLFvals(phase, hist.data['data'][1])
         elif hist.name.startswith('PWDR '):
             hist['Reflection Lists'][generalData['Name']] = {}
             UseList = phase['Histograms']

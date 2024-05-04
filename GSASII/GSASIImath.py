@@ -6105,5 +6105,24 @@ def annealtests():
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast'))
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann'))
 
+###############################################################################
+#### Reflection calculations
+###############################################################################
+def UpdateHKLFvals(phaseData, reflData):
+    '''Update the flag field and the d-space field in HKLF reflection table.
+
+    Pass tree contents into this so that this can be used for scripting as
+    well as from GUI
+    '''
+    generalData = phaseData['General']
+    SGData = generalData['SGData']
+    Cell = generalData['Cell'][1:7]
+    G,g = G2lat.cell2Gmat(Cell)
+    for iref,ref in enumerate(reflData['RefList']):
+        H = list(ref[:3])
+        ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+        iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+        if iabsnt: ref[3] = 0
+
 if __name__ == '__main__':
     annealtests()

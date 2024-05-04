@@ -1301,6 +1301,7 @@ class GSASII(wx.Frame):
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
+            #====> This is where histograms are linked to a newly-read Phase
             for i in result:
                 histoName = TextList[i]
                 if histoName in HKLFlist:
@@ -1468,6 +1469,7 @@ class GSASII(wx.Frame):
         wx.BeginBusyCursor()
         item, cookie = self.GPXtree.GetFirstChild(sub)
         iph = -1
+        #====> This is where phase(s) are linked to a newly-read HKLF histogram
         while item: # loop over (new) phases
             iph += 1
             data = self.GPXtree.GetItemPyData(item)

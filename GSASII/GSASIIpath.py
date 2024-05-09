@@ -310,15 +310,20 @@ def getG2VersionInfo():
             "contact the developers with what is preferred in this version ****"
                     )
         else:
+            msg = ''
+            if g2repo.active_branch != 'main':
+                msg += f'\nUsing experimental branch "{g2repo.active_branch}"'
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
             if rc is None:
-                msg = "\nOn locally defined branch?"
+                msg += "\nNo history found. On locally defined branch?"
+            elif g2repo.active_branch != 'main':
+                msg += "\nUsing experimental branch {g2repo.active_branch }"
             elif age > 60 and len(rc) > 0:
-                msg = f"\n**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
+                msg += f"\n**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
             elif age > 5 and len(rc) > 0:
-                msg = f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
+                msg += f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
-                msg = f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
+                msg += f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
         return f"  GSAS-II:    {commit.hexsha[:6]} from {ctim} ({age:.1f} days old). Version: {gversion}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()

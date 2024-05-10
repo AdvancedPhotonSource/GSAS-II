@@ -648,8 +648,13 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
     else:
         raise ValueError(f'gitHistory has invalid value specified: {value}')
 
-def getGitBinaryReleases():
+def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
+
+    :param bool cache: when cache is True and the binaries file names 
+       are retrieved (does not always succeed when done via GitHub 
+       Actions), the results are saved in a file for reuse should the 
+       retrieval fail. Default is False so the file is not changed. 
 
     :returns: a URL dict for GSAS-II binary distributions found in the newest 
       release in a GitHub repository. The repo location is defined in global 
@@ -682,21 +687,24 @@ def getGitBinaryReleases():
 
             versions = []
             URLs = []
+            count = 0
             for asset in assets:
                 if asset['name'].endswith('.tgz'):
                     versions.append(asset['name'][:-4]) # Remove .tgz tail
                     URLs.append(asset['browser_download_url'])
+                    count += 1
             # Cache the binary releases for later use in case GitHub 
             # prevents us from using a query to get them
-            fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
-            for key in dict(zip(versions,URLs)):
-                fp.write(f'{key} : {res[key]}\n')
-            fp.close()
+            if cache and count > 4:
+                fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
+                for key in dict(zip(versions,URLs)):
+                    fp.write(f'{key} : {res[key]}\n')
+                fp.close()
             return dict(zip(versions,URLs))
         except:
-            print('Attempt to download GSAS-II binary releases failed, sleeping for 30 sec and then retrying')
+            print('Attempt to list GSAS-II binary releases failed, sleeping for 10 sec and then retrying')
             import time
-            time.sleep(30)
+            time.sleep(10)  # this does not seem to help when GitHub is not letting the queries through
 
     print(f'Could not get releases from {G2binURL}. Using cache')
     res = {}

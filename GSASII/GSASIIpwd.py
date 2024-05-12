@@ -1,11 +1,11 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
 # $Author: vondreele $
-# $Revision: 5777 $
+# $Revision: 5785 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 5777 2024-04-16 13:03:40Z vondreele $
+# $Id: GSASIIpwd.py 5785 2024-05-10 23:09:00Z vondreele $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -33,8 +33,8 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5777 $"
-GSASIIpath.SetVersionNumber("$Revision: 5777 $")
+filversion = "$Revision: 5785 $"
+GSASIIpath.SetVersionNumber("$Revision: 5785 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -1594,6 +1594,11 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc        
     elif 'B' in dataType:
+        Ka2 = False
+        if 'Lam1' in parmDict.keys():
+            Ka2 = True
+            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
+            kRatio = parmDict['I(L2)/I(L1)']
         iPeak = 0
         dsp = 1.0 #for now - fix later
         while True:
@@ -1639,7 +1644,14 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
-                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]
+                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
+                if Ka2:
+                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    iBeg = np.searchsorted(xdata,pos2-fmin)
+                    iFin = np.searchsorted(xdata,pos2+fmin)
+                    if iBeg-iFin:
+                        fp2 = getEpsVoigt(pos2,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
+                        yc[iBeg:iFin] += intens*kRatio*fp2
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc        
@@ -1816,6 +1828,115 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 break
+    elif 'B' in dataType:
+        Ka2 = False
+        if 'Lam1' in parmDict.keys():
+            Ka2 = True
+            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
+            kRatio = parmDict['I(L2)/I(L1)']
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                tth = (pos-parmDict['Zero'])
+                intens = parmDict['int'+str(iPeak)]
+                alpName = 'alp'+str(iPeak)
+                if alpName in varyList or not peakInstPrmMode:
+                    alp = parmDict[alpName]
+                    dada0 = dada1 = 0.0
+                else:
+                    if 'X' in dataType:
+                        alp = G2mth.getPinkXalpha(parmDict,tth)
+                        dada0,dada1 = G2mth.getPinkXalphaDeriv(tth)
+                    else:
+                        alp = G2mth.getPinkNalpha(parmDict,tth)
+                        dada0,dada1 = G2mth.getPinkNalphaDeriv(tth)
+                alp = max(0.0001,alp)
+                betName = 'bet'+str(iPeak)
+                if betName in varyList or not peakInstPrmMode:
+                    bet = parmDict[betName]
+                    dbdb0 = dbdb1 = 0.0
+                else:
+                    if 'X' in dataType:
+                        bet = G2mth.getPinkXbeta(parmDict,tth)
+                        dbdb0,dbdb1 = G2mth.getPinkXbetaDeriv(tth)
+                    else:
+                        bet = G2mth.getPinkNbeta(parmDict,tth)
+                        dbdb0,dbdb1 = G2mth.getPinkNbetaDeriv(tth)
+                bet = max(0.0001,bet)
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList or not peakInstPrmMode:
+                    sig = parmDict[sigName]
+                    dsdU = dsdV = dsdW = 0
+                else:
+                    sig = G2mth.getCWsig(parmDict,tth)
+                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
+                sig = max(sig,0.001)          #avoid neg sigma
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList or not peakInstPrmMode:
+                    gam = parmDict[gamName]
+                    dgdX = dgdY = dgdZ = 0
+                else:
+                    gam = G2mth.getCWgam(parmDict,tth)
+                    dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig/1.e4,gam/100.)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = np.searchsorted(xdata,pos+fmin)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    break
+                dMdpk = np.zeros(shape=(7,len(xdata)))
+                dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                for i in range(1,6):
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]/100.
+                dMdpk[0][iBeg:iFin] += dMdipk[0]/100.
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
+                if Ka2:
+                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    iBeg = np.searchsorted(xdata,pos2-fmin)
+                    iFin = np.searchsorted(xdata,pos2+fmin)
+                    if iBeg-iFin:
+                        dMdipk2 = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                        for i in range(1,6):
+                            dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]/100.
+                        dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
+                        dMdpk[6][iBeg:iFin] += dMdipk2[0]/100.
+                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,
+                            'gam':dMdpk[5]/100.,'L1/L2':dMdpk[6]*intens}
+                for parmName in ['pos','int','alp','bet','sig','gam','L1/L2']:
+                    try:
+                        idx = varyList.index(parmName+str(iPeak))
+                        dMdv[idx] = dervDict[parmName]
+                    except ValueError:
+                        pass
+                if 'U' in varyList:
+                    dMdv[varyList.index('U')] += dsdU*dervDict['sig']
+                if 'V' in varyList:
+                    dMdv[varyList.index('V')] += dsdV*dervDict['sig']
+                if 'W' in varyList:
+                    dMdv[varyList.index('W')] += dsdW*dervDict['sig']
+                if 'X' in varyList:
+                    dMdv[varyList.index('X')] += dgdX*dervDict['gam']
+                if 'Y' in varyList:
+                    dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
+                if 'Z' in varyList:
+                    dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
+                if 'alpha-0' in varyList:
+                    dMdv[varyList.index('alpha-0')] += dada0*dervDict['alp']
+                if 'alpha-1' in varyList:
+                    dMdv[varyList.index('alpha-1')] += dada1*dervDict['alp']
+                if 'beta-0' in varyList:
+                    dMdv[varyList.index('beta-0')] += dbdb0*dervDict['bet']
+                if 'beta-1' in varyList:
+                    dMdv[varyList.index('beta-1')] += dbdb1*dervDict['bet']
+                if 'I(L2)/I(L1)' in varyList:
+                    dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                break        
     elif 'E' in dataType:
         iPeak = 0
         while True:
@@ -1874,96 +1995,6 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 break        
         
-    elif 'B' in dataType:
-        iPeak = 0
-        while True:
-            try:
-                pos = parmDict['pos'+str(iPeak)]
-                tth = (pos-parmDict['Zero'])
-                intens = parmDict['int'+str(iPeak)]
-                alpName = 'alp'+str(iPeak)
-                if alpName in varyList or not peakInstPrmMode:
-                    alp = parmDict[alpName]
-                    dada0 = dada1 = 0.0
-                else:
-                    if 'X' in dataType:
-                        alp = G2mth.getPinkXalpha(parmDict,tth)
-                        dada0,dada1 = G2mth.getPinkXalphaDeriv(tth)
-                    else:
-                        alp = G2mth.getPinkNalpha(parmDict,tth)
-                        dada0,dada1 = G2mth.getPinkNalphaDeriv(tth)
-                alp = max(0.0001,alp)
-                betName = 'bet'+str(iPeak)
-                if betName in varyList or not peakInstPrmMode:
-                    bet = parmDict[betName]
-                    dbdb0 = dbdb1 = 0.0
-                else:
-                    if 'X' in dataType:
-                        bet = G2mth.getPinkXbeta(parmDict,tth)
-                        dbdb0,dbdb1 = G2mth.getPinkXbetaDeriv(tth)
-                    else:
-                        bet = G2mth.getPinkNbeta(parmDict,tth)
-                        dbdb0,dbdb1 = G2mth.getPinkNbetaDeriv(tth)
-                bet = max(0.0001,bet)
-                sigName = 'sig'+str(iPeak)
-                if sigName in varyList or not peakInstPrmMode:
-                    sig = parmDict[sigName]
-                    dsdU = dsdV = dsdW = 0
-                else:
-                    sig = G2mth.getCWsig(parmDict,tth)
-                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
-                sig = max(sig,0.001)          #avoid neg sigma
-                gamName = 'gam'+str(iPeak)
-                if gamName in varyList or not peakInstPrmMode:
-                    gam = parmDict[gamName]
-                    dgdX = dgdY = dgdZ = 0
-                else:
-                    gam = G2mth.getCWgam(parmDict,tth)
-                    dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
-                gam = max(gam,0.001)             #avoid neg gamma
-                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig/1.e4,gam/100.)
-                iBeg = np.searchsorted(xdata,pos-fmin)
-                iFin = np.searchsorted(xdata,pos+fmin)
-                if not iBeg+iFin:       #peak below low limit
-                    iPeak += 1
-                    continue
-                elif not iBeg-iFin:     #peak above high limit
-                    break
-                dMdpk = np.zeros(shape=(7,len(xdata)))
-                dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
-                for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += dMdipk[0]
-                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
-                for parmName in ['pos','int','alp','bet','sig','gam']:
-                    try:
-                        idx = varyList.index(parmName+str(iPeak))
-                        dMdv[idx] = dervDict[parmName]
-                    except ValueError:
-                        pass
-                if 'U' in varyList:
-                    dMdv[varyList.index('U')] += dsdU*dervDict['sig']
-                if 'V' in varyList:
-                    dMdv[varyList.index('V')] += dsdV*dervDict['sig']
-                if 'W' in varyList:
-                    dMdv[varyList.index('W')] += dsdW*dervDict['sig']
-                if 'X' in varyList:
-                    dMdv[varyList.index('X')] += dgdX*dervDict['gam']
-                if 'Y' in varyList:
-                    dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
-                if 'Z' in varyList:
-                    dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
-                if 'alpha-0' in varyList:
-                    dMdv[varyList.index('alpha-0')] += dada0*dervDict['alp']
-                if 'alpha-1' in varyList:
-                    dMdv[varyList.index('alpha-1')] += dada1*dervDict['alp']
-                if 'beta-0' in varyList:
-                    dMdv[varyList.index('beta-0')] += dbdb0*dervDict['bet']
-                if 'beta-1' in varyList:
-                    dMdv[varyList.index('beta-1')] += dbdb1*dervDict['bet']
-                iPeak += 1
-            except KeyError:        #no more peaks to process
-                break        
     else:
         Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']

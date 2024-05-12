@@ -23,7 +23,6 @@ import GSASIIphsGUI as G2phG
 import GSASIIctrlGUI as G2G
 import GSASIIdataGUI as G2gd
 import GSASIIfiles as G2fil
-import GSASIImath as G2mth
 
 try:
     import wx
@@ -1220,7 +1219,6 @@ def MakeHistPhaseWin(G2frame):
                 if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES: return
 
         wx.BeginBusyCursor()
-        #====> This is where a previously input Phase is linked to a selected HKLF entries
         for i in result:
             histoName = TextList[i]
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
@@ -1263,17 +1261,16 @@ def MakeHistPhaseWin(G2frame):
 
     def UpdateHKLFdata(histoName):
         data = getDDataPhaseinfo()
-        #generalData = data['General']
+        generalData = data['General']
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
         refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-        #SGData = generalData['SGData']
-        #Cell = generalData['Cell'][1:7]
-        #G,g = G2lat.cell2Gmat(Cell)
-        #for iref,ref in enumerate(reflData['RefList']):
-        #    H = list(ref[:3])
-        #    ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-        #    iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-        G2mth.UpdateHKLFvals(data, reflData)
+        SGData = generalData['SGData']
+        Cell = generalData['Cell'][1:7]
+        G,g = G2lat.cell2Gmat(Cell)
+        for iref,ref in enumerate(reflData['RefList']):
+            H = list(ref[:3])
+            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
         
     def OnDataCopy(event):
         data = getDDataPhaseinfo()

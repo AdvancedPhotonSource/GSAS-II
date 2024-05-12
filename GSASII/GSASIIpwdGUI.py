@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpwdGUI - powder data display routines
 ########### SVN repository information ###################
-# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
 # $Author: vondreele $
-# $Revision: 5777 $
+# $Revision: 5785 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwdGUI.py $
-# $Id: GSASIIpwdGUI.py 5777 2024-04-16 13:03:40Z vondreele $
+# $Id: GSASIIpwdGUI.py 5785 2024-05-10 23:09:00Z vondreele $
 ########### SVN repository information ###################
 '''GUI routines for PWDR datadree subitems follow.
 '''
@@ -31,7 +31,7 @@ else:
     import pickle as cPickle
 import scipy.interpolate as si
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5777 $")
+GSASIIpath.SetVersionNumber("$Revision: 5785 $")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
@@ -2789,6 +2789,50 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def MakeParameterWindow():
         'Displays the Instrument parameters in the dataWindow frame'
+        
+        def MakeLamSizer():
+            if 'Lam1' in insVal:
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
+                txt = '%7.2f'%(insVal['Azimuth'])
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
+                txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                waveSizer = wx.BoxSizer(wx.HORIZONTAL)
+                waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
+                # PATCH?: for now at least, Source is not saved anywhere before here
+                if 'Source' not in data: data['Source'] = ['CuKa','?']
+                choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','GaKa','MoKa','AgKa','InKa']
+                lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
+                waveSizer.Add(lamPick,0)
+                subSizer.Add(waveSizer,0)
+                mainSizer.Add(subSizer)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),0,WACV)
+                key = 'I(L2)/I(L1)'
+                labelLst.append(key)
+                elemKeysLst.append([key,1])
+                dspLst.append([10,4])
+                refFlgElem.append([key,2])                   
+                ratVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                instSizer.Add(ratVal,0)
+                instSizer.Add(RefineBox(key),0,WACV)
+            else: # single wavelength
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
+                txt = '%7.2f'%(insVal['Azimuth'])
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                instSizer.Add((5,5),0)
+                key = 'Lam'
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append([key,1])
+                dspLst.append([10,6])
+                instSizer.Add(waveVal,0,WACV)
+                refFlgElem.append([key,2])                   
+                instSizer.Add(RefineBox(key),0,WACV)
+                
         G2frame.dataWindow.ClearData()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         instSizer = wx.FlexGridSizer(0,3,5,5)
@@ -2811,48 +2855,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
-                refFlgElem.append(None)                   
-                if 'Lam1' in insVal:
-                    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                    txt = '%7.2f'%(insVal['Azimuth'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
-                    txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
-                    # PATCH?: for now at least, Source is not saved anywhere before here
-                    if 'Source' not in data: data['Source'] = ['CuKa','?']
-                    choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','GaKa','MoKa','AgKa','InKa']
-                    lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
-                    waveSizer.Add(lamPick,0)
-                    subSizer.Add(waveSizer,0)
-                    mainSizer.Add(subSizer)
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),0,WACV)
-                    key = 'I(L2)/I(L1)'
-                    labelLst.append(key)
-                    elemKeysLst.append([key,1])
-                    dspLst.append([10,4])
-                    refFlgElem.append([key,2])                   
-                    ratVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-                    instSizer.Add(ratVal,0)
-                    instSizer.Add(RefineBox(key),0,WACV)
-                else: # single wavelength
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                    txt = '%7.2f'%(insVal['Azimuth'])
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    instSizer.Add((5,5),0)
-                    key = 'Lam'
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
-                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                    labelLst.append(u'Lam (\xc5)')
-                    elemKeysLst.append([key,1])
-                    dspLst.append([10,6])
-                    instSizer.Add(waveVal,0,WACV)
-                    refFlgElem.append([key,2])                   
-                    instSizer.Add(RefineBox(key),0,WACV)
+                refFlgElem.append(None)
+                MakeLamSizer()                   
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)
@@ -2879,20 +2883,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
-                refFlgElem.append(None)                   
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                txt = '%7.2f'%(insVal['Azimuth'])
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                instSizer.Add((5,5),0)
-                key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
-                elemKeysLst.append([key,1])
-                dspLst.append([10,6])
-                instSizer.Add(waveVal,0,WACV)
-                refFlgElem.append([key,2])                   
-                instSizer.Add(RefineBox(key),0,WACV)
+                refFlgElem.append(None)
+                MakeLamSizer()                  
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)

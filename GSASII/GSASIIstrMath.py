@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
+# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
 # $Author: vondreele $
-# $Revision: 5777 $
+# $Revision: 5785 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrMath.py $
-# $Id: GSASIIstrMath.py 5777 2024-04-16 13:03:40Z vondreele $
+# $Id: GSASIIstrMath.py 5785 2024-05-10 23:09:00Z vondreele $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIstrMath` routines, used for refinement computations 
@@ -21,7 +21,7 @@ import scipy.special as sp
 import multiprocessing as mp
 import pickle
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5777 $")
+GSASIIpath.SetVersionNumber("$Revision: 5785 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -2951,7 +2951,7 @@ def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
     parmDict[phfx+'Scale'] = max(1.e-12,parmDict[phfx+'Scale'])                      #put floor on phase fraction scale
     parmDict[hfx+'Scale'] = max(1.e-12,parmDict[hfx+'Scale'])                        #put floor on histogram scale
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3+im]               #scale*multiplicity
-    if 'XC' in parmDict[hfx+'Type']:
+    if 'XC' in parmDict[hfx+'Type'] or 'XB' in parmDict[hfx+'Type']:
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])[0]
     POcorr = 1.0
     if pfx+'SHorder' in parmDict:                 #generalized spherical harmonics texture - takes precidence
@@ -2972,7 +2972,7 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
     'Needs a doc string'    #need powder extinction derivs!
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
-    if 'XC' in parmDict[hfx+'Type']:
+    if 'XC' in parmDict[hfx+'Type'] or 'XB' in parmDict[hfx+'Type']:
         pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])
         dIdPola /= pola
     else:       #'N'
@@ -3947,7 +3947,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if useMP:
                     profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
                 else:
-                    fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))[0]
+                    fp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))[0]/100.
                     # if 'NB' in calcControls[hfx+'histType']:
                     #     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp*.001/cw[iBeg:iFin]
                     # else:
@@ -4229,7 +4229,7 @@ def getPowderProfileDerv(args):
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
-                    dMdpk[i] = refl[11+im]*refl[9+im]*dMdipk[i]
+                    dMdpk[i] = refl[11+im]*refl[9+im]*dMdipk[i]/100.
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}    
             elif 'E' in calcControls[hfx+'histType']:
                 lenBF = iFin-iBeg
@@ -4284,9 +4284,9 @@ def getPowderProfileDerv(args):
 #                    hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[tanth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[tanth,'bet'],
                     hfx+'alpha-0':[1.0,'alp'],hfx+'alpha-1':[sinth,'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[sinth,'bet'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],hfx+'DisplaceX':[dpdX,'pos'],hfx+'DisplaceY':[dpdY,'pos']}
-                if 'X' in calcControls[hfx+'histType']:
-                    names[hfx+'alpha-1'] =  [tanth,'alp']   #preserve pink x-ray definitions
-                    names[hfx+'beta-1'] = [tanth,'bet']
+                # if 'X' in calcControls[hfx+'histType']:
+                #     names[hfx+'alpha-1'] =  [tanth,'alp']   #preserve pink x-ray definitions
+                #     names[hfx+'beta-1'] = [tanth,'bet']
             elif 'E' in calcControls[hfx+'histType']:
                 dpdA,dpdTTh,dpdXE,dpdYE,dpdZE = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'2-theta':[dpdTTh,'pos'],

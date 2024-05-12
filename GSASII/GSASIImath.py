@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
-# $Author: toby $
-# $Revision: 5722 $
+# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
+# $Author: vondreele $
+# $Revision: 5785 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: GSASIImath.py 5785 2024-05-10 23:09:00Z vondreele $
 ########### SVN repository information ###################
 '''
 Routines defined in :mod:`GSASIImath` follow.
@@ -20,7 +20,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5722 $")
+GSASIIpath.SetVersionNumber("$Revision: 5785 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -4896,7 +4896,8 @@ def getPinkXalpha(ins,tth):
     :returns: float getPinkXalpha: peak alpha
     
     '''
-    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
+    return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
+#    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
 
 def getPinkNalphaDeriv(tth):
     '''get alpha derivatives of pink neutron peak profile 
@@ -4916,7 +4917,8 @@ def getPinkXalphaDeriv(tth):
     :returns: float getPinkXalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
     
     '''
-    return 1.0,tand(tth/2.)
+#    return 1.0,tand(tth/2.)
+    return 1.0,sind(tth/2.)
 
 def getPinkNbeta(ins,tth):
     '''get pink neutron peak profile beta
@@ -4940,7 +4942,7 @@ def getPinkXbeta(ins,tth):
     :returns: float getPinkXbeta: peak beta
     
     '''
-    return ins['beta-0']+ins['beta-1']*tand(tth/2.)
+    return ins['beta-0']+ins['beta-1']*sind(tth/2.)
     
 def getPinkNbetaDeriv(tth):
     '''get beta derivatives of pink neutron peak profile
@@ -4960,7 +4962,7 @@ def getPinkXbetaDeriv(tth):
     :returns: list getPinkXbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
     
     '''
-    return 1.0,tand(tth/2.)
+    return 1.0,sind(tth/2.)
     
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     '''set starting peak parameters for single peak fits from plot selection or auto selection
@@ -6104,25 +6106,6 @@ def annealtests():
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy'))
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast'))
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann'))
-
-###############################################################################
-#### Reflection calculations
-###############################################################################
-def UpdateHKLFvals(phaseData, reflData):
-    '''Update the flag field and the d-space field in HKLF reflection table.
-
-    Pass tree contents into this so that this can be used for scripting as
-    well as from GUI
-    '''
-    generalData = phaseData['General']
-    SGData = generalData['SGData']
-    Cell = generalData['Cell'][1:7]
-    G,g = G2lat.cell2Gmat(Cell)
-    for iref,ref in enumerate(reflData['RefList']):
-        H = list(ref[:3])
-        ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-        iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-        if iabsnt: ref[3] = 0
 
 if __name__ == '__main__':
     annealtests()

@@ -12475,19 +12475,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
     #     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
                 
     def UpdateHKLFdata(histoName):
-        #generalData = data['General']
+        generalData = data['General']
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
         refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-        #SGData = generalData['SGData']
-        #Cell = generalData['Cell'][1:7]
-        #G,g = G2lat.cell2Gmat(Cell)
-        #for iref,ref in enumerate(reflData['RefList']):
-        #    H = list(ref[:3])
-        #    ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-        #    iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-        #    if iabsnt:
-        #        ref[3] = 0
-        G2mth.UpdateHKLFvals(data, reflData)
+        SGData = generalData['SGData']
+        Cell = generalData['Cell'][1:7]
+        G,g = G2lat.cell2Gmat(Cell)
+        for iref,ref in enumerate(reflData['RefList']):
+            H = list(ref[:3])
+            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+            if iabsnt:
+                ref[3] = 0
         
     def OnDataCopy(event):
         hist = G2frame.hist

@@ -502,6 +502,31 @@ def ShowVersions():
     print(GSASIIpath.getG2VersionInfo())
 
     if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
+        path2repo = os.path.dirname(GSASIIpath.path2GSAS2)
+        installLoc = os.path.join(path2repo,'GSASII-bin')
+        binarydir = GSASIIpath.getGitBinaryLoc(verbose=True)
+        if not binarydir:
+            versionDict['errors'] += 'GSAS-II does not have a binaries built for this version of Python. You will need to install a supported Python version or build binaries yourself. See https://gsas-ii.readthedocs.io/en/latest/packages.html#python-requirements\n\n'
+        else:
+            msg = 'You do not have binaries installed for GSAS-II. Do you want to have them installed now?'
+            dlg = wx.MessageDialog(None, msg,'Install GSAS-II binaries?',
+                                   wx.YES_NO|wx.ICON_QUESTION)
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+                if result != wx.ID_NO:
+                    try:
+                        GSASIIpath.InstallGitBinary(binarydir, installLoc,
+                                                    nameByVersion=True)
+                        msg = f'Binaries installed from {binarydir} to {installLoc}\n'
+                        print(msg)
+                        GSASIIpath.BinaryPathFailed = False
+                        GSASIIpath.SetBinaryPath(True)
+                    except:
+                        print('Download failed, sorry')
+    if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
         versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
         prog = 'convcell'

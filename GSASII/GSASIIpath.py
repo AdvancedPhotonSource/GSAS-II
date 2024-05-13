@@ -1878,17 +1878,13 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
 
     :param bool printInfo: When True, information is printed to show
       has happened (default is False)
-    :param bool loadBinary: when True, if the binary files fail
-      to load, an attempt is made to download the binaries
-      (default is False).
-
-      TODO: the loadBinary option  not implemented at present and is 
-      not used in any of the calls to SetBinaryPath
+    :param bool loadBinary: no longer in use. This is now done in 
+      :func:`GSASIIdataGUI.ShowVersions`.
     '''
-    # do this only once no matter how many times it is called
+    # run this routine only once no matter how many times it is called
+    # using the following globals to check for repeated calls
     global BinaryPathLoaded,binaryPath,BinaryPathFailed
-    if BinaryPathLoaded: return
-    if BinaryPathFailed: return
+    if BinaryPathLoaded or BinaryPathFailed: return
     try:
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
@@ -1944,34 +1940,10 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
     if binpath:  # were GSAS-II binaries found?
         binaryPath = binpath
         BinaryPathLoaded = True
-    elif not loadBinary:
+    else:
         print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
         BinaryPathFailed = True
         return None
-    else:                                                  # try loading them 
-        BinaryPathFailed = True
-        raise Exception("**** ERROR GSAS-II binary libraries not found and loadBinary not"+
-                        "\nimplemented in SetBinaryPath, GSAS-II cannot run ****""")
-        # if printInfo:
-        #     print('Attempting to download GSAS-II binary files...')
-        # try:
-        #     binpath = DownloadG2Binaries(g2home)
-        # except AttributeError:   # this happens when building in Read The Docs
-        #     if printInfo:
-        #         print('Problem with download')
-        # if binpath and TestSPG(binpath):
-        #     if printInfo:
-        #         print('GSAS-II binary directory: {}'.format(binpath))
-        #     sys.path.insert(0,binpath)
-        #     binaryPath = binpath
-        #     BinaryPathLoaded = True
-        # # this must be imported before anything that imports any .pyd/.so file for GSASII
-        # else:
-        #     if printInfo:
-        #         print(75*'*')
-        #         print('Use of GSAS-II binary directory {} failed!'.format(binpath))
-        #         print(75*'*')
-        #     raise Exception("**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****")
 
     # add the data import and export directory to the search path
     if binpath not in sys.path: sys.path.insert(0,binpath)

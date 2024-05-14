@@ -770,7 +770,7 @@ def GetLineScan(image,data):
     scaley = 1000./pixelSize[1]
     wave = data['wavelength']
     numChans = data['outChannels']
-    LUtth = np.array(data['IOtth'],dtype=np.float)
+    LUtth = np.array(data['IOtth'],dtype=float)
     azm = data['linescan'][1]-data['azmthOff']
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)

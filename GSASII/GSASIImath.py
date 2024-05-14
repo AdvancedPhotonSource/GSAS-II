@@ -4479,7 +4479,7 @@ def SearchMap(generalData,drawingData,Neg=False):
             rho = copy.copy(mapData['rho'])     #don't mess up original
         mapHalf = np.array(rho.shape)/2
         res = mapData['GridStep']*2.
-        incre = np.array(rho.shape,dtype=np.float)
+        incre = np.array(rho.shape,dtype=float)
         step = max(1.0,1./res)+1
         steps = np.array((3*[step,]),dtype='int32')
     except KeyError:

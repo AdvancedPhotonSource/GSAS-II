@@ -1,0 +1,34 @@
+# when run, this starts GitHub Actions workflow in repo GSAS-II-buildtools
+name: Trigger on GSASII-buildtools
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_service:
+        description: 'Run on GSAS-II-buildtools'
+        required: true
+      target_version:
+        description: 'v0.0.1'
+        required: true
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Workflow in GSAS-II-buildtools
+        run: |
+          # Set the required variables
+          repo_owner="AdvancedPhotonSource" 
+          repo_name="GSAS-II-buildtools"
+          event_type="trigger-workflow" 
+          service=${{ github.event.inputs.target_service }}"
+          version="${{ github.event.inputs.target_version }}"
+  
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$repo_owner/$repo_name/dispatches \
+            -d "{\"event_type\": \"$event_type\", \"client_payload\": {\"service\": \"$service\", \"version\": \"$version\", \"unit\": false, \"integration\": true}}"

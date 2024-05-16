@@ -2,14 +2,6 @@
 name: Trigger on GSASII-buildtools
 
 on: workflow_dispatch
-#  workflow_dispatch:
-#    inputs:
-#      target_service:
-#        description: 'Run on GSAS-II-buildtools'
-#        required: true
-#      target_version:
-#        description: 'v0.0.1'
-#        required: true
 
 jobs:
   trigger:
@@ -22,8 +14,6 @@ jobs:
           repo_owner="AdvancedPhotonSource" 
           repo_name="GSAS-II-buildtools"
           event_type="trigger-workflow" 
-#          service="${{ github.event.inputs.target_service }}"
-#          version="${{ github.event.inputs.target_version }}"
           service="Run invoked by GSAS-II repo"
           version="TBD"
   

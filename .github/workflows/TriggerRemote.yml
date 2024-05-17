@@ -14,8 +14,8 @@ jobs:
           repo_owner="AdvancedPhotonSource" 
           repo_name="GSAS-II-buildtools"
           event_type="trigger-workflow" 
-          service="Run invoked by GSAS-II repo"
-          version="TBD"
+          service="test workflow"
+          version=""
   
           curl -L \
             -X POST \

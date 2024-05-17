@@ -11,7 +11,7 @@ jobs:
       - name: Trigger Workflow in GSAS-II-buildtools
         run: |
           # Set the required variables
-          repo_owner="AdvancedPhotonSource" 
+          repo_owner="briantoby" 
           repo_name="GSAS-II-buildtools"
           event_type="trigger-workflow" 
           service="test workflow"

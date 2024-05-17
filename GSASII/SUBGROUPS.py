@@ -27,8 +27,8 @@ pseudosym = 'pseudosym/nph-pseudosym'
 timeout=150  # time to wait for www.cryst.ehu.es to respond; 2.5 minutes
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
-    '''Run Bilboa's SUBGROUPS for a non-standard space group. 
-    This requires doing a post to the Bilboa site, which returns all
+    '''Run Bilbao's SUBGROUPS for a non-standard space group. 
+    This requires doing a post to the Bilbao site, which returns all
     subgroups of the entered space group as the text of a web page 
     with a table containing the space group symbol, the 
     transformation matrix and index for each subgroup.
@@ -136,8 +136,8 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     return result,baseList
 
 def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
-    '''Run Bilboa's k-Subgroupsmag for a non-standard space group. 
-    This requires doing a post to the Bilboa site, which returns all
+    '''Run Bilbao's k-Subgroupsmag for a non-standard space group. 
+    This requires doing a post to the Bilbao site, which returns all
     magnetic subgroups of the entered subgroup as the text of a web page 
     with a table containing the BNS magnetic space group symbol, the 
     transformation matrix and index for each subgroup.

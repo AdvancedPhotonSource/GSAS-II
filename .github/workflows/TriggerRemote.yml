@@ -1,4 +1,13 @@
-# when run, this starts GitHub Actions workflow in repo GSAS-II-buildtools
+# when run, this starts GitHub Actions workflow in another repo (GSAS-II-buildtools)
+
+# 1) note that the GitHub Actions to be run must be on: repository_dispatch:
+# 2) in the organizaion owning the remote repo, one must create a Personal Access Token
+#    (Org level) (Settings/Developer Settings/Personal Access Settings->Tokens
+#    got this to work w/classic having this access allowed: 
+#     repo:status, repo_deployment, public_repo, repo:invite, security_events, manage_runners:org
+#    better w/new style token, I guess
+# 3) save the created token in @ project-level: Settings/Secrets and vars/Actions: Repo secret
+
 name: Trigger on GSASII-buildtools
 
 on: workflow_dispatch
@@ -10,17 +19,14 @@ jobs:
     steps:
       - name: Trigger Workflow in GSAS-II-buildtools
         run: |
-          # Set the required variables
+          # config var follows
           repo_owner="AdvancedPhotonSource" 
-          repo_name="GSAS-II-buildtools"
-          event_type="trigger-workflow" 
-          service="Run invoked by GSAS-II repo"
-          version="TBD"
   
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PAT }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/$repo_owner/$repo_name/dispatches \
-            -d "{\"event_type\": \"$event_type\", \"client_payload\": {\"service\": \"$service\", \"version\": \"$version\", \"unit\": false, \"integration\": true}}"
+            https://api.github.com/repos/$repo_owner/GSAS-II-buildtools/dispatches \
+            -d '{"event_type": "remote build", "client_payload": {"service": "remote build", "unit": false, "integration": true}}'
+            

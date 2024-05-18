@@ -16,7 +16,6 @@ instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99),
             ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126), 
             ('W',0.063), ('X',0.0), ('Y',0.0), ('Z',0.0), ('Zero',0.0)]
 #   comments
-#   dataset naming
 #   sample parameters
 sampleprmList = [('InstrName','APS 1-ID'), ('Temperature', 295.0)]
 #  'Scale': [1.0, True], 'Type': 'Debye-Scherrer',
@@ -37,7 +36,6 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
     file.
     '''
     mode = None
-    azmcnt = -1   # index to array entry in midas output; incremented before use
     midassections = ('InstrumentParameters','Omegas', 'REtaMap', 'OmegaSumFrame')
     def __init__(self):
         if zarr is None:
@@ -255,6 +253,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         else:
             self.repeat = True
             return True
-        del fpbuffer
+        # read last pattern, reset buffer & counter
         print()
+        self.blknum = 0
+        for key in list(fpbuffer.keys()): del fpbuffer[key]
         return True

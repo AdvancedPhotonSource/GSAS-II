@@ -437,7 +437,9 @@ def import_generic(filename, readerlist, fmthint=None, bank=None):
                 rd.objname = os.path.basename(filename)
                 try:
                     flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                except:
+                except Exception as msg:
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('Reader exception',msg)
                     flag = False
                 if flag:
                     # Omitting image loading special cases

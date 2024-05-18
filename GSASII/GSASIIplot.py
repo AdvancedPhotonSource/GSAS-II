@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
-# $Author: vondreele $
-# $Revision: 5777 $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
+# $Author: toby $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIplot.py $
-# $Id: GSASIIplot.py 5777 2024-04-16 13:03:40Z vondreele $
+# $Id: GSASIIplot.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIplot` follow. 
@@ -44,7 +44,7 @@ except (ImportError, ValueError) as err:
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
-GSASIIpath.SetVersionNumber("$Revision: 5777 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5722 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/SUBGROUPS.py $
-# $Id: SUBGROUPS.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: SUBGROUPS.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import re

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 #========== SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5722 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIphsGUI.py $
-# $Id: GSASIIphsGUI.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: GSASIIphsGUI.py 5787 2024-05-18 01:36:24Z toby $
 #========== SVN repository information ###################
 '''
 Main routine here is :func:`UpdatePhaseData`, which displays the phase information
@@ -35,7 +35,7 @@ import subprocess as subp
 import distutils.file_util as disfile
 import scipy.optimize as so
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5722 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

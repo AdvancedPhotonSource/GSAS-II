@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
-# $Author: vondreele $
-# $Revision: 5785 $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
+# $Author: toby $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 5785 2024-05-10 23:09:00Z vondreele $
+# $Id: GSASIImath.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 Routines defined in :mod:`GSASIImath` follow.
@@ -20,7 +20,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5785 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-07-26 20:57:34 -0500 (Wed, 26 Jul 2023) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5635 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIfiles.py $
-# $Id: GSASIIfiles.py 5635 2023-07-27 01:57:34Z toby $
+# $Id: GSASIIfiles.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 This module should not contain any references to wxPython so that it
@@ -24,7 +24,7 @@ import inspect
 import numpy as np
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5635 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 
 if not sys.platform.startswith('win'):
     try:

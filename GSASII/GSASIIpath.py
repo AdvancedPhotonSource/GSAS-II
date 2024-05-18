@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-05-11 21:45:05 -0500 (Sat, 11 May 2024) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5786 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5786 2024-05-12 02:45:05Z toby $
+# $Id: GSASIIpath.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -112,10 +112,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5786 $"
+    :param str RevString: something like "$Revision: 5787 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5786 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5787 $")`` in every python
     file.
     '''
     try:

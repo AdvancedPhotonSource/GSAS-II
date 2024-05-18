@@ -418,7 +418,8 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
             if pkg in import_files:
                 G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
             elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note, found non-standard importer: {}'.format(os.path.abspath(filename)))
+                G2Print('Note: found importer in non-standard location:'+
+                            f'\n\t{os.path.abspath(filename)}')
                 import_files[pkg] = filename
             else:
                 import_files[pkg] = filename

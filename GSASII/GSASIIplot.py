@@ -3553,8 +3553,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             for excl in limits[2:]:
                 xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
             if unequalArrays:
-                if ma.is_masked(xye0):
-                    ExMask[N] = ma.getmask(xye0)   # save excluded regions
                 xye0 = ma.masked_outside(xye[0],limits[1][0],limits[1][1],copy=False) #now mask for limits
                 Lmask = ma.getmask(xye0)   # limits applied
                 ExMask[N] = ExMask[N][~Lmask] # drop points outside limits
@@ -3682,7 +3680,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Ytmp = Y
             # pad or truncate arrays when plotting with mpl.imshow
             if unequalArrays:
-                ContourZ.append(Ytmp[~Lmask])
+                ContourZ.append(ma.MaskedArray(Ytmp,Lmask).compressed())
             elif len(Y) < lenX:
                 Yext = np.ones(lenX)*Ytmp[-1]
                 Yext[:len(X)] = Ytmp
@@ -3696,7 +3694,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             #    against temperature, but this only works if patterns are sorted by T
             ContourY.append(N)
             if unequalArrays:
-                Xlist.append(X[~Lmask])
+                Xlist.append(ma.MaskedArray(X,Lmask).compressed())
             elif ContourX is None:
                 ContourX = X
             Nseq += 1

@@ -1036,9 +1036,10 @@ class GSASII(wx.Frame):
         rd_list = []
         filelist1 = []
         for filename in filelist:
-            # is this a zip file?
-            if os.path.splitext(filename)[1].lower() == '.zip':
-                extractedfiles = G2IO.ExtractFileFromZip(
+            # is this a non-zarr zip file?
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.zip' and '.zarr.zip' not in filename.lower():
+                extractedfiles = G2G.ExtractFileFromZip(
                     filename,parent=self,
                     multipleselect=True)
                 if extractedfiles is None: continue # error or Cancel 
@@ -1051,8 +1052,10 @@ class GSASII(wx.Frame):
         Start = True    #1st time read - clear selections below
         for filename in filelist:
             # is this a zip file?
-            if os.path.splitext(filename)[1].lower() == '.zip':
-                extractedfile = G2IO.ExtractFileFromZip(filename,parent=self)
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.zip' and '.zarr.zip' not in filename.lower():
+#            if os.path.splitext(filename)[1].lower() == '.zip':
+                extractedfile = G2G.ExtractFileFromZip(filename,parent=self)
                 if extractedfile is None: continue # error or Cancel 
                 if extractedfile != filename:
                     filename,self.zipfile = extractedfile,filename # now use the file that was created
@@ -1805,7 +1808,7 @@ class GSASII(wx.Frame):
         basename = os.path.splitext(filename)[0]
         for ext in '.prm','.inst','.ins','.instprm':
             if self.zipfile:
-                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+                instfile = G2G.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(basename + ext)[1],parent=self)
                 if instfile == None:
                     continue
@@ -1844,7 +1847,7 @@ class GSASII(wx.Frame):
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
 #            if self.zipfile:
-#                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+#                instfile = G2G.ExtractFileFromZip(self.zipfile,
 #                    selection=os.path.split(instfile)[1],parent=self)
             if instfile != None and os.path.exists(instfile):
                 #print 'debug: try read',instfile
@@ -6761,7 +6764,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
             'Find cells that index fitted peaks')
         self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search-Bilbao',
-            'Run Bilboa "Lattice Symmetry" to find higher symmetry cells')
+            'Run Bilbao "Lattice Symmetry" to find higher symmetry cells')
         G2G.Define_wxId('wxID_NISTLATSYM')
         self.IndexEdit.Append(G2G.wxID_NISTLATSYM,'Cell Symmetry Search-NIST*LATTICE',
             'Run NIST*LATTICE to find higher symmetry cells')

@@ -3192,7 +3192,7 @@ def UpdatePhaseData(G2frame,Item,data):
         
     def OnSuperSearch(event):
         '''Search for a supergroup matching the current phase using the 
-        Bilboa Pseudosymmetry search (PSEUDO) program
+        Bilbao Pseudosymmetry search (PSEUDO) program
         '''
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'

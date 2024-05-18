@@ -374,8 +374,8 @@ The following web services can also be accessed from computers that
 have internet access. All software needed for this access is included
 with GSAS-II.
 
-  **Bilboa Crystallographic Server** (https://www.cryst.ehu.es):
-    GSAS-II can directly access the Bilboa Crystallographic Server to
+  **Bilbao Crystallographic Server** (https://www.cryst.ehu.es):
+    GSAS-II can directly access the Bilbao Crystallographic Server to
     utilize the k-SUBGROUPSMAG, k-SUBGROUPS and PseudoLattice web utilities for
     computation of space group subgroups, color (magnetic) subgroups &
     lattice search.

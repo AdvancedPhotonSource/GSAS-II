@@ -8982,7 +8982,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
                 if width > 0:       #ellipses
-                    Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+                    try:  # angle was changed to a keyword at some point, needed in mpl 3.8
+                        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,angle=phi,ec=col,fc='none'))
+                    except: # but keep the old version as a patch (5/20/24) in case old call needed for old MPL
+                        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):

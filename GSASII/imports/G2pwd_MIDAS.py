@@ -10,6 +10,7 @@ except ImportError:
     zarr = None
 import numpy as np
 import GSASIIobj as G2obj
+import GSASIIfiles as G2fil
 import GSASIIpath
 
 instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99), 
@@ -181,16 +182,13 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fp.close()
             # overload from file, if found
             instfile = os.path.splitext(filename)[0] + '.instprm'
+            self.instvals = [{},{}]
             if os.path.exists(instfile):
                 self.instmsg = 'zarr and .instprm files'
                 fp = open(instfile,'r')
-                S = fp.readline()
-                while S:
-                    if not S.strip().startswith('#'):
-                        [item,val] = S[:-1].split(':')
-                        fpbuffer['instprm'][item.strip("'")] = eval(val)
-                    S = fp.readline()
-                del fp
+                instLines = fp.readlines()
+                fp.close()
+                nbank,self.instvals = G2fil.ReadInstprm(instLines, bank, self.Sample)
         #======================================================================
         # start reading 
         #======================================================================
@@ -217,6 +215,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         inst.update(self.MIDASinstprm)
         for key,val in inst.items():
             self.pwdparms['Instrument Parameters'][0][key] = [val,val,False]
+        self.pwdparms['Instrument Parameters'][0].update(self.instvals[0])
         samp = {}
         samp.update(sampleprmList)
         samp.update(self.MIDASsampleprm)

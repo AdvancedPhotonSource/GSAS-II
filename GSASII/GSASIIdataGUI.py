@@ -1580,28 +1580,28 @@ class GSASII(wx.Frame):
         File.close()
         return lines        
            
-    def ReadPowderInstprm(self,instLines,bank,databanks,rd):
-        '''Read lines from a GSAS-II (new) instrument parameter file
-        similar to G2pwdGUI.OnLoad
-        If instprm file has multiple banks each with header #Bank n: ..., this 
-        finds matching bank no. to load - problem with nonmatches?
+    def ReadPowderInstprm(self, instLines, bank, rd):
+        '''Read contents of a GSAS-II (new) .instprm instrument parameter file
+        similar to G2pwdGUI.OnLoad. Uses :func:`GSASIIfiles.ReadInstprm`
+        to actually read the file. 
+        If instprm file has multiple banks (where each has header #Bank n: ...,
+        and bank is supplied as None here, this routine (in GUI) uses a 
+        dialog for selection. Note that multibank .instprm files are made by 
+        a "Save all profile" command in Instrument Parameters. 
 
-        Note that this routine performs a similar role to :func:`GSASIIfiles.ReadPowderInstprm`,
-        but this will call a GUI routine for selection when needed. TODO: refactor to combine
-
-        :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
-        :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
-            when bank = n then use parameters; otherwise skip that set. Ignored if BANK n: 
-            not present. NB: this kind of instprm file made by a Save all profile command in Instrument Parameters 
-        :return dict: Inst  instrument parameter dict if OK, or
-                str: Error message if failed    
+        :param list instLines: contents of GSAS-II parameter file as a 
+          list of str; N.B. lines can be concatenated with ';'
+        :param int bank: bank number to use when instprm file has values 
+          for multiple banks (noted by headers of '#BANK n:...'.). This 
+          is ignored for instprm files without those headers. 
+          If bank is None with multiple banks, a selection window is shown. 
+        :param GSASIIobj.ImportPowder rd: The reader object that 
+           will be read from. Sample parameters are placed here.           
+        :returns: Either an instrument parameter dict if OK, or
+                an Error message (str) if read failed    
         '''
         if 'GSAS-II' not in instLines[0]: # not a valid file
             return 'Not a valid GSAS-II instprm file'
-        newItems = []
-        newVals = []
-        Found = False
-        il = 0
         if bank is None: # no bank was specified in the input file, is more than one present in file?
             banklist = set([])
             for S in instLines:
@@ -1613,69 +1613,9 @@ class GSASII(wx.Frame):
             else:
                 bank = 1
             rd.powderentry[2] = bank
-        while il < len(instLines):
-            S = instLines[il]
-            if S[0] == '#':
-                if Found:
-                    break
-                if 'Bank' in S:
-                    if bank == int(S.split(':')[0].split()[1]):
-                        il += 1
-                        S = instLines[il]
-                    else:
-                        il += 1
-                        S = instLines[il]
-                        while il < len(instLines) and '#Bank' not in S:
-                            il += 1
-                            if il == len(instLines):
-                                return 'Bank %d not found in instprm file'%(bank)
-                            S = instLines[il]
-                        continue
-                else:   #a non #Bank file
-                    il += 1
-                    S = instLines[il]
-            Found = True
-            if '"""' in S:
-                delim = '"""' 
-            elif "'''" in S:
-                delim = "'''"
-            else:
-                S = S.replace(' ','')
-                SS = S.strip().split(';')
-                for s in SS:
-                    [item,val] = s.split(':',1)
-                    newItems.append(item)
-                    try:
-                        newVals.append(float(val))
-                    except ValueError:
-                        newVals.append(val)
-                il += 1
-                continue
-            # read multiline values, delimited by ''' or """
-            item,val = S.strip().split(':',1)
-            val = val.replace(delim,'').rstrip()
-            val += '\n'
-            while True:
-                il += 1
-                if il >= len(instLines): break
-                S = instLines[il]
-                if delim in S:
-                    val += S.replace(delim,'').rstrip()
-                    val += '\n'
-                    break
-                else:
-                    val += S.rstrip()
-                    val += '\n'
-            newItems.append(item)
-            newVals.append(val)
-            il += 1
-        if 'Lam1' in newItems:
-            rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
-                'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
-        else:
-            rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
-        return [G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}]
-        
+        nbank,instdict = G2fil.ReadInstprm(instLines, bank, rd.Sample)
+        return instdict
+
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file
 
@@ -1785,7 +1725,7 @@ class GSASII(wx.Frame):
                         sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
                         bet1 = .00226+7.76e+11/difC**4
                         rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
+                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                         Inst[0]['difC'] = [difC,difC,0]
                         Inst[0]['sig-1'] = [sig1,sig1,0]
                         Inst[0]['beta-1'] = [bet1,bet1,0]
@@ -1793,7 +1733,7 @@ class GSASII(wx.Frame):
                     dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                    inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
+                    inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                     if rd.instdict.get('wave'):
                         inst1['Lam'][0] = rd.instdict.get('wave')
                         inst1['Lam'][1] = rd.instdict.get('wave')
@@ -1818,7 +1758,7 @@ class GSASII(wx.Frame):
                 continue
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
-                instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
+                instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1854,7 +1794,7 @@ class GSASII(wx.Frame):
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
                     Lines = self.OpenPowderInstprm(instfile)
                     if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)   #this is [Inst1,Inst2] a pair of dicts
+                        instParmList = self.ReadPowderInstprm(Lines,bank,rd)   #this is [Inst1,Inst2] a pair of dicts
                 else:   #old GSAS style iparm file - could be named anything!
                     Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                     if Iparm:
@@ -1872,7 +1812,7 @@ class GSASII(wx.Frame):
             else:
                 self.ErrorDialog('Open Error',u'Error opening instrument parameter file '
                     +u'{} requested by file {}'.format(instfile,filename))
-        #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
+        #Finally - ask user for Instrument parameters file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             pth = os.path.dirname(filename)     #look in same place data was found
@@ -1895,7 +1835,7 @@ class GSASII(wx.Frame):
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
                 if Lines is not None:
-                    instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
+                    instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -2363,7 +2303,7 @@ class GSASII(wx.Frame):
         # get instrument parameters for it
         rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
             'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
-        Iparm1, Iparm2 = G2fil.ReadPowderInstprm(dI.defaultIparms[0],1,1,rd)
+        nbank, (Iparm1, Iparm2) = G2fil.ReadInstprm(dI.defaultIparms[0],1,rd.Sample)
         rd.idstring = ' CW'
         simType = 'CW'
         # set wavelength

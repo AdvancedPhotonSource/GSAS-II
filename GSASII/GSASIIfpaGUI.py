@@ -24,6 +24,7 @@ import GSASIIdataGUI as G2gd
 import GSASIIplot as G2plt
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIfiles as G2fil
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 simParms = {}
@@ -696,9 +697,7 @@ def MakeSimSizer(G2frame, dlg):
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
-                for item in Parms:
-                    File.write(item+':'+str(Parms[item][1])+'\n')
+                G2fil.WriteInstprm(File, Parms)
                 File.close()
                 print ('Instrument parameters saved to: '+filename)
         finally:

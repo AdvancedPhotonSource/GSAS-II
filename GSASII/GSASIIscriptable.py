@@ -477,8 +477,8 @@ def load_iprms(instfile, reader, bank=None):
             lines = f.readlines()
         if bank is None: 
             bank = reader.powderentry[2] 
-        numbanks = reader.numbanks
-        iparms = G2fil.ReadPowderInstprm(lines, bank, numbanks, reader)
+        nbank,iparms = G2fil.ReadInstprm(lines, bank, reader.Sample)
+
         reader.instfile = instfile
         reader.instmsg = '{} (G2 fmt) bank {}'.format(instfile,bank)
         return iparms

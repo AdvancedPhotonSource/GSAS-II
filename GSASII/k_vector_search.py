@@ -375,17 +375,30 @@ class kVector:
         cost_matrix = np.array(
             [[((i - j) / j)**2. for i in list1] for j in list2]
         )
+        cost_matrix_dd = np.array(
+            [[(i - j)**2. for i in list1] for j in list2]
+        )
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         mapping = {list2[i]: list1[j] for i, j in zip(row_ind, col_ind)}
 
         sum_of_squares = np.sqrt(
-            cost_matrix[row_ind, col_ind].sum() / float(len(list2))
+            cost_matrix[row_ind, col_ind].sum()
+        ) / float(len(list2))
+        ave_dd = np.sqrt(
+            cost_matrix_dd[row_ind, col_ind].sum()
+        ) / float(len(list2))
+        max_dd = np.sqrt(
+            cost_matrix_dd[row_ind, col_ind].max()
         )
 
-        return (mapping, sum_of_squares)
+        return (mapping, sum_of_squares, ave_dd, max_dd)
 
-    def updateCandidateList(self, kpoint: list, k_opt_list: list,
-                            k_opt_dist: list, try_neg: bool) -> tuple:
+    def updateCandidateList(self, kpoint: list,
+                            k_opt_list: list,
+                            k_opt_dist: list,
+                            ave_dd: list,
+                            max_dd: list,
+                            try_neg: bool) -> tuple:
         """For a given k point, we want to find out such a one-to-one matching
         between the calculated satellite peaks and those observed ones that
         gives the minimal overall distance. The optimized overall distance will
@@ -398,6 +411,10 @@ class kVector:
         :param k_opt_list: list of top candidates of k vectors
         :param k_opt_dist: list of the `indicator distances` of those top
                            candidates of k vectors
+        :param ave_dd: list of ave. delta d values of those top candidates of
+                       k vectors
+        :param max_dd: list of max. delta d values of those top candidates of
+                       k vectors
         :param try_neg: flag for controlling whether to try the negative k
                         vector corresponding to the input k vector trial. For
                         the corners of the irreducible Brillouin zone wedge, we
@@ -437,14 +454,16 @@ class kVector:
 
         satellite_peaks = list(set(satellite_peaks))
 
-        _, indicator_dist = self.unique_closest(
+        _, indicator_dist, ave_dd_v, max_dd_v = self.unique_closest(
             satellite_peaks, self.superPeaks
         )
 
         if indicator_dist <= self.threshold:
             k_opt_list = [kpoint]
             k_opt_dist = [indicator_dist]
-            return (k_opt_list, k_opt_dist)
+            ave_dd = [ave_dd_v]
+            max_dd = [max_dd_v]
+            return (k_opt_list, k_opt_dist, ave_dd, max_dd)
         else:
             if len(k_opt_list) < 10:
                 k_opt_new = self.insIntoSortedList(
@@ -452,6 +471,8 @@ class kVector:
                     indicator_dist
                 )
                 k_opt_list.insert(k_opt_new[1], kpoint)
+                ave_dd.insert(k_opt_new[1], ave_dd_v)
+                max_dd.insert(k_opt_new[1], max_dd_v)
             else:
                 if indicator_dist < k_opt_dist[9]:
                     k_opt_new = self.insIntoSortedList(
@@ -459,12 +480,16 @@ class kVector:
                         indicator_dist
                     )
                     k_opt_list.insert(k_opt_new[1], kpoint)
+                    ave_dd.insert(k_opt_new[1], ave_dd_v)
+                    max_dd.insert(k_opt_new[1], max_dd_v)
                 else:
-                    return (k_opt_list, k_opt_dist)
+                    return (k_opt_list, k_opt_dist, ave_dd, max_dd)
 
             return (
                 k_opt_list[:10],
-                k_opt_new[0][:10]
+                k_opt_new[0][:10],
+                ave_dd,
+                max_dd
             )
 
     def kOptFinder(self) -> list:
@@ -486,6 +511,8 @@ class kVector:
 
         k_opt_list = list()
         k_opt_dist = list()
+        k_opt_ad = list()
+        k_opt_md = list()
 
         if len(self.nucPeaks) < np.floor(len(self.superPeaks) / 2):
             err_msg = "The number of nucleus peaks is not enough for "
@@ -502,10 +529,14 @@ class kVector:
                         kpoint,
                         k_opt_list,
                         k_opt_dist,
+                        k_opt_ad,
+                        k_opt_md,
                         True
                     )
                     k_opt_list = k_opt_tmp[0]
                     k_opt_dist = k_opt_tmp[1]
+                    k_opt_ad = k_opt_tmp[2]
+                    k_opt_md = k_opt_tmp[3]
                     found_opt = k_opt_dist[0] <= self.threshold
 
                     msg = "[Info] k point (primitive setting): "
@@ -522,7 +553,7 @@ class kVector:
                         te = stop_search - start_search
                         print(f"[Info] Time elapsed: {te} s")
 
-                        return (k_opt_list, k_opt_dist)
+                        return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
 
                 if self.option == 1 or self.option == 2:
                     # search along the k-path
@@ -553,10 +584,14 @@ class kVector:
                                 kpoint,
                                 k_opt_list,
                                 k_opt_dist,
+                                k_opt_ad,
+                                k_opt_md,
                                 True
                             )
                             k_opt_list = k_opt_tmp[0]
                             k_opt_dist = k_opt_tmp[1]
+                            k_opt_ad = k_opt_tmp[2]
+                            k_opt_md = k_opt_tmp[3]
                             found_opt = k_opt_dist[0] <= self.threshold
 
                             if len(k_opt_list) == 1 and found_opt:
@@ -601,12 +636,18 @@ class kVector:
                     k_opt_dist = [
                         item[1] for item in results
                     ]
+                    k_opt_ad = [
+                        item[2] for item in results
+                    ]
+                    k_opt_md = [
+                        item[3] for item in results
+                    ]
 
                 stop_search = time.time()
                 te = stop_search - start_search
                 print(f"[Info] Time elapsed: {te} s")
 
-                return (k_opt_list, k_opt_dist)
+                return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
             else:
                 if self.option == 0:
                     err_msg = "The number of nucleus peaks is less than that "

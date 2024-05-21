@@ -5739,6 +5739,8 @@ def UpdateUnitCellsGrid(G2frame, data):
 
         k_opt = k_search.kOptFinder()
         k_opt_dist = k_opt[1]
+        ave_dd = k_opt[2]
+        max_dd = k_opt[3]
         k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
 
         wx.EndBusyCursor()
@@ -5749,7 +5751,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             cells.append([])
             laue = 'P1'
             cells[-1] += ['?', 0, laue]
-            c = k_v + [k_opt_dist[i], 0., 0.]
+            c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
             cells[-1] += c
             cells[-1] += [0, False, False]
             # G2frame.OnFileSave(event) # forces save of project
@@ -5906,7 +5908,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
         G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get(
-            'tolerance', 0.005)
+            'tolerance', 0.0)
         G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get(
             'kx_step', 0.01
         )
@@ -5950,7 +5952,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataWindow,
             G2frame.kvecSearch,
             'kx_step',
-            nDig=[6, 2],
+            nDig=[6, 3],
             typeHint=float,
             size=(50, -1)
         )
@@ -5966,7 +5968,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataWindow,
             G2frame.kvecSearch,
             'ky_step',
-            nDig=[6, 2],
+            nDig=[6, 3],
             typeHint=float,
             size=(50, -1)
         )
@@ -5982,7 +5984,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataWindow,
             G2frame.kvecSearch,
             'kz_step',
-            nDig=[6, 2],
+            nDig=[6, 3],
             typeHint=float,
             size=(50, -1)
         )
@@ -6013,7 +6015,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataWindow,
             G2frame.kvecSearch,
             'tolerance',
-            nDig=[8, 4],
+            nDig=[10, 6],
             typeHint=float,
             size=(70, -1)
         )
@@ -6248,8 +6250,13 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.kvecSearch['mode'] == True
             colLabels = ['use']
             Types = [wg.GRID_VALUE_BOOL]
-            colLabels += ['kx', 'ky', 'kz', 'Ave. ' + u'\u03B4' + 'd/d']
-            Types += (4 * [wg.GRID_VALUE_FLOAT + ':10, 5'])
+            colLabels += [
+                'kx', 'ky', 'kz',
+                'Ave. ' + u'\u03B4' + 'd/d',
+                'Ave. ' + u'\u03B4' + 'd',
+                'Max. ' + u'\u03B4' + 'd'
+            ]
+            Types += (6 * [wg.GRID_VALUE_FLOAT + ':10, 5'])
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n k-vector search results:'))
         elif mode == 1:
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'))

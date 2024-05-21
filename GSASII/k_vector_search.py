@@ -502,7 +502,7 @@ class kVector:
                         kpoint,
                         k_opt_list,
                         k_opt_dist,
-                        False
+                        True
                     )
                     k_opt_list = k_opt_tmp[0]
                     k_opt_dist = k_opt_tmp[1]

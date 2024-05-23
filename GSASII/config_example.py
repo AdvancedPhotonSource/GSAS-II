@@ -264,11 +264,11 @@ shown. This should not need to be changed manually.
 '''
 
 SeparateHistPhaseTreeItem = False
-'''When this is set to True, the parameters for each histogram in each phase
-are placed in a separate 1st-level tree item rather than in the Data tab 
-for each phase. Requires GSAS-II be restarted to take effect. Default is False.
-
-This option is under development and is not fully tested. 
+'''When this is set to True, the parameters specific to each histogram 
+and phase together (such as peak shapes & phase fractions) 
+are shown as a 1st-level tree item rather than inside each Phase's
+Data tab. After changing this, GSAS-II needs to be restarted for the 
+change to take effect. Default is False.
 '''
 
 svn_exec = None

@@ -12371,71 +12371,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
 ##### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
     def OnHklfAdd(event):
-        keyList = list(data['Histograms'].keys())
-        TextList = []
-        if not G2frame.GPXtree.GetCount():
-            return
-        
-        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.GPXtree.GetItemText(item)
-            if name not in keyList and 'HKLF' in name:
-                TextList.append(name)
-            item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                        
-        if not TextList: 
-            G2G.G2MessageBox(G2frame,'No reflections')
-            return
-        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-            'Use data',TextList)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-            else:
-                return
-        finally:
-            dlg.Destroy()
+        '''Called to link a Single Xtal (HKLF) dataset to the current phase.
+        Most commonly, the histogram and phase are linked when the latter
+        item is read in (routines OnImportPhase or OnImportSfact in
+        func:`GSASIIdataGUI.GSASIImain`, but one can defer this or change
+        the linking later using this routine.
 
-        # get the histograms used in other phases
-        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-        usedHKLFhists = [] # used single-crystal histograms
-        for p in usedHistograms:
-            for h in usedHistograms[p]:
-                if h.startswith('HKLF ') and h not in usedHKLFhists:
-                    usedHKLFhists.append(h)
-        # check that selected single crystal histograms are not already in use!
-        for i in result:
-            used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
-            if used:
-                msg = 'The following single crystal histogram(s) are already in use'
-                for i in used:
-                    msg += '\n  '+str(i)
-                msg += '\nAre you sure you want to add them to this phase? '
-                msg += 'Associating a single crystal dataset to >1 histogram is usually an error, '
-                msg += 'so No is suggested here.'
-                if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES: return
-
-        wx.BeginBusyCursor()
-        for i in result:
-            histoName = TextList[i]
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-            refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-            data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                'Extinction':['Lorentzian','None',
-                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
-                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
-            if 'TwMax' in reflData:     #nonmerohedral twins present
-                data['Histograms'][histoName]['Twins'] = []
-                for iT in range(reflData['TwMax'][0]+1):
-                    if iT in reflData['TwMax'][1]:
-                        data['Histograms'][histoName]['Twins'].append([False,0.0])
-                    else:
-                        data['Histograms'][histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
-            else:   #no nonmerohedral twins
-                data['Histograms'][histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
-            UpdateHKLFdata(histoName)
+        Note that the capability here is duplicated in routine OnHklfAdd
+        inside :func:`GSASIIddataGUI.MakeHistPhaseWin`.
+        '''
+        result = CheckAddHKLF(G2frame,data)
+        if result is None: return
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
-        wx.EndBusyCursor()
         
     def OnDataUse(event):
 #        hist = G2frame.hist
@@ -12454,39 +12401,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 dlg.Destroy()
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
 
-    # Note: function replaced by one with identical name, below
-    # def UpdateHKLFdata(histoName):
-    #     generalData = data['General']
-    #     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-    #     refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-    #     SGData = generalData['SGData']
-    #     Cell = generalData['Cell'][1:7]
-    #     G,g = G2lat.cell2Gmat(Cell))
-    #         try:
-    #             if dlg.ShowModal() == wx.ID_OK:
-    #                 sel = dlg.GetSelections()
-    #                 for id,item in enumerate(keyList):  # <<<<< something is likely wrong here
-    #                     if id in sel:
-    #                         data['Histograms'][item]['Use'] = True
-    #                     else:
-    #                         data['Histograms'][item]['Use'] = False                        
-    #         finally:
-    #             dlg.Destroy()
-    #     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
-                
-    def UpdateHKLFdata(histoName):
-        generalData = data['General']
-        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-        SGData = generalData['SGData']
-        Cell = generalData['Cell'][1:7]
-        G,g = G2lat.cell2Gmat(Cell)
-        for iref,ref in enumerate(reflData['RefList']):
-            H = list(ref[:3])
-            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-            if iabsnt:
-                ref[3] = 0
         
     def OnDataCopy(event):
         hist = G2frame.hist
@@ -16632,6 +16546,68 @@ of the crystal structure.
             G2frame.phaseDisplay.SetSelection(ind)
             return
     ChangePage(0)
+
+def CheckAddHKLF(G2frame,data):
+    '''GUI actions associated with linking a Phase to a HKLF histogram.
+
+    This gets called in two routines named OnHklfAdd (one inside
+    :func:`GSASIIphsGUI.UpdatePhaseData` and the other inside
+    :func:`GSASIIddataGUI.MakeHistPhaseWin`).
+    '''
+    keyList = list(data['Histograms'].keys())
+    TextList = []
+    if not G2frame.GPXtree.GetCount():
+        return
+
+    item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+    while item:
+        name = G2frame.GPXtree.GetItemText(item)
+        if name not in keyList and 'HKLF' in name:
+            TextList.append(name)
+        item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+    if not TextList:
+        G2G.G2MessageBox(G2frame,'No HKLF histograms')
+        return
+    dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select HKLF reflection sets to use',
+            'Use data',TextList)
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            result = dlg.GetSelections()
+        else:
+            print('Nothing selected')
+            return
+    finally:
+        dlg.Destroy()
+
+    # get the histograms used in other phases
+    phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+    usedHKLFhists = [] # used single-crystal histograms
+    for p in usedHistograms:
+        for h in usedHistograms[p]:
+            if h.startswith('HKLF ') and h not in usedHKLFhists:
+                usedHKLFhists.append(h)
+    # check that selected single crystal histograms are not already in use!
+    for i in result:
+        used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
+        if used:
+          msg = 'The following single crystal histogram(s) are already in use'
+          for i in used:
+              msg += '\n  '+str(i)
+          msg += '\nAre you sure you want to add them to this phase? '
+          msg += 'Associating a single crystal dataset to >1 histogram is usually an error, '
+          msg += 'so No is suggested here.'
+          if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES:
+            return
+
+    wx.BeginBusyCursor()
+    for i in result:
+        histoName = TextList[i]
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
+        G2mth.UpdateHKLFvals(histoName, data, reflData)
+
+    wx.EndBusyCursor()
+    return result
 
 def checkPDFfit(G2frame):
     '''Checks to see if PDFfit2 is available and can be imported. PDFfit2 can be installed 

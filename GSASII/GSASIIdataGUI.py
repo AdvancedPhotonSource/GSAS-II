@@ -115,36 +115,6 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
     'abc*':np.eye(3), }
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
-
-def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
-    ''' Sets default values for various histogram parameters
-    param: str dType: 3 letter histogram type, e.g. 'PNT'
-    param: str histoName: histogram name as it aoears in tree
-    param: NShkl int: number of generalized mustrain coefficients - depends on symmetry
-    param: NDij int: number of hydrostatic strain coefficients - depends on symmetry
-    
-    returns dict: default data for histogram - found in data tab for phase/histogram 
-    '''
-    if dType in ['SXC','SNC','SEC']:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}],
-            'Flack':[0.0,False]}
-    elif dType == 'SNT':
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
-    elif 'P' in dType:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],'Type':dType,
-            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
-            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                [1.,1.,1.,0.,0.,0.],6*[False,]],
-            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                NShkl*[0.01,],NShkl*[False,]],
-            'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
         
 def GetDisplay(pos):
     '''Gets display number (0=main display) for window position (pos). If pos outside all displays
@@ -1320,47 +1290,22 @@ class GSASII(wx.Frame):
             data = self.GPXtree.GetItemPyData(item)
             item, cookie = self.GPXtree.GetNextChild(sub, cookie)
             if phaseName not in newPhaseList: continue
-            generalData = data['General']
-            SGData = generalData['SGData']
-            Super = generalData.get('Super',0)
-            SuperVec = []
-            if Super:
-                SuperVec = np.array(generalData['SuperVec'][0])
-            UseList = data['Histograms']
+            SGData = data['General']['SGData']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             #====> This is where histograms are linked to a newly-read Phase
             for i in result:
                 histoName = TextList[i]
                 if histoName in HKLFlist:
-                    #redo UpdateHKLFdata(histoName) here:
                     Id = GetGPXtreeItemId(self,self.root,histoName)
                     refDict,reflData = self.GPXtree.GetItemPyData(Id)
-                    G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
-                    Super = reflData.get('Super',0)
-                    for iref,ref in enumerate(reflData['RefList']):
-                        hkl = ref[:3]
-                        if Super:
-                            H = list(hkl+SuperVec*ref[3])
-                        else:
-                            H = hkl
-                        ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                        iabsnt = G2spc.GenHKLf(H,SGData)[0]
-                        if iabsnt:  #flag space gp. absences
-                            if Super: 
-                                if not ref[2+Super]:
-                                    ref[3+Super] = 0
-                                else:
-                                    ref[3+Super] = 1    #twin id
-                            else:
-                                ref[3] = 0
-                    UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
+                    G2mth.UpdateHKLFvals(histoName, data, reflData)
                 elif histoName in PWDRlist:
                     Id = GetGPXtreeItemId(self,self.root,histoName)
                     Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Instrument Parameters'))[0]
                     refList = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Reflection Lists'))
-                    refList[generalData['Name']] = {}
-                    UseList[histoName] = SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
+                    refList[data['General']['Name']] = {}
+                    data['Histograms'][histoName] = G2mth.SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+histoName)
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
@@ -1503,47 +1448,13 @@ class GSASII(wx.Frame):
             data = self.GPXtree.GetItemPyData(item)
             item, cookie = self.GPXtree.GetNextChild(sub, cookie)
             if iph not in result: continue
-            generalData = data['General']
-            SGData = generalData['SGData']
-            Super = generalData.get('Super',0)
-            SuperVec = []
-            if Super:
-                SuperVec = np.array(generalData['SuperVec'][0])
-            UseList = data['Histograms']
             for histoName in newHistList:
-                #redo UpdateHKLFdata(histoName) here:
                 Id = GetGPXtreeItemId(self,self.root,histoName)
                 refDict,reflData = self.GPXtree.GetItemPyData(Id)
-                UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
-                G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
-                if 'TwMax' in reflData:     #nonmerohedral twins present
-                    UseList[histoName]['Twins'] = []
-                    for iT in range(reflData['TwMax'][0]+1):
-                        if iT in reflData['TwMax'][1]:
-                            UseList[histoName]['Twins'].append([False,0.0])
-                        else:
-                            UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
-                else:   #no nonmerohedral twins
-                    UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
-                for iref,ref in enumerate(reflData['RefList']):
-                    hkl = ref[:3]
-                    if Super:
-                        H = list(hkl+SuperVec*ref[3])
-                    else:
-                        H = hkl
-                    ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                    iabsnt,mul,Uniq,phi = G2spc.GenHKLf(H,SGData)
-                    if iabsnt:  #flag space gp. absences
-                        if Super: 
-                            if not ref[2+Super]:
-                                ref[3+Super] = 0
-                            else:
-                                ref[3+Super] = 1    #twin id?
-                        else:
-                            ref[3] = 0
+                G2mth.UpdateHKLFvals(histoName, data, reflData)
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         wx.EndBusyCursor()
-        self.EnableRefineCommand()        
+        self.EnableRefineCommand()
         return # success
 
     def _Add_ImportMenu_powder(self,parent):
@@ -2080,7 +1991,7 @@ class GSASII(wx.Frame):
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             for histoName in newHistList:
-                UseList[histoName] = SetDefaultDData(Iparm1['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
+                UseList[histoName] = G2mth.SetDefaultDData(Iparm1['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 Id = GetGPXtreeItemId(self,self.root,histoName)
                 refList = self.GPXtree.GetItemPyData(
                     GetGPXtreeItemId(self,Id,'Reflection Lists'))
@@ -2264,7 +2175,7 @@ class GSASII(wx.Frame):
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
-            UseList[HistName] = SetDefaultDData('PWDR',HistName,NShkl=NShkl,NDij=NDij)
+            UseList[HistName] = G2mth.SetDefaultDData('PWDR',HistName,NShkl=NShkl,NDij=NDij)
             Id = GetGPXtreeItemId(self,self.root,HistName)
             refList = self.GPXtree.GetItemPyData(
                 GetGPXtreeItemId(self,Id,'Reflection Lists'))

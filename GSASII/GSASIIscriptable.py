@@ -217,33 +217,6 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
         file.close()
     G2fil.G2Print('gpx file saved as %s'%ProjFile)
 
-def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
-    '''Create an initial Histogram dictionary
-
-    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
-    '''
-    if dType in ['SXC','SNC','SEC',]:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}],
-            'Flack':[0.0,False]}
-    elif dType == 'SNT':
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
-    elif 'P' in dType:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],
-            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
-            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                [1.,1.,1.,0.,0.,0.],6*[False,]],
-            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                NShkl*[0.01,],NShkl*[False,]],
-            'HStrain':[NDij*[0.0,],NDij*[False,]],
-            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
-
-
 def PreSetup(data):
     '''Create part of an initial (empty) phase dictionary
 
@@ -301,16 +274,19 @@ def make_empty_project(author=None, filename=None):
     if author:
         controls_data['Author'] = author
 
-    output = {'Constraints': {'data': {'HAP': [], 'Hist': [], 'Phase': [],
-                                       'Global': []}},
+    output = {'Constraints': {'data': {'Hist': [], 'HAP': [], 'Phase': [],
+                                       'Global': [],
+                                       '_seqmode':'auto-wildcard',
+                                       '_seqhist':0}},
               'Controls': {'data': controls_data},
               'Covariance': {'data': {}},
               'Notebook': {'data': ['']},
               'Restraints': {'data': {}},
-              'Rigid bodies': {'data': {'RBIds': {'Residue': [], 'Vector': []},
-                                'Residue': {'AtInfo': {}},
-                                'Vector':  {'AtInfo': {}}}}}
-
+              'Rigid bodies': {'data':
+                    {'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
+                         "Spin": {},
+                         'RBIds':{'Vector':[], 'Residue':[],'Spin':[]}}}
+             }
     names = [['Notebook'], ['Controls'], ['Covariance'],
              ['Constraints'], ['Restraints'], ['Rigid bodies']]
 
@@ -1398,33 +1374,22 @@ class G2Project(G2ObjectWrapper):
 
             :meth:`~G2Project.histogram`
             :meth:`~G2Project.phase`"""
+        import GSASIImath as G2mth
         hist = self.histogram(histogram)
         phase = self.phase(phase)
 
         generalData = phase['General']
 
         if hist.name.startswith('HKLF '):
-            phase['Histograms'][hist.name] = {
-                'Histogram': hist.name,
-                'Show': False,
-                'Scale': [1.0, True],
-                'Type': hist.data['data'][1]['Type'],
-                'Babinet': {'BabA': [0.0, False], 'BabU': [0.0, False]},
-                'Extinction': ['Lorentzian','None',{
-                    'Tbar': 0.1,
-                    'Cos2TM': 0.955,
-                    'Eg': [1e-10, False],
-                    'Es': [1e-10, False],
-                    'Ep': [1e-10, False]}],
-                'Flack': [0.0, False],
-                'Twins': [[np.eye(3),[1.0, False, 0],]]}
+            G2mth.UpdateHKLFvals(hist.name, phase, hist.data['data'][1])
         elif hist.name.startswith('PWDR '):
             hist['Reflection Lists'][generalData['Name']] = {}
             UseList = phase['Histograms']
             SGData = generalData['SGData']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
-            UseList[hist.name] = SetDefaultDData('PWDR', hist.name, NShkl=NShkl, NDij=NDij)
+            UseList[hist.name] = G2mth.SetDefaultDData(
+                'PWDR', hist.name, NShkl=NShkl, NDij=NDij)
             UseList[hist.name]['hId'] = hist.id
             for key, val in [('Use', True), ('LeBail', False),
                              ('Babinet', {'BabA': [0.0, False],

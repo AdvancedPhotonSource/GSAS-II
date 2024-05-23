@@ -292,16 +292,16 @@ def getG2VersionInfo():
         # get sequential version # (tag)
         gversion = ""
         if len(tags) >= 1:
-            gversion = f"#{tags[0]}"
+            gversion = f"Tag: #{tags[0]}"
         else:
             for h in list(g2repo.iter_commits(commit))[:50]: # (don't go too far back)
                 for t in g2repo.git.tag('--points-at',h).split('\n'):
                     if t.isnumeric():
-                        gversion = f"last tag #{t}"
+                        gversion = f"Last tag: #{t}"
                         break
                 if gversion: break
             else:
-                gversion = "#?" # if all else fails
+                gversion = "No tag?!" # if all else fails
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -311,20 +311,18 @@ def getG2VersionInfo():
                     )
         else:
             msg = ''
-            if g2repo.active_branch != 'main':
-                msg += f'\nUsing experimental branch "{g2repo.active_branch}"'
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
             if rc is None:
-                msg += "\nNo history found. On locally defined branch?"
-            elif g2repo.active_branch != 'main':
-                msg += "\nUsing experimental branch {g2repo.active_branch }"
+                msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
+            elif str(g2repo.active_branch) != 'master':
+                msg += f'\n\tUsing development branch "{g2repo.active_branch}"'
             elif age > 60 and len(rc) > 0:
-                msg += f"\n**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
+                msg += f"\n\t**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
             elif age > 5 and len(rc) > 0:
-                msg += f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
+                msg += f"\n\t**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
-                msg += f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"  GSAS-II:    {commit.hexsha[:6]} from {ctim} ({age:.1f} days old). Version: {gversion}{msg}"
+                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
+        return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is None: 

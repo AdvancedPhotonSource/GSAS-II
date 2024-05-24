@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
 ########### SVN repository information ###################
-# $Date: 2023-08-14 17:41:31 -0500 (Mon, 14 Aug 2023) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5647 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/config_example.py $
-# $Id: config_example.py 5647 2023-08-14 22:41:31Z toby $
+# $Id: config_example.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 This file contains optional configuration options for GSAS-II. The variables

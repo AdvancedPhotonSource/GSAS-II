@@ -1361,7 +1361,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             pFile.write(135*'-'+'\n')
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
-                    '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
+                    '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs].strip())+'%5d'%(at[cs+1])+'%5s'%(at[cia])
                 if at[cia] == 'I':
                     line += '%8.5f'%(at[cia+1])+48*' '
                 else:
@@ -3870,7 +3870,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         
     def PrintInstParms(Inst):
         pFile.write('\n Instrument Parameters:\n')
-        insKeys = list(Inst.keys())
+        insKeys = [item for item in Inst.keys() if item not in ['Type','Source','Bank']]
         insKeys.sort()
         iBeg = 0
         Ok = True
@@ -3880,13 +3880,12 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             varstr = ' refine:'
             iFin = min(iBeg+9,len(insKeys))
             for item in insKeys[iBeg:iFin]:
-                if item not in ['Type','Source','Bank']:
-                    ptlbls += '%12s' % (item)
-                    ptstr += '%12.6f' % (Inst[item][1])
-                    if item in ['Lam1','Lam2','Azimuth','fltPath']:
-                        varstr += 12*' '
-                    else:
-                        varstr += '%12s' % (str(bool(Inst[item][2])))
+                ptlbls += '%12s' % (item)
+                ptstr += '%12.6f' % (Inst[item][1])
+                if item in ['Lam1','Lam2','Azimuth','fltPath']:
+                    varstr += 12*' '
+                else:
+                    varstr += '%12s' % (str(bool(Inst[item][2])))
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             pFile.write(varstr+'\n')
@@ -4120,7 +4119,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
         
     def PrintInstParmsSig(Inst,instSig):
         refine = False
-        insKeys = list(instSig.keys())
+        insKeys = [item for item in instSig.keys() if item not in ['Type','Lam1','Lam2','Azimuth','Source','fltPath','Bank']]
         insKeys.sort()
         iBeg = 0
         Ok = True
@@ -4130,14 +4129,13 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             sigstr = ' sig   :'
             iFin = min(iBeg+9,len(insKeys))
             for name in insKeys[iBeg:iFin]:
-                if name not in  ['Type','Lam1','Lam2','Azimuth','Source','fltPath','Bank']:
-                    ptlbls += '%12s' % (name)
-                    ptstr += '%12.6f' % (Inst[name][1])
-                    if instSig[name]:
-                        refine = True
-                        sigstr += '%12.6f' % (instSig[name])
-                    else:
-                        sigstr += 12*' '
+                ptlbls += '%12s' % (name)
+                ptstr += '%12.6f' % (Inst[name][1])
+                if instSig[name]:
+                    refine = True
+                    sigstr += '%12.6f' % (instSig[name])
+                else:
+                    sigstr += 12*' '
             if refine:
                 pFile.write('\n Instrument Parameters:\n')
                 pFile.write(ptlbls+'\n')

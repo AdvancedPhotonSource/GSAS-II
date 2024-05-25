@@ -93,13 +93,14 @@ Scripting class name                              Description
 Independent Functions
 ----------------------
 
-A small number of Scriptable routines do not require use of objects. 
+A small number of Scriptable routines do not require existence of a G2Project object. 
 
 .. tabularcolumns:: |l|p{4in}|
 
 ===================================================   ===============================================================================================================
 method                                                Use
 ===================================================   ===============================================================================================================
+:func:`~GSASIIscriptable.ShowVersions`                Shows Python and GSAS-II version information
 :func:`~GSASIIscriptable.GenerateReflections`         Generates a list of unique powder reflections 
 :func:`~GSASIIscriptable.SetPrintLevel`               Sets the amount of output generated when running a script 
 :func:`~GSASIIscriptable.installScriptingShortcut`    Installs GSASIIscriptable within Python as G2script
@@ -971,6 +972,32 @@ should be created from within each Python environment.
 If more than one GSAS-II installation will be used with a Python installation, 
 a shortcut can only be used with one of them.
 
+Status Information
+-----------------------------
+
+To find information on Python, Python packages and the GSAS-II version, one can call the
+:func:`~GSASIIscriptable.ShowVersions` function. This will show versions and
+install locations. 
+
+.. code-block::  python
+
+    import G2script as G2sc
+    print(f'Version information:\n{G2sc.ShowVersions()}')
+
+which produces output like this::
+
+  setting up GSASIIscriptable from /Users/toby/G2/git/g2full/GSAS-II/GSASII
+  Version information:
+    Python      3.11.9:  from /Users/toby/py/mf3/envs/py311/bin/python
+    numpy       1.26.4:  
+    scipy       1.13.0:  
+    IPython     8.22.2:  
+    GSAS-II:    641a65, 24-May-2024 10:16 (0.5 days old). Last tag: #5789
+
+  GSAS-II location: /Users/toby/G2/git/g2full/GSAS-II/GSASII
+  Binary location:  /Users/toby/G2/git/g2full/GSAS-II/GSASII-bin/mac_arm_p3.11_n1.26
+
+    
 .. _PeakRefine:  
  
 Peak Fitting

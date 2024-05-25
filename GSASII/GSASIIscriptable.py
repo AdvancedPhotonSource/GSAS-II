@@ -110,7 +110,39 @@ def installScriptingShortcut():
         G2fil.G2Print(f'success creating {f}')
     else:
         raise G2ScriptException('error creating G2script')
-        
+
+def ShowVersions():
+    '''Show the versions all of required Python packages, etc.
+    '''
+    out = ''
+    pkgList = [('Python',None), ('numpy',np), ('scipy',sp)]
+    try:
+        import IPython
+        pkgList.append(('IPython',IPython))
+    except:
+        pass
+    for s,m in pkgList:
+        msg = ''
+        if s == 'Python':
+            pkgver = platform.python_version()
+            prefix = ''
+            msg = f"from {format(sys.executable)}"
+        else:
+            pkgver = m.__version__
+            prefix = 'Package '
+        out += f"  {s:12s}{pkgver}:  {msg}\n"
+    out += GSASIIpath.getG2VersionInfo()
+    out += "\n\n"
+    try: 
+        out += f"GSAS-II location: {GSASIIpath.path2GSAS2}\n"
+    except:
+        out += f"GSAS-II location: not set\n"
+    try: 
+        out += f"Binary location:  {GSASIIpath.binaryPath}\n"
+    except:
+        out += f"Binary location:  not found\n"
+    return out
+
 def LoadG2fil():
     '''Setup GSAS-II importers. 
     Delay importing this module when possible, it is slow.

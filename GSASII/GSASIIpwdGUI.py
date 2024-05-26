@@ -6310,10 +6310,12 @@ def UpdateUnitCellsGrid(G2frame, data):
 
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
             hSizer.Add(gridDisplay)
-            ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
-            ISObut.Bind(wx.EVT_BUTTON,OnISODIST)
-            
-            hSizer.Add(ISObut)
+
+            # TODO: Add a button to call ISODISTORT
+            # ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
+            # ISObut.Bind(wx.EVT_BUTTON,OnISODIST)
+            # hSizer.Add(ISObut)
+
             mainSizer.Add(hSizer)
         else:
             mainSizer.Add(gridDisplay)

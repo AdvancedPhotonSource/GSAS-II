@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5722 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/SUBGROUPS.py $
-# $Id: SUBGROUPS.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: SUBGROUPS.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import re
@@ -27,8 +27,8 @@ pseudosym = 'pseudosym/nph-pseudosym'
 timeout=150  # time to wait for www.cryst.ehu.es to respond; 2.5 minutes
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
-    '''Run Bilboa's SUBGROUPS for a non-standard space group. 
-    This requires doing a post to the Bilboa site, which returns all
+    '''Run Bilbao's SUBGROUPS for a non-standard space group. 
+    This requires doing a post to the Bilbao site, which returns all
     subgroups of the entered space group as the text of a web page 
     with a table containing the space group symbol, the 
     transformation matrix and index for each subgroup.
@@ -136,8 +136,8 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     return result,baseList
 
 def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
-    '''Run Bilboa's k-Subgroupsmag for a non-standard space group. 
-    This requires doing a post to the Bilboa site, which returns all
+    '''Run Bilbao's k-Subgroupsmag for a non-standard space group. 
+    This requires doing a post to the Bilbao site, which returns all
     magnetic subgroups of the entered subgroup as the text of a web page 
     with a table containing the BNS magnetic space group symbol, the 
     transformation matrix and index for each subgroup.

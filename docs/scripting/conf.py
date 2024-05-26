@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# sphinx documentation build configuration file based on one built by sphinx-quickstart
+# this is used to create the shortened Scripting manual/web pages
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -78,7 +78,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+#root_doc = 'index'
 
 # General information about the project.
 project = u'GSAS-II'
@@ -232,7 +232,7 @@ rst_prolog = u"""\
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GSASIIdoc'
+htmlhelp_basename = 'GSASIIscripting'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -254,7 +254,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'GSASIIdoc.tex', u'GSAS-II Developers Documentation',
+  ('index', 'GSASIIscripting.tex', u'GSAS-II Scripting Documentation',
    u'Robert B. Von Dreele and Brian H. Toby', 'manual'),
 ]
 
@@ -285,10 +285,10 @@ latex_engine = 'xelatex'
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
-     [u'Robert B. Von Dreele',u'Brian H. Toby'], 1)
-]
+# man_pages = [
+#     ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
+#      [u'Robert B. Von Dreele',u'Brian H. Toby'], 1)
+# ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -299,11 +299,11 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
-   u'Robert B. Von Dreele and Brian H. Toby', 'GSASIIdoc', 'GSAS-II Developers Manual',
-   'Miscellaneous'),
-]
+# texinfo_documents = [
+#     ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
+#    u'Robert B. Von Dreele and Brian H. Toby', 'GSASIIdoc', 'GSAS-II Developers Manual',
+#    'Miscellaneous'),
+# ]
 
 # Documents to append as an appendix to all manuals.
 #texinfo_appendices = []

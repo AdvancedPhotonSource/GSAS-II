@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-01-22 12:08:46 -0600 (Mon, 22 Jan 2024) $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
 # $Author: toby $
-# $Revision: 5720 $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $
-# $Id: GSASIIIO.py 5720 2024-01-22 18:08:46Z toby $
+# $Id: GSASIIIO.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 Misc routines for input and output, including image reading follow. 
@@ -39,7 +39,7 @@ import sys
 import re
 import random as ran
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5720 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 try:
     import GSASIIdataGUI as G2gd
 except ImportError:
@@ -1024,128 +1024,6 @@ def IndexPeakListSave(G2frame,peaks):
     finally:
         wx.EndBusyCursor()
     print ('index peak list saved')
-                
-def ExtractFileFromZip(filename, selection=None, confirmread=True,
-                       confirmoverwrite=True, parent=None,
-                       multipleselect=False):
-    '''If the filename is a zip file, extract a file from that
-    archive.
-
-    :param list Selection: used to predefine the name of the file
-      to be extracted. Filename case and zip directory name are
-      ignored in selection; the first matching file is used.
-
-    :param bool confirmread: if True asks the user to confirm before expanding
-      the only file in a zip
-
-    :param bool confirmoverwrite: if True asks the user to confirm
-      before overwriting if the extracted file already exists
-
-    :param bool multipleselect: if True allows more than one zip
-      file to be extracted, a list of file(s) is returned.
-      If only one file is present, do not ask which one, otherwise
-      offer a list of choices (unless selection is used).
-    
-    :returns: the name of the file that has been created or a
-      list of files (see multipleselect)
-
-    If the file is not a zipfile, return the name of the input file.
-    If the zipfile is empty or no file has been selected, return None
-    '''
-    import zipfile # do this now, since we can save startup time by doing this only on need
-    import shutil
-    zloc = os.path.split(filename)[0]
-    if not zipfile.is_zipfile(filename):
-        #print("not zip")
-        return filename
-
-    z = zipfile.ZipFile(filename,'r')
-    zinfo = z.infolist()
-
-    if len(zinfo) == 0:
-        #print('Zip has no files!')
-        zlist = [-1]
-    if selection:
-        choices = [os.path.split(i.filename)[1].lower() for i in zinfo]
-        if selection.lower() in choices:
-            zlist = [choices.index(selection.lower())]
-        else:
-            print('debug: file '+str(selection)+' was not found in '+str(filename))
-            zlist = [-1]
-    elif len(zinfo) == 1 and confirmread:
-        result = wx.ID_NO
-        dlg = wx.MessageDialog(
-            parent,
-            'Is file '+str(zinfo[0].filename)+
-            ' what you want to extract from '+
-            str(os.path.split(filename)[1])+'?',
-            'Confirm file', 
-            wx.YES_NO | wx.ICON_QUESTION)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        if result == wx.ID_NO:
-            zlist = [-1]
-        else:
-            zlist = [0]
-    elif len(zinfo) == 1:
-        zlist = [0]
-    elif multipleselect:
-        # select one or more from a from list
-        choices = [i.filename for i in zinfo]
-        dlg = G2G.G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
-            'Choose file(s)',choices)
-        if dlg.ShowModal() == wx.ID_OK:
-            zlist = dlg.GetSelections()
-        else:
-            zlist = []
-        dlg.Destroy()
-    else:
-        # select one from a from list
-        choices = [i.filename for i in zinfo]
-        dlg = wx.SingleChoiceDialog(parent,
-            'Select file to extract from zip file'+str(filename),'Choose file',
-            choices,)
-        if dlg.ShowModal() == wx.ID_OK:
-            zlist = [dlg.GetSelection()]
-        else:
-            zlist = [-1]
-        dlg.Destroy()
-        
-    outlist = []
-    for zindex in zlist:
-        if zindex >= 0:
-            efil = os.path.join(zloc, os.path.split(zinfo[zindex].filename)[1])
-            if os.path.exists(efil) and confirmoverwrite:
-                result = wx.ID_NO
-                dlg = wx.MessageDialog(parent,
-                    'File '+str(efil)+' already exists. OK to overwrite it?',
-                    'Confirm overwrite',wx.YES_NO | wx.ICON_QUESTION)
-                try:
-                    result = dlg.ShowModal()
-                finally:
-                    dlg.Destroy()
-                if result == wx.ID_NO:
-                    zindex = -1
-        if zindex >= 0:
-            # extract the file to the current directory, regardless of it's original path
-            #z.extract(zinfo[zindex],zloc)
-            eloc,efil = os.path.split(zinfo[zindex].filename)
-            outfile = os.path.join(zloc, efil)
-            fpin = z.open(zinfo[zindex])
-            fpout = open(outfile, "wb")
-            shutil.copyfileobj(fpin, fpout)
-            fpin.close()
-            fpout.close()
-            outlist.append(outfile)
-    z.close()
-    if multipleselect and len(outlist) >= 1:
-        return outlist
-    elif len(outlist) == 1:
-        return outlist[0]
-    else:
-        return None
 
 def striphist(var,insChar=''):
     'strip a histogram number from a var name'
@@ -1294,7 +1172,7 @@ class ExportBaseclass(object):
                     'Project does not contain any single crystal data.')
                 return True
             elif len(self.xtalDict) == 1:
-                self.histnam = self.xtalDict.values()
+                self.histnam = list(self.xtalDict.values())
             elif self.multiple:
                 choices = sorted(self.xtalDict.values())
                 hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
@@ -2299,10 +2177,6 @@ if __name__ == '__main__':
     #filename = '/tmp/11bmb_7652.zip'
     
     #selection=None, confirmoverwrite=True, parent=None
-    #print ExtractFileFromZip(filename, selection='11bmb_7652.fxye',parent=frm)
-    #print ExtractFileFromZip(filename,multipleselect=True)
-    #                         #confirmread=False, confirmoverwrite=False)
-
     # choicelist=[ ('a','b','c'),
     #              ('test1','test2'),('no choice',)]
     # titles = [ 'a, b or c', 'tests', 'No option here']

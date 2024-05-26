@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-07-26 20:57:34 -0500 (Wed, 26 Jul 2023) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5635 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIfiles.py $
-# $Id: GSASIIfiles.py 5635 2023-07-27 01:57:34Z toby $
+# $Id: GSASIIfiles.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 This module should not contain any references to wxPython so that it
@@ -24,7 +24,7 @@ import inspect
 import numpy as np
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5635 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 
 if not sys.platform.startswith('win'):
     try:
@@ -298,31 +298,36 @@ def SetPowderInstParms(Iparm, rd):
         Iparm1['Bank'] = [Bank,Bank,0]
         return [Iparm1,{}]
 
-def ReadPowderInstprm(instLines, bank, databanks, rd):
-    '''Read lines from a GSAS-II (new) instrument parameter file
-    similar to G2pwdGUI.OnLoad
-    If instprm file has multiple banks each with header #Bank n: ..., this
-    finds matching bank no. to load - problem with nonmatches?
-    
-    Note that this routine performs a similar role to :meth:`GSASIIdataGUI.GSASII.ReadPowderInstprm`,
-    but that will call a GUI routine for selection when needed. This routine will raise exceptions
-    on errors and will select the first bank when a choice might be appropriate.
-    TODO: refactor to combine the two routines. 
-    
-    :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
-    :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
-         when bank = n then use parameters; otherwise skip that set. Ignored if BANK n:
-         not present. NB: this kind of instprm file made by a Save all profile command in Instrument Par     ameters
-    :return dict: Inst  instrument parameter dict if OK, or
-             str: Error message if failed
-    
-    (transliterated from GSASIIdataGUI.py:1235 (rev 3008), function of the same name)
-     ''' 
+def ReadInstprm(instLines, bank, Sample={}):
+    '''Read contents of a GSAS-II (new) .instprm instrument parameter file
+
+    :param list instLines: contents of GSAS-II parameter file as a 
+          list of str; N.B. lines can be concatenated with ';'
+    :param int bank: bank number to use when instprm file has values 
+          for multiple banks (noted by headers of '#BANK n:...'.). This 
+          is ignored for instprm files without those headers. 
+          If bank is None with multiple banks, the first bank is used.
+          Note that multibank .instprm files are made by 
+          a "Save all profile" command in Instrument Parameters. 
+    :param dict Sample: A dict containing sample parameters, 
+           typically corresponding to rd.Sample,
+           where rd is a reader object that 
+           is being read from. Sample parameters 
+           determined by instrument settings or information 
+           from the instprm file are placed here.
+    :returns: bank,instdict where bank is the sample parameter set 
+           number and instdict is the instrument parameter dict   
+
+    Note if 'Type' is set as Debye-Scherrer or Bragg-Brentano this will be used and 
+    will set defaults in the sample parameters. Otherwise, a single-wavelength file 
+    will set Debye-Scherrer mode and dual wavelength will set Bragg-Brentano.
+    '''
     if 'GSAS-II' not in instLines[0]:
         raise ValueError("Not a valid GSAS-II instprm file")
 
     newItems = []
     newVals = []
+    NewSample = {}
     Found = False
     il = 0
     if bank is None:
@@ -335,7 +340,7 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
             bank = sorted(banklist)[0]
         else:
             bank = 1
-        rd.powderentry[2] = bank
+#        rd.powderentry[2] = bank
     while il < len(instLines):
         S = instLines[il]
         if S[0] == '#':
@@ -367,10 +372,18 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
             SS = S.strip().split(';')
             for s in SS:
                 item, val = s.split(':', 1)
-                newItems.append(item)
                 try:
-                    newVals.append(float(val))
-                except ValueError:
+                    val = float(val)
+                except:
+                    pass
+                if item == 'Gonio.radius':
+                    NewSample.update({'Gonio. radius':float(val)})
+                elif item == 'Diff-type':
+                    NewSample.update({'Type':val})
+                elif item == 'InstrName':
+                    NewSample.update({item:val})
+                else:
+                    newItems.append(item)
                     newVals.append(val)
             il += 1
             continue
@@ -393,12 +406,45 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
         newItems.append(item)
         newVals.append(val)
         il += 1
-    if 'Lam1' in newItems:
-        rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
-            'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+    if NewSample.get('Type','') == 'Bragg-Brentano':
+        Sample.update({'Shift':[0.,False],'Transparency':[0.,False],
+                           'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+    elif NewSample.get('Type','') == 'Debye-Scherrer':
+        Sample.update({'Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
+    elif 'Lam1' in newItems:
+        Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+                           'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
     else:
-        rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
-    return [makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
+        Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
+                           'DisplaceY':[0.,False]})
+    Sample.update(NewSample)
+    return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
+
+def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
+    '''Write the contents of a GSAS-II (new) .instprm instrument parameter file
+    ToDo: use this inside G2frame.OnSave and G2frame.OnSaveAll
+
+    :param file fp: Pointer to open file to be written.
+    :param dict InstPrm: Instrument parameters
+    :param dict Sample: Sample parameters (optional)
+    :param int bank: Bank number. If not None (default), this causes
+      a "#Bank" heading to be placed in the file before the 
+      parameters are written.
+    '''
+    if bank is not None:
+        fp.write(f"#Bank {bank}: GSAS-II instrument parameter file; do not add/delete items!\n")
+        indent = '  '
+    else:
+        fp.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
+        indent = ''
+    for item in InstPrm:
+        fp.write(f"{indent}{item}:{InstPrm[item][1]}\n")
+    # stick in some instrumental things that are listed in Sample
+    if "Type" in Sample:
+        fp.write(f"{indent}Diff-type:{Sample['Type']}\n")
+    for item in ('Gonio. radius','InstrName'):
+        if not Sample.get(item): continue
+        fp.write(f"{indent}{item}:{Sample[item]}\n")
 
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     '''Routine to locate GSASII importers matching a prefix string.
@@ -418,7 +464,8 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
             if pkg in import_files:
                 G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
             elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note, found non-standard importer: {}'.format(os.path.abspath(filename)))
+                G2Print('Note: found importer in non-standard location:'+
+                            f'\n\t{os.path.abspath(filename)}')
                 import_files[pkg] = filename
             else:
                 import_files[pkg] = filename

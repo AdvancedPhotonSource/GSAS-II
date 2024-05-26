@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-11-06 12:10:30 -0600 (Mon, 06 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5699 $
+# $Date: 2024-04-18 09:43:08 -0500 (Thu, 18 Apr 2024) $
+# $Author: toby $
+# $Revision: 5781 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 5699 2023-11-06 18:10:30Z vondreele $
+# $Id: G2export_csv.py 5781 2024-04-18 14:43:08Z toby $
 ########### SVN repository information ###################
 '''Classes in :mod:`G2export_csv` follow:
 '''
@@ -15,7 +15,7 @@ from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5699 $")
+GSASIIpath.SetVersionNumber("$Revision: 5781 $")
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
@@ -564,25 +564,22 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
-            phasDict = histblk['Reflection Lists'][phasenam]
-            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
-            if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
-                refList = phasDict['RefList']
-                for refItem in refList:
-                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
-                    self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,i))                
-            else:
-                WriteList(self,("h","k","l",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
-                refList = phasDict['RefList']
-                for refItem in refList:
-                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
-                    self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,i))
+        phasDict = histblk['Data']
+        tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+        if phasDict.get('Super',False):
+            WriteList(self,("h","k","l","m",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in phasDict['RefList']:
+                h,k,l,m,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:13]
+                self.Write(fmt.format(h,k,l,m,dsp,Fobs,Fcalc,phase,mult,Icorr))
+        else:
+            WriteList(self,("h","k","l",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in phasDict['RefList']:
+                h,k,l,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:12]
+                self.Write(fmt.format(h,k,l,dsp,Fobs,Fcalc,phase,mult,Icorr))
         self.CloseFile()
-        print(hist+' written to file '+self.fullname)                        
+        print(f'{hist!r} written to file {self.filename} in {self.fullpath}')
 
 class ExportStrainCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data

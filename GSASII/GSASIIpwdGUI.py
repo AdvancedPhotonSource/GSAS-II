@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpwdGUI - powder data display routines
 ########### SVN repository information ###################
-# $Date: 2024-02-21 22:58:44 -0600 (Wed, 21 Feb 2024) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5737 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwdGUI.py $
-# $Id: GSASIIpwdGUI.py 5737 2024-02-22 04:58:44Z toby $
+# $Id: GSASIIpwdGUI.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''GUI routines for PWDR datadree subitems follow.
 '''
@@ -31,7 +31,7 @@ else:
     import pickle as cPickle
 import scipy.interpolate as si
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5737 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
@@ -74,6 +74,9 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+npsind = lambda x: np.sin(x*np.pi/180.)
+npasind = lambda x: 180.*np.arcsin(x)/math.pi
+npcosd = lambda x: np.cos(x*math.pi/180.)
     
 ################################################################################
 ###### class definitions
@@ -2410,33 +2413,47 @@ def UpdateInstrumentGrid(G2frame,data):
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
+        Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+        if 'Debye' not in Sample['Type']:
+            G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
+            return
         if not len(IndexPeaks[0]):
-            G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
+            G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
         if not np.any(IndexPeaks[1]):
-            G2frame.ErrorDialog('Can not calibrate','Peak positions not refined')
+            G2frame.ErrorDialog('Cannot calibrate','Peak positions not refined')
             return False
         Ok = False
         for peak in IndexPeaks[0]:
             if peak[2] and peak[3]:
                 Ok = True
         if not Ok:
-            G2frame.ErrorDialog('Can not calibrate','Index Peak List not indexed')
+            G2frame.ErrorDialog('Cannot calibrate','Index Peak List not indexed')
             return            
-        if G2pwd.DoCalibInst(IndexPeaks,data):
+        if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
+            const = 0.0
+            if 'C' in data['Type'][0] or 'B' in data['Type'][0]:
+                const = 18.e-2/(np.pi*Sample['Gonio. radius'])
+                # const = 10**-3/Sample['Gonio. radius']
             XY = []
             Sigs = []
             for ip,peak in enumerate(IndexPeaks[0]):
+                shft = 0.0
                 if peak[2] and peak[3]:
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    XY.append([peak[-1],peak[0],binwid])
+                    if const:
+                        # DThX = npasind(const*Sample['DisplaceX'][0]*npcosd(peak[0]))
+                        # DThY = -npasind(const*Sample['DisplaceY'][0]*npsind(peak[0]))
+                        # shft = DThX+DThY
+                        shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                    XY.append([peak[-1],peak[0]-shft,binwid])
                     Sigs.append(IndexPeaks[1][ip])
             if len(XY):
                 XY = np.array(XY)
                 G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
-            G2frame.ErrorDialog('Can not calibrate','Nothing selected for refinement')
+            G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement')
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
@@ -2444,12 +2461,11 @@ def UpdateInstrumentGrid(G2frame,data):
         If instprm file has multiple banks each with header #Bank n: ..., this 
         finds matching bank no. to load - rejects nonmatches.
         
-        Note that similar code is found in ReadPowderInstprm (GSASIIdataGUI.py)
+        Note uses ReadPowderInstprm (GSASIIdataGUI.py) to read .instprm fil
         '''
         
         def GetDefaultParms(rd):
             '''Solicits from user a default set of parameters & returns Inst parm dict
-            param: self: refers to the GSASII main class
             param: rd: importer data structure
             returns: dict: Instrument parameter dictionary
             '''       
@@ -2474,14 +2490,14 @@ def UpdateInstrumentGrid(G2frame,data):
                         difC = 505.632*FP*sind(tth/2.)
                         sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
                         bet1 = .00226+7.76e+11/difC**4
-                        Inst = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,1,rd)
+                        Inst = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                         Inst[0]['difC'] = [difC,difC,0]
                         Inst[0]['sig-1'] = [sig1,sig1,0]
                         Inst[0]['beta-1'] = [bet1,bet1,0]
                         return Inst    #this is [Inst1,Inst2] a pair of dicts
                     dlg.Destroy()
                 else:
-                    inst1,inst2 = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,1,rd)
+                    inst1,inst2 = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                     return [inst1,inst2]
                 if 'lab data' in choices[res]:
                     rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
@@ -2499,43 +2515,25 @@ def UpdateInstrumentGrid(G2frame,data):
             'instrument parameter files (*.instprm)|*.instprm',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetPath()
-                File = open(filename,'r')
-                S = File.readline()
-                newItems = []
-                newVals = []
                 Found = False
-                while S:
-                    if S[0] == '#':
-                        if Found:
-                            break
-                        if 'Bank' in S:
-                            if bank == int(S.split(':')[0].split()[1]):
-                                S = File.readline()
-                                continue
-                            else:
-                                S = File.readline()
-                                while S and '#Bank' not in S:
-                                    S = File.readline()
-                                continue
-                        else:   #a non #Bank file
-                            S = File.readline()
-                            continue
+                filename = dlg.GetPath()
+                try:
+                    File = open(dlg.GetPath(),'r')
+                    instLines = File.readlines()
+                    File.close()
+                    rd = G2obj.ImportPowderData('Dummy')
+                    rd.Sample = G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(
+                            G2frame,G2frame.PatternId,'Sample Parameters'))
+                    instvals = G2frame.ReadPowderInstprm(instLines, bank, rd)
                     Found = True
-                    [item,val] = S[:-1].split(':')
-                    newItems.append(item)
-                    try:
-                        newVals.append(float(val))
-                    except ValueError:
-                        newVals.append(val)                        
-                    S = File.readline()                
-                File.close()
+                except:
+                    print('instprm read failed')
                 if Found:
                     Inst,Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
                     if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
                         Inst['Bank'] = [1,1,0]
-                    data = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
-                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
+                    Inst.update(instvals[0])
                     RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
                     UpdateInstrumentGrid(G2frame,data)
                 else:
@@ -2562,13 +2560,14 @@ def UpdateInstrumentGrid(G2frame,data):
             'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                Sample = G2frame.GPXtree.GetItemPyData(
+                    G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId,
+                                              'Sample Parameters'))
                 filename = dlg.GetPath()
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
-                for item in data:
-                    File.write(item+':'+str(data[item][1])+'\n')
+                G2fil.WriteInstprm(File, data, Sample)
                 File.close()
                 print ('Instrument parameters saved to: '+filename)
         finally:
@@ -2588,8 +2587,7 @@ def UpdateInstrumentGrid(G2frame,data):
             'Save instrument parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                for i in dlg.GetSelections():
-                    saveList.append(histList[i])
+                saveList = [histList[i] for i in dlg.GetSelections()]
         finally:
             dlg.Destroy()
         pth = G2G.GetExportPath(G2frame)
@@ -2604,15 +2602,13 @@ def UpdateInstrumentGrid(G2frame,data):
                 for hist in saveList:
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
                     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+                    Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     if 'Bank' not in inst:  #patch
                         bank = 1
                         if 'Bank' in hist:
                             bank = int(hist.split('Bank')[1])
                         inst['Bank'] = [bank,bank,0]
-                    bank = inst['Bank'][0]                
-                    File.write("#Bank %d: GSAS-II instrument parameter file; do not add/delete items!\n"%(bank))
-                    for item in inst:
-                        File.write(item+':'+str(inst[item][1])+'\n')                                    
+                    G2fil.WriteInstprm(File, inst, Sample, inst['Bank'][0])
                 File.close()
         finally:
             dlg.Destroy()
@@ -2778,6 +2774,50 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def MakeParameterWindow():
         'Displays the Instrument parameters in the dataWindow frame'
+        
+        def MakeLamSizer():
+            if 'Lam1' in insVal:
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
+                txt = '%7.2f'%(insVal['Azimuth'])
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
+                txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                waveSizer = wx.BoxSizer(wx.HORIZONTAL)
+                waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
+                # PATCH?: for now at least, Source is not saved anywhere before here
+                if 'Source' not in data: data['Source'] = ['CuKa','?']
+                choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','GaKa','MoKa','AgKa','InKa']
+                lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
+                waveSizer.Add(lamPick,0)
+                subSizer.Add(waveSizer,0)
+                mainSizer.Add(subSizer)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),0,WACV)
+                key = 'I(L2)/I(L1)'
+                labelLst.append(key)
+                elemKeysLst.append([key,1])
+                dspLst.append([10,4])
+                refFlgElem.append([key,2])                   
+                ratVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                instSizer.Add(ratVal,0)
+                instSizer.Add(RefineBox(key),0,WACV)
+            else: # single wavelength
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
+                txt = '%7.2f'%(insVal['Azimuth'])
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                instSizer.Add((5,5),0)
+                key = 'Lam'
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append([key,1])
+                dspLst.append([10,6])
+                instSizer.Add(waveVal,0,WACV)
+                refFlgElem.append([key,2])                   
+                instSizer.Add(RefineBox(key),0,WACV)
+                
         G2frame.dataWindow.ClearData()
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         instSizer = wx.FlexGridSizer(0,3,5,5)
@@ -2800,48 +2840,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
-                refFlgElem.append(None)                   
-                if 'Lam1' in insVal:
-                    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                    txt = '%7.2f'%(insVal['Azimuth'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
-                    txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
-                    # PATCH?: for now at least, Source is not saved anywhere before here
-                    if 'Source' not in data: data['Source'] = ['CuKa','?']
-                    choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','GaKa','MoKa','AgKa','InKa']
-                    lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
-                    waveSizer.Add(lamPick,0)
-                    subSizer.Add(waveSizer,0)
-                    mainSizer.Add(subSizer)
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),0,WACV)
-                    key = 'I(L2)/I(L1)'
-                    labelLst.append(key)
-                    elemKeysLst.append([key,1])
-                    dspLst.append([10,4])
-                    refFlgElem.append([key,2])                   
-                    ratVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-                    instSizer.Add(ratVal,0)
-                    instSizer.Add(RefineBox(key),0,WACV)
-                else: # single wavelength
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                    txt = '%7.2f'%(insVal['Azimuth'])
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    instSizer.Add((5,5),0)
-                    key = 'Lam'
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
-                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                    labelLst.append(u'Lam (\xc5)')
-                    elemKeysLst.append([key,1])
-                    dspLst.append([10,6])
-                    instSizer.Add(waveVal,0,WACV)
-                    refFlgElem.append([key,2])                   
-                    instSizer.Add(RefineBox(key),0,WACV)
+                refFlgElem.append(None)
+                MakeLamSizer()                   
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)
@@ -2868,20 +2868,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
-                refFlgElem.append(None)                   
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
-                txt = '%7.2f'%(insVal['Azimuth'])
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                instSizer.Add((5,5),0)
-                key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
-                elemKeysLst.append([key,1])
-                dspLst.append([10,6])
-                instSizer.Add(waveVal,0,WACV)
-                refFlgElem.append([key,2])                   
-                instSizer.Add(RefineBox(key),0,WACV)
+                refFlgElem.append(None)
+                MakeLamSizer()                  
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)
@@ -3329,9 +3317,7 @@ def UpdateSampleGrid(G2frame,data):
             
     def OnSampleLoad(event):
         '''Loads sample parameters from a G2 .samprm file
-        in response to the Sample Parameters-Operations/Load menu
-        
-        Note that similar code is found in ReadPowderInstprm (GSASII.py)
+        in response to the Sample Parameters-Operations/Load menu        
         '''
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'

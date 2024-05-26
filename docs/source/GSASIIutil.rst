@@ -156,4 +156,15 @@ John Badger, J. Appl. Cryst. (2019) 52, 937-944.
 (DOI: 10.1107/S1600576719009774) modified to run inside GSAS-II.
 
 .. automodule:: G2shapes
+    :members:
+       
+--------------------------------------------
+*tutorialIndex: index to GSAS-II tutorials*
+--------------------------------------------
+
+tutorialIndex Contents
+------------------------------------
+
+.. automodule:: tutorialIndex
     :members: 
+

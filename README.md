@@ -67,7 +67,7 @@ The primary citation for GSAS-II is:
     Toby, B. H., & Von Dreele, R. B. (2013). "GSAS-II: the genesis of
     a modern open-source all purpose crystallography software
     package". Journal of Applied Crystallography, 46(2),
-    544-549. ​doi:10.1107/S0021889813003531 
+    544-549. doi:10.1107/S0021889813003531 
 
 ## Full Description
 GSAS-II is a unique and comprehensive Python project for

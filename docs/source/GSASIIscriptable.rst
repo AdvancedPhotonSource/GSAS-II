@@ -93,13 +93,14 @@ Scripting class name                              Description
 Independent Functions
 ----------------------
 
-A small number of Scriptable routines do not require use of objects. 
+A small number of Scriptable routines do not require existence of a G2Project object. 
 
 .. tabularcolumns:: |l|p{4in}|
 
 ===================================================   ===============================================================================================================
 method                                                Use
 ===================================================   ===============================================================================================================
+:func:`~GSASIIscriptable.ShowVersions`                Shows Python and GSAS-II version information
 :func:`~GSASIIscriptable.GenerateReflections`         Generates a list of unique powder reflections 
 :func:`~GSASIIscriptable.SetPrintLevel`               Sets the amount of output generated when running a script 
 :func:`~GSASIIscriptable.installScriptingShortcut`    Installs GSASIIscriptable within Python as G2script
@@ -133,8 +134,14 @@ method                                                                  Use
 
 :meth:`~GSASIIscriptable.G2Project.add_single_histogram`                Used to read in a single crystal diffraction dataset into a project file.
 
-:meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` objects
+:meth:`~GSASIIscriptable.G2Project.histogram`                           Finds a histogram from an object, name or random id reference, returning a
+                                                                        a :class:`~GSASIIscriptable.G2PwdrData` or :class:`~GSASIIscriptable.G2Single` object.
 
+:meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` or
+                                                                        as :class:`~GSASIIscriptable.G2Single` objects.
+
+:meth:`~GSASIIscriptable.G2Project.histType`                            Determines the histogram type from an object, name or random id reference.
+                                                                        
 :meth:`~GSASIIscriptable.G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`~GSASIIscriptable.G2Phase` objects
 
 :meth:`~GSASIIscriptable.G2Project.images`                              Provides a list of images in the current project, as :class:`~GSASIIscriptable.G2Image` objects
@@ -216,8 +223,8 @@ method                                                     Use
 =======================================================  ===============================================================================================================
 :meth:`~GSASIIscriptable.G2PwdrData.set_refinements`     Provides a mechanism to set values and refinement flags for the powder histogram. See 
                                                          :ref:`Histogram_parameters_table` for details.  
-:meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`   Unsets refinement flags for the the powder histogram.
-:meth:`~GSASIIscriptable.G2PwdrData.residuals`           Reports R-factors etc. for the the powder histogram (also see :meth:`~GSASIIscriptable.G2PwdrData.get_wR`) 
+:meth:`~GSASIIscriptable.G2PwdrData.clear_refinements`   Unsets refinement flags for the powder histogram.
+:meth:`~GSASIIscriptable.G2PwdrData.residuals`           Reports R-factors etc. for the powder histogram (also see :meth:`~GSASIIscriptable.G2PwdrData.get_wR`) 
 :meth:`~GSASIIscriptable.G2PwdrData.add_back_peak`       Adds a background peak to the histogram. Also see :meth:`~GSASIIscriptable.G2PwdrData.del_back_peak`
                                                          and :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak`.
 :meth:`~GSASIIscriptable.G2PwdrData.fit_fixed_points`    Fits background to the specified fixed points.
@@ -246,7 +253,9 @@ Class :class:`~GSASIIscriptable.G2Single`
 =======================================================  ===============================================================================================================
 method                                                     Use
 =======================================================  ===============================================================================================================
-(nothing yet defined)
+:meth:`~GSASIIscriptable.G2Single.set_refinements`        Provides a mechanism to set refinement flags for the single crystal histogram. See 
+                                                          :ref:`Histogram_parameters_table` for details.  
+:meth:`~GSASIIscriptable.G2Single.clear_refinements`      Unsets refinement flags for the single crystal powder histogram.
 =======================================================  ===============================================================================================================
 
 
@@ -591,18 +600,21 @@ separated by commas to save space in the table.
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
-===================== ====================  =================================================
+===================== ====================  ==============================================================
 key                   subkey                explanation
-===================== ====================  =================================================
+===================== ====================  ==============================================================
 Limits                                      The range of 2-theta (degrees) or TOF (in 
                                             microsec) range of values to use. Can
                                             be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
+                                            Available for powder histograms only.
 \                     low                   Sets the low limit
 \                     high                  Sets the high limit
 
 Sample Parameters                           Should be provided as a **list** of subkeys
-                                            to set or clear,\e.g. ['DisplaceX', 'Scale']
+                                            to set or clear refinement flags for,
+                                            e.g. ['DisplaceX', 'Scale']
+                                            Available for powder histograms only.
 \                     Absorption
 \                     Contrast
 \                     DisplaceX             Sample displacement along the X direction
@@ -612,10 +624,11 @@ Sample Parameters                           Should be provided as a **list** of 
 Background                                  Sample background. Value will be a dict or 
                                             a boolean. If True or False, the refine 
                                             parameter for background is set to that.
+                                            Available for powder histograms only.
                                             Note that background peaks are not handled
                                             via this; see 
-                                            :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak` instead.
-                                            When value is a dict,
+                                            :meth:`~GSASIIscriptable.G2PwdrData.ref_back_peak` 
+                                            instead. When value is a dict,
                                             supply any of the following keys:
 \                     type                  The background model, e.g. 'chebyschev-1'
 \                     refine                The value of the refine flag, boolean
@@ -633,8 +646,9 @@ Background                                  Sample background. Value will be a d
                                             are allowed). 
 
 Instrument Parameters                       As in Sample Parameters, provide as a **list** of
-                                            subkeys to
-                                            set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
+                                            subkeys to set or clear refinement flags,
+                                            e.g. ['X', 'Y', 'Zero', 'SH/L']
+                                            Available for powder histograms only.
 \                     U, V, W               Gaussian peak profile terms
 \                     X, Y, Z               Lorentzian peak profile terms
 \                     alpha, beta-0,        TOF profile terms 
@@ -646,7 +660,16 @@ Instrument Parameters                       As in Sample Parameters, provide as 
 \                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
 \                     Polariz.              Polarization parameter
 \                     Lam                   Lambda, the incident wavelength
-===================== ====================  =================================================
+
+Single xtal                                 As in Sample Parameters, provide as a **list** of
+                                            subkeys to set or clear refinement flags,
+                                            e.g. [...].
+                                            Available for single crystal histograms only.
+\                     Scale                 Single crystal scale factor
+\                     BabA, BabU            Babinet A & U parameters
+\                     Eg, Es, Ep            Extinction parameters
+\                     Flack                 Flack absolute configuration parameter
+===================== ====================  ==============================================================
 
 .. _Phase_parameters_table:
 
@@ -949,6 +972,32 @@ should be created from within each Python environment.
 If more than one GSAS-II installation will be used with a Python installation, 
 a shortcut can only be used with one of them.
 
+Status Information
+-----------------------------
+
+To find information on Python, Python packages and the GSAS-II version, one can call the
+:func:`~GSASIIscriptable.ShowVersions` function. This will show versions and
+install locations. 
+
+.. code-block::  python
+
+    import G2script as G2sc
+    print(f'Version information:\n{G2sc.ShowVersions()}')
+
+which produces output like this::
+
+  setting up GSASIIscriptable from /Users/toby/G2/git/g2full/GSAS-II/GSASII
+  Version information:
+    Python      3.11.9:  from /Users/toby/py/mf3/envs/py311/bin/python
+    numpy       1.26.4:  
+    scipy       1.13.0:  
+    IPython     8.22.2:  
+    GSAS-II:    641a65, 24-May-2024 10:16 (0.5 days old). Last tag: #5789
+
+  GSAS-II location: /Users/toby/G2/git/g2full/GSAS-II/GSASII
+  Binary location:  /Users/toby/G2/git/g2full/GSAS-II/GSASII-bin/mac_arm_p3.11_n1.26
+
+    
 .. _PeakRefine:  
  
 Peak Fitting

@@ -32,7 +32,7 @@ Script = '''@REM Script to start GSAS-II on Windows
 @echo             as Operator of Argonne National Laboratory.
 @echo                            Please cite:
 @echo      B.H. Toby and R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)
-@echo  + other papers for DIFFax, small angle, Bilboa, ISODISTORT,... as shown
+@echo  + other papers for DIFFax, small angle, Bilbao, ISODISTORT,... as shown
 @echo =========================================================================
 @
 {:s}{:s} {:s} "%~1"

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII image calculations: Image calibration, masking & integration routines.
 ########### SVN repository information ###################
-# $Date: 2023-10-28 16:43:36 -0500 (Sat, 28 Oct 2023) $
-# $Author: vondreele $
-# $Revision: 5687 $
+# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
+# $Author: toby $
+# $Revision: 5787 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIimage.py $
-# $Id: GSASIIimage.py 5687 2023-10-28 21:43:36Z vondreele $
+# $Id: GSASIIimage.py 5787 2024-05-18 01:36:24Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIimage` follow. 
@@ -23,7 +23,7 @@ from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5687 $")
+GSASIIpath.SetVersionNumber("$Revision: 5787 $")
 try:
     import GSASIIplot as G2plt
 except ImportError: # expected in scriptable w/o matplotlib and/or wx
@@ -770,7 +770,7 @@ def GetLineScan(image,data):
     scaley = 1000./pixelSize[1]
     wave = data['wavelength']
     numChans = data['outChannels']
-    LUtth = np.array(data['IOtth'],dtype=np.float)
+    LUtth = np.array(data['IOtth'],dtype=float)
     azm = data['linescan'][1]-data['azmthOff']
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)
@@ -1290,8 +1290,10 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
         if polygon:
             tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
                 tay,len(polygon),polygon,tamp)[:nI*nJ]))
-    for X,Y,rsq in masks['Points'].T:
-        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
+    points = masks['Points']
+    if points:
+        for X,Y,rsq in points.T:
+            tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: 
         tam = np.reshape(tam,(nI,nJ))
     else:
@@ -1304,7 +1306,7 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
             tam[:,yline-jLim[0]] = True            
     return tam           #position mask
 
-def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
+def Fill2ThetaAzimuthMap(masks,TAr,tam,image,ringMask=False):
     '''Makes masked intensity correction arrays that depend on image 
     intensity, 2theta and azimuth. Masking is generated from the 
     combination of the following: 
@@ -1359,8 +1361,11 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image):
     #tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     #pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
     #return tax,tay,taz/pol,tad,tabs
-    mask = ~mask
-    return tax[mask],tay[mask],image[mask]/pol[mask],tad[mask]
+    if ringMask: #returns contents of ring mask only
+        return tax[mask],tay[mask],image[mask]/pol[mask],tad[mask]
+    else:
+        mask = ~mask
+        return tax[mask],tay[mask],image[mask]/pol[mask],tad[mask]
 
 def MakeUseTA(data,blkSize=128):
     '''Precomputes the set of blocked arrays for 2theta-azimuth mapping from 
@@ -1448,6 +1453,46 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
     GainMap = np.nan_to_num(GainMap,1.0)
     GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
     return 1./GainMap
+
+def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
+    ''' Integrate by azimuth around the ring masked region in 0.5 deg steps
+    '''
+    import histogram2d as h2d
+    LRazm = np.array(data['LRazimuth'],dtype=np.float64)
+    numAzms = 720
+    ring = masks['Rings'][ringId]
+    Dazm = 360./numAzms
+    Azms = Dazm*np.arange(numAzms)
+    NST = np.zeros(shape=(numAzms,1),order='F',dtype=np.float32)
+    H0 = np.zeros(shape=(numAzms,1),order='F',dtype=np.float32)
+    AMasks = {'Points':[],'Rings':[ring,],'Arcs':[],'Polygons':[],'Frames':[],
+         'Thresholds':data['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+    LUtth = [ring[0],ring[0]+ring[1]]
+    dtth = ring[1]
+    Nx,Ny = data['size']
+    nXBlks = (Nx-1)//blkSize+1
+    nYBlks = (Ny-1)//blkSize+1
+    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
+    for iBlk in range(nYBlks):
+        iBeg = iBlk*blkSize
+        iFin = min(iBeg+blkSize,Ny)
+        for jBlk in range(nXBlks):
+            jBeg = jBlk*blkSize
+            jFin = min(jBeg+blkSize,Nx)
+            TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask (none here)
+            TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
+            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin),tamp)
+            Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
+            tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
+            # tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
+            # tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
+            if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
+                    numAzms,1,LRazm,LUtth,Dazm,dtth,NST,H0)
+    H0 /= NST
+    H0 = np.nan_to_num(np.array(H0))
+    return np.stack((Azms,H0.T[0]))
 
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
     '''Integrate an image; called from ``OnIntegrate()`` and 

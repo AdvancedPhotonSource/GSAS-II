@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-24 17:16:50 -0500 (Sun, 24 Mar 2024) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5770 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5770 2024-03-24 22:16:50Z toby $
+# $Id: GSASIIpath.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -112,10 +112,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5770 $"
+    :param str RevString: something like "$Revision: 5789 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5770 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5789 $")`` in every python
     file.
     '''
     try:
@@ -292,16 +292,16 @@ def getG2VersionInfo():
         # get sequential version # (tag)
         gversion = ""
         if len(tags) >= 1:
-            gversion = f"#{tags[0]}"
+            gversion = f"Tag: #{tags[0]}"
         else:
             for h in list(g2repo.iter_commits(commit))[:50]: # (don't go too far back)
                 for t in g2repo.git.tag('--points-at',h).split('\n'):
                     if t.isnumeric():
-                        gversion = f"last tag #{t}"
+                        gversion = f"Last tag: #{t}"
                         break
                 if gversion: break
             else:
-                gversion = "#?" # if all else fails
+                gversion = "No tag?!" # if all else fails
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -310,16 +310,19 @@ def getG2VersionInfo():
             "contact the developers with what is preferred in this version ****"
                     )
         else:
+            msg = ''
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
             if rc is None:
-                msg = "\nOn locally defined branch?"
+                msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
+            elif str(g2repo.active_branch) != 'master':
+                msg += f'\n\tUsing development branch "{g2repo.active_branch}"'
             elif age > 60 and len(rc) > 0:
-                msg = f"\n**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
+                msg += f"\n\t**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
             elif age > 5 and len(rc) > 0:
-                msg = f"\n**** Please consider updating. >= {len(rc)} updates have been posted"
+                msg += f"\n\t**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
-                msg = f"\nThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"  GSAS-II:    {commit.hexsha[:6]} from {ctim} ({age:.1f} days old). Version: {gversion}{msg}"
+                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
+        return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is None: 
@@ -648,8 +651,13 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
     else:
         raise ValueError(f'gitHistory has invalid value specified: {value}')
 
-def getGitBinaryReleases():
+def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
+
+    :param bool cache: when cache is True and the binaries file names 
+       are retrieved (does not always succeed when done via GitHub 
+       Actions), the results are saved in a file for reuse should the 
+       retrieval fail. Default is False so the file is not changed. 
 
     :returns: a URL dict for GSAS-II binary distributions found in the newest 
       release in a GitHub repository. The repo location is defined in global 
@@ -665,26 +673,54 @@ def getGitBinaryReleases():
       download a tar containing that binary distribution. 
     '''
     # Get first page of releases
-    releases = requests.get(
-        url=f"{G2binURL}/releases", 
-        headers=BASE_HEADER
-    ).json()
+    releases = []
+    tries = 0
+    while tries < 5: # this has been known to fail, so retry
+        tries += 1
+        releases = requests.get(
+            url=f"{G2binURL}/releases", 
+            headers=BASE_HEADER
+        ).json()
+        try:        
+            # Get assets of latest release
+            assets = requests.get(
+                url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
+                headers=BASE_HEADER
+                ).json()
+
+            versions = []
+            URLs = []
+            count = 0
+            for asset in assets:
+                if asset['name'].endswith('.tgz'):
+                    versions.append(asset['name'][:-4]) # Remove .tgz tail
+                    URLs.append(asset['browser_download_url'])
+                    count += 1
+            # Cache the binary releases for later use in case GitHub 
+            # prevents us from using a query to get them
+            if cache and count > 4:
+                fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
+                for key in dict(zip(versions,URLs)):
+                    fp.write(f'{key} : {res[key]}\n')
+                fp.close()
+            return dict(zip(versions,URLs))
+        except:
+            print('Attempt to list GSAS-II binary releases failed, sleeping for 10 sec and then retrying')
+            import time
+            time.sleep(10)  # this does not seem to help when GitHub is not letting the queries through
+
+    print(f'Could not get releases from {G2binURL}. Using cache')
+    res = {}
+    try:
+        fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'r')
+        for line in fp.readlines():
+            key,val = line.split(':',1)[:2]
+            res[key.strip()] = val.strip()
+        fp.close()
+        return res
+    except:
+        raise IOError('Cache read of releases failed too.')
     
-    # Get assets of latest release
-    assets = requests.get(
-        url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
-        headers=BASE_HEADER
-    ).json()
-
-    versions = []
-    URLs = []
-    for asset in assets:
-        if asset['name'].endswith('.tgz'):
-            versions.append(asset['name'][:-4]) # Remove .tgz tail
-            URLs.append(asset['browser_download_url'])
-
-    return dict(zip(versions,URLs))
-
 def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''Identify the best GSAS-II binary download location from the 
     distributions in the latest release section of the github repository 
@@ -1845,17 +1881,13 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
 
     :param bool printInfo: When True, information is printed to show
       has happened (default is False)
-    :param bool loadBinary: when True, if the binary files fail
-      to load, an attempt is made to download the binaries
-      (default is False).
-
-      TODO: the loadBinary option  not implemented at present and is 
-      not used in any of the calls to SetBinaryPath
+    :param bool loadBinary: no longer in use. This is now done in 
+      :func:`GSASIIdataGUI.ShowVersions`.
     '''
-    # do this only once no matter how many times it is called
+    # run this routine only once no matter how many times it is called
+    # using the following globals to check for repeated calls
     global BinaryPathLoaded,binaryPath,BinaryPathFailed
-    if BinaryPathLoaded: return
-    if BinaryPathFailed: return
+    if BinaryPathLoaded or BinaryPathFailed: return
     try:
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
@@ -1911,34 +1943,10 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
     if binpath:  # were GSAS-II binaries found?
         binaryPath = binpath
         BinaryPathLoaded = True
-    elif not loadBinary:
+    else:
         print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
         BinaryPathFailed = True
         return None
-    else:                                                  # try loading them 
-        BinaryPathFailed = True
-        raise Exception("**** ERROR GSAS-II binary libraries not found and loadBinary not"+
-                        "\nimplemented in SetBinaryPath, GSAS-II cannot run ****""")
-        # if printInfo:
-        #     print('Attempting to download GSAS-II binary files...')
-        # try:
-        #     binpath = DownloadG2Binaries(g2home)
-        # except AttributeError:   # this happens when building in Read The Docs
-        #     if printInfo:
-        #         print('Problem with download')
-        # if binpath and TestSPG(binpath):
-        #     if printInfo:
-        #         print('GSAS-II binary directory: {}'.format(binpath))
-        #     sys.path.insert(0,binpath)
-        #     binaryPath = binpath
-        #     BinaryPathLoaded = True
-        # # this must be imported before anything that imports any .pyd/.so file for GSASII
-        # else:
-        #     if printInfo:
-        #         print(75*'*')
-        #         print('Use of GSAS-II binary directory {} failed!'.format(binpath))
-        #         print(75*'*')
-        #     raise Exception("**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****")
 
     # add the data import and export directory to the search path
     if binpath not in sys.path: sys.path.insert(0,binpath)

@@ -22,6 +22,8 @@ __pycache__
 # cruft from MacOS
 .DS_Store
 
+# from Spyder
+.spyproject
 # GSAS binaries
 GSASII/bindist
 

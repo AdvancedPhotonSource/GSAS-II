@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-05-10 14:59:50 -0500 (Wed, 10 May 2023) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5574 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIfpaGUI.py $
-# $Id: GSASIIfpaGUI.py 5574 2023-05-10 19:59:50Z toby $
+# $Id: GSASIIfpaGUI.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''NIST XRD Fundamental Parameters interface routines follow:
 '''
@@ -24,6 +24,7 @@ import GSASIIdataGUI as G2gd
 import GSASIIplot as G2plt
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIfiles as G2fil
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 simParms = {}
@@ -696,9 +697,7 @@ def MakeSimSizer(G2frame, dlg):
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
-                for item in Parms:
-                    File.write(item+':'+str(Parms[item][1])+'\n')
+                G2fil.WriteInstprm(File, Parms)
                 File.close()
                 print ('Instrument parameters saved to: '+filename)
         finally:

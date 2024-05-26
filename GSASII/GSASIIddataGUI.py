@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################
-# $Date: 2023-10-09 08:44:52 -0500 (Mon, 09 Oct 2023) $
-# $Author: vondreele $
-# $Revision: 5669 $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
+# $Author: toby $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIddataGUI.py $
-# $Id: GSASIIddataGUI.py 5669 2023-10-09 13:44:52Z vondreele $
+# $Id: GSASIIddataGUI.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''Routines for Data tab in Phase dataframe follows. 
 '''
@@ -14,7 +14,7 @@ import copy
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5669 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIplot as G2plt
@@ -23,6 +23,7 @@ import GSASIIphsGUI as G2phG
 import GSASIIctrlGUI as G2G
 import GSASIIdataGUI as G2gd
 import GSASIIfiles as G2fil
+import GSASIImath as G2mth
 
 try:
     import wx
@@ -1133,7 +1134,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2G.G2MessageBox(G2frame,LeBailMsg,title='LeBail refinement changes')
 
 def MakeHistPhaseWin(G2frame):
-    '''Display Phase/Data info from Hist/Phase tree item (not used with Phase/Data tab)
+    '''Display Phase/Data (HAP) info from a Hist/Phase tree item. Used when
+    the HAP info is shown as if a top-level entry in the data tree (see the
+    SeparateHistPhaseTreeItem config option). This code is not used when
+    the HAP info is shown in its original location, the Data tab in the
+    Phase info.
     '''
     TabSelectionIdDict = {}
     def OnSelectPage(event):
@@ -1172,74 +1177,22 @@ def MakeHistPhaseWin(G2frame):
         G2plt.PlotSizeStrainPO(G2frame,data,hist='')            
         UpdateDData(G2frame,DData[page],data)
         
-    #### G2frame.dataWindow.DataMenu/"Edit Phase" menu routines (note similar routines in GSASIIphsGUI.py)
+    #### G2frame.dataWindow.DataMenu/"Edit Phase" menu routines follow
+       # where these duplicate similar routines in GSASIIphsGUI.py.
     def OnHklfAdd(event):
+        '''Called to link a Single Xtal (HKLF) dataset to a selected phase.
+        Most commonly, the histogram and phase are linked when the latter
+        item is read in (routines OnImportPhase or OnImportSfact in
+        func:`GSASIIdataGUI.GSASIImain`, but one can defer this or change
+        the linking later using this routine.
+
+        Note that this nearly identical to routine OnHklfAdd
+        inside :func:`GSASIIphsGUI.UpdatePhaseData`.
+        '''
         data = getDDataPhaseinfo()
-        keyList = data['Histograms'].keys()
-        TextList = []
-        if not G2frame.GPXtree.GetCount():
-            return
-        
-        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.GPXtree.GetItemText(item)
-            if name not in keyList and 'HKLF' in name:
-                TextList.append(name)
-            item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                        
-            if not TextList: 
-                G2G.G2MessageBox(G2frame,'No reflections')
-                return
-        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-            'Use data',TextList)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-            else:
-                return
-        finally:
-            dlg.Destroy()
-
-        # get the histograms used in other phases
-        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-        usedHKLFhists = [] # used single-crystal histograms
-        for p in usedHistograms:
-            for h in usedHistograms[p]:
-                if h.startswith('HKLF ') and h not in usedHKLFhists:
-                    usedHKLFhists.append(h)
-        # check that selected single crystal histograms are not already in use!
-        for i in result:
-            used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
-            if used:
-                msg = 'The following single crystal histogram(s) are already in use'
-                for i in used:
-                    msg += '\n  '+str(i)
-                msg += '\nAre you sure you want to add them to this phase? '
-                msg += 'Associating a single crystal dataset to >1 histogram is usually an error, '
-                msg += 'so No is suggested here.'
-                if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES: return
-
-        wx.BeginBusyCursor()
-        for i in result:
-            histoName = TextList[i]
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-            refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-            data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                'Extinction':['Lorentzian','None',
-                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
-                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
-            if 'TwMax' in reflData:     #nonmerohedral twins present
-                data['Histograms'][histoName]['Twins'] = []
-                for iT in range(reflData['TwMax'][0]+1):
-                    if iT in reflData['TwMax'][1]:
-                        data['Histograms'][histoName]['Twins'].append([False,0.0])
-                    else:
-                        data['Histograms'][histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
-            else:   #no nonmerohedral twins
-                data['Histograms'][histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
-            UpdateHKLFdata(histoName)
+        result = G2phG.CheckAddHKLF(G2frame,data)
+        if result is None: return
         wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
-        wx.EndBusyCursor()
         
     def OnDataUse(event):
         data = getDDataPhaseinfo()
@@ -1258,19 +1211,6 @@ def MakeHistPhaseWin(G2frame):
             finally:
                 dlg.Destroy()
         wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
-
-    def UpdateHKLFdata(histoName):
-        data = getDDataPhaseinfo()
-        generalData = data['General']
-        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
-        SGData = generalData['SGData']
-        Cell = generalData['Cell'][1:7]
-        G,g = G2lat.cell2Gmat(Cell)
-        for iref,ref in enumerate(reflData['RefList']):
-            H = list(ref[:3])
-            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
         
     def OnDataCopy(event):
         data = getDDataPhaseinfo()
@@ -1517,7 +1457,8 @@ def MakeHistPhaseWin(G2frame):
         #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
         wx.CallAfter(UpdateDData,G2frame,getDDataWindow(),data)
         
-    #### start of MakeHistPhaseWin
+    #### start of MakeHistPhaseWin.
+    # binds the menu items and shows the Data Window info
     G2frame.dataWindow.ClearData()
     HAPBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(HAPBook,1,wx.ALL|wx.EXPAND,1)

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
 ########### SVN repository information ###################
-# $Date: 2023-08-14 17:41:31 -0500 (Mon, 14 Aug 2023) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5647 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/config_example.py $
-# $Id: config_example.py 5647 2023-08-14 22:41:31Z toby $
+# $Id: config_example.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 This file contains optional configuration options for GSAS-II. The variables
@@ -264,11 +264,11 @@ shown. This should not need to be changed manually.
 '''
 
 SeparateHistPhaseTreeItem = False
-'''When this is set to True, the parameters for each histogram in each phase
-are placed in a separate 1st-level tree item rather than in the Data tab 
-for each phase. Requires GSAS-II be restarted to take effect. Default is False.
-
-This option is under development and is not fully tested. 
+'''When this is set to True, the parameters specific to each histogram 
+and phase together (such as peak shapes & phase fractions) 
+are shown as a 1st-level tree item rather than inside each Phase's
+Data tab. After changing this, GSAS-II needs to be restarted for the 
+change to take effect. Default is False.
 '''
 
 svn_exec = None

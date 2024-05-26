@@ -25,7 +25,7 @@ and ``n`` is the atom parameter number
 If a parameter does not depend on a histogram, phase or atom, ``h``, ``p`` and/or ``n`` will be omitted, 
 so ``p::<var>:n``, ``:h:<var>`` and ``p:h:<var>`` are all valid names.
 
-.. include:: vars.rst
+.. include:: ../source/vars.rst
 
 .. _Constraints_table:
 
@@ -936,26 +936,38 @@ Single Crystal Reflection Data Structure
 
 For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
-The columns in that array are documented below.
+The columns in that array are documented below for
+non-superspace phases. 
 
-.. tabularcolumns:: |l|p{4in}|
+.. tabularcolumns:: |l|l|p{4in}|
 
-==========  ====================================================
-  index         explanation
-==========  ====================================================
- 0,1,2          (float) h,k,l 
- 3              (int) multiplicity
- 4              (float) d-space, :math:`\AA`
- 5              (float) :math:`F_{obs}^2`
- 6              (float) :math:`\sigma(F_{obs}^2)`
- 7              (float) :math:`F_{calc}^2`
- 8              (float) :math:`F_{obs}^2T`
- 9              (float) :math:`F_{calc}^2T`
- 10             (float) reflection phase, in degrees
- 11             (float) intensity correction for reflection, this times
-                :math:`F_{obs}^2` or :math:`F_{calc}^2`
-                gives Iobs or Icalc
-==========  ====================================================
+==========  ==========  ====================================================
+  index     3+1 index    explanation
+==========  ==========  ====================================================
+ 0,1,2        0,1,2      reflection indices, h,k,l 
+ \              3        3+1 superspace index, m
+ 3              4        flag (0 absent, 1 observed)
+ 4              5        d-space, :math:`\AA`
+ 5              6        :math:`F_{obs}^2`
+ 6              7        :math:`\sigma(F_{obs}^2)`
+ 7              8        :math:`F_{calc}^2`
+ 8              9        :math:`F_{obs}^2(T)`
+ 9             10        :math:`F_{calc}^2(T)`
+ 10            11        reflection phase, in degrees
+ 11            12        intensity correction for reflection, this times
+                         :math:`F_{obs}^2` or :math:`F_{calc}^2`
+                         gives Iobs or Icalc
+==========  ==========  ====================================================
+
+Notes:
+
+  * The annotation "(T)" in the second set of :math:`F^2(T)` values 
+    stands for "true," where the values are on an absolute scale 
+    through application of the scale factor. 
+  * The left-most column gives the entry index for three dimensional 
+    spacegroups, the column to the right of that has the index for 
+    3+1 superspace phases, where there are four reflection indices 
+    h, k, l, m. 
 
 .. _Image_table:
 

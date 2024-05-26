@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5767 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5767 2024-03-17 17:50:24Z toby $
+# $Id: GSASIIdataGUI.py 5789 2024-05-24 15:06:45Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5767 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -115,36 +115,6 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
     'abc*':np.eye(3), }
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
-
-def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
-    ''' Sets default values for various histogram parameters
-    param: str dType: 3 letter histogram type, e.g. 'PNT'
-    param: str histoName: histogram name as it aoears in tree
-    param: NShkl int: number of generalized mustrain coefficients - depends on symmetry
-    param: NDij int: number of hydrostatic strain coefficients - depends on symmetry
-    
-    returns dict: default data for histogram - found in data tab for phase/histogram 
-    '''
-    if dType in ['SXC','SNC','SEC']:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}],
-            'Flack':[0.0,False]}
-    elif dType == 'SNT':
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
-            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-            'Extinction':['Lorentzian','None', {
-            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
-    elif 'P' in dType:
-        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],'Type':dType,
-            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
-            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                [1.,1.,1.,0.,0.,0.],6*[False,]],
-            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                NShkl*[0.01,],NShkl*[False,]],
-            'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
         
 def GetDisplay(pos):
     '''Gets display number (0=main display) for window position (pos). If pos outside all displays
@@ -501,6 +471,31 @@ def ShowVersions():
         pass
     print(GSASIIpath.getG2VersionInfo())
 
+    if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
+        path2repo = os.path.dirname(GSASIIpath.path2GSAS2)
+        installLoc = os.path.join(path2repo,'GSASII-bin')
+        binarydir = GSASIIpath.getGitBinaryLoc(verbose=True)
+        if not binarydir:
+            versionDict['errors'] += 'GSAS-II does not have a binaries built for this version of Python. You will need to install a supported Python version or build binaries yourself. See https://gsas-ii.readthedocs.io/en/latest/packages.html#python-requirements\n\n'
+        else:
+            msg = 'You do not have binaries installed for GSAS-II. Do you want to have them installed now?'
+            dlg = wx.MessageDialog(None, msg,'Install GSAS-II binaries?',
+                                   wx.YES_NO|wx.ICON_QUESTION)
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+                if result != wx.ID_NO:
+                    try:
+                        GSASIIpath.InstallGitBinary(binarydir, installLoc,
+                                                    nameByVersion=True)
+                        msg = f'Binaries installed from {binarydir} to {installLoc}\n'
+                        print(msg)
+                        GSASIIpath.BinaryPathFailed = False
+                        GSASIIpath.SetBinaryPath(True)
+                    except:
+                        print('Download failed, sorry')
     if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
         versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
@@ -1011,9 +1006,10 @@ class GSASII(wx.Frame):
         rd_list = []
         filelist1 = []
         for filename in filelist:
-            # is this a zip file?
-            if os.path.splitext(filename)[1].lower() == '.zip':
-                extractedfiles = G2IO.ExtractFileFromZip(
+            # is this a non-zarr zip file?
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.zip' and '.zarr.zip' not in filename.lower():
+                extractedfiles = G2G.ExtractFileFromZip(
                     filename,parent=self,
                     multipleselect=True)
                 if extractedfiles is None: continue # error or Cancel 
@@ -1026,8 +1022,10 @@ class GSASII(wx.Frame):
         Start = True    #1st time read - clear selections below
         for filename in filelist:
             # is this a zip file?
-            if os.path.splitext(filename)[1].lower() == '.zip':
-                extractedfile = G2IO.ExtractFileFromZip(filename,parent=self)
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.zip' and '.zarr.zip' not in filename.lower():
+#            if os.path.splitext(filename)[1].lower() == '.zip':
+                extractedfile = G2G.ExtractFileFromZip(filename,parent=self)
                 if extractedfile is None: continue # error or Cancel 
                 if extractedfile != filename:
                     filename,self.zipfile = extractedfile,filename # now use the file that was created
@@ -1292,46 +1290,22 @@ class GSASII(wx.Frame):
             data = self.GPXtree.GetItemPyData(item)
             item, cookie = self.GPXtree.GetNextChild(sub, cookie)
             if phaseName not in newPhaseList: continue
-            generalData = data['General']
-            SGData = generalData['SGData']
-            Super = generalData.get('Super',0)
-            SuperVec = []
-            if Super:
-                SuperVec = np.array(generalData['SuperVec'][0])
-            UseList = data['Histograms']
+            SGData = data['General']['SGData']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
+            #====> This is where histograms are linked to a newly-read Phase
             for i in result:
                 histoName = TextList[i]
                 if histoName in HKLFlist:
-                    #redo UpdateHKLFdata(histoName) here:
                     Id = GetGPXtreeItemId(self,self.root,histoName)
                     refDict,reflData = self.GPXtree.GetItemPyData(Id)
-                    G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
-                    Super = reflData.get('Super',0)
-                    for iref,ref in enumerate(reflData['RefList']):
-                        hkl = ref[:3]
-                        if Super:
-                            H = list(hkl+SuperVec*ref[3])
-                        else:
-                            H = hkl
-                        ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                        iabsnt = G2spc.GenHKLf(H,SGData)[0]
-                        if iabsnt:  #flag space gp. absences
-                            if Super: 
-                                if not ref[2+Super]:
-                                    ref[3+Super] = 0
-                                else:
-                                    ref[3+Super] = 1    #twin id
-                            else:
-                                ref[3] = 0
-                    UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
+                    G2mth.UpdateHKLFvals(histoName, data, reflData)
                 elif histoName in PWDRlist:
                     Id = GetGPXtreeItemId(self,self.root,histoName)
                     Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Instrument Parameters'))[0]
                     refList = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Reflection Lists'))
-                    refList[generalData['Name']] = {}
-                    UseList[histoName] = SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
+                    refList[data['General']['Name']] = {}
+                    data['Histograms'][histoName] = G2mth.SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+histoName)
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
@@ -1468,52 +1442,19 @@ class GSASII(wx.Frame):
         wx.BeginBusyCursor()
         item, cookie = self.GPXtree.GetFirstChild(sub)
         iph = -1
+        #====> This is where phase(s) are linked to a newly-read HKLF histogram
         while item: # loop over (new) phases
             iph += 1
             data = self.GPXtree.GetItemPyData(item)
             item, cookie = self.GPXtree.GetNextChild(sub, cookie)
             if iph not in result: continue
-            generalData = data['General']
-            SGData = generalData['SGData']
-            Super = generalData.get('Super',0)
-            SuperVec = []
-            if Super:
-                SuperVec = np.array(generalData['SuperVec'][0])
-            UseList = data['Histograms']
             for histoName in newHistList:
-                #redo UpdateHKLFdata(histoName) here:
                 Id = GetGPXtreeItemId(self,self.root,histoName)
                 refDict,reflData = self.GPXtree.GetItemPyData(Id)
-                UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
-                G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
-                if 'TwMax' in reflData:     #nonmerohedral twins present
-                    UseList[histoName]['Twins'] = []
-                    for iT in range(reflData['TwMax'][0]+1):
-                        if iT in reflData['TwMax'][1]:
-                            UseList[histoName]['Twins'].append([False,0.0])
-                        else:
-                            UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
-                else:   #no nonmerohedral twins
-                    UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
-                for iref,ref in enumerate(reflData['RefList']):
-                    hkl = ref[:3]
-                    if Super:
-                        H = list(hkl+SuperVec*ref[3])
-                    else:
-                        H = hkl
-                    ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                    iabsnt,mul,Uniq,phi = G2spc.GenHKLf(H,SGData)
-                    if iabsnt:  #flag space gp. absences
-                        if Super: 
-                            if not ref[2+Super]:
-                                ref[3+Super] = 0
-                            else:
-                                ref[3+Super] = 1    #twin id?
-                        else:
-                            ref[3] = 0
+                G2mth.UpdateHKLFvals(histoName, data, reflData)
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
         wx.EndBusyCursor()
-        self.EnableRefineCommand()        
+        self.EnableRefineCommand()
         return # success
 
     def _Add_ImportMenu_powder(self,parent):
@@ -1550,28 +1491,28 @@ class GSASII(wx.Frame):
         File.close()
         return lines        
            
-    def ReadPowderInstprm(self,instLines,bank,databanks,rd):
-        '''Read lines from a GSAS-II (new) instrument parameter file
-        similar to G2pwdGUI.OnLoad
-        If instprm file has multiple banks each with header #Bank n: ..., this 
-        finds matching bank no. to load - problem with nonmatches?
+    def ReadPowderInstprm(self, instLines, bank, rd):
+        '''Read contents of a GSAS-II (new) .instprm instrument parameter file
+        similar to G2pwdGUI.OnLoad. Uses :func:`GSASIIfiles.ReadInstprm`
+        to actually read the file. 
+        If instprm file has multiple banks (where each has header #Bank n: ...,
+        and bank is supplied as None here, this routine (in GUI) uses a 
+        dialog for selection. Note that multibank .instprm files are made by 
+        a "Save all profile" command in Instrument Parameters. 
 
-        Note that this routine performs a similar role to :func:`GSASIIfiles.ReadPowderInstprm`,
-        but this will call a GUI routine for selection when needed. TODO: refactor to combine
-
-        :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
-        :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
-            when bank = n then use parameters; otherwise skip that set. Ignored if BANK n: 
-            not present. NB: this kind of instprm file made by a Save all profile command in Instrument Parameters 
-        :return dict: Inst  instrument parameter dict if OK, or
-                str: Error message if failed    
+        :param list instLines: contents of GSAS-II parameter file as a 
+          list of str; N.B. lines can be concatenated with ';'
+        :param int bank: bank number to use when instprm file has values 
+          for multiple banks (noted by headers of '#BANK n:...'.). This 
+          is ignored for instprm files without those headers. 
+          If bank is None with multiple banks, a selection window is shown. 
+        :param GSASIIobj.ImportPowder rd: The reader object that 
+           will be read from. Sample parameters are placed here.           
+        :returns: Either an instrument parameter dict if OK, or
+                an Error message (str) if read failed    
         '''
         if 'GSAS-II' not in instLines[0]: # not a valid file
             return 'Not a valid GSAS-II instprm file'
-        newItems = []
-        newVals = []
-        Found = False
-        il = 0
         if bank is None: # no bank was specified in the input file, is more than one present in file?
             banklist = set([])
             for S in instLines:
@@ -1583,69 +1524,9 @@ class GSASII(wx.Frame):
             else:
                 bank = 1
             rd.powderentry[2] = bank
-        while il < len(instLines):
-            S = instLines[il]
-            if S[0] == '#':
-                if Found:
-                    break
-                if 'Bank' in S:
-                    if bank == int(S.split(':')[0].split()[1]):
-                        il += 1
-                        S = instLines[il]
-                    else:
-                        il += 1
-                        S = instLines[il]
-                        while il < len(instLines) and '#Bank' not in S:
-                            il += 1
-                            if il == len(instLines):
-                                return 'Bank %d not found in instprm file'%(bank)
-                            S = instLines[il]
-                        continue
-                else:   #a non #Bank file
-                    il += 1
-                    S = instLines[il]
-            Found = True
-            if '"""' in S:
-                delim = '"""' 
-            elif "'''" in S:
-                delim = "'''"
-            else:
-                S = S.replace(' ','')
-                SS = S.strip().split(';')
-                for s in SS:
-                    [item,val] = s.split(':',1)
-                    newItems.append(item)
-                    try:
-                        newVals.append(float(val))
-                    except ValueError:
-                        newVals.append(val)
-                il += 1
-                continue
-            # read multiline values, delimited by ''' or """
-            item,val = S.strip().split(':',1)
-            val = val.replace(delim,'').rstrip()
-            val += '\n'
-            while True:
-                il += 1
-                if il >= len(instLines): break
-                S = instLines[il]
-                if delim in S:
-                    val += S.replace(delim,'').rstrip()
-                    val += '\n'
-                    break
-                else:
-                    val += S.rstrip()
-                    val += '\n'
-            newItems.append(item)
-            newVals.append(val)
-            il += 1
-        if 'Lam1' in newItems:
-            rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
-                'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
-        else:
-            rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
-        return [G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}]
-        
+        nbank,instdict = G2fil.ReadInstprm(instLines, bank, rd.Sample)
+        return instdict
+
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file
 
@@ -1755,7 +1636,7 @@ class GSASII(wx.Frame):
                         sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
                         bet1 = .00226+7.76e+11/difC**4
                         rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
+                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                         Inst[0]['difC'] = [difC,difC,0]
                         Inst[0]['sig-1'] = [sig1,sig1,0]
                         Inst[0]['beta-1'] = [bet1,bet1,0]
@@ -1763,7 +1644,7 @@ class GSASII(wx.Frame):
                     dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                    inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
+                    inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
                     if rd.instdict.get('wave'):
                         inst1['Lam'][0] = rd.instdict.get('wave')
                         inst1['Lam'][1] = rd.instdict.get('wave')
@@ -1778,7 +1659,7 @@ class GSASII(wx.Frame):
         basename = os.path.splitext(filename)[0]
         for ext in '.prm','.inst','.ins','.instprm':
             if self.zipfile:
-                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+                instfile = G2G.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(basename + ext)[1],parent=self)
                 if instfile == None:
                     continue
@@ -1788,7 +1669,7 @@ class GSASII(wx.Frame):
                 continue
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
-                instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
+                instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1817,14 +1698,14 @@ class GSASII(wx.Frame):
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
 #            if self.zipfile:
-#                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+#                instfile = G2G.ExtractFileFromZip(self.zipfile,
 #                    selection=os.path.split(instfile)[1],parent=self)
             if instfile != None and os.path.exists(instfile):
                 #print 'debug: try read',instfile
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
                     Lines = self.OpenPowderInstprm(instfile)
                     if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)   #this is [Inst1,Inst2] a pair of dicts
+                        instParmList = self.ReadPowderInstprm(Lines,bank,rd)   #this is [Inst1,Inst2] a pair of dicts
                 else:   #old GSAS style iparm file - could be named anything!
                     Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                     if Iparm:
@@ -1842,7 +1723,7 @@ class GSASII(wx.Frame):
             else:
                 self.ErrorDialog('Open Error',u'Error opening instrument parameter file '
                     +u'{} requested by file {}'.format(instfile,filename))
-        #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
+        #Finally - ask user for Instrument parameters file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             pth = os.path.dirname(filename)     #look in same place data was found
@@ -1865,7 +1746,7 @@ class GSASII(wx.Frame):
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
                 if Lines is not None:
-                    instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
+                    instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -2008,6 +1889,8 @@ class GSASII(wx.Frame):
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
+            elif 'PNB' in Iparm1['Type'][0]:
+                Iparm1['Lam'][1] = rd.Wave
             Ymin = np.min(rd.powderdata[1])                 
             Ymax = np.max(rd.powderdata[1])                 
             valuesdict = {
@@ -2108,7 +1991,7 @@ class GSASII(wx.Frame):
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             for histoName in newHistList:
-                UseList[histoName] = SetDefaultDData(Iparm1['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
+                UseList[histoName] = G2mth.SetDefaultDData(Iparm1['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 Id = GetGPXtreeItemId(self,self.root,histoName)
                 refList = self.GPXtree.GetItemPyData(
                     GetGPXtreeItemId(self,Id,'Reflection Lists'))
@@ -2292,7 +2175,7 @@ class GSASII(wx.Frame):
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
-            UseList[HistName] = SetDefaultDData('PWDR',HistName,NShkl=NShkl,NDij=NDij)
+            UseList[HistName] = G2mth.SetDefaultDData('PWDR',HistName,NShkl=NShkl,NDij=NDij)
             Id = GetGPXtreeItemId(self,self.root,HistName)
             refList = self.GPXtree.GetItemPyData(
                 GetGPXtreeItemId(self,Id,'Reflection Lists'))
@@ -2331,7 +2214,7 @@ class GSASII(wx.Frame):
         # get instrument parameters for it
         rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
             'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
-        Iparm1, Iparm2 = G2fil.ReadPowderInstprm(dI.defaultIparms[0],1,1,rd)
+        nbank, (Iparm1, Iparm2) = G2fil.ReadInstprm(dI.defaultIparms[0],1,rd.Sample)
         rd.idstring = ' CW'
         simType = 'CW'
         # set wavelength
@@ -4957,7 +4840,7 @@ class GSASII(wx.Frame):
                         if 'T' in Type:
                             file.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','esd','alp','bet','sig','gam','FWHM'))                                    
                         else:
-                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','esd','sig','gam','FWHM'))
+                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','esd','sig','esd','gam','esd','FWHM'))
                         for ip,peak in enumerate(peaks):
                             dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
@@ -4979,8 +4862,8 @@ class GSASII(wx.Frame):
                                 gam = peak[6]
                                 esddsp = abs(G2lat.Pos2dsp(Inst,peak[0]-esds['pos'])-G2lat.Pos2dsp(Inst,peak[0]+esds['pos']))/2.
                                 FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
-                                file.write("%10.4f %10.5f %10.5f %12.2f %10.2f %10.5f %10.5f %10.5f \n" % \
-                                    (peak[0],dsp,esddsp,peak[2],esds['int'],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+                                file.write("%10.4f %10.5f %10.5f %12.2f %10.2f %10.5f %10.5f %10.5f %10.5f %10.5f \n" % \
+                                    (peak[0],dsp,esddsp,peak[2],esds['int'],np.sqrt(max(0.0001,peak[4]))/100.,esds['sig']/100.,peak[6]/100.,esds['gam']/100,FWHM/100.)) #convert to deg
                     item, cookie = self.GPXtree.GetNextChild(self.root, cookie)                            
                 file.close()
         finally:
@@ -6732,7 +6615,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
             'Find cells that index fitted peaks')
         self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search-Bilbao',
-            'Run Bilboa "Lattice Symmetry" to find higher symmetry cells')
+            'Run Bilbao "Lattice Symmetry" to find higher symmetry cells')
         G2G.Define_wxId('wxID_NISTLATSYM')
         self.IndexEdit.Append(G2G.wxID_NISTLATSYM,'Cell Symmetry Search-NIST*LATTICE',
             'Run NIST*LATTICE to find higher symmetry cells')

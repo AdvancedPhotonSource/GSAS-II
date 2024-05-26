@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2024-02-05 15:49:09 -0600 (Mon, 05 Feb 2024) $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
 # $Author: toby $
-# $Revision: 5722 $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 5722 2024-02-05 21:49:09Z toby $
+# $Id: GSASIImath.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 Routines defined in :mod:`GSASIImath` follow.
@@ -20,7 +20,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5722 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -4479,7 +4479,7 @@ def SearchMap(generalData,drawingData,Neg=False):
             rho = copy.copy(mapData['rho'])     #don't mess up original
         mapHalf = np.array(rho.shape)/2
         res = mapData['GridStep']*2.
-        incre = np.array(rho.shape,dtype=np.float)
+        incre = np.array(rho.shape,dtype=float)
         step = max(1.0,1./res)+1
         steps = np.array((3*[step,]),dtype='int32')
     except KeyError:
@@ -4896,7 +4896,8 @@ def getPinkXalpha(ins,tth):
     :returns: float getPinkXalpha: peak alpha
     
     '''
-    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
+    return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
+#    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
 
 def getPinkNalphaDeriv(tth):
     '''get alpha derivatives of pink neutron peak profile 
@@ -4916,7 +4917,8 @@ def getPinkXalphaDeriv(tth):
     :returns: float getPinkXalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
     
     '''
-    return 1.0,tand(tth/2.)
+#    return 1.0,tand(tth/2.)
+    return 1.0,sind(tth/2.)
 
 def getPinkNbeta(ins,tth):
     '''get pink neutron peak profile beta
@@ -4940,7 +4942,7 @@ def getPinkXbeta(ins,tth):
     :returns: float getPinkXbeta: peak beta
     
     '''
-    return ins['beta-0']+ins['beta-1']*tand(tth/2.)
+    return ins['beta-0']+ins['beta-1']*sind(tth/2.)
     
 def getPinkNbetaDeriv(tth):
     '''get beta derivatives of pink neutron peak profile
@@ -4960,7 +4962,7 @@ def getPinkXbetaDeriv(tth):
     :returns: list getPinkXbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
     
     '''
-    return 1.0,tand(tth/2.)
+    return 1.0,sind(tth/2.)
     
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     '''set starting peak parameters for single peak fits from plot selection or auto selection
@@ -6104,6 +6106,103 @@ def annealtests():
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy'))
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast'))
     print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann'))
+
+###############################################################################
+#### Reflection calculations
+###############################################################################
+def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
+    ''' Sets default values for various histogram parameters
+    param: str dType: 3 letter histogram type, e.g. 'PNT'
+    param: str histoName: histogram name as it aoears in tree
+    param: NShkl int: number of generalized mustrain coefficients - depends on symmetry
+    param: NDij int: number of hydrostatic strain coefficients - depends on symmetry
+
+    returns dict: default data for histogram - found in data tab for phase/histogram
+    '''
+    if dType in ['SXC','SNC','SEC']:
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
+            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+            'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
+            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}],
+            'Flack':[0.0,False]}
+    elif dType == 'SNT':
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],'Type':dType,
+            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+            'Extinction':['Lorentzian','None', {
+            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
+    elif 'P' in dType:
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],'Type':dType,
+            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
+            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
+                [1.,1.,1.,0.,0.,0.],6*[False,]],
+            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
+                NShkl*[0.01,],NShkl*[False,]],
+            'HStrain':[NDij*[0.0,],NDij*[False,]],
+            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+
+def UpdateHKLFvals(histoName, phaseData, reflData):
+    '''Update the flag field and the d-space field in HKLF reflection table.
+
+    Data tree contents are passed into this routine as data objects (strings,
+    dicts,...) rather than data tree references so that this can called
+    both from GUI routines as well as used in scripting.
+
+    This gets called from :func:`GSASIIphsGUI.CheckAddHKLF`
+    (which gets called in OnHklfAdd, inside
+    :func:`GSASIIphsGUI.UpdatePhaseData` and
+    :func:`GSASIIddataGUI.MakeHistPhaseWin`). Also, in
+    :meth:`GSASIIscriptable.G2Project.link_histogram_phase` and
+    in routines OnImportPhase or OnImportSfact inside
+    func:`GSASIIdataGUI.GSASIImain`.
+    '''
+    generalData = phaseData['General']
+    Super = generalData.get('Super',0)
+    SuperVec = []
+    if Super:
+        SuperVec = np.array(generalData['SuperVec'][0])
+    SGData = generalData['SGData']
+    Cell = generalData['Cell'][1:7]
+    G,g = G2lat.cell2Gmat(Cell)
+    phaseData['Histograms'][histoName] = {
+        'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+        'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+        'Extinction':['Lorentzian','None',
+                        {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],
+                        'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
+        'Flack':[0.0,False],
+        'Twins':[[np.eye(3),[1.0,False,0]],]}
+    phaseData['Histograms'][histoName] = SetDefaultDData(
+        reflData['Type'],histoName)
+    if 'TwMax' in reflData:     #nonmerohedral twins present
+        phaseData['Histograms'][histoName]['Twins'] = []
+        for iT in range(reflData['TwMax'][0]+1):
+            if iT in reflData['TwMax'][1]:
+                phaseData['Histograms'][histoName]['Twins'].append([False,0.0])
+            else:
+                phaseData['Histograms'][histoName]['Twins'].append(
+                    [np.array([[1,0,0],[0,1,0],[0,0,1]]),
+                         [1.0,False,reflData['TwMax'][0]]])
+    else:   #no nonmerohedral twins
+        phaseData['Histograms'][histoName]['Twins'] = [
+            [np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
+
+    for iref,ref in enumerate(reflData['RefList']):
+        hkl = ref[:3]
+        if Super:
+            H = list(hkl+SuperVec*ref[3])
+        else:
+            H = hkl
+        ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+        iabsnt = G2spc.GenHKLf(H,SGData)[0]
+        if iabsnt:  #flag space gp. absences
+            if Super:
+                if not ref[2+Super]:
+                    ref[3+Super] = 0
+                else:
+                    ref[3+Super] = 1    #twin id
+            else:
+                ref[3] = 0
+
 
 if __name__ == '__main__':
     annealtests()

@@ -1,0 +1,6 @@
+linux_64_p3.11_n1.26 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/linux_64_p3.11_n1.26.tgz
+linux_arm32_p3.11_n1.24 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/linux_arm32_p3.11_n1.24.tgz
+linux_arm64_p3.11_n1.26 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/linux_arm64_p3.11_n1.26.tgz
+mac_64_p3.11_n1.26 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/mac_64_p3.11_n1.26.tgz
+mac_arm_p3.11_n1.26 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/mac_arm_p3.11_n1.26.tgz
+win_64_p3.11_n1.26 : https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/win_64_p3.11_n1.26.tgz

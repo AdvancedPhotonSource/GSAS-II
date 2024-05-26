@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-03-27 16:10:16 -0500 (Wed, 27 Mar 2024) $
-# $Author: vondreele $
-# $Revision: 5773 $
+# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
+# $Author: toby $
+# $Revision: 5789 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIplot.py $
-# $Id: GSASIIplot.py 5773 2024-03-27 21:10:16Z vondreele $
+# $Id: GSASIIplot.py 5789 2024-05-24 15:06:45Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIplot` follow. 
@@ -44,7 +44,7 @@ except (ImportError, ValueError) as err:
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
-GSASIIpath.SetVersionNumber("$Revision: 5773 $")
+GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
@@ -3553,8 +3553,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             for excl in limits[2:]:
                 xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
             if unequalArrays:
-                if ma.is_masked(xye0):
-                    ExMask[N] = ma.getmask(xye0)   # save excluded regions
                 xye0 = ma.masked_outside(xye[0],limits[1][0],limits[1][1],copy=False) #now mask for limits
                 Lmask = ma.getmask(xye0)   # limits applied
                 ExMask[N] = ExMask[N][~Lmask] # drop points outside limits
@@ -3682,7 +3680,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Ytmp = Y
             # pad or truncate arrays when plotting with mpl.imshow
             if unequalArrays:
-                ContourZ.append(Ytmp[~Lmask])
+                ContourZ.append(ma.MaskedArray(Ytmp,Lmask).compressed())
             elif len(Y) < lenX:
                 Yext = np.ones(lenX)*Ytmp[-1]
                 Yext[:len(X)] = Ytmp
@@ -3696,7 +3694,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             #    against temperature, but this only works if patterns are sorted by T
             ContourY.append(N)
             if unequalArrays:
-                Xlist.append(X[~Lmask])
+                Xlist.append(ma.MaskedArray(X,Lmask).compressed())
             elif ContourX is None:
                 ContourX = X
             Nseq += 1
@@ -3797,6 +3795,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if 'PWDR' in plottype and len(limits[2:]):
                             DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
                     DifLine = Plot1.plot(X,DZ,colors[3],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+                    if Page.plotStyle.get('font',False):
+                        Plot1.tick_params(labelsize=14)
+                    else:
+                        Plot1.tick_params(reset=True)
                     Plot1.axhline(0.,color='k')
                     
                 if Page.plotStyle['logPlot']:
@@ -5887,8 +5889,8 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     
     Page.Choice = None
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
-    Plot.set_title(Title)
-    Plot.set_xlabel(r'd-spacing',fontsize=14)
+    Plot.set_title(Title,fontsize=14)
+    Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
     if 'C' in Inst['Type'][0]:
         Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
     else:
@@ -5899,6 +5901,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         else:
             X,Y = xyw
             W = 0.
+        Q = 2.*np.pi/X
         Yc = G2lat.Dsp2pos(Inst,X)
         if 'C' in Inst['Type'][0]:
             Y = Y-Yc
@@ -5909,19 +5912,20 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             E = Sigs[ixy]/Yc
             bin = W/(2.*Yc)
         if E:
-            Plot.errorbar(X,Y,ecolor='k',yerr=E)
+            Plot.errorbar(Q,Y,ecolor='k',yerr=E)
         if ixy:
-            Plot.plot(X,Y,'kx',picker=True,pickradius=3)
+            Plot.plot(Q,Y,'kx',picker=True,pickradius=3)
         else:
-            Plot.plot(X,Y,'kx',label='peak')
+            Plot.plot(Q,Y,'kx',label='peak')
         if W:
             if ixy:
-                Plot.plot(X,bin,'b+')
+                Plot.plot(Q,bin,'b+')
             else:
-                Plot.plot(X,bin,'b+',label='bin width')
-            Plot.plot(X,-bin,'b+')
+                Plot.plot(Q,bin,'b+',label='bin width')
+            Plot.plot(Q,-bin,'b+')
         Plot.axhline(0.,color='r',linestyle='--')
     Plot.legend(loc='best')
+    Plot.tick_params(labelsize=14)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -6633,7 +6637,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
                 dlg.Destroy()
             fp = open(filename,'w')
             fp.write("# Peak widths. Def. are default values from InstParms file, fit are from refined Instrument Parameters\n")
-            if 'C' in Parms['Type'][0]:
+            if 'C' in Parms['Type'][0] or 'B' in Parms['Type'][0]:
                 Write2csv(fp,['Q','Gauss-def','Lorenz-def,total-def',
                     'Gauss-fit','Lorenz-fit,total-fit'],header=True)
                 for vals in zip(Q,Y,Z,W,Yf,Zf,Wf): Write2csv(fp,vals)
@@ -8978,7 +8982,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
                 if width > 0:       #ellipses
-                    Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+                    try:  # angle was changed to a keyword at some point, needed in mpl 3.8
+                        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,angle=phi,ec=col,fc='none'))
+                    except: # but keep the old version as a patch (5/20/24) in case old call needed for old MPL
+                        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):

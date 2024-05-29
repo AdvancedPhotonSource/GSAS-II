@@ -48,6 +48,7 @@ import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
 import G2shapes
 import SUBGROUPS as kSUB
+import k_vector_search as kvs
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WACV = wx.ALIGN_CENTER_VERTICAL
@@ -1231,6 +1232,11 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.XtraPeakMode.Enable(False)
     else:
         G2frame.dataWindow.XtraPeakMode.Enable(True)
+        data['xtraMode'] = data.get('xtraMode',False)
+        G2frame.dataWindow.XtraPeakMode.Check(data['xtraMode'])
+        def OnXtraMode(event):
+            data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
+        G2frame.Bind(wx.EVT_MENU, OnXtraMode, id=G2G.wxID_XTRAPEAKMODE)
     OnSetPeakWidMode(None)
     # can peaks be refined?
     pkmode = False
@@ -4640,6 +4646,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
+            if cells[0][0] == '?':  # k-vector table
+                # uncheck all rowes then check only the one used row
+                for i in range(len(cells)):
+                    UnitCellsTable.SetValue(i,c,False)
+                UnitCellsTable.SetValue(r,c,True)
+                # do some plotting here.
+                # Easiest way is to fill G2frame.HKL and then call
+                # G2plt.PlotPatterns(G2frame)
+                # return
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False
@@ -4648,15 +4663,18 @@ def UpdateUnitCellsGrid(G2frame, data):
                 gridDisplay.ForceRefresh()
                 cells[r][-2] = True
                 ibrav = cells[r][2]
-                A = G2lat.cell2A(cells[r][3:9])
-                G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                for hkl in G2frame.HKL:
-                    hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
-                G2frame.HKL = np.array(G2frame.HKL)
-                if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-                    G2plt.PlotPowderLines(G2frame)
-                else:
-                    G2plt.PlotPatterns(G2frame)
+                try:
+                    A = G2lat.cell2A(cells[r][3:9])
+                    G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                    for hkl in G2frame.HKL:
+                        hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+                    G2frame.HKL = np.array(G2frame.HKL)
+                    if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
+                        G2plt.PlotPowderLines(G2frame)
+                    else:
+                        G2plt.PlotPatterns(G2frame)
+                except:
+                    pass
             elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
                 if UnitCellsTable.GetValue(r,c):
                     UnitCellsTable.SetValue(r,c,False)
@@ -5205,7 +5223,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
-    def OnRunSubsMag(event):
+    def OnRunSubsMag(event,kvec1=None):
         #import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroups.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
@@ -5222,10 +5240,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
+        if kvec1 is None:
+            kvec1start = [Kx[1:],Ky[1:],Kz[1:]]
+        else:
+            kvec1start = kvec1
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
             ' Use whole star',' Filter by','preserve axes','test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,'',True,'',False,100],
-            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+            limits=[kvec1start,[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],testAtoms,[True,False],[1,100]],
             formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
                     'bool','choice','bool','%d',])
@@ -5319,6 +5341,413 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
+    def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
+        '''Search for 
+        using the ISODISTORT web service 
+        '''
+        def _showWebPage(event):
+            'Show a web page when the user presses the "show" button'
+            import tempfile
+            txt = event.GetEventObject().page
+            tmp = tempfile.NamedTemporaryFile(suffix='.html',
+                        delete=False)
+            open(tmp.name,'w').write(txt.replace(
+                '<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',
+                ))
+            fileList.append(tmp.name)
+            G2G.ShowWebPage('file://'+tmp.name,G2frame)
+        def showWebtext(txt):
+            import tempfile
+            tmp = tempfile.NamedTemporaryFile(suffix='.html',
+                        delete=False)
+            open(tmp.name,'w').write(txt.replace(
+                '<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',
+                ))
+            fileList.append(tmp.name)
+            G2G.ShowWebPage('file://'+tmp.name,G2frame)
+
+        import tempfile
+        import re
+        import requests
+        import G2export_CIF
+        import ISODISTORT as ISO
+        isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+
+        #isoscript='isocifform.php'
+        isoCite = '''For use of this please cite 
+            H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY
+            Software Suite, iso.byu.edu. B. J. Campbell, H. T. Stokes,
+            D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for
+            Exploring Structural Distortions." J. Appl. Cryst.
+            39, 607-614 (2006).
+        '''
+        #latTol,coordTol,occTol = 0.001, 0.01, 0.1
+        phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+        Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+            G2frame,phaseID,phase_nam))
+        data = Phase
+        #oacomp,occomp = G2mth.phaseContents(data)
+        #ophsnam = data['General']['Name']
+        fileList = []
+        # write a CIF as a scratch file
+        obj = G2export_CIF.ExportPhaseCIF(G2frame)
+        obj.InitExport(None)
+        obj.currentExportType='phase'
+        obj.loadTree()
+        tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
+        obj.dirname,obj.filename = os.path.split(tmp.name)
+        obj.phasenam = data['General']['Name']
+        obj.Writer('', data['General']['Name'])
+        parentcif = tmp.name
+        ISOparentcif = ISO.UploadCIF(parentcif)
+        up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
+        out2 = requests.post(isoformsite, up2).text
+        try:
+            pos = out2.index('<p><FORM')
+        except ValueError:
+            ISO.HandleError(out2)
+            return [], []
+        data = {}
+        while True:
+            try:
+                posB = out2[pos:].index('INPUT TYPE') + pos
+                posF = out2[posB:].index('>') + posB
+                items = out2[posB:posF].split('=',3)
+                name = items[2].split()[0].replace('"', '')
+                if 'isosystem' in name:
+                    break
+                vals = items[3].replace('"', '')
+                data[name] = vals
+                pos = posF
+            except ValueError:
+                break
+
+        # TODO: bring in the searched k-vector.
+        # we can use the `use` check box to select the k-vector to use.
+        data['input'] = 'kvector'
+        data['irrepcount'] = '1'
+        data['kvec1'] = ' 1 *GM, k16 (0,0,0)'
+        data['nmodstar1'] = '0'
+        out3 = requests.post(isoformsite, data=data).text
+    
+        try:
+            pos = out3.index('irrep1')
+        except ValueError:
+            ISO.HandleError(out3)
+            return [],[]
+
+        def _get_opt_val(opt_name, out):
+            opt_pattern = rf'NAME="{opt_name}" VALUE="(.*?)"'
+            opt_match = re.search(opt_pattern, out)
+
+            return opt_match.group(1)
+
+        kvec1 = _get_opt_val('kvec1', out3)
+        kvecnumber1 = _get_opt_val('kvecnumber1', out3)
+        kparam1 = _get_opt_val('kparam1', out3)
+        nmodstar1 = _get_opt_val('nmodstar1', out3)
+        data["kvec1"] = kvec1
+        data["kvecnumber1"] = kvecnumber1
+        data["kparam1"] = kparam1
+        data["nmodstar1"] = nmodstar1
+
+        pos = out3.index("irrep1")
+        pos1 = out3[pos:].index("</SELECT>")
+        str_tmp = out3[pos:][:pos1]
+        ir_options = re.findall(
+            r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',
+            str_tmp
+        )
+
+        for ir_opt, _ in ir_options:
+            data["input"] = "irrep"
+            data['irrep1'] = ir_opt
+            out4 = requests.post(isoformsite, data=data).text
+
+            irrep1 = _get_opt_val('irrep1', out4)
+            irrpointer1 = _get_opt_val('irrpointer1', out4)
+            data["irrep1"] = irrep1
+            data["irrpointer1"] = irrpointer1
+
+            r_pattern = r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
+            r_pattern += r'orderparam["\']?\s+value=["\']?([^"\']+)["\']?'
+            radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
+            radio_vals = radio_val_pattern.findall(out4)
+            cleaned_radio_vals = [value.strip() for value in radio_vals]
+
+            for radio_val in cleaned_radio_vals:
+                data["input"] = "distort"
+                data["origintype"] = "method2"
+                data["orderparam"] = radio_val + '" CHECKED'
+                data["isofilename"] = ""
+                out5 = requests.post(isoformsite, data=data).text
+
+                continue
+
+                # TODO: parse out the distortion info from out5
+                # 1. download the CIF file for each search result
+                # 2. load the CIF file as a phase and create a project for it
+                # 3. we may want to package up all the project files and save
+                #    to a user specified location for later use.
+
+        os.unlink(tmp.name)
+
+        return
+        
+    def updateCellsWindow(event):
+        'called when k-vec mode is selected'
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+    def OnKvecSearch(event):
+        'Run the k-vector search'
+
+        # msg = G2G.NISTlatUse(True)
+        _, _, cells, _, _, _ = data
+        wx.BeginBusyCursor()
+
+        # grab the satellite peaks. here, gsas-ii will only grab the data
+        # for the histogram under selection.
+        hist_name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist_name)
+        peakId = G2gd.GetGPXtreeItemId(G2frame, Id, 'Peak List')
+        peakdata = G2frame.GPXtree.GetItemPyData(peakId)
+        if len(peakdata["xtraPeaks"]) == 0:
+            err_title = "Empty satellite peak list"
+            err_msg = "The satellite peak list is empty. Please select the "
+            err_msg += "extra peak positions before executing the k vector "
+            err_msg += "search."
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        # we need to grab the instrument parameter and call gsas ii routine
+        # to convert the satellite peaks into d-spacing.
+        Id = G2gd.GetGPXtreeItemId(
+            G2frame, G2frame.PatternId, 'Instrument Parameters'
+        )
+        Parms, _ = G2frame.GPXtree.GetItemPyData(Id)
+        xtra_peaks_d = list()
+        for extra_peak in peakdata["xtraPeaks"]:
+            dsp_tmp = G2lat.Pos2dsp(Parms, extra_peak[0])
+            xtra_peaks_d.append(dsp_tmp)
+
+        # select a parent phase. error message will be presented in a pop-up
+        # window if an invalid selection is made.
+        phase_sel = G2frame.kvecSearch['phase']
+        if len(phase_sel.strip()) == 0:
+            err_title = "Missing parent phase"
+            err_msg = "Please select the parent phase from the dropdown."
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        # again, gsas ii will only grab the reflection lists for the
+        # histogram under selection. also, only those phases that are being
+        # used for the selected histogram will be included in the
+        # `refDict` variable.
+        refDict = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(
+                G2frame, G2frame.PatternId, 'Reflection Lists'
+            )
+        )
+        if phase_sel not in refDict.keys():
+            err_title = "Phase selection error"
+            err_msg = "The parent phase selected is not used in "
+            err_msg += "current histogram. "
+            err_msg += "Please select from one of the followings, "
+            err_msg += f"{list(refDict.keys())}"
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        # grab the search option. By default, we woule search over those
+        # high symmetry points only.
+        kvs_option_map = {
+            "HighSymPts": 0,
+            "HighSymPts & HighSymPaths": 1,
+            "General": 2
+        }
+        kvs_option = G2frame.kvecSearch['soption']
+        kvs_option = kvs_option_map[kvs_option]
+        if kvs_option == 2:
+            # grab the search range, which will be used for the option of
+            # 'General' only -- see the part below for user selection of the
+            # search option.
+            try:
+                kx_s = float(G2frame.kvecSearch['kx_step'])
+                ky_s = float(G2frame.kvecSearch['ky_step'])
+                kz_s = float(G2frame.kvecSearch['kz_step'])
+                num_procs = int(G2frame.kvecSearch['num_procs'])
+            except ValueError:
+                err_title = "Invalid k grid input"
+                err_msg = "The k gird values should all be float numbers"
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+
+            if kx_s <= 0 or ky_s <= 0 or kz_s <= 0:
+                err_title = "Invalid k grid input"
+                err_msg = "The k step is less than or equal to 0. "
+                err_msg += "Please check the input values."
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+            else:
+                warn_title = "Long execution time expected"
+                warn_msg = "Searching over general k points may take a while, "
+                warn_msg += "usually on the level of serveral hours. "
+                warn_msg += "Do you want to proceed?"
+                dialog = wx.MessageDialog(
+                    G2frame,
+                    warn_msg,
+                    warn_title,
+                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION
+                )
+                result = dialog.ShowModal()
+
+                if result == wx.ID_OK:
+                    pass
+                else:
+                    dialog.Destroy()
+                    wx.EndBusyCursor()
+                    return
+
+            kstep = [kx_s, ky_s, kz_s]
+        else:
+            num_procs = None
+            kstep = None
+
+        # grab the user defined tolerance for determining the optimal k vector.
+        # refer to the following link for more detailed explanation about this,
+        #
+        # https://yr.iris-home.net/kvectordoc
+        #
+        try:
+            tol_val = float(G2frame.kvecSearch['tolerance'])
+        except ValueError:
+            err_title = "Invalid tolerance input"
+            err_msg = "The tolerance value should be a float number, "
+            err_msg += "representing the instrument resolution "
+            err_msg += ("level " + u"\u03B4" + "d/d.")
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Phase = Phases[phase_sel]
+
+        # grab the Bravais lattice type
+        #
+        # given the lattice type and lattice system, the Bravais lattice type
+        # can be determined. see the comparison table in the Wikipedia link
+        # below for the correspondence,
+        #
+        # https://en.wikipedia.org/wiki/Crystal_system
+        #
+        # here, we need to assign the Bravais lattice with specific names as
+        # inputs for the `seekpath` routine.
+        lat_type = Phase["General"]["SGData"]["SGLatt"]
+        lat_sym = Phase["General"]["SGData"]["SGSys"]
+        if lat_sym == "trigonal":
+            brav_sym = "hR"
+        else:
+            brav_sym = lat_sym[0] + lat_type
+
+        # grab all atomic coordinates in the P1 symmetry
+        #
+        # define some matrix as necessary inputs for generating the P1
+        # structure.
+        Trans = np.eye(3)
+        Uvec = np.zeros(3)
+        Vvec = np.zeros(3)
+
+        # expand the structure to P1 symmetry
+        newPhase = copy.deepcopy(Phase)
+        newPhase['ranId'] = ran.randint(0, sys.maxsize)
+        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+        newPhase, _ = G2lat.TransformPhase(
+            Phase,
+            newPhase,
+            Trans,
+            Uvec,
+            Vvec,
+            False
+        )
+        atoms_pointer = newPhase['General']['AtomPtrs']
+
+        atom_coords = list()
+        atom_types = list()
+        for atom in newPhase["Atoms"]:
+            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
+            atom_coords.append(coord_tmp)
+            type_tmp = atom[atoms_pointer[1]]
+            atom_types.append(type_tmp)
+
+        # this will turn each of the atom types into a unique integer number,
+        # which is required by the `seekpath` routine
+        atom_ids = kvs.unique_id_gen(atom_types)
+
+        # grab the parent unit cell and construct the lattice vectors
+        cell_params = newPhase["General"]["Cell"][1:7]
+        lat_vectors = kvs.lat_params_to_vec(cell_params)
+
+        hkl_refls = list()
+        for i in range(6):
+            for j in range(6):
+                for k in range(6):
+                    hkl_refls.append([i, j, k])
+
+        try:
+            # if we choose option-2, we need to use the `kvec_general` module
+            # Otherwise, the computation time would be unacceptably long.
+            k_search = kvs.kVector(
+                brav_sym,
+                lat_vectors,
+                atom_coords,
+                atom_ids,
+                hkl_refls,
+                xtra_peaks_d,
+                tol_val,
+                option=kvs_option,
+                kstep=kstep,
+                processes=num_procs
+            )
+        except ModuleNotFoundError:
+            err_title = "Module not found"
+            err_msg = "The `kvec_general` module is not found. Please install "
+            err_msg += "the module before running the k-vector search with "
+            err_msg += "option-2."
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        k_opt = k_search.kOptFinder()
+        k_opt_dist = k_opt[1]
+        ave_dd = k_opt[2]
+        max_dd = k_opt[3]
+        k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
+
+        wx.EndBusyCursor()
+        cells.clear()
+
+        # display the result
+        for i, k_v in enumerate(k_opt):
+            cells.append([])
+            laue = 'P1'
+            cells[-1] += ['?', 0, laue]
+            c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
+            cells[-1] += c
+            cells[-1] += [0, False, False]
+            # G2frame.OnFileSave(event) # forces save of project
+        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
+
+    def OnClearCells(event):
+        'remove previous search results'
+        data[2] = []
+        data[5] = []
+        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
     #### UpdateUnitCellsGrid code starts here
     G2frame.ifGetExclude = False
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
@@ -5353,7 +5782,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
     G2frame.Bind(wx.EVT_MENU, OnShowGenRefls, id=G2G.wxID_SHOWGENHKLS)
-        
+    G2frame.Bind(wx.EVT_MENU, OnClearCells, id=G2G.wxID_CLEARCELLS)        
     if len(data) < 6:
         data.append([])
     controls,bravais,cells,dminx,ssopt,magcells = data
@@ -5399,49 +5828,213 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)        
     if G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases'):
         G2frame.dataWindow.LoadCell.Enable(True)
+    peakList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
+    # in case we are loading this without visiting the Peak List first, initialize
+    peakList['xtraMode'] = peakList.get('xtraMode',False)
+    G2frame.dataWindow.XtraPeakMode.Check(peakList['xtraMode'])
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing controls'),0,WACV)
+    if not hasattr(G2frame,'kvecSearch'):
+        G2frame.kvecSearch = {'mode':False}
+
+    if G2frame.dataWindow.XtraPeakMode.IsChecked():
+        cb = G2G.G2CheckBox(G2frame.dataWindow,'Search for k-vector',G2frame.kvecSearch,'mode',OnChange=updateCellsWindow)
+        topSizer.Add(cb,0,WACV|wx.LEFT,15)
+    else: 
+        G2frame.kvecSearch['mode'] = False
+        
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(0,5,5,5)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
-    NcNo = wx.SpinCtrl(G2frame.dataWindow)
-    NcNo.SetRange(2,8)
-    NcNo.SetValue(controls[2])
-    NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
-    littleSizer.Add(NcNo,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Start Volume '),0,WACV)
-    startVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,3,typeHint=int,xmin=25)
-    littleSizer.Add(startVol,0,WACV)
-    x20 = wx.CheckBox(G2frame.dataWindow,label='Use M20/(X20+1)?')
-    x20.SetValue(G2frame.ifX20)
-    x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
-    littleSizer.Add(x20,0,WACV)
-    mainSizer.Add(littleSizer,0)
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),0)
-    mainSizer.Add((5,5),0)
-    indentSizer = wx.BoxSizer(wx.HORIZONTAL)
-    indentSizer.Add((20,-1))
-    littleSizer = wx.FlexGridSizer(0,4,5,5)
-    bravList = []
-    bravs = zip(bravais,bravaisNames)
-    for brav,bravName in bravs:
-        bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
-        bravList.append(bravCk.GetId())
-        bravCk.SetValue(brav)
-        bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
-        littleSizer.Add(bravCk,0,WACV)
+    if not G2frame.kvecSearch['mode']:
+        littleSizer = wx.FlexGridSizer(0,5,5,5)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
+        NcNo = wx.SpinCtrl(G2frame.dataWindow)
+        NcNo.SetRange(2,8)
+        NcNo.SetValue(controls[2])
+        NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
+        littleSizer.Add(NcNo,0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Start Volume '),0,WACV)
+        startVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,3,typeHint=int,xmin=25)
+        littleSizer.Add(startVol,0,WACV)
+        x20 = wx.CheckBox(G2frame.dataWindow,label='Use M20/(X20+1)?')
+        x20.SetValue(G2frame.ifX20)
+        x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
+        littleSizer.Add(x20,0,WACV)
+        mainSizer.Add(littleSizer,0)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),0)
+        mainSizer.Add((5,5),0)
+        indentSizer = wx.BoxSizer(wx.HORIZONTAL)
+        indentSizer.Add((20,-1))
+        littleSizer = wx.FlexGridSizer(0,4,5,5)
+        bravList = []
+        bravs = zip(bravais,bravaisNames)
+        for brav,bravName in bravs:
+            bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
+            bravList.append(bravCk.GetId())
+            bravCk.SetValue(brav)
+            bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
+            littleSizer.Add(bravCk,0,WACV)
 
-    indentSizer.Add(littleSizer,0)
-    mainSizer.Add(indentSizer,0)
-    mainSizer.Add((-1,10),0)
+        indentSizer.Add(littleSizer,0)
+        mainSizer.Add(indentSizer,0)
+    else:
+        #breakpoint()
+        Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer1x = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer1y = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer1z = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
+        G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get(
+            'tolerance', 0.0)
+        G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get(
+            'kx_step', 0.01
+        )
+        G2frame.kvecSearch['ky_step'] = G2frame.kvecSearch.get(
+            'ky_step', 0.01
+        )
+        G2frame.kvecSearch['kz_step'] = G2frame.kvecSearch.get(
+            'k_step', 0.01
+        )
+        G2frame.kvecSearch['num_procs'] = G2frame.kvecSearch.get(
+            'num_procs', 8
+        )
+        G2frame.kvecSearch['soption'] = G2frame.kvecSearch.get(
+            'soption', "HighSymPts"
+        )
+        if len(Phases) == 0:
+            littleSizer.Add(
+                wx.StaticText(
+                    G2frame.dataWindow,
+                    label='    You need to define a phase to use k-vector searching'
+                ),
+                0,
+                WACV
+            )
+        elif len(Phases) == 1:
+            G2frame.kvecSearch['phase'] = list(Phases.keys())[0]
+        else:
+            littleSizer.Add(
+                wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV
+            )
+            ch = G2G.EnumSelector(G2frame.dataWindow, G2frame.kvecSearch, 'phase',
+                                  [''] + list(Phases.keys()))
+            littleSizer.Add(ch, 10, WACV | wx.RIGHT, 0)
+
+        littleSizer1x.Add(
+            wx.StaticText(G2frame.dataWindow, label='kx step'),
+            0,
+            WACV
+        )
+        kx_s = G2G.ValidatedTxtCtrl(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'kx_step',
+            nDig=[6, 3],
+            typeHint=float,
+            size=(50, -1)
+        )
+        littleSizer1x.Add(kx_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(
+            wx.StaticText(G2frame.dataWindow, label='ky step'),
+            0,
+            WACV
+        )
+        ky_s = G2G.ValidatedTxtCtrl(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'ky_step',
+            nDig=[6, 3],
+            typeHint=float,
+            size=(50, -1)
+        )
+        littleSizer1x.Add(ky_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(
+            wx.StaticText(G2frame.dataWindow, label='kz step'),
+            0,
+            WACV
+        )
+        kz_s = G2G.ValidatedTxtCtrl(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'kz_step',
+            nDig=[6, 3],
+            typeHint=float,
+            size=(50, -1)
+        )
+        littleSizer1x.Add(kz_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(
+            wx.StaticText(G2frame.dataWindow, label='Number of processors'),
+            0,
+            WACV
+        )
+        num_procs = G2G.ValidatedTxtCtrl(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'num_procs',
+            nDig=[6, 2],
+            typeHint=int,
+            size=(50, -1)
+        )
+        littleSizer1x.Add(num_procs, 0, WACV | wx.RIGHT, 10)
+
+        littleSizer2.Add(
+            wx.StaticText(G2frame.dataWindow, label='Search tolerance'),
+            0,
+            WACV
+        )
+        tolVal = G2G.ValidatedTxtCtrl(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'tolerance',
+            nDig=[10, 6],
+            typeHint=float,
+            size=(70, -1)
+        )
+        littleSizer2.Add(tolVal, 0, WACV | wx.RIGHT, 20)
+
+        littleSizer2.Add(
+            wx.StaticText(G2frame.dataWindow, label='Search option'), 0, WACV
+        )
+        search_opts = ["HighSymPts", "HighSymPts & HighSymPaths", "General"]
+        ch1 = G2G.EnumSelector(
+            G2frame.dataWindow,
+            G2frame.kvecSearch,
+            'soption',
+            search_opts
+        )
+        littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
+        littleSizer2.Add((15, -1))  # add space
+
+        btn = wx.Button(
+            G2frame.dataWindow,
+            wx.ID_ANY,
+            'Start Search'
+        )
+        littleSizer2.Add(btn, 5, WACV | wx.RIGHT, 0)
+        btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
+
+        mainSizer.Add(littleSizer, 0)
+        mainSizer.Add((-1, 10), 0)
+        mainSizer.Add(littleSizer1x, 0)
+        mainSizer.Add((-1, 10), 0)
+        mainSizer.Add(littleSizer2, 0)
+    
+    mainSizer.Add((-1, 10), 0)
     
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test && Refinement: '),0,WACV)
@@ -5632,25 +6225,43 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataWindow.currentGrids = []
     if cells:
         mode = 0
-        try: # for Cell sym, 1st entry is cell xform matrix
+        try: # for Cell sym, 1st entry is cell xform matrix;
+             # for kvector search, 1st item is a question mark
             len(cells[0][0])
             mode = 1
+            if cells[0][0] == '?': mode = 2
         except:
             pass
-        if mode:
+        if mode == 2:
+            G2frame.kvecSearch['mode'] == True
+            colLabels = ['use']
+            Types = [wg.GRID_VALUE_BOOL]
+            colLabels += [
+                'kx', 'ky', 'kz',
+                'Ave. ' + u'\u03B4' + 'd/d',
+                'Ave. ' + u'\u03B4' + 'd',
+                'Max. ' + u'\u03B4' + 'd'
+            ]
+            Types += (6 * [wg.GRID_VALUE_FLOAT + ':10, 5'])
+            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n k-vector search results:'))
+        elif mode == 1:
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'))
             colLabels = ['use']
             Types = [wg.GRID_VALUE_BOOL]
+            colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
+            Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
+                  3*[wg.GRID_VALUE_FLOAT+':10,3',]+
+                  [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
         else:
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'))
             colLabels = ['M20','X20','use','Bravais']
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
                          wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING]
+            colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
+            Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
+                    3*[wg.GRID_VALUE_FLOAT+':10,3',]+
+                    [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
         rowLabels = []
-        colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
-        Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
-                  3*[wg.GRID_VALUE_FLOAT+':10,3',]+
-                  [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
         table = []
         for cell in cells:
             rowLabels.append('')
@@ -5659,11 +6270,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:
                 row = cell[0:2]+[cell[-2]]+[bravaisSymb[cell[2]]]+cell[3:10]+[cell[11],]
             if cell[-2]:
-                A = G2lat.cell2A(cell[3:9])
-                G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)
-                for hkl in G2frame.HKL:
-                    hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
-                G2frame.HKL = np.array(G2frame.HKL)
+                if mode != 2:
+                    A = G2lat.cell2A(cell[3:9])
+                    G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)
+                    for hkl in G2frame.HKL:
+                        hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+                    G2frame.HKL = np.array(G2frame.HKL)
+                else:
+                    # We need to fill in the todos when the mode is 2, i.e.,
+                    # the k-vector search.
+                    pass
             table.append(row)
         UnitCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         gridDisplay = G2G.GSGrid(G2frame.dataWindow)
@@ -5679,7 +6295,30 @@ def UpdateUnitCellsGrid(G2frame, data):
                     gridDisplay.SetReadOnly(r,c,isReadOnly=False)
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
-        mainSizer.Add(gridDisplay)
+        if mode == 2:
+            def OnISODIST(event):
+                phase_sel = G2frame.kvecSearch['phase']
+                if len(phase_sel.strip()) == 0:
+                    err_title = "Missing parent phase"
+                    err_msg = "Please select the parent phase from "
+                    err_msg += "the drop-down list."
+                    G2G.G2MessageBox(G2frame, err_msg, err_title)
+
+                    return
+
+                OnISODISTORT_kvec(phase_sel)
+
+            hSizer = wx.BoxSizer(wx.HORIZONTAL)
+            hSizer.Add(gridDisplay)
+
+            # TODO: Add a button to call ISODISTORT
+            # ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
+            # ISObut.Bind(wx.EVT_BUTTON,OnISODIST)
+            # hSizer.Add(ISObut)
+
+            mainSizer.Add(hSizer)
+        else:
+            mainSizer.Add(gridDisplay)
     if magcells and len(controls) > 16:
         itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
         phaseDict = dict(zip(itemList,magcells))

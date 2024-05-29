@@ -6638,6 +6638,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         G2G.Define_wxId('wxID_SHOWGENHKLS')
         self.IndexEdit.Append(G2G.wxID_SHOWGENHKLS,'Show reflections','Show generated reflection positions on console')
+        G2G.Define_wxId('wxID_CLEARCELLS')
+        self.IndexEdit.Append(
+            G2G.wxID_CLEARCELLS,'Clear search results',
+            'Clear cell/k-vector/magnetic cell search results'
+        )
         self.PostfillDataMenu()
         self.LoadCell.Enable(False)
         self.IndexPeaks.Enable(False)

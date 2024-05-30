@@ -27,12 +27,12 @@
 # acknowledged for their useful comments.
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-import seekpath
 import numpy as np
 import sys
 from scipy.optimize import linear_sum_assignment
 import math
 try:
+    import seekpath
     from kvec_general import parallel_proc
     gen_option_avail = True
 except ModuleNotFoundError:

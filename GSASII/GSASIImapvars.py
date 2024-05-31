@@ -251,14 +251,15 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
         Lists parameters in each parameter groups
     '''
     warninfo = {'msg':'', 'shown':{}}
-    def warn(msg,cdict=None,val=None):
+    def warn(msg,cdict=None,val=None,prefix=None):
+        if prefix is None: prefix = '\nProblem with '
         if cdict is not None and cdict != warninfo['shown']:
             warninfo['shown'] = cdict
             if warninfo['msg']: warninfo['msg'] += '\n'
             if '_vary' in cdict:
-                warninfo['msg'] += '\nProblem with new var expression: ' + _FormatConstraint(cdict,cdict.get('_name','New Var'))
+                warninfo['msg'] += prefix + 'new var expression: ' + _FormatConstraint(cdict,cdict.get('_name','New Var'))
             else:
-                warninfo['msg'] += '\nProblem with constraint equation: ' + _FormatConstraint(cdict,val)
+                warninfo['msg'] += prefix + 'constraint equation: ' + _FormatConstraint(cdict,val)
         if warninfo['msg']: warninfo['msg'] += '\n'
         warninfo['msg'] += '  ' + msg
     
@@ -336,9 +337,16 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
         if seqHistNum is not None and len(notDefList) > 0 and valid == 0:
             # for sequential ref can quietly ignore constraints with all undefined vars
             notDefList = []
+        
+        if noVaryList and cdict.get('_vary',True): # true for constr eq & varied New Var
+            msg = "parameter(s) not varied: "
+            for i,v in enumerate(noVaryList):
+                if i != 0: msg += ', '
+                msg += v
+            warn(msg,cdict,fixVal,prefix='\nUnused ')
         for l,m in ((zeroList,"have zero multipliers"), # show warning
                       (holdList,'set as "Hold"'),
-                      (noVaryList,"not varied"),
+                      #(noVaryList,"not varied"),
                       (noWildcardList,"wildcard in non-sequential fit"),
                       (notDefList,"not defined")):
             if l and cdict.get('_vary',True): # true for constr eq & varied New Var
@@ -348,11 +356,12 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     msg += v
                 warn(msg,cdict,fixVal)
         if valid == 0: # no valid entries
-            if seqHistNum is None: warn('Ignoring constraint, no valid entries',cdict)
+            if seqHistNum is None:
+                warn('Ignoring constraint, contains no usable parameters',cdict,prefix='\nUnused ')
             skipList.append(cnum)
         elif problem: # mix of valid & refined and undefined items, cannot use this
             if cdict.get('_vary',True): # true for constr eq & varied New Var
-                warn('New Var constraint will be ignored',cdict)
+                warn('New Var constraint will be ignored',cdict,prefix='\nUnused ')
                 skipList.append(cnum)
             invalidParms += VarKeys(cdict)
         elif len(dropList) > 0: # mix of valid and problematic items, drop problem vars, but keep rest

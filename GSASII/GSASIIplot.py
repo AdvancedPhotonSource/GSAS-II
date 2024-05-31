@@ -8639,7 +8639,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',
                                         picker=True)
-                    GSASIIpath.IPyBreak()
+                    #GSASIIpath.IPyBreak()
                     Page.figure.gca().add_artist(artist)
                     artist.itemNumber = len(Masks['Points'])-1
                     artist.itemType = 'Spot'
@@ -9006,10 +9006,17 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist.itemType = 'Spot'
                 
         G2frame.ringList = []
+        wave = Data['wavelength']
+        for tth in range(1,5):
+            (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,wave)
+            artistO, = Plot.plot(x1,y1,'g',picker=False)
+            #artistO.itemNumber = iring
+            #artistO.itemType = 'RingOuter'
+            #G2frame.ringList.append([artistI])
+            
         for iring,ring in enumerate(Masks['Rings']):    # drawing spot masks
             if ring:
                 tth,thick = ring
-                wave = Data['wavelength']
                 (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,wave)
                 artistO, = Plot.plot(x1,y1,'r',picker=True,pickradius=3)  
                 artistO.itemNumber = iring

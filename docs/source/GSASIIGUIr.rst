@@ -117,8 +117,6 @@ Class or function name             Description
                                    (no edits allowed) text appears in a box.
 :func:`setColorButton`             A button for color selection as a replacement 
                                    for wx.ColourSelect
-:func:`openInNewTerm`              opens a Python routine (usually GSASII.py) in a
-                                   new terminal window (works on all platforms)
 ================================  =================================================================
 
 Other miscellaneous non-GUI routines that may be of use for GUI-related actions:

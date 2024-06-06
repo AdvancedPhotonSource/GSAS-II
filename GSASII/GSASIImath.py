@@ -4859,7 +4859,7 @@ def getTOFalpha(ins,dsp):
       as values only
     :param float dsp: d-spacing of peak
     
-    :returns: flaot getTOFalpha: peak alpha
+    :returns: float getTOFalpha: peak alpha
     
     '''
     return ins['alpha']/dsp
@@ -4874,7 +4874,7 @@ def getTOFalphaDeriv(dsp):
     '''
     return 1./dsp
     
-def getPinkNalpha(ins,tth):
+def getPinkAlpha(ins,tth):
     '''get pink neutron peak alpha profile
     
     :param dict ins: instrument parameters with at least 'alpha'
@@ -4886,20 +4886,7 @@ def getPinkNalpha(ins,tth):
     '''
     return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
     
-def getPinkXalpha(ins,tth):
-    '''get pink x-ray peak alpha profile
-    
-    :param dict ins: instrument parameters with at least 'alpha'
-      as values only
-    :param float tth: 2-theta of peak
-    
-    :returns: float getPinkXalpha: peak alpha
-    
-    '''
-    return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
-#    return ins['alpha-0']+ ins['alpha-1']*tand(tth/2.)
-
-def getPinkNalphaDeriv(tth):
+def getPinkAlphaDeriv(tth):
     '''get alpha derivatives of pink neutron peak profile 
     
     :param float tth: 2-theta of peak
@@ -4909,18 +4896,7 @@ def getPinkNalphaDeriv(tth):
     '''
     return 1.0,sind(tth/2.)
     
-def getPinkXalphaDeriv(tth):
-    '''get alpha derivatives of pink x-ray peak profile
-    
-    :param float tth: 2-theta of peak
-    
-    :returns: float getPinkXalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
-    
-    '''
-#    return 1.0,tand(tth/2.)
-    return 1.0,sind(tth/2.)
-
-def getPinkNbeta(ins,tth):
+def getPinkBeta(ins,tth):
     '''get pink neutron peak profile beta
     
     :param dict ins: instrument parameters with at least 'beta-0' & 'beta-1'
@@ -4931,35 +4907,13 @@ def getPinkNbeta(ins,tth):
     
     '''
     return ins['beta-0']+ins['beta-1']*sind(tth/2.)
-    
-def getPinkXbeta(ins,tth):
-    '''get pink x-ray peak profile beta
-    
-    :param dict ins: instrument parameters with at least 'beta-0' & 'beta-1'
-      as values only
-    :param float tth: 2-theta of peak
-    
-    :returns: float getPinkXbeta: peak beta
-    
-    '''
-    return ins['beta-0']+ins['beta-1']*sind(tth/2.)
-    
-def getPinkNbetaDeriv(tth):
+        
+def getPinkBetaDeriv(tth):
     '''get beta derivatives of pink neutron peak profile
     
     :param float tth: 2-theta of peak
     
     :returns: list getPinkNbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
-    
-    '''
-    return 1.0,sind(tth/2.)
-    
-def getPinkXbetaDeriv(tth):
-    '''get beta derivatives of pink x-ray peak profile
-    
-    :param float tth: 2-theta of peak
-    
-    :returns: list getPinkXbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
     
     '''
     return 1.0,sind(tth/2.)
@@ -5013,17 +4967,13 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getCWsig(ins,pos)
         gam = getCWgam(ins,pos)           
         XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
-    elif 'B' in Parms['Type'][0]:
+    elif Parms['Type'][0][2] in ['A','B']:
         for x in ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']:
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
-        if 'X' in Parms['Type'][0]:
-            alp = getPinkXalpha(ins,pos)
-            bet = getPinkXbeta(ins,pos)
-        else:
-            alp = getPinkNalpha(ins,pos)
-            bet = getPinkNbeta(ins,pos)
+        alp = getPinkAlpha(ins,pos)
+        bet = getPinkBeta(ins,pos)
         sig = getCWsig(ins,pos)
         gam = getCWgam(ins,pos)           
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]       #default refine intensity 1st
@@ -5033,7 +4983,6 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         sig = getEDsig(ins,pos)
         gam = getEDgam(ins,pos)          
         XY = [pos,0,mag,1,sig,0,gam,0]       #default refine intensity 1st
-        
     return XY
     
 ################################################################################

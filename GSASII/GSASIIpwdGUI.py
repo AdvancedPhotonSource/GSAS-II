@@ -342,7 +342,7 @@ def SetupSampleLabels(histName,dataType,histType):
     '''
     parms = []
     parms.append(['Scale','Histogram scale factor: ',[10,7]])
-    if 'C' in histType or 'B' in histType:
+    if histType[2] in ['A','B','C']:
         parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
@@ -2528,6 +2528,8 @@ def UpdateInstrumentGrid(G2frame,data):
                     if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
                         Inst['Bank'] = [1,1,0]
                     Inst.update(instvals[0])
+                    if 'B' in Inst['Type'][1] and 'SH/L' in Inst:
+                        del Inst['SH/L']
                     RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
                     UpdateInstrumentGrid(G2frame,data)
                 else:
@@ -2826,11 +2828,10 @@ def UpdateInstrumentGrid(G2frame,data):
         subSizer.Add((-1,-1),1,wx.EXPAND)
         subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(subSizer,0,wx.EXPAND)
-#        mainSizer.Add(subSizer)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
             [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
-            if 'C' in insVal['Type']:               #constant wavelength
+            if insVal['Type'][2] in ['A','B','C']:               #constant wavelength
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
@@ -2846,7 +2847,13 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
                         instSizer.Add(RefineBox(item),0,WACV)
-                for item in ['U','V','W','X','Y','Z','SH/L']:
+                if 'C' in insVal['Type']:
+                    itemList = ['U','V','W','X','Y','Z','SH/L']
+                elif 'B' in insVal['Type']:
+                    itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+                else: #'A'
+                    itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']                
+                for item in itemList:
                     nDig = (10,3)
                     if item == 'SH/L':
                         nDig = (10,5)
@@ -2855,33 +2862,10 @@ def UpdateInstrumentGrid(G2frame,data):
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
                     instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
-                    instSizer.Add(itemVal,0,WACV)
-                    instSizer.Add(RefineBox(item),0,WACV)
-            elif 'B' in insVal['Type']:                                   #pink beam CW (x-rays & neutrons(?))
-                labelLst.append('Azimuth angle')
-                elemKeysLst.append(['Azimuth',1])
-                dspLst.append([10,2])
-                refFlgElem.append(None)
-                MakeLamSizer()                  
-                for item in ['Zero','Polariz.']:
-                    if item in insDef:
-                        labelLst.append(item)
-                        elemKeysLst.append([item,1])
-                        dspLst.append([10,4])
-                        instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,4,insDef[item])),0,WACV)
-                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-                        instSizer.Add(itemVal,0,WACV)
-                        refFlgElem.append([item,2])
-                        instSizer.Add(RefineBox(item),0,WACV)
-                for item in ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']:
-                    nDig = (10,3)
-                    labelLst.append(item)
-                    elemKeysLst.append([item,1])
-                    dspLst.append(nDig)
-                    refFlgElem.append([item,2])
-                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
+                    if item == 'SH/L':
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile,xmin=0.002)
+                    else:
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'E' in insVal['Type']:
@@ -3151,14 +3135,17 @@ def UpdateInstrumentGrid(G2frame,data):
 
         # determine what items will be shown based on histogram type
         Items = []
-        if 'C' in data['Type'][1]:               #constant wavelength
+        if data['Type'][1][2] in ['A','B','C']:               #constant wavelength
             if 'Lam1' in data:
                 Items = ['Lam1','Lam2','I(L2)/I(L1)']
             else:
                 Items = ['Lam','Zero','Polariz.']
-            Items += ['U','V','W','X','Y','Z','SH/L','Azimuth']
-        elif 'B' in data['Type'][1]:
-            Items = ['Azimuth','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+            if 'C' in data['Type'][1]:
+                Items += ['Azimuth','U','V','W','X','Y','Z','SH/L']
+            elif 'B' in data['Type'][1]:
+                Items += ['Azimuth','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+            else: #'A'
+                Items += ['Azimuth','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']
         elif 'E' in data['Type'][1]:
             Items = ['2-theta','XE','YE','ZE','A','B','C','X','Y','Z']
         elif 'T' in data['Type'][1]:            # TOF
@@ -3736,9 +3723,9 @@ def UpdateSampleGrid(G2frame,data):
     if 'PWDR' in histName:
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
         nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),0,WACV)
-        if 'T' in Inst['Type'][0] or 'B' in Inst['Type'][0] or 'E' in Inst['Type'][0]:
+        if 'T' in Inst['Type'][0] or 'E' in Inst['Type'][0]:
             choices = ['Debye-Scherrer',]
-        else:
+        else: #'[A','B','C']
             choices = ['Debye-Scherrer','Bragg-Brentano',]
         histoType = G2G.G2ChoiceButton(G2frame.dataWindow,choices,strLoc=data,strKey='Type',
             onChoice=OnHistoChange)
@@ -5941,7 +5928,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 refs = np.vstack((refList.T[:15+Super],I100,MuStr,CrSize)).T
             elif 'T' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:18+Super],I100,MuStr,CrSize)).T
-            elif 'B' in Inst['Type'][0]:
+            elif Inst['Type'][0][2] in ['A','B']:
                 refs = np.vstack((refList.T[:17+Super],I100,MuStr,CrSize)).T
             elif 'E' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:12+Super],I100,MuStr,CrSize)).T        #last two not shown for now
@@ -5963,7 +5950,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             elif 'T' in Inst['Type'][0]:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
-            elif 'B' in Inst['Type'][0]:
+            elif Inst['Type'][0][2] in ['A','B']:
                 colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'E' in Inst['Type'][0]:

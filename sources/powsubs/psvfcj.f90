@@ -13,376 +13,376 @@
     !    Further changed by J. Hester to include optimisations found in GSAS-II version
     !    of original FCJ code, and streamlined for incorporation into GSAS-II
    
-    implicit none
+    IMPLICIT NONE
 
-    !---- List of Public Subroutines ----!
-    public :: prof_val
+    !---- LIST OF PUBLIC SUBROUTINES ----!
+    PUBLIC :: PROF_VAL
 
-    !---- List of Private Functions ----!
-    private ::  dfunc_int, extra_int
+    !---- LIST OF PRIVATE FUNCTIONS ----!
+    PRIVATE ::  DFUNC_INT, EXTRA_INT
 
-    integer,       parameter :: sp = selected_real_kind(6,30)
-    integer,       parameter :: dp = selected_real_kind(14,150)
-    integer,       parameter :: cp = sp    !switch to double precision by putting cp=dp
-    real(kind=dp), parameter :: pi = 3.141592653589793238463_dp
-    real(kind=dp), parameter :: to_DEG  = 180.0_dp/pi
-    real(kind=dp), parameter :: to_RAD  = pi/180.0_dp
-    integer,       parameter :: numtab = 34
-    integer, private,dimension(numtab) :: nterms =(/2,4,6,8,10,12,14,16,18,20,22,24,26,28, &
+    INTEGER,       PARAMETER :: SP = SELECTED_REAL_KIND(6,30)
+    INTEGER,       PARAMETER :: DP = SELECTED_REAL_KIND(14,150)
+    INTEGER,       PARAMETER :: CP = SP    !SWITCH TO DOUBLE PRECISION BY PUTTING CP=DP
+    REAL(KIND=DP), PARAMETER :: PI = 3.141592653589793238463_DP
+    REAL(KIND=DP), PARAMETER :: TO_DEG  = 180.0_DP/PI
+    REAL(KIND=DP), PARAMETER :: TO_RAD  = PI/180.0_DP
+    INTEGER,       PARAMETER :: NUMTAB = 34
+    INTEGER, PRIVATE,DIMENSION(NUMTAB) :: NTERMS =(/2,4,6,8,10,12,14,16,18,20,22,24,26,28, &
          30,40,50,60,70,80,90,100,110,120,140,160,180,200,220,240,260,280,300,400/)
-    integer, private,dimension(numtab) :: fstterm=(/0,1,3,6,10,15,21,28,36,45,55,66,78, &
+    INTEGER, PRIVATE,DIMENSION(NUMTAB) :: FSTTERM=(/0,1,3,6,10,15,21,28,36,45,55,66,78, &
          91,105,120,140,165,195,230,270,315,365,420,480,550,630, &
-         720,820,930,1050,1180,1320,1470/) !fstterm(1) should be zero, indexing starts at 1+ this number
-    real(kind=cp),private,dimension(0:1883) :: wp  !extra space for expansion
-    real(kind=cp),private,dimension(0:1883) :: xp  !extra space for expansion
+         720,820,930,1050,1180,1320,1470/) !FSTTERM(1) SHOULD BE ZERO, INDEXING STARTS AT 1+ THIS NUMBER
+    REAL(KIND=CP),PRIVATE,DIMENSION(0:1883) :: WP  !EXTRA SPACE FOR EXPANSION
+    REAL(KIND=CP),PRIVATE,DIMENSION(0:1883) :: XP  !EXTRA SPACE FOR EXPANSION
 
     !
-    ! Variables to switch to new calculations of some variables that depend
-    ! only on (twoth0,asym1,asym2) and not on the particular point of the profile.
-    ! When the subroutine is invoked for the same reflection some variables
-    ! are not calculated.
+    ! VARIABLES TO SWITCH TO NEW CALCULATIONS OF SOME VARIABLES THAT DEPEND
+    ! ONLY ON (TWOTH0,ASYM1,ASYM2) AND NOT ON THE PARTICULAR POINT OF THE PROFILE.
+    ! WHEN THE SUBROUTINE IS INVOKED FOR THE SAME REFLECTION SOME VARIABLES
+    ! ARE NOT CALCULATED.
     !
     !
-    real(kind=cp), private, save :: twoth0_prev = 0.0_cp
-    real(kind=cp), private, save ::  asym1_prev = 0.0_cp
-    real(kind=cp), private, save ::  asym2_prev = 0.0_cp
+    REAL(KIND=CP), PRIVATE, SAVE :: TWOTH0_PREV = 0.0_CP
+    REAL(KIND=CP), PRIVATE, SAVE ::  ASYM1_PREV = 0.0_CP
+    REAL(KIND=CP), PRIVATE, SAVE ::  ASYM2_PREV = 0.0_CP
 
-    ! Fixed constants
-    real(kind=cp), private, parameter :: pi_over_two=0.5_cp*pi
-    real(kind=cp), private, parameter :: eps=1.0e-6_cp
-    ! Following gives the notional number of steps per degree for quadrature
-    integer,       private, parameter :: ctrl_nsteps= 300
-    logical,       private, dimension(numtab) :: calclfg
-    !calclfg true if table entry calculated
-    data calclfg/numtab*.false./
- Contains
+    ! FIXED CONSTANTS
+    REAL(KIND=CP), PRIVATE, PARAMETER :: PI_OVER_TWO=0.5_CP*PI
+    REAL(KIND=CP), PRIVATE, PARAMETER :: EPS=1.0E-6_CP
+    ! FOLLOWING GIVES THE NOTIONAL NUMBER OF STEPS PER DEGREE FOR QUADRATURE
+    INTEGER,       PRIVATE, PARAMETER :: CTRL_NSTEPS= 300
+    LOGICAL,       PRIVATE, DIMENSION(NUMTAB) :: CALCLFG
+    !CALCLFG TRUE IF TABLE ENTRY CALCULATED
+    DATA CALCLFG/NUMTAB*.FALSE./
+ CONTAINS
 
-    Subroutine Prof_Val( SIG, gamma, asym1, asym2, twoth, twoth0, dprdt, dprdg,  &
-         dprdlz , dprds , dprdd , profval)
-      real(kind=cp), Intent(In)    :: sig        ! Gaussian variance (i.e. sig squared)
-      real(kind=cp), Intent(In)    :: gamma      ! Lorenzian FWHM (i.e. 2 HWHM)
-      real(kind=cp), Intent(In)    :: asym1      ! D_L+S_L
-      real(kind=cp), Intent(In)    :: asym2      ! D_L-S_L
-      real(kind=cp), Intent(In)    :: twoth      ! point at which to evaluate the profile
-      real(kind=cp), Intent(In)    :: twoth0     ! two_theta value for peak
-      real(kind=cp), Intent(Out)   :: dprdt      ! derivative of profile wrt TwoTH0
-      real(kind=cp), Intent(Out)   :: dprdg      ! derivative of profile wrt Gaussian sig
-      real(kind=cp), Intent(Out)   :: dprdlz     ! derivative of profile wrt Lorenzian
-      real(kind=cp), Intent(Out)   :: dprds      ! derivative of profile wrt asym1
-      real(kind=cp), Intent(Out)   :: dprdd      ! derivative of profile wrt asym2
-      real(kind=cp), Intent(Out)   :: profval    ! Value of the profile at point twoth
-      !The variables below have the "save" attribute in order to save calculation
-      !time when the subroutine is invoked for different points of the same peak
-      real(kind=cp),save :: s_l , d_l, half_over_dl
-      real(kind=cp),save :: df_dh_factor, df_ds_factor
-      real(kind=cp),save :: dfi_emin, dfi_einfl
-      real(kind=cp),save :: normv_analytic
-      real(kind=cp),save :: einfl              ! 2phi value for inflection point
-      real(kind=cp),save :: emin               ! 2phi value for minimum
-      real(kind=cp),save :: cstwoth            ! cos(twoth)
-      real(kind=cp),save :: coseinfl           ! cos(Einfl)
-      real(kind=cp),save :: apb                ! (S + H)/L
-      real(kind=cp),save :: amb                ! (S - H)/L
-      real(kind=cp),save :: apb2               ! (ApB) **2
-      Integer,save       :: arraynum, ngt, ngt2, it
-      Logical,save       :: s_eq_d
+    SUBROUTINE PROF_VAL( SIG, GAMMA, ASYM1, ASYM2, TWOTH, TWOTH0, DPRDT, DPRDG,  &
+         DPRDLZ , DPRDS , DPRDD , PROFVAL)
+      REAL(KIND=CP), INTENT(IN)    :: SIG        ! GAUSSIAN VARIANCE (I.E. SIG SQUARED)
+      REAL(KIND=CP), INTENT(IN)    :: GAMMA      ! LORENZIAN FWHM (I.E. 2 HWHM)
+      REAL(KIND=CP), INTENT(IN)    :: ASYM1      ! D_L+S_L
+      REAL(KIND=CP), INTENT(IN)    :: ASYM2      ! D_L-S_L
+      REAL(KIND=CP), INTENT(IN)    :: TWOTH      ! POINT AT WHICH TO EVALUATE THE PROFILE
+      REAL(KIND=CP), INTENT(IN)    :: TWOTH0     ! TWO_THETA VALUE FOR PEAK
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDT      ! DERIVATIVE OF PROFILE WRT TWOTH0
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDG      ! DERIVATIVE OF PROFILE WRT GAUSSIAN SIG
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDLZ     ! DERIVATIVE OF PROFILE WRT LORENZIAN
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDS      ! DERIVATIVE OF PROFILE WRT ASYM1
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDD      ! DERIVATIVE OF PROFILE WRT ASYM2
+      REAL(KIND=CP), INTENT(OUT)   :: PROFVAL    ! VALUE OF THE PROFILE AT POINT TWOTH
+      !THE VARIABLES BELOW HAVE THE "SAVE" ATTRIBUTE IN ORDER TO SAVE CALCULATION
+      !TIME WHEN THE SUBROUTINE IS INVOKED FOR DIFFERENT POINTS OF THE SAME PEAK
+      REAL(KIND=CP),SAVE :: S_L , D_L, HALF_OVER_DL
+      REAL(KIND=CP),SAVE :: DF_DH_FACTOR, DF_DS_FACTOR
+      REAL(KIND=CP),SAVE :: DFI_EMIN, DFI_EINFL
+      REAL(KIND=CP),SAVE :: NORMV_ANALYTIC
+      REAL(KIND=CP),SAVE :: EINFL              ! 2PHI VALUE FOR INFLECTION POINT
+      REAL(KIND=CP),SAVE :: EMIN               ! 2PHI VALUE FOR MINIMUM
+      REAL(KIND=CP),SAVE :: CSTWOTH            ! COS(TWOTH)
+      REAL(KIND=CP),SAVE :: COSEINFL           ! COS(EINFL)
+      REAL(KIND=CP),SAVE :: APB                ! (S + H)/L
+      REAL(KIND=CP),SAVE :: AMB                ! (S - H)/L
+      REAL(KIND=CP),SAVE :: APB2               ! (APB) **2
+      INTEGER,SAVE       :: ARRAYNUM, NGT, NGT2, IT
+      LOGICAL,SAVE       :: S_EQ_D
       
 
-      ! Variables not conserving their value between calls
-      Integer       :: side, k
-      real(kind=cp) :: tmp , tmp1 , tmp2  ! intermediate values
-      real(kind=cp) :: delta              ! Angle of integration for comvolution
-      real(kind=cp) :: sindelta           ! sine of DELTA
-      real(kind=cp) :: cosdelta           ! cosine of DELTA
-      real(kind=cp) :: rcosdelta          ! 1/cos(DELTA)
-      real(kind=cp) :: f,g, einflr,eminr,twoth0r
-      real(kind=cp) :: sumwg, sumwrg, sumwrdgda ,sumwdgdb , sumwrdgdb
-      real(kind=cp) :: sumwgdrdg, sumwgdrdlz, sumwgdrd2t
-      real(kind=cp) :: sumwx
-      real(kind=cp) :: xpt(1000)          !temporary storage
-      real(kind=cp) :: wpt(1000)          !temporary storage
-      logical       :: re_calculate
+      ! VARIABLES NOT CONSERVING THEIR VALUE BETWEEN CALLS
+      INTEGER       :: SIDE, K
+      REAL(KIND=CP) :: TMP , TMP1 , TMP2  ! INTERMEDIATE VALUES
+      REAL(KIND=CP) :: DELTA              ! ANGLE OF INTEGRATION FOR COMVOLUTION
+      REAL(KIND=CP) :: SINDELTA           ! SINE OF DELTA
+      REAL(KIND=CP) :: COSDELTA           ! COSINE OF DELTA
+      REAL(KIND=CP) :: RCOSDELTA          ! 1/COS(DELTA)
+      REAL(KIND=CP) :: F,G, EINFLR,EMINR,TWOTH0R
+      REAL(KIND=CP) :: SUMWG, SUMWRG, SUMWRDGDA ,SUMWDGDB , SUMWRDGDB
+      REAL(KIND=CP) :: SUMWGDRDG, SUMWGDRDLZ, SUMWGDRD2T
+      REAL(KIND=CP) :: SUMWX
+      REAL(KIND=CP) :: XPT(1000)          !TEMPORARY STORAGE
+      REAL(KIND=CP) :: WPT(1000)          !TEMPORARY STORAGE
+      LOGICAL       :: RE_CALCULATE
 
-      ! First simple calculation of Pseudo-Voigt if asymmetry is not used
-      if(asym1 == 0.0) then
-        call Psvoigt(twoth-twoth0,sig,gamma,tmp,tmp1,dprdg,dprdlz)
-        profval = tmp
-        dprds = 0.4*sign(1.0,2.0*twoth0-twoth)
-        dprdd = 0.0
-        dprdt = -tmp1    !derivative relative to centre position
-        return
-      end if
+      ! FIRST SIMPLE CALCULATION OF PSEUDO-VOIGT IF ASYMMETRY IS NOT USED
+      IF(ASYM1 == 0.0) THEN
+        CALL PSVOIGT(TWOTH-TWOTH0,SIG,GAMMA,TMP,TMP1,DPRDG,DPRDLZ)
+        PROFVAL = TMP
+        DPRDS = 0.4*SIGN(1.0,2.0*TWOTH0-TWOTH)
+        DPRDD = 0.0
+        DPRDT = -TMP1    !DERIVATIVE RELATIVE TO CENTRE POSITION
+        RETURN
+      END IF
 
-      !From here to the end of the procedure asymmetry is used.
-      !Make the calculations of some variables only if twoth0,asym1,asym2
-      !are different from previous values. This saves calculation time if the
-      !different points of a peak are calculated sequentially for the same values
-      !of twotheta and asymmetry parameters.
+      !FROM HERE TO THE END OF THE PROCEDURE ASYMMETRY IS USED.
+      !MAKE THE CALCULATIONS OF SOME VARIABLES ONLY IF TWOTH0,ASYM1,ASYM2
+      !ARE DIFFERENT FROM PREVIOUS VALUES. THIS SAVES CALCULATION TIME IF THE
+      !DIFFERENT POINTS OF A PEAK ARE CALCULATED SEQUENTIALLY FOR THE SAME VALUES
+      !OF TWOTHETA AND ASYMMETRY PARAMETERS.
 
-      re_calculate= abs(twoth0_prev-twoth0) > eps .or.  &
-                    abs(asym1_prev-asym1)   > eps .or.  &
-                    abs(asym2_prev-asym2)   > eps
+      RE_CALCULATE= ABS(TWOTH0_PREV-TWOTH0) > EPS .OR.  &
+                    ABS(ASYM1_PREV-ASYM1)   > EPS .OR.  &
+                    ABS(ASYM2_PREV-ASYM2)   > EPS
 
-      if(re_calculate) then
-        twoth0_prev=twoth0
-         asym1_prev=asym1
-         asym2_prev=asym2
+      IF(RE_CALCULATE) THEN
+        TWOTH0_PREV=TWOTH0
+         ASYM1_PREV=ASYM1
+         ASYM2_PREV=ASYM2
 
-        twoth0r=twoth0*to_rad
-        cstwoth = Cos(twoth0r)
-        s_l = 0.5*(asym1 - asym2)  ! 1/2(s_l+d_l - (d_l-s_l))
-        d_l = 0.5*(asym1 + asym2)  ! 1/2(s_l+d_l + (d_l-s_l))
-        apb = asym1
-        amb = asym2
-        ! Catch special case of S_L = D_L
-        If (Abs(amb) < 0.00001) Then
-          s_eq_d = .TRUE.
-        Else
-          s_eq_d = .FALSE.
-        End If
-        apb2 = apb*apb
+        TWOTH0R=TWOTH0*TO_RAD
+        CSTWOTH = COS(TWOTH0R)
+        S_L = 0.5*(ASYM1 - ASYM2)  ! 1/2(S_L+D_L - (D_L-S_L))
+        D_L = 0.5*(ASYM1 + ASYM2)  ! 1/2(S_L+D_L + (D_L-S_L))
+        APB = ASYM1
+        AMB = ASYM2
+        ! CATCH SPECIAL CASE OF S_L = D_L
+        IF (ABS(AMB) < 0.00001) THEN
+          S_EQ_D = .TRUE.
+        ELSE
+          S_EQ_D = .FALSE.
+        END IF
+        APB2 = APB*APB
 
-        tmp = Sqrt(1.0 + amb*amb)*cstwoth
-        If ((Abs(tmp) > 1.0) .or. (Abs(tmp) <= Abs(cstwoth))) Then
-          einfl = twoth0
-          einflr=einfl*to_rad
-          dfi_einfl = pi_over_two
-        Else
-          einflr = Acos(tmp)
-          einfl=einflr*to_deg
-          dfi_einfl = dfunc_int(einflr,twoth0r)
-        End If
-        coseinfl = Cos(einflr)
-        tmp2 = 1.0 + apb2
-        tmp = Sqrt(tmp2) * cstwoth
+        TMP = SQRT(1.0 + AMB*AMB)*CSTWOTH
+        IF ((ABS(TMP) > 1.0) .OR. (ABS(TMP) <= ABS(CSTWOTH))) THEN
+          EINFL = TWOTH0
+          EINFLR=EINFL*TO_RAD
+          DFI_EINFL = PI_OVER_TWO
+        ELSE
+          EINFLR = ACOS(TMP)
+          EINFL=EINFLR*TO_DEG
+          DFI_EINFL = DFUNC_INT(EINFLR,TWOTH0R)
+        END IF
+        COSEINFL = COS(EINFLR)
+        TMP2 = 1.0 + APB2
+        TMP = SQRT(TMP2) * CSTWOTH
 
-        ! If S_L or D_L are zero, set Einfl = 2theta
-        ! If S_L equals D_L, set Einfl = 2theta
+        ! IF S_L OR D_L ARE ZERO, SET EINFL = 2THETA
+        ! IF S_L EQUALS D_L, SET EINFL = 2THETA
 
-        If ((s_l == 0.0) .OR. (d_l == 0.0) .OR. s_eq_d) then
-          einfl = twoth0
-          einflr=einfl*to_rad
-        End if
+        IF ((S_L == 0.0) .OR. (D_L == 0.0) .OR. S_EQ_D) THEN
+          EINFL = TWOTH0
+          EINFLR=EINFL*TO_RAD
+        END IF
 
-        If (Abs(tmp) <= 1.0) Then
-          eminr = Acos(tmp)
-          emin = eminr * to_deg
-          tmp1 = tmp2 * (1.0 - tmp2 * cstwoth*cstwoth)
-        Else
-          tmp1 = 0.0
-          If (tmp > 0.0) Then
-            emin = 0.0
-            eminr= 0.0
-          Else
-            emin = 180.0
-            eminr= pi
-          End If
-        End If
+        IF (ABS(TMP) <= 1.0) THEN
+          EMINR = ACOS(TMP)
+          EMIN = EMINR * TO_DEG
+          TMP1 = TMP2 * (1.0 - TMP2 * CSTWOTH*CSTWOTH)
+        ELSE
+          TMP1 = 0.0
+          IF (TMP > 0.0) THEN
+            EMIN = 0.0
+            EMINR= 0.0
+          ELSE
+            EMIN = 180.0
+            EMINR= PI
+          END IF
+        END IF
 
-        dfi_emin = dfunc_int(eminr,twoth0r)
+        DFI_EMIN = DFUNC_INT(EMINR,TWOTH0R)
         !
-        ! Simplifications if S_L equals D_L
+        ! SIMPLIFICATIONS IF S_L EQUALS D_L
         !
-        half_over_dl=0.5_cp/d_l
-        If (s_eq_d) Then
-          dfi_einfl = pi_over_two
-          normv_analytic = (pi_over_two - dfi_emin)  &
-              - 2.0_cp*half_over_dl*(extra_int(einflr)-extra_int(eminr))
-          df_dh_factor =  half_over_dl * (pi_over_two - dfi_emin)
-          df_ds_factor =  half_over_dl * (pi_over_two - dfi_emin)
-          df_dh_factor = df_dh_factor - 2.0_cp*half_over_dl * normv_analytic
-        Else
-          dfi_einfl = dfunc_int(einflr,twoth0r)
-          normv_analytic = Min(s_l,d_l)/d_l*(pi_over_two - dfi_einfl)
-          normv_analytic = normv_analytic + apb*half_over_dl*(dfi_einfl-dfi_emin)   &
-                       - 2.0_cp*half_over_dl*(extra_int(einflr)-extra_int(eminr))
-          tmp= half_over_dl*(pi - dfi_einfl - dfi_emin)
-          tmp1=half_over_dl*(dfi_einfl - dfi_emin)
-          If(d_l < s_l) Then
-            df_dh_factor = tmp
-            df_ds_factor = tmp1
-          Else
-            df_dh_factor = tmp1
-            df_ds_factor = tmp
-          End If
-          df_dh_factor = df_dh_factor - 2.0_cp*half_over_dl * normv_analytic
-        End If
-        arraynum = 1
-        ! Number of terms needed, GSAS-II formulation
-        tmp = abs(twoth0 - emin)
-        if (gamma <= 0.0) then
-           k = ctrl_nsteps*tmp/2
-        else
-           k = ctrl_nsteps*tmp/(100*gamma)
-        endif
-        Do
-           if ( .not. ( arraynum < numtab  .And.  k > nterms(arraynum) ) ) exit
-           arraynum = arraynum + 1
-        End Do
-        ngt = nterms(arraynum)              ! Save the number of terms
-        ngt2 = ngt / 2
-        ! Calculate Gauss-Legendre quadrature terms the first time they
-        ! are required
-        if (.not. calclfg(arraynum)) then
-           calclfg(arraynum) = .true.
-           call gauleg(-1.,1.,xpt,wpt,ngt)
-           it = fstterm(arraynum)-ngt2
+        HALF_OVER_DL=0.5_CP/D_L
+        IF (S_EQ_D) THEN
+          DFI_EINFL = PI_OVER_TWO
+          NORMV_ANALYTIC = (PI_OVER_TWO - DFI_EMIN)  &
+              - 2.0_CP*HALF_OVER_DL*(EXTRA_INT(EINFLR)-EXTRA_INT(EMINR))
+          DF_DH_FACTOR =  HALF_OVER_DL * (PI_OVER_TWO - DFI_EMIN)
+          DF_DS_FACTOR =  HALF_OVER_DL * (PI_OVER_TWO - DFI_EMIN)
+          DF_DH_FACTOR = DF_DH_FACTOR - 2.0_CP*HALF_OVER_DL * NORMV_ANALYTIC
+        ELSE
+          DFI_EINFL = DFUNC_INT(EINFLR,TWOTH0R)
+          NORMV_ANALYTIC = MIN(S_L,D_L)/D_L*(PI_OVER_TWO - DFI_EINFL)
+          NORMV_ANALYTIC = NORMV_ANALYTIC + APB*HALF_OVER_DL*(DFI_EINFL-DFI_EMIN)   &
+                       - 2.0_CP*HALF_OVER_DL*(EXTRA_INT(EINFLR)-EXTRA_INT(EMINR))
+          TMP= HALF_OVER_DL*(PI - DFI_EINFL - DFI_EMIN)
+          TMP1=HALF_OVER_DL*(DFI_EINFL - DFI_EMIN)
+          IF(D_L < S_L) THEN
+            DF_DH_FACTOR = TMP
+            DF_DS_FACTOR = TMP1
+          ELSE
+            DF_DH_FACTOR = TMP1
+            DF_DS_FACTOR = TMP
+          END IF
+          DF_DH_FACTOR = DF_DH_FACTOR - 2.0_CP*HALF_OVER_DL * NORMV_ANALYTIC
+        END IF
+        ARRAYNUM = 1
+        ! NUMBER OF TERMS NEEDED, GSAS-II FORMULATION
+        TMP = ABS(TWOTH0 - EMIN)
+        IF (GAMMA <= 0.0) THEN
+           K = CTRL_NSTEPS*TMP/2
+        ELSE
+           K = CTRL_NSTEPS*TMP/(100*GAMMA)
+        ENDIF
+        DO
+           IF ( .NOT. ( ARRAYNUM < NUMTAB  .AND.  K > NTERMS(ARRAYNUM) ) ) EXIT
+           ARRAYNUM = ARRAYNUM + 1
+        END DO
+        NGT = NTERMS(ARRAYNUM)              ! SAVE THE NUMBER OF TERMS
+        NGT2 = NGT / 2
+        ! CALCULATE GAUSS-LEGENDRE QUADRATURE TERMS THE FIRST TIME THEY
+        ! ARE REQUIRED
+        IF (.NOT. CALCLFG(ARRAYNUM)) THEN
+           CALCLFG(ARRAYNUM) = .TRUE.
+           CALL GAULEG(-1.,1.,XPT,WPT,NGT)
+           IT = FSTTERM(ARRAYNUM)-NGT2
            !
-           ! copy the ngt/2 terms from our working array to the stored array
+           ! COPY THE NGT/2 TERMS FROM OUR WORKING ARRAY TO THE STORED ARRAY
            !
-           do k=ngt2+1,ngt
-              xp(k+it) = xpt(k)
-              wp(k+it) = wpt(k)
-           enddo
-      end if
-      it = fstterm(arraynum)-ngt2  !in case skipped initialisation
+           DO K=NGT2+1,NGT
+              XP(K+IT) = XPT(K)
+              WP(K+IT) = WPT(K)
+           ENDDO
+      END IF
+      IT = FSTTERM(ARRAYNUM)-NGT2  !IN CASE SKIPPED INITIALISATION
 
-   End if   !re_calculate
-        ! Clear terms needed for summations
-      sumwg = 0.0
-      sumwrg = 0.0
-      sumwrdgda = 0.0
-      sumwdgdb = 0.0
-      sumwrdgdb = 0.0
-      sumwgdrd2t = 0.0
-      sumwgdrdg = 0.0
-      sumwgdrdlz = 0.0
-      sumwx = 0.0
-      ! Compute the convolution integral with the pseudovoight.
-      ! using Gauss-Legendre quadrature.
-      ! In theory, we should use the weighted w_i values of the
-      ! product of the asymmetry
-      ! profile with the pseudovoight at a set of points x_i in the
-      ! interval [-1,1]. However, 
-      ! the following adopts the GSAS-II approach of instead integrating
-      ! between 0 and 1, which can be imagined as extending the range
-      ! of integration be from Emin - twoth0 up to twoth0.
-      ! This seems to be preferable because the most important area
-      ! for integration is the rapidly increasing peak, and so the
-      ! higher density of points at the end of the interval works in our
-      ! favour.
-      Do k = ngt2+1 , ngt
-          delta = emin + (twoth0 - emin) * xp(k + it)
-          sindelta = Sin(delta*to_rad)
-          cosdelta = Cos(delta*to_rad)
-          If (Abs(cosdelta) < 1.0E-15) cosdelta = 1.0E-15
-          rcosdelta = Abs(1.0 / cosdelta)
-          tmp = cosdelta*cosdelta - cstwoth*cstwoth
-          If (tmp > 0.0) Then
-            tmp1 = Sqrt(tmp)
-            f = Abs(cstwoth) / tmp1           !h-function in FCJ
-          Else
-            f = 0.0
-          End If
-          !  calculate G(Delta,2theta) , FCJ eq. 7a and 7b
-          If ( Abs(delta - emin) > Abs(einfl - emin)) Then
-            If (s_l > d_l) Then
-              g = 2.0 * d_l * f * rcosdelta
-            Else
-              g = 2.0 * s_l * f * rcosdelta
-            End If
-          Else
-            g = (-1.0 + apb * f) * rcosdelta
-          End If
-          call Psvoigt(twoth-delta,sig,gamma,tmp,dprdt,dprdg,dprdlz)
-          sumwg = sumwg + wp(k+it) * g
-          sumwrg = sumwrg + wp(k+it) * g * tmp
-          If ( Abs(cosdelta) > Abs(coseinfl)) Then
-            sumwrdgda = sumwrdgda + wp(k+it) * f * rcosdelta * tmp
-            sumwrdgdb = sumwrdgdb + wp(k+it) * f * rcosdelta * tmp
-          Else
-            If (s_l < d_l) Then
-              sumwrdgdb = sumwrdgdb + 2.0*wp(k+it)*f* rcosdelta*tmp
-            Else
-              sumwrdgda = sumwrdgda + 2.0*wp(k+it)*f* rcosdelta*tmp
-            End If
-          End If
-          sumwgdrd2t = sumwgdrd2t + wp(k+it) * g * dprdt
-          sumwgdrdg = sumwgdrdg + wp(k+it) * g * dprdg
-          sumwgdrdlz = sumwgdrdlz + wp(k+it) * g * dprdlz
-      End Do
+   END IF   !RE_CALCULATE
+        ! CLEAR TERMS NEEDED FOR SUMMATIONS
+      SUMWG = 0.0
+      SUMWRG = 0.0
+      SUMWRDGDA = 0.0
+      SUMWDGDB = 0.0
+      SUMWRDGDB = 0.0
+      SUMWGDRD2T = 0.0
+      SUMWGDRDG = 0.0
+      SUMWGDRDLZ = 0.0
+      SUMWX = 0.0
+      ! COMPUTE THE CONVOLUTION INTEGRAL WITH THE PSEUDOVOIGHT.
+      ! USING GAUSS-LEGENDRE QUADRATURE.
+      ! IN THEORY, WE SHOULD USE THE WEIGHTED W_I VALUES OF THE
+      ! PRODUCT OF THE ASYMMETRY
+      ! PROFILE WITH THE PSEUDOVOIGHT AT A SET OF POINTS X_I IN THE
+      ! INTERVAL [-1,1]. HOWEVER, 
+      ! THE FOLLOWING ADOPTS THE GSAS-II APPROACH OF INSTEAD INTEGRATING
+      ! BETWEEN 0 AND 1, WHICH CAN BE IMAGINED AS EXTENDING THE RANGE
+      ! OF INTEGRATION BE FROM EMIN - TWOTH0 UP TO TWOTH0.
+      ! THIS SEEMS TO BE PREFERABLE BECAUSE THE MOST IMPORTANT AREA
+      ! FOR INTEGRATION IS THE RAPIDLY INCREASING PEAK, AND SO THE
+      ! HIGHER DENSITY OF POINTS AT THE END OF THE INTERVAL WORKS IN OUR
+      ! FAVOUR.
+      DO K = NGT2+1 , NGT
+          DELTA = EMIN + (TWOTH0 - EMIN) * XP(K + IT)
+          SINDELTA = SIN(DELTA*TO_RAD)
+          COSDELTA = COS(DELTA*TO_RAD)
+          IF (ABS(COSDELTA) < 1.0E-15) COSDELTA = 1.0E-15
+          RCOSDELTA = ABS(1.0 / COSDELTA)
+          TMP = COSDELTA*COSDELTA - CSTWOTH*CSTWOTH
+          IF (TMP > 0.0) THEN
+            TMP1 = SQRT(TMP)
+            F = ABS(CSTWOTH) / TMP1           !H-FUNCTION IN FCJ
+          ELSE
+            F = 0.0
+          END IF
+          !  CALCULATE G(DELTA,2THETA) , FCJ EQ. 7A AND 7B
+          IF ( ABS(DELTA - EMIN) > ABS(EINFL - EMIN)) THEN
+            IF (S_L > D_L) THEN
+              G = 2.0 * D_L * F * RCOSDELTA
+            ELSE
+              G = 2.0 * S_L * F * RCOSDELTA
+            END IF
+          ELSE
+            G = (-1.0 + APB * F) * RCOSDELTA
+          END IF
+          CALL PSVOIGT(TWOTH-DELTA,SIG,GAMMA,TMP,DPRDT,DPRDG,DPRDLZ)
+          SUMWG = SUMWG + WP(K+IT) * G
+          SUMWRG = SUMWRG + WP(K+IT) * G * TMP
+          IF ( ABS(COSDELTA) > ABS(COSEINFL)) THEN
+            SUMWRDGDA = SUMWRDGDA + WP(K+IT) * F * RCOSDELTA * TMP
+            SUMWRDGDB = SUMWRDGDB + WP(K+IT) * F * RCOSDELTA * TMP
+          ELSE
+            IF (S_L < D_L) THEN
+              SUMWRDGDB = SUMWRDGDB + 2.0*WP(K+IT)*F* RCOSDELTA*TMP
+            ELSE
+              SUMWRDGDA = SUMWRDGDA + 2.0*WP(K+IT)*F* RCOSDELTA*TMP
+            END IF
+          END IF
+          SUMWGDRD2T = SUMWGDRD2T + WP(K+IT) * G * DPRDT
+          SUMWGDRDG = SUMWGDRDG + WP(K+IT) * G * DPRDG
+          SUMWGDRDLZ = SUMWGDRDLZ + WP(K+IT) * G * DPRDLZ
+      END DO
 
-      If (sumwg == 0.0) sumwg = 1.0_cp
-      profval = sumwrg / sumwg
-      ! Minus sign in following as Psvoight returns derivs against x, not
-      ! against the centre position.
-      dprdt = -sumwgdrd2t/ sumwg
-      dprdg = sumwgdrdg / sumwg
-      dprdlz = sumwgdrdlz / sumwg
+      IF (SUMWG == 0.0) SUMWG = 1.0_CP
+      PROFVAL = SUMWRG / SUMWG
+      ! MINUS SIGN IN FOLLOWING AS PSVOIGHT RETURNS DERIVS AGAINST X, NOT
+      ! AGAINST THE CENTRE POSITION.
+      DPRDT = -SUMWGDRD2T/ SUMWG
+      DPRDG = SUMWGDRDG / SUMWG
+      DPRDLZ = SUMWGDRDLZ / SUMWG
       !
-      If(normv_analytic <= 0.0) normv_analytic=1.0_cp
-      dprdd = sumwrdgda / sumwg - df_dh_factor*profval/normv_analytic - profval/d_l
-      dprds = sumwrdgdb / sumwg - df_ds_factor*profval/normv_analytic
+      IF(NORMV_ANALYTIC <= 0.0) NORMV_ANALYTIC=1.0_CP
+      DPRDD = SUMWRDGDA / SUMWG - DF_DH_FACTOR*PROFVAL/NORMV_ANALYTIC - PROFVAL/D_L
+      DPRDS = SUMWRDGDB / SUMWG - DF_DS_FACTOR*PROFVAL/NORMV_ANALYTIC
 
-      dprds = 0.5_cp*(dprdd + dprds)  !S is really D+S
-      dprdd = 0.5_cp*(dprdd - dprds)  !D is really D-S
-      Return
-    End Subroutine Prof_Val
-
-!  Function to give the analytical value of the normalisation constant
-
-    Function dfunc_int(twopsi, twoth0) result(dfunc)
-      Real(kind=cp), Intent(In)  :: twopsi
-      Real(kind=cp), Intent(In)  :: twoth0
-      Real(kind=cp)              :: dfunc
-      !--- Local variables
-      Real(kind=cp) :: sintp        !Sin twopsi
-      Real(kind=cp) :: sin2t,sin2t2,csp,csm,ssp,ssm,a,b ! sin2Theta, (sin2Theta)^2
-
-      If(Abs(twopsi-twoth0) < 1.0E-5) Then
-        dfunc=pi_over_two
-      Else
-        sin2t=Sin(twoth0)
-        sin2t2=sin2t*sin2t
-        sintp = Sin(twopsi)
-        csp=sintp+sin2t2
-        csm=sintp-sin2t2
-        ssp=Abs((sintp+1.0_cp)*sin2t)
-        ssm=Abs((sintp-1.0_cp)*sin2t)
-        a=csm/ssm; b=-csp/ssp
-        If(a > 1.0_cp) a=1.0_cp
-        If(b <-1.0_cp) b=-1.0_cp
-        dfunc=0.5_cp*(Asin(a)-Asin(b))
-      End If
-    End Function dfunc_int
-
-    !  Function to calculate 1/4(log(|sin(x)+1|)-log(|sin(x)-1|))
-    Function extra_int(x) result(extra)
-      Real(kind=cp), Intent(In) :: x
-      Real(kind=cp)             :: extra
-      !--- Local variables
-      Real(kind=cp)             :: sinx
-
-      sinx = Sin(x)
-      extra = 0.25_cp*(Log(Abs(sinx+1.0_cp))-Log(Abs(sinx-1.0_cp)))
-    End Function extra_int
-
-End Module Profile_Finger
-
-! Linkage for F2Py as direct calling of Fortran module contents
-! from outside file containing module fails when separate object files combined into
-! single Python loadable module
-Subroutine get_prof_val( SIG, gamma, asym1, asym2, twoth, twoth0, dprdt, dprdg,  &
-     dprdlz , dprds , dprdd , profval)
-  use Profile_Finger, only:Prof_Val
-      integer,       parameter :: sp = selected_real_kind(6,30)
-      integer,       parameter :: dp = selected_real_kind(14,150)
-      integer,       parameter :: cp = sp    !switch to double precision by putting cp=dp
-      real(kind=cp), Intent(In)    :: sig        ! Gaussian variance (i.e. sig squared)
-      real(kind=cp), Intent(In)    :: gamma      ! Lorenzian FWHM (i.e. 2 HWHM)
-      real(kind=cp), Intent(In)    :: asym1      ! D_L+S_L
-      real(kind=cp), Intent(In)    :: asym2      ! D_L-S_L
-      real(kind=cp), Intent(In)    :: twoth      ! point at which to evaluate the profile
-      real(kind=cp), Intent(In)    :: twoth0     ! two_theta value for peak
-      real(kind=cp), Intent(Out)   :: dprdt      ! derivative of profile wrt TwoTH0
-      real(kind=cp), Intent(Out)   :: dprdg      ! derivative of profile wrt Gaussian sig
-      real(kind=cp), Intent(Out)   :: dprdlz     ! derivative of profile wrt Lorenzian
-      real(kind=cp), Intent(Out)   :: dprds      ! derivative of profile wrt asym1
-      real(kind=cp), Intent(Out)   :: dprdd      ! derivative of profile wrt asym2
-      real(kind=cp), Intent(Out)   :: profval    ! Value of the profile at point twoth
-      Call Prof_Val(SIG,GAMMA,asym1,asym2,twoth,twoth0,DPRDT,DPRDG,DPRDLZ,DPRDS, &
-           DPRDD,profval)
+      DPRDS = 0.5_CP*(DPRDD + DPRDS)  !S IS REALLY D+S
+      DPRDD = 0.5_CP*(DPRDD - DPRDS)  !D IS REALLY D-S
       RETURN
-    END subroutine get_prof_val
+    END SUBROUTINE PROF_VAL
+
+!  FUNCTION TO GIVE THE ANALYTICAL VALUE OF THE NORMALISATION CONSTANT
+
+    FUNCTION DFUNC_INT(TWOPSI, TWOTH0) RESULT(DFUNC)
+      REAL(KIND=CP), INTENT(IN)  :: TWOPSI
+      REAL(KIND=CP), INTENT(IN)  :: TWOTH0
+      REAL(KIND=CP)              :: DFUNC
+      !--- LOCAL VARIABLES
+      REAL(KIND=CP) :: SINTP        !SIN TWOPSI
+      REAL(KIND=CP) :: SIN2T,SIN2T2,CSP,CSM,SSP,SSM,A,B ! SIN2THETA, (SIN2THETA)^2
+
+      IF(ABS(TWOPSI-TWOTH0) < 1.0E-5) THEN
+        DFUNC=PI_OVER_TWO
+      ELSE
+        SIN2T=SIN(TWOTH0)
+        SIN2T2=SIN2T*SIN2T
+        SINTP = SIN(TWOPSI)
+        CSP=SINTP+SIN2T2
+        CSM=SINTP-SIN2T2
+        SSP=ABS((SINTP+1.0_CP)*SIN2T)
+        SSM=ABS((SINTP-1.0_CP)*SIN2T)
+        A=CSM/SSM; B=-CSP/SSP
+        IF(A > 1.0_CP) A=1.0_CP
+        IF(B <-1.0_CP) B=-1.0_CP
+        DFUNC=0.5_CP*(ASIN(A)-ASIN(B))
+      END IF
+    END FUNCTION DFUNC_INT
+
+    !  FUNCTION TO CALCULATE 1/4(LOG(|SIN(X)+1|)-LOG(|SIN(X)-1|))
+    FUNCTION EXTRA_INT(X) RESULT(EXTRA)
+      REAL(KIND=CP), INTENT(IN) :: X
+      REAL(KIND=CP)             :: EXTRA
+      !--- LOCAL VARIABLES
+      REAL(KIND=CP)             :: SINX
+
+      SINX = SIN(X)
+      EXTRA = 0.25_CP*(LOG(ABS(SINX+1.0_CP))-LOG(ABS(SINX-1.0_CP)))
+    END FUNCTION EXTRA_INT
+
+END MODULE PROFILE_FINGER
+
+! LINKAGE FOR F2PY AS DIRECT CALLING OF FORTRAN MODULE CONTENTS
+! FROM OUTSIDE FILE CONTAINING MODULE FAILS WHEN SEPARATE OBJECT FILES COMBINED INTO
+! SINGLE PYTHON LOADABLE MODULE
+SUBROUTINE GET_PROF_VAL( SIG, GAMMA, ASYM1, ASYM2, TWOTH, TWOTH0, DPRDT, DPRDG,  &
+     DPRDLZ , DPRDS , DPRDD , PROFVAL)
+  USE PROFILE_FINGER, ONLY:PROF_VAL
+      INTEGER,       PARAMETER :: SP = SELECTED_REAL_KIND(6,30)
+      INTEGER,       PARAMETER :: DP = SELECTED_REAL_KIND(14,150)
+      INTEGER,       PARAMETER :: CP = SP    !SWITCH TO DOUBLE PRECISION BY PUTTING CP=DP
+      REAL(KIND=CP), INTENT(IN)    :: SIG        ! GAUSSIAN VARIANCE (I.E. SIG SQUARED)
+      REAL(KIND=CP), INTENT(IN)    :: GAMMA      ! LORENZIAN FWHM (I.E. 2 HWHM)
+      REAL(KIND=CP), INTENT(IN)    :: ASYM1      ! D_L+S_L
+      REAL(KIND=CP), INTENT(IN)    :: ASYM2      ! D_L-S_L
+      REAL(KIND=CP), INTENT(IN)    :: TWOTH      ! POINT AT WHICH TO EVALUATE THE PROFILE
+      REAL(KIND=CP), INTENT(IN)    :: TWOTH0     ! TWO_THETA VALUE FOR PEAK
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDT      ! DERIVATIVE OF PROFILE WRT TWOTH0
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDG      ! DERIVATIVE OF PROFILE WRT GAUSSIAN SIG
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDLZ     ! DERIVATIVE OF PROFILE WRT LORENZIAN
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDS      ! DERIVATIVE OF PROFILE WRT ASYM1
+      REAL(KIND=CP), INTENT(OUT)   :: DPRDD      ! DERIVATIVE OF PROFILE WRT ASYM2
+      REAL(KIND=CP), INTENT(OUT)   :: PROFVAL    ! VALUE OF THE PROFILE AT POINT TWOTH
+      CALL PROF_VAL(SIG,GAMMA,ASYM1,ASYM2,TWOTH,TWOTH0,DPRDT,DPRDG,DPRDLZ,DPRDS, &
+           DPRDD,PROFVAL)
+      RETURN
+    END SUBROUTINE GET_PROF_VAL
 
 

@@ -6818,10 +6818,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         SetupLegendPick(legend,new)
         Page.canvas.draw()
         
-    else:       #'C' & 'B'
+    else:       #'A', 'C' & 'B'
         isig = 4
         igam = 6
-        if 'B' in Parms['Type'][0]:
+        if Parms['Type'][0][2] in ['A','B']:
             isig = 8
             igam = 10
         Plot.figure.suptitle(TreeItemText)

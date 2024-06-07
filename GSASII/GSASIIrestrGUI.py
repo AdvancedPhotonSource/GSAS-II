@@ -1056,7 +1056,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(BondRestr,wx.ID_ANY,
-                    f'Bond restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(bondList):.2f}'
+                    f'Bond restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(bondList):.2f}'
                                         ),0)
                 Bonds.SetScrollRate(10,10)
                 Bonds.SetMinSize((-1,300))
@@ -1200,7 +1200,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(AngleRestr,wx.ID_ANY,
-                    f'Angle restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(angleList):.2f}'
+                    f'Angle restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(angleList):.2f}'
                                         ),0)
                 Angles.SetScrollRate(10,10)
                 Angles.SetMinSize((-1,300))
@@ -1337,7 +1337,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
-                    f'Plane restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(planeList):.2f}'
+                    f'Plane restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(planeList):.2f}'
                                         ),0)
                 Planes.SetScrollRate(10,10)
                 Planes.SetMinSize((-1,300))
@@ -1478,7 +1478,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
-                    f'Chiral volume restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(volumeList):.2f}'
+                    f'Chiral volume restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(volumeList):.2f}'
                                         ),0)
                 Volumes.SetScrollRate(10,10)
                 Volumes.SetMinSize((-1,300))
@@ -1615,7 +1615,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             if 'chisq' in Rvals:
                 frac = f"{100 * chisq / Rvals['chisq']:.1f}"
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,
-                f'Torsion restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(torsionList):.2f}'
+                f'Torsion restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(torsionList):.2f}'
                                         ),0)
             TorsionRestr.Torsions.SetScrollRate(10,10)
             TorsionRestr.Torsions.SetMinSize((-1,300))
@@ -1751,7 +1751,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
-                    f'Ramachandran restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(ramaList):.2f}'
+                    f'Ramachandran restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(ramaList):.2f}'
                                                 ),0)
                 RamaRestr.Ramas.SetScrollRate(10,10)
                 RamaRestr.Ramas.SetMinSize((-1,300))
@@ -1897,7 +1897,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if 'chisq' in Rvals:
                     frac = f"{100 * chisq / Rvals['chisq']:.1f}"
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
-                    f'Chemical composition restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(chemcompList):.2f}'
+                    f'Chemical composition restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(chemcompList):.2f}'
                                         ),0)
                 mainSizer.Add(ChemComps)
             else:
@@ -1998,7 +1998,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             if 'chisq' in Rvals:
                 frac = f"{100 * chisq / Rvals['chisq']:.1f}"
             mainSizer.Add(wx.StaticText(MomentRestr,-1,
-                f'Moment restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total), mean(wt*(delt/sig)^2) = {chisq/len(momentList):.2f}'
+                f'Moment restraints: sum(wt*(delt/sig)^2) = {chisq:.2f} ({frac}% of total \u03C7\u00b2), mean(wt*(delt/sig)^2) = {chisq/len(momentList):.2f}'
                                         ),0)
             Moments.SetScrollRate(10,10)
             Moments.SetMinSize((-1,300))

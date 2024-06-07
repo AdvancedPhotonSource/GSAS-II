@@ -7912,7 +7912,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 # compute Chi**2 contribution from Rwp
                 chisq = (data[0]['wR']/100)**2 * data[0]['sumwYo']
                 frac = f"{100 * chisq / Rvals['chisq']:.1f}"
-                Rmsg += f". Contributes {frac}% to Chi**2"
+                Rmsg += f". Contributes {frac}% of total \u03C7\u00b2"
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,Rmsg))
         if kind == 'PWDR':
             try:    #old gpx file

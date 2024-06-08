@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
-########### SVN repository information ###################
-# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
-# $Author: toby $
-# $Revision: 5787 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5787 2024-05-18 01:36:24Z toby $
-########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
 '''
@@ -1269,6 +1262,64 @@ class EnumSelector(wx.ComboBox):
         else:
             self.dct[self.item] = self.values[0] # unknown
         if self.OnChange: self.OnChange(event)
+
+################################################################################
+class popupSelectorButton(wx.Button):
+    '''Create a button that will invoke a menu with choices that can 
+    be selected. Do special stuff if the first item is "all"
+
+    TODO: It might be better to make this a wx.ComboCtrl if I can figure out
+    how to make that work, or perhaps make that an option
+
+    :param wx.Frame parent: a panel or frame that is the parent to this 
+      button
+    :param str lbl: a label for the button
+    :param list choices: a list of str's with labels for the items in the
+      menu
+    :param list selected: a list of bool's that determine if the menu item
+      is initial selected
+    :param function OnChange: an optional function that is called after the 
+      menu is removed
+    :param others: other keyword parameters are allowed. They will be 
+      passed to the OnChange routine. 
+    '''
+    def __init__(self,parent,lbl,choices,selected,OnChange=None,**kw):
+        self.parent = parent
+        self.choices = choices
+        self.selected = selected
+        self.OnChange = OnChange
+        self.kw = kw
+        wx.Button.__init__(self,parent,label=lbl)
+        self.Bind(wx.EVT_BUTTON, self.popupSelector)
+    
+    def popupSelector(self,event):
+        '''Show the menu and then get current values. Optionally call the 
+        OnChange routine. 
+        '''
+        menu = wx.Menu()
+        menuList = []
+        #breakpoint()
+        for i in range(len(self.choices)):
+            menuList.append(
+                menu.Append(wx.ID_ANY, self.choices[i], '', wx.ITEM_CHECK)
+                )
+            if self.selected[i]: menuList[-1].Check()
+        self.parent.PopupMenu(menu)
+        new = -1
+        for i,m in enumerate(menuList):
+            if self.selected[i] != m.IsChecked(): new = i
+            self.selected[i] = m.IsChecked()
+        if self.choices[0] == "all":
+            # special handling when 1st item is all: turn off everything
+            # when all is selected. Otherwise, set all when nothing
+            # is selected and turn it off if something else is selected
+            if new == 0:
+                self.selected[:] = [True] + (len(self.selected)-1)*[False]
+            else:
+                self.selected[0] = not any(self.selected[1:])
+                
+        menu.Destroy()
+        if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)
 
 ################################################################################
 class G2ChoiceButton(wx.Choice):
@@ -3058,8 +3109,11 @@ class SingleStringDialog(wx.Dialog):
     :param str title: title string for dialog
     :param str prompt: string to tell use what they are inputting
     :param str value: default input value, if any
-    :param tuple size: specifies default size and width for dialog 
-      [default (200,-1)]
+    :param tuple size: specifies default size and width for the text 
+      entry section of the dialog [default (200,-1)]. If the vertical 
+      size (the second number) is greater than 20 (~ a single line) then 
+      the textbox will allow inclusion of new-line characters. In single-line
+      mode, return causes the dialog to close.
     :param str help: if supplied, a help button is added to the dialog that
       can be used to display the supplied help text/URL for setting this 
       variable. (Default is '', which is ignored.)
@@ -3075,22 +3129,25 @@ class SingleStringDialog(wx.Dialog):
         self.CenterOnParent()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1.Add((-1,-1),1,wx.EXPAND)
+        if help:
+            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
+        mainSizer.Add(sizer1,0,wx.EXPAND)
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
         if choices:
             self.valItem = wx.ComboBox(self.panel, wx.ID_ANY, value,
                                 size=size,choices=[value]+choices,
                                 style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+        elif size[1] > 20:
+            self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size,
+                                style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
         else:
             self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
-        if help:
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
-        else:
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-        mainSizer.Add(sizer1,0,wx.EXPAND)
+        #sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+        #mainSizer.Add(sizer1,0,wx.EXPAND)
+        mainSizer.Add(self.valItem,1,wx.EXPAND)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()

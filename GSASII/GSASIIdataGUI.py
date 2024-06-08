@@ -2632,7 +2632,6 @@ If you continue from this point, it is quite likely that all intensity computati
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
         '''
-        
         # get a list of existing histograms
         PDFlist = []
         if self.GPXtree.GetCount():
@@ -2682,13 +2681,16 @@ If you continue from this point, it is quite likely that all intensity computati
         if not newHistList: return # somehow, no new histograms
         return # success
     
-    def AddToNotebook(self,text):
+    def AddToNotebook(self,text,typ=None):
         '''Add entry to Notebook tree item
         '''
         Id =  GetGPXtreeItemId(self,self.root,'Notebook')
         data = self.GPXtree.GetItemPyData(Id)
-        data.append('Notebook entry @ %s: %s'%(time.ctime(),text))    
-                   
+        data.append(f'[TS] Notebook entry @ {time.ctime()}')
+        if typ:
+            data.append(f'[{typ}] {text}')
+        else:
+            data.append(f'{text}')
 
 ### Command logging ###########################################################
     def OnMacroRecordStatus(self,event,setvalue=None):
@@ -5845,7 +5847,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
         if rtext is not None:
-            self.AddToNotebook(rtext)
+            self.AddToNotebook(rtext,'REF')
         self.ResetPlots()        
         
     def SaveTreeSetting(self):
@@ -7223,27 +7225,94 @@ def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
     '''
-    def OnNoteBook(event):
-        event.Skip()
-        data = text.GetValue().split('\n')
-        G2frame.GPXtree.SetItemPyData(GetGPXtreeItemId(G2frame,G2frame.root,'Notebook'),data)
-        if 'nt' not in os.name:
-            text.AppendText('\n')
-            
+    def onUpdateWindow(event=None):
+        wx.CallAfter(UpdateNotebook,G2frame,data)
+    def OnAddNotebook(event):
+        dlg = G2G.SingleStringDialog(G2frame.dataWindow,'Enter Comment',
+                    '','',(600,50),
+        '''Enter a string here that will be included in the Notebook
+This can contain any text you wish. It will have no effect on GSAS-II
+other than being included in the Notebook section of the project file.''')
+        if dlg.Show():
+            data.append(f'[TS] Notebook entry @ {time.ctime()}')
+            data.append(f'[CM] {dlg.GetValue().strip()}')
+        dlg.Destroy()
+        wx.CallAfter(UpdateNotebook,G2frame,data)
+    filterLbls = ['all','Timestamps','Refinement results','Comments',
+                      'Charge flip','Fourier','Peak fit']
+    filterPrefix = ['', 'TS', 'REF',' CM', 'CF', 'FM', 'PF']
+    cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+    if cId:
+        controls = G2frame.GPXtree.GetItemPyData(cId)
+    else: # unexpected: Notebook w/o Controls tree entries
+        self.CheckNotebook()
+        cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        controls = self.GPXtree.GetItemPyData(cId)
+    controls['Notebook'] = controls.get('Notebook',{})
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
-    topSizer.Add((250,-1))
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Project notes'),0,WACV)
+    topSizer.Add((20,-1))
+    controls['Notebook']['order'] = controls['Notebook'].get('order',False)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'  order: '),0,WACV)
+    topSizer.Add(G2G.EnumSelector(G2frame.dataWindow,controls['Notebook'],
+                         'order',['oldest-1st','newest-1st'],[False,True],
+                         OnChange=onUpdateWindow))
+    controls['Notebook']['filterSel'] = controls['Notebook'].get(
+        'filterSel',[True]+(len(filterLbls)-1)*[False])
+    topSizer.Add((20,-1))
+    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Set filters',
+                        filterLbls,controls['Notebook']['filterSel'],
+                        OnChange=onUpdateWindow)
+    topSizer.Add(fBtn,0,WACV)
+    topSizer.Add((20,-1))
+    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
+    topSizer.Add(addBtn,0,WACV)
+    addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
+    topSizer.Add((20,-1),1,wx.EXPAND,1)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
-    bigSizer.Add(topSizer)
+    bigSizer.Add(topSizer,0,wx.EXPAND)
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
-            style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
-    text.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
-    text.Bind(wx.EVT_KILL_FOCUS,OnNoteBook)
-    for line in data:
-        text.AppendText(line+"\n")
-    text.AppendText('Notebook entry @ '+time.ctime()+"\n")
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP)
+    if controls['Notebook']['order']:
+        # would be nice to have some code that reverses in blocks,
+        # so that lines stay after their timestamp
+#        breakpoint()
+#        lines = []
+#        i = 0
+#        while i < len(data):
+#            if data[i].startswith('[TS']):
+#                tsi = i
+#                i += 1
+#                while data[i].startswith('[TS']):
+#                lines.insert
+        fxn = reversed
+    else:
+        fxn = list
+    # get prefixes to be shown
+    selLbl = [l for i,l in enumerate(filterPrefix)
+                  if controls['Notebook']['filterSel'][i]]
+    for line in fxn(data):
+        if not line.strip(): continue
+        prefix = ''
+        if line[0] == '[' and ']' in line:
+            prefix, line = line[1:].split(']',1)
+        show = False
+        if controls['Notebook']['filterSel'][0] or prefix == '':
+            show = True
+        elif prefix in selLbl: 
+            show = True
+        if show:
+            if prefix == 'TS':
+                text.AppendText(line.strip()+"\n")
+            elif prefix and (controls['Notebook']['filterSel'][0]
+                                or controls['Notebook']['filterSel'][1]):
+                # indent all but timestamps
+                for l in line.strip().split('\n'):
+                    text.AppendText('    '+l.strip()+"\n")
+            else:
+                text.AppendText(line.strip()+"\n")
     bigSizer.Add(text,1,wx.ALL|wx.EXPAND)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)

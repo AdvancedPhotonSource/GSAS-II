@@ -201,6 +201,7 @@ def UpdateImageData(G2frame,data):
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
 
+    G2frame.PhaseRing2Th = []
     G2frame.dataWindow.ClearData()
     G2frame.ImageZ = GetImageZ(G2frame,data)
     mainSizer = G2frame.dataWindow.GetSizer()
@@ -1558,6 +1559,57 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         globEdit.Bind(wx.EVT_BUTTON,OnGlobalEdit)
         gonioSizer.Add(globEdit,0,WACV)
         return gonioSizer
+
+    def OnDrawPhase(event):
+        'generate and plot the rings for a selected phase'
+        import GSASIIlattice as G2lat
+        import GSASIIspc as G2spc
+        import GSASIIpwd as G2pwd
+        #calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
+        # make a list of phases & calibrants
+        calList = sorted(calFile.Calibrants.keys(),key=lambda s: s.lower())
+        selList = ['(clear)']
+        selList += G2frame.GetPhaseNames()
+        selList += [i for i in calList if i]
+        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select a phase to superimpose on image',
+            'Select phase',selList)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        # generate the powder reflections for the selected phase/calibrant
+        skip = data['calibskip']
+        dmin = data['calibdmin']
+        G2frame.PhaseRing2Th = []
+        if selList[sel] == '(clear)':
+            G2plt.PlotExposedImage(G2frame,event=event)
+            return
+        elif selList[sel] in calList:
+            Bravais,SGs,Cells = calFile.Calibrants[selList[sel]][:3]
+            HKL = []
+            for bravais,sg,cell in zip(Bravais,SGs,Cells):
+                A = G2lat.cell2A(cell)
+                if sg:
+                    SGData = G2spc.SpcGroup(sg)[1]
+                    hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
+                    HKL += list(hkl)
+                else:
+                    hkl = G2lat.GenHBravais(dmin,bravais,A)
+                    HKL += list(hkl)
+        else:
+            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phId = G2gd.GetGPXtreeItemId(G2frame,phId,selList[sel])
+            phdata = G2frame.GPXtree.GetItemPyData(phId)
+            SGData = phdata['General']['SGData']
+            A = G2lat.cell2A(phdata['General']['Cell'][1:7])
+            HKL = list(G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True))
+        for iH,H in enumerate(HKL):
+            tth = 2.0*asind(data['wavelength']/(2.*H[3]))
+            G2frame.PhaseRing2Th.append(tth)
+        G2plt.PlotExposedImage(G2frame,event=event)
         
     # UpdateImageControls: Image Controls main code             
                             
@@ -1622,6 +1674,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnLoadMultiControls, id=G2G.wxID_LOADELECTEDCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnTransferAngles, id=G2G.wxID_IMXFERCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnResetDist, id=G2G.wxID_IMRESETDIST)
+    G2frame.Bind(wx.EVT_MENU, OnDrawPhase, id=G2G.wxID_IMDRWPHS)
     def OnDestroy(event):
         G2frame.autoIntFrame = None
     def OnAutoInt(event):

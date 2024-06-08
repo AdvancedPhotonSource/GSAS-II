@@ -9004,16 +9004,17 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Plot.add_artist(artist)
                 artist.itemNumber = i
                 artist.itemType = 'Spot'
-                
+
+        # plot the selected phase as green rings
+        try:
+            for tth in G2frame.PhaseRing2Th:
+                (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,
+                                                 Data['wavelength'])
+                Plot.plot(x1,y1,'g',picker=False)
+        except:
+            pass
+
         G2frame.ringList = []
-        wave = Data['wavelength']
-        for tth in range(1,5):
-            (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,wave)
-            artistO, = Plot.plot(x1,y1,'g',picker=False)
-            #artistO.itemNumber = iring
-            #artistO.itemType = 'RingOuter'
-            #G2frame.ringList.append([artistI])
-            
         for iring,ring in enumerate(Masks['Rings']):    # drawing spot masks
             if ring:
                 tth,thick = ring

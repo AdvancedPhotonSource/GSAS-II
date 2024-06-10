@@ -14,8 +14,8 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DTT                 !delta 2-theta in centidegrees                 
-      REAL*4        TTHETA              !2-theta in centidegrees              
+      REAL*4        DTT                 !delta 2-theta in degrees                 
+      REAL*4        TTHETA              !2-theta in degrees              
       REAL*4        ALP,BET,SIG,GAM             
       REAL*4        SL,HL               !S/L & H/L               
       REAL*4        PRFUNC              
@@ -54,7 +54,6 @@
       REAL*4        APB                 ! (A+B)
       REAL*4        AMB                 ! (A-B)
       REAL*4        APB2                ! (A+B)**2
-      REAL*4        TTHETAD             ! Two Theta in degrees
 
 ! Intermediate variables
 
@@ -121,9 +120,8 @@ C       note that nterms determines both arraysize and fstterm
 c
 C f(2theta) intermediates
 c
-      TTHETAD = 0.01 * TTHETA
-      SIN2THETA = SIND(TTHETAD)
-      COS2THETA = COSD(TTHETAD)
+      SIN2THETA = SIND(TTHETA)
+      COS2THETA = COSD(TTHETA)
       SIN2THETA2 = SIN2THETA * SIN2THETA
       COS2THETA2 = COS2THETA * COS2THETA
 C
@@ -174,11 +172,11 @@ C
 C       
 C CALCULATE DESIRED NUMBER OF INTERVALS
 C
-        TMP = ABS(TTHETAD - EMIN)               ! TMP IN DEGREES
+        TMP = ABS(TTHETA - EMIN)               ! TMP IN DEGREES
         IF ( GAM.LE.0.0 ) THEN
-          K = INT(TMP*200.0)                    !RVD FORMULATION
+          K = INT(TMP*20.0)                    !RVD FORMULATION
         ELSE
-          K = INT(300.0*TMP/GAM)                !NEW FORMULATION OF MAY 2004
+          K = INT(10.0*TMP/GAM)                !NEW FORMULATION OF MAY 2004
         END IF
 C
 C FIND THE NEXT LARGEST SET
@@ -220,8 +218,8 @@ C COMPUTE CONVOLUTION INTEGRAL FOR 2PHI(MIN) <= DELTA <= 2THETA
 C       
         IT = FSTTERM(ARRAYNUM)-NGT/2
         DO K=NGT/2+1,NGT
-          DELTA = EMIN + (TTHETAD - EMIN) * XP(K+IT) ! DELTA IN DEGREES
-          CALL EPSVOIGT(DTT+TTHETA-DELTA*100.,ALP,BET,SIG,GAM,R,DRDT,
+          DELTA = EMIN + (TTHETA - EMIN) * XP(K+IT) ! DELTA IN DEGREES
+          CALL EPSVOIGT(DTT+TTHETA-DELTA,ALP,BET,SIG,GAM,R,DRDT,
      1      DRDA,DRDB,DRDS,DRDG)
 
           DDELTADA = (1. - XP(K+IT))*DEMINDA ! N. B. SYMM W/R A,B
@@ -233,7 +231,7 @@ C
           TMP1 = COSDELTA2 - COS2THETA2
           TMP2 = SIN2THETA2 - SINDELTA * SINDELTA
           TMP = TMP2
-          IF ( TTHETA.GT.4500.0 ) TMP = TMP1 
+          IF ( TTHETA.GT.45.0 ) TMP = TMP1 
           IF (TMP .GT. 0) THEN
             TMP1 = 1.0/SQRT(TMP)
             F = ABS(COS2THETA) * TMP1
@@ -300,7 +298,7 @@ C
         CALL EPSVOIGT(DTT,ALP,BET,SIG,GAM,R,DRDT,DRDA,DRDB,DRDS,DRDG)
         
         PRFUNC = R
-        DYDA = 0.002 * SIGN(1.0,TTHETA - DTT)
+        DYDA = -.2 * SIGN(1.0,TTHETA - DTT)
         DYDB = DYDA
         ALPART = DRDA
         BEPART = DRDB

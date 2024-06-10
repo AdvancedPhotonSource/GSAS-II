@@ -1090,7 +1090,19 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             pkS = max(parmDict[pfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[pfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
-                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+                shl = parmDict[pfx+'SH/L']
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            elif 'B' in dataType:
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
+            elif 'A'' in dataType':    
+                shl = parmDict[pfx+'SH/L']
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWA(pkP,alp,bet,pkS,pkG,shl)
             elif 'E' in dataType:
                 Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T'OF
@@ -1105,13 +1117,13 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
+                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])[0]
+            elif 'B' in dataType:
+                ybi = pkI*getEpsVoigt(pkP,alp,bet,pkS/1.e4,pkG/100.,xdata[iBeg:iFin])[0]/100.
+            elif 'A' in dataType:
+                ybi = pkI*getExpFCJVoigt3(pkP,alp,bet,pkS,pkG,shl,xdata[iBeg:iFin])[0]
             elif 'T' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])[0]
-            elif 'A' in dataType:
-                ybi = pkI*getEpsVoigt(pkP,1000.,1000.,pkS,pkG,xdata[iBeg:iFin])[0]
-            elif 'B' in dataType:
-                ybi = pkI*getEpsVoigt(pkP,1000.,1000.,pkS/1.e4,pkG/100.,xdata[iBeg:iFin])[0]
             elif 'E' in dataType:
                 ybi = pkI*getPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])[0]
             else:
@@ -1240,7 +1252,19 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
             pkS = max(parmDict[hfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[hfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
-                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+                shl = parmDict[hfx+'SH/L']
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            elif 'B' in dataType:
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
+            elif 'A'' in dataType':    
+                shl = parmDict[hfx+'SH/L']
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWA(pkP,alp,bet,pkS,pkG,shl)
             elif 'E' in dataType:
                 Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T' or 'B'
@@ -1255,7 +1279,15 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,.002,xdata[iBeg:iFin])
+                Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
+            elif 'B' in dataType:
+                Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,alp,bet,pkS/1.e4,pkG/100.,xdata[iBeg:iFin])
+                dFdp /= 100.
+                dFds /= 1.e6
+                dFdg /= 1.e4
+                Df /= 100.
+            elif 'A' in dataType:
+                Df,dFdp,x,x,dFds,dFdg,x = getdExpFCJVoigt3(pkP,alp,bet,pkS,pkG,shl,xdata[iBeg:iFin])
             elif 'E' in dataType:
                 Df,dFdp,dFds,dFdg = getdPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])
             else:   #'T'OF
@@ -1896,17 +1928,17 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                             dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
                             dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
                         elif 'B' in dataType:
-                            dMdpk = np.zeros(shape=(7,len(xdata)))
-                            dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                            dMdpk2 = np.zeros(shape=(7,len(xdata)))
+                            dMdipk2 = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
                             for i in range(1,6):
-                                dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]/100.
+                                dMdpk2[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]/100.
                             dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]/100.
                             dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.,'L1/L2':dMdpk[6]*intens}
                         else: #'A'
-                            dMdpk = np.zeros(shape=(8,len(xdata)))
-                            dMdipk = getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata[iBeg:iFin])
+                            dMdpk2 = np.zeros(shape=(8,len(xdata)))
+                            dMdipk2 = getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata[iBeg:iFin])
                             for i in range(1,7):
-                                dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
+                                dMdpk2[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
                             dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
                             dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5],'shl':dMdpk[6],'L1/L2':dMdpk[7]*intens}
                 for parmName in ['pos','int','alp','bet','sig','gam','shl','L1/L2']:

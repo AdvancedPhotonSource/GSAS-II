@@ -93,7 +93,7 @@ defaultIparm_lbl.append('10m TOF 90deg bank')
 defaultIparms.append([
     '#GSAS-II instrument parameter file for 10m TOF 90deg bank\n',
     'Type:PNT;Bank:1\n',
-    'fltPath:10;2-theta:90.0;Azimuth:0.0\n',
+    'fltPath:10.0;2-theta:90.0;Azimuth:0.0\n',
     'Zero:0.0;difC:3500.;difA:0.0;difB:0.0\n',
     'alpha:5.0\n',
     'beta-0:0.03;beta-1:0.004;beta-q:0.0\n',

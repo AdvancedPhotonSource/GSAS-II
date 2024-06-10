@@ -1291,7 +1291,7 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
             tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
                 tay,len(polygon),polygon,tamp)[:nI*nJ]))
     points = masks['Points']
-    if points:
+    if len(points):
         for X,Y,rsq in points.T:
             tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: 

@@ -749,9 +749,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             return False
         elif warnmsg:
             print ('Warning after constraint addition:\n'+warnmsg)
-            ans = G2G.ShowScrolledInfo(header='Constraint Warning',
-                    txt='Warning noted after adding constraint:\n'+warnmsg+
-                '\n\nKeep this addition?',
+            txt = 'Warning noted after adding constraint (this may be OK):\n'
+            txt += warnmsg + '\n\nKeep this addition?'
+            ans = G2G.ShowScrolledInfo(header='Constraint Warning',txt=txt,
                 buttonlist=[wx.ID_YES,wx.ID_NO],parent=G2frame,height=250)
             if ans == wx.ID_NO: return False
         return True

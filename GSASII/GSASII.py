@@ -53,11 +53,11 @@ class G2App(wx.App):
     def MacOpenFiles(self, filenames):
         if self.startupMode:
             return
-        import GSASIIctrlGUI as G2G
+        import GSASIIfiles
         for project in filenames:
             #print("Start GSAS-II with project file "+str(project))
             #GSASIIpath.MacStartGSASII(__file__,project)
-            G2G.openInNewTerm(project)
+            GSASIIfiles.openInNewTerm(project)
 
 if __name__ == '__main__':
     if sys.platform == "darwin": 

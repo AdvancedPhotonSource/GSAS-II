@@ -1198,7 +1198,24 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             # make new phase names unique
             rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName,phaseNameList)
-            if rd.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
+            if rd.SymOps.get('xyz',[]): # did the phase supply symmetry operations?
+                # check if they agree with GSAS-II's setting
+                OK = G2spc.CompareSym(rd.SymOps['xyz'],
+                                        SGData=rd.Phase['General']['SGData'])
+                # TODO: perhaps someday we could write a CIF with symmetry
+                # ops and use that to get try to get standard settings
+                if not OK and rd.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
+                    # hope that a origin change will fix things
+                    choice = G2G.ChooseOrigin(self,rd)
+                    if choice is None: return # dialog cancelled
+                    rd.Phase = choice
+                elif not OK:
+                    # This user is in trouble
+                    msg = '''Based on symmetry operations supplied in the input, it appears this structure uses a space group setting not compatible with GSAS-II. 
+
+If you continue from this point, it is quite likely that all intensity computations will be wrong. At a minimum view the structure and check site multiplicities to confirm they are correct. The Bilbao web site may help you convert this.'''
+                    wx.MessageBox(msg,caption='Symmetry problem likely',style=wx.ICON_EXCLAMATION)
+            elif rd.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
                 try:
                     choice = G2G.ChooseOrigin(self,rd)
                     if choice is None: return # dialog cancelled
@@ -2288,8 +2305,40 @@ class GSASII(wx.Frame):
     def OnPreferences(self,event):
         'Edit the GSAS-II configuration variables'
         dlg = G2G.SelectConfigSetting(self)
-        dlg.ShowModal() == wx.ID_OK
-        dlg.Destroy()
+        restart = False
+        try:
+            dlg.ShowModal() == wx.ID_OK
+            restart = dlg.restart
+        finally:
+            dlg.Destroy()
+        # trigger a restart if the var description asks for that
+        if restart:
+            ans = G2G.askQuestion(self,"A restart of GSAS-II is needed for your change to take effect. OK to restart?",'Restart?')
+            if not ans: return
+
+            msg = ('Before restarting, do you want to save your project? '+
+                   'Select "Yes" to save, "No" to skip the save, or "Cancel"'+
+                   ' to discontinue the restart process.\n\n'+
+                   'If "Yes", GSAS-II will reopen the project after the update. '+
+           'The restart will now begin unless Cancel is pressed.')
+            dlg = wx.MessageDialog(self, msg,'Save Project and Restart?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+            ans = dlg.ShowModal()
+            dlg.Destroy()
+            if ans == wx.ID_CANCEL:
+                return
+            elif ans == wx.ID_YES:
+                ans = self.OnFileSave(None)
+                if not ans: return
+                project = os.path.abspath(self.GSASprojectfile)
+                print(f"Restarting GSAS-II with project file {project!r}")
+            else:
+                print("Restarting GSAS-II without a project file ")
+                project = None
+            G2fil.openInNewTerm(project)
+            print ('exiting GSAS-II')
+            sys.exit()
+                
 
     def EditProxyInfo(self,event):
         '''Edit the proxy information used by subversion (svn only, not used with git)
@@ -4454,7 +4503,7 @@ class GSASII(wx.Frame):
         if GSASIIpath.GetConfigValue('Save_paths'):
             G2G.SaveGPXdirectory(pth,write=False)
         config = G2G.GetConfigValsDocs()
-        GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
+        GSASIIpath.addPrevGPX(self.GSASprojectfile,config) # add new proj
         G2G.SaveConfigVars(config)
         self.LastGPXdir = pth
 
@@ -4523,8 +4572,7 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')
-        #GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
-        G2G.openInNewTerm(GSASprojectfile)
+        G2fil.openInNewTerm(GSASprojectfile)
         
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
@@ -4562,7 +4610,7 @@ class GSASII(wx.Frame):
                 self.LastGPXdir = dlg.GetDirectory()
                 os.chdir(self.LastGPXdir) 
                 config = G2G.GetConfigValsDocs()
-                GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
+                GSASIIpath.addPrevGPX(self.GSASprojectfile,config)  # add new name
                 G2G.SaveConfigVars(config)
                 return True
             else:
@@ -6638,6 +6686,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         G2G.Define_wxId('wxID_SHOWGENHKLS')
         self.IndexEdit.Append(G2G.wxID_SHOWGENHKLS,'Show reflections','Show generated reflection positions on console')
+        G2G.Define_wxId('wxID_CLEARCELLS')
+        self.IndexEdit.Append(
+            G2G.wxID_CLEARCELLS,'Clear search results',
+            'Clear cell/k-vector/magnetic cell search results'
+        )
         self.PostfillDataMenu()
         self.LoadCell.Enable(False)
         self.IndexPeaks.Enable(False)
@@ -7859,7 +7912,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 # compute Chi**2 contribution from Rwp
                 chisq = (data[0]['wR']/100)**2 * data[0]['sumwYo']
                 frac = f"{100 * chisq / Rvals['chisq']:.1f}"
-                Rmsg += f". Contributes {frac}% to Chi**2"
+                Rmsg += f". Contributes {frac}% of total \u03C7\u00b2"
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,Rmsg))
         if kind == 'PWDR':
             try:    #old gpx file

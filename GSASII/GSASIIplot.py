@@ -3063,24 +3063,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             plotItem = histoList[0]
         else:
             plotItem = plottingItem
-            if Page.plotStyle['dPlot'] or Page.plotStyle['qPlot']:
-                print("Skipping plot, can't do this for d-plots or q-plots!")
-                return           
         xye = np.array(ma.getdata(Histograms[plotItem]['Data'])) # strips mask
         xye0 = Histograms[plotItem]['Data'][0]
         limits = Histograms[plotItem]['Limits']
-#        if Page.plotStyle['qPlot']:
-#            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
-#            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
-#            Ifin = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][1]))
-#        elif Page.plotStyle['dPlot']:
-#            X = G2lat.Pos2dsp(Parms,xye0)
-#            Ibeg = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][1]))
-#            Ifin = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][0]))
-#        else:
-        X = copy.deepcopy(xye0)
-        Ibeg = np.searchsorted(X,limits[1][0])
-        Ifin = np.searchsorted(X,limits[1][1])
+        if Page.plotStyle['qPlot']:
+            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)   # might want to consider caching this 
+            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
+            Ifin = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][1]))
+        elif Page.plotStyle['dPlot']:
+            X = G2lat.Pos2dsp(Parms,xye0)    # might want to consider caching this 
+            Ibeg = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][1]))
+            Ifin = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][0]))
+        else:
+            X = copy.deepcopy(xye0)
+            Ibeg = np.searchsorted(X,limits[1][0])
+            Ifin = np.searchsorted(X,limits[1][1])
         if Ibeg == Ifin: # if no points are within limits bad things happen 
             Ibeg,Ifin = 0,None
         if Page.plotStyle['sqrtPlot']:

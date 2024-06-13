@@ -2,11 +2,11 @@
 
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-02-07 14:07:07 -0600 (Wed, 07 Feb 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5723 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $
-# $Id: GSASIImapvars.py 5723 2024-02-07 20:07:07Z toby $
+# $Id: GSASIImapvars.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 """
 Classes and routines defined in :mod:`GSASIImapvars` follow. 
@@ -24,7 +24,7 @@ from __future__ import division, print_function
 import copy
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5723 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIobj as G2obj 
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed

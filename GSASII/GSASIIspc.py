@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-03-22 11:53:23 -0500 (Fri, 22 Mar 2024) $
-# $Author: vondreele $
-# $Revision: 5768 $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Author: toby $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIspc.py $
-# $Id: GSASIIspc.py 5768 2024-03-22 16:53:23Z vondreele $
+# $Id: GSASIIspc.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 ''':mod:`GSASIIspc` Classes & routines follow
 '''
@@ -17,7 +17,7 @@ import copy
 import os.path as ospath
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5768 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)

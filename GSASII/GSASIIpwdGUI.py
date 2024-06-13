@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpwdGUI - powder data display routines
 ########### SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5789 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwdGUI.py $
-# $Id: GSASIIpwdGUI.py 5789 2024-05-24 15:06:45Z toby $
+# $Id: GSASIIpwdGUI.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''GUI routines for PWDR datadree subitems follow.
 '''
@@ -31,7 +31,7 @@ else:
     import pickle as cPickle
 import scipy.interpolate as si
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5789 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil

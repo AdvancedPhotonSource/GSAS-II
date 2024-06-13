@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-12-16 09:25:27 -0600 (Sat, 16 Dec 2023) $
-# $Author: vondreele $
-# $Revision: 5707 $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Author: toby $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $
-# $Id: GSASIIstrIO.py 5707 2023-12-16 15:25:27Z vondreele $
+# $Id: GSASIIstrIO.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIstrIO` routines, used for refinement to 
@@ -30,7 +30,7 @@ else:
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5707 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

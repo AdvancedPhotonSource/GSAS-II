@@ -1,11 +1,11 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
-# $Author: vondreele $
-# $Revision: 5785 $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Author: toby $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 5785 2024-05-10 23:09:00Z vondreele $
+# $Id: GSASIIpwd.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -33,8 +33,8 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5785 $"
-GSASIIpath.SetVersionNumber("$Revision: 5785 $")
+filversion = "$Revision: 5790 $"
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

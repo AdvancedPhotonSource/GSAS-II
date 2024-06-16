@@ -1170,8 +1170,9 @@ def UpdatePeakGrid(G2frame, data):
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
             OnPeakFit(noFit=True)
-            
-    def RefreshPeakWindow(event):
+
+    def OnXtraMode(event):
+        data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
         wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
         
@@ -1209,7 +1210,6 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2G.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2G.wxID_RESETSIGGAM)
     G2frame.Bind(wx.EVT_MENU, OnSetPeakWidMode, id=G2G.wxID_SETUNVARIEDWIDTHS)
-    G2frame.Bind(wx.EVT_MENU, RefreshPeakWindow, id=G2G.wxID_XTRAPEAKMODE)
     # get info in phases associated with current histogram
     data['xtraPeaks'] = data.get('xtraPeaks',[])
     histoName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -1226,8 +1226,6 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.XtraPeakMode.Enable(True)
         data['xtraMode'] = data.get('xtraMode',False)
         G2frame.dataWindow.XtraPeakMode.Check(data['xtraMode'])
-        def OnXtraMode(event):
-            data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
         G2frame.Bind(wx.EVT_MENU, OnXtraMode, id=G2G.wxID_XTRAPEAKMODE)
     OnSetPeakWidMode(None)
     # can peaks be refined?
@@ -5482,6 +5480,44 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnKvecSearch(event):
         'Run the k-vector search'
 
+        try:
+            import seekpath
+        except:
+            msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
+            dlg = wx.MessageDialog(G2frame, msg,'Install package?',
+                                   wx.YES_NO|wx.ICON_QUESTION)
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+                wx.GetApp().Yield()
+            if result != wx.ID_YES: return
+            wx.BeginBusyCursor()
+            try:             # can we install via conda?
+                import conda.cli.python_api
+                print('Starting conda install of seekpath...')
+                GSASIIpath.condaInstall(['seekpath'])
+                print('conda install of seekpath completed')
+            except Exception as msg:
+                print(msg)
+                try:
+                    print('Starting pip install of seekpath...')
+                    GSASIIpath.pipInstall(['seekpath'])
+                    print('pip install of seekpath completed')
+                except Exception as msg:
+                    print('install of seekpath failed, sorry\n',msg)
+                    return
+            finally:
+                wx.EndBusyCursor()
+            ans = G2frame.OnFileSave(None)
+            if not ans: return
+            project = os.path.abspath(G2frame.GSASprojectfile)
+            print(f"Restarting GSAS-II with project file {project!r}")
+            G2fil.openInNewTerm(project)
+            print ('exiting GSAS-II')
+            sys.exit()
+
         # msg = G2G.NISTlatUse(True)
         _, _, cells, _, _, _ = data
         wx.BeginBusyCursor()
@@ -6000,11 +6036,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
         littleSizer2.Add((15, -1))  # add space
 
-        btn = wx.Button(
-            G2frame.dataWindow,
-            wx.ID_ANY,
-            'Start Search'
-        )
+        btn = wx.Button(G2frame.dataWindow,wx.ID_ANY,'Start Search')
         littleSizer2.Add(btn, 5, WACV | wx.RIGHT, 0)
         btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
 

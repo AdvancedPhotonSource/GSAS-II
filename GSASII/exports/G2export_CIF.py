@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-03 21:44:28 -0500 (Wed, 03 Apr 2024) $
-# $Author: toby $
-# $Revision: 5775 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $
-# $Id: G2export_CIF.py 5775 2024-04-04 02:44:28Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_CIF` follow:
 '''
 # note documentation in docs/source/exports.rst
@@ -3842,7 +3835,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.ShowModal()
 
 #==============================================================================
-####  MasterExporter code starts here         ======================================
+####  MasterExporter code starts here    ======================================
 #==============================================================================
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
@@ -4925,6 +4918,16 @@ class ExportHKLCIF(ExportCIF):
         self.exporttype = ['single']
         # CIF-specific items
         self.author = ''
+        
+    def Writer(self,hist,filename=None):
+        self.currentExportType = 'single'
+        self.CIFname = filename
+        self.filename = filename
+        self.OpenFile(filename,mode='w')
+        self.Histograms[hist.name] = {}
+        self.Histograms[hist.name]['Data'] = hist.data['data'][1]
+        self.MasterExporter(histOnly=hist.name)
+        self.CloseFile()
 
     def Exporter(self,event=None):
         self.InitExport(event)

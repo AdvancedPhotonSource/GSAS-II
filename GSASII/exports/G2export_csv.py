@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-18 09:43:08 -0500 (Thu, 18 Apr 2024) $
-# $Author: toby $
-# $Revision: 5781 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 5781 2024-04-18 14:43:08Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_csv` follow:
 '''
 # note documentation in docs/source/exports.rst
@@ -553,6 +546,24 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.exporttype = ['single']
         self.multiple = False # only allow one histogram to be selected
 
+    def Writer(self,hist,filename=None):
+        self.OpenFile(filename)
+        self.filename = filename
+        if hist.data['data'][1].get('Super',False):
+            WriteList(self,("h","k","l","m",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in hist.data['data'][1]['RefList']:
+                h,k,l,m,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:13]
+                self.Write(fmt.format(h,k,l,m,dsp,Fobs,Fcalc,phase,mult,Icorr))
+        else:
+            WriteList(self,("h","k","l",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
+            fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
+            for refItem in hist.data['data'][1]['RefList']:
+                h,k,l,mult,dsp,Fobs,sig,Fcalc,FobsT,FcalcT,phase,Icorr = refItem[:12]
+                self.Write(fmt.format(h,k,l,dsp,Fobs,Fcalc,phase,mult,Icorr))
+        self.CloseFile()
+        print(f'{hist.name!r} written to file {filename!r}')
+    
     def Exporter(self,event=None):
         '''Export a set of single crystal data as a csv file
         '''

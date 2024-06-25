@@ -1549,6 +1549,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H2 = np.linspace(lutth[0],lutth[1],numChans+1)
+    # HalfBin = (H2[1]-H2[0])/2.
+    # H2 += HalfBin
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1

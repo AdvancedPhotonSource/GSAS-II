@@ -1,11 +1,11 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-05-10 18:09:00 -0500 (Fri, 10 May 2024) $
-# $Author: vondreele $
-# $Revision: 5785 $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Author: toby $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 5785 2024-05-10 23:09:00Z vondreele $
+# $Id: GSASIIpwd.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -33,8 +33,8 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5785 $"
-GSASIIpath.SetVersionNumber("$Revision: 5785 $")
+filversion = "$Revision: 5790 $"
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -67,7 +67,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
 npq2T = lambda Q,wave: 2.0*npasind(0.25*Q*wave/np.pi)
-ateln2 = 8.0*math.log(2.0)
+ateln2 = 8.0*np.log(2.0)
 sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
 is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -806,7 +806,7 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
 def getWidthsCW(pos,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
     for constant wavelength data. On low-angle side, 50 FWHM are used, 
-    on high-angle side 75 are used, high angle side extended for axial divergence
+    on high-angle side 75 are used, low angle side extended for axial divergence
     (for peaks above 90 deg, these are reversed.)
     
     :param pos: peak position; 2-theta in degrees
@@ -815,14 +815,14 @@ def getWidthsCW(pos,sig,gam,shl):
     :param shl: axial divergence parameter (S+H)/L
     
     :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and 
-        low angle, high angle ends of peak; 20 FWHM & 50 FWHM from position
+        low angle, high angle ends of peak; 50 FWHM & 75 FWHM from position
         reversed for 2-theta > 90 deg.
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+widths[1]
     fmin = 50.*(fwhm+shl*abs(npcosd(pos)))
     fmax = 75.0*fwhm
-    if pos > 90:
+    if pos > 90.:
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
     
@@ -846,7 +846,7 @@ def getWidthsED(pos,sig,gam):
     
 def getWidthsTOF(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data. 50 FWHM are used on both sides each 
+    for TOF data. 50 FWHM are used on both sides each 
     extended by exponential coeff.
     
     param pos: peak position; TOF in musec (not used)
@@ -858,6 +858,50 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     returns: low TOF, high TOF ends of peak; 50FWHM from position
     '''
     widths = [np.sqrt(sig),gam]
+    fwhm = 2.355*widths[0]+2.*widths[1]
+    fmin = 50.*fwhm*(1.+1./alp)    
+    fmax = 50.*fwhm*(1.+1./bet)
+    return widths,fmin,fmax
+    
+def getWidthsCWA(pos,alp,bet,sig,gam,shl):
+    '''Compute the peak widths used for computing the range of a peak
+    for constant wavelength data with axial divergence. 50 & 75 FWHM are used on 
+    each side each extended by exponential coeff.
+    
+    :param pos: peak position; 2-theta in degrees
+    :param alp,bet: TOF peak exponential rise & decay parameters
+    :param sig: Gaussian peak variance in centideg^2
+    :param gam: Lorentzian peak width in centidegrees
+    :param shl: axial divergence parameter (S+H)/L
+    
+    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and 
+        low angle, high angle ends of peak; 50 FWHM & 75 FWHM from position
+        reversed for 2-theta > 90 deg.
+    '''
+    widths = [np.sqrt(sig)/100.,gam/100.]
+    fwhm = 2.355*widths[0]+2.*widths[1]
+    if pos < 90.:
+        fmin = 50.0*(fwhm*(1.+1./alp)+shl*abs(npcosd(pos)))
+        fmax = 75.0*fwhm*(1.+1./bet)
+    else:
+        fmin = 75.0*fwhm*(1.+1./alp)
+        fmax = 50.0*(fwhm*(1.+1./bet)+shl*abs(npcosd(pos)))
+    return widths,fmin,fmax
+    
+def getWidthsCWB(pos,alp,bet,sig,gam):
+    '''Compute the peak widths used for computing the range of a peak
+    for constant wavelength data without axial divergence. 50 FWHM are used on 
+    both sides each extended by exponential coeff.
+    
+    :param pos: peak position; 2-theta in degrees
+    :param alp,bet: TOF peak exponential rise & decay parameters
+    :param sig: Gaussian peak variance in centideg^2
+    :param gam: Lorentzian peak width in centidegrees
+    
+    returns: widths; [Gaussian sigma, Lornetzian gamma] in degrees
+    returns: low angle, high angle ends of peak; 50FWHM from position
+    '''
+    widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+2.*widths[1]
     fmin = 50.*fwhm*(1.+1./alp)    
     fmax = 50.*fwhm*(1.+1./bet)
@@ -1046,7 +1090,19 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             pkS = max(parmDict[pfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[pfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
-                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+                shl = parmDict[pfx+'SH/L']
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            elif 'B' in dataType:
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
+            elif 'A'' in dataType':    
+                shl = parmDict[pfx+'SH/L']
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWA(pkP,alp,bet,pkS,pkG,shl)
             elif 'E' in dataType:
                 Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T'OF
@@ -1061,11 +1117,13 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])[0]
+                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])[0]
+            elif 'B' in dataType:
+                ybi = pkI*getEpsVoigt(pkP,alp,bet,pkS/1.e4,pkG/100.,xdata[iBeg:iFin])[0]/100.
+            elif 'A' in dataType:
+                ybi = pkI*getExpFCJVoigt3(pkP,alp,bet,pkS,pkG,shl,xdata[iBeg:iFin])[0]
             elif 'T' in dataType:
                 ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])[0]
-            elif 'B' in dataType:
-                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS/100.,pkG/1.e4,xdata[iBeg:iFin])[0]
             elif 'E' in dataType:
                 ybi = pkI*getPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])[0]
             else:
@@ -1194,7 +1252,19 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
             pkS = max(parmDict[hfx+'BkPksig;'+str(iD)],0.01)
             pkG = max(parmDict[hfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
-                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+                shl = parmDict[hfx+'SH/L']
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            elif 'B' in dataType:
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
+            elif 'A'' in dataType':    
+                shl = parmDict[hfx+'SH/L']
+                sinPos = npsind(pkP/2.0)
+                alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
+                bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
+                Wd,fmin,fmax = getWidthsCWA(pkP,alp,bet,pkS,pkG,shl)
             elif 'E' in dataType:
                 Wd,fmin,fmax = getWidthsED(pkP,pkS)
             else: #'T' or 'B'
@@ -1209,7 +1279,15 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,.002,xdata[iBeg:iFin])
+                Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
+            elif 'B' in dataType:
+                Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,alp,bet,pkS/1.e4,pkG/100.,xdata[iBeg:iFin])
+                dFdp /= 100.
+                dFds /= 1.e6
+                dFdg /= 1.e4
+                Df /= 100.
+            elif 'A' in dataType:
+                Df,dFdp,x,x,dFds,dFdg,x = getdExpFCJVoigt3(pkP,alp,bet,pkS,pkG,shl,xdata[iBeg:iFin])
             elif 'E' in dataType:
                 Df,dFdp,dFds,dFdg = getdPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])
             else:   #'T'OF
@@ -1246,7 +1324,7 @@ def getFCJVoigt3(pos,sig,gam,shl,xdata):
     if len(xdata):
         cw = np.diff(xdata)
         cw = np.append(cw,cw[-1])
-        Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+        Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
         return Df,np.sum(100.*Df*cw)
     else:
         return 0.,1.
@@ -1263,8 +1341,48 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     
     returns: arrays: function and derivatives of pos, sig, gam, & shl
     '''
-    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     return Df,dFdp,dFds,dFdg,dFdsh
+
+def getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
+    '''Compute the Finger-Cox-Jepcoat modified double exponential Pseudo-Voigt 
+    convolution function for a CW powder peak in external Fortran routine
+    
+    param pos: peak position in degrees
+    param sig: Gaussian variance in centideg^2
+    param alp: Rise exponential coefficient
+    param bet: Decay exponential coefficient
+    param gam: Lorentzian width in centideg
+    param shl: axial divergence parameter (S+H)/L
+    param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
+    
+    returns: array: calculated peak function at each xdata
+    returns: integral of peak; nominally = 1.0
+    '''
+    if len(xdata):
+        cw = np.diff(xdata)
+        cw = np.append(cw,cw[-1])
+        Df = pyd.pypsvfcjexpo(len(xdata),xdata-pos,pos,alp,bet,sig,gam,shl)
+        return Df,np.sum(100.*Df*cw)
+    else:
+        return 0.,1.
+
+def getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
+    '''Compute analytic derivatives the Finger-Cox-Jepcoat modified double 
+    exponential Pseudo-Voigt convolution function for a CW powder peak
+    
+    param pos: peak position in degrees
+    param alp: Rise exponential coefficient
+    param bet: Decay exponential coefficient
+    param sig: Gaussian variance in centideg^2
+    param gam: Lorentzian width in centideg
+    param shl: axial divergence parameter (S+H)/L
+    param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
+    
+    returns: arrays: function and derivatives of pos, alp, bet, sig, gam, & shl
+    '''
+    Df,dFdp,dFda,dFdb,dFds,dFdg,dFdsh = pyd.pydpsvfcjexpo(len(xdata),xdata-pos,pos,alp,bet,sig,gam,shl)
+    return Df,dFdp,dFda,dFdb,dFds,dFdg,dFdsh
 
 def getPsVoigt(pos,sig,gam,xdata):
     '''Compute the simple Pseudo-Voigt function for a
@@ -1517,8 +1635,9 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                         LaueFringePeakCalc(xdata,yc,lam2,pos2,intens*kRatio,sig,gam,shol,ncells,clat,dampM,dampP,fmin,fitPowerM,fitPowerP)
             except KeyError:        #no more peaks to process
                 return yb+yc
-    elif 'C' in dataType:
-        shl = max(parmDict['SH/L'],0.002)
+    elif dataType[2] in ['A','B','C']:
+        if 'B' not in dataType:
+            shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
         if 'Lam1' in parmDict.keys():
             Ka2 = True
@@ -1542,7 +1661,25 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 else:
                     gam = G2mth.getCWgam(parmDict,tth)
                 gam = max(gam,0.001)             #avoid neg gamma
-                Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                if 'C' not in dataType:
+                    alpName = 'alp'+str(iPeak)
+                    if alpName in varyList or not peakInstPrmMode:
+                        alp = parmDict[alpName]
+                    else:
+                        alp = G2mth.getPinkAlpha(parmDict,tth)
+                    alp = max(0.1,alp)
+                    betName = 'bet'+str(iPeak)
+                    if betName in varyList or not peakInstPrmMode:
+                        bet = parmDict[betName]
+                    else:
+                        bet = G2mth.getPinkBeta(parmDict,tth)
+                    bet = max(0.1,bet)
+                if 'C' in dataType:
+                    Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                elif 'B' in dataType:
+                    Wd,fmin,fmax = getWidthsCWB(pos,alp,bet,sig,gam)
+                else: #'A'    
+                    Wd,fmin,fmax = getWidthsCWA(pos,alp,bet,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 iFin = np.searchsorted(xdata,pos+fmin)
                 if not iBeg+iFin:       #peak below low limit
@@ -1550,14 +1687,24 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
-                fp = getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])[0]
+                if 'C' in dataType:
+                    fp = getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])[0]
+                elif 'B' in dataType:
+                    fp = getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
+                else: #'A'
+                    fp = getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata[iBeg:iFin])[0]
                 yc[iBeg:iFin] += intens*fp
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     iBeg = np.searchsorted(xdata,pos2-fmin)
                     iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
-                        fp2 = getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])[0]
+                        if 'C' in dataType:
+                            fp2 = getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])[0]
+                        elif 'B' in dataType:
+                            fp2 = getEpsVoigt(pos2,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
+                        else: #'A'
+                            fp2 = getExpFCJVoigt3(pos2,alp,bet,sig,gam,shl,xdata[iBeg:iFin])[0]
                         yc[iBeg:iFin] += intens*kRatio*fp2
                 iPeak += 1
             except KeyError:        #no more peaks to process
@@ -1590,68 +1737,6 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
                 yc[iBeg:iFin] += intens*getPsVoigt(pos,sig*10.**4,gam*100.,xdata[iBeg:iFin])[0]
-                iPeak += 1
-            except KeyError:        #no more peaks to process
-                return yb+yc        
-    elif 'B' in dataType:
-        Ka2 = False
-        if 'Lam1' in parmDict.keys():
-            Ka2 = True
-            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
-            kRatio = parmDict['I(L2)/I(L1)']
-        iPeak = 0
-        dsp = 1.0 #for now - fix later
-        while True:
-            try:
-                pos = parmDict['pos'+str(iPeak)]
-                tth = (pos-parmDict['Zero'])
-                intens = parmDict['int'+str(iPeak)]
-                alpName = 'alp'+str(iPeak)
-                if alpName in varyList or not peakInstPrmMode:
-                    alp = parmDict[alpName]
-                else:
-                    if 'X' in dataType:                        
-                        alp = G2mth.getPinkXalpha(parmDict,tth)
-                    else:
-                        alp = G2mth.getPinkNalpha(parmDict,tth)
-                alp = max(0.1,alp)
-                betName = 'bet'+str(iPeak)
-                if betName in varyList or not peakInstPrmMode:
-                    bet = parmDict[betName]
-                else:
-                    if 'X' in dataType:
-                        bet = G2mth.getPinkXbeta(parmDict,tth)
-                    else:
-                        bet = G2mth.getPinkNbeta(parmDict,tth)
-                bet = max(0.1,bet)
-                sigName = 'sig'+str(iPeak)
-                if sigName in varyList or not peakInstPrmMode:
-                    sig = parmDict[sigName]
-                else:
-                    sig = G2mth.getCWsig(parmDict,tth)
-                sig = max(sig,0.001)          #avoid neg sigma^2
-                gamName = 'gam'+str(iPeak)
-                if gamName in varyList or not peakInstPrmMode:
-                    gam = parmDict[gamName]
-                else:
-                    gam = G2mth.getCWgam(parmDict,tth)
-                gam = max(gam,0.001)             #avoid neg gamma
-                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
-                iBeg = np.searchsorted(xdata,pos-fmin)
-                iFin = np.searchsorted(xdata,pos+fmin)
-                if not iBeg+iFin:       #peak below low limit
-                    iPeak += 1
-                    continue
-                elif not iBeg-iFin:     #peak above high limit
-                    return yb+yc
-                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
-                if Ka2:
-                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    iBeg = np.searchsorted(xdata,pos2-fmin)
-                    iFin = np.searchsorted(xdata,pos2+fmin)
-                    if iBeg-iFin:
-                        fp2 = getEpsVoigt(pos2,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])[0]/100.
-                        yc[iBeg:iFin] += intens*kRatio*fp2
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc        
@@ -1749,8 +1834,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
             intArrM = getPeakProfile(dataType,deltaParmDict,xdata,fixback,varyList,bakType)
             dMdv[i] = 0.5 * (intArrP - intArrM) / delta
         return dMdv
-    if 'C' in dataType:
-        shl = max(parmDict['SH/L'],0.002)
+    if dataType[2] in ['A','B','C']:
+        if 'B' not in dataType:
+            shl = max(parmDict['SH/L'],0.002)
         Ka2 = False
         if 'Lam1' in parmDict.keys():
             Ka2 = True
@@ -1762,6 +1848,23 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 pos = parmDict['pos'+str(iPeak)]
                 tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
+                if 'C' not in dataType:
+                    alpName = 'alp'+str(iPeak)
+                    if alpName in varyList or not peakInstPrmMode:
+                        alp = parmDict[alpName]
+                        dada0 = dada1 = 0.0
+                    else:
+                        alp = G2mth.getPinkAlpha(parmDict,tth)
+                        dada0,dada1 = G2mth.getPinkAlphaDeriv(tth)
+                    alp = max(0.0001,alp)
+                    betName = 'bet'+str(iPeak)
+                    if betName in varyList or not peakInstPrmMode:
+                        bet = parmDict[betName]
+                        dbdb0 = dbdb1 = 0.0
+                    else:
+                        bet = G2mth.getPinkBeta(parmDict,tth)
+                        dbdb0,dbdb1 = G2mth.getPinkBetaDeriv(tth)
+                    bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
@@ -1778,7 +1881,12 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     gam = G2mth.getCWgam(parmDict,tth)
                     dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
                 gam = max(gam,0.001)             #avoid neg gamma
-                Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                if 'C' in dataType:
+                    Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                elif 'B' in dataType:
+                    Wd,fmin,fmax = getWidthsCWB(pos,alp,bet,sig,gam)
+                else: #'A'    
+                    Wd,fmin,fmax = getWidthsCWA(pos,alp,bet,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 iFin = max(iBeg+3,np.searchsorted(xdata,pos+fmin))
                 if not iBeg+iFin:       #peak below low limit
@@ -1786,24 +1894,54 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     break
-                dMdpk = np.zeros(shape=(6,len(xdata)))
-                dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
-                for i in range(1,5):
-                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += dMdipk[0]
-                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
+                if 'C' in dataType:
+                    dMdpk = np.zeros(shape=(6,len(xdata)))
+                    dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
+                    for i in range(1,5):
+                        dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                    dMdpk[0][iBeg:iFin] += dMdipk[0]
+                    dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
+                elif 'B' in dataType:
+                    dMdpk = np.zeros(shape=(7,len(xdata)))
+                    dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                    for i in range(1,6):
+                        dMdpk[i][iBeg:iFin] += intens*dMdipk[i]/100.
+                    dMdpk[0][iBeg:iFin] += dMdipk[0]/100.
+                    dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
+                else: #'A'
+                    dMdpk = np.zeros(shape=(8,len(xdata)))
+                    dMdipk = getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata[iBeg:iFin])
+                    for i in range(1,7):
+                        dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                    dMdpk[0][iBeg:iFin] += dMdipk[0]
+                    dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5],'shl':dMdpk[6]}
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     iBeg = np.searchsorted(xdata,pos2-fmin)
                     iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
-                        dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
-                        for i in range(1,5):
-                            dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
-                        dMdpk[5][iBeg:iFin] += dMdipk2[0]
-                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
-                for parmName in ['pos','int','sig','gam']:
+                        if 'C' in dataType:
+                            dMdpk2 = np.zeros(shape=(6,len(xdata)))
+                            dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
+                            for i in range(1,5):
+                                dMdpk2[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
+                            dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
+                            dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
+                        elif 'B' in dataType:
+                            dMdpk2 = np.zeros(shape=(7,len(xdata)))
+                            dMdipk2 = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
+                            for i in range(1,6):
+                                dMdpk2[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]/100.
+                            dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]/100.
+                            dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.,'L1/L2':dMdpk[6]*intens}
+                        else: #'A'
+                            dMdpk2 = np.zeros(shape=(8,len(xdata)))
+                            dMdipk2 = getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata[iBeg:iFin])
+                            for i in range(1,7):
+                                dMdpk2[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]
+                            dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
+                            dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5],'shl':dMdpk[6],'L1/L2':dMdpk[7]*intens}
+                for parmName in ['pos','int','alp','bet','sig','gam','shl','L1/L2']:
                     try:
                         idx = varyList.index(parmName+str(iPeak))
                         dMdv[idx] = dervDict[parmName]
@@ -1822,108 +1960,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if 'Z' in varyList:
                     dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
                 if 'SH/L' in varyList:
-                    dMdv[varyList.index('SH/L')] += dervDict['shl']         #problem here
-                if 'I(L2)/I(L1)' in varyList:
-                    dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
-                iPeak += 1
-            except KeyError:        #no more peaks to process
-                break
-    elif 'B' in dataType:
-        Ka2 = False
-        if 'Lam1' in parmDict.keys():
-            Ka2 = True
-            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
-            kRatio = parmDict['I(L2)/I(L1)']
-        iPeak = 0
-        while True:
-            try:
-                pos = parmDict['pos'+str(iPeak)]
-                tth = (pos-parmDict['Zero'])
-                intens = parmDict['int'+str(iPeak)]
-                alpName = 'alp'+str(iPeak)
-                if alpName in varyList or not peakInstPrmMode:
-                    alp = parmDict[alpName]
-                    dada0 = dada1 = 0.0
-                else:
-                    if 'X' in dataType:
-                        alp = G2mth.getPinkXalpha(parmDict,tth)
-                        dada0,dada1 = G2mth.getPinkXalphaDeriv(tth)
-                    else:
-                        alp = G2mth.getPinkNalpha(parmDict,tth)
-                        dada0,dada1 = G2mth.getPinkNalphaDeriv(tth)
-                alp = max(0.0001,alp)
-                betName = 'bet'+str(iPeak)
-                if betName in varyList or not peakInstPrmMode:
-                    bet = parmDict[betName]
-                    dbdb0 = dbdb1 = 0.0
-                else:
-                    if 'X' in dataType:
-                        bet = G2mth.getPinkXbeta(parmDict,tth)
-                        dbdb0,dbdb1 = G2mth.getPinkXbetaDeriv(tth)
-                    else:
-                        bet = G2mth.getPinkNbeta(parmDict,tth)
-                        dbdb0,dbdb1 = G2mth.getPinkNbetaDeriv(tth)
-                bet = max(0.0001,bet)
-                sigName = 'sig'+str(iPeak)
-                if sigName in varyList or not peakInstPrmMode:
-                    sig = parmDict[sigName]
-                    dsdU = dsdV = dsdW = 0
-                else:
-                    sig = G2mth.getCWsig(parmDict,tth)
-                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
-                sig = max(sig,0.001)          #avoid neg sigma
-                gamName = 'gam'+str(iPeak)
-                if gamName in varyList or not peakInstPrmMode:
-                    gam = parmDict[gamName]
-                    dgdX = dgdY = dgdZ = 0
-                else:
-                    gam = G2mth.getCWgam(parmDict,tth)
-                    dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
-                gam = max(gam,0.001)             #avoid neg gamma
-                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig/1.e4,gam/100.)
-                iBeg = np.searchsorted(xdata,pos-fmin)
-                iFin = np.searchsorted(xdata,pos+fmin)
-                if not iBeg+iFin:       #peak below low limit
-                    iPeak += 1
-                    continue
-                elif not iBeg-iFin:     #peak above high limit
-                    break
-                dMdpk = np.zeros(shape=(7,len(xdata)))
-                dMdipk = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
-                for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]/100.
-                dMdpk[0][iBeg:iFin] += dMdipk[0]/100.
-                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,'gam':dMdpk[5]/100.}
-                if Ka2:
-                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    iBeg = np.searchsorted(xdata,pos2-fmin)
-                    iFin = np.searchsorted(xdata,pos2+fmin)
-                    if iBeg-iFin:
-                        dMdipk2 = getdEpsVoigt(pos,alp,bet,sig/1.e4,gam/100.,xdata[iBeg:iFin])
-                        for i in range(1,6):
-                            dMdpk[i][iBeg:iFin] += intens*kRatio*dMdipk2[i]/100.
-                        dMdpk[0][iBeg:iFin] += kRatio*dMdipk2[0]
-                        dMdpk[6][iBeg:iFin] += dMdipk2[0]/100.
-                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4]/1.e4,
-                            'gam':dMdpk[5]/100.,'L1/L2':dMdpk[6]*intens}
-                for parmName in ['pos','int','alp','bet','sig','gam','L1/L2']:
-                    try:
-                        idx = varyList.index(parmName+str(iPeak))
-                        dMdv[idx] = dervDict[parmName]
-                    except ValueError:
-                        pass
-                if 'U' in varyList:
-                    dMdv[varyList.index('U')] += dsdU*dervDict['sig']
-                if 'V' in varyList:
-                    dMdv[varyList.index('V')] += dsdV*dervDict['sig']
-                if 'W' in varyList:
-                    dMdv[varyList.index('W')] += dsdW*dervDict['sig']
-                if 'X' in varyList:
-                    dMdv[varyList.index('X')] += dgdX*dervDict['gam']
-                if 'Y' in varyList:
-                    dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
-                if 'Z' in varyList:
-                    dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
+                    dMdv[varyList.index('SH/L')] += dervDict['shl']
                 if 'alpha-0' in varyList:
                     dMdv[varyList.index('alpha-0')] += dada0*dervDict['alp']
                 if 'alpha-1' in varyList:
@@ -1936,7 +1973,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
                 iPeak += 1
             except KeyError:        #no more peaks to process
-                break        
+                break
     elif 'E' in dataType:
         iPeak = 0
         while True:
@@ -2568,18 +2605,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
                     else: #'B'
-                        if 'X' in Inst['Type'][0]:
-                            peak[2*j+off] = G2mth.getPinkXalpha(parmDict,pos)
-                        else:
-                            peak[2*j+off] = G2mth.getPinkNalpha(parmDict,pos)
+                        peak[2*j+off] = G2mth.getPinkAlpha(parmDict,pos)
                 elif 'bet' in parName:
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
                     else:   #'B'
-                        if 'X' in Inst['Type'][0]:
-                            peak[2*j+off] = G2mth.getPinkXbeta(parmDict,pos)
-                        else:
-                            peak[2*j+off] = G2mth.getPinkNbeta(parmDict,pos)
+                        peak[2*j+off] = G2mth.getPinkBeta(parmDict,pos)
                 elif 'sig' in parName:
                     if 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)

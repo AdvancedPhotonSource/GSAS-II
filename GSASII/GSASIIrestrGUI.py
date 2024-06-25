@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIrestr - restraint GUI routines
 ########### SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5767 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIrestrGUI.py $
-# $Id: GSASIIrestrGUI.py 5767 2024-03-17 17:50:24Z toby $
+# $Id: GSASIIrestrGUI.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''Restraint GUI routines follow.
 '''
@@ -16,7 +16,7 @@ import numpy as np
 import numpy.ma as ma
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5767 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-07-10 09:25:23 -0500 (Mon, 10 Jul 2023) $
-# $Author: vondreele $
-# $Revision: 5625 $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Author: toby $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImpsubs.py $
-# $Id: GSASIImpsubs.py 5625 2023-07-10 14:25:23Z vondreele $
+# $Id: GSASIImpsubs.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 The routines here are called either directly when GSAS-II is used without multiprocessing
@@ -26,7 +26,7 @@ import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5625 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
 
@@ -113,11 +113,25 @@ def ComputeFobsSqTOFbatch(profList):
             break
     return sInt,resList
         
-def ComputeFobsSqPinkbatch(profList):
+def ComputeFobsSqCWBbatch(profList):
     sInt = 0
     resList = []
     for refl,iref in profList:
-        icod = ComputeFobsSqPink(refl,iref)
+        icod = ComputeFobsSqCWB(refl,iref)
+        if type(icod) is tuple:
+            resList.append((icod[0],iref))
+            sInt += icod[1]
+        elif icod == -1:
+            resList.append((None,iref))
+        elif icod == -2:
+            break
+    return sInt,resList
+
+def ComputeFobsSqCWAbatch(profList):
+    sInt = 0
+    resList = []
+    for refl,iref in profList:
+        icod = ComputeFobsSqCWA(refl,iref)
         if type(icod) is tuple:
             resList.append((icod[0],iref))
             sInt += icod[1]
@@ -171,6 +185,42 @@ def ComputeFobsSqCW(refl,iref):
     refl8im = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11+im]*(1.+kRatio)),0.0))
     return refl8im,sInt
 
+def ComputeFobsSqCWB(refl,iref):
+    yp = np.zeros(len(x)) # not masked
+    refl8im = 0
+    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
+    iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
+    iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
+    if not iBeg+iFin:       #peak below low limit - skip peak
+        return 0
+    if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
+        return -1
+    elif not iBeg-iFin:     #peak above high limit - done
+        return -2
+    if iBeg < iFin:
+        fp,sumfp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])
+        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
+    refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
+    return refl8im,refl[11+im]*refl[9+im]
+
+def ComputeFobsSqCWA(refl,iref):
+    yp = np.zeros(len(x)) # not masked
+    refl8im = 0
+    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
+    iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
+    iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
+    if not iBeg+iFin:       #peak below low limit - skip peak
+        return 0
+    if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
+        return -1
+    elif not iBeg-iFin:     #peak above high limit - done
+        return -2
+    if iBeg < iFin:
+        fp,sumfp = G2pwd.getExpFCJVoigt3(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl,x[iBeg:iFin])
+        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
+    refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
+    return refl8im,refl[11+im]*refl[9+im]
+
 def ComputeFobsSqTOF(refl,iref):
     yp = np.zeros(len(x)) # not masked
     refl8im = 0
@@ -185,24 +235,6 @@ def ComputeFobsSqTOF(refl,iref):
         return -2
     if iBeg < iFin:
         fp,sumfp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])
-        yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
-    refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
-    return refl8im,refl[11+im]*refl[9+im]
-
-def ComputeFobsSqPink(refl,iref):
-    yp = np.zeros(len(x)) # not masked
-    refl8im = 0
-    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
-    iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
-    iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
-    if not iBeg+iFin:       #peak below low limit - skip peak
-        return 0
-    if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
-        return -1
-    elif not iBeg-iFin:     #peak above high limit - done
-        return -2
-    if iBeg < iFin:
-        fp,sumfp = G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])
         yp[iBeg:iFin] = refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]/sumfp
     refl8im = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
     return refl8im,refl[11+im]*refl[9+im]
@@ -253,10 +285,17 @@ def ComputePwdrProfTOF(profList):
         fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im],refl[7+im],x[iBeg:iFin])[0]
         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp*cw[iBeg:iFin]
     
-def ComputePwdrProfPink(profList):
+def ComputePwdrProfCWB(profList):
     'Compute the peaks profile for a set of TOF peaks and add into the yc array'
     for pos,refl,iBeg,iFin in profList:
-        fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])[0]
+        fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,x[iBeg:iFin])[0]/100.
+        yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
+    return yc
+
+def ComputePwdrProfCWA(profList):
+    'Compute the peaks profile for a set of TOF peaks and add into the yc array'
+    for pos,refl,iBeg,iFin in profList:
+        fp = G2pwd.getEpsVoigt(pos,refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl,x[iBeg:iFin])[0]
         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
     return yc
 

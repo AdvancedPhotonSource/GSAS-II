@@ -24,7 +24,7 @@
       REAL*4        SLPART,HLPART       
 
 !INCLUDE STATEMENTS:
-      real*4 sind,cosd,tand,acosd
+      REAL*4 SIND,COSD,TAND,ACOSD
 
 !LOCAL VARIABLES:
 
@@ -80,37 +80,37 @@
 c       
 c       Local Variables for Gaussian Integration
 c        
-      INTEGER*4     NGT                 !number of terms in Gaussian quadrature
-      INTEGER*4     NUMTAB              ! number of pre-computed Gaussian tables
-      parameter      (numtab=34)
-      INTEGER*4     NTERMS(NUMTAB)      ! number of terms in each table - must be even
-      INTEGER*4     FSTTERM(NUMTAB)     ! location of 1st term: N.B. N/2 terms
-      LOGICAL*4     CALCLFG(NUMTAB)     ! true if table has previously been calculated
-      INTEGER*4     ARRAYNUM            ! number of selected array
-      INTEGER*4     ARRAYSIZE           ! size of complete array
-      parameter      (arraysize=1670)
-      REAL*4        XP(ARRAYSIZE)       !Gaussian abscissas
-      REAL*4        WP(ARRAYSIZE)       !Gaussian weights
-      REAL*4        XPT(400)            !temporary Gaussian abscissas
-      REAL*4        WPT(400)            !temporary Gaussian weights
+      INTEGER*4     NGT                 !NUMBER OF TERMS IN GAUSSIAN QUADRATURE
+      INTEGER*4     NUMTAB              ! NUMBER OF PRE-COMPUTED GAUSSIAN TABLES
+      PARAMETER      (NUMTAB=34)
+      INTEGER*4     NTERMS(NUMTAB)      ! NUMBER OF TERMS IN EACH TABLE - MUST BE EVEN
+      INTEGER*4     FSTTERM(NUMTAB)     ! LOCATION OF 1ST TERM: N.B. N/2 TERMS
+      LOGICAL*4     CALCLFG(NUMTAB)     ! TRUE IF TABLE HAS PREVIOUSLY BEEN CALCULATED
+      INTEGER*4     ARRAYNUM            ! NUMBER OF SELECTED ARRAY
+      INTEGER*4     ARRAYSIZE           ! SIZE OF COMPLETE ARRAY
+      PARAMETER      (ARRAYSIZE=1670)
+      REAL*4        XP(ARRAYSIZE)       !GAUSSIAN ABSCISSAS
+      REAL*4        WP(ARRAYSIZE)       !GAUSSIAN WEIGHTS
+      REAL*4        XPT(400)            !TEMPORARY GAUSSIAN ABSCISSAS
+      REAL*4        WPT(400)            !TEMPORARY GAUSSIAN WEIGHTS
       REAL*4        STOFW               
       PARAMETER (STOFW=2.35482005)
       REAL*4        TODEG               
-      PARAMETER (todeg=57.2957795)
-      save      calclfg,xp,wp          !Values to be saved across calls
+      PARAMETER (TODEG=57.2957795)
+      SAVE      CALCLFG,XP,WP          !VALUES TO BE SAVED ACROSS CALLS
 
 !FUNCTION DEFINITIONS:
 
 !DATA STATEMENTS:
 
-      DATA      NTERMS                ! number of terms in each table - must be even
-     1  /2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,40,50,60,70,80,90	! Numbers of terms changed May 2004
+      DATA      NTERMS                ! NUMBER OF TERMS IN EACH TABLE - MUST BE EVEN
+     1  /2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,40,50,60,70,80,90	! NUMBERS OF TERMS CHANGED MAY 2004
      2   ,100,110,120,140,160,180,200,220,240,260,280,300,400/
-C       note that nterms determines both arraysize and fstterm
-      DATA      FSTTERM                ! loc. of 1st term: N.B. N/2 terms are saved
-     1  /0,1,3,6,10,15,21,28,36,45,55,66,78,91,105,120,140,165,195,230, !FSTERM(1) should be 0 - indexing starts at 1+this number!
+C       NOTE THAT NTERMS DETERMINES BOTH ARRAYSIZE AND FSTTERM
+      DATA      FSTTERM                ! LOC. OF 1ST TERM: N.B. N/2 TERMS ARE SAVED
+     1  /0,1,3,6,10,15,21,28,36,45,55,66,78,91,105,120,140,165,195,230, !FSTERM(1) SHOULD BE 0 - INDEXING STARTS AT 1+THIS NUMBER!
      2  270,315,365,420,480,550,630,720,820,930,1050,1180,1320,1470/
-      DATA      calclfg/numtab*.false./ ! true if table entry has been calculated 
+      DATA      CALCLFG/NUMTAB*.FALSE./ ! TRUE IF TABLE ENTRY HAS BEEN CALCULATED 
 
 !CODE:
 
@@ -119,43 +119,43 @@ C f(2theta) intermediates
 c
       TTHETAD = 0.01 * TTHETA
       SIN2THETA = SIND(TTHETAD)
-      cos2THETA = COSD(TTHETAD)
-      sin2theta2 = sin2THETA * sin2THETA
-      cos2THETA2 = cos2THETA * cos2THETA
+      COS2THETA = COSD(TTHETAD)
+      SIN2THETA2 = SIN2THETA * SIN2THETA
+      COS2THETA2 = COS2THETA * COS2THETA
 c
 C Asymmetry terms
 c
-      A = SL            ! A = S/L in FCJ
-      B = HL            ! B = H/L in FCJ
-      ApB = A+B
-      AmB = A-B
-      ApB2 = ApB*ApB
+      A = SL            ! A = S/L IN FCJ
+      B = HL            ! B = H/L IN FCJ
+      APB = A+B
+      AMB = A-B
+      APB2 = APB*APB
 c
 C handle the case where there is asymmetry
 c
-      IF (A .ne. 0.0 .or. B .ne. 0.0) then
-        Einfl = Acosd(SQRT(1.0 + AmB**2)*cos2THETA) ! 2phi(infl) FCJ eq 5 (degrees)
-        tmp2 = 1.0 + ApB2
-        tmp = SQRT(tmp2)*cos2THETA
+      IF (A .NE. 0.0 .OR. B .NE. 0.0) THEN
+        EINFL = ACOSD(SQRT(1.0 + AMB**2)*COS2THETA) ! 2PHI(INFL) FCJ EQ 5 (DEGREES)
+        TMP2 = 1.0 + APB2
+        TMP = SQRT(TMP2)*COS2THETA
 c
 C Treat case where A or B is zero - Set Einfl = 2theta
 c
-        if (A.eq.0.0 .or. B .eq. 0.0)Einfl = Acosd(cos2THETA)
-        if (abs(tmp) .le. 1.0) then
-          Emin = Acosd(tmp)      ! 2phi(min) FCJ eq 4 (degrees)
-          tmp1 = tmp2*(1.0 - tmp2*(1.0-sin2THETA2))
-        else
-          tmp1 = 0.0
-          if (tmp .gt. 0.0) then
-            Emin = 0.0
-          else
-            Emin = 180.0
-          endif
-        endif
-        if (tmp1 .gt. 0 .and. abs(tmp) .le. 1.0) then
-          dEmindA = -ApB*cos2THETA/SQRT(tmp1) ! N. B. symm w/r A,B
+        IF (A.EQ.0.0 .OR. B .EQ. 0.0)EINFL = ACOSD(COS2THETA)
+        IF (ABS(TMP) .LE. 1.0) THEN
+          EMIN = ACOSD(TMP)      ! 2PHI(MIN) FCJ EQ 4 (DEGREES)
+          TMP1 = TMP2*(1.0 - TMP2*(1.0-SIN2THETA2))
         ELSE
-          dEmindA = 0.0
+          TMP1 = 0.0
+          IF (TMP .GT. 0.0) THEN
+            EMIN = 0.0
+          ELSE
+            EMIN = 180.0
+          ENDIF
+        ENDIF
+        IF (TMP1 .GT. 0 .AND. ABS(TMP) .LE. 1.0) THEN
+          DEMINDA = -APB*COS2THETA/SQRT(TMP1) ! N. B. SYMM W/R A,B
+        ELSE
+          DEMINDA = 0.0
         ENDIF
 
 c       
@@ -166,133 +166,133 @@ c larger than 0.005 degrees.  LWF  8/10/95
 c       
 c Determine which Gauss-Legendre Table to use
 c       
-        arraynum = 1
+        ARRAYNUM = 1
 c       
 c Calculate desired number of intervals
 c
-        tmp = abs(TTHETAD - emin)               ! tmp in degrees
+        TMP = ABS(TTHETAD - EMIN)               ! TMP IN DEGREES
         IF ( GAM.LE.0.0 ) THEN
-          K = INT(TMP*200.0)                    !RVD formulation
+          K = INT(TMP*200.0)                    !RVD FORMULATION
         ELSE
-          k = int(300.0*tmp/GAM)                !New formulation of May 2004
+          K = INT(300.0*TMP/GAM)                !NEW FORMULATION OF MAY 2004
         END IF
 c
 C Find the next largest set
 c
-        do while (arraynum .lt. numtab .and. k.gt.nterms(arraynum))
-          arraynum = arraynum + 1
-        enddo
-        ngt = nterms(arraynum)
+        DO WHILE (ARRAYNUM .LT. NUMTAB .AND. K.GT.NTERMS(ARRAYNUM))
+          ARRAYNUM = ARRAYNUM + 1
+        ENDDO
+        NGT = NTERMS(ARRAYNUM)
 c
 C calculate the terms, if they have not been used before
 c
-        if (.not. calclfg(arraynum)) then
-          calclfg(arraynum) = .true.
-          call gauleg(-1.,1.,xpt,wpt,ngt)
-          it = fstterm(arraynum)-ngt/2
+        IF (.NOT. CALCLFG(ARRAYNUM)) THEN
+          CALCLFG(ARRAYNUM) = .TRUE.
+          CALL GAULEG(-1.,1.,XPT,WPT,NGT)
+          IT = FSTTERM(ARRAYNUM)-NGT/2
 c
 C copy the ngt/2 terms from our working array to the stored array
 c
-          do k=ngt/2+1,ngt
-            xp(k+it) = xpt(k)
-            wp(k+it) = wpt(k)
-          enddo
-        endif
-        sumWG = 0.
-        sumWRG = 0.
-        sumWdGdA = 0.
-        sumWRdGdA = 0.
-        sumWdGdB = 0.
-        sumWRdGdB = 0.
-        sumWGdRd2t = 0.
-        sumWGdRdsig = 0.
-        sumWGdRdgam = 0.
-        sumWGdRdA = 0.
-        sumWGdRdB = 0.
+          DO K=NGT/2+1,NGT
+            XP(K+IT) = XPT(K)
+            WP(K+IT) = WPT(K)
+          ENDDO
+        ENDIF
+        SUMWG = 0.
+        SUMWRG = 0.
+        SUMWDGDA = 0.
+        SUMWRDGDA = 0.
+        SUMWDGDB = 0.
+        SUMWRDGDB = 0.
+        SUMWGDRD2T = 0.
+        SUMWGDRDSIG = 0.
+        SUMWGDRDGAM = 0.
+        SUMWGDRDA = 0.
+        SUMWGDRDB = 0.
 c       
 c Compute Convolution integral for 2phi(min) <= delta <= 2theta
 c       
-        it = fstterm(arraynum)-ngt/2
-        do k=ngt/2+1,ngt
-          delta = emin + (TTHETAD - emin) * xp(k+it) ! Delta in degrees
-          CALL PSVOIGT(DTT+TTHETA-delta*100.,SIG,GAM,R,dRdT,dRdS,dRdG)
+        IT = FSTTERM(ARRAYNUM)-NGT/2
+        DO K=NGT/2+1,NGT
+          DELTA = EMIN + (TTHETAD - EMIN) * XP(K+IT) ! DELTA IN DEGREES
+          CALL PSVOIGT(DTT+TTHETA-DELTA*100.,SIG,GAM,R,DRDT,DRDS,DRDG)
 
-          dDELTAdA = (1. - xp(k+it))*dEmindA ! N. B. symm w/r A,B
-          sinDELTA = sind(Delta)
-          cosDELTA = cosd(Delta)
-          RcosDELTA = 1. / cosDELTA
-          tanDELTA = tand(Delta)
-          cosDELTA2 = cosDELTA*cosDELTA      
-          tmp1 = cosDELTA2 - cos2THETA2
-          tmp2 = sin2THETA2 - sinDelta * sinDELTA
-          tmp = tmp2
-          if ( ttheta.gt.4500.0 ) tmp = tmp1 
-          if (tmp .gt. 0) then
-            tmp1 = 1.0/SQRT(tmp)
-            F = abs(cos2THETA) * tmp1
-            dFdA = cosDELTA*cos2THETA*sinDELTA*dDELTAdA * 
-     1           (tmp1*tmp1*tmp1)
-          else
+          DDELTADA = (1. - XP(K+IT))*DEMINDA ! N. B. SYMM W/R A,B
+          SINDELTA = SIND(DELTA)
+          COSDELTA = COSD(DELTA)
+          RCOSDELTA = 1. / COSDELTA
+          TANDELTA = TAND(DELTA)
+          COSDELTA2 = COSDELTA*COSDELTA      
+          TMP1 = COSDELTA2 - COS2THETA2
+          TMP2 = SIN2THETA2 - SINDELTA * SINDELTA
+          TMP = TMP2
+          IF ( TTHETA.GT.4500.0 ) TMP = TMP1 
+          IF (TMP .GT. 0) THEN
+            TMP1 = 1.0/SQRT(TMP)
+            F = ABS(COS2THETA) * TMP1
+            DFDA = COSDELTA*COS2THETA*SINDELTA*DDELTADA * 
+     1           (TMP1*TMP1*TMP1)
+          ELSE
             F = 1.0
-            dFdA = 0.0
-          endif
+            DFDA = 0.0
+          ENDIF
 c       
 c Calculate G(Delta,2theta) [G = W /(h cos(delta) ] [ FCJ eq. 7(a) and 7(b) ]
 c       
-          if(abs(delta-emin) .gt. abs(einfl-emin))then
-            if ( A.ge.B) then
+          IF(ABS(DELTA-EMIN) .GT. ABS(EINFL-EMIN))THEN
+            IF ( A.GE.B) THEN
 c
 C N.B. this is the only place where d()/dA <> d()/dB
 c
-              G = 2.0*B*F*RcosDELTA
-              dGdA = 2.0*B*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
-              dGdB = dGdA + 2.0*F*RcosDELTA
-            else
-              G = 2.0*A*F*RcosDELTA
-              dGdB = 2.0*A*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
-              dGdA = dGdB + 2.0*F*RcosDELTA
-            endif
-          else                                            ! delta .le. einfl .or. min(A,B) .eq. 0
-            G = (-1.0 + ApB*F) * RcosDELTA
-            dGdA = RcosDELTA*(F - tanDELTA*dDELTAdA
-     1             + ApB*F*tanDELTA*dDELTAdA + ApB*dFdA)
-            dGdB = dGdA
-          endif
+              G = 2.0*B*F*RCOSDELTA
+              DGDA = 2.0*B*RCOSDELTA*(DFDA + F*TANDELTA*DDELTADA)
+              DGDB = DGDA + 2.0*F*RCOSDELTA
+            ELSE
+              G = 2.0*A*F*RCOSDELTA
+              DGDB = 2.0*A*RCOSDELTA*(DFDA + F*TANDELTA*DDELTADA)
+              DGDA = DGDB + 2.0*F*RCOSDELTA
+            ENDIF
+          ELSE                                            ! DELTA .LE. EINFL .OR. MIN(A,B) .EQ. 0
+            G = (-1.0 + APB*F) * RCOSDELTA
+            DGDA = RCOSDELTA*(F - TANDELTA*DDELTADA
+     1             + APB*F*TANDELTA*DDELTADA + APB*DFDA)
+            DGDB = DGDA
+          ENDIF
 
-          WG = wp(k+it) * G
-          sumWG = sumWG + WG
-          sumWRG = sumWRG + WG * R
-          sumWdGdA = sumWdGdA + wp(k+it) * dGdA
-          sumWRdGdA = sumWRdGdA + wp(k+it) * R * dGdA
-          sumWdGdB = sumWdGdB + wp(k+it) * dGdB
-          sumWRdGdB = sumWRdGdB + wp(k+it) * R * dGdB
-          sumWGdRd2t = sumWGdRd2t + WG * dRdT ! N.B. 1/centidegrees
-          sumWGdRdsig = sumWGdRdsig + WG * dRdS
-          sumWGdRdgam = sumWGdRdgam + WG * dRdG
-          sumWGdRdA = sumWGdRdA + WG * dRdT * dDELTAdA ! N. B. symm w/r A,B
-        enddo
-        RsumWG = 1.0/sumWG
-        RsumWG2 = RsumWG * RsumWG
-        PRFUNC = sumWRG * RsumWG
+          WG = WP(K+IT) * G
+          SUMWG = SUMWG + WG
+          SUMWRG = SUMWRG + WG * R
+          SUMWDGDA = SUMWDGDA + WP(K+IT) * DGDA
+          SUMWRDGDA = SUMWRDGDA + WP(K+IT) * R * DGDA
+          SUMWDGDB = SUMWDGDB + WP(K+IT) * DGDB
+          SUMWRDGDB = SUMWRDGDB + WP(K+IT) * R * DGDB
+          SUMWGDRD2T = SUMWGDRD2T + WG * DRDT ! N.B. 1/CENTIDEGREES
+          SUMWGDRDSIG = SUMWGDRDSIG + WG * DRDS
+          SUMWGDRDGAM = SUMWGDRDGAM + WG * DRDG
+          SUMWGDRDA = SUMWGDRDA + WG * DRDT * DDELTADA ! N. B. SYMM W/R A,B
+        ENDDO
+        RSUMWG = 1.0/SUMWG
+        RSUMWG2 = RSUMWG * RSUMWG
+        PRFUNC = SUMWRG * RSUMWG
 
-        dydA = (-(sumWRG*sumWdGdA) +
-     1    sumWG*(sumWRdGdA- 100.0 * todeg * sumWGdRdA)) * RsumWG2
-        dydB = (-(sumWRG*sumWdGdB) +
-     1    sumWG*(sumWRdGdB- 100.0 * todeg * sumWGdRdA)) * RsumWG2
-        sigpart = sumWGdRdsig * RsumWG
-        gampart = sumWGdRdgam * RsumWG
-        DPRDT = -SumWGdRd2T * RsumWG
-      else
+        DYDA = (-(SUMWRG*SUMWDGDA) +
+     1    SUMWG*(SUMWRDGDA- 100.0 * TODEG * SUMWGDRDA)) * RSUMWG2
+        DYDB = (-(SUMWRG*SUMWDGDB) +
+     1    SUMWG*(SUMWRDGDB- 100.0 * TODEG * SUMWGDRDA)) * RSUMWG2
+        SIGPART = SUMWGDRDSIG * RSUMWG
+        GAMPART = SUMWGDRDGAM * RSUMWG
+        DPRDT = -SUMWGDRD2T * RSUMWG
+      ELSE
 c
 C no asymmetry -- nice and simple!
 c
-        CALL PSVOIGT(DTT,SIG,GAM,R,dRdT,dRdS,dRdG)
+        CALL PSVOIGT(DTT,SIG,GAM,R,DRDT,DRDS,DRDG)
         PRFUNC = R
-        dydA = 0.002 * sign(1.0,TTHETA - DTT)
-        dydB = dydA
-        sigpart = dRdS
-        gampart = dRdG
-        DPRDT = -dRdT
+        DYDA = 0.002 * SIGN(1.0,TTHETA - DTT)
+        DYDB = DYDA
+        SIGPART = DRDS
+        GAMPART = DRDG
+        DPRDT = -DRDT
       END IF
       SLPART = DYDA
       HLPART = DYDB

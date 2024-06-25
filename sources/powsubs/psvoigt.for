@@ -27,10 +27,10 @@
       REAL*4        COFT(6),COFN(3) 
       REAL*4        EPS                 !Are values different
 ! Local variables saved between calls
-      REAL*4        prev_sig,prev_gam
-      REAL*4        eta,fwhm,frac,dsdg,dsdl,sumhm,dedf,sqsg
-      save          eta,fwhm,frac,prev_sig,prev_gam,dsdg,dsdl,sumhm,
-     1                   dedf,sqsg
+      REAL*4        PREV_SIG,PREV_GAM
+      REAL*4        ETA,FWHM,FRAC,DSDG,DSDL,SUMHM,DEDF,SQSG
+      SAVE          ETA,FWHM,FRAC,PREV_SIG,PREV_GAM,DSDG,DSDL,SUMHM,
+     1                   DEDF,SQSG
       
 !SUBROUTINES CALLED:
 
@@ -42,17 +42,17 @@
       DATA SQ2PI/2.506628275/            !SQRT(2PI)
       DATA COFT/1.0,2.69269,2.42843,4.47163,0.07842,1.0/
       DATA COFN/1.36603,-0.47719,0.11116/
-      DATA prev_sig/-1.0/
-      DATA prev_gam/-1.0/
-      DATA eps/1.0e-10/           !Threshold for recalculation
+      DATA PREV_SIG/-1.0/
+      DATA PREV_GAM/-1.0/
+      DATA EPS/1.0E-10/           !THRESHOLD FOR RECALCULATION
 
 !CODE:
 
-! Check for repeat call
-      if (abs(prev_sig-sig) .gt. eps .or.   
-     1  (abs(prev_gam-gam).gt.eps)) then !need to recalculate
-         prev_sig = sig
-         prev_gam = gam
+! CHECK FOR REPEAT CALL
+      IF (ABS(PREV_SIG-SIG) .GT. EPS .OR.   
+     1  (ABS(PREV_GAM-GAM).GT.EPS)) THEN !NEED TO RECALCULATE
+         PREV_SIG = SIG
+         PREV_GAM = GAM
          SQSG = MAX(SQRT(SIG),0.001)
          FWHG = STOFW*SQSG
          PGL = FWHG**5
@@ -76,7 +76,7 @@
             PF = PF*FRAC
             ETA = ETA+COFN(ITRM)*PF
          END DO
-      end if   !end of recalculation step 
+      END IF   !END OF RECALCULATION STEP 
       CALL LORENTZ(DX,FWHM,TL,DTLDT,DTLDFW)
       SIGP = (FWHM/STOFW)**2
       EX = MAX(-20.0,-0.5*DX**2/SIGP)
@@ -100,9 +100,9 @@
       
       SUBROUTINE PSVOIGT2(DX,SIG,GAM,FUNC,DFDX,DFDS,DFDG)
 
-!PURPOSE: Compute function & derivatives pseudovoigt - unfinished; 
-!   no derivatives
-!pseudo Voigt W.I.F. David, J. Appl. Cryst. 19, 63-64 (1986)
+!PURPOSE: COMPUTE FUNCTION & DERIVATIVES PSEUDOVOIGT - UNFINISHED; 
+!   NO DERIVATIVES
+!PSEUDO VOIGT W.I.F. DAVID, J. APPL. CRYST. 19, 63-64 (1986)
 
       INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
@@ -110,19 +110,19 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DX                  !Delta-x from center
-      REAL*4        SIG                 !Gaussian variance
-      REAL*4        GAM                 !Lorentzian FWHM
-      REAL*4        FUNC                !Value of pseudo-Voigt at DX
-      REAL*4        DFDX                !dF/dx
-      REAL*4        DFDS                !dF/ds
-      REAL*4        DFDG                !dF/dg
+      REAL*4        DX                  !DELTA-X FROM CENTER
+      REAL*4        SIG                 !GAUSSIAN VARIANCE
+      REAL*4        GAM                 !LORENTZIAN FWHM
+      REAL*4        FUNC                !VALUE OF PSEUDO-VOIGT AT DX
+      REAL*4        DFDX                !DF/DX
+      REAL*4        DFDS                !DF/DS
+      REAL*4        DFDG                !DF/DG
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        GNORM               !Gaussian Normalization constant
+      REAL*4        GNORM               !GAUSSIAN NORMALIZATION CONSTANT
       REAL*4        COFEG(7),COFEL(7),COFGG(6),COFGL(6)    
 
 !SUBROUTINES CALLED:
@@ -176,7 +176,7 @@
       TG = STOFW*EXP(EX)/(SQ2PI*FWHM)
       FUNC = ETAL*TL+ETAG*TG
         
-! Unfinished - no derivatives
+! UNFINISHED - NO DERIVATIVES
 
       RETURN
       END

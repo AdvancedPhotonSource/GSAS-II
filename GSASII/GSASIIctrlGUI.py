@@ -5406,6 +5406,11 @@ class MyHelp(wx.Menu):
                 frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
             else:
                 helpobj.Enable(False)
+        if (GSASIIpath.HowIsG2Installed().startswith('git')
+                and GSASIIpath.GetConfigValue('debug')): 
+            helpobj = self.Append(wx.ID_ANY,'Switch to/from branch',
+                    'Switch to/from a GSAS-II development branch')
+            frame.Bind(wx.EVT_MENU, gitSelectBranch, helpobj)
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
             helpobj = self.Append(wx.ID_ANY,lbl,'')
@@ -9387,7 +9392,7 @@ def gitCheckUpdates(G2frame):
                    ' manually.\n\nPress "Yes" to continue with update\n'+
                    'Press "Cancel" to stop the update.')
         dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
-                wx.YES|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+                wx.OK|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
         ans = dlg.ShowModal()
         dlg.Destroy()
         if ans == wx.ID_CANCEL: return
@@ -9561,6 +9566,106 @@ def gitSelectVersion(G2frame):
 
     # launch changes and restart
     GSASIIpath.gitStartUpdate(cmds)
+
+def gitSelectBranch(event):
+    '''Pull in latest GSAS-II branches on origin server; Allow user to 
+    select a branch; checkout that branch and restart GSAS-II. 
+    Expected to be used by developers and by expert users only.
+    '''
+    G2frame = wx.App.GetMainTopWindow()
+    if not GSASIIpath.HowIsG2Installed().startswith('git-rev'):
+        G2MessageBox(G2frame,
+            'Unable to switch branches unless GSAS-II has been installed from GitHub',
+            'Not a git install')
+        return
+    if not os.path.exists(GSASIIpath.path2GSAS2): 
+        print(f'Warning: Directory {GSASIIpath.path2GSAS2} not found')
+        return
+    if os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'..','.git')):
+        path2repo = os.path.join(path2GSAS2,'..')  # expected location
+    elif os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'.git')):
+        path2repo = GSASIIpath.path2GSAS2
+    else:
+        print(f'Warning: Repository {path2GSAS2} not found')
+        return
+    try:
+        g2repo = GSASIIpath.openGitRepo(path2repo)
+    except Exception as msg:
+        print(f'Warning: Failed to open repository. Error: {msg}')
+        return
+    if g2repo.is_dirty() or g2repo.index.diff("HEAD"): # changed or staged files
+        G2MessageBox(G2frame,
+            'You have local changes. They must be reset, committed or stashed before switching branches',
+            'Local changes')
+        return
+    if g2repo.head.is_detached:
+        G2MessageBox(G2frame,
+            'You have a old previous version loaded; you must be on a branch head to switching branches',
+            'Detached head')
+        return
+
+    # make sure that branches are accessible & get updates
+    print('getting updates...',end='')
+    g2repo.git.remote('set-branches','origin','*')
+    print('..',end='')
+    g2repo.git.fetch()
+    print('.done')
+    branchlist = [i.strip() for i in g2repo.git.branch('-r').split('\n') if '->' not in i]
+    choices = [i for i in  [os.path.split(i)[1] for i in branchlist] if i != g2repo.active_branch.name]
+    if len(choices) == 0:
+        G2MessageBox(G2frame,
+            'No branches were found to select. Unexpected!',
+            'No branches')
+        return
+    if len(choices) == 1:
+        b = choices[0]
+    else:
+        dlg = G2SingleChoiceDialog(G2frame,'Select branch to use','Select Branch',
+                                 choices)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                b = choices[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+    msg = f'''Confirm switching from git branch {g2repo.active_branch.name!r} to {b!r}.
+
+If confirmed here, GSAS-II will restart. 
+
+Do you want to save your project before restarting?
+Select "Yes" to save, "No" to skip the save, or "Cancel"
+to discontinue the restart process.
+
+If "Yes", GSAS-II will reopen the project after the update.
+
+The switch will be made unless Cancel is pressed.'''
+    dlg = wx.MessageDialog(G2frame, msg, 'Confirm branch switch?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        project = os.path.abspath(G2frame.GSASprojectfile)
+        print(f"Restarting GSAS-II with project file {project!r}")
+    else:
+        print("Restarting GSAS-II without a project file ")
+        project = None
+    # I hope that it is possible to do a checkout on Windows
+    # (source files are not locked). If this is not the case
+    # then another approach will be needed, where a .bat file is used
+    # or GSASIIpath is used, as is the case for updates
+    a = g2repo.git.checkout(b)
+    if 'Your branch is behind' in a:
+        print('updating local copy of branch')
+        print(g2repo.git.pull())
+    G2fil.openInNewTerm(project)
+    print ('exiting GSAS-II')
+    sys.exit()
     
 #===========================================================================
 def svnCheckUpdates(G2frame):

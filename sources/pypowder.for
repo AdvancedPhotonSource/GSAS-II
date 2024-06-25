@@ -22,7 +22,7 @@ C     CDSIG is in centidegrees squared, we must change to normal degrees
       SIG = CDSIG/10000.0
       GAM = CDGAM/100.0
       DO I=0,NPTS-1
-         Call Get_Prof_Val(SIG,GAM,SPH,0.0,DTT(I)+TTHETA,TTHETA,DPRDT,
+         CALL GET_PROF_VAL(SIG,GAM,SPH,0.0,DTT(I)+TTHETA,TTHETA,DPRDT,
      1    DPRDG,DPRDD,DPRDS,DPRDLZ,PRFUNC(I))
           PRFUNC(I)=PRFUNC(I)/100.   !Calling code expects peak normalised in centidegrees
       END DO
@@ -60,7 +60,7 @@ Cf2py depend(NPTS) SLPART
       SIG = CDSIG/10000.
       GAM = CDGAM/100.
       DO I=0,NPTS-1
-         Call Get_Prof_Val(SIG,GAM,SPH,0.0,DTT(I)+TTHETA,TTHETA,
+         CALL GET_PROF_VAL(SIG,GAM,SPH,0.0,DTT(I)+TTHETA,TTHETA,
      1      DPRDT(I),SIGPART(I),GAMPART(I),SLPART(I),LPART, PRFUNC(I))
          ! Calling code expects all values to be for a peak normalised in centidegrees
          SIGPART(I)=SIGPART(I)/1.0e6
@@ -148,7 +148,7 @@ Cf2py depend(NPTS) PRFUNC
       RETURN
       END
 
-      SUBROUTINE PYDPSVFCJO(NPTS,DTT,TTHETA,SIG,GAM,SHL,PRFUNC,
+      SUBROUTINE PYDPSVFCJO(NPTS,DTT,TTHETA,SIG,GAM,SPH,PRFUNC,
      1  DPRDT,SIGPART,GAMPART,SLPART)
 C DTT in degrees
 C TTHETA in degrees
@@ -160,7 +160,7 @@ Cf2py depend(NPTS) DTT
 Cf2py intent(in) TTHETA
 Cf2py intent(in) SIG
 Cf2py intent(in) GAM
-Cf2py intent(in) SHL
+Cf2py intent(in) SPH
 Cf2py intent(out) PRFUNC
 Cf2py depend(NPTS) PRFUNC
 Cf2py intent(out) DPRDT
@@ -173,14 +173,95 @@ Cf2py intent(out) SLPART
 Cf2py depend(NPTS) SLPART
 
       INTEGER*4 NPTS
-      REAL*4 TTHETA,SIG,GAM,SHL
+      REAL*4 TTHETA,SIG,GAM,SPH
       REAL*4 DTT(0:NPTS-1),DPRDT(0:NPTS-1),SIGPART(0:NPTS-1),
      1   GAMPART(0:NPTS-1),SLPART(0:NPTS-1),PRFUNC(0:NPTS-1)
       DO I=0,NPTS-1
-        CALL PSVFCJO(DTT(I)*100.,TTHETA*100.,SIG,GAM,SHL/2.,SHL/2.,
+        CALL PSVFCJO(DTT(I)*100.,TTHETA*100.,SIG,GAM,SPH/2.,SPH/2.,
      1     PRFUNC(I),DPRDT(I),SIGPART(I),GAMPART(I),SPART,HPART)
           SLPART(I) = SPART
         DPRDT(I) = DPRDT(I)*100.
+      END DO
+      RETURN
+      END
+
+      SUBROUTINE PYPSVFCJEXPO(NPTS,DTT,TTHETA,ALP,BET,SIG,GAM,
+     1  SPH,PRFUNC)
+C DTT in degrees
+C TTHETA in degrees
+C SPH is S/L + H/L
+C RETURNS FUNCTION ONLY
+Cf2py intent(in) NPTS
+Cf2py intent(in) DTT
+Cf2py depend(NPTS) DTT
+Cf2py intent(in) TTHETA
+Cf2py intent(in) ALP
+Cf2py intent(in) BET
+Cf2py intent(in) SIG
+Cf2py intent(in) GAM
+Cf2py intent(in) SPH
+Cf2py intent(out) PRFUNC
+Cf2py depend(NPTS) PRFUNC
+
+      INTEGER*4 NPTS
+      REAL*4 TTHETA,ALP,BET,SIG,GAM,SPH,PFUNC
+      REAL*4 DTT(0:NPTS-1),PRFUNC(0:NPTS-1),DPRDT,ALPART,BEPART,SIGPART
+     1  GAMPART,SLPART,HLPART
+      DO I=0,NPTS-1
+        CALL PSVFCJEXPO(DTT(I),TTHETA,ALP,BET,SIG/1.e4,GAM/100.,SPH/2.0,
+     1    SPH/2.0,PFUNC,DPRDT,ALPART,BEPART,SIGPART,GAMPART,
+     1    SLPART,HLPART)
+        PRFUNC(I) = PFUNC/100.
+      END DO
+      RETURN
+      END
+
+      SUBROUTINE PYDPSVFCJEXPO(NPTS,DTT,TTHETA,ALP,BET,SIG,GAM,SHL,
+     1  PRFUNC,DPRDT,ALPART,BEPART,SIGPART,GAMPART,SLPART)
+C DTT in degrees
+C TTHETA in degrees
+C SPH is S/L + H/L
+C RETURNS FUNCTION & DERIVATIVES
+Cf2py intent(in) NPTS
+Cf2py intent(in) DTT
+Cf2py depend(NPTS) DTT
+Cf2py intent(in) TTHETA
+Cf2py intent(in) ALP
+Cf2py intent(in) BET
+Cf2py intent(in) SIG
+Cf2py intent(in) GAM
+Cf2py intent(in) SHL
+Cf2py intent(out) PRFUNC
+Cf2py depend(NPTS) PRFUNC
+Cf2py intent(out) DPRDT
+Cf2py depend(NPTS) DPRDT
+Cf2py intent(out) ALPART
+Cf2py depend(NPTS) ALPART
+Cf2py intent(out) BEPART
+Cf2py depend(NPTS) BEPART
+Cf2py intent(out) SIGPART
+Cf2py depend(NPTS) SIGPART
+Cf2py intent(out) GAMPART
+Cf2py depend(NPTS) GAMPART
+Cf2py intent(out) SLPART
+Cf2py depend(NPTS) SLPART
+
+      INTEGER*4 NPTS
+      REAL*4 TTHETA,ALP,BET,SIG,GAM,SHL,HPART,SGPART,GAPART,PFUNC
+      REAL*4 DTT(0:NPTS-1),DPRDT(0:NPTS-1),ALPART(0:NPTS-1),
+     1   BEPART(0:NPTS-1),SIGPART(0:NPTS-1),GAMPART(0:NPTS-1),
+     1   SLPART(0:NPTS-1),PRFUNC(0:NPTS-1),APART,BPART,DPDT
+      DO I=0,NPTS-1
+        CALL PSVFCJEXPO(DTT(I),TTHETA,ALP,BET,SIG/1.e4,GAM/100.,SHL/2.,
+     1     SHL/2.,PFUNC,DPDT,APART,BPART,SGPART,
+     1     GAPART,SPART,HPART)
+        PRFUNC(I) = PFUNC/100.
+        ALPART(I) = APART/100.
+        BEPART(I) = BPART/100.
+        SIGPART(I) = SGPART/1.E6
+        GAMPART(I) = GAPART/1.E4
+        SLPART(I) = SPART/100.
+        DPRDT(I) = DPDT/100.
       END DO
       RETURN
       END

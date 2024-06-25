@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5577 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_CIF.py $
-# $Id: G2phase_CIF.py 5577 2023-05-11 23:08:12Z toby $
+# $Id: G2phase_CIF.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 '''
@@ -22,11 +22,12 @@ import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import GSASIIpath
 import GSASIIfiles as G2fil
+import SUBGROUPS
 try:
     import GSASIIctrlGUI as G2G
 except ImportError:
     pass
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
@@ -127,8 +128,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 #how about checking for super/magnetic ones as well? - reject 'X'?
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
-            selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
-                title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
+            try:
+                selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
+                    title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
+            except: # no wxPython
+                selblk = 0
         self.errors = 'Error during reading of selected block'
 #process selected phase
         if selblk is None:
@@ -649,6 +653,34 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.ISODISTORT_proc(blk,atomlbllist,ranIdlookup,filename)
                     self.errors = ""
             returnstat = True
+        if self.SymOps.get('xyz',[]): # did the phase supply symmetry operations?
+            # check if they agree with GSAS-II's setting
+            good = G2spc.CompareSym(self.SymOps['xyz'],
+                                     SGData=self.Phase['General']['SGData'])
+            if not good:
+                centro = False
+                if '-x,-y,-z' in [i.replace(' ','').lower() for i in self.SymOps['xyz']]:
+                    centro = True
+                msg = 'This CIF uses a space group setting not compatible with GSAS-II.\n'
+                if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
+                    msg += '\nThis is likely due to the space group being set in Origin 1 rather than 2.\n'
+                msg += '''
+Do you want to use Bilbao's "CIF to Standard Setting" web service to 
+transform this into a standard setting?
+'''
+                if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not centro:
+                    msg += '''
+If you say "no" here, later, you will get the chance to apply a simple origin 
+shift later as an alternative to the above.'''
+                else:
+                    msg += '\nIf you say "no" here you will need to do this yourself manually.'
+                try:
+                    ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
+                except Exception as err: # fails if non-interactive (no wxPython)
+                    print(err)
+                    print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
+                    ans = True
+                if ans: SUBGROUPS.createStdSetting(filename,self)
         return returnstat
         
     def ISODISTORT_test(self,blk):

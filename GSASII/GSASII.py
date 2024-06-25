@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSASII
 ########### SVN repository information ###################
-# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5750 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASII.py $
-# $Id: GSASII.py 5750 2024-03-04 19:37:23Z toby $
+# $Id: GSASII.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 A single class, :class:`G2App`, is defined here to create 
@@ -36,7 +36,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5750 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 
 __version__ = '1.0.0'
 
@@ -53,11 +53,11 @@ class G2App(wx.App):
     def MacOpenFiles(self, filenames):
         if self.startupMode:
             return
-        import GSASIIctrlGUI as G2G
+        import GSASIIfiles
         for project in filenames:
             #print("Start GSAS-II with project file "+str(project))
             #GSASIIpath.MacStartGSASII(__file__,project)
-            G2G.openInNewTerm(project)
+            GSASIIfiles.openInNewTerm(project)
 
 if __name__ == '__main__':
     if sys.platform == "darwin": 

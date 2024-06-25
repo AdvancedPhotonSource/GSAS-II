@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5789 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5789 2024-05-24 15:06:45Z toby $
+# $Id: GSASIIpath.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -89,33 +89,36 @@ def SetConfigValue(parmdict):
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
 
-def addPrevGPX(fil,configDict):
+def addPrevGPX(fil,cDict):
     '''Add a GPX file to the list of previous files. 
     Move previous names to start of list. Keep most recent five files
     '''
+    global configDict
     fil = os.path.abspath(os.path.expanduser(fil))
-    if 'previous_GPX_files' not in configDict: return
+    if 'previous_GPX_files' not in cDict: 
+        cDict['previous_GPX_files'] = [[],[],[],'Previous .gpx files'] # unexpected
     try:
-        pos = configDict['previous_GPX_files'][1].index(fil) 
+        pos = cDict['previous_GPX_files'][1].index(fil) 
         if pos == 0: return
-        configDict['previous_GPX_files'][1].pop(pos) # if present, remove if not 1st
+        cDict['previous_GPX_files'][1].pop(pos) # if present, remove if not 1st
     except ValueError:
         pass
     except AttributeError:
-        configDict['previous_GPX_files'][1] = []
-    files = list(configDict['previous_GPX_files'][1])
+        cDict['previous_GPX_files'][1] = []
+    files = list(cDict['previous_GPX_files'][1])
     files.insert(0,fil)
-    configDict['previous_GPX_files'][1] = files[:5]
+    cDict['previous_GPX_files'][1] = files[:5]
+    configDict['previous_GPX_files'] = cDict['previous_GPX_files'][1]
 
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5789 $"
+    :param str RevString: something like "$Revision: 5790 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5789 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5790 $")`` in every python
     file.
     '''
     try:
@@ -2601,8 +2604,8 @@ to update/regress repository from git repository:
         else:
             print("Restart GSAS-II without a project file ")
             # subprocess.Popen([sys.executable,G2scrpt])
-        import GSASIIctrlGUI
-        GSASIIctrlGUI.openInNewTerm(project)
+        import GSASIIfiles
+        GSASIIfiles.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
         

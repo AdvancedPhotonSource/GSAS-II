@@ -5771,6 +5771,46 @@ class G2Single(G2ObjectWrapper):
                 d['Extinction'][2][key][1] = False
             else:
                 raise ValueError(f'clear_refinements: {key} is unknown')
+            
+    def Export(self,fileroot,extension,fmthint=None):
+        '''Write the HKLF histogram into a file. The path is specified by 
+        fileroot and extension.
+        
+        :param str fileroot: name of the file, optionally with a path (extension is
+           ignored)
+        :param str extension: includes '.', must match an extension in global
+           exportersByExtension['single'] or a Exception is raised.
+        :param str fmthint: If specified, the first exporter where the format 
+           name (obj.formatName, as shown in Export menu) contains the
+           supplied string will be used. If not specified, an error 
+           will be generated showing the possible choices.
+        :returns: name of file that was written
+        '''
+        LoadG2fil()
+        if extension not in exportersByExtension.get('single',[]):
+            print('Defined exporters are:')
+            print('  ',list(exportersByExtension.get('single',[])))
+            raise G2ScriptException('No Writer for file type = "'+extension+'"')
+        fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
+        obj = exportersByExtension['single'][extension]
+        if type(obj) is list:
+            if fmthint is None:
+                print('Defined ',extension,'exporters are:')
+                for o in obj:
+                    print('\t',o.formatName)
+                raise G2ScriptException('No format hint for file type = "'+extension+'"')
+            for o in obj:
+              if fmthint.lower() in o.formatName.lower():
+                  obj = o
+                  break
+            else:
+                print('Hint ',fmthint,'not found. Defined ',extension,'exporters are:')
+                for o in obj:
+                    print('\t',o.formatName)
+                raise G2ScriptException('Bad format hint for file type = "'+extension+'"')
+        #self._SetFromArray(obj)
+        obj.Writer(self,fil)
+        return fil
 
 blkSize = 128
 '''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses 

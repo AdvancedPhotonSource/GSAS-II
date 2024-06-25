@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5789 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIplot.py $
-# $Id: GSASIIplot.py 5789 2024-05-24 15:06:45Z toby $
+# $Id: GSASIIplot.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIplot` follow. 
@@ -44,7 +44,7 @@ except (ImportError, ValueError) as err:
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
-GSASIIpath.SetVersionNumber("$Revision: 5789 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
@@ -3063,24 +3063,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             plotItem = histoList[0]
         else:
             plotItem = plottingItem
-            if Page.plotStyle['dPlot'] or Page.plotStyle['qPlot']:
-                print("Skipping plot, can't do this for d-plots or q-plots!")
-                return           
         xye = np.array(ma.getdata(Histograms[plotItem]['Data'])) # strips mask
         xye0 = Histograms[plotItem]['Data'][0]
         limits = Histograms[plotItem]['Limits']
-#        if Page.plotStyle['qPlot']:
-#            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
-#            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
-#            Ifin = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][1]))
-#        elif Page.plotStyle['dPlot']:
-#            X = G2lat.Pos2dsp(Parms,xye0)
-#            Ibeg = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][1]))
-#            Ifin = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][0]))
-#        else:
-        X = copy.deepcopy(xye0)
-        Ibeg = np.searchsorted(X,limits[1][0])
-        Ifin = np.searchsorted(X,limits[1][1])
+        if Page.plotStyle['qPlot']:
+            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)   # might want to consider caching this 
+            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
+            Ifin = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][1]))
+        elif Page.plotStyle['dPlot']:
+            X = G2lat.Pos2dsp(Parms,xye0)    # might want to consider caching this 
+            Ibeg = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][1]))
+            Ifin = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][0]))
+        else:
+            X = copy.deepcopy(xye0)
+            Ibeg = np.searchsorted(X,limits[1][0])
+            Ifin = np.searchsorted(X,limits[1][1])
         if Ibeg == Ifin: # if no points are within limits bad things happen 
             Ibeg,Ifin = 0,None
         if Page.plotStyle['sqrtPlot']:
@@ -6818,10 +6815,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         SetupLegendPick(legend,new)
         Page.canvas.draw()
         
-    else:       #'C' & 'B'
+    else:       #'A', 'C' & 'B'
         isig = 4
         igam = 6
-        if 'B' in Parms['Type'][0]:
+        if Parms['Type'][0][2] in ['A','B']:
             isig = 8
             igam = 10
         Plot.figure.suptitle(TreeItemText)

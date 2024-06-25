@@ -90,6 +90,6 @@
      |           eps7 = 1.0D-7, eps8 = 1.0D-8, eps9 = 1.0D-9,
      |           eps10 = 1.0D-10, eps14 = 1.0D-14)
       real*8 EIGHTBITS, FIFTEENBITS, SIXTEENBITS
-	parameter (EIGHTBITS = 256.0D0, FIFTEENBITS = 32768.0D0,
+      parameter (EIGHTBITS = 256.0D0, FIFTEENBITS = 32768.0D0,
      |       SIXTEENBITS = 65536.0D0)
 *

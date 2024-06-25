@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
+# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
 # $Author: toby $
-# $Revision: 5787 $
+# $Revision: 5790 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5787 2024-05-18 01:36:24Z toby $
+# $Id: GSASIIctrlGUI.py 5790 2024-06-13 12:33:46Z toby $
 ########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
@@ -46,7 +46,7 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5787 $")
+GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
@@ -5406,6 +5406,11 @@ class MyHelp(wx.Menu):
                 frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
             else:
                 helpobj.Enable(False)
+        if (GSASIIpath.HowIsG2Installed().startswith('git')
+                and GSASIIpath.GetConfigValue('debug')): 
+            helpobj = self.Append(wx.ID_ANY,'Switch to/from branch',
+                    'Switch to/from a GSAS-II development branch')
+            frame.Bind(wx.EVT_MENU, gitSelectBranch, helpobj)
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
             helpobj = self.Append(wx.ID_ANY,lbl,'')
@@ -6227,12 +6232,14 @@ def SaveConfigVars(vars,parent=None):
 class SelectConfigSetting(wx.Dialog):
     '''Dialog to select configuration variables and set associated values.
     '''
-    def __init__(self,parent=None):
+    def __init__(self,parent):
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Set Config Variable', style=style)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.vars = GetConfigValsDocs()
-        
+        self.G2frame = parent
+        self.restart = False
+
         label = wx.StaticText(
             self,  wx.ID_ANY,
             'Select a GSAS-II configuration variable to change'
@@ -6259,10 +6266,6 @@ class SelectConfigSetting(wx.Dialog):
         btnsizer.Add(self.saveBtn, 0, wx.ALL, 2) 
         self.saveBtn.Bind(wx.EVT_BUTTON, self.OnSave)
         self.saveBtn.Enable(False)
-        self.applyBtn = wx.Button(self,-1,"Use current (no save)")
-        btnsizer.Add(self.applyBtn, 0, wx.ALL, 2) 
-        self.applyBtn.Bind(wx.EVT_BUTTON, self.OnApplyChanges)
-        self.applyBtn.Enable(False)
         
         btn = wx.Button(self,wx.ID_CANCEL)
         btnsizer.Add(btn, 0, wx.ALL, 2) 
@@ -6282,11 +6285,11 @@ class SelectConfigSetting(wx.Dialog):
             if self.vars[var][1] != self.vars[var][2]:
                 #print 'changed',var,self.vars[var][:3]
                 self.saveBtn.Enable(True)
-                self.applyBtn.Enable(True)
+                if 'restart' in self.vars[var][3].lower():
+                    self.restart  = True
                 break
         else:
             self.saveBtn.Enable(False)
-            self.applyBtn.Enable(False)
         try:
             self.resetBtn.Enable(True)
         except:
@@ -8314,7 +8317,7 @@ def ChooseOrigin(G2frame,rd):
         if i:
             txt += "\n\nWith origin shift applied\n"
         else:
-            txt += "\nWith original origin\n"
+            txt += "\nWith current coordinates and original origin\n"
         cellContents = {}
         for atom in phObj['Atoms']:
             if atom[ct] in cellContents:
@@ -8360,11 +8363,11 @@ def ChooseOrigin(G2frame,rd):
     if centro:
         msg += '\nThere is an -x,-y,-z symmetry op in the file input, so this is likely already in Origin 2.\n'
     elif centro is None:
-        msg += '\nNo symmetry operations read from the input file; you must decide what to do. You are recommended to review a plot of the structure to make sure the symmetry is correct.\n'
+        msg += '\nNo symmetry operations are provided in the input file; you must review this yourself. You are recommended to review a plot of the structure to make sure the symmetry is correct.\n'
     else:
         msg += '\nSymmetry operations in the input file do not contain -x,-y,-z, indicating an origin shift is likely needed.\n'
 
-    msg += '\nNote that computations below, made from the coordinates, may help determine the correct origin choice:'
+    msg += '\nNote that the stoichometry computations below, made from the coordinates, may help indicate the correct origin choice:'
 
     width = 600
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'Warning: Shift origin?',
@@ -8380,7 +8383,7 @@ def ChooseOrigin(G2frame,rd):
     mainSizer.Add(txtbox,0,wx.ALIGN_CENTER,1)
     mainSizer.Add((10,10))
 
-    O1Btn = wx.Button(dlg,wx.ID_ANY,"Shift to Origin 2")
+    O1Btn = wx.Button(dlg,wx.ID_ANY,"Apply origin shift")
     O1Btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
     O2Btn = wx.Button(dlg,wx.ID_ANY,"Keep current coordinates")
     O2Btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_YES))
@@ -9069,117 +9072,118 @@ class ScrolledStaticText(wx.StaticText):
         if self.msgpos >= len(self.fullmsg): self.msgpos = 0
 
 #===========================================================================
-def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
-    '''Open a new and independent GSAS-II session in separate terminal 
-    or console window and as a separate process that will continue
-    even if the calling process exits.
-    Intended to work on all platforms. 
+# this has been moved to GSASIIfiles, since it does not need wx
+# def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
+#     '''Open a new and independent GSAS-II session in separate terminal 
+#     or console window and as a separate process that will continue
+#     even if the calling process exits.
+#     Intended to work on all platforms. 
 
-    This could be used to run other scripts inside python other than GSAS-II
+#     This could be used to run other scripts inside python other than GSAS-II
 
-    :param str project: the name of an optional parameter to be
-      passed to the script (usually a .gpx file to be opened in 
-      a new GSAS-II session)
-    :param str g2script: the script to be run. If None (default)
-      the GSASII.py file in the same directory as this file will
-      be used. 
-    :param str pythonapp: the Python interpreter to be used. 
-      Defaults to sys.executable which is usually what is wanted.
-    :param str terminal: a name for a preferred terminal emulator
-    '''
-    import subprocess
-    if g2script is None:
-        g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
+#     :param str project: the name of an optional parameter to be
+#       passed to the script (usually a .gpx file to be opened in 
+#       a new GSAS-II session)
+#     :param str g2script: the script to be run. If None (default)
+#       the GSASII.py file in the same directory as this file will
+#       be used. 
+#     :param str pythonapp: the Python interpreter to be used. 
+#       Defaults to sys.executable which is usually what is wanted.
+#     :param str terminal: a name for a preferred terminal emulator
+#     '''
+#     import subprocess
+#     if g2script is None:
+#         g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
     
-    if sys.platform == "darwin":
-        if project:
-            script = f'''
-set python to "{pythonapp}"
-set appwithpath to "{g2script}"
-set filename to "{project}"
-set filename to the quoted form of the POSIX path of filename
+#     if sys.platform == "darwin":
+#         if project:
+#             script = f'''
+# set python to "{pythonapp}"
+# set appwithpath to "{g2script}"
+# set filename to "{project}"
+# set filename to the quoted form of the POSIX path of filename
 
-tell application "Terminal"
-     activate
-     do script python & " " & appwithpath & " " & filename & "; exit"
-end tell
-'''
-        else:
-            script = f'''
-set python to "{pythonapp}"
-set appwithpath to "{g2script}"
+# tell application "Terminal"
+#      activate
+#      do script python & " " & appwithpath & " " & filename & "; exit"
+# end tell
+# '''
+#         else:
+#             script = f'''
+# set python to "{pythonapp}"
+# set appwithpath to "{g2script}"
 
-tell application "Terminal"
-     activate
-     do script python & " " & appwithpath & " " & "; exit"
-end tell
-'''
-        subprocess.Popen(["osascript","-e",script])
-    elif sys.platform.startswith("win"):
-        cmds = [pythonapp, g2script]
-        if project: cmds += [project]
-        subprocess.Popen(cmds,creationflags=subprocess.CREATE_NEW_CONSOLE)
-    else:
-        import shutil
-        script = ''
-        # try a bunch of common terminal emulators in Linux
-        # there does not appear to be a good way to way to specify this
-        # perhaps this should be a GSAS-II config option
-        for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
-                         "terminator", "terminology", "tilix"):
-            try:
-                found = shutil.which(term)
-                if not found: continue
-            except AttributeError:
-                print(f'shutil.which() failed (why?); assuming {term} present')
-                found = True
-            if term == "gnome-terminal":
-                #terminal = 'gnome-terminal -t "GSAS-II console" --'
-                cmds = [term,'--title','"GSAS-II console"','--']
-                script = "echo; echo Press Enter to close window; read line"
-                break
-            elif term == "lxterminal":
-               #terminal = 'lxterminal -t "GSAS-II console" -e'
-               cmds = [term,'-t','"GSAS-II console"','-e']
-               script = "echo;echo Press Enter to close window; read line"
-               break
-            elif term == "xterm":
-                #terminal = 'xterm -title "GSAS-II console" -hold -e'
-                cmds = [term,'-title','"GSAS-II console"','-hold','-e']
-                script = "echo; echo This window can now be closed"
-                break
-            elif term == "terminator":
-                cmds = [term,'-T','"GSAS-II console"','-x']
-                script = "echo;echo Press Enter to close window; read line"
-                break
-            elif term == "konsole":
-                cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
-                script = "echo; echo This window can now be closed"
-                break
-            elif term == "tilix":
-                cmds = [term,'-t','"GSAS-II console"','-e']
-                script = "echo;echo Press Enter to close window; read line"
-                break
-            elif term == "terminology":
-                cmds = [term,'-T="GSAS-II console"','--hold','-e']
-                script = "echo; echo This window can now be closed"
-                break                
-        else:
-            print("No known terminal was found to use, Can't start {}")
-            return
+# tell application "Terminal"
+#      activate
+#      do script python & " " & appwithpath & " " & "; exit"
+# end tell
+# '''
+#         subprocess.Popen(["osascript","-e",script])
+#     elif sys.platform.startswith("win"):
+#         cmds = [pythonapp, g2script]
+#         if project: cmds += [project]
+#         subprocess.Popen(cmds,creationflags=subprocess.CREATE_NEW_CONSOLE)
+#     else:
+#         import shutil
+#         script = ''
+#         # try a bunch of common terminal emulators in Linux
+#         # there does not appear to be a good way to way to specify this
+#         # perhaps this should be a GSAS-II config option
+#         for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
+#                          "terminator", "terminology", "tilix"):
+#             try:
+#                 found = shutil.which(term)
+#                 if not found: continue
+#             except AttributeError:
+#                 print(f'shutil.which() failed (why?); assuming {term} present')
+#                 found = True
+#             if term == "gnome-terminal":
+#                 #terminal = 'gnome-terminal -t "GSAS-II console" --'
+#                 cmds = [term,'--title','"GSAS-II console"','--']
+#                 script = "echo; echo Press Enter to close window; read line"
+#                 break
+#             elif term == "lxterminal":
+#                #terminal = 'lxterminal -t "GSAS-II console" -e'
+#                cmds = [term,'-t','"GSAS-II console"','-e']
+#                script = "echo;echo Press Enter to close window; read line"
+#                break
+#             elif term == "xterm":
+#                 #terminal = 'xterm -title "GSAS-II console" -hold -e'
+#                 cmds = [term,'-title','"GSAS-II console"','-hold','-e']
+#                 script = "echo; echo This window can now be closed"
+#                 break
+#             elif term == "terminator":
+#                 cmds = [term,'-T','"GSAS-II console"','-x']
+#                 script = "echo;echo Press Enter to close window; read line"
+#                 break
+#             elif term == "konsole":
+#                 cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
+#                 script = "echo; echo This window can now be closed"
+#                 break
+#             elif term == "tilix":
+#                 cmds = [term,'-t','"GSAS-II console"','-e']
+#                 script = "echo;echo Press Enter to close window; read line"
+#                 break
+#             elif term == "terminology":
+#                 cmds = [term,'-T="GSAS-II console"','--hold','-e']
+#                 script = "echo; echo This window can now be closed"
+#                 break                
+#         else:
+#             print("No known terminal was found to use, Can't start {}")
+#             return
 
-        fil = '/tmp/GSAS2-launch.sh'
-        cmds += ['/bin/sh',fil]
-        fp = open(fil,'w')
-        if project:
-            fp.write(f"{pythonapp} {g2script} {project}\n")
-        else:
-            fp.write(f"{pythonapp} {g2script}\n")
-        fp.write(f"rm {fil}\n")
-        if script:
-            fp.write(f"{script}\n")
-        fp.close()
-        subprocess.Popen(cmds,start_new_session=True)
+#         fil = '/tmp/GSAS2-launch.sh'
+#         cmds += ['/bin/sh',fil]
+#         fp = open(fil,'w')
+#         if project:
+#             fp.write(f"{pythonapp} {g2script} {project}\n")
+#         else:
+#             fp.write(f"{pythonapp} {g2script}\n")
+#         fp.write(f"rm {fil}\n")
+#         if script:
+#             fp.write(f"{script}\n")
+#         fp.close()
+#         subprocess.Popen(cmds,start_new_session=True)
 
 #===========================================================================
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
@@ -9304,6 +9308,16 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     else:
         return None
 
+def askQuestion(parent,question,title):
+    '''Simple code to ask a Y/N question and get answer'''
+    ans = True
+    try:
+        dlg = wx.MessageDialog(parent,question,title,wx.YES_NO | wx.ICON_QUESTION)
+        ans = (dlg.ShowModal() == wx.ID_YES)
+    finally:
+        dlg.Destroy()
+    return ans
+
 #===========================================================================
 def gitFetch(G2frame):
     wx.BeginBusyCursor()
@@ -9378,7 +9392,7 @@ def gitCheckUpdates(G2frame):
                    ' manually.\n\nPress "Yes" to continue with update\n'+
                    'Press "Cancel" to stop the update.')
         dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
-                wx.YES|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+                wx.OK|wx.CANCEL|wx.CANCEL_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
         ans = dlg.ShowModal()
         dlg.Destroy()
         if ans == wx.ID_CANCEL: return
@@ -9552,6 +9566,98 @@ def gitSelectVersion(G2frame):
 
     # launch changes and restart
     GSASIIpath.gitStartUpdate(cmds)
+
+def gitSelectBranch(event):
+    '''Pull in latest GSAS-II branches on origin server; Allow user to 
+    select a branch; checkout that branch and restart GSAS-II. 
+    Expected to be used by developers and by expert users only.
+    '''
+    G2frame = wx.App.GetMainTopWindow()
+    if not GSASIIpath.HowIsG2Installed().startswith('git-rev'):
+        G2MessageBox(G2frame,
+            'Unable to switch branches unless GSAS-II has been installed from GitHub',
+            'Not a git install')
+        return
+    if not os.path.exists(GSASIIpath.path2GSAS2): 
+        print(f'Warning: Directory {GSASIIpath.path2GSAS2} not found')
+        return
+    if os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'..','.git')):
+        path2repo = os.path.join(path2GSAS2,'..')  # expected location
+    elif os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'.git')):
+        path2repo = GSASIIpath.path2GSAS2
+    else:
+        print(f'Warning: Repository {path2GSAS2} not found')
+        return
+    try:
+        g2repo = GSASIIpath.openGitRepo(path2repo)
+    except Exception as msg:
+        print(f'Warning: Failed to open repository. Error: {msg}')
+        return
+    if g2repo.is_dirty() or g2repo.index.diff("HEAD"): # changed or staged files
+        G2MessageBox(G2frame,
+            'You have local changes. They must be reset, committed or stashed before switching branches',
+            'Local changes')
+        return
+
+    # make sure that branches are accessible & get updates
+    print('getting updates...',end='')
+    g2repo.git.remote('set-branches','origin','*')
+    print('..',end='')
+    g2repo.git.fetch()
+    print('.done')
+    branchlist = [i.strip() for i in g2repo.git.branch('-r').split('\n') if '->' not in i]
+    choices = [i for i in  [os.path.split(i)[1] for i in branchlist] if i != g2repo.active_branch.name]
+    if len(choices) == 0:
+        G2MessageBox(G2frame,
+            'No branches were found to select. Unexpected!',
+            'No branches')
+        return
+    if len(choices) == 1:
+        b = choices[0]
+    else:
+        dlg = G2SingleChoiceDialog(G2frame,'Select branch to use','Select Branch',
+                                 choices)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                b = choices[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+    msg = f'''Confirm switching from git branch {g2repo.active_branch.name!r} to {b!r}.
+
+If confirmed here, GSAS-II will restart. 
+
+Do you want to save your project before restarting?
+Select "Yes" to save, "No" to skip the save, or "Cancel"
+to discontinue the restart process.
+
+If "Yes", GSAS-II will reopen the project after the update.
+
+The switch will be made unless Cancel is pressed.'''
+    dlg = wx.MessageDialog(G2frame, msg, 'Confirm branch switch?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        project = os.path.abspath(G2frame.GSASprojectfile)
+        print(f"Restarting GSAS-II with project file {project!r}")
+    else:
+        print("Restarting GSAS-II without a project file ")
+        project = None
+    # I hope that it is possible to do a checkout on Windows
+    # (source files are not locked). If this is not the case
+    # then another approach will be needed, where a .bat file is used
+    # or GSASIIpath is used, as is the case for updates
+    g2repo.git.checkout(b)
+    G2fil.openInNewTerm(project)
+    print ('exiting GSAS-II')
+    sys.exit()
     
 #===========================================================================
 def svnCheckUpdates(G2frame):

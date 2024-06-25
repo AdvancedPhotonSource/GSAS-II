@@ -246,7 +246,8 @@ method                                                     Use
 Class :class:`~GSASIIscriptable.G2Single`
 ---------------------------------------------
 
-  A less object in GSASIIscriptable scripts is :class:`~GSASIIscriptable.G2Single`, which encapsulate each single crystal diffraction histogram in a project, with commonly used methods:
+  A less commonly-used object in GSASIIscriptable scripts is :class:`~GSASIIscriptable.G2Single`, which will encapsulate each single crystal diffraction
+  histogram in a project. At present, very few methods are provided:
 
 .. tabularcolumns:: |l|p{3.5in}|
 
@@ -256,6 +257,7 @@ method                                                     Use
 :meth:`~GSASIIscriptable.G2Single.set_refinements`        Provides a mechanism to set refinement flags for the single crystal histogram. See 
                                                           :ref:`Histogram_parameters_table` for details.  
 :meth:`~GSASIIscriptable.G2Single.clear_refinements`      Unsets refinement flags for the single crystal powder histogram.
+:meth:`~GSASIIscriptable.G2Single.Export`                 Writes the reflection list into a file
 =======================================================  ===============================================================================================================
 
 

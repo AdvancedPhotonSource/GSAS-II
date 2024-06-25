@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_examples.py $
-# $Id: G2export_examples.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_examples` follow:
 '''
 # note documentation in docs/source/exports.rst
@@ -269,6 +262,22 @@ class ExportSingleText(G2IO.ExportBaseclass):
         self.exporttype = ['single']
         self.multiple = False # only allow one histogram to be selected
 
+    def Writer(self,hist,filename=None):
+        self.OpenFile(filename)
+        hklfmt = "{:.0f},{:.0f},{:.0f}"
+        hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>12s} {:>7s} {:>6s}"
+        fmt = "{:>10s} {:8.3f} {:12.2f} {:12.4f} {:12.2f} {:7.2f} {:6.0f}"
+        self.Write(80*'=')
+        self.Write(hfmt.format("h,k,l","d-space","F_obs","sig(Fobs)","F_calc","phase","twin"))
+        self.Write(80*'=')
+        for (
+            h,k,l,twin,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
+            ) in hist.data['data'][1]['RefList']:
+            if twin > 0:
+                self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,twin))
+        self.CloseFile()
+        print(hist.name+' written to file '+self.fullpath)
+        
     def Exporter(self,event=None):
         '''Export a set of single crystal data as a text file
         '''

@@ -54,11 +54,11 @@ class PhaseReaderClass(G2obj.ImportPhase):
             'MORE','TIME','HKLF','OMIT','SHEL','BASF','TWIN','EXTI','SWAT',
             'HOPE','MERG','SPEC','RESI','RTAB','MPLA','HFIX','MOVE','ANIS','AFIX',
             'FRAG','FEND','EXYZ','EDAP','EQIV','CONN','PART','BIND','FREE','DFIX','DANG',
-            'BUMP','SAME','SADI','CHIV','FLAT','DELU','SIMU','DEFS','ISOR','NCSY',
+            'BUMP','SAME','SADI','CHIV','FLAT','DELU','SIMU','DEFS','ISOR','NCSY','RIGU',
             'SUMP','L.S.','CGLS','BLOC','DAMP','STIR','WGHT','FVAR','BOND','CONF','MPLA',
             'HTAB','LIST','ACTA','SIZE','TEMP','WPDB','FMAP','GRID','PLAN','MOLE']
         self.errors = 'Error opening file'
-        fp = open(filename, 'Ur')
+        fp = open(filename, 'r')
         Phase = {}
         Title = ''
         Atoms = []
@@ -74,6 +74,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
             Atom = []
             if 'TITL' in S[:4].upper():
                 Title = S[4:72].strip()
+                ifTITL = True
             elif not S.strip():
                 pass
             elif 'CELL' in S[:4].upper():
@@ -101,38 +102,43 @@ class PhaseReaderClass(G2obj.ImportPhase):
                 pass
             elif S[:3].upper() == 'END':
                 pass
-            elif S[:4].strip().upper() not in Shelx:   #this will find an atom record!
-                AtRec = S.split()
-                Atype = aTypes[int(AtRec[1])-1]
-                Aname = AtRec[0]
-                Afrac = abs(float(AtRec[5]))%10.
-                x,y,z = AtRec[2:5]
-                XYZ = np.array([float(x),float(y),float(z)])
-                XYZ = np.where(np.abs(XYZ)<0.00001,0,XYZ)
-                SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
-                if '=' not in S:
-                    IA = 'I'
-                    Uiso = float(AtRec[6])
-                    if Uiso < 0. or Uiso > 1.0:
-                        Uiso = 0.025
-                    Uij = [0. for i in range(6)]
+            elif S[:4].strip().upper() not in Shelx:   #this will find an atom record or an extended title!
+                if ifTITL:
+                    Title += S.strip()
                 else:
-                    IA = 'A'
-                    Uiso = 0.
-                    Ustr = AtRec[6:8]
-                    S = fp.readline()
-                    if '!' in S:
-                        S = S.split('!')[0]
                     AtRec = S.split()
-                    line += 1
-                    Ustr += AtRec
-                    Uij = [float(Ustr[i]) for i in range(6)]
-                    Uij = Uij[0:3]+[Uij[5],Uij[4],Uij[3]]
-                Atom = [Aname,Atype,'',XYZ[0],XYZ[1],XYZ[2],Afrac,SytSym,Mult,IA,Uiso]
-                Atom += Uij
-                Atom.append(ran.randint(0,sys.maxsize))
-                Atoms.append(Atom)
+                    Atype = aTypes[int(AtRec[1])-1]
+                    Aname = AtRec[0]
+                    Afrac = abs(float(AtRec[5]))%10.
+                    x,y,z = AtRec[2:5]
+                    XYZ = np.array([float(x),float(y),float(z)])
+                    XYZ = np.where(np.abs(XYZ)<0.00001,0,XYZ)
+                    SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
+                    if '=' not in S:
+                        IA = 'I'
+                        Uiso = float(AtRec[6])
+                        if Uiso < 0. or Uiso > 1.0:
+                            Uiso = 0.025
+                        Uij = [0. for i in range(6)]
+                    else:
+                        IA = 'A'
+                        Uiso = 0.
+                        Ustr = AtRec[6:8]
+                        S = fp.readline()
+                        if '!' in S:
+                            S = S.split('!')[0]
+                        AtRec = S.split()
+                        line += 1
+                        Ustr += AtRec
+                        Uij = [float(Ustr[i]) for i in range(6)]
+                        Uij = Uij[0:3]+[Uij[5],Uij[4],Uij[3]]
+                    Atom = [Aname,Atype,'',XYZ[0],XYZ[1],XYZ[2],Afrac,SytSym,Mult,IA,Uiso]
+                    Atom += Uij
+                    Atom.append(ran.randint(0,sys.maxsize))
+                    Atoms.append(Atom)
             S = fp.readline()
+            if S[:4].strip().upper() in Shelx:
+                ifTITL = False
             line += 1
         fp.close()
         self.errors = 'Error after read complete'

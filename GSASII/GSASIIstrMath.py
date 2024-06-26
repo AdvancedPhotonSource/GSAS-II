@@ -1838,12 +1838,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms - Mmod matched drawing & Bilbao drawings
     
-        # mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
-        # if SGData['SGGray']:
-        #     mXYZ = np.hstack((mXYZ,mXYZ))
-
-#        MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
-        mXYZ,MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod2(glTau,Xdata+dXdata,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
+        mXYZ,MmodAR,MmodBR,MmodAI,MmodBI = G2mth.MagMod(glTau,Xdata+dXdata,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sin parts sum matches drawing
         #expand Mmod over mag symm ops. --> GSSdata
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
@@ -1940,13 +1935,11 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
 #  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
             fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (-MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+    
-                GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
+                (-MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (MmodAR-H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+    
-                GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
+                (MmodAR-H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:

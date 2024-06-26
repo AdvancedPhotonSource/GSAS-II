@@ -1835,43 +1835,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         Mmod = 1.0
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
 
-def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
-    '''
-    this needs to make magnetic moment modulations & magnitudes as 
-    fxn of gTau points; NB: this allows only 1 mag. wave fxn.
-    '''
-    Am = np.array(MSSdata[3:]).T[:,0,:]   #atoms x cos mag mods; only 1 wave used
-    Bm = np.array(MSSdata[:3]).T[:,0,:]   #...sin mag mods
-    SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!! (no diff for MnWO4 & best for DyMnGe)
-    Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
-    SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
-    if SGData['SGInv']:
-        SGMT = np.vstack((SGMT,-SGMT))
-        Sinv = np.vstack((Sinv,-Sinv))
-        SGT = np.vstack((SGT,-SGT))
-    SGMT = np.vstack([SGMT for cen in SGData['SGCen']])
-    Sinv = np.vstack([Sinv for cen in SGData['SGCen']])
-    SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
-    if SGData['SGGray']:
-        SGMT = np.vstack((SGMT,SGMT))
-        Sinv = np.vstack((Sinv,Sinv))
-        SGT = np.vstack((SGT,SGT+np.array([0.,0.,0.,.5])))%1.
-    AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
-    BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
-    epsinv = Sinv[:,3,3]
-    mst = np.inner(Sinv[:,:3,:3],modQ)-epsinv[:,nxs]*modQ   #van Smaalen Eq. 3.3
-    phi =  np.inner(XYZ,modQ).T+np.inner(SGT[:,:3],modQ)[:,nxs]+SGT[:,3,nxs]        # +,+ best for MnWO4 & DyMnGe
-    TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*glTau[:,nxs,nxs]+phi[nxs,:,:]    #+ best for MnWO4
-    psin = np.sin(twopi*phase)      #tau,ops,atms
-    pcos = np.cos(twopi*phase)
-    MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz
-    MmodBR = BMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Re sin term
-    MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im cos term
-    MmodBI = BMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Im sin term
-    return MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; Re, Im cos & sin parts
-        
-def MagMod2(glTau,xyz,modQ,MSSdata,SGData,SSGData):
+def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     '''
     this needs to make magnetic moment modulations & magnitudes as 
     fxn of gTau points; NB: this allows only 1 mag. wave fxn.
@@ -1895,13 +1859,13 @@ def MagMod2(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     XYZ = np.array([(np.inner(xyzi,SGMT)+SGT[:,:3])%1. for xyzi in xyz.T]) #Natn,Nop,xyz
     AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
     BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
-    phi =  -np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
-    psin = np.sin(twopi*phi)      #tau,ops,atms
-    pcos = np.cos(twopi*phi)
+    phi =  np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
+    psin = np.sin(-twopi*phi)      #tau,ops,atms
+    pcos = np.cos(-twopi*phi)
     MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz
     MmodBR = BMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Re sin term
-    MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im cos term
-    MmodBI = BMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Im sin term
+    MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im sin term
+    MmodBI = BMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Im cos term
     return XYZ,MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; Re, Im cos & sin parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):

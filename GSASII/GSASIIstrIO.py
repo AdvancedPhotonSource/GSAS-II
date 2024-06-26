@@ -3028,8 +3028,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
             Vec,x,maxH = Phases[phase]['General']['SuperVec']
         pId = Phases[phase]['pId']
         for histogram in Histograms:
+            if not histogram.startswith('PWDR'): continue
             if histogram not in HistoPhase and phase in Histograms[histogram]['Reflection Lists']:
-                #remove previously created reflection list if histogram is removed from phase
+                #remove previously created powder reflection list if histogram is removed from phase
                 #print("removing ",phase,"from",histogram)
                 del Histograms[histogram]['Reflection Lists'][phase]
         histoList = list(HistoPhase.keys())

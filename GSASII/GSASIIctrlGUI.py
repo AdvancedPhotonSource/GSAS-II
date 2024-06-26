@@ -9598,6 +9598,11 @@ def gitSelectBranch(event):
             'You have local changes. They must be reset, committed or stashed before switching branches',
             'Local changes')
         return
+    if g2repo.head.is_detached:
+        G2MessageBox(G2frame,
+            'You have a old previous version loaded; you must be on a branch head to switching branches',
+            'Detached head')
+        return
 
     # make sure that branches are accessible & get updates
     print('getting updates...',end='')
@@ -9654,7 +9659,10 @@ The switch will be made unless Cancel is pressed.'''
     # (source files are not locked). If this is not the case
     # then another approach will be needed, where a .bat file is used
     # or GSASIIpath is used, as is the case for updates
-    g2repo.git.checkout(b)
+    a = g2repo.git.checkout(b)
+    if 'Your branch is behind' in a:
+        print('updating local copy of branch')
+        print(g2repo.git.pull())
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()

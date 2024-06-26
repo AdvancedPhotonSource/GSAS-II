@@ -1310,13 +1310,14 @@ class popupSelectorButton(wx.Button):
             if self.selected[i] != m.IsChecked(): new = i
             self.selected[i] = m.IsChecked()
         if self.choices[0] == "all":
-            # special handling when 1st item is all: turn off everything
-            # when all is selected. Otherwise, set all when nothing
-            # is selected and turn it off if something else is selected
+            # special handling when 1st item is all: turn on everything
+            # when all is selected.
             if new == 0:
-                self.selected[:] = [True] + (len(self.selected)-1)*[False]
-            else:
-                self.selected[0] = not any(self.selected[1:])
+                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+            # Otherwise, set all when nothing
+            # is selected and turn it off if something else is selected
+            #else:
+            #    self.selected[0] = not any(self.selected[1:])
                 
         menu.Destroy()
         if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)

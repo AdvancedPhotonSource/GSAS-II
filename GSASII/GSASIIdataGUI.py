@@ -2681,12 +2681,13 @@ If you continue from this point, it is quite likely that all intensity computati
         if not newHistList: return # somehow, no new histograms
         return # success
     
-    def AddToNotebook(self,text,typ=None):
+    def AddToNotebook(self,text,typ=None, TimeStamp=True):
         '''Add entry to Notebook tree item
         '''
         Id =  GetGPXtreeItemId(self,self.root,'Notebook')
         data = self.GPXtree.GetItemPyData(Id)
-        data.append(f'[TS] Notebook entry @ {time.ctime()}')
+        if TimeStamp: 
+            data.append(f'[TS] Notebook entry @ {time.ctime()}')
         if typ:
             data.append(f'[{typ}] {text}')
         else:
@@ -5551,7 +5552,7 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    self.reloadFromGPX(rtext)
+                    self.reloadFromGPX(rtext,Rvals)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
@@ -5835,9 +5836,9 @@ If you continue from this point, it is quite likely that all intensity computati
         ClustDict['SKLearn'] = SKLearn
         self.GPXtree.SelectItem(Id)
     
-    def reloadFromGPX(self,rtext=None):
+    def reloadFromGPX(self,rtext=None,Rvals={}):
         '''Deletes current data tree & reloads it from GPX file (after a 
-        refinemnt.) Done after events are completed to avoid crashes.
+        refinement.) Done after events are completed to avoid crashes.
         :param rtext str: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
@@ -5848,7 +5849,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
         if rtext is not None:
             self.AddToNotebook(rtext,'REF')
-        self.ResetPlots()        
+            if 'varyList' in Rvals:
+                self.AddToNotebook('varied: '+Rvals['varyList'],'VARS',TimeStamp=False)
+        self.ResetPlots()
         
     def SaveTreeSetting(self):
         'Save the current selected tree item by name (since the id will change)'
@@ -7238,9 +7241,12 @@ other than being included in the Notebook section of the project file.''')
             data.append(f'[CM] {dlg.GetValue().strip()}')
         dlg.Destroy()
         wx.CallAfter(UpdateNotebook,G2frame,data)
-    filterLbls = ['all','Timestamps','Refinement results','Comments',
-                      'Charge flip','Fourier','Peak fit']
-    filterPrefix = ['', 'TS', 'REF',' CM', 'CF', 'FM', 'PF']
+    filterLbls = ['all',
+                      'Timestamps','Refinement results','Variables',
+                      'Comments','Charge flip','Fourier','Peak fit']
+    filterPrefix = ['',
+                        'TS', 'REF','VARS',
+                        'CM', 'CF', 'FM', 'PF']
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)
@@ -7260,7 +7266,9 @@ other than being included in the Notebook section of the project file.''')
                          'order',['oldest-1st','newest-1st'],[False,True],
                          OnChange=onUpdateWindow))
     controls['Notebook']['filterSel'] = controls['Notebook'].get(
-        'filterSel',[True]+(len(filterLbls)-1)*[False])
+        'filterSel',[False]+(len(filterLbls)-1)*[True])
+    for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
+        controls['Notebook']['filterSel'] += [True]    # pad list if needed    
     topSizer.Add((20,-1))
     fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Set filters',
                         filterLbls,controls['Notebook']['filterSel'],
@@ -7276,25 +7284,27 @@ other than being included in the Notebook section of the project file.''')
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
             style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP)
     if controls['Notebook']['order']:
-        # would be nice to have some code that reverses in blocks,
-        # so that lines stay after their timestamp
-#        breakpoint()
-#        lines = []
-#        i = 0
-#        while i < len(data):
-#            if data[i].startswith('[TS']):
-#                tsi = i
-#                i += 1
-#                while data[i].startswith('[TS']):
-#                lines.insert
-        fxn = reversed
+        # reverse entries in blocks, so that lines stay after their timestamp
+        order = []
+        pos = -1
+        for i,l in enumerate(data):
+            pos += 1
+            ls = l.split()
+            if len(ls) < 1: # empty line
+                continue
+            elif '[' not in ls[0]: 
+                pos = 0 # old untagged NB entry
+            elif '[TS]' in ls[0]: 
+                pos = 0 # Move time stamp to top
+            order.insert(pos,i)
     else:
-        fxn = list
+        order = range(len(data))
     # get prefixes to be shown
     selLbl = [l for i,l in enumerate(filterPrefix)
                   if controls['Notebook']['filterSel'][i]]
-    for line in fxn(data):
-        if not line.strip(): continue
+    for i in order:
+        line = data[i]
+        if not line.strip(): continue # empty line
         prefix = ''
         if line[0] == '[' and ']' in line:
             prefix, line = line[1:].split(']',1)

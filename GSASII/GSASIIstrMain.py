@@ -622,6 +622,12 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
         else:
             Rvals['msg'] = Msg.msg
         return False,Rvals
+
+    # document the refinement further
+    Rvals['varyList'] = ', '.join(varyList)
+    # TODO: document constraints & restraints, somehow?
+    #breakpoint()
+    # rigid bodies?
     
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:

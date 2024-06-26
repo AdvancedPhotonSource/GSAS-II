@@ -8636,7 +8636,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',
                                         picker=True)
-                    GSASIIpath.IPyBreak()
+                    #GSASIIpath.IPyBreak()
                     Page.figure.gca().add_artist(artist)
                     artist.itemNumber = len(Masks['Points'])-1
                     artist.itemType = 'Spot'
@@ -9001,13 +9001,22 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Plot.add_artist(artist)
                 artist.itemNumber = i
                 artist.itemType = 'Spot'
-                
+
+        # plot the selected phase as green rings
+        try:
+            for tth in G2frame.PhaseRing2Th:
+                (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,
+                                                 Data['wavelength'])
+                Plot.plot(x1,y1,'g',picker=False)
+        except:
+            pass
+
         G2frame.ringList = []
         for iring,ring in enumerate(Masks['Rings']):    # drawing spot masks
             if ring:
                 tth,thick = ring
-                wave = Data['wavelength']
-                (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,wave)
+                (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,
+                                                 Data['wavelength'])
                 artistO, = Plot.plot(x1,y1,'r',picker=True,pickradius=3)  
                 artistO.itemNumber = iring
                 artistO.itemType = 'RingOuter'
@@ -9021,8 +9030,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if arc:
                 tth,azm,thick = arc
                 azm = np.squeeze(azm)
-                wave = Data['wavelength']
-                (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,wave,azm[0],azm[1])
+                (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,
+                                        Data['wavelength'],azm[0],azm[1])
                 arcList = []
                 arcList.append(Plot.plot(x2,y2,'r',picker=True,pickradius=3)[0]) # 'inner'
                 arcList[-1].itemNumber = iarc

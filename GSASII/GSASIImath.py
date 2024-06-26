@@ -1895,12 +1895,7 @@ def MagMod2(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     XYZ = np.array([(np.inner(xyzi,SGMT)+SGT[:,:3])%1. for xyzi in xyz.T]) #Natn,Nop,xyz
     AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
     BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
-    epsinv = Sinv[:,3,3]
-    # mst = np.inner(Sinv[:,:3,:3],modQ)-epsinv[:,nxs]*modQ   #van Smaalen Eq. 3.3
-    phi =  np.inner(xyz.T,modQ)-np.inner(SGT[:,:3],modQ)[:,nxs]*glTau[:,nxs,nxs]+SGT[:,3,nxs]
-    # TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    # phase =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*glTau[:,nxs,nxs]+phi[nxs,:,:]    #+ best for MnWO4
-    phase =  epsinv[nxs,:,nxs]+phi[nxs,:,:]    #+ best for MnWO4
+    phi =  -np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
     psin = np.sin(twopi*phi)      #tau,ops,atms
     pcos = np.cos(twopi*phi)
     MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz

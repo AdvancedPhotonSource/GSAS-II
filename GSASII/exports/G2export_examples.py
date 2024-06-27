@@ -8,7 +8,7 @@ from __future__ import division, print_function
 import os
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
+GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth

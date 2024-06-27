@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - image data display routines
 ########### SVN repository information ###################
-# $Date: 2024-04-30 15:20:21 -0500 (Tue, 30 Apr 2024) $
-# $Author: vondreele $
-# $Revision: 5783 $
+# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
+# $Author: toby $
+# $Revision: 5791 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIimgGUI.py $
-# $Id: GSASIIimgGUI.py 5783 2024-04-30 20:20:21Z vondreele $
+# $Id: GSASIIimgGUI.py 5791 2024-06-27 18:47:39Z toby $
 ########### SVN repository information ###################
 '''Image GUI routines follow.
 '''
@@ -24,7 +24,7 @@ import matplotlib as mpl
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5783 $")
+GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIimage as G2img
 import GSASIImath as G2mth
 import GSASIIElem as G2elem

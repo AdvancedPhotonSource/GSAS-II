@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
+# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
 # $Author: toby $
-# $Revision: 5790 $
+# $Revision: 5791 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5790 2024-06-13 12:33:46Z toby $
+# $Id: GSASIIdataGUI.py 5791 2024-06-27 18:47:39Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
+GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil

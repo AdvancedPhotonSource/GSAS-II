@@ -7109,13 +7109,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     # end of GSAS-II menu definitions
     
 ####  Notebook Tree Item editor ##############################################
+NBinfo = {}
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
     '''
     def onUpdateWindow(event=None):
+        'redraw the window'
         wx.CallAfter(UpdateNotebook,G2frame,data)
     def OnAddNotebook(event):
+        'add comment text to notebook and redisplay'
         dlg = G2G.SingleStringDialog(G2frame.dataWindow,'Enter Comment',
                     '','',(600,50),
         '''Enter a string here that will be included in the Notebook
@@ -7126,6 +7129,34 @@ other than being included in the Notebook section of the project file.''')
             data.append(f'[CM] {dlg.GetValue().strip()}')
         dlg.Destroy()
         wx.CallAfter(UpdateNotebook,G2frame,data)
+    def onPlotNotebook():
+        'Locate R values from the Notebook and plot them'
+        NBinfo['plotLbl']
+        if NBinfo['plotLbl']['GOF']:
+            target = 'GOF'
+        elif NBinfo['plotLbl']['Rw']:
+            target = 'Rw'
+        else:
+            G2frame.G2plotNB.Delete('fit results')
+            return
+        vals = []
+        for i,l in enumerate(data):
+            ls = l.split()
+            if len(ls) < 1: # empty line
+                continue
+            elif '[' not in ls[0] or '[REF]' in ls[0]:
+                if target not in l: continue
+                try:
+                    vals.append(
+                        float(l.split(target)[1].split(',')[0]
+                                  .replace('=','').replace('%',''))
+                        )
+                except:
+                    continue
+        Y = np.array(vals)
+        XY = [np.arange(len(Y)),Y]
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',labelX='seq',labelY=target,lines=True)
+    ##### === UpdateNotebook starts here
     filterLbls = ['all',
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
@@ -7141,11 +7172,15 @@ other than being included in the Notebook section of the project file.''')
         self.CheckNotebook()
         cId = GetGPXtreeItemId(self,self.root, 'Controls')
         controls = self.GPXtree.GetItemPyData(cId)
-    controls['Notebook'] = controls.get('Notebook',{})
+    controls['Notebook'] = controls.get('Notebook',{}) # filter & order settings get saved here, plot settings do not
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Project notes'),0,WACV)
+    topSizer.Add((20,-1))
+    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
+    topSizer.Add(addBtn,0,WACV)
+    addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
     topSizer.Add((20,-1))
     controls['Notebook']['order'] = controls['Notebook'].get('order',False)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'  order: '),0,WACV)
@@ -7154,6 +7189,7 @@ other than being included in the Notebook section of the project file.''')
                          OnChange=onUpdateWindow))
     controls['Notebook']['filterSel'] = controls['Notebook'].get(
         'filterSel',[False]+(len(filterLbls)-1)*[True])
+    NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
     for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
         controls['Notebook']['filterSel'] += [True]    # pad list if needed    
     topSizer.Add((20,-1))
@@ -7161,10 +7197,12 @@ other than being included in the Notebook section of the project file.''')
                         filterLbls,controls['Notebook']['filterSel'],
                         OnChange=onUpdateWindow)
     topSizer.Add(fBtn,0,WACV)
+    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Plot',
+            choiceDict=NBinfo['plotLbl'],
+                        OnChange=onPlotNotebook)
     topSizer.Add((20,-1))
-    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
-    topSizer.Add(addBtn,0,WACV)
-    addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
+    topSizer.Add(fBtn,0,WACV)
+    topSizer.Add((20,-1))
     topSizer.Add((20,-1),1,wx.EXPAND,1)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
     bigSizer.Add(topSizer,0,wx.EXPAND)

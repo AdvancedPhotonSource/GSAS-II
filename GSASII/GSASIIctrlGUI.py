@@ -1224,15 +1224,25 @@ class popupSelectorButton(wx.Button):
       menu
     :param list selected: a list of bool's that determine if the menu item
       is initial selected
+    :param: dict choiceDict: a dict with both choices and their 
+      values (selections). Use this or choices & selected, not both. 
+      If this is used, the values are set as radiobutton choices, 
+      only the most recent setting is selected. 
     :param function OnChange: an optional function that is called after the 
       menu is removed
     :param others: other keyword parameters are allowed. They will be 
       passed to the OnChange routine. 
     '''
-    def __init__(self,parent,lbl,choices,selected,OnChange=None,**kw):
+    def __init__(self,parent,lbl,choices=None,selected=None,
+                     choiceDict=None, OnChange=None,**kw):
         self.parent = parent
         self.choices = choices
         self.selected = selected
+        self.choiceDict = None
+        if choiceDict is not None:
+            self.choices = list(choiceDict.keys())
+            self.selected = list(choiceDict.values())
+            self.choiceDict = choiceDict
         self.OnChange = OnChange
         self.kw = kw
         wx.Button.__init__(self,parent,label=lbl)
@@ -1255,15 +1265,16 @@ class popupSelectorButton(wx.Button):
         for i,m in enumerate(menuList):
             if self.selected[i] != m.IsChecked(): new = i
             self.selected[i] = m.IsChecked()
-        if self.choices[0] == "all":
+        if self.choiceDict is not None:
+            self.selected = len(self.selected) * [False]
+            for i in self.choiceDict: self.choiceDict[i] = False
+            self.choiceDict[self.choices[new]] = True
+            self.selected[new] = True
+        elif self.choices[0] == "all":
             # special handling when 1st item is all: turn on everything
             # when all is selected.
             if new == 0:
                 self.selected[:] = [False] + (len(self.selected)-1)*[True]
-            # Otherwise, set all when nothing
-            # is selected and turn it off if something else is selected
-            #else:
-            #    self.selected[0] = not any(self.selected[1:])
                 
         menu.Destroy()
         if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)

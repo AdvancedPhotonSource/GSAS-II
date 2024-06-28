@@ -1939,7 +1939,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
                         
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (MmodAR-H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
+                (-MmodAR+H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(-MmodAI+H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:

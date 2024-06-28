@@ -1436,6 +1436,64 @@ def _showEquiv(varlist,mapvars,invmultarr,longmsg=False):
                 s1 += " / " + str(m[0])
     return s1
 
+def VarRemapSumm():
+    '''Summarize the constraints in a single line
+
+    :returns: a string summarizing the contraint relationships. May be blank
+    '''
+    varyList = saveVaryList
+    s = ''
+    depVars = constrParms['dep-equiv']+constrParms['dep-constr']
+        
+    userOut = 0
+    symOut = 0
+    consOut = 0
+    varOut = 0
+    freeOut = 0
+    variedOut = 0
+    global dependentParmList,arrayList,invarrayList,indParmList,symGenList
+    for varlist,mapvars,multarr,invmultarr,symFlag in zip(
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        for i,mv in enumerate(mapvars):
+            if multarr is None:
+                if symFlag:
+                    symOut += 1
+                else:
+                    userOut += 1
+                continue            
+            if mv in varyList: 
+                variedOut += 1
+            if type(mv) is float:
+                consOut += 1
+            elif '::nv-' in mv:
+                varOut += 1
+            else:
+                freeOut += 1
+    numHold = len([i for i in holdParmList if i not in depVars])
+    if userOut:
+        if s: s += '; '
+        s += f'Equivalences: {userOut}'
+    if numHold > 0:
+        if s: s += '; '
+        s += f'Hold param: {numHold}'
+#    if symOut:  # don't need to log this
+#        if s: s += '; '
+#        s += f'Sym gen param: {symOut}'
+    if consOut + freeOut:
+        if s: s += '; '
+        s += f'Constr Eqns: {consOut + freeOut}'
+    if freeOut:
+        s += f' ({freeOut} generated)'
+    if varOut:
+        if s: s += '; '
+        s += f'New Var Eqns: {varOut}'
+    if variedOut:
+        s += f' ({freeOut} varied)'
+    if len(depVars) > 0:
+        if s: s += '. '
+        s += f'Depend. param: {len(depVars)}'
+    return s
+    
 def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     '''List out the saved relationships. This should be done after the constraints have been
     defined using :func:`StoreEquivalence`, :func:`GroupConstraints` and :func:`GenerateConstraints`.

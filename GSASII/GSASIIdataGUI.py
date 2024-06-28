@@ -73,7 +73,6 @@ import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
 import GSASIIobj as G2obj
-import GSASIIlog as log
 import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
@@ -698,11 +697,6 @@ class GSASII(wx.Frame):
     :param parent: reference to parent application
 
     '''                
-    def MenuBinding(self,event):
-        '''Called when a menu is clicked upon; looks up the binding in table
-        '''
-        log.InvokeMenuCommand(event.GetId(),self,event)
-            
     def _Add_FileMenuItems(self, parent):
         '''Add items to File menu
         '''
@@ -2692,117 +2686,6 @@ If you continue from this point, it is quite likely that all intensity computati
             data.append(f'[{typ}] {text}')
         else:
             data.append(f'{text}')
-
-### Command logging ###########################################################
-    def OnMacroRecordStatus(self,event,setvalue=None):
-        '''Called when the record macro menu item is used which toggles the
-        value. Alternately a value to be set can be provided. Note that this
-        routine is made more complex because on the Mac there are lots of menu
-        items (listed in self.MacroStatusList) and this loops over all of them.
-        '''
-        nextvalue = log.ShowLogStatus() != True
-        if setvalue is not None:
-            nextvalue = setvalue 
-        if nextvalue:
-            log.LogOn()
-            set2 = True
-        else:
-            log.LogOff()
-            set2 = False
-        for menuitem in self.MacroStatusList:
-            menuitem.Check(set2)
-
-    def _init_Macro(self):
-        '''Define the items in the macro menu.
-        '''
-        menu = self.MacroMenu
-        item = menu.Append(
-                help='Start or stop recording of menu actions, etc.', id=wx.ID_ANY,
-                kind=wx.ITEM_CHECK,text='Record actions')
-        self.MacroStatusList.append(item)
-        item.Check(log.ShowLogStatus())
-        self.Bind(wx.EVT_MENU, self.OnMacroRecordStatus, item)
-
-        # this may only be of value for development work
-        item = menu.Append(
-            help='Show logged commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Show log')
-        def OnShowLog(event):
-            print (70*'=')
-            print ('List of logged actions')
-            for i,line in enumerate(log.G2logList):
-                if line: print ('%d %s'%(i,line))
-            print (70*'=')
-        self.Bind(wx.EVT_MENU, OnShowLog, item)
-
-        item = menu.Append(
-            help='Clear logged commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Clear log')
-        def OnClearLog(event): log.G2logList=[None]
-        self.Bind(wx.EVT_MENU, OnClearLog, item)
-        
-        item = menu.Append(
-            help='Save logged commands to file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Save log')
-        def OnSaveLog(event):
-            defnam = os.path.splitext(os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
-            dlg = wx.FileDialog(self,
-                'Choose a file to save past actions', '.', defnam, 
-                'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            dlg.CenterOnParent()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+'.gcmd'
-                else:
-                    filename = None
-            finally:
-                dlg.Destroy()
-            if filename:
-                fp = open(filename,'wb')
-                fp.write(str(len(log.G2logList)-1)+'\n')
-                for item in log.G2logList:
-                    if item: cPickle.dump(item,fp)
-                fp.close()
-        self.Bind(wx.EVT_MENU, OnSaveLog, item)
-
-        item = menu.Append(
-            help='Load logged commands from file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Load log')
-        def OnLoadLog(event):
-            # this appends. Perhaps we should ask to clear? 
-            defnam = os.path.splitext(
-                os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
-            dlg = wx.FileDialog(self,
-                'Choose an file to read saved actions', '.', defnam, 
-                'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.FD_OPEN)
-            dlg.CenterOnParent()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+'.gcmd'
-                else:
-                    filename = None
-            finally:
-                dlg.Destroy()
-            if filename and os.path.exists(filename):
-                fp = open(filename,'rb')
-                lines = fp.readline()
-                for i in range(int(lines)):
-                    log.G2logList.append(cPickle.load(fp))
-                fp.close()
-        self.Bind(wx.EVT_MENU, OnLoadLog, item)
-
-        item = menu.Append(
-            help='Replay saved commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Replay log')
-        self.Bind(wx.EVT_MENU, log.ReplayLog, item)
-        
-# End of logging ##############################################################
 
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
@@ -5849,8 +5732,10 @@ If you continue from this point, it is quite likely that all intensity computati
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
         if rtext is not None:
             self.AddToNotebook(rtext,'REF')
-            if 'varyList' in Rvals:
-                self.AddToNotebook('varied: '+Rvals['varyList'],'VARS',TimeStamp=False)
+            for tag,entry in (['VARS','varyList'],['CNSTR','contrSumm'],
+                                  ['RSTR','restrSumm'],['RB','RBsumm']):
+                if entry in Rvals and Rvals[entry]:
+                    self.AddToNotebook(Rvals[entry],tag,TimeStamp=False)
         self.ResetPlots()
         
     def SaveTreeSetting(self):
@@ -7243,10 +7128,12 @@ other than being included in the Notebook section of the project file.''')
         wx.CallAfter(UpdateNotebook,G2frame,data)
     filterLbls = ['all',
                       'Timestamps','Refinement results','Variables',
-                      'Comments','Charge flip','Fourier','Peak fit']
+                      'Comments','Charge flip','Fourier','Peak fit',
+                      'Constraints','Restraints','Rigid Bodies']
     filterPrefix = ['',
                         'TS', 'REF','VARS',
-                        'CM', 'CF', 'FM', 'PF']
+                        'CM', 'CF', 'FM', 'PF',
+                        'CNSTR','RSTR','RB']
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)

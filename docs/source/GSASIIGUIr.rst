@@ -10,7 +10,7 @@ are used in multiple sections of the GSAS-II GUI or graphics.
 
  .. py:currentmodule:: GSASIIctrlGUI
 
-A library of GUI controls for reuse throughout GSAS-II, as indexed below
+A library of GUI controls for reuse throughout GSAS-II, as summarized below
 
 .. tabularcolumns:: |l|p{4in}|
 
@@ -48,6 +48,7 @@ Class or function name             Description
                                    a sizer that can be placed in a frame or panel.
 :class:`G2SingleChoiceDialog`      Dialog similar to wx.SingleChoiceDialog, but provides
                                    a filter to help search through choices.
+:class:`G2Button`                  Creates a button and specifies a binding in a single call. 
 :class:`HelpButton`                Creates a button labeled with a "?" that when pressed
                                    displays help text in a modal message window
                                    or web browser. 

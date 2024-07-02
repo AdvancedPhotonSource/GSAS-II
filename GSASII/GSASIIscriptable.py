@@ -2001,6 +2001,7 @@ class G2Project(G2ObjectWrapper):
             elif G2Phase.is_valid_refinement_key(key):
                 phase_set[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
+                if key == 'PhaseFraction': key = 'Scale'
                 hap_set[key] = val
             elif G2Single.is_valid_refinement_key(key):
                 xtal_set[key] = val
@@ -2030,6 +2031,7 @@ class G2Project(G2ObjectWrapper):
             elif G2Phase.is_valid_refinement_key(key):
                 phase_clear[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
+                if key == 'PhaseFraction': key = 'Scale'
                 hap_clear[key] = val   # was _set, seems wrong
             elif G2Single.is_valid_refinement_key(key):
                 xtal_clear[key] = val
@@ -3323,6 +3325,116 @@ class G2PwdrData(G2ObjectWrapper):
     def id(self, val):
         self.data['data'][0]['hId'] = val
 
+    def Limits(self,typ,value=None):
+        '''Used to obtain or set the histogram limits. When a value is 
+        specified, the appropriate limit is set. Otherwise, the value is 
+        returned. Note that this provides an alternative to setting 
+        histogram limits with the :meth:`G2Project:do_refinements` or 
+        :meth:`G2PwdrData.set_refinements` methods. 
+
+        :param str typ: a string which must be either 'lower' 
+          (for 2-theta min or TOF min) or 'upper' (for 2theta max or TOF max).
+          Anything else produces an error. 
+        :param float value: the number to set the limit (in units of degrees 
+          or TOF (microsec.). If not specified, the command returns the 
+          selected limit value rather than setting it. 
+        :returns: The current value of the requested limit 
+          (when ``value=None``). Units are 
+          2-theta (degrees) or TOF (microsec).
+
+        Examples::
+
+          h = gpx.histogram(0)
+          val = h.Limits('lower')
+          h.Limits('upper',75)
+        '''
+
+        if value == None:
+            if typ == 'lower':
+                return self.data['Limits'][1][0]
+            elif typ == 'upper':
+                return self.data['Limits'][1][1]
+            else:
+                raise G2ScriptException('Limit errr: must be "lower" or "upper"')
+        else:
+            if typ == 'lower':
+                self.data['Limits'][1][0] = float(value)
+            elif typ == 'upper':
+                self.data['Limits'][1][1] = float(value)
+            else:
+                raise G2ScriptException('G2PwdData.Limit error: must be "lower" or "upper"')
+            
+    def Excluded(self,value=None):
+        '''Used to obtain or set the excluded regions for a histogram.
+        When a value is specified, the excluded regions are set. 
+        Otherwise, the list of excluded region pairs is returned.
+        Note that excluded regions may be an empty list or a list 
+        of regions to be excluded, where each region is provided
+        as pair of numbers, where the lower limit comes first. 
+        Some sample excluded region lists are::
+
+          [[4.5, 5.5], [8.0, 9.0]]
+
+          [[130000.0, 140000.0], [160000.0, 170000.0]]
+
+          []
+
+        The first above describes two excluded regions from 4.5-5.5 and 8-9
+        degrees 2-theta. The second is for a TOF pattern and also 
+        describes two excluded regions, for 130-140 and 160-170 milliseconds. 
+        The third line would be the case where there are no excluded 
+        regions. 
+
+        :param list value: A list of pairs of excluded region numbers
+          (as two-element lists). Some error checking/reformatting is done, 
+          but users are expected to get this right. Use the GUI to 
+          create examples or check input. Numbers in the list 
+          are in units of degrees or TOF (microsec.). 
+
+          If a value is not specified, the command returns the list of excluded regions.
+
+        :returns: The list of excluded regions (when ``value=None``). Units are 
+          2-theta (degrees) or TOF (microsec).
+
+        Example 1:: 
+
+          h = gpx.histogram(0)  # adds an excluded region (11-13 degrees)
+          h.Excluded(h.Excluded() + [[11,13]])
+
+        Example 2:: 
+
+          h = gpx.histogram(0) # changes the range of the first excluded region
+          excl = h.Excluded()
+          excl[0] = [120000.0, 160000.0]  # microsec
+          h.Excluded(excl)
+
+        Example 3::
+ 
+          h = gpx.histogram(0)  # deletes all excluded regions
+          h.Excluded([])
+        '''
+        if value is None:
+            return self.data['Limits'][2:]
+
+        # set up the excluded regions. Make sure we have a list of list pairs
+        s = ''
+        listValues = []
+        try:
+            for i,(l,h) in enumerate(value): # quick bit of validation
+                listValues.append([
+                    min(float(l),float(h)),
+                    max(float(l),float(h)),
+                    ])
+                if float(l) < self.data['Limits'][0][0]:
+                    s += f'Lower limit {l} too low. '
+                if float(h) > self.data['Limits'][0][1]:
+                    s += f'Upper limit {h} too high. '
+        except:
+            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {values}')
+        if s: 
+            raise G2ScriptException(f'G2PwdData.Excluded error(s): {s}')
+        self.data['Limits'][2:] = listValues
+
     def fit_fixed_points(self):
         """Attempts to apply a background fit to the fixed points currently specified."""
         def SetInstParms(Inst):
@@ -4096,7 +4208,7 @@ class G2Phase(G2ObjectWrapper):
     @staticmethod
     def is_valid_HAP_refinement_key(key):
         valid_keys = ["Babinet", "Extinction", "HStrain", "Mustrain",
-                      "Pref.Ori.", "Show", "Size", "Use", "Scale"]
+                      "Pref.Ori.", "Show", "Size", "Use", "Scale", "PhaseFraction"]
         return key in valid_keys
 
     def atom(self, atomlabel):
@@ -4574,7 +4686,7 @@ class G2Phase(G2ObjectWrapper):
             elif key == 'Use':
                 for h in histograms:
                     self.data['Histograms'][h]['Use'] = bool(val)
-            elif key == 'Scale':
+            elif key == 'Scale' or key == 'PhaseFraction':
                 for h in histograms:
                     self.data['Histograms'][h]['Scale'][1] = bool(val)
             else:
@@ -4638,7 +4750,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Use':
                     for h in histograms:
                         self.data['Histograms'][h]['Use'] = False
-                elif key == 'Scale':
+                elif key == 'Scale' or key == 'PhaseFraction':
                     for h in histograms:
                         self.data['Histograms'][h]['Scale'][1] = False
                 else:
@@ -4686,10 +4798,12 @@ class G2Phase(G2ObjectWrapper):
         :param list skip: items in the HAP dict that should not be 
             copied. The default is an empty list, which causes all items
             to be copied. To see a list of items in the dict, use
-            :meth:`getHAPvalues` or use an invalid item, such as '?'.
+            :meth:`getHAPvalues`.
+            Don't use with :attr:`use`.
         :param list use: specifies the items in the HAP dict should be 
             copied. The default is None, which causes all items
             to be copied. 
+            Don't use with :attr:`skip`.
 
         examples::
 
@@ -4708,6 +4822,7 @@ class G2Phase(G2ObjectWrapper):
         
         copydict = copy.deepcopy(self.data['Histograms'][sourcehist])
         for item in skip:
+            if item == 'PhaseFraction': item = 'Scale'
             if item in list(copydict.keys()):
                 del copydict[item]
             else:
@@ -4716,6 +4831,7 @@ class G2Phase(G2ObjectWrapper):
                 raise Exception('HAP skip list entry {} invalid'.format(item))
         if use:
             for item in list(copydict.keys()):
+                if item == 'PhaseFraction': item = 'Scale'
                 if item not in use:
                     del copydict[item]
 
@@ -4796,7 +4912,8 @@ class G2Phase(G2ObjectWrapper):
         multiple histograms.
 
 
-        :param str param: is a parameter name, which can be 'Scale' (phase 
+        :param str param: is a parameter name, which can be 'Scale' or 
+          'PhaseFraction' (either can be used for phase 
           fraction), 'Use', 'Extinction' or 'LeBail'. 
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
@@ -4828,7 +4945,7 @@ class G2Phase(G2ObjectWrapper):
         Example::
 
             val = ph0.HAPvalue('Scale')
-            val = ph0.HAPvalue('Scale',targethistlist=[0])
+            val = ph0.HAPvalue('PhaseFraction',targethistlist=[0])
             ph0.HAPvalue('Scale',2.5)
 
         The first command returns the phase fraction if only one histogram 
@@ -4846,13 +4963,14 @@ class G2Phase(G2ObjectWrapper):
         refFloatParam = ('Scale','Extinction')
         useBool = False
         useFloat = False
+        if param == 'PhaseFraction': param = 'Scale'
         if param in boolParam:
             useBool = True
         elif param in refFloatParam:
             useFloat = True
         else:
             s = ''
-            for i in boolParam+refFloatParam:
+            for i in boolParam+refFloatParam+['PhaseFraction']:
                 if s != '': s += ', '
                 s += f'"{i}"'
             raise G2ScriptException('Invalid parameter. Valid choices are: '+s)
@@ -4894,10 +5012,10 @@ class G2Phase(G2ObjectWrapper):
         :param list skip: items in the HAP dict that should not be 
             copied. The default is an empty list, which causes all items
             to be copied. To see a list of items in the dict, use
-            :meth:`getHAPvalues` or use an invalid item, such as '?'.
+            :meth:`getHAPvalues`. Don't use with :attr:`use`.
         :param list use: specifies the items in the HAP dict should be 
             copied. The default is None, which causes all items
-            to be copied. 
+            to be copied. Don't use with :attr:`skip`.
 
         Example::
 
@@ -4912,6 +5030,7 @@ class G2Phase(G2ObjectWrapper):
             targethistlist = self.histograms()
         copydict = copy.deepcopy(HAPdict)
         for item in skip:
+            if item == 'PhaseFraction': item = 'Scale'
             if item in list(copydict.keys()):
                 del copydict[item]
             # else:
@@ -4920,6 +5039,7 @@ class G2Phase(G2ObjectWrapper):
             #     raise Exception('HAP skip list entry {} invalid'.format(item))
         if use:
             for item in list(copydict.keys()):
+                if item == 'PhaseFraction': item = 'Scale'
                 if item not in use:
                     del copydict[item]
 
@@ -5103,7 +5223,6 @@ class G2Phase(G2ObjectWrapper):
         except:
             raise G2ScriptException(f"{nam} error: Bonds for phase not in Restraints")
 
-        
     def setDistRestraintWeight(self, factor=1):
         '''Sets the weight for the bond distance restraint(s) to factor
 

@@ -239,6 +239,8 @@ method                                                     Use
 :attr:`~GSASIIscriptable.G2PwdrData.Peaks`               Provides access to the peak list data structure
 :attr:`~GSASIIscriptable.G2PwdrData.PeakList`            Provides the peak list parameter values 
 :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
+:meth:`~GSASIIscriptable.G2PwdrData.Limits`              Reads or sets the region of data used in fitting (histogram limits)
+:meth:`~GSASIIscriptable.G2PwdrData.Excluded`            Reads or sets regions of powder data that will be ignored
 =======================================================  ===============================================================================================================
 
 .. _Class_G2Single:
@@ -716,9 +718,9 @@ unless the ``histograms`` and ``phases`` keys are used to define specific phases
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
-=============  ==========  ============================================================
+=============  ==========  =========================================================================
 key             subkey                 explanation
-=============  ==========  ============================================================
+=============  ==========  =========================================================================
 Babinet                                Should be a **list** of the following
                                        subkeys. If not, assumes both
                                        BabA and BabU
@@ -757,7 +759,17 @@ Pref.Ori.                             Boolean, True to refine
 Show                                  Boolean, True to refine
 Use                                   Boolean, True to refine
 Scale                                 Phase fraction; Boolean, True to refine
-=============  ==========  ============================================================
+PhaseFraction                         PhaseFraction can also be used in place of
+                                      Scale for the routines that access HAP
+                                      parameters:
+                                      :func:`~GSASIIscriptable.G2Phase.HAPvalue`,
+                                      :func:`~GSASIIscriptable.G2Phase.setHAPvalues`,
+                                      :func:`~GSASIIscriptable.G2Phase.copyHAPvalues`,
+                                      :meth:`~GSASIIscriptable.G2Project.set_refinement`,
+                                      :meth:`~GSASIIscriptable.G2Project.do_refinements`,
+                                      :func:`~GSASIIscriptable.G2Phase.clear_HAP_refinements`
+                                      and :func:`~GSASIIscriptable.G2Phase.set_HAP_refinements`.
+=============  ==========  =========================================================================
 
 Histogram/Phase objects
 -----------------------

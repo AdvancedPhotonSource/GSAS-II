@@ -29,16 +29,10 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 from __future__ import division, print_function
 import argparse
 import os.path as ospath
-#import datetime as dt
 import sys
 import platform
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-    strtypes = (str,unicode)
-else:
-    import pickle as cPickle
-    strtypes = (str,bytes)
-#import imp
+import pickle as cPickle
+strtypes = (str,bytes)
 import copy
 import os
 import random as ran
@@ -2068,7 +2062,7 @@ class G2Project(G2ObjectWrapper):
                     +" must be 'Hist', 'HAP', 'Phase', or 'Global'.")
                                 .format(ctype))
         
-    def add_HoldConstr(self,varlist,reloadIdx=True):
+    def add_HoldConstr(self,varlist,reloadIdx=True,override=False):
         '''Set a hold constraint on a list of variables. 
 
         Note that this will cause the project to be saved if not 
@@ -2083,6 +2077,10 @@ class G2Project(G2ObjectWrapper):
         :param bool reloadIdx: If True (default) the .gpx file will be 
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
+        :param bool override: This routine looks up variables using 
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+          not found, the routine will throw an exception, unless
+          override=True is specified. 
         
         Example::
         
@@ -2093,16 +2091,22 @@ class G2Project(G2ObjectWrapper):
             self.index_ids()
         elif G2obj.TestIndexAll():
             self.index_ids()
+        vardefwarn = False
         for var in varlist:
             # make var object
             if isinstance(var, str):
                 var = self.make_var_obj(var,reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var,reloadIdx=False)
+            if G2obj.getDescr(var.name) is None:
+                vardefwarn = True
+                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, 'h'])
+        if vardefwarn and not override:
+            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
                 
-    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True):
+    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True,override=False):
         '''Set a equivalence on a list of variables. 
 
         Note that this will cause the project to be saved if not 
@@ -2122,6 +2126,10 @@ class G2Project(G2ObjectWrapper):
         :param bool reloadIdx: If True (default) the .gpx file will be 
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
+        :param bool override: This routine looks up variables using 
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+          not found, the routine will throw an exception, unless
+          override=True is specified. 
 
         Examples::
         
@@ -2137,6 +2145,7 @@ class G2Project(G2ObjectWrapper):
             raise Exception('add_EquivConstr Error: varlist must have at least 2 variables')
         constr = []
         typ_prev = None
+        vardefwarn = False
         for i,var in enumerate(varlist):
             m = 1.
             try:
@@ -2148,6 +2157,9 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(var,reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var,reloadIdx=False)
+            if G2obj.getDescr(var.name) is None:
+                vardefwarn = True
+                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2158,11 +2170,13 @@ class G2Project(G2ObjectWrapper):
                 msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
                 raise Exception('add_EquivConstr Error: '+msg)
             typ_prev = typ
-            var_prev = var    
+            var_prev = var
+        if vardefwarn and not override:
+            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [None, None, 'e']
         self.add_constraint_raw(typ, constr)
 
-    def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True):
+    def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True,override=False):
         '''Set a constraint equation on a list of variables. 
 
         Note that this will cause the project to be saved if not 
@@ -2182,6 +2196,10 @@ class G2Project(G2ObjectWrapper):
         :param bool reloadIdx: If True (default) the .gpx file will be 
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
+        :param bool override: This routine looks up variables using 
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+          not found, the routine will throw an exception, unless
+          override=True is specified. 
 
         Example::
         
@@ -2200,6 +2218,7 @@ class G2Project(G2ObjectWrapper):
             raise Exception('add_EqnConstr Error: total be a valid float')
         constr = []
         typ_prev = None
+        vardefwarn = False
         for i,var in enumerate(varlist):
             m = 1.
             try:
@@ -2211,6 +2230,9 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(var,reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var,reloadIdx=False)
+            if G2obj.getDescr(var.name) is None:
+                vardefwarn = True
+                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2221,11 +2243,14 @@ class G2Project(G2ObjectWrapper):
                 msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
                 raise Exception('add_EquivConstr Error: '+msg)
             typ_prev = typ
-            var_prev = var    
+            var_prev = var
+        if vardefwarn and not override:
+            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')            
         constr += [float(total), None, 'c']
         self.add_constraint_raw(typ, constr)
 
-    def add_NewVarConstr(self,varlist,multlist=[],name=None,vary=False,reloadIdx=True):
+    def add_NewVarConstr(self,varlist,multlist=[],name=None,vary=False,
+                             reloadIdx=True,override=False):
         '''Set a new-variable constraint from a list of variables to 
         create a new parameter from two or more predefined parameters. 
 
@@ -2249,6 +2274,10 @@ class G2Project(G2ObjectWrapper):
         :param bool reloadIdx: If True (default) the .gpx file will be 
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
+        :param bool override: This routine looks up variables using 
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+          not found, the routine will throw an exception, unless
+          override=True is specified. 
 
         Examples::
         
@@ -2272,6 +2301,7 @@ class G2Project(G2ObjectWrapper):
         if name is not None:
             name = str(name)
         typ_prev = None
+        vardefwarn = False
         for i,var in enumerate(varlist):
             m = 1.
             try:
@@ -2283,6 +2313,9 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(var,reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var,reloadIdx=False)
+            if G2obj.getDescr(var.name) is None:
+                vardefwarn = True
+                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2293,7 +2326,9 @@ class G2Project(G2ObjectWrapper):
                 msg = 'Type ({}) for var {} is different from {} ({})'.format(typ,var,var_prev,typ_prev)
                 raise Exception('add_EquivConstr Error: '+msg)
             typ_prev = typ
-            var_prev = var    
+            var_prev = var
+        if vardefwarn and not override:
+            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [name, bool(vary), 'f']
         self.add_constraint_raw(typ, constr)
         

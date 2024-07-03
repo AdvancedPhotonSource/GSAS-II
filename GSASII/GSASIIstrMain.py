@@ -315,6 +315,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             Controls['Marquardt'] = -3  #reset to default
             if 'chisq0' in result[2] and chisq0 is None:
                 chisq0 = result[2]['chisq0']
+            if result[1] is None:
+                IfOK = False
+                covMatrix = []
+                sig = len(varyList)*[None,]
+                break
         elif 'Hessian SVD' in Controls['deriv type']:
             maxCyc = Controls['max cyc']
             result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,

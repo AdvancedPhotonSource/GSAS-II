@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Routines defined in :mod:`GSASIImath` follow.
 '''
@@ -20,7 +13,6 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -142,7 +134,7 @@ def setHcorr(info,Amat,xtol,problem=False):
     return Bmat,Nzeros
 
 def setSVDwarn(info,Amat,Nzeros,indices):
-    '''Find & report terms causing SVN zeros
+    '''Find & report terms causing SVD zeros
     '''
     if Nzeros == 0: return
     d = np.abs(np.diag(nl.qr(Amat)[1]))
@@ -183,11 +175,15 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         call).
       * cov_x : ndarray
         Uses the fjac and ipvt optional outputs to construct an
-        estimate of the jacobian around the solution.  ``None`` if a
-        singular matrix encountered (indicates very flat curvature in
-        some direction).  This matrix must be multiplied by the
-        residual standard deviation to get the covariance of the
-        parameter estimates -- see curve_fit.
+        estimate of the jacobian around the solution. This matrix 
+        must be multiplied by the residual standard deviation to get 
+        the covariance of the parameter estimates -- see curve_fit.
+        
+        -- or ``None`` if a singular matrix encountered (indicates very 
+        flat curvature in direction), or some other error is encountered.
+        
+        -- or an empty array if a refinement was not performed because 
+        no valid variables were refined.
       * infodict : dict, a dictionary of optional outputs with the keys:
 
          * 'fvec' : the function evaluated at the output

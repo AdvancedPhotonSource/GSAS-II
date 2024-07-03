@@ -2100,11 +2100,11 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(*var,reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
+                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, 'h'])
         if vardefwarn and not override:
-            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
+            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
                 
     def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True,override=False):
         '''Set a equivalence on a list of variables. 
@@ -2159,7 +2159,7 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(*var,reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
+                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2172,7 +2172,7 @@ class G2Project(G2ObjectWrapper):
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
+            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [None, None, 'e']
         self.add_constraint_raw(typ, constr)
 
@@ -2211,11 +2211,11 @@ class G2Project(G2ObjectWrapper):
         elif G2obj.TestIndexAll():
             self.index_ids()
         if len(varlist) < 2:
-            raise Exception('add_EqnConstr Error: varlist must have at least 2 variables')
+            raise Exception('Constraint var error: varlist must have at least 2 variables')
         try:
             float(total)
         except:
-            raise Exception('add_EqnConstr Error: total be a valid float')
+            raise Exception('Constraint var error: total be a valid float')
         constr = []
         typ_prev = None
         vardefwarn = False
@@ -2232,7 +2232,7 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(*var,reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
+                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2245,7 +2245,7 @@ class G2Project(G2ObjectWrapper):
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')            
+            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')            
         constr += [float(total), None, 'c']
         self.add_constraint_raw(typ, constr)
 
@@ -2315,7 +2315,7 @@ class G2Project(G2ObjectWrapper):
                 var = self.make_var_obj(*var,reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'add_EqnConstr warning: No definition for variable {var.name}. Name correct?')
+                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
             # make constraint
             constr.append([m,var])
             typ = _constr_type(var)
@@ -2328,7 +2328,7 @@ class G2Project(G2ObjectWrapper):
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('add_EqnConstr Error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
+            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [name, bool(vary), 'f']
         self.add_constraint_raw(typ, constr)
         

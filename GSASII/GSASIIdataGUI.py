@@ -5934,9 +5934,44 @@ If you continue from this point, it is quite likely that all intensity computati
                 ' histograms that are not used have been removed from the sequential list.',
                 'Histograms removed')
             seqList = Controls['Seq Data'] = newseqList
-        self.OnFileSave(event)
         allerrors = {}
         allwarnings = {}
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        #
+        # Check if a phase lattice parameter refinement flag is set, if so transfer it to the Dij terms
+        cellFit = 0
+        for key in Phases: 
+            if Phases[key]['General']['Cell'][0]: cellFit += 1
+        if cellFit: 
+            msg = f'''You are refining the unit cell parameter for {cellFit} phase(s). 
+
+In sequential fits the Dij (hydrostatic strain) terms, which provide offsets to the reciprocal cell tensor, must be refined rather than the cell parameters.
+
+Do you want to transfer the cell refinement flag to the Dij terms?
+(Select Yes to continue the refinement)'''
+            dlg = wx.MessageDialog(None, msg,'xfer cell flag to Dij?',
+                                   wx.YES_NO|wx.ICON_QUESTION)
+            result = wx.ID_NO
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO:
+                return
+            for p in Phases: 
+                count = 0
+                if Phases[p]['General']['Cell'][0]:
+                    for h in Phases[p]['Histograms']:
+                        if not Phases[p]['Histograms'][h]['Use']: continue
+                        Phases[p]['Histograms'][h]['HStrain'][1] = len(
+                            Phases[p]['Histograms'][h]['HStrain'][1]) * [True]
+                        count += 1
+                    if count > 0: print(f'{count} hydrostratic strain refinement flags were set for phase {p}')
+                    Phases[p]['General']['Cell'][0] = False
+        
+        # save Tree to file and from here forward, work from the .gpx file not from the data tree
+        self.OnFileSave(event)
+        breakpoint()
         Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(self.GSASprojectfile)
         for h in seqList: # check constraints are OK for each histogram to be processed
             errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,

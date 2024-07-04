@@ -2299,11 +2299,23 @@ def UpdateLimitsGrid(G2frame, data,datatype):
             delExcl.Bind(wx.EVT_CHECKBOX,OnDelExcl)
             excl.Add(delExcl,0,WACV)
         return excl
-               
-    def OnAddExcl(event):
-        G2frame.ifGetExclude = True
+
+    def onSetLimExcl(event):
+        txt = event.EventObject.FindItemById(event.GetId()).GetItemLabel() # gets menu command text
+        if 'lower' in txt:
+            G2frame.ifSetLimitsMode = 1
+            G2frame.CancelSetLimitsMode.Enable(True)
+        elif 'upper' in txt:
+            G2frame.ifSetLimitsMode = 2
+            G2frame.CancelSetLimitsMode.Enable(True)
+        elif 'excl' in txt:
+            G2frame.ifSetLimitsMode = 3
+            G2frame.CancelSetLimitsMode.Enable(True)
+        else:
+            G2frame.ifSetLimitsMode = 0
+            G2frame.CancelSetLimitsMode.Enable(False)
         G2frame.plotFrame.Raise()
-        G2G.G2MessageBox(G2frame.plotFrame,'Click on a point in the pattern to be excluded, then drag or edit limits to adjust range','Creating excluded region')
+        G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
         
     def OnLimitCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -2342,11 +2354,14 @@ def UpdateLimitsGrid(G2frame, data,datatype):
         G2frame.dataWindow.SetSizer(mainSizer)
         G2frame.dataWindow.SetDataSize()
 
-    G2frame.ifGetExclude = False
+    G2frame.ifSetLimitsMode = 0
+    G2frame.CancelSetLimitsMode.Enable(False)
     if 'P' in datatype:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
-        G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
+        for n in (G2G.wxID_ADDEXCLREGION, G2G.wxID_SETLOWLIMIT,
+                  G2G.wxID_SETTOPLIMIT, G2G.wxID_STOPSETLIMIT):
+            G2frame.Bind(wx.EVT_MENU,onSetLimExcl,id=n)
     elif 'A' in datatype or 'R' in datatype:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDLimitMenu)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_SASDLIMITCOPY)
@@ -5765,7 +5780,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
         
     #### UpdateUnitCellsGrid code starts here
-    G2frame.ifGetExclude = False
+    G2frame.ifSetLimitsMode = 0
+    G2frame.CancelSetLimitsMode.Enable(False)
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',

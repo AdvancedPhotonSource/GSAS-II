@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
-#========== SVN repository information ###################
-# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
-# $Author: toby $
-# $Revision: 5791 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5791 2024-06-27 18:47:39Z toby $
-#=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
 '''
@@ -58,7 +51,6 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -3115,7 +3107,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     
 #### init_vars ################################################################
     def init_vars(self):
-        ''' initialize default values for GSAS-II "global" variables (saved in main Frame)
+        ''' initialize default values for GSAS-II "global" variables (saved in main Frame, G2frame)
         '''
         self.oldFocus = None
         self.undofile = ''
@@ -3144,7 +3136,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.logPlot = False
         self.plusPlot = True
         self.ErrorBars = False
-        self.CumeChi = False
         self.Contour = False
         self.TforYaxis = False
         self.Legend = False
@@ -3181,7 +3172,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.newGPXfile = ''
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
-        self.RMCchoice = 'RMCProfile' 
+        self.RMCchoice = 'RMCProfile'
+        self.ifSetLimitsMode = 0
+
         
     def __init__(self, parent):
         self.ExportLookup = {}
@@ -6522,13 +6515,24 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PWDR / Limits
         G2G.Define_wxId('wxID_LIMITCOPY', 'wxID_ADDEXCLREGION',)
+        G2G.Define_wxId('wxID_SETLOWLIMIT')
+        G2G.Define_wxId('wxID_SETTOPLIMIT')
+        G2G.Define_wxId('wxID_STOPSETLIMIT')
         self.LimitMenu = wx.MenuBar()
         self.PrefillDataMenu(self.LimitMenu)
         self.LimitEdit = wx.Menu(title='')
         self.LimitMenu.Append(menu=self.LimitEdit, title='Edit Limits')
         self.LimitEdit.Append(G2G.wxID_LIMITCOPY,'Copy','Copy limits to other histograms')
-        self.LimitEdit.Append(G2G.wxID_ADDEXCLREGION,'Add exclude',
-            'Add excluded region - select a point on plot; drag to adjust')            
+        self.LimitEdit.Append(G2G.wxID_SETLOWLIMIT,'Set lower limit',
+            'Click on a data point to set the lower limit location')
+        self.LimitEdit.Append(G2G.wxID_SETTOPLIMIT,'Set upper limit',
+            'Click on a data point to set the upper limit location')
+        self.LimitEdit.Append(G2G.wxID_ADDEXCLREGION,'Add excluded region',
+            'Add excluded region - select a point on plot; drag later to adjust')            
+        G2frame.CancelSetLimitsMode = self.LimitEdit.Append(
+            G2G.wxID_STOPSETLIMIT,'Cancel set',
+            'Clears a previous Set limits/add excluded region')
+        G2frame.CancelSetLimitsMode.Enable(False)
         self.PostfillDataMenu()
             
         # PWDR / Background

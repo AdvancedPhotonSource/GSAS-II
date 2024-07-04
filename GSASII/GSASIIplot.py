@@ -2507,7 +2507,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         G2frame.itemPicked = DifLine[0]
         G2frame.G2plotNB.Parent.Raise()
-        OnPick(None)
+        OnPickPwd(None)
 
     def onMoveTopTick(event):
         '''Respond to a menu command to move the tick locations. 
@@ -2517,7 +2517,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         G2frame.itemPicked = Page.tickDict[Page.phaseList[0]]
         G2frame.G2plotNB.Parent.Raise()
-        OnPick(None)
+        OnPickPwd(None)
                 
     def onMoveTickSpace(event):
         '''Respond to a menu command to move the tick spacing. 
@@ -2527,7 +2527,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         G2frame.itemPicked = Page.tickDict[Page.phaseList[-1]]
         G2frame.G2plotNB.Parent.Raise()
-        OnPick(None)
+        OnPickPwd(None)
         
     def onMovePeak(event):
         reflGrid = G2frame.reflGrid
@@ -2546,11 +2546,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if len(selectedPeaks) != 1: return
         G2frame.itemPicked = G2frame.Lines[selectedPeaks[0]+2] # 1st 2 lines are limits
         G2frame.G2plotNB.Parent.Raise()
-        OnPick(None)
-                        
-    def OnPick(event):
+        OnPickPwd(None)
+
+    def OnPickPwd(event):
         '''Respond to an item being picked. This usually means that the item
-        will be dragged with the mouse. 
+        will be dragged with the mouse, or sometimes the pick object is used 
+        to create a peak or an excluded region
         '''
         def OnDragMarker(event):
             '''Respond to dragging of a plot Marker
@@ -2611,6 +2612,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
 
+        ####====== start of OnPickPwd
         global Page
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -2638,6 +2640,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId
         if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
+            # Peak List: add peaks by clicking on points,
+            # Or, by dragging lines: move peaks; move limits
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
@@ -2660,32 +2664,35 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) in ['Limits','Unit Cells List']:
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+            # Limits: add excluded region or move limits by use of menu command
+            # and then pick a point
+            # Or, drag line for limits/excluded region
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
-                data = G2frame.GPXtree.GetItemPyData(LimitId)
-                # likely that these conversions are not needed, Q & d not allowed on limits (BHT)
+                limData = G2frame.GPXtree.GetItemPyData(LimitId)
+                # Q & d not allowed on limits plot, but are on Unit Cells List plot
                 if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
                 elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
-                if G2frame.ifGetExclude:
+                if G2frame.ifSetLimitsMode == 3:   # add an excluded region
                     excl = [0,0]
-                    excl[0] = max(data[1][0],min(xy[0],data[1][1]))
+                    excl[0] = max(limData[1][0],min(xy[0],limData[1][1]))
                     excl[1] = excl[0]+0.1
-                    data.append(excl)
-                    G2frame.ifGetExclude = False
-                else:
-                    if mouse.button==1:
-                        data[1][0] = min(xy[0],data[1][1])
-                    if mouse.button==3:
-                        data[1][1] = max(xy[0],data[1][0])
-                G2frame.GPXtree.SetItemPyData(LimitId,data)
-                G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+                    limData.append(excl)
+                elif G2frame.ifSetLimitsMode == 2: # set upper
+                    limData[1][1] = max(xy[0],limData[1][0])
+                elif G2frame.ifSetLimitsMode == 1:
+                    limData[1][0] = min(xy[0],limData[1][1]) # set lower
+                G2frame.ifSetLimitsMode = 0
+                G2frame.CancelSetLimitsMode.Enable(False)
+                G2frame.GPXtree.SetItemPyData(LimitId,limData)
+                G2pdG.UpdateLimitsGrid(G2frame,limData,plottype)
                 G2frame.GPXtree.SelectItem(LimitId)
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return
-            else:                                                   #picked a limit line
+            else:                                         # picked a limit line
                 # prepare to animate move of line
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
@@ -2696,6 +2703,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
                 
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Unit Cells List':
+            # By dragging lines: move limits
+            if ind.all() == [0]:                         # picked a limit line
+                # prepare to animate move of line
+                G2frame.itemPicked = pick
+                pick.set_linestyle(':') # set line as dotted
+                Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+                Page.figure.gca()
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+                pick.set_linestyle('--') # back to dashed
+
         elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Models':
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
@@ -3143,6 +3163,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         publish = None
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
+        # note mode
+        if G2frame.ifSetLimitsMode == 1:
+            msg = 'Click on a point to define the location of the lower limit'
+        elif G2frame.ifSetLimitsMode == 2:
+            msg = 'Click on a point to define the location of the upper limit'
+        elif G2frame.ifSetLimitsMode == 3:
+            msg = 'Click on a point in the pattern to be excluded,\nthen drag or edit limits to adjust range'
+        Page.figure.text(.02,.93, msg, fontsize=14, fontweight='bold')
+
     Page.excludeMode = False  # True when defining an excluded region
     Page.savedplot = None
 #patch
@@ -3229,7 +3259,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.canvas.mpl_connect('pick_event', OnPick)
+        Page.canvas.mpl_connect('pick_event', OnPickPwd)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
         Page.bindings = []

@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
-########### SVN repository information ###################
-# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
-# $Author: toby $
-# $Revision: 5791 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5791 2024-06-27 18:47:39Z toby $
-########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
 '''
@@ -46,7 +39,6 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
@@ -92,11 +84,12 @@ def Define_wxId(*args):
     '''
     for arg in args:
         if GSASIIpath.GetConfigValue('debug') and not arg.startswith('wxID_'):
-            print ('DBG_Problem in name'+arg)
+            print (f'DBG_Problem in ID name: {arg} needs to start w/wxID_')
         if arg in globals():
-            if GSASIIpath.GetConfigValue('debug'): print ('DBG_'+arg+'already defined')
+            if GSASIIpath.GetConfigValue('debug'):
+                print (f'DBG_Warning: {arg} already defined')
             continue
-        exec('global '+arg+';'+arg+' = wx.NewId()')
+        exec(f'global {arg}; {arg} = wx.NewId()')
 
 #### Tree Control ################################################################################
 class G2TreeCtrl(wx.TreeCtrl):

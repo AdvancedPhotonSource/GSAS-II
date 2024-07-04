@@ -2086,6 +2086,10 @@ class G2RefineCancel(Exception):
 def HowDidIgetHere(wherecalledonly=False):
     '''Show a traceback with calls that brought us to the current location.
     Used for debugging.
+
+    :param bool wherecalledonly: When True, the entire calling stack is 
+      shown. When False (default), only the 2nd to last stack entry (the
+      routine that called the calling routine is shown.
     '''
     import traceback
     if wherecalledonly:

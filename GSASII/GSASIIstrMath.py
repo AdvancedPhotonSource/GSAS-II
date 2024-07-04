@@ -865,10 +865,10 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             for s in -step,2*step:
                                 parmDict[var] += s
                                 # extend shift if needed to other parameters
-                                if var in G2mv.independentVars:
+                                if var in G2mv.indepVarList:
                                     G2mv.Dict2Map(parmDict)
                                     oneparm = False
-                                elif var in G2mv.dependentVars:
+                                elif var in sum(G2mv.dependentParmList,[]):
                                     G2mv.Map2Dict(parmDict,[])
                                     oneparm = False
                                 if 'RB' in var:

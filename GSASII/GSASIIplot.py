@@ -2671,11 +2671,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 limData = G2frame.GPXtree.GetItemPyData(LimitId)
-                # Q & d not allowed on limits plot, but are on Unit Cells List plot
-                if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
-                    xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
-                    xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+                # Q & d not currently allowed on limits plot
+                # if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+                #     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+                # elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+                #     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 if G2frame.ifSetLimitsMode == 3:   # add an excluded region
                     excl = [0,0]
                     excl[0] = max(limData[1][0],min(xy[0],limData[1][1]))

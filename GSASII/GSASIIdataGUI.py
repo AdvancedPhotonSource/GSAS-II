@@ -3144,6 +3144,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.logPlot = False
         self.plusPlot = True
         self.ErrorBars = False
+        self.CumeChi = False
         self.Contour = False
         self.TforYaxis = False
         self.Legend = False

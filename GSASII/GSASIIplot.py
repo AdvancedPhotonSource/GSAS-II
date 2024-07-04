@@ -57,7 +57,6 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-import GSASIIElem as G2elem
 try:
     import pytexture as ptx
     ptx.pyqlmninit()
@@ -107,6 +106,7 @@ if '2' not in platform.python_version_tuple()[0]:
     unichr = chr
 GkDelta = unichr(0x0394)
 Gkrho = unichr(0x03C1)
+Gkchisq = unichr(0x03C7)+unichr(0xb2)
 super2 = unichr(0xb2)
 Angstr = unichr(0x00c5)
 Pwrm1 = unichr(0x207b)+unichr(0x0b9)
@@ -2121,6 +2121,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
             newPlot = True
+        elif event.key == 'X' and plottype == 'PWDR':
+            G2frame.CumeChi = not G2frame.CumeChi 
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'F' and 'PWDR' in plottype:
@@ -3298,7 +3300,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','F: toggle axis font',
-                'g: toggle grid',
+                'g: toggle grid','X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
                 Page.Choice += ['o: remove obs, calc,... from legend',]
@@ -3479,6 +3481,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
             elif Page.plotStyle.get('WgtDiagnostic',False):
                 Plot.set_ylabel('Intensity * Weight')
+            elif G2frame.CumeChi and G2frame.SinglePlot:
+                Plot.set_ylabel(r'$Intensity, cum('+Gkchisq+')$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Intensity$',fontsize=16)
         elif plottype == 'SASD':
@@ -3987,6 +3991,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         orange = [255/256.,128/256.,0.]
+        if 'PWDR' in plottype and G2frame.SinglePlot and G2frame.CumeChi:
+            CY = np.cumsum(W**2*(Y-Z)**2)
+            scale = np.max(CY)/np.max(Y)
+            CY /= scale
+            Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
         if G2frame.GPXtree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
             if not len(peaks): return # are there any peaks?

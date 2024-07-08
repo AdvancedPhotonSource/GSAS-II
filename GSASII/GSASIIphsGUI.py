@@ -9995,7 +9995,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
         indx = getAtomSelections(drawAtoms,ct-1)
         if not indx: return
-        indx = drawAtoms.GetSelectedRows()
+        #indx = drawAtoms.GetSelectedRows()
         restData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'))
         drawingData = data['Drawing']
@@ -10781,6 +10781,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         G2plt.PlotStructure(G2frame,data)
         
     def FillCoordSphere(event):
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
         time0 = time.time()
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -10791,7 +10793,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             radii[indH] = 0.5
         except:
             pass            
-        indx = drawAtoms.GetSelectedRows()
         if indx:
             indx.sort()
             atomData = data['Drawing']['Atoms']

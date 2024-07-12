@@ -67,3 +67,5 @@ py.install_sources([
 )
 
 subdir('NIST_profile')
+subdir('imports')
+subdir('exports')

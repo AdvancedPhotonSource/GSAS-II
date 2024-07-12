@@ -36,6 +36,6 @@ py.install_sources([
     'G2sfact_CIF.py',
     ],
   pure: false,    # Will be installed next to binaries
-  subdir: 'GSASII'  # Folder relative to site-packages to install to
+  subdir: 'GSASII/imports'  # Folder relative to site-packages to install to
 )
 

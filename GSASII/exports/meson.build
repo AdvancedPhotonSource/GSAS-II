@@ -21,6 +21,6 @@ py.install_sources([
     'template_single.cif',
     ],
   pure: false,    # Will be installed next to binaries
-  subdir: 'GSASII'  # Folder relative to site-packages to install to
+  subdir: 'GSASII/exports'  # Folder relative to site-packages to install to
 )
 

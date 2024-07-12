@@ -65,3 +65,5 @@ py.install_sources([
   pure: false,    # Will be installed next to binaries
   subdir: 'GSASII'  # Folder relative to site-packages to install to
 )
+
+subdir('NIST_profile')

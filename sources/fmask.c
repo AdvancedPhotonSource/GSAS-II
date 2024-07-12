@@ -185,7 +185,7 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
     size2Th[ith] = 0;
   }
   int i2TTh;
-  double tth;
+  //double tth; unused
   // count the number of pixels in each 2theta ring; no tests to max out speed
   for (int i=0; i < size; ++i) {     // loop over all pixels
     if (TAP[i] < TThsP[0]) continue;

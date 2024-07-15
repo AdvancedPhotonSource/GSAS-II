@@ -2347,6 +2347,20 @@ class G2SingleChoiceDialog(wx.Dialog):
       note that ``wx.OK`` and ``wx.CANCEL`` controls
       the presence of the eponymous buttons in the dialog.
     :returns: the name of the created dialog
+
+    Example::
+
+            dlg = G2SingleChoiceDialog(G2frame,'Select option from list',
+                                           'Select option',optList)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = optList[dlg.GetSelection()]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+
     '''
     def __init__(self,parent, title, header, ChoiceList, 
                  monoFont=False, filterBox=True, **kw):

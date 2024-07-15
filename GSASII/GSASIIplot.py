@@ -9386,6 +9386,62 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SetViewPointText(drawingData['viewPoint'][0])
             SetViewDirText(drawingData['viewDir'])
             G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+        elif key in ('Y','N','Q') and G2phG.ranDrwDict['atomList']:
+            # Special actions in "random action" mode
+            cx,ct = drawingData['atomPtrs'][:2]
+            if key == 'Q':
+                print('end random')
+                G2phG.ranDrwDict['atomList'] = []
+            elif key == 'Y' and len(G2phG.ranDrwDict['atomList']) > 0: # process the requested action
+                i = G2phG.ranDrwDict['atomList'][0]
+                if G2phG.ranDrwDict['opt'] == 1:
+                    print(f"color {i} {G2phG.ranDrwDict['color']}")
+                    data['Drawing']['Atoms'][i][cx+6] = G2phG.ranDrwDict['color']
+                elif G2phG.ranDrwDict['opt'] == 0:
+                    print(f'delete {i}')
+                    G2phG.ranDrwDict['delAtomsList'].append(i)
+                    data['Drawing']['Atoms'][i][cx+6] = (0,0,0) # mark atoms to be deleted in black & delete later
+                elif G2phG.ranDrwDict['opt'] == 2:
+                    cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
+                    data['Drawing']['Atoms'][i][cs] = G2phG.ranDrwDict['style']
+                elif G2phG.ranDrwDict['opt'] == 3:
+                    G2phG.ranDrwDict['2call'](
+                        event=None,
+                        selection=[i],
+                        radius=G2phG.ranDrwDict['radius'],
+                        targets=G2phG.ranDrwDict['targets']
+                        )
+                elif G2phG.ranDrwDict['opt'] == 4:
+                    G2phG.ranDrwDict['2call'](
+                        event=None,
+                        selection=[i]
+                        )
+            if len(G2phG.ranDrwDict['atomList']) > 0:
+                G2phG.ranDrwDict['atomList'].pop(0)
+            if len(G2phG.ranDrwDict['atomList']) == 0:  # no more atoms left
+                # delete any so-marked atoms
+                G2phG.ranDrwDict['delAtomsList'].sort(reverse=True)
+                for i in G2phG.ranDrwDict['delAtomsList']: del data['Drawing']['Atoms'][i]
+                G2phG.ranDrwDict['delAtomsList'] = []
+                drawingData['viewPoint'] = [np.array([.5,.5,.5]),[0,0]]
+                SetViewPointText(drawingData['viewPoint'][0])
+                try:
+                    G2phG.ranDrwDict['msgWin'].Destroy()
+                except:
+                    pass
+                ClearSelectedAtoms()
+                wx.CallAfter(PlotStructure,G2frame,data,False,pageCallback)
+            else:
+                i = G2phG.ranDrwDict['atomList'][0]
+                msg = f"Atom #{i} selected ({drawingData['Atoms'][i][ct-1]})"
+                print(msg)
+                G2phG.ranDrwDict['msgWin'].text2.SetLabel(msg)
+                SetViewPointText(drawingData['viewPoint'][0])
+                SetSelectedAtoms(i)
+                drawingData['viewPoint'][0] = drawingData['Atoms'][i][cx:cx+3]
+                SetViewPointText(drawingData['viewPoint'][0])
+                #NPkey = True
+                wx.CallAfter(PlotStructure,G2frame,data,False,pageCallback)
         elif key in ['N','P',]:
             if G2frame.phaseDisplay.GetPageText(getSelection()) == 'Map peaks':
                 cx = 1

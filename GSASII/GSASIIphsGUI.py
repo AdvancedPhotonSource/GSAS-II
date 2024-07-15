@@ -102,6 +102,8 @@ else:
     Angstr = chr(0x00c5)   
 
 RMCmisc = {}
+ranDrwDict = {}
+ranDrwDict['atomList'] = []
 #### phase class definitions ################################################################################
 class SymOpDialog(wx.Dialog):
     '''Class to select a symmetry operator
@@ -234,7 +236,9 @@ class SphereEnclosure(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label=' Sphere of enclosure controls:'),0)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         atoms = []
-        if len(self.indx):
+        if self.indx is None:
+            pass
+        elif len(self.indx):
             topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at atoms: '),0,WACV)
             cx,ct,cs = self.Drawing['atomPtrs'][:3]
             for Id in self.indx:
@@ -10516,10 +10520,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
             
-    def AddSphere(event):
-        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
-        indx = getAtomSelections(drawAtoms,ct-1,'as center of sphere addition',
-                                     includeView=True)
+    def AddSphere(event=None,selection=None,radius=None,targets=None):
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)
+        if selection:
+            indx = selection
+        else:
+            indx = getAtomSelections(drawAtoms,ct-1,
+                                    'as center of sphere addition',
+                                    includeView=True)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -10534,55 +10542,65 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         SpnFlp = SGData.get('SpnFlp',[])
         cellArray = G2lat.CellBlock(1)
         indx.sort()
-        dlg = SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                centers,radius,targets = dlg.GetSelection()
-                ncent = len(centers)
-                pgbar = wx.ProgressDialog('Sphere of enclosure for %d atoms'%ncent,'Centers done=',ncent+1, 
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-                screenSize = wx.ClientDisplayRect()
-                Size = pgbar.GetSize()
-                if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-                    pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-                    pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-                for ic,orig in enumerate(centers):
-                    xyzA = np.array(orig)
-                    for atomB in atomData[:numAtoms]:
-                        if atomB[ct] not in targets:
-                            continue
-                        xyzB = np.array(atomB[cx:cx+3])
-                        Uij = atomB[cuij:cuij+6]
-                        result = G2spc.GenAtom(xyzB,SGData,False,Uij,True)
-                        for item in result:
-                            atom = copy.copy(atomB)
-                            atom[cx:cx+3] = item[0]
-                            Opr = abs(item[2])%100
-                            M = SGData['SGOps'][Opr-1][0]
-                            if cmx:
-                                opNum = G2spc.GetOpNum(item[2],SGData)
-                                mom = np.array(atom[cmx:cmx+3])
-                                if SGData['SGGray']:
-                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
-                                else:    
-                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                            atom[cs-1] = str(item[2])+'+'
-                            atom[cuij:cuij+6] = item[1]
-                            for xyz in cellArray+np.array(atom[cx:cx+3]):
-                                dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                                if 0 < dist <= radius:
-                                    if noDuplicate(xyz,atomData):
-                                        C = xyz-atom[cx:cx+3]+item[3]
-                                        newAtom = atom[:]
-                                        newAtom[cx:cx+3] = xyz
-                                        newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                                        atomData.append(newAtom)
-                    GoOn = pgbar.Update(ic,newmsg='Centers done=%d'%(ic))
-                    if not GoOn[0]:
-                        break
-                pgbar.Destroy()
-        finally:
-            dlg.Destroy()
+        if radius is None or targets is None:
+            dlg = SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    centers,radius,targets = dlg.GetSelection()
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        else:
+            centers = []
+            for Id in indx:
+                if Id < len(data['Drawing']['Atoms']):
+                    atom = data['Drawing']['Atoms'][Id]
+                    centers.append(atom[cx:cx+3])
+            
+        ncent = len(centers)
+        pgbar = wx.ProgressDialog('Sphere of enclosure for %d atoms'%ncent,'Centers done=',ncent+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        for ic,orig in enumerate(centers):
+            xyzA = np.array(orig)
+            for atomB in atomData[:numAtoms]:
+                if atomB[ct] not in targets:
+                    continue
+                xyzB = np.array(atomB[cx:cx+3])
+                Uij = atomB[cuij:cuij+6]
+                result = G2spc.GenAtom(xyzB,SGData,False,Uij,True)
+                for item in result:
+                    atom = copy.copy(atomB)
+                    atom[cx:cx+3] = item[0]
+                    Opr = abs(item[2])%100
+                    M = SGData['SGOps'][Opr-1][0]
+                    if cmx:
+                        opNum = G2spc.GetOpNum(item[2],SGData)
+                        mom = np.array(atom[cmx:cmx+3])
+                        if SGData['SGGray']:
+                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                        else:    
+                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                    atom[cs-1] = str(item[2])+'+'
+                    atom[cuij:cuij+6] = item[1]
+                    for xyz in cellArray+np.array(atom[cx:cx+3]):
+                        dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                        if 0 < dist <= radius:
+                            if noDuplicate(xyz,atomData):
+                                C = xyz-atom[cx:cx+3]+item[3]
+                                newAtom = atom[:]
+                                newAtom[cx:cx+3] = xyz
+                                newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                                atomData.append(newAtom)
+            GoOn = pgbar.Update(ic,newmsg='Centers done=%d'%(ic))
+            if not GoOn[0]:
+                break
+        pgbar.Destroy()
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
@@ -10643,10 +10661,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         G2plt.PlotStructure(G2frame,data)
             
     def FillMolecule(event):
-        '''This is called by the Complete Molecule command. It adds a layer of bonded atoms 
-        of the selected types for all selected atoms in the Draw Atoms table. If the number
-        of repetitions is greater than one, the added atoms (other than H atoms, which are assumed
-        to only have one bond) are then searched for the next surrounding layer of bonded atoms.
+        '''This is called by the Complete Molecule command. It adds a layer 
+        of bonded atoms of the selected types for all selected atoms in 
+        the Draw Atoms table. If the number of repetitions is greater than 
+        one, the added atoms (other than H atoms, which are assumed to only 
+        have one bond) are then searched for the next surrounding layer of 
+        bonded atoms.
         '''
         indx = getAtomSelections(drawAtoms)
         if not indx: return
@@ -10775,13 +10795,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 pgbar.Destroy()
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
-        pgbar.Destroy()   
+        pgbar.Destroy()
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         
-    def FillCoordSphere(event):
-        indx = getAtomSelections(drawAtoms)
+    def FillCoordSphere(event=None,selection=None):
+        if selection:
+            indx = selection
+        else:
+            indx = getAtomSelections(drawAtoms)
         if not indx: return
         time0 = time.time()
         generalData = data['General']
@@ -11161,7 +11184,98 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             voidPar['grid'],voidPar['probe'])
         drawingData['showVoids'] = True
         G2plt.PlotStructure(G2frame,data)
-        
+
+    def RandomizedAction(event):
+        '''perform a selected action on a random sequence from a selected 
+        list of atoms. After each selection, one chooses if the 
+        action should be performed on the selected atom 
+        '''
+        ranDrwDict['opt'] = 1
+        ranDrwDict['optList'] = ['Delete selection',
+                          'Change color of selection',
+                          'Atom drawing style for selection',
+                          'Add sphere of atoms around selection',
+                          'Add coordination-sphere around selection']
+
+        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select option from list',
+                                    'Select option',ranDrwDict['optList'])
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                ranDrwDict['opt'] = dlg.GetSelection()
+                sellbl = ranDrwDict['optList'][dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        if ranDrwDict['opt'] == 1:
+            colors = wx.ColourData()
+            colors.SetChooseFull(True)
+            try:
+                dlg = wx.ColourDialog(G2frame.GetParent(),colors)
+                if dlg.ShowModal() == wx.ID_OK:
+                    ranDrwDict['color'] = dlg.GetColourData().GetColour()[:3]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        elif ranDrwDict['opt'] == 2:
+            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+            if data['General']['Type'] == 'macromolecular':
+                styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
+                                   'backbone','ribbons','schematic']
+            try:
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',
+                                        styleChoice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    ranDrwDict['style'] = styleChoice[sel]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        elif ranDrwDict['opt'] == 3:
+            dlg = SphereEnclosure(G2frame,data['General'],data['Drawing'],None)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    centers,ranDrwDict['radius'],ranDrwDict['targets'] = dlg.GetSelection()
+                    ranDrwDict['2call'] = AddSphere
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        elif ranDrwDict['opt'] == 4:
+            ranDrwDict['2call'] = FillCoordSphere
+                            
+        indx = getAtomSelections(drawAtoms)
+        if not indx: return
+        ranDrwDict['atomList'] = list(indx)
+        ran.shuffle(ranDrwDict['atomList'])
+        i = ranDrwDict['atomList'][0]
+        cx,ct = data['Drawing']['atomPtrs'][:2]
+        data['Drawing']['viewPoint'][0] = data['Drawing']['Atoms'][i][cx:cx+3]
+        drawAtoms.SelectRow(i)
+        G2plt.PlotStructure(G2frame,data)
+        msg = f"Atom #{i} selected ({data['Drawing']['Atoms'][i][ct-1]})"
+        print(msg)
+        ranDrwDict['delAtomsList'] = []
+        ranDrwDict['msgWin'] = wx.Frame(G2frame, wx.ID_ANY, size=(300, 300),
+                        style=wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|
+                                    wx.STAY_ON_TOP)
+        ranDrwDict['msgWin'].SetTitle("Random action messages")
+        siz = wx.BoxSizer(wx.VERTICAL)
+        ranDrwDict['msgWin'].text1 = wx.StaticText(ranDrwDict['msgWin'],  wx.ID_ANY,
+            f"For random Draw Atoms action, in plot window press:  \n\t'Y' to {ranDrwDict['optList'][ranDrwDict['opt']]}\n\t'N' to advance to the next atom\n\t'Q' to end\n"
+            )
+        siz.Add(ranDrwDict['msgWin'].text1)
+        ranDrwDict['msgWin'].text2 = wx.StaticText(ranDrwDict['msgWin'],  wx.ID_ANY, msg)
+        siz.Add(ranDrwDict['msgWin'].text2)
+        ranDrwDict['msgWin'].SetSizer(siz)
+        siz.Fit(ranDrwDict['msgWin'])
+        ranDrwDict['msgWin'].CentreOnParent()
+        ranDrwDict['msgWin'].Show()
+        drawAtoms.Update()
+    
 #### Draw Options page ################################################################################
     def UpdateDrawOptions():
         def SlopSizer(): 
@@ -16283,7 +16397,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
         G2frame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2G.wxID_DRAWTRANSFORM)
-        G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)            
+        G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)
         G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)
         G2frame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2G.wxID_DRAWDELETE)
         G2frame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2G.wxID_RELOADATOMS)
@@ -16299,6 +16413,7 @@ of the crystal structure.
         G2frame.Bind(wx.EVT_MENU, MapVoid, id=G2G.wxID_DRAWVOIDMAP)
         G2frame.Bind(wx.EVT_MENU, SelDrawList, id=G2G.wxID_DRAWSETSEL)
         G2frame.Bind(wx.EVT_MENU, DrawLoadSel, id=G2G.wxID_DRAWLOADSEL)
+        G2frame.Bind(wx.EVT_MENU, RandomizedAction, id=G2G.wxID_DRAWRANDOM)
         
         # Deformation form factors
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DeformationMenu)

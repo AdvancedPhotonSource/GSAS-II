@@ -7159,6 +7159,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_RELOADATOMS')
         self.DrawAtomEdit.Append(G2G.wxID_RELOADATOMS,'Update draw atoms','Update atom drawing list')
         self.DrawAtomEdit.Append(G2G.wxID_DRAWLOADSEL,'Load selected atoms','Copy selected atoms into draw atoms')
+        G2G.Define_wxId('wxID_DRAWRANDOM')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWRANDOM,'Randomized action','Perform an action in randomized order')
 
         self.DrawAtomCompute.Append(G2G.wxID_DRAWDISTVP,'View pt. dist.','Compute distance of selected atoms from view point')   
         self.DrawAtomCompute.Append(G2G.wxID_DRAWDISAGLTOR,'Dist. Ang. Tors.',

@@ -2964,7 +2964,14 @@ If you continue from this point, it is quite likely that all intensity computati
         
         item = Import.Append(wx.ID_ANY,'Column metadata test','Test Column (.par) metadata import')
         self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())
-
+        msgs = G2fil.ImportErrorMsg()
+        if msgs:
+            #print('condaRequestList',G2fil.condaRequestList)
+            item = Import.Append(wx.ID_ANY,
+                'Show importer error(s)',
+                'Show the error message explaining why importers could not be loaded')
+            self.Bind(wx.EVT_MENU, lambda e: G2G.ImportMsg(self,msgs),
+                          id=item.GetId())
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
         # but module is reloaded before each use, allowing faster testing

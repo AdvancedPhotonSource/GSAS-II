@@ -41,11 +41,10 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
     def __init__(self):
         if zarr is None:
             self.UseReader = False
-            print('MIDAS_Zarr Reader skipped because zarr module is not installed')
-            os.path.split(sys.executable)[0]
-            conda = os.path.join(os.path.split(sys.executable)[0],'conda')
-            if os.path.exists(conda):
-                print(f'To fix this use command:\n\t{conda} install zarr')
+            msg = 'MIDAS_Zarr Reader skipped because zarr module is not installed.'
+            if GSASIIpath.condaTest():
+                msg += ' To fix this use command:\n\tconda install zarr'
+            G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.zarr.zip',),strictExtension=True,
             formatName = 'MIDAS zarr',longFormatName = 'MIDAS zarr intergrated scans')

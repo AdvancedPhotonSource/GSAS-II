@@ -498,6 +498,26 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                 traceback.print_exc(file=sys.stdout)
     return readerlist
 
+ImportErrors = []
+condaRequestList = {}
+def ImportErrorMsg(errormsg=None,pkg={}):
+    '''Store error message(s) from loading importers (usually missing 
+    packages. Or, report back all messages, if called with no argument.
+
+    :param str errormsg: a string containing the error message. If not 
+      supplied, the function returns the error message(s).
+    :param dict pkg: a dict where the key is the name of the importer and the 
+      value is a list containing the packages that need to be installed to 
+      allow the importer to be used.
+
+    :returns: the error messages as a list (an empty list if there are none), 
+    only if errormsg is None (the default).
+    '''
+    if errormsg is None:
+        return ImportErrors
+    ImportErrors.append(errormsg)
+    if pkg: condaRequestList.update(pkg)
+
 def LoadExportRoutines(parent, traceback=False):
     '''Routine to locate GSASII exporters. Warns if more than one file
     with the same name is in the path or if a file is found that is not 

@@ -155,6 +155,9 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
+    # TODO: refactor this: 
+    #    Should not count on ContentsValidator being called before Reader
+
     def ContentsValidator(self, filename):
         if '2' in platform.python_version_tuple()[0]:
             fp = open(filename,'Ur')
@@ -163,16 +166,16 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
         self.vals = None
         self.stepsize = None
         if '.rasx' in filename:
-            try:
-                import xmltodict as xml
-            except:
-                print('Attempting to conda install xmltodict - please wait')
-                res = GSASIIpath.condaInstall('xmltodict')
-                if res:
-                    msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
-                    G2G.G2MessageBox(self,msg,'Install xmltodict Error')
-                    return False
-                import xmltodict as xml
+#            try:
+#                import xmltodict as xml
+#            except:
+#                print('Attempting to conda install xmltodict - please wait')
+#                res = GSASIIpath.condaInstall('xmltodict')
+#                if res:
+#                    msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
+#                    G2G.G2MessageBox(self,msg,'Install xmltodict Error')
+#                    return False
+#                import xmltodict as xml
             try:
                 import zipfile as ZF        
                 with ZF.ZipFile(filename, 'r') as zipObj:

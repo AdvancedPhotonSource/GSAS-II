@@ -2547,8 +2547,11 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
     :param int width: lateral of window in pixels (defaults to 600)
     :param int height: vertical dimension of window in pixels (defaults to 400)
     :param str header: title to be placed on window
-    :param list buttonlist: list of button Ids to show. The default is None 
-      which places a single "Close" button and returns wx.ID_CANCEL 
+    :param list buttonlist: list of button Ids to show, or one or more 
+      pairs of values, where the first is a label to place on the button 
+      and the second is a routine that is called if the button is pressed.
+      The default is None which places a single "Close" button that 
+      returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
     '''
     
@@ -2570,8 +2573,12 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
         btnsizer.Add(btn)
     else:
         for b in buttonlist:
-            btn = wx.Button(dlg, b) 
-            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
+            if isinstance(b, (list, tuple)):
+                btn = wx.Button(dlg, wx.ID_ANY, b[0]) 
+                btn.Bind(wx.EVT_BUTTON,b[1])
+            else:
+                btn = wx.Button(dlg, b) 
+                btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
             btnsizer.Add(btn)
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
     dlg.SetSizer(mainSizer)
@@ -9863,6 +9870,21 @@ def svnSelectVersion(G2frame):
     GPX = G2frame.GSASprojectfile
     GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
     return
+
+#def SelectCondaInstall(event):
+#    dlg = event.GetEventObject().GetParent()
+#    dlg.EndModal(wx.ID_OK)
+#    print('condaRequestList',G2fil.condaRequestList)
+    
+def ImportMsg(parent,msgs):
+    # TODO: this needs an option to use conda to install selected package(s)
+    print('condaRequestList',G2fil.condaRequestList)
+    ShowScrolledInfo(parent,
+                    'Messages from importer(s)\n\n  '+
+                    '\n\n  '.join(msgs),
+                    header='Importer load problems',
+#                    buttonlist=[('Install packages via conda',SelectCondaInstall), wx.ID_CLOSE]
+                         )
 
 if __name__ == '__main__':
     app = wx.App()

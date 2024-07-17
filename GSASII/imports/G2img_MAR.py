@@ -44,7 +44,7 @@ def GetMAR345Data(filename,imageOnly=False):
     try:
         import pack_f as pf
     except:
-        print ('**** ERROR - Unable to load the GSAS MAR image decompression, pack_f')
+        print ('**** ERROR - Unable to load the GSAS-II MAR image decompression, pack_f')
         return None,None,None,None
 
     if not imageOnly:

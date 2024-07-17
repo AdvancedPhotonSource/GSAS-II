@@ -29,12 +29,10 @@ class HDF5_Reader(G2obj.ImportImage):
     def __init__(self):
         if h5py is None:
             self.UseReader = False
-            print('HDF5 Reader skipped because h5py library is not installed')
-            import os,sys
-            os.path.split(sys.executable)[0]
-            conda = os.path.join(os.path.split(sys.executable)[0],'conda')
-            if os.path.exists(conda):
-                print('To fix this use command:\n\t'+conda+' install h5py hdf5')
+            msg = 'HDF5 Reader skipped because h5py library is not installed'
+            if GSASIIpath.condaTest():
+                msg += ' To fix this use command:\n\tconda install h5py hdf5'
+            G2fil.ImportErrorMsg(msg,{'HDF5 image importer':['h5py','hdf5']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hdf5','.hd5','.h5','.hdf'),strictExtension=True,
             formatName = 'HDF5 image',longFormatName = 'HDF5 image file')

@@ -15,6 +15,7 @@ try:
 except ImportError:
     h5py = None
 import GSASIIobj as G2obj
+import GSASIIfiles as G2fil
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 

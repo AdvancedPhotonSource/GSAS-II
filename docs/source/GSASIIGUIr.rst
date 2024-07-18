@@ -69,6 +69,8 @@ Class or function name             Description
 :func:`askSaveDirectory`           Get a directory name from user
 :class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
                                    is used for the 2nd, 3rd,... columns. 
+:func:`MultiColMultiSelDlg`        Calls a dialog that allows multiple selection from a
+                                   multicolumn table
 :class:`MultiDataDialog`           Dialog to obtain multiple data values from user, 
                                    with optional range validation; items can be float, str or bool
 :class:`MultiIntegerDialog`        Dialog to obtain multiple integer values from user, 

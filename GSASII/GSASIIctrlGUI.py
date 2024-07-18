@@ -3652,7 +3652,8 @@ class MultiColumnSelection(wx.Dialog):
       and unspecified columns are left blank.
     :param list colWidths: a list of int values specifying the column width for each
       column in the table (pixels). There must be a value for every column label (colLabels).
-    :param str checkLbl: A label for a row of checkboxes added at the beginning of the table
+    :param str checkLbl: A label for a row of checkboxes added at the beginning of the table.
+       This option seems to be broken.
     :param int height: an optional height (pixels) for the table (defaults to 400)
     :param bool centerCols: if True, items in each column are centered. Default is False
     
@@ -3744,6 +3745,76 @@ class MultiColumnSelection(wx.Dialog):
         if self.list.GetNextSelected(-1) == -1: return
         self.Selection = self.list.GetNextSelected(-1)
         self.EndModal(wx.ID_OK)
+
+def MultiColMultiSelDlg(parent, title, header, colInfo, choices):
+    '''Provides a dialog widget that can be used to select multiple items
+    from a multicolumn list. 
+    
+    :param wx.Frame parent: the parent frame (or None)
+    :param str title: A title for the dialog window
+    :param str header: A instruction string for the dialog window
+    :param list colInfo: contains three items for each column: a label for the column, 
+      a width for the column (in pixels), and True if the column should be right justified.
+    :param list choices: a nested list with values for each row in the table. Within each row
+      should be a list of values for each column. There must be at least one value, but it is
+      OK to have more or fewer values than there are column labels (colInfo). Extra are ignored
+      and unspecified columns are left blank.
+    :returns: a list of bool values for each entry in choices, True if selected, or
+      None is the dialog is cancelled.
+    
+    Example use::
+
+      choices = [('xmltodict', 'Bruker .brml Importer'),
+                 ('zarr', 'MIDAS Zarr importer'),
+                 ('h5py', 'HDF5 image importer'),
+                 ('hdf5', 'HDF5 image importer')]
+      colInfo = [('package', 50, False),
+                 ('needed by', 200, True)]
+      res = G2G.MultiColMultiSelDlg(parent, 'window title', 'Instructions', colInfo, choices)
+    '''
+    dlg = wx.Dialog(parent,wx.ID_ANY,title,
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,header)
+    txt.Wrap(300)
+    mainSizer.Add(txt)
+    lst = wx.ListCtrl(dlg, wx.ID_ANY, style=wx.LC_REPORT)
+    lst.EnableCheckBoxes()
+    lst.InsertColumn(0, 'Sel')
+    lst.SetColumnWidth(0, 30)
+    cols = len(colInfo)
+    for i,(lbl,wid,rgt) in enumerate(colInfo):
+        if rgt:
+            lst.InsertColumn(i+1, lbl, wx.LIST_FORMAT_RIGHT)
+        else:
+            lst.InsertColumn(i+1, lbl)
+        if type(wid) is int:
+            lst.SetColumnWidth(i+1, wid)
+        else:
+            lst.SetColumnWidth(i+1, wx.LIST_AUTOSIZE)
+    for line in choices:
+        index = lst.InsertItem(lst.GetItemCount(),'')
+        for i,lbl in enumerate(line[:cols]):
+            lst.SetItem(index, i+1, lbl)
+    mainSizer.Add(lst,1,wx.EXPAND,1)
+    btnsizer = wx.StdDialogButtonSizer()
+    btn = wx.Button(dlg, wx.ID_OK, 'Install Selected')
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    btnsizer.AddButton(btn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return [lst.IsItemChecked(i) for i,c in enumerate(choices)]
+        return
+    finally:
+        dlg.Destroy()
         
 ################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
@@ -9871,20 +9942,80 @@ def svnSelectVersion(G2frame):
     GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
     return
 
-#def SelectCondaInstall(event):
-#    dlg = event.GetEventObject().GetParent()
-#    dlg.EndModal(wx.ID_OK)
-#    print('condaRequestList',G2fil.condaRequestList)
-    
+# Importer GUI stuff
 def ImportMsg(parent,msgs):
-    # TODO: this needs an option to use conda to install selected package(s)
-    print('condaRequestList',G2fil.condaRequestList)
+    '''Show a message with the warnings from importers that 
+    could not be installed (due to uninstalled Python packages). Then 
+    offer the chance to install GSAS-II packages using :func:`SelectPkgInstall`
+    '''
     ShowScrolledInfo(parent,
                     'Messages from importer(s)\n\n  '+
                     '\n\n  '.join(msgs),
                     header='Importer load problems',
-#                    buttonlist=[('Install packages via conda',SelectCondaInstall), wx.ID_CLOSE]
+                    width=650,
+                    buttonlist=[('Install packages',SelectPkgInstall), wx.ID_CLOSE]
                          )
+
+def SelectPkgInstall(event):
+    '''Offer the user a chance to install Python packages needed by one or 
+    more importers. There might be times where something like this will be 
+    useful for other GSAS-II actions.
+    '''
+    dlg = event.GetEventObject().GetParent()
+    dlg.EndModal(wx.ID_OK)
+    G2frame = wx.App.GetMainTopWindow()
+    choices = []
+    for key in G2fil.condaRequestList:
+        for item in G2fil.condaRequestList[key]:
+            choices.append((item,key))
+    msg = 'Select packages to install'
+    if GSASIIpath.condaTest():
+        msg += ' using conda'
+    else:
+        msg += ' using pip'
+    sel = MultiColMultiSelDlg(G2frame, 'Install packages?', msg,
+                             [('package',120,0),('needed by',300,0)], choices)
+    if sel is None: return
+    if not any(sel): return
+    pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
+    if GSASIIpath.condaTest():
+        if not GSASIIpath.condaTest(True):
+            GSASIIpath.addCondaPkg()
+        err = GSASIIpath.condaInstall(pkgs)
+        if err:
+            print(f'Error from conda: {err}')
+            return
+    else:
+        err = GSASIIpath.pipInstall(pkgs)
+        if err:
+            print(f'Error from pip: {err}')
+            return
+    msg = '''You must restart GSAS-II to access the importer(s) 
+requiring the installed package(s). 
+
+Select "Yes" to save, "No" to skip the save, or "Cancel"
+to discontinue the restart process and continue GSAS-II 
+without the importer(s). 
+
+If "Yes", GSAS-II will reopen the project after the update.
+'''
+    dlg = wx.MessageDialog(G2frame, msg, 'Save and restart?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        project = os.path.abspath(G2frame.GSASprojectfile)
+        print(f"Restarting GSAS-II with project file {project!r}")
+    else:
+        print("Restarting GSAS-II without a project file ")
+        project = None
+    G2fil.openInNewTerm(project)
+    print ('exiting GSAS-II')
+    sys.exit()
 
 if __name__ == '__main__':
     app = wx.App()
@@ -9905,6 +10036,21 @@ if __name__ == '__main__':
     ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
     frm.SetSizer(ms)
     frm.Show(True)
+
+    # if True:
+    #   title='title here'
+    #   header = 'this is where a header goes. this is where a header to explain what to do goes this is where a header to explain what to do goes'
+    #   choices = [('xmltodict', 'Bruker .brml Importer'),
+    #              ('zarr', 'MIDAS Zarr importer'),
+    #              ('h5py', 'HDF5 image importer'),
+    #              ('hdf5', 'HDF5 image importer'),
+    #              ('test',),('val','used','ignored'),[]]
+    #   colInfo = [('package',100, False),
+    #                ('needed by',200, False)]
+
+    #   parent = wx.App.GetMainTopWindow()
+    #   print(MultiColMultiSelDlg(parent, title, header, colInfo, choices))
+    
     app.MainLoop()
     
 #    choices = [wx.ID_YES,wx.ID_NO]

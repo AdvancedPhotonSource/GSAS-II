@@ -842,6 +842,10 @@ class GSASII(wx.Frame):
         self.ImportPDFReaderlist = G2fil.LoadImportRoutines('pdf','PDF_Data')
         self.ImportImageReaderlist = G2fil.LoadImportRoutines('img','Images')
         self.ImportMenuId = {}
+        msgs = G2fil.ImportErrorMsg()
+        if msgs:
+            print(f'Note: {len(msgs)} importer(s) could not be installed. See the'+
+                   '\n  "Import->Show importer error(s)" menu command for more information')
 
     def testSeqRefineMode(self):
         '''Returns the list of histograms included in a sequential refinement or
@@ -2966,7 +2970,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())
         msgs = G2fil.ImportErrorMsg()
         if msgs:
-            #print('condaRequestList',G2fil.condaRequestList)
             item = Import.Append(wx.ID_ANY,
                 'Show importer error(s)',
                 'Show the error message explaining why importers could not be loaded')

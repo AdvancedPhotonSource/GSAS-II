@@ -24,7 +24,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.xye','.qye','.chi','.qchi',),
             strictExtension=False,
-            formatName = 'Topas xye or 2th Fit2D chi',
+            formatName = 'Topas xye/qye or 2th Fit2D chi/qchi',
             longFormatName = 'Topas .xye/.qye or 2th Fit2D .chi/.qchi powder data file'
             )
         self.scriptable = True

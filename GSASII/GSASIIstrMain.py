@@ -276,6 +276,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     Rvals = {}
     chisq0 = None
     Lastshft = None
+    IfOK = True
     while True:
         G2mv.Map2Dict(parmDict,varyList)
         begin = time.time()
@@ -315,7 +316,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             Controls['Marquardt'] = -3  #reset to default
             if 'chisq0' in result[2] and chisq0 is None:
                 chisq0 = result[2]['chisq0']
-            if result[1] is None:
+            if maxCyc == 0:
+                covMatrix = []
+                sig = len(varyList)*[None,]
+            elif result[1] is None:
                 IfOK = False
                 covMatrix = []
                 sig = len(varyList)*[None,]

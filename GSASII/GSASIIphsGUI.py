@@ -5347,7 +5347,10 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnDensity(event):
         'show the density for the current phase'
         density,mattCoeff = G2mth.getDensity(data['General'])
-        msg = 'Density of phase {:s} = {:.3f} g/cc'.format(data['General']['Name'],density)
+        msg = f"Density of phase {data['General']['Name']!r} = {density:.3f} g/cc"
+        msg += '\n\nCell contents:'
+        for typ,num in data['General']['NoAtoms'].items():
+            msg += f'\n      {typ}: {num}'
         print(msg)
         G2G.G2MessageBox(G2frame,msg,'Density')
         

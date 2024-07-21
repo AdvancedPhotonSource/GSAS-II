@@ -331,7 +331,7 @@ def GetStdSGset(SGData=None, oprList=[]):
 
     # scrape the HTML output for the new space group # and the xform info
     try:
-        sgnum = int(re.search('\(No. (\d+)\)',page).group(1))
+        sgnum = int(re.search(r'\(No. (\d+)\)',page).group(1))
     except Exception as msg:
         print('error:',msg)
         return [None,None,None,None]

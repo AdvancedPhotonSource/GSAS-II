@@ -13463,7 +13463,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             RigidBodies.Scroll(0,Scroll)
             G2frame.dataWindow.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
-            wx.CallAfter(oldFocus.SetFocus)
+            if oldFocus: wx.CallAfter(oldFocus.SetFocus)
         
         # FillRigidBodyGrid executable code starts here
         if refresh:
@@ -15301,7 +15301,7 @@ of the crystal structure.
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=True
                     else:
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=False
-                FillPawleyReflectionsGrid()
+                wx.CallAfter(FillPawleyReflectionsGrid)
                 
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()

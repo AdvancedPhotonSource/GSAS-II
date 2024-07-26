@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
-# $Author: toby $
-# $Revision: 5791 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIplot.py $
-# $Id: GSASIIplot.py 5791 2024-06-27 18:47:39Z toby $
-########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIplot` follow. 
 '''
 # Note that documentation for GSASIIplot.py has been moved
 # to file docs/source/GSASIIplot.rst
-
 
 from __future__ import division, print_function
 import platform
@@ -44,7 +36,6 @@ except (ImportError, ValueError) as err:
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
@@ -9691,6 +9682,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             Draw('Shift atom select')
         else:
             drawingData['oldxy'] = list(xy)
+            
+    def OnMouseUp(event):
+        '''This is used to initiate a FillCell action after a rigid body has been 
+        "dragged" if selected. Flags are used to try to make sure that this is only done
+        once, even if multiple mouse up/down actions are made.
+        '''
+        if rbObj and rbObj.get('needsFill') and 'FillUnitCell' in G2frame.testRBObjSizers:
+            if rbObj.get('FillInProgress'): return
+            rbObj['needsFill'] = False
+            rbObj['FillInProgress'] = True
+            G2frame.testRBObjSizers['FillUnitCell'](None,selectAll=True)
+            rbObj['FillInProgress'] = False
         
     def OnMouseMove(event):
         if event.ShiftDown():           #don't want any inadvertant moves when picking
@@ -9698,17 +9701,21 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         newxy = event.GetPosition()
                                 
         if event.Dragging():
-            if event.AltDown() and rbObj:
+            if event.AltDown() and rbObj:  # dragging of a rigid body
                 if event.LeftIsDown():
                     SetRBRotation(newxy)
+                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.RightIsDown():
-                    SetRBTranslation(newxy)
+                    if rbObj['Orig'][1]:
+                        if rbObj.get('fillMode'): rbObj['needsFill'] = True
+                        SetRBTranslation(newxy)
                     Tx,Ty,Tz = rbObj['Orig'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
+                    G2frame.G2plotNB.status.SetStatusText('New origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
                 elif event.MiddleIsDown():
                     SetRBRotationZ(newxy)
+                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
@@ -9768,25 +9775,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.showCS.SetSelection(CS)
-                                
-    def SetRBOrigText():
+                                            
+    def SetRBText():
         '''Called w/Locate & Insert Rigid Body to update text in DataWindow
-        when the RB origin is moved via a mouse drag 
-        '''
-        page = getSelection()
-        if page:
-            if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
-                    sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
-        if pageCallback:
-            try:
-                pageCallback()
-            except:
-                pass
-            
-    def SetRBOrienText():
-        '''Called w/Locate & Insert Rigid Body to update text in DataWindow
-        when the RB orientation is changed via a mouse drag
+        when the RB orientation/origin is changed via a mouse drag
         '''
         page = getSelection()
         if page:
@@ -9971,7 +9963,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Ty -= V[1]*0.01
         Tz -= V[2]*0.01
         rbObj['Orig'][0][:] =  Tx,Ty,Tz
-        SetRBOrigText()
+        SetRBText()
         
     def SetRotation(newxy):
         'Perform a rotation in x-y space due to a left-mouse drag'
@@ -10041,7 +10033,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         DQ = G2mth.AVdeg2Q(A,V)
         Q = G2mth.prodQQ(Q,DQ)
         rbObj['Orient'][0][:] = Q
-        SetRBOrienText()
+        SetRBText()
         
     def SetRBRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
@@ -10069,7 +10061,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Q = G2mth.prodQQ(Q,Qx)
         Q = G2mth.prodQQ(Q,Qy)
         rbObj['Orient'][0][:] = Q
-        SetRBOrienText()
+        SetRBText()
 
     def RenderBox():
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.4,.4,.4,1])
@@ -10839,7 +10831,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         RenderMapPeak(x,y,z,Or,-2*mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
-        if len(testRBObj) and pageName == 'RB Models':  # plot a test rigid body as ball & [green] sticks
+        if len(testRBObj) and pageName == 'RB Models' and 'OnOrien' not in G2frame.testRBObjSizers:
+            # plot a test rigid body as ball & [green] sticks when adding the RB into cell
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
             if testRBObj['rbType'] != 'Spin':
                 rbBonds = FindPeaksBonds(XYZ)
@@ -11079,6 +11072,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_LEFT_UP, OnMouseUp)
+    Page.canvas.Bind(wx.EVT_RIGHT_UP, OnMouseUp)
+    Page.canvas.Bind(wx.EVT_MIDDLE_UP, OnMouseUp)
     Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
     Page.canvas.Bind(wx.EVT_KEY_DOWN,OnKeyPressed)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
@@ -11114,8 +11110,6 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                 SetRotation(newxy)
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-#            elif event.RightIsDown():
-#                SetRBOrigin(newxy)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 Q = defaults['Quaternion']
@@ -11355,15 +11349,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
                         
-#    def SetRBOrigin():
-#        page = getSelection()
-#        if page:
-#            if G2frame.GetPageText(page) == 'Rigid bodies':
-#                G2frame.MapPeaksTable.SetData(mapPeaks)
-#                panel = G2frame.GetPage(page).GetChildren()
-#                names = [child.GetName() for child in panel]
-#                panel[names.index('grid window')].Refresh()
-            
     def OnMouseDown(event):
         xy = event.GetPosition()
         defaults['oldxy'] = list(xy)
@@ -11376,8 +11361,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 SetRotation(newxy)
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-#            elif event.RightIsDown():
-#                SetRBOrigin(newxy)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 Q = defaults['Quaternion']

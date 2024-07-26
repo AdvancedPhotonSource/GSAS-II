@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
-#========== SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
-# $Author: toby $
-# $Revision: 5789 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIphsGUI.py $
-# $Id: GSASIIphsGUI.py 5789 2024-05-24 15:06:45Z toby $
-#========== SVN repository information ###################
 '''
 Main routine here is :func:`UpdatePhaseData`, which displays the phase information
 (called from :func:`GSASIIdataGUI:SelectDataTreeItem`).
@@ -35,7 +28,6 @@ import subprocess as subp
 import distutils.file_util as disfile
 import scipy.optimize as so
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -104,6 +96,8 @@ else:
 RMCmisc = {}
 ranDrwDict = {}
 ranDrwDict['atomList'] = []
+DrawStyleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+
 #### phase class definitions ################################################################################
 class SymOpDialog(wx.Dialog):
     '''Class to select a symmetry operator
@@ -1588,16 +1582,25 @@ def SetDrawingDefaults(drawingData):
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
 
 def updateAddRBorientText(G2frame,testRBObj,Bmat):
-    '''Update all orientation text on the Add RB panel
+    '''Update all origin/orientation text on the Add RB panel or 
+    on main RB Models page in response to Alt+mouse movement
     '''
     A,V = G2mth.Q2AVdeg(testRBObj['rbObj']['Orient'][0])
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
         G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
-    G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
-        int(10*testRBObj['rbObj']['OrientVec'][0]))
-            
+    try:
+        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+            int(10*testRBObj['rbObj']['OrientVec'][0]))
+    except:
+        pass
+    for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
+        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
+    # redraw asymmetric unit when called on an existing body
+    if G2frame.testRBObjSizers.get('OnOrien') is None: return
+    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
+    
 def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
@@ -3146,7 +3149,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 dlg.CenterOnParent()
                 ans = dlg.ShowModal()
                 dlg.Destroy()
-                #breakpoint()
                 if ans == wx.ID_CANCEL:
                     for i in fileList: os.unlink(i) # cleanup tmp web pages
                     return
@@ -10264,7 +10266,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
             [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
             wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
-        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+        styleChoice = DrawStyleChoice
         labelChoice = [' ','type','name','number']
         colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','Color','I/A']
         if generalData['Type'] == 'macromolecular':
@@ -10354,7 +10356,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if not indx: return
         generalData = data['General']
         atomData = data['Drawing']['Atoms']
-        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+        styleChoice = DrawStyleChoice
         if generalData['Type'] == 'macromolecular':
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
             'backbone','ribbons','schematic']
@@ -10906,8 +10908,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
             
-    def FillUnitCell(event):
-        indx = getAtomSelections(drawAtoms)
+    def FillUnitCell(event,selectAll=None):
+        if selectAll is not None:
+            indx = list(range(drawAtoms.NumberRows))
+        else:
+            indx = getAtomSelections(drawAtoms)
         if not indx: return
         indx.sort()
         atomData = data['Drawing']['Atoms']
@@ -12940,7 +12945,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 
             def OnOrien(*args, **kwargs):
                 '''Called when the orientation info is changed (vector 
-                or azimuth)
+                or azimuth). When called after a move of RB with alt key pressed, 
+                an optional keyword arg is provided with the mode to draw atoms 
+                (lines, ball & sticks,...)
                 '''
                 try:
                     orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
@@ -12960,7 +12967,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                         data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                     data['Drawing']['Atoms'] = []
-                    UpdateDrawAtoms()
+                    if 'mode' in kwargs:
+                        UpdateDrawAtoms(kwargs['mode'])
+                    else:
+                        UpdateDrawAtoms()
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -12975,16 +12985,21 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
                 topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z (frac)'),0,WACV)
                 topSizer.Add((-1,-1))
+                Xsizers = []
                 for ix in range(3):
                     origX = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Orig'][0],ix,nDig=(8,5),
                         typeHint=float,OnLeave=OnOrigX,xmin=-1,xmax=1.,size=(70,-1))
                     topSizer.Add(origX,0,WACV)
+                    Xsizers.append(origX)
+                G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
                 Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
                 Ocheck.SetValue(RBObj['Orig'][1])
                 # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
                 topSizer.Add(Ocheck,0,WACV)
                 Name = 'Origin'
+                G2frame.testRBObjSizers['OnOrien'] = OnOrien
+                G2frame.testRBObjSizers['FillUnitCell'] = FillUnitCell
             else:
                 if 'Orig' in RBObj:     #cleanout - not using Orig for spinning RBs!
                     del RBObj['Orig']
@@ -13000,12 +13015,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Orien = [Orien,]
             Orien.extend(np.inner(Bmat,OrienV)) # fractional coords
             dp,xmin,xmax = 2,-180.,360.
+            OrientVecSiz = []
             for ix,x in enumerate(Orien):
                 orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
                     typeHint=float,OnLeave=OnOrien,xmin=xmin,xmax=xmax,size=(70,-1))
+                OrientVecSiz.append(orien)
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
+            G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
             Qchoice = [' ','A','AV','V']
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -13338,6 +13356,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             resrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
                 resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
+            dragSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
+            RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
+            dragSizer.Add(G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
+                                                 strLoc=RBObj, strKey='drawMode'))
+            RBObj['fillMode'] = RBObj.get('fillMode',True)
+            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', RBObj, 'fillMode'))
+            resrbSizer.Add((-1,5))
+            resrbSizer.Add(dragSizer)
             return resrbSizer
             
         def VecrbSizer(RBObj,resIndx):
@@ -13421,6 +13448,40 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 spnSelect.Deselect(spnSelect.GetSelection())
             except:
                 pass
+            # define the parameters needed to drag the RB with the mouse
+            data['testRBObj'] = {}
+            rbType = 'Residue'
+            data['testRBObj']['rbObj'] = data['RBModels'][rbType][prevResId]
+            rbId = data['RBModels'][rbType][prevResId]['RBId']
+            RBdata = G2frame.GPXtree.GetItemPyData(   
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+            data['testRBObj']['rbData'] = RBdata
+            data['testRBObj']['rbType'] = rbType
+            data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
+            data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            data['testRBObj']['Sizers'] = {}
+            data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
+
+            refType = []
+            for ref in data['testRBObj']['rbRef'][:3]:
+                reftype = data['testRBObj']['rbAtTypes'][ref]
+                refType.append(reftype)
+                #refName.append(reftype+' '+str(rbRef[0]))
+            atNames = [{},{},{}]
+            AtNames = {}
+            cx,ct,cs,cia = data['General']['AtomPtrs']
+            for iatm,atom in enumerate(data['Atoms']):
+                AtNames[atom[ct-1]] = iatm
+                for i,reftype in enumerate(refType):
+                    if atom[ct] == reftype:
+                        atNames[i][atom[ct-1]] = iatm
+            data['testRBObj']['atNames'] = atNames
+            data['testRBObj']['AtNames'] = AtNames
+            data['testRBObj']['torAtms'] = []                
+            for item in RBData[rbType][rbId].get('rbSeq',[]):
+                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
+                data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
             
         def OnSpnSelect(event):
@@ -13491,7 +13552,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         topSizer.Add(wx.StaticText(RigidBodies,label='Select rigid body to view:'),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(RigidBodies,helpIndex=G2frame.dataWindow.helpKey),0,WACV)
-        mainSizer.Add(topSizer)
+        mainSizer.Add(topSizer,0,wx.EXPAND,0)
         nobody = True
         resSelect = None
         vecSelect = None
@@ -13896,8 +13957,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
-                G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
-                    int(10*rbObj['OrientVec'][0]))                
+                try:
+                    G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+                        int(10*rbObj['OrientVec'][0]))
+                except:
+                    pass
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
                 
@@ -14161,7 +14225,6 @@ Note that dragging the mouse without the Alt button changes the view
 of the crystal structure.
 %%Once the rigid body has been placed in the desired position, press the "Add" button.
 '''
-            topSizer.Add(G2G.HelpButton(RigidBodies,helpText,wrap=700),0,wx.RIGHT,5)
             topSizer.Add(wx.StaticText(RigidBodies,label='Locating rigid body: '+rbName), 0, WACV)
             topSizer.Add((10,-1),0)
             topSizer.Add(wx.StaticText(RigidBodies,label='Display crystal structure as:'), 0, WACV)
@@ -14171,7 +14234,9 @@ of the crystal structure.
             btn = wx.Button(RigidBodies,label="Sticks")
             btn.Bind(wx.EVT_BUTTON, Sticks)
             topSizer.Add(btn)
-            mainSizer.Add(topSizer)
+            topSizer.Add((-1,-1),1,wx.EXPAND,1)
+            topSizer.Add(G2G.HelpButton(RigidBodies,helpText,wrap=700),0,wx.RIGHT,5)
+            mainSizer.Add(topSizer,0,wx.EXPAND,0)
             mainSizer.Add((-1,5),0)
             OriSizer = wx.BoxSizer(wx.HORIZONTAL)
             OriSizer.Add(wx.StaticText(RigidBodies,label='Origin: '),0,WACV)
@@ -14265,7 +14330,6 @@ of the crystal structure.
                     mainSizer.Add(TorSizer,0,wx.EXPAND|wx.RIGHT)
                 else:
                     mainSizer.Add(wx.StaticText(RigidBodies,label='No side chain torsions'),0)
-                
             OkBtn = wx.Button(RigidBodies,label="Add")
             OkBtn.Bind(wx.EVT_BUTTON, OnAddRB)
             CancelBtn = wx.Button(RigidBodies,label='Cancel')
@@ -14382,7 +14446,6 @@ of the crystal structure.
             RigidBodies.Scroll(0,0)
             RigidBodies.SetFocus() # make sure tab presses go to panel
             misc['UpdateTable'] = UpdateTable
-                
             
         # start of OnRBAssign(event)
         rbAssignments = {}

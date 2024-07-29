@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_HDF5.py $
-# $Id: G2img_HDF5.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -17,7 +10,6 @@ except ImportError:
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class HDF5_Reader(G2obj.ImportImage):
     '''Routine to read a HD5 image, typically from APS Sector 6.
@@ -30,7 +22,7 @@ class HDF5_Reader(G2obj.ImportImage):
     def __init__(self):
         if h5py is None:
             self.UseReader = False
-            msg = 'HDF5 Reader skipped because h5py library is not installed'
+            msg = 'HDF5 Reader skipped because h5py module is not installed'
             if GSASIIpath.condaTest():
                 msg += ' To fix this use command:\n\tconda install h5py hdf5'
             G2fil.ImportErrorMsg(msg,{'HDF5 image importer':['h5py','hdf5']})

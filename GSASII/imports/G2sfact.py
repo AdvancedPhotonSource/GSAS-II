@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
-# $Author: toby $
-# $Revision: 5776 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sfact.py $
-# $Id: G2sfact.py 5776 2024-04-13 02:06:19Z toby $
-########### SVN repository information ###################
 '''
 '''
 from __future__ import division, print_function
@@ -13,7 +6,6 @@ import sys
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5776 $")
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -129,7 +121,7 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a Shelx HKLF 4 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'HKLF 4'
+            formatName = 'Shelx HKLF 4'
             longFormatName = 'Shelx HKLF 4 [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
             formatName = u'Shelx HKLF 4 F\u00b2'

@@ -1525,7 +1525,10 @@ class ImportImage(ImportBaseclass):
       * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
         directly into the data tree.
 
-      * Images are reloaded with :func:`GSASIIIO.GetImageData`.
+      * Unlike all other data types read by GSAS-II, images are only kept in memory as 
+        they are used and function :func:`GSASIIIO.GetImageData` is used to reread images
+        if they are reloaded. For quick retrieval of previously read images, it may be useful to 
+        save sums of images or save a keyword (see ``ImageTag``, below
 
     When reading an image, the ``Reader()`` routine in the ImportImage class
     should set:
@@ -1534,16 +1537,23 @@ class ImportImage(ImportBaseclass):
       * :attr:`Npix`: the number of pixels in the image (int),
       * :attr:`Image`: the actual image as a numpy array (np.array)
       * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
-        data items are needed:
+        data items are used:
 
-         * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
-         * 'wavelength': wavelength in :math:`\\AA`.
-         * 'distance': distance of detector from sample in cm.
-         * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
-         * 'size': size of image (such as ``[2048,2048]``).
-         * 'ImageTag': image number or other keyword used to retrieve image from
+         * ``pixelSize``: size of each pixel (x,y) in microns (such as ``[200.,200.]``.
+         * ``wavelength``: wavelength in :math:`\\AA`.
+         * ``distance``: distance of detector from sample in cm.
+         * ``center``: uncalibrated center of beam on detector (such as ``[204.8,204.8]``, in mm
+           measured from top left corner of the detector
+         * ``size``: size of image in pixels (x,y) (such as ``[2048,2048]``).
+         * ``ImageTag``: image number or other keyword used to retrieve image from
            a multi-image data file (defaults to ``1`` if not specified).
-         * 'sumfile': holds sum image file name if a sum was produced from a multi image file
+         * ``sumfile``: holds sum image file name if a sum was produced from a multi image file
+         * ``PolaVal``: has two values, the polarization fraction (typically 0.95-0.99 
+           for synchrotrons, 0.5 for lab instruments) and a refinement flag 
+           (such as ``[0.99, False]``).
+         * ``setdist``: nominal distance from sample to detector. Note that ``distance`` may 
+           be changed during calibration, but ``setdist`` will not be, so that calibration may be 
+           repeated. 
 
     optional data items:
 

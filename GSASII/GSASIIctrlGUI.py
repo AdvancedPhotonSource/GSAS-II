@@ -2553,6 +2553,15 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
       The default is None which places a single "Close" button that 
       returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
+
+    example::
+
+       res = ShowScrolledInfo(self.frame,msg,header='Please Note',buttonlist=[
+               ('Open', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+               ('Skip', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+              ])
+       if res == wx.ID_OK:
+           pass
     '''
     
     dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -5579,6 +5588,29 @@ For DIFFaX use cite:
         if GSASIIpath.HowIsG2Installed().startswith('git'):
             gitCheckUpdates(self.frame)
         elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+            msg = '''
+Note: GSAS-II is migrating to GitHub from the APS subversion server (where 
+your current version of GSAS-II was installed from.) 
+
+To use the new server, you must reinstall GSAS-II from https://bit.ly/G2download
+(https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1).
+After September 2024, it will not be possible to update, unless you reinstall.
+
+See web page GSASII.github.io for information on how to install.
+'''
+            res = ShowScrolledInfo(self.frame,msg,header='Please Note',
+                                height=200,
+                                buttonlist=[
+           ('Open download site',
+            lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+           ('Skip download for now',
+            lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+                                    ])
+            if res == wx.ID_OK:
+                ShowWebPage(
+                    'https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1',
+                    self.frame,
+                    browser=True)
             svnCheckUpdates(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
@@ -6257,8 +6289,8 @@ def SaveConfigVars(vars,parent=None):
                 os.mkdir(g2local)
             except:
                 if parent:
-                    G2MessageBox(parent,u'Error trying to create directory '+g2local,
-                        'Unable to save')
+                    G2MessageBox(parent,
+                                     f'Error trying to create directory {g2local}. Unable to save')
                 else:
                     print(u'Error trying to create directory '+g2local)
                 return True
@@ -7381,12 +7413,17 @@ def ShowHelp(helpType,frame):
         else:
             wb.open(pfx+helplink, new=0, autoraise=True)
 
-def ShowWebPage(URL,frame):
+def ShowWebPage(URL,frame,browser=False):
     '''Called to show a tutorial web page.
+
+    :param str URL: web page URL
+    :param wx.Frame frame: parent window (or None)
+    :param bool browser: If True, forces the page to be opened in a web 
+      browser, regardless of the ``Help_mode`` config setting. 
     '''
     global htmlFirstUse,htmlPanel,htmlFrame
     # determine if a web browser or the internal viewer should be used for help info
-    if GSASIIpath.GetConfigValue('Help_mode'):
+    if GSASIIpath.GetConfigValue('Help_mode') and not browser:
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
     else:
         helpMode = 'browser'
@@ -9409,30 +9446,30 @@ def gitFetch(G2frame):
     pdlg = wx.ProgressDialog('Updating','Performing git update',11,
                     style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
                     parent=G2frame)
-    pdlg.CenterOnParent()
-    if hasattr(G2frame,'UpdateTask'):     # check if git update has completed
-        count = 0
-        while G2frame.UpdateTask.poll() is None:
-            count += 1
-            if count > 10:
-                G2MessageBox(G2frame,
-                    'Background git update has not completed, try again later', 
-                    title='Warning')
-                pdlg.Destroy()
-                wx.EndBusyCursor()
-                return
-            time.sleep(1)
-            ok,_ = pdlg.Update(count)
-            wx.GetApp().Yield()
-            if not ok:
-                pdlg.Destroy()
-                wx.EndBusyCursor()
-                return
-    if GSASIIpath.GetConfigValue('debug'): print('background update complete')
-    # try update one more time just to make sure
-    GSASIIpath.gitGetUpdate('immediate')
-    pdlg.Destroy()
-    wx.EndBusyCursor()
+    try:
+        pdlg.CenterOnParent()
+        if hasattr(G2frame,'UpdateTask'):     # check if git update has completed
+            count = 0
+            while G2frame.UpdateTask.poll() is None:
+                count += 1
+                if count > 10:
+                    G2MessageBox(G2frame,
+                        'Background git update has not completed, try again later', 
+                        title='Warning')
+                    return
+                time.sleep(1)
+                ok,_ = pdlg.Update(count)
+                wx.GetApp().Yield()
+                if not ok:
+                    return
+        if GSASIIpath.GetConfigValue('debug'): print('background update complete')
+        # try update one more time just to make sure
+        GSASIIpath.gitGetUpdate('immediate')
+    except Exception as msg:
+        raise Exception(msg)
+    finally:
+        pdlg.Destroy()
+        wx.EndBusyCursor()
             
 def gitCheckUpdates(G2frame):
     '''Used to update to the latest GSAS-II version, but checks for a variety

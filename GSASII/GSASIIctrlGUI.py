@@ -9695,9 +9695,10 @@ def gitSelectBranch(event):
     Expected to be used by developers and by expert users only.
     '''
     G2frame = wx.App.GetMainTopWindow()
-    if not GSASIIpath.HowIsG2Installed().startswith('git-rev'):
+    gitInst = GSASIIpath.HowIsG2Installed()
+    if not gitInst.startswith('github-rev'):
         G2MessageBox(G2frame,
-            'Unable to switch branches unless GSAS-II has been installed from GitHub',
+            'Unable to switch branches unless GSAS-II has been installed from GitHub; installed as: '+gitInst,
             'Not a git install')
         return
     if not os.path.exists(GSASIIpath.path2GSAS2): 

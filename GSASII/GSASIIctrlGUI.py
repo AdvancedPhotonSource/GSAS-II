@@ -2933,8 +2933,15 @@ class MultiDataDialog(wx.Dialog):
     :param list values: a set of initial values for each item
     :param list limits: A nested list with an upper and lower value 
        for each item
-    :param list format: an "old-style" format string used to display 
-       each item value
+    :param list formats: an "old-style" format string used to display 
+       each item value, or a keyword that specifies how the values
+       are used. Allowed keywords are, 
+       'choice': for a pull-down list;
+       'bool': for a yes/no checkbox;
+       'str': for a text entry 
+       'edit': for a pull-down list that allows one to enter an arbitrary value.
+       Note that for nested format lists (where multiple entries are 
+       placed on one line, only choice and edit are allowed.)
     :param str header: a string to be placed at the top of the 
        window, if specified
 
@@ -2965,6 +2972,29 @@ class MultiDataDialog(wx.Dialog):
         
     def Draw(self):
         
+        def OnEditItem(event):
+            if event: event.Skip()
+            Obj = event.GetEventObject()
+            fmt = Indx[Obj][-1]
+            if type(fmt) is list:
+                tid,idl,limits = Indx[Obj][:3]
+            else:
+                tid,idl = Indx[Obj],0
+            val = Obj.GetValue()
+            try:
+                eval(val)
+                self.values[tid][idl] = val
+                return
+            except:
+                pass
+            try:   # deal with mixed fractions (example: 1 3/4)
+                val = val.replace(' ','+')
+                val = str(eval(val))
+                self.values[tid][idl] = val
+                return
+            except:
+                pass
+                    
         def OnValItem(event):
             if event: event.Skip()
             Obj = event.GetEventObject()
@@ -3011,10 +3041,18 @@ class MultiDataDialog(wx.Dialog):
         lineSizer = wx.FlexGridSizer(0,2,5,5)
         for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            if type(fmt) is list:  #let's assume these are 'choice' for now
+            if type(fmt) is list:  #let's assume these are choice/edit for now
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
                 for idl,item in enumerate(fmt):
-                    listItem = wx.ComboBox(self.panel,value=limits[idl][0],choices=limits[idl],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    if 'edit' in item:
+                        style = wx.CB_DROPDOWN
+                        listItem = wx.ComboBox(self.panel,value=limits[idl][0],
+                                                choices=limits[idl],style=style)
+                        listItem.Bind(wx.EVT_TEXT,OnEditItem)
+                    else:
+                        style = wx.CB_READONLY|wx.CB_DROPDOWN
+                        listItem = wx.ComboBox(self.panel,value=limits[idl][0],
+                                                choices=limits[idl],style=style)
                     listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
                     valItem.Add(listItem,0,WACV)
                     Indx[listItem] = [tid,idl,limits,fmt]
@@ -3027,6 +3065,10 @@ class MultiDataDialog(wx.Dialog):
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
                 valItem.SetValue('%s'%value)
+            elif 'edit' in fmt:
+                valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_DROPDOWN)
+                valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                valItem.Bind(wx.EVT_TEXT,OnEditItem)
             elif 'choice' in fmt:
                 valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
@@ -5585,9 +5627,10 @@ For DIFFaX use cite:
         '''Check if the GSAS-II repository has an update for the current source files
         and perform that update if requested.
         '''
-        if GSASIIpath.HowIsG2Installed().startswith('git'):
-            gitCheckUpdates(self.frame)
-        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+        if True:
+#        if GSASIIpath.HowIsG2Installed().startswith('git'):
+#            gitCheckUpdates(self.frame)
+#        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
             msg = '''
 Note: GSAS-II is migrating to GitHub from the APS subversion server (where 
 your current version of GSAS-II was installed from.) 

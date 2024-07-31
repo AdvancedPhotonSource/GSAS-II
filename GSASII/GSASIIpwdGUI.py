@@ -5236,13 +5236,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             kvec1start = [Kx[1:],Ky[1:],Kz[1:]]
         else:
             kvec1start = kvec1
+        msg = f"Run k-SUBGROUPSMAG on space group {SGData['SpGrp']}"
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
             ' Use whole star',' Filter by','preserve axes','test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,'',True,'',False,100],
             limits=[kvec1start,[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],testAtoms,[True,False],[1,100]],
-            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
-                    'bool','choice','bool','%d',])
+            formats=[['edit','edit','edit'],
+                     ['choice','choice','choice'],
+                     ['choice','choice','choice'],
+                     'bool','choice','bool','choice','bool','%d',],
+            header=msg)
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()

@@ -23,16 +23,6 @@ GSASIIpath Classes & Routines
 .. automodule:: GSASIIpath
     :members: 
 
----------------------------------
-*GSASIIlog: Logging of "Actions"*
----------------------------------
-
-GSASIIlog Classes & Routines
-------------------------------------
-
-.. automodule:: GSASIIlog
-    :members: 
-
 -------------------------------------------
 *config_example.py: Configuration options*
 -------------------------------------------

@@ -42,7 +42,6 @@ import GSASIIpath
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
-import GSASIIlog as log
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
@@ -113,7 +112,6 @@ class G2TreeCtrl(wx.TreeCtrl):
         self.root = self.AddRoot('Loaded Data: ')
         self.SelectionChanged = None
         self.textlist = None
-        log.LogInfo['Tree'] = self
 
     def _getTreeItemsList(self,item):
         '''Get the full tree hierarchy from a reference to a tree item.
@@ -144,47 +142,6 @@ class G2TreeCtrl(wx.TreeCtrl):
         TId = self.GetFocusedItem()
         self.SelectItem(self.root)
         self.SelectItem(TId)
-
-    # def onSelectionChanged(self,event):
-    #     '''Log each press on a tree item here. 
-    #     '''
-    #     if not self.G2frame.treePanel:
-    #         return
-    #     if self.SelectionChanged:
-    #         textlist = self._getTreeItemsList(event.GetItem())
-    #         if log.LogInfo['Logging'] and event.GetItem() != self.root:
-    #             textlist[0] = self.GetRelativeHistNum(textlist[0])
-    #             if textlist[0] == "Phases" and len(textlist) > 1:
-    #                 textlist[1] = self.GetRelativePhaseNum(textlist[1])
-    #             log.MakeTreeLog(textlist)
-    #         if textlist == self.textlist:
-    #             return      #same as last time - don't get it again
-    #         self.textlist = textlist
-    #         self.SelectionChanged(event)
-
-    # def Bind(self,eventtype,handler,*args,**kwargs):
-    #     '''Override the Bind() function so that page change events can be trapped
-    #     '''
-    #     if eventtype == wx.EVT_TREE_SEL_CHANGED:
-    #         self.SelectionChanged = handler
-    #         wx.TreeCtrl.Bind(self,eventtype,self.onSelectionChanged)
-    #         return
-    #     wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
-
-    # commented out, disables Logging
-    # def GetItemPyData(self,*args,**kwargs):
-    #    '''Override the standard method to wrap the contents
-    #    so that the source can be logged when changed
-    #    '''
-    #    data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
-    #    textlist = self._getTreeItemsList(args[0])
-    #    if type(data) is dict:
-    #        return log.dictLogged(data,textlist)
-    #    if type(data) is list:
-    #        return log.listLogged(data,textlist)
-    #    if type(data) is tuple: #N.B. tuples get converted to lists
-    #        return log.listLogged(list(data),textlist)
-    #    return data
 
     def GetRelativeHistNum(self,histname):
         '''Returns list with a histogram type and a relative number for that
@@ -530,7 +487,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def SetValue(self,val):
         if self.result is not None: # note that this bypasses formatting
             self.result[self.key] = val
-            log.LogVarChange(self.result,self.key)
         self._setValue(val)
 
     def _setValue(self,val,show=True):
@@ -673,7 +629,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
-        log.LogVarChange(self.result,self.key)
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -827,7 +782,6 @@ class NumberValidator(wxValidator):
             val = tc.GetValue().strip()
             if val == '?' or val == '.':
                 self.result[self.key] = val
-                log.LogVarChange(self.result,self.key)
                 return
         try:
             val = self.typ(tc.GetValue())
@@ -854,7 +808,6 @@ class NumberValidator(wxValidator):
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
-            log.LogVarChange(self.result,self.key)
 
     def ShowValidity(self,tc):
         '''Set the control colors to show invalid input
@@ -975,7 +928,6 @@ class ASCIIValidator(wxValidator):
             self.result[self.key] = tc.GetValue().encode('ascii','replace')
         else:
             self.result[self.key] = tc.GetValue()
-        log.LogVarChange(self.result,self.key)
 
     def OnChar(self, event):
         '''Called each type a key is pressed
@@ -1175,14 +1127,12 @@ def HorizontalLine(sizer,parent):
         sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
 
 ################################################################################
-class G2LoggedButton(wx.Button):
-    '''A version of wx.Button that creates logging events. Bindings are saved
+class G2Button(wx.Button):
+    '''A version of wx.Button. Bindings are saved
     in the object, and are looked up rather than directly set with a bind.
-    An index to these buttons is saved as log.ButtonBindingLookup
     :param wx.Panel parent: parent widget
     :param int id: Id for button
     :param str label: label for button
-    :param str locationcode: a label used internally to uniquely indentify the button
     :param function handler: a routine to call when the button is pressed
     '''
     def __init__(self,parent,id=wx.ID_ANY,label='',locationcode='',
@@ -1190,13 +1140,9 @@ class G2LoggedButton(wx.Button):
         super(self.__class__,self).__init__(parent,id,label,*args,**kwargs)
         self.label = label
         self.handler = handler
-        self.locationcode = locationcode
-        key = locationcode + '+' + label # hash code to find button
         self.Bind(wx.EVT_BUTTON,self.onPress)
-        log.ButtonBindingLookup[key] = self
     def onPress(self,event):
         'create log event and call handler'
-        log.MakeButtonLog(self.locationcode,self.label)
         self.handler(event)
         
 ################################################################################
@@ -1264,6 +1210,76 @@ class EnumSelector(wx.ComboBox):
         if self.OnChange: self.OnChange(event)
 
 ################################################################################
+class popupSelectorButton(wx.Button):
+    '''Create a button that will invoke a menu with choices that can 
+    be selected. Do special stuff if the first item is "all"
+
+    TODO: It might be better to make this a wx.ComboCtrl if I can figure out
+    how to make that work, or perhaps make that an option
+
+    :param wx.Frame parent: a panel or frame that is the parent to this 
+      button
+    :param str lbl: a label for the button
+    :param list choices: a list of str's with labels for the items in the
+      menu
+    :param list selected: a list of bool's that determine if the menu item
+      is initial selected
+    :param: dict choiceDict: a dict with both choices and their 
+      values (selections). Use this or choices & selected, not both. 
+      If this is used, the values are set as radiobutton choices, 
+      only the most recent setting is selected. 
+    :param function OnChange: an optional function that is called after the 
+      menu is removed
+    :param others: other keyword parameters are allowed. They will be 
+      passed to the OnChange routine. 
+    '''
+    def __init__(self,parent,lbl,choices=None,selected=None,
+                     choiceDict=None, OnChange=None,**kw):
+        self.parent = parent
+        self.choices = choices
+        self.selected = selected
+        self.choiceDict = None
+        if choiceDict is not None:
+            self.choices = list(choiceDict.keys())
+            self.selected = list(choiceDict.values())
+            self.choiceDict = choiceDict
+        self.OnChange = OnChange
+        self.kw = kw
+        wx.Button.__init__(self,parent,label=lbl)
+        self.Bind(wx.EVT_BUTTON, self.popupSelector)
+    
+    def popupSelector(self,event):
+        '''Show the menu and then get current values. Optionally call the 
+        OnChange routine. 
+        '''
+        menu = wx.Menu()
+        menuList = []
+        #breakpoint()
+        for i in range(len(self.choices)):
+            menuList.append(
+                menu.Append(wx.ID_ANY, self.choices[i], '', wx.ITEM_CHECK)
+                )
+            if self.selected[i]: menuList[-1].Check()
+        self.parent.PopupMenu(menu)
+        new = -1
+        for i,m in enumerate(menuList):
+            if self.selected[i] != m.IsChecked(): new = i
+            self.selected[i] = m.IsChecked()
+        if self.choiceDict is not None:
+            self.selected = len(self.selected) * [False]
+            for i in self.choiceDict: self.choiceDict[i] = False
+            self.choiceDict[self.choices[new]] = True
+            self.selected[new] = True
+        elif self.choices[0] == "all":
+            # special handling when 1st item is all: turn on everything
+            # when all is selected.
+            if new == 0:
+                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+                
+        menu.Destroy()
+        if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)
+
+################################################################################
 class G2ChoiceButton(wx.Choice):
     '''A customized version of a wx.Choice that automatically initializes
     the control to match a supplied value and saves the choice directly
@@ -1305,7 +1321,6 @@ class G2ChoiceButton(wx.Choice):
                 self.SetSelection(self.indLoc[self.indKey])
                 if self.strLoc is not None and self.strKey is not None:
                     self.strLoc[self.strKey] = self.GetStringSelection()
-                #log.LogVarChange(self.strLoc,self.strKey)
             except (KeyError,ValueError,TypeError):
                 pass
         elif self.strLoc is not None and self.strKey is not None:
@@ -1313,7 +1328,6 @@ class G2ChoiceButton(wx.Choice):
                 self.SetSelection(choiceList.index(self.strLoc[self.strKey]))
                 if self.indLoc is not None:
                     self.indLoc[self.indKey] = self.GetSelection()
-                    log.LogVarChange(self.indLoc,self.indKey)
             except (KeyError,ValueError,TypeError):
                 pass
         self.Bind(wx.EVT_CHOICE, self._OnChoice)
@@ -1323,10 +1337,8 @@ class G2ChoiceButton(wx.Choice):
     def _OnChoice(self,event):
         if self.indLoc is not None:
             self.indLoc[self.indKey] = self.GetSelection()
-            log.LogVarChange(self.indLoc,self.indKey)
         if self.strLoc is not None:
             self.strLoc[self.strKey] = self.GetStringSelection()
-            log.LogVarChange(self.strLoc,self.strKey)
         if self.onChoice:
             self.onChoice()
     def setByString(self,string):
@@ -1363,7 +1375,6 @@ class G2CheckBox(wx.CheckBox):
         self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
     def _OnCheckBox(self,event):
         self.loc[self.key] = self.GetValue()
-        log.LogVarChange(self.loc,self.key)
         if self.OnChange: self.OnChange(event)
 
 def G2CheckBoxFrontLbl(parent,label,loc,key,OnChange=None):
@@ -1404,7 +1415,6 @@ def G2RadioButtons(parent,loc,key,choices,values=None,OnChange=None):
             if GSASIIpath.GetConfigValue('debug'): print('Strange: unknown button')
             return
         loc[key] = values[buttons.index(event.GetEventObject())]
-        #log.LogVarChange(self.loc,self.key)
         if OnChange: OnChange(event)
     if not values:
         values = list(range(len(choices)))
@@ -3123,8 +3133,11 @@ class SingleStringDialog(wx.Dialog):
     :param str title: title string for dialog
     :param str prompt: string to tell use what they are inputting
     :param str value: default input value, if any
-    :param tuple size: specifies default size and width for dialog 
-      [default (200,-1)]
+    :param tuple size: specifies default size and width for the text 
+      entry section of the dialog [default (200,-1)]. If the vertical 
+      size (the second number) is greater than 20 (~ a single line) then 
+      the textbox will allow inclusion of new-line characters. In single-line
+      mode, return causes the dialog to close.
     :param str help: if supplied, a help button is added to the dialog that
       can be used to display the supplied help text/URL for setting this 
       variable. (Default is '', which is ignored.)
@@ -3140,22 +3153,25 @@ class SingleStringDialog(wx.Dialog):
         self.CenterOnParent()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1.Add((-1,-1),1,wx.EXPAND)
+        if help:
+            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
+        mainSizer.Add(sizer1,0,wx.EXPAND)
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
         if choices:
             self.valItem = wx.ComboBox(self.panel, wx.ID_ANY, value,
                                 size=size,choices=[value]+choices,
                                 style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+        elif size[1] > 20:
+            self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size,
+                                style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
         else:
             self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
-        if help:
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
-        else:
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-        mainSizer.Add(sizer1,0,wx.EXPAND)
+        #sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+        #mainSizer.Add(sizer1,0,wx.EXPAND)
+        mainSizer.Add(self.valItem,1,wx.EXPAND)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()
@@ -5450,25 +5466,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
         
     def PageChangeEvent(self,event):
         pass
-#        G2frame = self.parent.G2frame
-#        page = event.GetSelection()
-#        if self.PageChangeHandler:
-#            if log.LogInfo['Logging']:
-#                log.MakeTabLog(
-#                    G2frame.dataWindow.GetTitle(),
-#                    G2frame.dataDisplay.GetPageText(page)
-#                    )
-#            self.PageChangeHandler(event)
-            
-#    def Bind(self,eventtype,handler,*args,**kwargs):
-#        '''Override the Bind() function so that page change events can be trapped
-#        '''
-#        if eventtype == wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED:
-#            self.PageChangeHandler = handler
-#            wx.aui.AuiNotebook.Bind(self,eventtype,self.PageChangeEvent)
-#            return
-#        wx.aui.AuiNotebook.Bind(self,eventtype,handler,*args,**kwargs)
-                                                      
+                                                                  
     def Clear(self):
         GSNoteBook.DeleteAllPages(self)
         

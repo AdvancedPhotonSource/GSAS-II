@@ -631,6 +631,25 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
         else:
             Rvals['msg'] = Msg.msg
         return False,Rvals
+
+    # document the refinement further: RB, constraints, restraints, what's varied
+    Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
+    s = G2mv.VarRemapSumm()
+    if s: Rvals['contrSumm'] = f'Constraints: {s}' 
+    Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)
+    Rvals['RBsumm'] = ''
+    for ph in Phases:
+        s = ''
+        for i in 'Vector','Residue':
+            try: 
+                l = len(Phases[ph]['RBModels'][i])
+                if s: s += '; '
+                s += f'{l} {i} bodies'
+            except:
+                pass
+        if s:
+            if not Rvals['RBsumm']: Rvals['RBsumm'] += 'Rigid Bodies: '
+            Rvals['RBsumm'] += f'{ph}: {s}'
     
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:

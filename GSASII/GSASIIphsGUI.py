@@ -16058,7 +16058,7 @@ of the crystal structure.
         data['Drawing']['showMap'] = True
         ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         print (ftext)
-        G2frame.AddToNotebook('Fourier '+ftext)
+        G2frame.AddToNotebook('Fourier '+ftext,'FM')
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         
@@ -16151,8 +16151,7 @@ of the crystal structure.
             result = G2mth.SSChargeFlip(data,ReflData,pgbar)
         finally:
             pgbar.Destroy()
-        G2frame.AddToNotebook('4D Charge flip: '+result[2])
-        G2frame.AddToNotebook('4D Charge flip: '+result[3])
+        G2frame.AddToNotebook(f'4D Charge flip: {result[2]}\n{result[3]}','CF')
         mapData.update(result[0])
         map4DData.update(result[1])
         mapData['Flip'] = True        
@@ -16190,8 +16189,7 @@ of the crystal structure.
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             result = G2mth.ChargeFlip(data,ReflData,pgbar)
-            G2frame.AddToNotebook('Charge flip: '+result[2])
-            G2frame.AddToNotebook('Charge flip: '+result[3])
+            G2frame.AddToNotebook(f'Charge flip: {result[2]}\n{result[3]}','CF')
             mapData.update(result[0])
             X = range(len(result[1]))
             Y = 180.*np.array(result[1]).T/np.pi

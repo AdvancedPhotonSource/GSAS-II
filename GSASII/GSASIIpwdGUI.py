@@ -1002,7 +1002,7 @@ def UpdatePeakGrid(G2frame, data):
         text = 'Peak fit: Rwp=%.2f%% Nobs= %d Nparm= %d Npeaks= %d'%(results[3]['Rwp'],results[1][2]['fjac'].shape[1],len(results[0]),len(peaks['peaks']))
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
-        G2frame.AddToNotebook(text)
+        G2frame.AddToNotebook(text,'PF')
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         

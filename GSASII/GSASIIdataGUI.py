@@ -65,7 +65,6 @@ import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
 import GSASIIobj as G2obj
-import GSASIIlog as log
 import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
@@ -690,11 +689,6 @@ class GSASII(wx.Frame):
     :param parent: reference to parent application
 
     '''                
-    def MenuBinding(self,event):
-        '''Called when a menu is clicked upon; looks up the binding in table
-        '''
-        log.InvokeMenuCommand(event.GetId(),self,event)
-            
     def _Add_FileMenuItems(self, parent):
         '''Add items to File menu
         '''
@@ -2628,7 +2622,6 @@ If you continue from this point, it is quite likely that all intensity computati
         None for the last menu item, which is the "guess" option
         where all appropriate formats will be tried.
         '''
-        
         # get a list of existing histograms
         PDFlist = []
         if self.GPXtree.GetCount():
@@ -2678,124 +2671,17 @@ If you continue from this point, it is quite likely that all intensity computati
         if not newHistList: return # somehow, no new histograms
         return # success
     
-    def AddToNotebook(self,text):
+    def AddToNotebook(self,text,typ=None, TimeStamp=True):
         '''Add entry to Notebook tree item
         '''
         Id =  GetGPXtreeItemId(self,self.root,'Notebook')
         data = self.GPXtree.GetItemPyData(Id)
-        data.append('Notebook entry @ %s: %s'%(time.ctime(),text))    
-                   
-
-### Command logging ###########################################################
-    def OnMacroRecordStatus(self,event,setvalue=None):
-        '''Called when the record macro menu item is used which toggles the
-        value. Alternately a value to be set can be provided. Note that this
-        routine is made more complex because on the Mac there are lots of menu
-        items (listed in self.MacroStatusList) and this loops over all of them.
-        '''
-        nextvalue = log.ShowLogStatus() != True
-        if setvalue is not None:
-            nextvalue = setvalue 
-        if nextvalue:
-            log.LogOn()
-            set2 = True
+        if TimeStamp: 
+            data.append(f'[TS] Notebook entry @ {time.ctime()}')
+        if typ:
+            data.append(f'[{typ}] {text}')
         else:
-            log.LogOff()
-            set2 = False
-        for menuitem in self.MacroStatusList:
-            menuitem.Check(set2)
-
-    def _init_Macro(self):
-        '''Define the items in the macro menu.
-        '''
-        menu = self.MacroMenu
-        item = menu.Append(
-                help='Start or stop recording of menu actions, etc.', id=wx.ID_ANY,
-                kind=wx.ITEM_CHECK,text='Record actions')
-        self.MacroStatusList.append(item)
-        item.Check(log.ShowLogStatus())
-        self.Bind(wx.EVT_MENU, self.OnMacroRecordStatus, item)
-
-        # this may only be of value for development work
-        item = menu.Append(
-            help='Show logged commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Show log')
-        def OnShowLog(event):
-            print (70*'=')
-            print ('List of logged actions')
-            for i,line in enumerate(log.G2logList):
-                if line: print ('%d %s'%(i,line))
-            print (70*'=')
-        self.Bind(wx.EVT_MENU, OnShowLog, item)
-
-        item = menu.Append(
-            help='Clear logged commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Clear log')
-        def OnClearLog(event): log.G2logList=[None]
-        self.Bind(wx.EVT_MENU, OnClearLog, item)
-        
-        item = menu.Append(
-            help='Save logged commands to file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Save log')
-        def OnSaveLog(event):
-            defnam = os.path.splitext(os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
-            dlg = wx.FileDialog(self,
-                'Choose a file to save past actions', '.', defnam, 
-                'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            dlg.CenterOnParent()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+'.gcmd'
-                else:
-                    filename = None
-            finally:
-                dlg.Destroy()
-            if filename:
-                fp = open(filename,'wb')
-                fp.write(str(len(log.G2logList)-1)+'\n')
-                for item in log.G2logList:
-                    if item: cPickle.dump(item,fp)
-                fp.close()
-        self.Bind(wx.EVT_MENU, OnSaveLog, item)
-
-        item = menu.Append(
-            help='Load logged commands from file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Load log')
-        def OnLoadLog(event):
-            # this appends. Perhaps we should ask to clear? 
-            defnam = os.path.splitext(
-                os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
-            dlg = wx.FileDialog(self,
-                'Choose an file to read saved actions', '.', defnam, 
-                'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.FD_OPEN)
-            dlg.CenterOnParent()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+'.gcmd'
-                else:
-                    filename = None
-            finally:
-                dlg.Destroy()
-            if filename and os.path.exists(filename):
-                fp = open(filename,'rb')
-                lines = fp.readline()
-                for i in range(int(lines)):
-                    log.G2logList.append(cPickle.load(fp))
-                fp.close()
-        self.Bind(wx.EVT_MENU, OnLoadLog, item)
-
-        item = menu.Append(
-            help='Replay saved commands', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Replay log')
-        self.Bind(wx.EVT_MENU, log.ReplayLog, item)
-        
-# End of logging ##############################################################
+            data.append(f'{text}')
 
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
@@ -5554,7 +5440,7 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
-                    self.reloadFromGPX(rtext)
+                    self.reloadFromGPX(rtext,Rvals)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
@@ -5838,9 +5724,9 @@ If you continue from this point, it is quite likely that all intensity computati
         ClustDict['SKLearn'] = SKLearn
         self.GPXtree.SelectItem(Id)
     
-    def reloadFromGPX(self,rtext=None):
+    def reloadFromGPX(self,rtext=None,Rvals={}):
         '''Deletes current data tree & reloads it from GPX file (after a 
-        refinemnt.) Done after events are completed to avoid crashes.
+        refinement.) Done after events are completed to avoid crashes.
         :param rtext str: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
@@ -5850,8 +5736,12 @@ If you continue from this point, it is quite likely that all intensity computati
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
         if rtext is not None:
-            self.AddToNotebook(rtext)
-        self.ResetPlots()        
+            self.AddToNotebook(rtext,'REF')
+            for tag,entry in (['VARS','varyList'],['CNSTR','contrSumm'],
+                                  ['RSTR','restrSumm'],['RB','RBsumm']):
+                if entry in Rvals and Rvals[entry]:
+                    self.AddToNotebook(Rvals[entry],tag,TimeStamp=False)
+        self.ResetPlots()
         
     def SaveTreeSetting(self):
         'Save the current selected tree item by name (since the id will change)'
@@ -7274,31 +7164,145 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     # end of GSAS-II menu definitions
     
 ####  Notebook Tree Item editor ##############################################
+NBinfo = {}
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
     '''
-    def OnNoteBook(event):
-        event.Skip()
-        data = text.GetValue().split('\n')
-        G2frame.GPXtree.SetItemPyData(GetGPXtreeItemId(G2frame,G2frame.root,'Notebook'),data)
-        if 'nt' not in os.name:
-            text.AppendText('\n')
-            
+    def onUpdateWindow(event=None):
+        'redraw the window'
+        wx.CallAfter(UpdateNotebook,G2frame,data)
+    def OnAddNotebook(event):
+        'add comment text to notebook and redisplay'
+        dlg = G2G.SingleStringDialog(G2frame.dataWindow,'Enter Comment',
+                    '','',(600,50),
+        '''Enter a string here that will be included in the Notebook
+This can contain any text you wish. It will have no effect on GSAS-II
+other than being included in the Notebook section of the project file.''')
+        if dlg.Show():
+            data.append(f'[TS] Notebook entry @ {time.ctime()}')
+            data.append(f'[CM] {dlg.GetValue().strip()}')
+        dlg.Destroy()
+        wx.CallAfter(UpdateNotebook,G2frame,data)
+    def onPlotNotebook():
+        'Locate R values from the Notebook and plot them'
+        NBinfo['plotLbl']
+        if NBinfo['plotLbl']['GOF']:
+            target = 'GOF'
+        elif NBinfo['plotLbl']['Rw']:
+            target = 'Rw'
+        else:
+            G2frame.G2plotNB.Delete('fit results')
+            return
+        vals = []
+        for i,l in enumerate(data):
+            ls = l.split()
+            if len(ls) < 1: # empty line
+                continue
+            elif '[' not in ls[0] or '[REF]' in ls[0]:
+                if target not in l: continue
+                try:
+                    vals.append(
+                        float(l.split(target)[1].split(',')[0]
+                                  .replace('=','').replace('%',''))
+                        )
+                except:
+                    continue
+        Y = np.array(vals)
+        XY = [np.arange(len(Y)),Y]
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',labelX='seq',labelY=target,lines=True)
+    ##### === UpdateNotebook starts here
+    filterLbls = ['all',
+                      'Timestamps','Refinement results','Variables',
+                      'Comments','Charge flip','Fourier','Peak fit',
+                      'Constraints','Restraints','Rigid Bodies']
+    filterPrefix = ['',
+                        'TS', 'REF','VARS',
+                        'CM', 'CF', 'FM', 'PF',
+                        'CNSTR','RSTR','RB']
+    cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+    if cId:
+        controls = G2frame.GPXtree.GetItemPyData(cId)
+    else: # unexpected: Notebook w/o Controls tree entries
+        self.CheckNotebook()
+        cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        controls = self.GPXtree.GetItemPyData(cId)
+    controls['Notebook'] = controls.get('Notebook',{}) # filter & order settings get saved here, plot settings do not
     G2frame.dataWindow.ClearData()
     bigSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Add notes on project here: '),0)
-    topSizer.Add((250,-1))
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Project notes'),0,WACV)
+    topSizer.Add((20,-1))
+    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
+    topSizer.Add(addBtn,0,WACV)
+    addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
+    topSizer.Add((20,-1))
+    controls['Notebook']['order'] = controls['Notebook'].get('order',False)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'  order: '),0,WACV)
+    topSizer.Add(G2G.EnumSelector(G2frame.dataWindow,controls['Notebook'],
+                         'order',['oldest-1st','newest-1st'],[False,True],
+                         OnChange=onUpdateWindow))
+    controls['Notebook']['filterSel'] = controls['Notebook'].get(
+        'filterSel',[False]+(len(filterLbls)-1)*[True])
+    NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
+    for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
+        controls['Notebook']['filterSel'] += [True]    # pad list if needed    
+    topSizer.Add((20,-1))
+    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Set filters',
+                        filterLbls,controls['Notebook']['filterSel'],
+                        OnChange=onUpdateWindow)
+    topSizer.Add(fBtn,0,WACV)
+    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Plot',
+            choiceDict=NBinfo['plotLbl'],
+                        OnChange=onPlotNotebook)
+    topSizer.Add((20,-1))
+    topSizer.Add(fBtn,0,WACV)
+    topSizer.Add((20,-1))
+    topSizer.Add((20,-1),1,wx.EXPAND,1)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
-    bigSizer.Add(topSizer)
+    bigSizer.Add(topSizer,0,wx.EXPAND)
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
-            style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
-    text.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
-    text.Bind(wx.EVT_KILL_FOCUS,OnNoteBook)
-    for line in data:
-        text.AppendText(line+"\n")
-    text.AppendText('Notebook entry @ '+time.ctime()+"\n")
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP)
+    if controls['Notebook']['order']:
+        # reverse entries in blocks, so that lines stay after their timestamp
+        order = []
+        pos = -1
+        for i,l in enumerate(data):
+            pos += 1
+            ls = l.split()
+            if len(ls) < 1: # empty line
+                continue
+            elif '[' not in ls[0]: 
+                pos = 0 # old untagged NB entry
+            elif '[TS]' in ls[0]: 
+                pos = 0 # Move time stamp to top
+            order.insert(pos,i)
+    else:
+        order = range(len(data))
+    # get prefixes to be shown
+    selLbl = [l for i,l in enumerate(filterPrefix)
+                  if controls['Notebook']['filterSel'][i]]
+    for i in order:
+        line = data[i]
+        if not line.strip(): continue # empty line
+        prefix = ''
+        if line[0] == '[' and ']' in line:
+            prefix, line = line[1:].split(']',1)
+        show = False
+        if controls['Notebook']['filterSel'][0] or prefix == '':
+            show = True
+        elif prefix in selLbl: 
+            show = True
+        if show:
+            if prefix == 'TS':
+                text.AppendText(line.strip()+"\n")
+            elif prefix and (controls['Notebook']['filterSel'][0]
+                                or controls['Notebook']['filterSel'][1]):
+                # indent all but timestamps
+                for l in line.strip().split('\n'):
+                    text.AppendText('    '+l.strip()+"\n")
+            else:
+                text.AppendText(line.strip()+"\n")
     bigSizer.Add(text,1,wx.ALL|wx.EXPAND)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)

@@ -2040,7 +2040,7 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
-    'needs a doc string'
+    'Documents Restraint settings in .lst file'
     if phaseRest:
         Amat = G2lat.cell2AB(cell)[0]
         cx,ct,cs = AtPtrs[:3]
@@ -2140,7 +2140,31 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if num:
                             sum = np.sum(Z)
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
-        
+
+def SummRestraints(restraintDict):
+    'Summarize number of Restraints in a single line'
+    res = ''
+    for ph in restraintDict:
+        s = ""
+        phaseRest = restraintDict[ph]
+        if phaseRest:
+            names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
+                ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
+                ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
+                         ['General','General']]
+            for name,rest in names:
+                if name not in phaseRest: continue
+                itemRest = phaseRest[name]
+                if not itemRest['Use']: continue
+                if rest not in itemRest: continue
+                if len(itemRest[rest]) > 0:
+                    if s: s += '; '
+                    s += f"{name} restrs.: {len(itemRest[rest])}, Weight {itemRest['wtFactor']}"
+        if s:
+            if res: res += '. '
+            res += f'Phase {ph} Restraints: {s}'
+    return res
+
 def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters
     

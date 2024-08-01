@@ -5627,10 +5627,9 @@ For DIFFaX use cite:
         '''Check if the GSAS-II repository has an update for the current source files
         and perform that update if requested.
         '''
-        if True:
-#        if GSASIIpath.HowIsG2Installed().startswith('git'):
-#            gitCheckUpdates(self.frame)
-#        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
+            gitCheckUpdates(self.frame)
+        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
             msg = '''
 Note: GSAS-II is migrating to GitHub from the APS subversion server (where 
 your current version of GSAS-II was installed from.) 

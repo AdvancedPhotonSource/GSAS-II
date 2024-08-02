@@ -5228,9 +5228,9 @@ def UpdateUnitCellsGrid(G2frame, data):
                     caption='k-SUBGROUPSMAG setup error: Phase loaded?',style=wx.ICON_EXCLAMATION)
             return
         testAtoms = ['',]+[atom for atom in atoms if (len(G2elem.GetMFtable([atom,],[2.0,])) and atom != 'O')]   #skip "magnetic" O atoms
-        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
-        Ky = [' ','0','1/2','1/3','2/3','1']
-        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1/4','1/5','3/5','1']
+        Ky = [' ','0','1/2','-1/2','1/3','2/3','1/4','-1/4','2/5','-2/5','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1/4','3/4','1/6','-1/6','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
         if kvec1 is None:
             kvec1start = [Kx[1:],Ky[1:],Kz[1:]]

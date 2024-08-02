@@ -5345,22 +5345,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             'Show a web page when the user presses the "show" button'
             import tempfile
             txt = event.GetEventObject().page
-            tmp = tempfile.NamedTemporaryFile(suffix='.html',
-                        delete=False)
-            open(tmp.name,'w').write(txt.replace(
-                '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
-                ))
+            tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
+            open(tmp.name,'w').write(txt.replace('<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
         def showWebtext(txt):
             import tempfile
-            tmp = tempfile.NamedTemporaryFile(suffix='.html',
-                        delete=False)
-            open(tmp.name,'w').write(txt.replace(
-                '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
-                ))
+            tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
+            open(tmp.name,'w').write(txt.replace('<HEAD>',
+                '<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5452,10 +5446,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         pos = out3.index("irrep1")
         pos1 = out3[pos:].index("</SELECT>")
         str_tmp = out3[pos:][:pos1]
-        ir_options = re.findall(
-            r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',
-            str_tmp
-        )
+        ir_options = re.findall(r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp)
 
         for ir_opt, _ in ir_options:
             data["input"] = "irrep"
@@ -5503,8 +5494,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             import seekpath
         except:
             msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
-            dlg = wx.MessageDialog(G2frame, msg,'Install package?',
-                                   wx.YES_NO|wx.ICON_QUESTION)
+            dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
             result = wx.ID_NO
             try:
                 result = dlg.ShowModal()
@@ -5558,9 +5548,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 
         # we need to grab the instrument parameter and call gsas ii routine
         # to convert the satellite peaks into d-spacing.
-        Id = G2gd.GetGPXtreeItemId(
-            G2frame, G2frame.PatternId, 'Instrument Parameters'
-        )
+        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Instrument Parameters')
         Parms, _ = G2frame.GPXtree.GetItemPyData(Id)
         xtra_peaks_d = list()
         for extra_peak in peakdata["xtraPeaks"]:
@@ -5582,10 +5570,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         # used for the selected histogram will be included in the
         # `refDict` variable.
         refDict = G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(
-                G2frame, G2frame.PatternId, 'Reflection Lists'
-            )
-        )
+            G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Reflection Lists'))
         if phase_sel not in refDict.keys():
             err_title = "Phase selection error"
             err_msg = "The parent phase selected is not used in "
@@ -5633,12 +5618,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 warn_msg = "Searching over general k points may take a while, "
                 warn_msg += "usually on the level of serveral hours. "
                 warn_msg += "Do you want to proceed?"
-                dialog = wx.MessageDialog(
-                    G2frame,
-                    warn_msg,
-                    warn_title,
-                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION
-                )
+                dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
+                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
                 result = dialog.ShowModal()
 
                 if result == wx.ID_OK:
@@ -5701,14 +5682,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         newPhase = copy.deepcopy(Phase)
         newPhase['ranId'] = ran.randint(0, sys.maxsize)
         newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-        newPhase, _ = G2lat.TransformPhase(
-            Phase,
-            newPhase,
-            Trans,
-            Uvec,
-            Vvec,
-            False
-        )
+        newPhase, _ = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
         atoms_pointer = newPhase['General']['AtomPtrs']
 
         atom_coords = list()
@@ -5736,18 +5710,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         try:
             # if we choose option-2, we need to use the `kvec_general` module
             # Otherwise, the computation time would be unacceptably long.
-            k_search = kvs.kVector(
-                brav_sym,
-                lat_vectors,
-                atom_coords,
-                atom_ids,
-                hkl_refls,
-                xtra_peaks_d,
-                tol_val,
-                option=kvs_option,
-                kstep=kstep,
-                processes=num_procs
-            )
+            k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
+                hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
+                kstep=kstep,processes=num_procs)
         except ModuleNotFoundError:
             err_title = "Module not found"
             err_msg = "The `kvec_general` module is not found. Please install "
@@ -5929,130 +5894,54 @@ def UpdateUnitCellsGrid(G2frame, data):
         littleSizer1z = wx.BoxSizer(wx.HORIZONTAL)
         littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
-        G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get(
-            'tolerance', 0.0)
-        G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get(
-            'kx_step', 0.01
-        )
-        G2frame.kvecSearch['ky_step'] = G2frame.kvecSearch.get(
-            'ky_step', 0.01
-        )
-        G2frame.kvecSearch['kz_step'] = G2frame.kvecSearch.get(
-            'k_step', 0.01
-        )
-        G2frame.kvecSearch['num_procs'] = G2frame.kvecSearch.get(
-            'num_procs', 8
-        )
-        G2frame.kvecSearch['soption'] = G2frame.kvecSearch.get(
-            'soption', "HighSymPts"
-        )
+        G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get('tolerance', 0.0)
+        G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get('kx_step', 0.01)
+        G2frame.kvecSearch['ky_step'] = G2frame.kvecSearch.get('ky_step', 0.01)
+        G2frame.kvecSearch['kz_step'] = G2frame.kvecSearch.get('k_step', 0.01)
+        G2frame.kvecSearch['num_procs'] = G2frame.kvecSearch.get('num_procs', 8)
+        G2frame.kvecSearch['soption'] = G2frame.kvecSearch.get('soption', "HighSymPts")
         if len(Phases) == 0:
-            littleSizer.Add(
-                wx.StaticText(
-                    G2frame.dataWindow,
-                    label='    You need to define a phase to use k-vector searching'
-                ),
-                0,
-                WACV
-            )
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow,
+                label='    You need to define a phase to use k-vector searching'),0,WACV)
         elif len(Phases) == 1:
             G2frame.kvecSearch['phase'] = list(Phases.keys())[0]
         else:
-            littleSizer.Add(
-                wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV
-            )
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV)
             ch = G2G.EnumSelector(G2frame.dataWindow, G2frame.kvecSearch, 'phase',
-                                  [''] + list(Phases.keys()))
+                [''] + list(Phases.keys()))
             littleSizer.Add(ch, 10, WACV | wx.RIGHT, 0)
 
-        littleSizer1x.Add(
-            wx.StaticText(G2frame.dataWindow, label='kx step'),
-            0,
-            WACV
-        )
-        kx_s = G2G.ValidatedTxtCtrl(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'kx_step',
-            nDig=[6, 3],
-            typeHint=float,
-            size=(50, -1)
-        )
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kx step'),0,WACV)
+        kx_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kx_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
         littleSizer1x.Add(kx_s, 0, WACV | wx.RIGHT, 10)
         littleSizer1x.Add((10, -1))
 
-        littleSizer1x.Add(
-            wx.StaticText(G2frame.dataWindow, label='ky step'),
-            0,
-            WACV
-        )
-        ky_s = G2G.ValidatedTxtCtrl(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'ky_step',
-            nDig=[6, 3],
-            typeHint=float,
-            size=(50, -1)
-        )
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='ky step'),0,WACV)
+        ky_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'ky_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
         littleSizer1x.Add(ky_s, 0, WACV | wx.RIGHT, 10)
         littleSizer1x.Add((10, -1))
 
-        littleSizer1x.Add(
-            wx.StaticText(G2frame.dataWindow, label='kz step'),
-            0,
-            WACV
-        )
-        kz_s = G2G.ValidatedTxtCtrl(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'kz_step',
-            nDig=[6, 3],
-            typeHint=float,
-            size=(50, -1)
-        )
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kz step'),0,WACV)
+        kz_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kz_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
         littleSizer1x.Add(kz_s, 0, WACV | wx.RIGHT, 10)
         littleSizer1x.Add((10, -1))
 
-        littleSizer1x.Add(
-            wx.StaticText(G2frame.dataWindow, label='Number of processors'),
-            0,
-            WACV
-        )
-        num_procs = G2G.ValidatedTxtCtrl(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'num_procs',
-            nDig=[6, 2],
-            typeHint=int,
-            size=(50, -1)
-        )
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='Number of processors'),0,WACV)
+        num_procs = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'num_procs',
+            nDig=[6, 2],typeHint=int,size=(50, -1))
         littleSizer1x.Add(num_procs, 0, WACV | wx.RIGHT, 10)
 
-        littleSizer2.Add(
-            wx.StaticText(G2frame.dataWindow, label='Search tolerance'),
-            0,
-            WACV
-        )
-        tolVal = G2G.ValidatedTxtCtrl(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'tolerance',
-            nDig=[10, 6],
-            typeHint=float,
-            size=(70, -1)
-        )
+        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search tolerance'),0,WACV)
+        tolVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'tolerance',
+            nDig=[10, 6],typeHint=float,size=(70, -1))
         littleSizer2.Add(tolVal, 0, WACV | wx.RIGHT, 20)
 
-        littleSizer2.Add(
-            wx.StaticText(G2frame.dataWindow, label='Search option'), 0, WACV
-        )
+        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search option'), 0, WACV)
         search_opts = ["HighSymPts", "HighSymPts & HighSymPaths", "General"]
-        ch1 = G2G.EnumSelector(
-            G2frame.dataWindow,
-            G2frame.kvecSearch,
-            'soption',
-            search_opts
-        )
+        ch1 = G2G.EnumSelector(G2frame.dataWindow,G2frame.kvecSearch,'soption',search_opts)
         littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
         littleSizer2.Add((15, -1))  # add space
 

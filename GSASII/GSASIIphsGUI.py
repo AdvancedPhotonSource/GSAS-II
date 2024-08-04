@@ -10349,6 +10349,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
+        G2frame.drawAtoms = drawAtoms
+
 
     def DrawAtomStyle(event):
         cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
@@ -15746,29 +15748,29 @@ of the crystal structure.
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if r < 0 and c < 0:
-                if MapPeaks.IsSelection():
-                    MapPeaks.ClearSelection()
+                if G2frame.MapPeaks.IsSelection():
+                    G2frame.MapPeaks.ClearSelection()
                 else:
-                    for row in range(MapPeaks.GetNumberRows()):
-                        MapPeaks.SelectRow(row,True)
+                    for row in range(G2frame.MapPeaks.GetNumberRows()):
+                        G2frame.MapPeaks.SelectRow(row,True)
                     
             elif c < 0:                   #only row clicks
                 if event.ControlDown():                    
-                    if r in getAtomSelections(MapPeaks):
-                        MapPeaks.DeselectRow(r)
+                    if r in getAtomSelections(G2frame.MapPeaks):
+                        G2frame.MapPeaks.DeselectRow(r)
                     else:
-                        MapPeaks.SelectRow(r,True)
+                        G2frame.MapPeaks.SelectRow(r,True)
                 elif event.ShiftDown():
-                    indxs = getAtomSelections(MapPeaks)
-                    MapPeaks.ClearSelection()
+                    indxs = getAtomSelections(G2frame.MapPeaks)
+                    G2frame.MapPeaks.ClearSelection()
                     ibeg = 0
                     if indxs:
                         ibeg = indxs[-1]
                     for row in range(ibeg,r+1):
-                        MapPeaks.SelectRow(row,True)
+                        G2frame.MapPeaks.SelectRow(row,True)
                 else:
-                    MapPeaks.ClearSelection()
-                    MapPeaks.SelectRow(r,True)
+                    G2frame.MapPeaks.ClearSelection()
+                    G2frame.MapPeaks.SelectRow(r,True)
             elif r < 0:                 #a column pick
                 mapPeaks = data['Map Peaks']
                 c =  event.GetCol()
@@ -15804,15 +15806,15 @@ of the crystal structure.
             colLabels = ['mag','x','y','z','dzero','dcent']
             Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
             G2frame.MapPeaksTable = G2G.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            MapPeaks.SetTable(G2frame.MapPeaksTable, True)
-            MapPeaks.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
-            MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
-            for r in range(MapPeaks.GetNumberRows()):
-                for c in range(MapPeaks.GetNumberCols()):
-                    MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            MapPeaks.SetMargins(0,0)
-            MapPeaks.AutoSizeColumns(False)
-            mainSizer.Add(MapPeaks)
+            G2frame.MapPeaks.SetTable(G2frame.MapPeaksTable, True)
+            G2frame.MapPeaks.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
+            G2frame.MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
+            for r in range(G2frame.MapPeaks.GetNumberRows()):
+                for c in range(G2frame.MapPeaks.GetNumberCols()):
+                    G2frame.MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            G2frame.MapPeaks.SetMargins(0,0)
+            G2frame.MapPeaks.AutoSizeColumns(False)
+            mainSizer.Add(G2frame.MapPeaks)
         else:
             mainSizer.Add(wx.StaticText(MapPeakList,label=' Map peak list is empty'))
         SetPhaseWindow(MapPeakList,mainSizer)
@@ -15821,7 +15823,7 @@ of the crystal structure.
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
             peakMax = np.amax(mapPeaks.T[0])
-            Ind = getAtomSelections(MapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             pgbar = wx.ProgressDialog('Move peaks','Map peak no. 0 processed',len(Ind)+1, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             for i,ind in enumerate(Ind):
@@ -15918,16 +15920,16 @@ of the crystal structure.
         
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            Ind = getAtomSelections(MapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
                     Ind = G2mth.PeaksEquiv(data,Ind)
-                    for r in range(MapPeaks.GetNumberRows()):
+                    for r in range(G2frame.MapPeaks.GetNumberRows()):
                         if r in Ind:
-                            MapPeaks.SelectRow(r,addToSelected=True)
+                            G2frame.MapPeaks.SelectRow(r,addToSelected=True)
                         else:
-                            MapPeaks.DeselectRow(r)
+                            G2frame.MapPeaks.DeselectRow(r)
                 finally:
                     wx.EndBusyCursor()
                 G2plt.PlotStructure(G2frame,data)
@@ -15946,7 +15948,7 @@ of the crystal structure.
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            Ind = getAtomSelections(MapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 choice = ['x=0','y=0','z=0','origin','center']
                 dlg = wx.SingleChoiceDialog(G2frame,'Peaks closest to:','Select',choice)
@@ -15961,20 +15963,20 @@ of the crystal structure.
 
                 Ind = G2mth.PeaksUnique(data,Ind,sel,pgbar)
                 print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
-                tbl = MapPeaks.GetTable().data
+                tbl = G2frame.MapPeaks.GetTable().data
                 tbl[:] = [t for i,t in enumerate(tbl) if i in Ind] + [
                     t for i,t in enumerate(tbl) if i not in Ind]         
-                for r in range(MapPeaks.GetNumberRows()):
+                for r in range(G2frame.MapPeaks.GetNumberRows()):
                     if r < len(Ind):
-                        MapPeaks.SelectRow(r,addToSelected=True)
+                        G2frame.MapPeaks.SelectRow(r,addToSelected=True)
                     else:
-                        MapPeaks.DeselectRow(r)
-                MapPeaks.ForceRefresh()
+                        G2frame.MapPeaks.DeselectRow(r)
+                G2frame.MapPeaks.ForceRefresh()
                 G2plt.PlotStructure(G2frame,data)
                 
     def OnPeaksViewPoint(event):
         # set view point
-        indx = getAtomSelections(MapPeaks)
+        indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
             G2frame.ErrorDialog('Set viewpoint','No peaks selected')
             return
@@ -15985,7 +15987,7 @@ of the crystal structure.
     
     def OnPeaksDistVP(event):
         # distance to view point
-        indx = getAtomSelections(MapPeaks)
+        indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
             G2frame.ErrorDialog('Peak distance','No peaks selected')
             return
@@ -15995,7 +15997,7 @@ of the crystal structure.
         drawingData = data['Drawing']
         viewPt = np.array(drawingData['viewPoint'][0])
         print (' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2]))
-        colLabels = [MapPeaks.GetColLabelValue(c) for c in range(MapPeaks.GetNumberCols())]
+        colLabels = [G2frame.MapPeaks.GetColLabelValue(c) for c in range(G2frame.MapPeaks.GetNumberCols())]
         cx = colLabels.index('x')
         cm = colLabels.index('mag')
         for i in indx:
@@ -16006,7 +16008,7 @@ of the crystal structure.
 
     def OnPeaksDA(event):
         #distance, angle 
-        indx = getAtomSelections(MapPeaks)
+        indx = getAtomSelections(G2frame.MapPeaks)
         if len(indx) not in [2,3]:
             G2frame.ErrorDialog('Peak distance/angle','Wrong number of atoms for distance or angle calculation')
             return
@@ -16671,8 +16673,8 @@ of the crystal structure.
     MapPeakList = wx.ScrolledWindow(G2frame.phaseDisplay)   
     G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
     # create the grid once; N.B. need to reference at this scope
-    MapPeaks = G2G.GSGrid(MapPeakList)
-    G2frame.phaseDisplay.gridList.append(MapPeaks)    
+    G2frame.MapPeaks = G2G.GSGrid(MapPeakList)
+    G2frame.phaseDisplay.gridList.append(G2frame.MapPeaks)    
     
     if data['General']['doDysnomia']:
         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)

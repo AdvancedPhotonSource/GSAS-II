@@ -9802,16 +9802,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
                 G2frame.MapPeaksTable.SetData(data['Map Peaks'])
-                panel = G2frame.phaseDisplay.GetPage(page).GetChildren()
-                names = [child.GetName() for child in panel]
-                try:
-                    panel[names.index('GridWindow')].Refresh()
-                except ValueError:  #different wx versions!
-                    try:
-                        panel[names.index('grid window')].Refresh()
-                    except ValueError:
-                        pass
-                    
+                G2frame.MapPeaks.Refresh()
             
     def SetDrawAtomsText(drawAtoms):
         page = getSelection()
@@ -9824,15 +9815,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         table[i][2:5] = atom[2:5]
                 G2frame.atomTable.SetData(table)
-                panel = G2frame.phaseDisplay.GetPage(page).GetChildren()
-                names = [child.GetName() for child in panel]
-                try:
-                    panel[names.index('GridWindow')].Refresh()
-                except ValueError:  #different wx versions!
-                    try:
-                        panel[names.index('grid window')].Refresh()
-                    except ValueError:
-                        pass
+                G2frame.drawAtoms.Refresh()
             
     def ClearSelectedAtoms():
         page = getSelection()

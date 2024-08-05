@@ -13,7 +13,6 @@ import os.path as ospath
 import platform
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIctrlGUI as G2G
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 5495 $")
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):

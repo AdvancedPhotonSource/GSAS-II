@@ -67,6 +67,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         line = 1
         SGData = None
         cell = None
+        SFACcontinue = True
         while S:
             if '!' in S:
                 S = S.split('!')[0]
@@ -88,12 +89,16 @@ class PhaseReaderClass(G2obj.ImportPhase):
                 SGData = G2obj.P1SGData # P 1
                 self.warnings += '\nThe space group is not given in an ins file and has been set to "P 1".'
                 self.warnings += "\nChange this in phase's General tab; NB: it might be in the Phase name."
-            elif S[:4].upper() in 'SFAC':
+            elif S[:4].upper() in 'SFAC' or SFACcontinue:
                 aTypes = S[4:].split()
                 if 'H' in aTypes:
                     self.warnings += '\n\nHydrogen atoms found; consider replacing them with stereochemically tied ones'
                     self.warnings += '\nas Shelx constraints & HFIX commands are ignored.'
                     self.warnings += "\nDo 'Edit/Insert H atoms' in this phase's Atoms tab after deleting the old ones."
+                if "=" in aTypes:
+                    SFACcontinue = True
+                else:
+                    SFACcontinue = False
             elif S[0] == 'Q':
                 pass
             elif '\x1a' in S[:4]:

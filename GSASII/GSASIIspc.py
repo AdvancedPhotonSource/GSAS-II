@@ -2371,12 +2371,12 @@ def checkMagextc(HKL,SGData):
             nsum += np.trace(phkl)          #eq(8)
             pterm = np.inner(Ftest,phkl)    #eq(9)
             Psum += pterm
-    if nsum/nA > 1.:        #only need to look at nA=1 frok eq(8)
+    if nsum/nA > 1.:        #only need to look at nA=1 from eq(8)
         return False
     if np.allclose(Psum,np.zeros(3),atol=1.e-3):
         return True
     else:
-        if np.inner(HKL,Psum):
+        if np.abs(np.inner(HKL,Psum)) > 1.e-3:
             return True
         return False
     

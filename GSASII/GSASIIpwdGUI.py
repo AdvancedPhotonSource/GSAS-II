@@ -5890,8 +5890,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         littleSizer1x = wx.BoxSizer(wx.HORIZONTAL)
-        littleSizer1y = wx.BoxSizer(wx.HORIZONTAL)
-        littleSizer1z = wx.BoxSizer(wx.HORIZONTAL)
         littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
         G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get('tolerance', 0.0)

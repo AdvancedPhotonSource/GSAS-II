@@ -599,6 +599,9 @@ def Latt2text(Cen):
             if icen == 1:
                 txt += '1,'
                 continue
+            elif icen == -1:
+                txt += '-1,'
+                continue
             if not icen:
                 txt += '0,'
                 continue

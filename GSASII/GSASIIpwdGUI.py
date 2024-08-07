@@ -4693,7 +4693,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         atom_coords, atom_ids,
                         hkl_refls, [0.], 0.
                     )
-                    kpoint = [0., 0., 0.]
+                    kpoint = cells[r][3:6]
 
                     rep_prim_latt = k_search.kpathFinder()["reciprocal_primitive_lattice"]
 

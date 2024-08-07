@@ -351,12 +351,24 @@ def UpdateRestraints(G2frame,data,phaseName):
 
     def AddMogulBondRestraint(bondRestData):
         mogul,colNums = getMOGULFile()
+        badNames = []
+        badCount = 0
         for line in mogul:
             items = line.split(',')
             if 'bond' == items[colNums[0]]:
                 oName,tName = items[colNums[1]].split()
-                oInd = Names.index(oName)
-                tInd = Names.index(tName)
+                try:
+                    oInd = Names.index(oName)
+                except:
+                    badCount += 1
+                    badNames.append(oName)
+                    continue
+                try:
+                    tInd = Names.index(tName)
+                except:
+                    badCount += 1
+                    badNames.append(tName)
+                    continue
                 if items[colNums[2]] != 'No hits':
                     dist = float(items[colNums[4]])
                     esd = float(items[colNums[5]])
@@ -367,7 +379,10 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if newBond not in bondRestData['Bonds']:
                     bondRestData['Bonds'].append(newBond)              
         UpdateBondRestr(bondRestData)
-            
+        if badNames:
+            msg = f'{badCount} restraints were skipped beccause these atom(s) were not found: {" ".join(set(badNames))}'
+            wx.GetApp().Yield()
+            G2G.G2MessageBox(G2frame,msg,'Missing atoms')
     def AddAngleRestraint(angleRestData):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
         Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}

@@ -4643,10 +4643,92 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for i in range(len(cells)):
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
-                # do some plotting here.
-                # Easiest way is to fill G2frame.HKL and then call
-                # G2plt.PlotPatterns(G2frame)
-                # return
+
+                if G2frame.kvecSearch['mode']:
+                    phase_sel = G2frame.kvecSearch['phase']
+                    _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+                    Phase = Phases[phase_sel]
+
+                    lat_type = Phase["General"]["SGData"]["SGLatt"]
+                    lat_sym = Phase["General"]["SGData"]["SGSys"]
+                    if lat_sym == "trigonal":
+                        brav_sym = "hR"
+                    else:
+                        brav_sym = lat_sym[0] + lat_type
+
+                    Trans = np.eye(3)
+                    Uvec = np.zeros(3)
+                    Vvec = np.zeros(3)
+
+                    newPhase = copy.deepcopy(Phase)
+                    newPhase['ranId'] = ran.randint(0, sys.maxsize)
+                    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+                    newPhase, _ = G2lat.TransformPhase(
+                        Phase, newPhase, Trans,
+                        Uvec, Vvec, False
+                    )
+                    atoms_pointer = newPhase['General']['AtomPtrs']
+
+                    atom_coords = list()
+                    atom_types = list()
+                    for atom in newPhase["Atoms"]:
+                        coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
+                        atom_coords.append(coord_tmp)
+                        type_tmp = atom[atoms_pointer[1]]
+                        atom_types.append(type_tmp)
+
+                    atom_ids = kvs.unique_id_gen(atom_types)
+
+                    cell_params = newPhase["General"]["Cell"][1:7]
+                    lat_vectors = kvs.lat_params_to_vec(cell_params)
+
+                    hkl_refls = list()
+                    for i in range(6):
+                        for j in range(6):
+                            for k in range(6):
+                                hkl_refls.append([i, j, k])
+
+                    k_search = kvs.kVector(
+                        brav_sym, lat_vectors,
+                        atom_coords, atom_ids,
+                        hkl_refls, [0.], 0.
+                    )
+                    kpoint = [0., 0., 0.]
+
+                    rep_prim_latt = k_search.kpathFinder()["reciprocal_primitive_lattice"]
+
+                    satellite_peaks = list()
+                    for nucp in k_search.nucPeaks:
+                        all_zero_nuc = all(v == 0 for v in nucp)
+                        all_zero_k = all(v == 0 for v in kpoint)
+                        if all_zero_nuc and all_zero_k:
+                            continue
+
+                        hkl_prim = np.array(nucp)
+                        hkl_p_k = hkl_prim + np.array(kpoint)
+                        k_cart = np.matmul(
+                            hkl_p_k,
+                            rep_prim_latt
+                        )
+                        d_hkl_p_k = 2. * np.pi / np.linalg.norm(k_cart)
+                        satellite_peaks.append(d_hkl_p_k)
+
+                        hkl_m_k = hkl_prim - np.array(kpoint)
+                        k_cart = np.matmul(
+                            hkl_m_k,
+                            rep_prim_latt
+                        )
+                        d_hkl_m_k = 2. * np.pi / np.linalg.norm(k_cart)
+                        satellite_peaks.append(d_hkl_m_k)
+
+                    satellite_peaks = list(set(satellite_peaks))
+
+                    print("Debugging -> here...")
+
+                    # do some plotting here.
+                    # Easiest way is to fill G2frame.HKL and then call
+                    # G2plt.PlotPatterns(G2frame)
+                    # return
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False

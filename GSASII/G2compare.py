@@ -101,11 +101,11 @@ def cPickleLoad(fp):
        return cPickle.load(fp,encoding='latin-1')
             
 def main(application):
-    '''Start up the GSAS-II GUI'''                        
-    knownVersions = ['3.6','3.7','3.8','3.9']
-    if platform.python_version()[:3] not in knownVersions: 
+    '''Start up the GSAS-II GUI'''
+    knownVersions = ['3.9','3.10','3.11','3.12']
+    if '.'.join(platform.python_version().split('.')[:2]) not in knownVersions: 
         dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 3.6+\n Yours is '+sys.version.split()[0],
+                f'GSAS-II Compare requires Python 3.9+\n Yours is {sys.version.split()[0]}',
                 'Python version error',  wx.OK)
         try:
             dlg.ShowModal()

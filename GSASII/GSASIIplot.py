@@ -9702,7 +9702,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                 
         if event.Dragging():
             if event.AltDown() and rbObj:  # dragging of a rigid body
-                if event.LeftIsDown():
+                if event.CmdDown(): # Mac middlebutton workaround
+                    SetRBRotationZ(newxy)
+                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
+                    Q = rbObj['Orient'][0]
+                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                elif event.LeftIsDown():
                     SetRBRotation(newxy)
                     if rbObj.get('fillMode'): rbObj['needsFill'] = True
                     Q = rbObj['Orient'][0]

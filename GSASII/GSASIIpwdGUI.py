@@ -4721,14 +4721,29 @@ def UpdateUnitCellsGrid(G2frame, data):
                         d_hkl_m_k = 2. * np.pi / np.linalg.norm(k_cart)
                         satellite_peaks.append(d_hkl_m_k)
 
-                    satellite_peaks = list(set(satellite_peaks))
+                    satellite_peaks = sorted(
+                        list(set(satellite_peaks)),
+                        reverse=True
+                    )
 
-                    print("Debugging -> here...")
+                    Inst = G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(
+                            G2frame,G2frame.PatternId,
+                            'Instrument Parameters')
+                    )[0]
+                    G2frame.HKL = list()
+                    for d in satellite_peaks:
+                        list_tmp = [
+                            0, 0, 0,
+                            d, G2lat.Dsp2pos(Inst, d),
+                            -1
+                        ]
+                        G2frame.HKL.append(list_tmp)
 
                     # do some plotting here.
                     # Easiest way is to fill G2frame.HKL and then call
-                    # G2plt.PlotPatterns(G2frame)
-                    # return
+                    G2plt.PlotPatterns(G2frame)
+                    return
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False

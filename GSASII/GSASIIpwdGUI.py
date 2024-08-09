@@ -5217,10 +5217,17 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnRunSubsMag(event,kvec1=None):
         #import SUBGROUPS as kSUB
-        if 'extend' in event.EventObject.FindItemById(event.GetId()).GetItemLabel():
-            extend = True
-        else:
-            extend = False
+        
+        def strTest(text):
+            if '.' in text: # no decimals
+                return False
+            elif text.strip() in  [' ','0','1','-1','3/2']: # specials
+                return True
+            elif '/' in text: #process fraction 
+                nums = text.split('/')
+                return (0 < int(nums[1]) < 10) and (0 < abs(int(nums[0])) < int(nums[1]))
+            return False
+            
         G2frame.dataWindow.RunSubGroups.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
@@ -5232,29 +5239,23 @@ def UpdateUnitCellsGrid(G2frame, data):
                     caption='k-SUBGROUPSMAG setup error: Phase loaded?',style=wx.ICON_EXCLAMATION)
             return
         testAtoms = ['',]+[atom for atom in atoms if (len(G2elem.GetMFtable([atom,],[2.0,])) and atom != 'O')]   #skip "magnetic" O atoms
-        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1/4','1/5','3/5','1']
-        Ky = [' ','0','1/2','-1/2','1/3','2/3','1/4','-1/4','2/5','-2/5','1']
-        Kz = [' ','0','1/2','3/2','1/3','2/3','1/4','3/4','1/6','-1/6','1']
-        if extend:
-            Kx += ['3/2','4/3','5/3','5/4','7/4','6/5','8/5']
-            Ky += ['3/2','4/3','5/3','5/4','7/4','6/5','8/5']
-            Kz += ['4/3','5/3','5/4','7/4','7/6','9/6','11/6']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
-        if kvec1 is None:
-            kvec1start = [Kx[1:],Ky[1:],Kz[1:]]
-        else:
-            kvec1start = kvec1
-        msg = f"Run k-SUBGROUPSMAG on space group {SGData['SpGrp']}"
+        msg = f"Run k-SUBGROUPSMAG on space group {SGData['SpGrp']}\n"+'For k-vectors, enter rational fraction, 0, -1 or 1; no decimals'
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
-                        prompts=[' k-vector 1',' k-vector 2',' k-vector 3',
-                                     ' Use whole star',' Filter by','preserve axes',
-                                     'test for mag. atoms','all have moment','max unique'],
+            prompts=[' k-vector 1',' k-vector 2',' k-vector 3',
+                     ' Use whole star',' Filter by','preserve axes',
+                     'test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,'',True,'',False,100],
-            limits=[kvec1start,[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+            limits=[[None,None,None],[None,None,None],[None,None,None],
+                    [True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],testAtoms,[True,False],[1,100]],
-            formats=[['choice','choice','choice'],
-                     ['choice','choice','choice'],
-                     ['choice','choice','choice'],
+            testfxns = [[strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        None,None,None,None,None,None],
+            formats=[['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
                      'bool','choice','bool','choice','bool','%d',],
             header=msg)
         if dlg.ShowModal() == wx.ID_OK:
@@ -5783,7 +5784,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
-    G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAGEXT)
     G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM)
     G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)

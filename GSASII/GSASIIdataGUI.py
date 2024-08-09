@@ -6597,7 +6597,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # PWDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
             'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL',
-            'wxID_RUNSUB','wxID_RUNSUBMAG','wxID_RUNSUBMAGEXT','wxID_LATSYM')
+            'wxID_RUNSUB','wxID_RUNSUBMAG','wxID_LATSYM')
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
@@ -6612,8 +6612,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
             'If disabled, do Load Phase first')
         self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',
-            'If disabled, do Load Phase first')
-        self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAGEXT,'Run k-SUBGROUPMAG, extend BZ',
             'If disabled, do Load Phase first')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
             'Copy selected unit cell from indexing to cell refinement fields')

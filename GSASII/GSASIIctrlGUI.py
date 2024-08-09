@@ -2943,13 +2943,15 @@ class MultiDataDialog(wx.Dialog):
     :param list values: a set of initial values for each item
     :param list limits: A nested list with an upper and lower value 
        for each item
+    :param list testfxns: A nested list of string test functions
     :param list formats: an "old-style" format string used to display 
        each item value, or a keyword that specifies how the values
        are used. Allowed keywords are, 
        'choice': for a pull-down list;
-       'bool': for a yes/no checkbox;
-       'str': for a text entry 
        'edit': for a pull-down list that allows one to enter an arbitrary value.
+       'bool': for a yes/no checkbox;
+       'str': for a text entry
+       'testfxn': for tested text entry 
        Note that for nested format lists (where multiple entries are 
        placed on one line, only choice and edit are allowed.)
     :param str header: a string to be placed at the top of the 
@@ -2969,7 +2971,7 @@ class MultiDataDialog(wx.Dialog):
         dlg.Destroy()
 '''
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
-                     formats=['%.5g',],header=None):
+                     testfxns=[None],formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -2977,6 +2979,7 @@ class MultiDataDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.formats = formats
+        self.testfxns = testfxns
         self.header = header
         self.Draw()
         
@@ -3011,6 +3014,15 @@ class MultiDataDialog(wx.Dialog):
             fmt = Indx[Obj][-1]
             if type(fmt) is list:
                 tid,idl,limits = Indx[Obj][:3]
+                if 'testfxn' in fmt:
+                    testfxn = Indx[Obj][3][tid]
+                    val = Obj.GetValue().strip()
+                    if testfxn(val):
+                        self.values[tid][idl] = val
+                        Obj.SetBackgroundColour(wx.WHITE)
+                    else:
+                        Obj.SetBackgroundColour(wx.YELLOW)
+                Obj.SetValue('%s'%(val))                    
                 self.values[tid][idl] = Obj.GetValue()
             elif 'bool' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
@@ -3024,18 +3036,17 @@ class MultiDataDialog(wx.Dialog):
                     val = self.values[tid]
                 self.values[tid] = val
                 Obj.SetValue('%s'%(val))
+            elif 'testfxn' in fmt:
+                tid,x,testfxn = Indx[Obj][:3]
+                val = Obj.GetValue()
+                if testfxn(val):
+                    self.values[tid] = val
+                    Obj.SetBackgroundColour(wx.WHITE)
+                else:
+                    Obj.SetBackgroundColour(wx.YELLOW)
+                Obj.SetValue('%s'%(val))                    
             elif 'choice' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
-            # else:
-            #     tid,limits = Indx[Obj][:2]
-            #     try:
-            #         val = float(Obj.GetValue())
-            #         if val < limits[0] or val > limits[1]:
-            #             raise ValueError
-            #     except ValueError:
-            #         val = self.values[tid]
-            #     self.values[tid] = val
-            #     Obj.SetValue(fmt%(val))
             
         Indx = {}
         if self.panel: self.panel.Destroy()
@@ -3049,23 +3060,31 @@ class MultiDataDialog(wx.Dialog):
             HorizontalLine(mainSizer,self.panel)
             mainSizer.Add((-1,5))
         lineSizer = wx.FlexGridSizer(0,2,5,5)
-        for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
+        for tid,[prompt,value,limits,testfxn,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.testfxns,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            if type(fmt) is list:  #let's assume these are choice/edit for now
+            if type(fmt) is list:
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
                 for idl,item in enumerate(fmt):
                     if 'edit' in item:
                         style = wx.CB_DROPDOWN
                         listItem = wx.ComboBox(self.panel,value=limits[idl][0],
-                                                choices=limits[idl],style=style)
+                            choices=limits[idl],style=style)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
                         listItem.Bind(wx.EVT_TEXT,OnEditItem)
+                        listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    elif 'testfxn' in item:
+                        listItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
+                        listItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                        listItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+                        listItem.SetValue('%s'%value[idl])
                     else:
                         style = wx.CB_READONLY|wx.CB_DROPDOWN
                         listItem = wx.ComboBox(self.panel,value=limits[idl][0],
-                                                choices=limits[idl],style=style)
-                    listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                            choices=limits[idl],style=style)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
+                        listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
                     valItem.Add(listItem,0,WACV)
-                    Indx[listItem] = [tid,idl,limits,fmt]
             elif 'bool' in fmt:
                 valItem = wx.CheckBox(self.panel,label='')
                 valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
@@ -3082,6 +3101,10 @@ class MultiDataDialog(wx.Dialog):
             elif 'choice' in fmt:
                 valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+            elif 'testfxn' in fmt:
+                valItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
+                valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
             else:
                 if '%' in fmt:
                     if 'd' in fmt:
@@ -3094,7 +3117,8 @@ class MultiDataDialog(wx.Dialog):
                 # valItem = wx.TextCtrl(self.panel,value=fmt%(value),style=wx.TE_PROCESS_ENTER)
                 # valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 # valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
-            Indx[valItem] = [tid,limits,fmt]
+            if type(fmt) is not list:
+                Indx[valItem] = [tid,limits,fmt]
             lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
         mainSizer.Add(lineSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")

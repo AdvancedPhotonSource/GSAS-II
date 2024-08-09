@@ -4682,6 +4682,9 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cell_params = newPhase["General"]["Cell"][1:7]
                     lat_vectors = kvs.lat_params_to_vec(cell_params)
 
+                    # Generate (hkl) coordinate in primitive reciprocal space.
+                    # 0-5 for each direction should be generating enough
+                    # satellite peaks for users to check.
                     hkl_refls = list()
                     for i in range(6):
                         for j in range(6):
@@ -4694,8 +4697,11 @@ def UpdateUnitCellsGrid(G2frame, data):
                         hkl_refls, [0.], 0.
                     )
                     kpoint = cells[r][3:6]
+                    kpoint = k_search.hklConvToPrim(kpoint)
 
-                    rep_prim_latt = k_search.kpathFinder()["reciprocal_primitive_lattice"]
+                    rep_prim_latt = k_search.kpathFinder()[
+                        "reciprocal_primitive_lattice"
+                    ]
 
                     satellite_peaks = list()
                     for nucp in k_search.nucPeaks:
@@ -4705,7 +4711,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                             continue
 
                         hkl_prim = np.array(nucp)
-                        hkl_p_k = hkl_prim + np.array(kpoint)
+                        hkl_p_k = hkl_prim + kpoint
                         k_cart = np.matmul(
                             hkl_p_k,
                             rep_prim_latt
@@ -4713,7 +4719,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         d_hkl_p_k = 2. * np.pi / np.linalg.norm(k_cart)
                         satellite_peaks.append(d_hkl_p_k)
 
-                        hkl_m_k = hkl_prim - np.array(kpoint)
+                        hkl_m_k = hkl_prim - kpoint
                         k_cart = np.matmul(
                             hkl_m_k,
                             rep_prim_latt
@@ -4731,6 +4737,10 @@ def UpdateUnitCellsGrid(G2frame, data):
                             G2frame,G2frame.PatternId,
                             'Instrument Parameters')
                     )[0]
+
+                    # Here we are generating a dummy HKL list to host the
+                    # satellite peak positions for the selected k vector. We
+                    # set (hkl) for all the peaks to (000).
                     G2frame.HKL = list()
                     for d in satellite_peaks:
                         list_tmp = [
@@ -4739,11 +4749,9 @@ def UpdateUnitCellsGrid(G2frame, data):
                             -1
                         ]
                         G2frame.HKL.append(list_tmp)
+                    G2frame.HKL = np.array(G2frame.HKL)
 
-                    # do some plotting here.
-                    # Easiest way is to fill G2frame.HKL and then call
                     G2plt.PlotPatterns(G2frame)
-                    return
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False
@@ -4772,6 +4780,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[r][c] = True
                     UnitCellsTable.SetValue(r,c,True)
                 gridDisplay.ForceRefresh()
+
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
     KeyList = []

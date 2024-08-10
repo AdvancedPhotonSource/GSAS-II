@@ -2935,29 +2935,52 @@ class SingleIntDialog(SingleFloatDialog):
 
 ################################################################################
 class MultiDataDialog(wx.Dialog):
-    '''Dialog to obtain multiple values from user
+    '''Dialog to obtain multiple values from user. Use ``dlg.GetValues()`` to 
+    get the values set in the window.
 
     :param wx.Frame parent: parent frame for dialog to be created
     :param str title: title to place on top of window
-    :param list prompts: a string to describe each item
-    :param list values: a set of initial values for each item
+    :param list prompts: a string to describe each item. Each entry
+      in this list will designate a row in the generated window. 
+    :param list values: a list of initial values for each item. Use a 
+      nested list when multiple entries are placed on a single row of 
+      the window (see discussion of formats, below). Number of items
+      in the outer list should match the length of ``prompts``. The 
+      total number of items should match ``formats``.
     :param list limits: A nested list with an upper and lower value 
-       for each item
-    :param list testfxns: A nested list of string test functions
-    :param list formats: an "old-style" format string used to display 
-       each item value, or a keyword that specifies how the values
-       are used. Allowed keywords are, 
-       'choice': for a pull-down list;
-       'edit': for a pull-down list that allows one to enter an arbitrary value.
-       'bool': for a yes/no checkbox;
-       'str': for a text entry
-       'testfxn': for tested text entry 
-       Note that for nested format lists (where multiple entries are 
-       placed on one line, only choice and edit are allowed.)
-    :param str header: a string to be placed at the top of the 
-       window, if specified
+       for each item or for a choice/edit control a list of allowed 
+       values. Use a nested list when multiple entries are placed on 
+       a single row of the window (see discussion of formats, below).
+       Number of items in the outer list should match the length of 
+       ``prompts``. The total number of items should match ``formats``.
+    :param list testfxns: A nested list of string test functions.
+       The total number of items should match ``formats`` or should be
+       left as the default (None).
+    :param list formats: A list of values for each entry in the 
+       window. Several different types of values are possible: 
 
-    example::
+       * An "old-style" format string (e.g. ``%5d`` or ``%.3f``) 
+         which will be used to display each item's value
+
+       * Or a keyword that specifies how the values are used. 
+         Allowed keywords are:
+
+         * ``choice``: for a pull-down list;
+         * ``bool``: for a yes/no checkbox;
+         * ``str``: for a text entry 
+         * ``edit``: for a pull-down list that allows one to enter an arbitrary value.
+
+       * Alternately, a value can be a list of items, in which case multiple 
+         entries are placed on a single row of the window. When this is done, 
+         any value in the list other than ``choice`` or ``edit`` is used as 
+         text to be placed between the ComboBoxes.
+
+       The number of items in the outer list should match the length 
+       of ``prompts``.
+    :param str header: a string to be placed at the top of the 
+       window. Ignored if None (the default.)
+
+    example 1::
 
         dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
                 prompts=['lattice constants tolerance',
@@ -2969,9 +2992,22 @@ class MultiDataDialog(wx.Dialog):
         dlg.ShowModal()
         latTol,coordTol,occTol = dlg.GetValues()
         dlg.Destroy()
+
+    example 2::
+
+        nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
+        dm = ['1','2','3','4','5','6']
+        kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+        dlg = MultiDataDialog(G2frame,title='options',
+                prompts=[' k-vector 1 (x,y,z)',
+                         ' k-vector 2 (x,y,z)'],
+                values=[3*['0','','2',''],3*[' ','','2','']],
+                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,'']],
+                formats=[kfmt,kfmt])
+        if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
 '''
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
-                     testfxns=[None],formats=['%.5g',],header=None):
+                     testfxns=None,formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -2979,7 +3015,15 @@ class MultiDataDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.formats = formats
-        self.testfxns = testfxns
+        if testfxns is None:
+            self.testfxns = []
+            for i in formats:
+                if type(i) is list:
+                    self.testfxns.append(len(i)*[None])
+                else:
+                    self.testfxns.append(None)                    
+        else:
+            self.testfxns = testfxns
         self.header = header
         self.Draw()
         
@@ -3022,7 +3066,7 @@ class MultiDataDialog(wx.Dialog):
                         Obj.SetBackgroundColour(wx.WHITE)
                     else:
                         Obj.SetBackgroundColour(wx.YELLOW)
-                Obj.SetValue('%s'%(val))                    
+                    Obj.SetValue('%s'%(val))                    
                 self.values[tid][idl] = Obj.GetValue()
             elif 'bool' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
@@ -3065,9 +3109,13 @@ class MultiDataDialog(wx.Dialog):
             if type(fmt) is list:
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
                 for idl,item in enumerate(fmt):
+                    if value[idl] in limits[idl]:
+                        initVal = value[idl]
+                    else:
+                        initVal = limits[idl][0]
                     if 'edit' in item:
                         style = wx.CB_DROPDOWN
-                        listItem = wx.ComboBox(self.panel,value=limits[idl][0],
+                        listItem = wx.ComboBox(self.panel,value=initVal,
                             choices=limits[idl],style=style)
                         Indx[listItem] = [tid,idl,limits,testfxn,fmt]
                         listItem.Bind(wx.EVT_TEXT,OnEditItem)
@@ -3078,12 +3126,14 @@ class MultiDataDialog(wx.Dialog):
                         listItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                         listItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
                         listItem.SetValue('%s'%value[idl])
-                    else:
+                    elif 'choice' in item:
                         style = wx.CB_READONLY|wx.CB_DROPDOWN
-                        listItem = wx.ComboBox(self.panel,value=limits[idl][0],
+                        listItem = wx.ComboBox(self.panel,value=initVal,
                             choices=limits[idl],style=style)
                         Indx[listItem] = [tid,idl,limits,testfxn,fmt]
                         listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    else:
+                        listItem = wx.StaticText(self.panel,wx.ID_ANY,item)
                     valItem.Add(listItem,0,WACV)
             elif 'bool' in fmt:
                 valItem = wx.CheckBox(self.panel,label='')
@@ -10138,6 +10188,44 @@ if __name__ == '__main__':
     ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
     frm.SetSizer(ms)
     frm.Show(True)
+
+    G2frame = frm
+
+
+    nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
+    dm = ['1','2','3','4','5','6']
+    kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+    dlg = MultiDataDialog(G2frame,title='options',
+                prompts=[' k-vector 1 (x,y,z)',
+                         ' k-vector 2 (x,y,z)'],
+                values=[3*['0','','2',''],3*[' ','','2','']],
+                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,'']],
+                formats=[kfmt,kfmt])
+    if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
+    
+    testAtoms = ['']
+    
+    nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
+    dm = ['1','2','3','4','5','6']
+    kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+
+    msg = 'test of MultiDataDialog'
+    dlg = MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
+                prompts=[' k-vector 1 (x,y,z)',
+                         ' k-vector 2 (x,y,z)',
+                         ' k-vector 3 (x,y,z)',
+                         ' Use whole star',' Filter by','preserve axes',
+                         'test for mag. atoms','all have moment','max unique'],
+                values=[3*['0','','2',''],3*[' ','','2',''],3*[' ','','2',''],
+                        False,'',True,'',False,100],
+                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,''],3*[nm,'',dm,''],
+                        [True,False],['',' Landau transition',' Only maximal subgroups',],
+                        [True,False],testAtoms,[True,False],[1,100]],
+                formats=[kfmt,kfmt,kfmt,
+                        'bool','choice','bool','choice','bool','%d',],
+                header=msg)
+    if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
+    
 
     # if True:
     #   title='title here'

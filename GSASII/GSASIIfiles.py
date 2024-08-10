@@ -511,7 +511,7 @@ def ImportErrorMsg(errormsg=None,pkg={}):
       allow the importer to be used.
 
     :returns: the error messages as a list (an empty list if there are none), 
-    only if errormsg is None (the default).
+      only if errormsg is None (the default).
     '''
     if errormsg is None:
         return ImportErrors

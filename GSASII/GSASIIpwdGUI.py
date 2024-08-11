@@ -3158,7 +3158,7 @@ def UpdateInstrumentGrid(G2frame,data):
             else: #'A'
                 Items += ['Azimuth','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']
         elif 'E' in data['Type'][1]:
-            Items = ['2-theta','XE','YE','ZE','A','B','C','X','Y','Z']
+            Items = ['2-theta','XE','YE','ZE','WE','A','B','C','X','Y','Z']
         elif 'T' in data['Type'][1]:            # TOF
             Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
         # display the items in the table

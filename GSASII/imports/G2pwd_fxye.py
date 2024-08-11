@@ -181,7 +181,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             if 'EDS' in cons[4]:
                Ecoef = np.fromstring(' '.join(cons[5:9]),sep=' ')
                self.Inst = {'XE':[Ecoef[0],Ecoef[0],False],'YE':[Ecoef[1],Ecoef[1],False],
-                'ZE':[Ecoef[2],Ecoef[2],False],'2-theta':[5.,5.,False]}
+                'ZE':[Ecoef[2],Ecoef[2],False],'WE':[Ecoef[3],Ecoef[3],False],'2-theta':[5.,5.,False]}
             while S and S[:4] != 'BANK' and S[0] != '#':
                 if 'TIME_MAP' in S or '\x1a' in S:
                     break
@@ -190,7 +190,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                         break
                     xi = start+step*j
                     if 'EDS' in Bank:   #Energy dispersive - convert CN to EkeV
-                        xi = Ecoef[0]+(Ecoef[1]+Ecoef[2]*j)*j
+                        xi = Ecoef[0]+(Ecoef[1]+Ecoef[2]*j)*j+Ecoef[3]*j**3
                     ni = max(sint(S[i:i+2]),1)
                     yi = max(sfloat(S[i+2:i+8]),0.0)
                     if yi:

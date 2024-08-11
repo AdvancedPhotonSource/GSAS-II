@@ -389,6 +389,9 @@ def ReadInstprm(instLines, bank, Sample={}):
             continue
         # read multiline values, delimited by ''' or """
         item, val = S.strip().split(':', 1)
+        if item in ['XE','YE','ZE','WE']:   #skip cn to keV conversion factors
+            il += 1
+            continue
         val = val.replace(delim, '').rstrip()
         val += '\n'
         while True:
@@ -438,7 +441,8 @@ def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
         fp.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
         indent = ''
     for item in InstPrm:
-        fp.write(f"{indent}{item}:{InstPrm[item][1]}\n")
+        if item not in  ['XE','YE','ZE','WE']:  #skip cn to keV conversion factors
+            fp.write(f"{indent}{item}:{InstPrm[item][1]}\n")
     # stick in some instrumental things that are listed in Sample
     if "Type" in Sample:
         fp.write(f"{indent}Diff-type:{Sample['Type']}\n")

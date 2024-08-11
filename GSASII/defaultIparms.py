@@ -64,7 +64,7 @@ defaultIparm_lbl.append('X-ray EDS data')
 defaultIparms.append([
     '#GSAS-II instrument parameter file energy dispersive data\n',
     'Type:PXE;Bank:1\n',
-    '2-theta:5.000;XE:10.0;YE:0.0488;ZE:0.0\n',
+    '2-theta:5.000\n',
     'A:0.0;B:0.0005;C:.005\n',
     'X:0.0;Y:0.0;Z:0.0\n',
 ])

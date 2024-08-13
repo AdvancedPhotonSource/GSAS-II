@@ -2388,7 +2388,7 @@ def UpdateInstrumentGrid(G2frame,data):
         for key in keys:
             if key in ['Type','Bank','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.','alpha-0','alpha-1',
-                'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2','XE','YE','ZE',]:
+                'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2','XE','YE','ZE','WE']:
                 good.append(key)
         return good
         
@@ -2448,9 +2448,6 @@ def UpdateInstrumentGrid(G2frame,data):
                 if peak[2] and peak[3]:
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
                     if const:
-                        # DThX = npasind(const*Sample['DisplaceX'][0]*npcosd(peak[0]))
-                        # DThY = -npasind(const*Sample['DisplaceY'][0]*npsind(peak[0]))
-                        # shft = DThX+DThY
                         shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
                     XY.append([peak[-1],peak[0]-shft,binwid])
                     Sigs.append(IndexPeaks[1][ip])
@@ -2693,7 +2690,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'Source' not in instData:
                 instData['Source'] = ['','']
             if 'Z' not in instData:
-                instData['Z'] = [0.,0.,0]
+                instData['Z'] = [0.,0.,False]
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
                 instData.update(copyData)
             else:
@@ -2889,16 +2886,20 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(tthVal,0,WACV)
                 refFlgElem.append([key,2])                   
                 instSizer.Add(RefineBox(key),0,WACV)
-                for item in ['XE','YE','ZE','A','B','C','X','Y','Z']:
+                for item in ['XE','YE','ZE','WE','A','B','C','X','Y','Z']:
                     nDig = (10,6,'g')
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
                     instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
-                    instSizer.Add(itemVal,0,WACV)
-                    instSizer.Add(RefineBox(item),0,WACV)
+                    if item in ['XE','YE','ZE','WE']:
+                        instSizer.Add(wx.StaticText(G2frame.dataWindow,label='%10.6g'%insVal[item]))
+                        instSizer.Add((5,5),0)                        
+                    else:    
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
+                        instSizer.Add(itemVal,0,WACV)
+                        instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flight path: '),0,WACV)
@@ -3158,7 +3159,7 @@ def UpdateInstrumentGrid(G2frame,data):
             else: #'A'
                 Items += ['Azimuth','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']
         elif 'E' in data['Type'][1]:
-            Items = ['2-theta','XE','YE','ZE','A','B','C','X','Y','Z']
+            Items = ['2-theta','XE','YE','ZE','WE','A','B','C','X','Y','Z']
         elif 'T' in data['Type'][1]:            # TOF
             Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
         # display the items in the table
@@ -3247,6 +3248,10 @@ def UpdateInstrumentGrid(G2frame,data):
                 insDef['Azimuth'] = 0.0
                 insRef['Azimuth'] = False
         elif 'E' in insVal['Type']:
+            if 'WE' not in insVal:
+                    insVal['WE'] = 0.0
+                    insDef['WE'] = 0.0
+                    insRef['WE'] = False
             if 'X' not in insVal:
                 for item in ['X','Y','Z']:
                     insVal[item] = 0.0

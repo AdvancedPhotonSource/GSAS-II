@@ -2237,8 +2237,11 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         for name in Inst:
             Inst[name][1] = parmDict[name]
         for name in Sample:
-            if name in ['DisplaceX','DisplaceY']:
-                Sample[name][0] = parmDict[name]
+            if name in ['DisplaceX','DisplaceY']: # for CW only
+                try:
+                    Sample[name][0] = parmDict[name]
+                except:
+                    pass            
         
     def InstPrint(sigDict):
         print ('Instrument/Sample Parameters:')

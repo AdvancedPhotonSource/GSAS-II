@@ -65,19 +65,18 @@ class Exportbracket(G2IO.ExportBaseclass):
             for phasedict in self.Phases.items():
                 phasenam = phasedict[0]
                 cellList, cellSig = self.GetCell(phasenam)
-                # Initialise lattice parameter letter
-                lp_letter = "a"
+
+                # Set up list of cell quantity symbols and units, to be used for generating text in output CSV
+                cell_quantity_symbols = ["a", "b", "c", "alpha", "beta", "gamma", "Volume"]
+                cell_quantity_units = ["(Å)", "(Å)", "(Å)", "(°)", "(°)", "(°)", "(Å³)"]
+
                 for i in range(0, len(cellList)):
-                # for cell in cellList:
                     if cellSig[i] > 0:
                         # Formulate lattice parameter in bracket notation
                         current_lp_bracket = ValEsd(cellList[i], cellSig[i])
                         # Write to dictionary that will later be exported to CSV
-                        model_parameters[phasenam + " " + lp_letter + " (Å)"] = current_lp_bracket
-                        # Increment lattice parameter letter
-                        lp_letter = chr(ord(lp_letter[0]) + 1)
-                    else:
-                        break
+                        model_parameters[phasenam + " " + cell_quantity_symbols[i] + " " +
+                                         cell_quantity_units[i]] = current_lp_bracket
 
                 # Get phase and weight fractions uncertainties, if they have been refined
                 for hist_num,hist_name in enumerate(self.Histograms):

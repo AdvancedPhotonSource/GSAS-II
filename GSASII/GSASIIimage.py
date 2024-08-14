@@ -1569,7 +1569,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             else:
                 TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-                TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+                TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             times[1] += time.time()-t0      #xy->th,azm
 
             t0 = time.time()

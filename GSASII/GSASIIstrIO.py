@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
-# $Author: toby $
-# $Revision: 5791 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $
-# $Id: GSASIIstrIO.py 5791 2024-06-27 18:47:39Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIstrIO` routines, used for refinement to 
 read from GPX files and print to the .LST file. 
@@ -30,7 +23,6 @@ else:
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-02-21 22:58:44 -0600 (Wed, 21 Feb 2024) $
-# $Author: toby $
-# $Revision: 5737 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrMain.py $
-# $Id: GSASIIstrMain.py 5737 2024-02-22 04:58:44Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIstrMain` routines, used for refinement are found below.
 '''
@@ -25,7 +18,6 @@ import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-GSASIIpath.SetVersionNumber("$Revision: 5737 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImapvars as G2mv

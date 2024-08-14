@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-07-17 11:14:28 -0500 (Mon, 17 Jul 2023) $
-# $Author: vondreele $
-# $Revision: 5626 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_fxye.py $
-# $Id: G2pwd_fxye.py 5626 2023-07-17 16:14:28Z vondreele $
-########### SVN repository information ###################
 '''
 '''
 from __future__ import division, print_function
@@ -14,7 +7,6 @@ import platform
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5626 $")
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'

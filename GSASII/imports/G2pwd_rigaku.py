@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-02-06 15:54:24 -0600 (Mon, 06 Feb 2023) $
-# $Author: vondreele $
-# $Revision: 5495 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_rigaku.py $
-# $Id: G2pwd_rigaku.py 5495 2023-02-06 21:54:24Z vondreele $
-########### SVN repository information ###################
 
 from __future__ import division, print_function
 import os
@@ -14,7 +7,6 @@ import platform
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5495 $")
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded
@@ -165,16 +157,6 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
         self.vals = None
         self.stepsize = None
         if '.rasx' in filename:
-#            try:
-#                import xmltodict as xml
-#            except:
-#                print('Attempting to conda install xmltodict - please wait')
-#                res = GSASIIpath.condaInstall('xmltodict')
-#                if res:
-#                    msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
-#                    G2G.G2MessageBox(self,msg,'Install xmltodict Error')
-#                    return False
-#                import xmltodict as xml
             try:
                 import zipfile as ZF        
                 with ZF.ZipFile(filename, 'r') as zipObj:

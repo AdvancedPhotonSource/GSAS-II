@@ -1,12 +1,5 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
 '''
@@ -33,8 +26,7 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5790 $"
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
+filversion = "$Revision: 5794 $"   # TODO: this should be removed (& where used)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
 '''

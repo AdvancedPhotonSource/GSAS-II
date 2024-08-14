@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #defaultIparms
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/defaultIparms.py $
-# $Id: defaultIparms.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Defines some default instrument parameters.
 Format for each is a list of strings finished with a '\n'.

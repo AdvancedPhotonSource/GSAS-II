@@ -1,19 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2022-11-06 12:25:48 -0600 (Sun, 06 Nov 2022) $
-# $Author: toby $
-# $Revision: 5365 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_Bracket.py $
-# $Id: G2export_Bracket.py 5365 2022-11-06 18:25:48Z toby $
-########### SVN repository information ###################
 
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT
 from __future__ import division, print_function
 import wx
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5365 $")
 import GSASIIIO as G2IO
 from collections import OrderedDict
 from GSASIImath import ValEsd

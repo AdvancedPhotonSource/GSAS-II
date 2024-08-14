@@ -8,7 +8,6 @@ from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
@@ -335,7 +334,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                 if 'T' in phasDict['Type']:
                     fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:

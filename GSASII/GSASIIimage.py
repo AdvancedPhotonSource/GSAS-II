@@ -1391,7 +1391,7 @@ def MakeUseTA(data,blkSize=128):
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))          #2-theta & azimuth arrays & create position mask
             TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             useTAj.append(TAr)
         useTA.append(useTAj)
     return useTA
@@ -1481,7 +1481,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask (none here)
             TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin),tamp)
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents

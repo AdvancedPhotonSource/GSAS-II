@@ -358,7 +358,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                 if 'T' in phasDict['Type']:
                     fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:

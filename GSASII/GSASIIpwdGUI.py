@@ -2455,7 +2455,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 XY = np.array(XY)
                 G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
-            G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement')
+            G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file

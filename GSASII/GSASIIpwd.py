@@ -2266,7 +2266,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
         parmDict.update(zip(varyList,values))
-        calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)-parmDict['Zero']
+        calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
         if 'C' in dataType or 'B' in dataType:
             const = 18.e-2/(np.pi*parmDict['radius'])
             shft = -const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
@@ -2315,7 +2315,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
             G2fil.G2Print ('**** Refinement failed - singular matrix ****')
-            return True
+            return False
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,varyList)

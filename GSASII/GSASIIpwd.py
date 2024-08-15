@@ -2315,6 +2315,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
             G2fil.G2Print ('**** Refinement failed - singular matrix ****')
+            return True
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,varyList)

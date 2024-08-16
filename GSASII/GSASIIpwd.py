@@ -3447,41 +3447,21 @@ def fullrmcDownload():
 
 def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
-    :returns: two items: (1) the full path to a python executable or None, if 
-    it was not found and (2) path(s) to the PDFfit2 location(s) as a list.
+    :returns: the full path to a python executable where PDFfit2 can be run or None, if 
+    it was not found.
     
     '''
     if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
             GSASIIpath.GetConfigValue('pdffit2_exec')):
-        return GSASIIpath.GetConfigValue('pdffit2_exec'),None
-    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
-    if not os.path.exists(pdffitloc):
-        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
-        return None,[]
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
+        return GSASIIpath.GetConfigValue('pdffit2_exec')
     try:
         from diffpy.pdffit2 import PdfFit
         import diffpy
         import inspect
-        pdffitloc = [os.path.dirname(os.path.dirname(inspect.getfile(diffpy)))]
-        # is this the original version of diffpy (w/pdffit2.py) 
-        try:
-            from diffpy.pdffit2 import pdffit2
-        except ImportError:
-            # or the GSAS-II version w/o; for this we need to find the binary's location
-            try:
-                import pdffit2     # added for GSAS-II to relocate binary file
-            except ImportError:
-                print('\nError: pdffit2 failed to load with this python\n')
-                return None,[]
-            except ModuleNotFoundError:
-                print('\nGSAS-II does not have a PDFfit2 module compatible\nwith this Python interpreter\n')
-                return None,[]
-            pdffitloc += [os.path.dirname(inspect.getfile(pdffit2))]
-        return sys.executable,pdffitloc
+        return sys.executable
     except Exception as msg:
         print('Error importing PDFfit2:\n',msg)
-        return None,[]
+        return None
     
 def GetPDFfitAtomVar(Phase,RMCPdict):
     ''' Find dict of independent "@n" variables for PDFfit in atom constraints
@@ -3583,12 +3563,12 @@ import sys,os
 datadir = r'{:}'
 pathWrap = lambda f: os.path.join(datadir,f)
 '''.format(os.path.abspath(os.getcwd()))
-    PDFfit_exe,PDFfit_path = findPDFfit()  # returns python loc and path(s) for pdffit
+    PDFfit_exe = findPDFfit()  # returns python loc and path(s) for pdffit
     if not PDFfit_exe:
         print('PDFfit2 is not found. Creating .sh file without paths.')
-    if PDFfit_path:
-        for p in PDFfit_path:
-            rundata += "sys.path.append(r'{:}')\n".format(p)
+#    if PDFfit_path:
+#        for p in PDFfit_path:
+#            rundata += "sys.path.append(r'{:}')\n".format(p)
     rundata += 'from diffpy.pdffit2 import PdfFit\n'
     rundata += 'pf = PdfFit()\n'
     Nd = 0

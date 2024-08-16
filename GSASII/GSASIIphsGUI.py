@@ -7571,7 +7571,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     def RunPDFfit(event):
         generalData = data['General']
         ISOdict = data['ISODISTORT']
-        PDFfit_exec,_ = G2pwd.findPDFfit()  #returns location of python with PDFfit installed and path(s) for  pdffit
+        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python with PDFfit installed
         if not PDFfit_exec:
             wx.MessageBox(''' PDFfit2 is not currently installed for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
@@ -16796,9 +16796,7 @@ def checkPDFfit(G2frame):
     in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
     defined, no attempt is made to check that it actually runs. 
     Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the 
-    install command. The fallback is to check if a .so/.pyd file has been supplied with 
-    GSAS-II. This requires that GSL (GNU Scientific Library) be installed. If the current 
-    Python is being run from conda, this will be loaded.
+    install command. 
 
     :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
     '''
@@ -16814,48 +16812,20 @@ def checkPDFfit(G2frame):
     except:
         pass
 
-    # See if if we can import the GSAS-II supplied PDFfit
-    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
-    print(pdffitloc,'\n',GSASIIpath.binaryPath)
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        pass
-        #print('Failed to import PDFfit2 with error:\n'+str(err))
-    
-    if not os.path.exists(pdffitloc):
-        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
-        return False
-
-    import glob
-    # see if we can fix things so the GSAS-II version can be used
-    if not GSASIIpath.condaTest() and glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-        msg = ('GSAS-II supplies a version of PDFfit2 that should be compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install GSL (GNU Software Library).')
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 will not load; No conda')
-        return False
-    elif not GSASIIpath.condaTest():
-        msg = ('GSAS-II does not supply a version of PDFfit2 compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install the GSL (GNU Software Library) and use "pip install diffpy.pdffit2".'+
-        ' This is best done in a separate Python installation/virtual environment.')
+    if not GSASIIpath.condaTest():
+        msg = ('PDFfit2 is not installed or has not been found (via the config variable '+
+        'pdffit2_exec). GSAS-II can install this via conda, but since Python was not '+
+        'installed under conda you need to install PDFfit2 and its required packages for '+
+        'yourself. See https://github.com/diffpy/diffpy.pdffit2#pdffit2 and '+ 
+        'https://pypi.org/project/diffpy.pdffit2/ for more information. Installation '+
+        'is best done in a separate Python installation/virtual environment.')
         G2G.G2MessageBox(G2frame,msg,'PDFfit2 not provided; No conda')
         return False
 
     try:     # have conda. Can we access it programmatically?
         import conda.cli.python_api
     except:
-        if not glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            msg = 'GSAS-II does not supply PDFfit2 for the version of Python that you are using'
-        else:
-            msg = 'GSAS-II supplies PDFfit2 that should be compatible with the version of Python that you are using. The problem is likely that the GSL package needs to be installed.'
-        msg += ('\n\nYou do not have the conda package installed in this '+
+        msg = ('\n\nYou do not have the conda package installed in this '+
                     'environment. This is needed for GSAS-II to install software.'+
                     '\n\nDo you want to have conda installed for you?')
         dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
@@ -16870,48 +16840,13 @@ def checkPDFfit(G2frame):
             GSASIIpath.addCondaPkg()
         finally:
             wx.EndBusyCursor()
-        try:     # have conda. Can we access it programmatically?
+        try:     # Can we now access conda programmatically?
             import conda.cli.python_api
         except:
             print('command line conda install did not provide package. Unexpected!')
             return False
-        
-    if ('gsl' not in conda.cli.python_api.run_command(
-             conda.cli.python_api.Commands.LIST,'gsl')[0].lower()
-        and
-             glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*'))):
-        msg = ('The gsl (GNU Software Library), needed by PDFfit2, '+
-                   ' is not installed in this Python. Do you want to have this installed?')
-        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return False
-        dlg.Destroy()
 
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install gsl. This may take a few minutes...')
-            res = GSASIIpath.condaInstall(['gsl','-c','conda-forge'])
-        finally:
-            wx.EndBusyCursor()
-        if res:
-            msg = 'Installation of the GSL package failed with error:\n' + str(res)
-            G2G.G2MessageBox(G2frame,msg,'Install GSL Error')
-            
-    # GSAS-II supplied version for PDFfit now runs?
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        msg = 'Failed to import PDFfit2 with error:\n'+str(err)
-        print(msg)
-        if glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
-
-    # Last effort: With conda we should be able to create a separate Python in a separate
+    # With conda we should be able to install PDFfit2 with a separate Python in a separate
     # environment
     msg = ('Do you want to try using conda to install PDFfit2 into a separate environment? '+
                '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
@@ -16923,16 +16858,12 @@ def checkPDFfit(G2frame):
     try:
         wx.BeginBusyCursor()
         print('Preparing to create a conda environment. This may take a few minutes...')
-        # for now use the older diffpy version of pdffit:
-        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.2 -c conda-forge -c diffpy
         res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2=1.2',
-                         '-c', 'conda-forge', '-c', 'diffpy'])
-        # someday perhaps this will work:
-        #   conda create -n pdffit2 python conda gsl diffpy.pdffit2 -c conda-forge
+                    ['python', 'conda', 'gsl', 'diffpy.pdffit2',
+                         '-c', 'conda-forge'])
     finally:
         wx.EndBusyCursor()
-    if os.path.exists(PDFpython):
+    if os.path.exists(PDFpython) and is_exe(PDFpython):
         vars = G2G.GetConfigValsDocs()
         vars['pdffit2_exec'][1] = PDFpython
         GSASIIpath.SetConfigValue(vars)

@@ -414,12 +414,19 @@ as part of the GSAS-II distribution and must be installed separately:
 
   **PDFfit2**
     For small-box fitting of PDFs; see
-    https://github.com/diffpy/diffpy.pdffit2#pdffit2. This code is no 
-    longer being updated by the authors, but is still quite useful.
-    It is supplied within GSAS-II for Python 3.7.
-    It is likely best to install a separate Python
-    interpreter specifically for PDFfit2. When GSAS-II is run from a
-    Python installation that includes the conda package manager (the
-    usual installation practice), the GUI will offer an option to
+    https://github.com/diffpy/diffpy.pdffit2?tab=readme-ov-file#-diffpypdffit2.
+    This software is no longer developed, but it appears that it is
+    being maintained with respect to new Python versions.
+    
+    The PDFfit2 developers recommend installing via conda, but
+    it appears that pip installation is also possible. See 
+    https://pypi.org/project/diffpy.pdffit2/ for more information. 
+    It is possible to install PDFfit2 into the same
+    conda environment that GSAS-II uses and if that is done, GSAS-II
+    will use the package, but it is probably best to use a separate
+    Python environment for PDFfit2, so that there is no possibility for
+    conflict between package versions. When GSAS-II is run from a
+    Python installation that includes the conda package manager (which
+    is the case with the GSAS2FULL installer), the GUI will offer an option to
     install PDFfit2 via a separate environment when the
     PDFfit2 option is selected on the Phase/RMC tab. 

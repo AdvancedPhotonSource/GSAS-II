@@ -11446,19 +11446,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawingData['showVoids'] = showVoids.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnShowSlice(event):
-                drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetSelection()
-                G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnSliceSize(invalid,value,tc):
-                G2plt.PlotStructure(G2frame,data)
-                
-            def OnContourMax(event):
-                drawingData['contourMax'] = contourMax.GetValue()/100.
-                contourMaxTxt.SetLabel(' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
-                G2plt.PlotStructure(G2frame,data)
-
             def OnViewPoint(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -11593,26 +11580,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             line3Sizer.Add(showVoids,0,WACV)
             showSizer.Add(line3Sizer)
             
-            if generalData['Map']['rhoMax']:
-                line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
-                slices = ['','lines','colors','lines+colors']
-                line3Sizer.Add(wx.StaticText(drawOptions,label=' Show map slice as '),0,WACV)
-                G2frame.phaseDisplay.showCS = wx.ComboBox(drawOptions,value=slices[drawingData['showSlice']],
-                    choices=slices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                G2frame.phaseDisplay.showCS.Bind(wx.EVT_COMBOBOX, OnShowSlice)
-                G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])            
-                line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
-                line3Sizer.Add(wx.StaticText(drawOptions,label=' Slice size (2-20)A: '),0,WACV)
-                line3Sizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sliceSize',nDig=(10,2),xmin=2.0,xmax=20.0,OnLeave=OnSliceSize),0,WACV)
-                showSizer.Add(line3Sizer)
-                line4Sizer = wx.BoxSizer(wx.HORIZONTAL)
-                contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
-                line4Sizer.Add(contourMaxTxt,0,WACV)
-                contourMax = G2G.G2Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
-                    value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
-                contourMax.Bind(wx.EVT_SLIDER, OnContourMax)
-                line4Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
-                showSizer.Add(line4Sizer)
             return showSizer
         
         def MapSizer():
@@ -11621,8 +11588,40 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawingData['showMap'] = showMap.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
-            valSize = (50,20)
+            def OnShowSlice(event):
+                drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetSelection()
+                G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnSliceSize(invalid,value,tc):
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnContourMax(event):
+                drawingData['contourMax'] = contourMax.GetValue()/100.
+                contourMaxTxt.SetLabel(' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+                G2plt.PlotStructure(G2frame,data)
+
             mapSizer = wx.BoxSizer(wx.VERTICAL)
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            slices = ['','lines','colors','lines+colors']
+            line3Sizer.Add(wx.StaticText(drawOptions,label=' Show map slice as '),0,WACV)
+            G2frame.phaseDisplay.showCS = wx.ComboBox(drawOptions,value=slices[drawingData['showSlice']],
+                choices=slices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            G2frame.phaseDisplay.showCS.Bind(wx.EVT_COMBOBOX, OnShowSlice)
+            G2frame.phaseDisplay.showCS.SetValue(slices[drawingData['showSlice']])            
+            line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
+            line3Sizer.Add(wx.StaticText(drawOptions,label=' Slice size 2X(2-20)A: '),0,WACV)
+            line3Sizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sliceSize',nDig=(10,2),xmin=2.0,xmax=20.0,OnLeave=OnSliceSize),0,WACV)
+            mapSizer.Add(line3Sizer)
+            line4Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+            line4Sizer.Add(contourMaxTxt,0,WACV)
+            contourMax = G2G.G2Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
+                value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
+            contourMax.Bind(wx.EVT_SLIDER, OnContourMax)
+            line4Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
+            mapSizer.Add(line4Sizer)
+            valSize = (50,20)
             showMap = wx.CheckBox(drawOptions,label=' Show density map?')
             showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
             showMap.SetValue(drawingData['showMap'])

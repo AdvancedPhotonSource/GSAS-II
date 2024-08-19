@@ -10868,7 +10868,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
                 for plane in Planes:
                     RenderPlane(plane,color)
-        if drawingData.get('showSlice',0):      #must be done last to properly show things behind as faded
+        if drawingData.get('showSlice',''):      #must be done last to properly show things behind as faded
             global contourSet
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
@@ -10880,7 +10880,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             Rmax = np.max(rho)*drawingData['contourMax']
             Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
             invModel = nl.inv(Model)
-            msize = 5.      #-5A - 5A slice
+            msize = drawingData.get('sliceSize',5.0)      #default -5A - 5A slice
             mRes = generalData['Map']['GridStep']
             npts = int(2*msize/mRes)
             VP = np.array(drawingData['viewPoint'][0])

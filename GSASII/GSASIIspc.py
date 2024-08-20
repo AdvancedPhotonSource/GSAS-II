@@ -681,6 +681,8 @@ def GetGenSym(SGData):
     OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
+    for oprname in OprNames: 
+        print(oprname)
     Nsyms = len(SGData['SGOps'])
     if SGData['SGInv'] and not SGData['SGFixed']: Nsyms *= 2
     UsymOp = ['1',]
@@ -723,7 +725,7 @@ def GetGenSym(SGData):
             UsymOp.append(OprNames[3])
             OprFlg.append(SGData['SGGen'][3])
     elif Nsyms == 6:                    #Point symmetry 32, 3m or 6
-            if '6' in OprNames[1]:      #Hexagonal 6/m Laue symmetry
+            if '6' in OprNames[1]:      #Hexagonal 6 Laue symmetry
                 UsymOp.append(OprNames[1])
                 OprFlg.append(SGData['SGGen'][1])
             else:                       #Trigonal
@@ -744,10 +746,10 @@ def GetGenSym(SGData):
                     UsymOp.append(OprNames[7])
                     OprFlg.append(8)
                 else:                       #-42m, -4m2, and 422 type groups
-                    UsymOp.append(OprNames[5])
-                    OprFlg.append(8)
                     UsymOp.append(OprNames[6])
                     OprFlg.append(19)
+                    UsymOp.append(OprNames[5])
+                    OprFlg.append(8)
         else:                               #Orthorhombic, mmm
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
@@ -764,8 +766,8 @@ def GetGenSym(SGData):
         if 'mz' in OprNames[9]:                     #6/m
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
-            UsymOp.append(OprNames[6])
-            OprFlg.append(SGData['SGGen'][6])
+            UsymOp.append(OprNames[9])
+            OprFlg.append(SGData['SGGen'][9])
         else:                                       #6mm, -62m, -6m2 or 622
             UsymOp.append(OprNames[6])
             OprFlg.append(18)
@@ -944,7 +946,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
         SGData['SGSpin'] = [1,]+list(SGData['SGSpin'])      #end patch
     GenSym = SGData['GenSym'][1:]       #skip identity
     SpnFlp = SGData['SGSpin']
-#    print('SpnFlp',SpnFlp)
+    print('SpnFlp',SpnFlp,' GenSym',GenSym)
     SGPtGrp = SGData['SGPtGrp']
     if len(SpnFlp) == 1:
         SGData['MagPtGp'] = SGPtGrp
@@ -1284,32 +1286,31 @@ def MagSSText2MTS(Opr,G2=False):
 def GetSGSpin(SGData,MSgSym):
     'get spin generators from magnetic space group symbol'
 
-    SpGrp = SGData['SpGrp']
     mSgSym = MSgSym+' '
     mFlds = mSgSym.split()
     mSpn = SGData['SGSpin']
     SGPtGrp = SGData['SGPtGrp']
     SGLaue = SGData['SGLaue']
     GenSym = GetGenSym(SGData)[0][1:]       #skip identity
+    print('MSgSym',MSgSym,' GenSym',GenSym)
     if SGLaue in ['-1',]:
         if "'" in mFlds[1]:
             mSpn[1] = -1
-    elif SGLaue in ['2/m','4/m','6/m']: #all ok
+    elif SGLaue in ['2/m','4/m']: #all ok
         Uniq = {'a':1,'b':2,'c':3,'':1}
         Id = [0,1]
         if len(mFlds) > 2:
             Id = [0,Uniq[SGData['SGUniq']]]
         sym = mFlds[Id[1]].split('/')
-        if len(GenSym) == 3:
-            for j in [0,1,2]:
-                if mFlds[j+1] != '1':
-                    for i in range(len(GenSym)):
-                        if "'" in sym[i]:
-                            mSpn[i+1] = -1                      
-        else:
-            for i in range(len(GenSym)):
-                if "'" in sym[i]:
-                    mSpn[i+1] = -1                      
+        for i in range(len(GenSym)):
+            if "'" in sym[i]:
+                mSpn[i+1] = -1
+    elif SGLaue == '6/m':
+        sym = mFlds[1].split('/')
+        for i in range(len(GenSym)):
+            if "'" in sym[i]:
+                mSpn[i] = -1
+                     
     elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         for i in [0,1,2]:
             if "'" in mFlds[i+1]:
@@ -1317,20 +1318,20 @@ def GetSGSpin(SGData,MSgSym):
     elif SGLaue == '6/mmm': #ok
         if len(GenSym) == 2:
             for i in [0,1]:
-                if "'" in mFlds[i+2]:
+                if "'" in mFlds[i+1]:
                     mSpn[i+1] = -1
         else:
             sym = mFlds[1].split('/')
             if "'" in sym[1]:
-                mSpn[1] = -1
+                mSpn[0] = -1
             for i in [1,2]:
                 if "'" in mFlds[i+1]:
-                    mSpn[i+1] = -1
+                    mSpn[i] = -1
     elif SGLaue == '4/mmm':
         if len(GenSym) == 2:
             for i in [0,1]:
-                if "'" in mFlds[i+2]:
-                    mSpn[i+1] = -1
+                if "'" in mFlds[i+1]:
+                    mSpn[i] = -1
         else:
             if '/' in mFlds[1]:    #P 4/m m m, etc.
                 sym = mFlds[1].split('/')

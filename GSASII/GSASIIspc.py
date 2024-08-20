@@ -681,8 +681,8 @@ def GetGenSym(SGData):
     OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
-    for oprname in OprNames: 
-        print(oprname)
+    # for oprname in OprNames: 
+    #     print(oprname)
     Nsyms = len(SGData['SGOps'])
     if SGData['SGInv'] and not SGData['SGFixed']: Nsyms *= 2
     UsymOp = ['1',]
@@ -946,7 +946,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
         SGData['SGSpin'] = [1,]+list(SGData['SGSpin'])      #end patch
     GenSym = SGData['GenSym'][1:]       #skip identity
     SpnFlp = SGData['SGSpin']
-    print('SpnFlp',SpnFlp,' GenSym',GenSym)
+    # print('SpnFlp',SpnFlp,' GenSym',GenSym)
     SGPtGrp = SGData['SGPtGrp']
     if len(SpnFlp) == 1:
         SGData['MagPtGp'] = SGPtGrp
@@ -1292,7 +1292,7 @@ def GetSGSpin(SGData,MSgSym):
     SGPtGrp = SGData['SGPtGrp']
     SGLaue = SGData['SGLaue']
     GenSym = GetGenSym(SGData)[0][1:]       #skip identity
-    print('MSgSym',MSgSym,' GenSym',GenSym)
+    # print('MSgSym',MSgSym,' GenSym',GenSym)
     if SGLaue in ['-1',]:
         if "'" in mFlds[1]:
             mSpn[1] = -1
@@ -1309,7 +1309,7 @@ def GetSGSpin(SGData,MSgSym):
         sym = mFlds[1].split('/')
         for i in range(len(GenSym)):
             if "'" in sym[i]:
-                mSpn[i] = -1
+                mSpn[i+1] = -1
                      
     elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         for i in [0,1,2]:
@@ -1437,7 +1437,7 @@ def GenMagOps(SGData):
                     SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
         if SGData['SGGray']:
            SpnFlp = np.concatenate((SpnFlp,-SpnFlp))
-           detMs =2*detMs                   
+           detMs = 2*detMs                   
     MagMom = SpnFlp*np.array(detMs)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
     return OprNames,SpnFlp

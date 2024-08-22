@@ -1419,8 +1419,8 @@ def GenMagOps(SGData):
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
         Nfl = len(GenFlg)
-        print('GenFlg:',GenFlg,'FlpSpn:',FlpSpn)
-        print('SGGen:',SGData['SGGen'])
+        # print('GenFlg:',GenFlg,'FlpSpn:',FlpSpn)
+        # print('SGGen:',SGData['SGGen'])
         for ieqv in range(Nsym):
             for iunq in range(Nfl):
                 if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
@@ -1430,7 +1430,7 @@ def GenMagOps(SGData):
                         print('index error: ',Nsym,ieqv,Nfl,iunq)
                         FlpSpn = FlpSpn+[1,]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
-                    print('ieqv',ieqv,'iunq',iunq,ieqv%Ngen,'SpnFlp:',SpnFlp)
+                    # print('ieqv',ieqv,'iunq',iunq,ieqv%Ngen,'SpnFlp:',SpnFlp)
         for incv in range(Ncv):
             if incv:
                 try:

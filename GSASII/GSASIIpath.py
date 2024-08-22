@@ -2110,16 +2110,17 @@ def condaInstall(packageList):
         return None
     try:
         (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.INSTALL,packageList
-#    use_exception_handler=True#, stdout=sys.stdout, stderr=sys.stderr)
-            )
+            conda.cli.python_api.Commands.INSTALL,packageList,
+            search_path=('conda-forge'),
+#    use_exception_handler=True#, stdout=sys.stdout,
+            stderr=sys.stderr)
         #print('rc=',rc)
         print('Ran conda. output follows...')
         print(70*'='+'\n'+out+'\n'+70*'=')
         #print('err=',err)
         if rc != 0: return str(out)
     except Exception as msg:
-        print("Error occurred, see below\n",msg)  
+        print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
     return None
     

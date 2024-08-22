@@ -2950,7 +2950,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow, 200)
+        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow, 400)
         self.Status.SetStatusWidths([200,-1])   # make these match?
         
         G2G.wxID_GPXTREE = wx.NewId()

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 '''Import a collection of "lineouts" from MIDAS from a zarr zip file
 '''
-
+# TODO: radius to be added to Zarr file
+#
 from __future__ import division, print_function
 import os,sys
 try:
@@ -37,7 +38,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
     file.
     '''
     mode = None
-    midassections = ('InstrumentParameters','Omegas', 'REtaMap', 'OmegaSumFrame')
+    midassections = ('InstrumentParameters', 'REtaMap', 'OmegaSumFrame')
     def __init__(self):
         if zarr is None:
             self.UseReader = False
@@ -80,11 +81,6 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         "lineouts", the selections are numbered against all possible 
         "lineouts" not the ones that have 20 or more points. 
         '''
-        # TODO: need to think about normalization
-        # sample parameters (such as temperature)
-        # xfer instrument from fpbuffer
-        # review xfer of sample parameters
-        # 
         fpbuffer = kwarg.get('buffer',{})
         if not hasattr(self,'blknum'):
             self.blknum = 0    # image counter for multi-image files
@@ -115,7 +111,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         self.instmsg = 'MIDAS zarr file'
         # has the zarr file already been cached?
         doread = False # yes
-        for i in ('intenArr','REtaMap','omegas', 'REtaMap', 'unmasked', '2Read'):
+        for i in ('intenArr','REtaMap','attributes', 'REtaMap', 'unmasked', '2Read'):
             if i not in fpbuffer:
                 doread = True # no
                 break
@@ -125,19 +121,18 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         # (or every call if no buffer is supplied -- very slow)
         #======================================================================
         if doread:   # read into buffer
-            print()
+            print('Caching MIDAS zarr contents...')
             try:
                 fp = zarr.open(filename, 'r')
                 fpbuffer['REtaMap'] = np.array(fp['REtaMap']) # 4 x Nbins x Nazimuth
                 # [0]: radius; [1] 2theta; [2] eta; [3] bin area 
                 # tabulate integrated intensities image & eta
                 fpbuffer['intenArr'] = []
-                fpbuffer['omegas'] = []
+                fpbuffer['attributes'] = []
                 for i,k in enumerate(fp['OmegaSumFrame']):
                     fpbuffer['intenArr'].append(fp['OmegaSumFrame'][k])
-                    fpbuffer['omegas'].append(0.5*
-                        (fp['OmegaSumFrame']['LastFrameNumber_1'].attrs['FirstOme']+
-                         fp['OmegaSumFrame']['LastFrameNumber_1'].attrs['LastOme']))                    
+                    fpbuffer['attributes'].append(
+                        dict(fp['OmegaSumFrame'][k].attrs.items()))
                 Nimg = len(fp['OmegaSumFrame'])   # number of images
                 Nbins,Nazim = fpbuffer['REtaMap'][1].shape
                 # Nbins: number of points in each lineout (not all of which may be
@@ -145,23 +140,23 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 # Nazim: number of azimuthal "cake slices"
 
                 # get a list of points in use at each azimuth
-                unmasked = fpbuffer['unmasked'] = [(fpbuffer['REtaMap'][3][:,i] != 0) for i in range(Nazim)]
+                fpbuffer['unmasked'] = [(fpbuffer['REtaMap'][3][:,i] != 0) for i in range(Nazim)] # will be True if area is >0
                 # find the azimuths with more than 20 points
-                mAzm = [i for i in range(Nazim) if sum(unmasked[i]) > 20]
+                mAzm = [i for i in range(Nazim) if sum(fpbuffer['unmasked'][i]) > 20]
                 
                 # generate a list of lineouts to be read from selections
                 if self.selections:
                     sel = self.selections
                 else:
                     sel = range(Nimg*Nazim) # nothing selected, use all
-                fpbuffer['2Read'] = [(i%Nazim,i//Nazim) for i in sel if i%Nazim in mAzm]
                 # fpbuffer['2Read'] is the list of lineouts to be read, where each entry
                 # contains two values, the azumuth and the image number (iAzm,iImg)
                 # defined points for each lineout are then 
                 #   intensities : fpbuffer['intenArr'][iImg][:,iAzm][unmasked[iAzm]]
                 #   2thetas: fpbuffer['REtaMap'][1][:,iAzm][unmasked[iAzm]]
-                self.MIDASinstprm = {i:j[0] # reform as a native dict
-                    for i,j in fp['InstrumentParameters'].items()} 
+                fpbuffer['2Read'] = [(i%Nazim,i//Nazim) for i in sel if i%Nazim in mAzm]
+                # xfrom Zarr dict into a native dict
+                self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()} 
             except IOError:
                 print ('cannot open file '+ filename)
                 return False
@@ -193,19 +188,30 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         #======================================================================
         # look for the next non-empty scan (lineout)
         iAzm,iImg = fpbuffer['2Read'][self.blknum]
-        unmasked = fpbuffer['unmasked']
-        y = fpbuffer['intenArr'][iImg][:,iAzm][unmasked[iAzm]]
-        x = fpbuffer['REtaMap'][1][:,iAzm][unmasked[iAzm]]
-        normalization = fpbuffer['REtaMap'][3][:,iAzm][unmasked[iAzm]]
-        # note that y values have been scaled by division by normalization values
-        # esd = np.sqrt(y*normalization)
-        w = np.nan_to_num(1./(y * normalization))
-        omega = fpbuffer['omegas'][iImg]
-        eta = sum(fpbuffer['REtaMap'][2][:,iAzm][unmasked[iAzm]])/sum(
-            unmasked[iAzm]) # single-valued?
-        radius = 1000
-#        radius = sum(fpbuffer['REtaMap'][0][:,iAzm][unmasked[iAzm]])/sum(
-#            unmasked[iAzm]) * self.pixelsize
+        nFrame = fpbuffer['attributes'][iImg].get('Number Of Frames Summed',1.)
+        unmasked = fpbuffer['unmasked'][iAzm]
+        y = fpbuffer['intenArr'][iImg][:,iAzm][unmasked]/nFrame
+        x = fpbuffer['REtaMap'][1][:,iAzm][unmasked]
+        normalization = fpbuffer['REtaMap'][3][:,iAzm][unmasked]
+        # compute the uncertainty on the normalized intensities
+        #   Y(normalized) = Y-norm = Ysum / area
+        #   sigma(Y-norm) = sqrt(Ysum) / area = sqrt[Y-norm * area] / area
+        #                 = sqrt( Y-norm / area)
+        # For GSAS-II want to normalize by the number of frames,
+        #   Y(GSAS) = Y-norm / nFrame
+        #   sigma(Y-GSAS) = sigma(Y-norm) / nFrame
+        #                 = sqrt( Y-norm / area) / nFrame
+        #   weight(Y-GSAS) is 1/sigma[Y-GSAS]**2 = nFrame**2 * area / Y-norm
+        w = np.where(y > 0, np.zeros_like(y), nFrame**2 * normalization/ y )
+        omega = 999.  # indicates an error
+        try:
+            omega = 0.5 * (
+                fpbuffer['attributes'][iImg]['FirstOme'] + 
+                fpbuffer['attributes'][iImg]['LastOme'])
+        except:
+            pass
+        eta = sum(fpbuffer['REtaMap'][2][:,iAzm][unmasked])/sum(unmasked) # compute an averaged Phi value
+        radius = 1000   # sample to detector distance
         
         # now transfer instprm & sample prms into current histogram 
         self.pwdparms['Instrument Parameters'] = [{}, {}]
@@ -220,17 +226,24 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         samp.update(self.MIDASsampleprm)
         for key,val in samp.items():
             self.Sample[key] = val
-        self.numbanks=len(fpbuffer['2Read'])  # number of lineouts to be read
+        self.numbanks=len(fpbuffer['2Read'])  # number of remaining lineouts to be read
+        # save the various GSAS-II instrument and sample parameters
         self.pwdparms['Instrument Parameters'][0]['Azimuth'] = [90-eta,90-eta,False]
         self.pwdparms['Instrument Parameters'][0]['Bank'] = [iAzm,iAzm,False]
         self.Sample['Gonio. radius'] = float(radius)
+        try:
+            self.Sample['Temperature'] = fpbuffer['attributes'][iImg]['Temperature']
+        except:
+            pass
+        try:
+            self.Sample['Pressure'] = fpbuffer['attributes'][iImg]['Pressure']
+        except:
+            pass
 #        self.Sample['Omega'] = float(S.split('=')[1])
 #        self.Sample['Chi'] = float(S.split('=')[1])
         self.Sample['Phi'] = omega
 #        self.Sample['FreePrm1']
 #        self.Controls['FreePrm1'] = 'Midas Label'  # relabel the parameter
-#        self.Sample['Temperature']
-#        self.Sample['Pressure']
 #        self.Sample['Time']
         self.powderdata = [x,y,w,np.zeros_like(x),np.zeros_like(x),np.zeros_like(x)]
         #self.comments = comments[selblk]
@@ -240,10 +253,9 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         self.idstring = f'{os.path.split(filename)[1][:10]} img={iImg} omega={omega} eta={eta}'
         if GSASIIpath.GetConfigValue('debug'):
             print(f'Read entry #{iAzm} img# {iImg} from file {filename}\n{self.idstring}')
-        else:
-            print('.',end='')  # do something since this can take a while
-            sys.stdout.flush()
-        
+#        else:
+#            print('.',end='')  # do something since this can take a while
+#            sys.stdout.flush()
         # are there more lineouts after this one in current image to read?
         self.blknum += 1
         if self.blknum >= len(fpbuffer['2Read']): # is this the last scan?
@@ -255,4 +267,5 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         print()
         self.blknum = 0
         for key in list(fpbuffer.keys()): del fpbuffer[key]
+        print('...read done')
         return True

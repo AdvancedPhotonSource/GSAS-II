@@ -142,29 +142,29 @@ def SpcGroup(SGSymbol):
                 SGData['SGGen'][i] = 8
             elif (not SGData['SGInv']) and (SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']) and (gen == 1):
                 SGData['SGGen'][i] = 24
-        gen = SGData['SGGen'][i]
-        if gen == 99:
-            gen = 8
+        gen1 = SGData['SGGen'][i]
+        if gen1 == 99:
+            gen1 = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                gen = 3
+                gen1 = 3
             elif SGData['SGLaue'] == 'm3m':
-                gen = 12
-            SGData['SGGen'][i] = gen
-        elif gen == 98:
-            gen = 8
+                gen1 = 12
+            SGData['SGGen'][i] = gen1
+        elif gen1 == 98:
+            gen1 = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                gen = 4
-            SGData['SGGen'][i] = gen
-        elif not SGData['SGInv'] and gen in [23,] and SGData['SGLaue'] in ['m3','m3m']:
+                gen1 = 4
+            SGData['SGGen'][i] = gen1
+        elif not SGData['SGInv'] and gen1 in [23,] and SGData['SGLaue'] in ['m3','m3m']:
             SGData['SGGen'][i] = 24
-        elif gen >= 16 and gen != 128:
+        elif gen1 >= 16 and gen1 != 128:
             if not SGData['SGInv']:
-                gen = 31
+                gen1 = 31
             else:
-                gen ^= Ibarx 
-            SGData['SGGen'][i] = gen
+                gen1 ^= Ibarx 
+            SGData['SGGen'][i] = gen1
         if SGData['SGInv']:
-            if gen < 128:
+            if gen1 < 128:
                 moregen.append(SGData['SGGen'][i]^Ibar)
             else:
                 moregen.append(1)
@@ -1419,6 +1419,8 @@ def GenMagOps(SGData):
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
         Nfl = len(GenFlg)
+        print('GenFlg:',GenFlg,'FlpSpn:',FlpSpn)
+        print('SGGen:',SGData['SGGen'])
         for ieqv in range(Nsym):
             for iunq in range(Nfl):
                 if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
@@ -1428,6 +1430,7 @@ def GenMagOps(SGData):
                         print('index error: ',Nsym,ieqv,Nfl,iunq)
                         FlpSpn = FlpSpn+[1,]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
+                    print('ieqv',ieqv,'iunq',iunq,ieqv%Ngen,'SpnFlp:',SpnFlp)
         for incv in range(Ncv):
             if incv:
                 try:

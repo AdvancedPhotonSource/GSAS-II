@@ -1228,7 +1228,8 @@ class G2Project(G2ObjectWrapper):
           (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
-          (equivalent to "guess format" in menu).
+          (equivalent to "guess format" in menu). Specifying this 
+          is optional but is strongly encouraged.
         :param bool mag: Set to True to read a magCIF
         :param str spacegroup: The space group name as a string. The  
           space group must follow the naming rules used in 
@@ -1242,7 +1243,7 @@ class G2Project(G2ObjectWrapper):
         """
         LoadG2fil()
         histograms = [self.histogram(h).name for h in histograms]
-        if phasefile is None:
+        if phasefile is None:  # create a phase, rather than reading it
             if phasename is None:
                 raise Exception('add_phase: phasefile and phasename cannot both be None')
             phaseNameList = [p.name for p in self.phases()]
@@ -1280,8 +1281,9 @@ class G2Project(G2ObjectWrapper):
             return self.phase(phasename)
         
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
-
-        # TODO handle multiple phases in a file
+        if not os.path.exists(phasefile):
+            raise G2ImportException(f'File {phasefile} does not exist')
+        # TODO: handle multiple phases in a file
         phasereaders = import_generic(phasefile, Readers['Phase'], fmthint=fmthint)
         phasereader = phasereaders[0]
         

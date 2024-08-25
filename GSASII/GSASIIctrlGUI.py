@@ -577,6 +577,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
+            self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -8153,6 +8154,51 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             finally:
                 d.Destroy()
         TestInput()
+        
+    def OnFileOfFiles(event):
+        '''Read from a list of files and add those files in the order
+        specified in that file.
+        '''
+        # get a list of existing histograms
+        if FileTyp == 'pwd':
+            treePrfx = 'PWDR '
+        else:
+            treePrfx = 'PDF  '
+        ReadList = []
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith(treePrfx) and name not in ReadList:
+                    ReadList.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        Settings['ReadList'] = ReadList
+        extList = 'text file (*.txt,*.csv)|*.txt;*.csv'
+        d = wx.FileDialog(dlg,
+                'Choose a text file with file names',
+                '', '',extList, wx.FD_OPEN)
+        filelist = []
+        try:
+            if d.ShowModal() == wx.ID_OK:
+                if not os.path.exists(Settings['instfile']): return
+                if not os.path.exists(d.GetPath()): return
+                with open(d.GetPath(),'r') as fp:
+                    for line in fp: # split lines at comma/tab, strip quotes, etc
+                        if line.startswith('#'): continue
+                        line = line.split(',')[0]
+                        line = line.split('\t')[0]
+                        f = line.replace('"','').replace("'",'').strip()
+                        if not os.path.exists(f) and not os.path.abspath(f):
+                            f = os.path.join(Settings['indir'],f)
+                        if not os.path.exists(f):
+                            print(f'Skipping file {f}, not found')
+                        else:
+                            filelist.append(f)
+                G2frame.CheckNotebook()
+                RunTimerPWDR(None,filelist)
+                wx.CallAfter(dlg.Destroy)
+        finally:
+            d.Destroy()
     def onSetFmtSelection():
         extSel.Clear()
         extSel.AppendItems(fileReaders[Settings['fmt']].extensionlist)
@@ -8173,6 +8219,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         if FileTyp == 'pwd' and not os.path.exists(Settings['instfile']):
             valid = False
         btnstart.Enable(valid)
+        FofFbtn.Enable(valid)
     def OnStart(event):
         if btnstart.GetLabel() == 'Pause':
             Settings['timer'].Stop()
@@ -8199,12 +8246,13 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     ReadList.append(name)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         Settings['ReadList'] = ReadList
-    def RunTimerPWDR(event):
-        if GSASIIpath.GetConfigValue('debug'):
-            import datetime
-            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
-        filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
-        if not filelist: return
+    def RunTimerPWDR(event,filelist=None):
+        if filelist is None:
+            if GSASIIpath.GetConfigValue('debug'):
+                import datetime
+                print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
+            if not filelist: return
         #if GSASIIpath.GetConfigValue('debug'): print(filelist)
         Id = None
         for f in filelist:
@@ -8294,22 +8342,6 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 # apply user-supplied corrections to powder data
                 if 'CorrectionCode' in Iparm1:
                     print('Warning: CorrectionCode from instprm file not applied')
-                # code below produces error on Py2.7: unqualified exec is not
-                # allowed in this function because it is a nested function
-                # no attempt made to address this.
-                #
-                #    print('Applying corrections from instprm file')
-                #    corr = Iparm1['CorrectionCode'][0]
-                #    try:
-                #        exec(corr)
-                #        print('done')
-                #    except Exception as err:
-                #        print(u'error: {}'.format(err))
-                #        print('with commands -------------------')
-                #        print(corr)
-                #        print('---------------------------------')
-                #    finally:
-                #        del Iparm1['CorrectionCode']
                 rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
                 G2frame.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
                 G2frame.GPXtree.SetItemPyData(
@@ -8470,16 +8502,35 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format:'))
     fmtSel = G2ChoiceButton(mnpnl,fmtchoices,Settings,'fmt',onChoice=onSetFmtSelection)
-    sizer.Add(fmtSel,1,wx.EXPAND)
+    sizer.Add(fmtSel)
+    sizer.Add((-1,-1),1,wx.EXPAND,1)
+    msg = '''This window serves two purposes. It can be used to read files 
+as they are added to a directory or it can be used to read files from an 
+externally-created file list. For either, set the file format and an 
+instrument parameter file must be specified.
+%%
+* For automatic reading, the files must be found in the directory specified by
+"Read from:" and the selected extension. The "File filter:" can be used to 
+limit the files to those matching a wildcard, (for example, if 
+"202408*pow*.*" is used as a filter, then files must begin with "202408" 
+and must also contain the string "pow".) 
+%%
+* For reading from a list of files, press the "Read from file with a list 
+of files" button. The input file must contain a list of files, one per line. 
+Lines beginning in '#' are ignored. If more than one column is used 
+(separated by commas or tabs), the file name should be the first column. 
+File names can be in quotes, but this is not required. The extension 
+is ignored, as is the "File filter". The "Read from" directory will be used 
+if the file name does not contain a full path and the file is not in the 
+current working directory.
+'''
+    sizer.Add(HelpButton(mnpnl,msg,wrap=400),0,wx.RIGHT,5)
     mnsizer.Add(sizer,0,wx.EXPAND)
 
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select extension:'))
     extSel = G2ChoiceButton(mnpnl,[],Settings,'ext',Settings,'extStr',onChoice=onSetExtSelection)
     sizer.Add(extSel,0)
-    mnsizer.Add(sizer,0,wx.EXPAND)
-    
-    sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add((-1,-1),1,wx.EXPAND,1)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'  File filter: '))
     flterInp = ValidatedTxtCtrl(mnpnl,Settings,'filter')
@@ -8504,7 +8555,10 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn4,0,wx.ALIGN_CENTER_VERTICAL)
         mnsizer.Add(sizer,0,wx.EXPAND)
-    
+        # read a list of files
+        FofFbtn = wx.Button(mnpnl,  wx.ID_ANY, 'Read from file with a list of files')
+        FofFbtn.Bind(wx.EVT_BUTTON, OnFileOfFiles)
+        mnsizer.Add(FofFbtn)
     # buttons on bottom
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add((-1,-1),1,wx.EXPAND)
@@ -8518,9 +8572,9 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer.Add(btnclose)
     sizer.Add((-1,-1),1,wx.EXPAND)
     mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
-    
     mnpnl.SetSizer(mnsizer)
     mnsizer.Fit(dlg)
+    dlg.CenterOnParent()
     dlg.Show()
     AutoLoadWindow = dlg # save window reference
 

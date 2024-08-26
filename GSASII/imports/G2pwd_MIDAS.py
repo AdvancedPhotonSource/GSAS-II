@@ -4,7 +4,7 @@
 # TODO: radius to be added to Zarr file
 #
 from __future__ import division, print_function
-import os,sys
+import os
 try:
     import zarr
 except ImportError:
@@ -157,6 +157,11 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fpbuffer['2Read'] = [(i%Nazim,i//Nazim) for i in sel if i%Nazim in mAzm]
                 # xfrom Zarr dict into a native dict
                 self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()} 
+                # change a few keys
+                for key,newkey in [('Polariz','Polariz.'),('SH_L','SH/L')]:
+                    if key in self.MIDASinstprm:
+                        self.MIDASinstprm[newkey] = self.MIDASinstprm[key]
+                        del self.MIDASinstprm[key]
             except IOError:
                 print ('cannot open file '+ filename)
                 return False
@@ -182,7 +187,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fp = open(instfile,'r')
                 instLines = fp.readlines()
                 fp.close()
-                nbank,self.instvals = G2fil.ReadInstprm(instLines, bank, self.Sample)
+                nbank,self.instvals = G2fil.ReadInstprm(instLines, None, self.Sample)
         #======================================================================
         # start reading 
         #======================================================================
@@ -211,34 +216,38 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         except:
             pass
         eta = sum(fpbuffer['REtaMap'][2][:,iAzm][unmasked])/sum(unmasked) # compute an averaged Phi value
-        radius = 1000   # sample to detector distance
+        radius = 1000   # sample to detector distance (mm)
+        if 'Distance' in self.MIDASinstprm:
+            radius = self.MIDASinstprm['Distance']/1000   # convert from microns
         
         # now transfer instprm & sample prms into current histogram 
         self.pwdparms['Instrument Parameters'] = [{}, {}]
         inst = {}
         inst.update(instprmList)
-        inst.update(self.MIDASinstprm)
+        for i in inst:
+            if i in self.MIDASinstprm:
+                inst[i] = self.MIDASinstprm[i]
         for key,val in inst.items():
             self.pwdparms['Instrument Parameters'][0][key] = [val,val,False]
         self.pwdparms['Instrument Parameters'][0].update(self.instvals[0])
+        self.pwdparms['Instrument Parameters'][0]['Azimuth'] = [90-eta,90-eta,False]
+        self.pwdparms['Instrument Parameters'][0]['Bank'] = [iAzm,iAzm,False]
         samp = {}
         samp.update(sampleprmList)
         samp.update(self.MIDASsampleprm)
+        try:
+            sampleprmList['Temperature'] = fpbuffer['attributes'][iImg]['Temperature']
+        except:
+            pass
+        try:
+            sampleprmList['Pressure'] = fpbuffer['attributes'][iImg]['Pressure']
+        except:
+            pass
         for key,val in samp.items():
             self.Sample[key] = val
         self.numbanks=len(fpbuffer['2Read'])  # number of remaining lineouts to be read
         # save the various GSAS-II instrument and sample parameters
-        self.pwdparms['Instrument Parameters'][0]['Azimuth'] = [90-eta,90-eta,False]
-        self.pwdparms['Instrument Parameters'][0]['Bank'] = [iAzm,iAzm,False]
         self.Sample['Gonio. radius'] = float(radius)
-        try:
-            self.Sample['Temperature'] = fpbuffer['attributes'][iImg]['Temperature']
-        except:
-            pass
-        try:
-            self.Sample['Pressure'] = fpbuffer['attributes'][iImg]['Pressure']
-        except:
-            pass
 #        self.Sample['Omega'] = float(S.split('=')[1])
 #        self.Sample['Chi'] = float(S.split('=')[1])
         self.Sample['Phi'] = omega

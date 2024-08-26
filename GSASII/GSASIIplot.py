@@ -2646,6 +2646,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a peak list line
+                if DifLine[0] is pick: return   # don't drag the difference during peak lists
                 # prepare to animate move of line
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
@@ -2949,7 +2950,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif GSASIIpath.GetConfigValue('debug'): # should not happen!
             print('How did we get here?')
             GSASIIpath.IPyBreak()
-        PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
+        wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
         G2frame.itemPicked = None
 
     def onSetPlotLim(event):

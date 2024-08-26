@@ -26,7 +26,7 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5794 $"   # TODO: this should be removed (& where used)
+filversion = "$Revision: 5796 $"   # TODO: this should be removed (& where used)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

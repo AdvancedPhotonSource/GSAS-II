@@ -108,10 +108,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5790 $"
+    :param str RevString: something like "$Revision: 5796 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5790 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5796 $")`` in every python
     file.
     '''
     try:

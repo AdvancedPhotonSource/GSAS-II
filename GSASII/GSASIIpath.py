@@ -1856,10 +1856,29 @@ def TestSPG(fpth):
     # test to see if a shared library can be used
     try:
         import pyspg
+    except ModuleNotFoundError as err:
+        print(70*'=')
+        print(f'Binary module pyspg not found in {fpth!r}\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    except ImportError as err:
+        print(70*'=')
+        print(f'Module pyspg in {fpth!r} could not be loaded\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    except Exception as err:
+        print(70*'=')
+        print(f'Error importing module pyspg in {fpth!r}\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    try:
         pyspg.sgforpy('P -1')
     except Exception as err:
         print(70*'=')
-        print(f'Failed to run pyspg in {fpth!r}\nerror: {err}')
+        print(f'Module pyspg in {fpth!r} could not be run\nerror msg: {err}')
         print(70*'=')
         sys.path = savpath
         return False
@@ -1902,7 +1921,10 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         if os.path.exists(newpath):
             if newpath in searchpathlist: return
             searchpathlist.append(newpath)
+    searched = []
     for loc in binseapath:
+        if loc in searched: continue
+        searched.append(loc)
         # Look at bin directory (created by a local compile) before looking for standard dist files
         searchpathlist = []
         appendIfExists(searchpathlist,loc,'bin')
@@ -1925,9 +1947,9 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
             elif v > inpver:
                 vmax = v
                 break
-        if vmin in versions:
+        if vmin in versions and versions[vmin] not in searchpathlist:
             searchpathlist.append(versions[vmin])
-        if vmax in versions:
+        if vmax in versions and versions[vmax] not in searchpathlist:
             searchpathlist.append(versions[vmax])
         for fpth in searchpathlist:
             if TestSPG(fpth):

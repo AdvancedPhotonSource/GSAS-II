@@ -8526,6 +8526,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist = G2frame.frameArtist
                 artist.set_data((xl,yl)) # lines
                 Page.figure.gca().draw_artist(artist)
+            # elif pickType.startswith('Xlines'):
+            #     itemNum = G2frame.itemPicked.itemNumber
+                
+            # elif pickType.startswith('Ylines'):
+            #     itemNum = G2frame.itemPicked.itemNumber
+                
             else: # non-dragable object
                 return
             Page.canvas.blit(Page.figure.gca().bbox)

@@ -1141,6 +1141,7 @@ class G2Button(wx.Button):
         super(self.__class__,self).__init__(parent,id,label,*args,**kwargs)
         self.label = label
         self.handler = handler
+        self.locationcode = locationcode
         self.Bind(wx.EVT_BUTTON,self.onPress)
     def onPress(self,event):
         'create log event and call handler'

@@ -1755,8 +1755,8 @@ def UpdateMasks(G2frame,data):
 
     def onDeleteMask(event):
         Obj = event.GetEventObject()
-        typ = Obj.locationcode.split('+')[1]
-        num = int(Obj.locationcode.split('+')[2])
+        typ = Obj.locationcode.split('+')[0]
+        num = int(Obj.locationcode.split('+')[1])
         del(data[typ][num])
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
@@ -2161,7 +2161,7 @@ def UpdateMasks(G2frame,data):
     def OnAzimuthPlot(event):
         GkTheta = chr(0x03f4)
         Obj = event.GetEventObject()
-        ringId = int(Obj.locationcode.split('+')[2])
+        ringId = int(Obj.locationcode.split('+')[1])
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
         image = GetImageZ(G2frame,Controls)
         RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)
@@ -2344,11 +2344,10 @@ def UpdateMasks(G2frame,data):
                 ringThick = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=Rings[i],key=1,
                     xmin=0.001,xmax=1.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(ringThick,0,WACV)
-                ringDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                            handler=onDeleteMask)
+                code = '%s+%d'%('Rings',i)
+                ringDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',handler=onDeleteMask,locationcode=code)
                 littleSizer.Add(ringDelete,0,WACV)
-                ringPlot = G2G.G2Button(G2frame.dataWindow,label='Azimuth plot?',
-                                            handler=OnAzimuthPlot)
+                ringPlot = G2G.G2Button(G2frame.dataWindow,label='Azimuth plot?',handler=OnAzimuthPlot,locationcode=code)
                 littleSizer.Add(ringPlot,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if Arcs:
@@ -2377,8 +2376,9 @@ def UpdateMasks(G2frame,data):
                 arcThick = G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=Arcs[i],key=2,
                     xmin=0.001,xmax=20.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(arcThick,0,WACV)
+                code = '%s+%d'%('Arcs',i)
                 arcDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                             handler=onDeleteMask)
+                    locationcode=code,handler=onDeleteMask)
                 littleSizer.Add(arcDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
         
@@ -2391,8 +2391,9 @@ def UpdateMasks(G2frame,data):
         for i in range(len(Xlines)):
             if Xlines[i]:
                 littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='at Y-pixel: %d'%(Xlines[i])),0,WACV)
+                code = '%s+%d'%('Xlines',i)
                 xlineDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                               handler=onDeleteMask)
+                    locationcode=code,handler=onDeleteMask)
                 littleSizer.Add(xlineDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
         
@@ -2405,8 +2406,9 @@ def UpdateMasks(G2frame,data):
         for i in range(len(Ylines)):
             if Ylines[i]:
                 littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='at X-pixel: %d'%(Ylines[i])),0,WACV)
+                code = '%s+%d'%('Ylines',i)
                 ylineDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                               handler=onDeleteMask)
+                    locationcode=code,handler=onDeleteMask)
                 littleSizer.Add(ylineDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
         
@@ -2424,8 +2426,9 @@ def UpdateMasks(G2frame,data):
                     polyList.append("%.2f, %.2f"%(x,y))
                 polyText = wx.ComboBox(G2frame.dataWindow,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
                 littleSizer.Add(polyText,0,WACV)
+                code = '%s+%d'%('Polygons',1)
                 polyDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                              handler=onDeleteMask)
+                    locationcode=code,handler=onDeleteMask)
                 littleSizer.Add(polyDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if frame:
@@ -2440,8 +2443,9 @@ def UpdateMasks(G2frame,data):
             frameList.append("%.2f, %.2f"%(x,y))
         frameText = wx.ComboBox(G2frame.dataWindow,value=frameList[0],choices=frameList,style=wx.CB_READONLY)
         littleSizer.Add(frameText,0,WACV)
+        code = '%s+%d'%('Frames',0)
         frameDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
-                                       handler=onDeleteFrame)
+            locationcode=code,handler=onDeleteFrame)
         littleSizer.Add(frameDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     G2frame.dataWindow.SetDataSize()

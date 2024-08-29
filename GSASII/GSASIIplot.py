@@ -8526,12 +8526,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist = G2frame.frameArtist
                 artist.set_data((xl,yl)) # lines
                 Page.figure.gca().draw_artist(artist)
-            # elif pickType.startswith('Xlines'):
-            #     itemNum = G2frame.itemPicked.itemNumber
-                
-            # elif pickType.startswith('Ylines'):
-            #     itemNum = G2frame.itemPicked.itemNumber
-                
+            elif pickType.startswith('Xline'):
+                a = Page.figure.gca().axhline(Ypos,color='g',
+                                     linewidth=1,linestyle=(0,(5,5)))
+                Page.figure.gca().draw_artist(a)
+            elif pickType.startswith('Yline'):
+                a = Page.figure.gca().axvline(Xpos,color='g',
+                                     linewidth=1,linestyle=(0,(5,5)))
+                Page.figure.gca().draw_artist(a)
             else: # non-dragable object
                 return
             Page.canvas.blit(Page.figure.gca().bbox)
@@ -8570,6 +8572,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 pl = [G2frame.polyList[pick.itemNumber]]
             elif pickType == 'Frame':
                 pl = [G2frame.frameArtist,]
+            elif 'line' in pickType:
+                pl = [pick,]
             else:
                 print('picktype {} should not happen!'.format(pickType))
                 GSASIIpath.IPyBreak()
@@ -8834,6 +8838,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif pickType == 'Frame' and treeItem == 'Masks':
                 UpdatePolygon(G2frame.itemPicked,event,Masks['Frames'])
                 G2imG.UpdateMasks(G2frame,Masks)
+            elif pickType.startswith('Xline'):
+                itemNum = G2frame.itemPicked.itemNumber
+                Masks['Xlines'][itemNum] = int(0.5 + 1000.*Ypos/pixelSize[1])
+                G2imG.UpdateMasks(G2frame,Masks)
+            elif pickType.startswith('Yline'):
+                itemNum = G2frame.itemPicked.itemNumber
+                Masks['Ylines'][itemNum] = int(0.5 + 1000.*Xpos/pixelSize[0])
+                G2imG.UpdateMasks(G2frame,Masks)
             else: # nothing was done, nothing was changed, don't replot
                 G2frame.itemPicked = None
                 return 
@@ -8919,7 +8931,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         xcent += Data['distance']*nptand(Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
-    #do threshold mask - "real" mask - others are just bondaries
+    #do threshold mask - "real" mask - others are just boundaries
     Zlim = Masks['Thresholds'][1]
     wx.BeginBusyCursor()
     try:
@@ -8929,7 +8941,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             try:
                 MaskA = ma.getmaskarray(MA)^Masks['SpotMask']['spotMask']
                 MA = ma.array(MA,mask=MaskA)
-            except KeyError: # should not be needed if initializtion is proper
+            except KeyError: # should not be needed if initialization is proper
 #                if GSASIIpath.GetConfigValue('debug'): print('SpotMask missing')
                 MaskA = ma.getmaskarray(MA)
             except TypeError: # needed if spotMasks set to initial value (None)
@@ -9112,6 +9124,20 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist = Plot.plot(x,y,'g+',picker=True,pickradius=10)[0] # point (plus sign)
                 artist.itemType = 'Frame'
                 artist.pointNumber = i
+        # Line mask display
+        if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Masks',]:
+            for i,xline in enumerate(Masks.get('Xlines',[])):
+                ypos = xline*pixelSize[1]/1000. # pixel to mm
+                a = Plot.axhline(ypos,color='g',picker=True,pickradius=2.,
+                                     linewidth=0.25,linestyle=(0,(10,10)))
+                a.itemType = 'Xline'
+                a.itemNumber = i
+            for i,yline in enumerate(Masks.get('Ylines',[])):
+                xpos = yline*pixelSize[0]/1000. # pixel to mm
+                a = Plot.axvline(xpos,color='g',picker=True,pickradius=2.,
+                                     linewidth=0.5,linestyle=(0,(5,5)))
+                a.itemType = 'Yline'
+                a.itemNumber = i
         if newImage:
             Page.figure.colorbar(Page.ImgObj)
         Plot.set_xlim(xlim)

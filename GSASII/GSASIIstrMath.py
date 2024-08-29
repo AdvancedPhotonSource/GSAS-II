@@ -4918,7 +4918,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             M = np.concatenate((M,wtFactor*df))
-# end of HKLF processing
+            # end of HKLF processing
 #    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs

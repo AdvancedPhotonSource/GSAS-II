@@ -7195,7 +7195,8 @@ class gitVersionSelector(wx.Dialog):
         # end patch 
         self.initial_commit = self.g2repo.commit('HEAD')
         self.initial_commit_info = self.docCommit(self.initial_commit)
-        
+        if parent is None:
+            parent = wx.GetApp().GetMainTopWindow()
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',
                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)

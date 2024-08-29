@@ -8148,11 +8148,17 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 'Choose instrument parameter file',
                 '', '',extList, wx.FD_OPEN)
             if os.path.exists(Settings['instfile']):
-                d.SetFilename(Settings['instfile'])
+                dr,f = os.path.split(Settings['instfile'])
+                d.SetDirectory(dr)
+                d.SetFilename(f)
             try:
                 if d.ShowModal() == wx.ID_OK:
                     Settings['instfile'] = d.GetPath()
                     fInp4.SetValue(Settings['instfile'])
+                    # change the "read from" directory if defaulted
+                    if Settings['indir'] == os.getcwd():
+                        Settings['indir'] = os.path.dirname(d.GetPath())
+                        fInp3.SetValue(Settings['indir'])
             finally:
                 d.Destroy()
         TestInput()
@@ -8391,6 +8397,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             G2frame.EnablePlot = True
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)
+        dlg.Raise()
             
     def RunTimerGR(event):
         if GSASIIpath.GetConfigValue('debug'):

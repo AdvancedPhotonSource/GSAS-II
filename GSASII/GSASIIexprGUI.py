@@ -673,8 +673,11 @@ class ExpressionDialog(wx.Dialog):
                 depVal = '; Variable "' + self.dependentVar + '" = ' + str(
                     self.depVarDict.get(self.dependentVar,'?')
                     )
-            self.setEvalResult("Expression evaluates to: "+str(s)+depVal+
-                                   " with first defined values")
+            if self.wildCard:
+                msg = " with first defined values"
+            else:
+                msg = " using parameter values"
+            self.setEvalResult(f"Expression evaluates to: {s}{depVal}{msg}")
             self.OKbtn.Enable()
             if self.ExtraBtn: self.ExtraBtn.Enable()
         finally:  

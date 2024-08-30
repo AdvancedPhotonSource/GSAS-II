@@ -121,34 +121,56 @@ are stored in a dict with these keys:
 
 .. tabularcolumns:: |l|l|p{4in}|
 
-=============  ===============  ====================================================
+=============  ===============  ===========================================================================
   key            sub-key        explanation
-=============  ===============  ====================================================
-newCellDict    \                (dict) ith lattice parameters computed by
+=============  ===============  ===========================================================================
+newCellDict    \                (dict) lattice parameters computed by
                                 :func:`GSASIIstrMath.GetNewCellParms`
-title          \                (str) Name of gpx file(?) 
-variables      \                (list) Values for all N refined variables
+title          \                (str) Name of gpx file
+variables      \                (list) Values for refined variables
                                 (list of float values, length N,
                                 ordered to match varyList)
-sig            \                (list) Uncertainty values for all N refined variables
+sig            \                (list) Standard uncertainty values for refined variables
                                 (list of float values, length N,
                                 ordered to match varyList)
 varyList       \                (list of str values, length N) List of directly refined variables
-                                
+varyListStart  \                (list) initial refined variables before dependent vars are removed
 newAtomDict    \                (dict) atom position values computed in
-                                :func:`GSASIIstrMath.ApplyXYZshifts` 
+                                :func:`GSASIIstrMath.ApplyXYZshifts`
+Lastshft       \                (list) The shifts applied to each variable in the last refinement
+                                run. (list of float values, length N,
+                                ordered to match varyList)
+depSigDict     \                (dict) Values along with standard uncertainty values for
+                                dependent variables
+covMatrix      \                (np.array) The (NxN) covVariance matrix
+freshCOV       \                (bool) indicates if the covMatrix has been freshly computed
+msg            \                Warning/error messages from the last refinement run
+
 Rvals          \                (dict) R-factors, GOF, Marquardt value for last
                                 refinement cycle 
 \              Nobs             (int) Number of observed data points 
+\              Nvars            (int) Number of refined parameters
 \              Rwp              (float) overall weighted profile R-factor (%)
 \              chisq            (float) :math:`\sum w*(I_{obs}-I_{calc})^2`                                
                                 for all data.
-                                Note: this is not the reduced :math:`\chi^2`. 
+                                Note: this is what GSAS-II calls :math:`\chi^2`,
+                                which is not the same thing as the reduced :math:`\chi^2`. 
 \              lamMax           (float) Marquardt value applied to Hessian diagonal
 \              GOF              (float) The goodness-of-fit, aka square root of
-                                the reduced chi squared. 
-covMatrix      \                (np.array) The (NxN) covVariance matrix 
-=============  ===============  ====================================================
+                                the reduced :math:`\chi^2` squared, after refinement. 
+\              GOF0             (float) The goodness-of-fit, aka square root of
+                                the reduced :math:`\chi^2` square, before refinement.
+\              lastShifts       (dict) values of the shifts applied in the last
+                                refinement cycle (note: differs from `Lastshft`,
+                                which has values from the last run).
+\              SVD0             (int) number of singular value decomposition
+                                (SVD) singularities
+\              converged        (bool) True if last refinement run converged
+\              DelChi2          (float) change in :math:`\chi^2` in last refinement cycle
+\              RestraintSum     (float) sum of restraints
+\              RestraintTerms   (float) total number of restraints 
+\              Max shft/sig     (float) maximum shift/s.u. for shifts applied in last refinement run
+=============  ===============  ===========================================================================
 
 .. _Phase_table:
 

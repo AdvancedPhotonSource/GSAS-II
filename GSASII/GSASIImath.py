@@ -196,6 +196,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     '''
     ifConverged = False
     deltaChi2 = -10.
+    lastShifts = None
     x0 = np.array(x0, ndmin=1, dtype=np.float64) # make sure that x0 float 1-D
     # array (in case any parameters were set to int)
     n = len(x0)
@@ -336,6 +337,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 chitol *= 2
             else:   # refinement succeeded
                 x0 += XvecAll
+                lastShifts = XvecAll    # save shifts in last cycle (for CIF)
                 lam /= 10. # drop lam on next cycle
                 break
         # complete current cycle
@@ -397,6 +399,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if len(psing_prev):
             ins = [j-i for i,j in enumerate(psing_prev)]
             Bmat = np.insert(np.insert(Bmat,ins,0,1),ins,0,0)
+        if lastShifts is not None:
+            info['lastShifts'] = lastShifts
         return [x0,Bmat,info]
     except nl.LinAlgError:
         G2fil.G2Print('Warning: Hessian too ill-conditioned to get full covariance matrix')
@@ -423,6 +427,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':-1,'Xvec':None, 'chisq0':chisqf}
         info['psing'] = [i for i in range(n) if i not in indices]
+        if lastShifts is not None:
+            info['lastShifts'] = lastShifts
         return [x0,None,info]
     # expand Bmat by filling with zeros if columns have been dropped
     psing = [i for i in range(n) if i not in indices]
@@ -432,9 +438,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,
         'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
     info['psing'] = [i for i in range(n) if i not in indices]
+    if lastShifts is not None:
+        info['lastShifts'] = lastShifts
     setSVDwarn(info,Amat,Nzeros,indices)
     return [x0,Bmat,info]
-            
+    
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
     '''

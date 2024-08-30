@@ -8131,14 +8131,20 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
     def OnShowShift(event):
-        if 'Lastshft' not in data:
-            return
-        if data['Lastshft'] is None:
-            return
-        shftesd = data['Lastshft']/data['sig']
-        
+        breakpoint()
+        if 'cycle' in event.EventObject.GetLabel():
+            shftesd = [data['Rvals']['lastShifts'].get(k,0)/s for k,s in
+                           zip(data['varyList'],data['sig'])]
+            lbl = 'Total shift/esd for last refinement cycle'
+        else:
+            if 'Lastshft' not in data:
+                return
+            if data['Lastshft'] is None:
+                return
+            shftesd = data['Lastshft']/data['sig']
+            lbl = 'Total shift/esd over last refinement run'
         G2plt.PlotNamedFloatHBarGraph(G2frame,shftesd,data['varyList'],Xlabel='Total shift/esd',
-            Ylabel='Variables',Title='Total shift/esd',PlotName='Shift/esd')
+            Ylabel='Variables',Title=lbl,PlotName='Shift/esd')
     
     if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
         if GSASIIpath.GetConfigValue('debug'): print('Skipping SelectDataTreeItem as G2frame.PickIdText unchanged')
@@ -8269,11 +8275,19 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     lbl += f'\n\tGOF = {np.sqrt(chisq_data):.2f}'
                     lbl += f'\n\tReduced χ**2 = {chisq_data:.2f}'
                     subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                plotSizer = wx.BoxSizer(wx.HORIZONTAL)
+
                 if 'Lastshft' in data and not data['Lastshft'] is None:
-                    showShift = wx.Button(G2frame.dataWindow,label='Show shift/esd plot')
+                    showShift = wx.Button(G2frame.dataWindow,label='Plot shift/esd -- last refinement')
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)
-                    subSizer.Add((-1,10))
-                    subSizer.Add(showShift)
+                    plotSizer.Add(showShift)
+                if 'lastShifts' in data['Rvals']:
+                    showShift = wx.Button(G2frame.dataWindow,label='Plot shift/esd -- last cycle')
+                    showShift.Bind(wx.EVT_BUTTON,OnShowShift)
+                    plotSizer.Add((10,-1))
+                    plotSizer.Add(showShift)
+                subSizer.Add((-1,10))
+                subSizer.Add(plotSizer)
             mainSizer.Add(subSizer)
             mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
             G2frame.dataWindow.GetSizer().Add(mainSizer)

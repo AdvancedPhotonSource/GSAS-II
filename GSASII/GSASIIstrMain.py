@@ -301,6 +301,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 refPlotUpdate=refPlotUpdate)
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
+            if 'lastShifts' in result[2]:
+                Rvals['lastShifts'] = dict(zip(varyList,result[2]['lastShifts']))
             if 'Ouch#4' in  result[2]:
                 Rvals['Aborted'] = True
             if 'msg' in result[2]:

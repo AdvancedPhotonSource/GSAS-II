@@ -802,6 +802,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRefinePartials, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Parameter Impact\tCTRL+I','Perform a derivative calculation')
         self.Bind(wx.EVT_MENU, self.OnDerivCalc, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'Evaluate expression and s.u.','Perform uncertainty analysis on an expression of GSAS-II parameters')
+        self.Bind(wx.EVT_MENU, self.OnExpressionCalc, id=item.GetId())
         
         item = parent.Append(wx.ID_ANY,'Save partials as csv','Save the computed partials as a csv file')
         self.Refine.append(item)
@@ -5360,6 +5362,15 @@ If you continue from this point, it is quite likely that all intensity computati
         G2G.G2ScrolledGrid(self,'Parameter Impact Results','Impact Results',tbl,colLbls,colTypes,
             maxSize=(700,400),comment=' Cite: B.H. Toby, IUCrJ, to be published')
 
+    def OnExpressionCalc(self,event):
+        import GSASIIexprGUI as G2exG
+        parmDict,varyList = self.MakeLSParmDict()
+        dlg = G2exG.ExpressionDialog(self,parmDict,
+                           header="Evaluate an expression of GSAS-II parameters",
+                           fit=False,wildCard=self.testSeqRefineMode())
+        exprobj = dlg.Show(True)
+#        if exprobj:
+                            
     def OnRefine(self,event):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.

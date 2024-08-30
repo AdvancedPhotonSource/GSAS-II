@@ -662,12 +662,16 @@ def GetTthAzmG2(x,y,data):
     dzp = peneCorr(tth0,data['DetDepth'],dist)
     tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp) 
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
     
-    distsq = data['distance']**2
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    # distsq = data['distance']**2
+    # x0 = data['distance']*nptand(tilt)
+    # x0x = x0*npcosd(data['rotation'])
+    # x0y = x0*npsind(data['rotation'])
+    # G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return tth,azm,G
 
 def GetTthAzmG(x,y,data):
@@ -704,12 +708,16 @@ def GetTthAzmG(x,y,data):
     ctth = costth(dxyz)
     tth = npacosd(ctth)
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation        
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    distsq = data['distance']**2
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
+# # G-calculation        
+#     x0 = data['distance']*nptand(tilt)
+#     x0x = x0*npcosd(data['rotation'])
+#     x0y = x0*npsind(data['rotation'])
+#     distsq = data['distance']**2
+#     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return tth,azm,G
 
 def GetDsp(x,y,data):
@@ -1459,6 +1467,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     H0 = np.zeros(shape=(numAzms,1),order='F',dtype=np.float32)
     AMasks = {'Points':[],'Rings':[ring,],'Arcs':[],'Polygons':[],'Frames':[],
          'Thresholds':data['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+    muT = data.get('SampleAbs',[0.0,''])[0]
     LUtth = [ring[0],ring[0]+ring[1]]
     dtth = ring[1]
     Nx,Ny = data['size']
@@ -1477,8 +1486,17 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin),tamp)
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
-            # tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
-            # tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
+            if data.get('SampleAbs',[0.0,''])[1]:
+                if 'Cylind' in data['SampleShape']:
+                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
+                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
+                    tabs = G2pwd.Absorb('Fixed',muT,tay)
+                else:
+                    tabs = np.ones_like(taz)
+            else:
+                tabs = np.ones_like(taz)                
+            taz = np.array((taz*tad*tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,1,LRazm,LUtth,Dazm,dtth,NST,H0)
@@ -1592,7 +1610,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             times[2] += time.time()-t0          #fill map
 
             t0 = time.time()
-            taz = np.array((taz*tad/tabs),dtype='float32')
+            taz = np.array((taz*tad*tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)

@@ -572,7 +572,6 @@ def GetTthAzmDsp2(x,y,data): #expensive
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
-    D = ((dx-x0)**2+dy**2+dist**2)      #sample to pixel distance
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
@@ -583,7 +582,10 @@ def GetTthAzmDsp2(x,y,data): #expensive
     tth = npatan2d(DY,DX) 
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-    G = D/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
     return np.array([tth,azm,G,dsp])
     
 def GetTthAzmDsp(x,y,data): #expensive
@@ -625,12 +627,10 @@ def GetTthAzmDsp(x,y,data): #expensive
     tth = npacosd(ctth)
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation        
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    distsq = data['distance']**2
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
     return [tth,azm,G,dsp]
     
 def GetTth(x,y,data):

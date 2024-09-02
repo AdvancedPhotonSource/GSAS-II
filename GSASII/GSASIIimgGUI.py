@@ -1745,7 +1745,7 @@ def UpdateMasks(G2frame,data):
     
     def OnTextMsg(event):
         Obj = event.GetEventObject()
-        Obj.SetToolTipString('Drag this mask on 2D Powder Image with mouse to change ')
+        Obj.SetToolTip('Drag this mask on 2D Powder Image with mouse to change ')
 
     def Replot(*args,**kwargs):
         wx.CallAfter(G2plt.PlotExposedImage,G2frame)

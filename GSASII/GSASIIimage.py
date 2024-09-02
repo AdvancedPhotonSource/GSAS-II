@@ -566,7 +566,6 @@ def GetTthAzmDsp2(x,y,data): #expensive
     cent = data['center']
     tilt = data['tilt']
     dist = data['distance']/cosd(tilt)
-    x0 = dist*tand(tilt)
     phi = data['rotation']
     dep = data.get('DetDepth',0.)
     azmthoff = data['azmthOff']
@@ -582,11 +581,7 @@ def GetTthAzmDsp2(x,y,data): #expensive
     tth = npatan2d(DY,DX) 
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-# G-calculation - use Law of sines
-    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
-    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = data['distance']**2*sinB2/npsind(C)**2
-    return np.array([tth,azm,G,dsp])
+    return np.array([tth,azm,dsp])
     
 def GetTthAzmDsp(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
@@ -627,11 +622,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     tth = npacosd(ctth)
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation - use Law of sines
-    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
-    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = data['distance']**2*sinB2/npsind(C)**2
-    return [tth,azm,G,dsp]
+    return [tth,azm,dsp]
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -646,6 +637,20 @@ def GetTthAzm(x,y,data):
         return GetTthAzmDsp(x,y,data)[0:2]
     else:
         return GetTthAzmDsp2(x,y,data)[0:2]
+    
+def GetDsp(x,y,data):
+    'Give d-spacing value for detector x,y position; calibration info in data'
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[2]
+    else:
+        return GetTthAzmDsp2(x,y,data)[2]
+       
+def GetAzm(x,y,data):
+    'Give azimuth value for detector x,y position; calibration info in data'
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[1]
+    else:
+        return GetTthAzmDsp2(x,y,data)[1]
     
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
@@ -666,12 +671,6 @@ def GetTthAzmG2(x,y,data):
     sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
     G = data['distance']**2*sinB2/npsind(C)**2
-    
-    # distsq = data['distance']**2
-    # x0 = data['distance']*nptand(tilt)
-    # x0x = x0*npcosd(data['rotation'])
-    # x0y = x0*npsind(data['rotation'])
-    # G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return tth,azm,G
 
 def GetTthAzmG(x,y,data):
@@ -712,28 +711,8 @@ def GetTthAzmG(x,y,data):
     sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
     G = data['distance']**2*sinB2/npsind(C)**2
-# # G-calculation        
-#     x0 = data['distance']*nptand(tilt)
-#     x0x = x0*npcosd(data['rotation'])
-#     x0y = x0*npsind(data['rotation'])
-#     distsq = data['distance']**2
-#     G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return tth,azm,G
 
-def GetDsp(x,y,data):
-    'Give d-spacing value for detector x,y position; calibration info in data'
-    if data['det2theta']:
-        return GetTthAzmDsp(x,y,data)[3]
-    else:
-        return GetTthAzmDsp2(x,y,data)[3]
-       
-def GetAzm(x,y,data):
-    'Give azimuth value for detector x,y position; calibration info in data'
-    if data['det2theta']:
-        return GetTthAzmDsp(x,y,data)[1]
-    else:
-        return GetTthAzmDsp2(x,y,data)[1]
-    
 def meanAzm(a,b):
     AZM = lambda a,b: npacosd(0.5*(npsind(2.*b)-npsind(2.*a))/(np.pi*(b-a)/180.))/2.
     azm = AZM(a,b)

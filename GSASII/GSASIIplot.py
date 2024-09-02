@@ -8177,7 +8177,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Int = 0
                 if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
-                tth,azm,D,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
+                tth,azm,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 if G2frame.StrainKey:
                     G2frame.G2plotNB.status.SetStatusText('d-zero pick active',0)

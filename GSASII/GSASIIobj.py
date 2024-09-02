@@ -1913,12 +1913,8 @@ class ExpressionCalcObj(object):
         '''Standard error evaluation where supplied by the evaluator
         '''
         # Patch: for old-style expressions with a (now removed step size)
-        if '2' in platform.python_version_tuple()[0]: 
-            basestr = basestring
-        else:
-            basestr = str
         for v in self.eObj.assgnVars:
-            if not isinstance(self.eObj.assgnVars[v], basestr):
+            if not isinstance(self.eObj.assgnVars[v], str):
                 self.eObj.assgnVars[v] = self.eObj.assgnVars[v][0]
         self.parmDict = {}
         '''A copy of the parameter dictionary, for distance and angle computation
@@ -1936,13 +1932,9 @@ class ExpressionCalcObj(object):
 
         # look at first value in parmDict to determine its type
         parmsInList = True
-        if '2' in platform.python_version_tuple()[0]: 
-            basestr = basestring
-        else:
-            basestr = str
         for key in parmDict:
             val = parmDict[key]
-            if isinstance(val, basestr):
+            if isinstance(val, str):
                 parmsInList = False
                 break
             try: # check if values are in lists

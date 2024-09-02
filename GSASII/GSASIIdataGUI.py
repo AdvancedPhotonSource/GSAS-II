@@ -5363,14 +5363,134 @@ If you continue from this point, it is quite likely that all intensity computati
             maxSize=(700,400),comment=' Cite: B.H. Toby, IUCrJ, to be published')
 
     def OnExpressionCalc(self,event):
+        '''Compute an arbitrary expression (supplied by user) as well as the 
+        (statistical) standard uncertainty on that expression.
+
+        Uses the :class:`GSASIIexprGUI.ExpressionDialog` to obtain 
+        an expression which is evaluated using the 
+        :class:`GSASIIobj.ExpressionObj` capability. Then the derivative of
+        the expression is computed numerically for every parameter in the
+        covariance matrix. Finally the derivative list is used to find
+        the s.u. on the expression using Ted Prince's method. 
+        '''
         import GSASIIexprGUI as G2exG
+        import GSASIIstrMath as G2stMth
+        def extendChanges():
+            '''Propagate changes due to constraint and rigid bodies 
+            from varied parameters to dependent parameters
+            '''
+            # apply constraints
+            G2mv.Dict2Map(prms)
+            # apply rigid body constraints
+            G2stMth.ApplyRBModels(prms,Phases,rigidbodyDict)
+            # apply shifts to atoms
+            for dk in prms:
+                if not '::dA' in dk: continue
+                if prms[dk] == 0: continue
+                k = dk.replace('::dA','::A')
+                prms[k] += prms[dk]
+                prms[dk] = 0
+            # TODO: debug: find what has changed
+            #print(var,[k for k in prms if prms[k] != parmValDict[k]])
+            #print(var,[prms[k] for k in prms if prms[k] != parmValDict[k]])
+            # end debug
+        def striphist(var,insChar=''):
+            'strip a histogram number from a var name'
+            sv = var.split(':')
+            if len(sv) <= 1: return var
+            if sv[1]:
+                sv[1] = insChar
+            return ':'.join(sv)
+                
+
+            name = histNames[0]
+            data = seqDict
+
         parmDict,varyList = self.MakeLSParmDict()
-        dlg = G2exG.ExpressionDialog(self,parmDict,
-                           header="Evaluate an expression of GSAS-II parameters",
-                           fit=False,wildCard=self.testSeqRefineMode())
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        if not len(Phases) or not len(Histograms):
+            print('Expression computation not possible without definition of phases and histograms')
+            return
+        Constraints = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Constraints'))
+        errmsg,warnmsg = G2cnstG.CheckConstraints(self,Phases,Histograms,
+                                    Constraints,[],copy.copy(varyList))
+        item = GetGPXtreeItemId(self,self.root,'Covariance')
+        covData = self.GPXtree.GetItemPyData(item)
+        covData['covMatrix'] = covData.get('covMatrix',[])
+        parmValDict = {i:parmDict[i][0] for i in parmDict}  # dict w/parm values only            
+        G2mv.Map2Dict(parmValDict,G2mv.saveVaryList)
+        rigidbodyDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Rigid bodies'))
+
+        if self.testSeqRefineMode():
+            seqDict = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root,'Sequential results'))
+            histNames = [h for h in self.testSeqRefineMode() if h in seqDict]
+            if len(histNames) == 0:
+                print('no histograms')
+                return
+            # wildcard the histogram values
+            for k in sorted(parmValDict,reverse=True):
+                ks = striphist(k,'*')
+                if ks != k:
+                    parmValDict[ks] = parmValDict[k]
+                    del parmValDict[k]
+        
+        dlg = G2exG.ExpressionDialog(self,parmValDict,
+                    header="Evaluate an expression of GSAS-II parameters",
+                    VarLabel = "Expression",
+                    fit=False,wildCard=self.testSeqRefineMode())
         exprobj = dlg.Show(True)
-#        if exprobj:
-                            
+        if not exprobj: return
+
+        if not self.testSeqRefineMode():
+            histNames = [0]
+        for h in histNames:
+            prfx = ''
+            if self.testSeqRefineMode():
+                parmValDict = seqDict[h]['parmDict']
+                covMatrix = seqDict[h]['covMatrix']
+                CvaryList = seqDict[h]['varyList']
+                Csig = seqDict[h]['sig']
+                prfx = h+': '
+            else:
+                covMatrix = covData['covMatrix']
+                CvaryList = covData['varyList']
+                Csig = covData['sig']
+            # evaluate the expression
+            try:
+                calcobj = G2obj.ExpressionCalcObj(exprobj)
+                calcobj.SetupCalc(parmValDict)
+                value = calcobj.EvalExpression()
+            except:
+                continue
+            # evaluate the derivatives of the expression with respect to
+            # the varied parameters
+            if len(covMatrix) > 0:
+                derivs = []
+                for var,sig in zip(CvaryList,Csig):
+                    prms = copy.copy(parmValDict)
+                    if sig == 0:
+                        derivs.append(0.0)
+                        continue
+                    prms[var] += sig
+                    extendChanges()
+                    calcobj.SetupCalc(prms)
+                    valP = calcobj.EvalExpression()
+                    prms[var] -= 2*sig
+                    extendChanges()
+                    calcobj.SetupCalc(prms)
+                    valM = calcobj.EvalExpression()
+                    derivs.append((valP-valM)/(2*sig))
+                Avec = np.array(derivs)
+                sig = np.sqrt(np.inner(Avec.T,np.inner(covMatrix,Avec)))
+            else:
+                sig = -1
+            if sig > 0:
+                print(f'{prfx}{exprobj.expression!r} value = {G2mth.ValEsd(value,sig)}')
+            elif sig == 0:
+                print(f'{prfx}{exprobj.expression!r} value = {G2mth.ValEsd(value,-abs(value)/10000)} (0 uncertainty)')
+            else:
+                print(f'{prfx}{exprobj.expression!r} value = {G2mth.ValEsd(value,-abs(value)/10000)} (no s.u.: no covariance available')
+        
     def OnRefine(self,event):
         '''Perform a single refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.

@@ -8276,7 +8276,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if not (event.xdata and event.ydata): return
                 xpos = event.xdata
                 ypos = event.ydata
-                tth,azm,D,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
+                tth,azm,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
                 G2frame.calibDmin.SetValue(dsp)
             elif event.key in ['x',]:
                 Data['invert_x'] = not Data['invert_x']
@@ -8321,7 +8321,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 # mouse is outside window. Could abort the movement,
                 # for now ignore the movement until it moves back in
                 return
-            tth,azm,D,dsp = G2img.GetTthAzmDsp2(event.xdata,event.ydata,Data)
+            tth,azm,dsp = G2img.GetTthAzmDsp2(event.xdata,event.ydata,Data)
             itemPicked = str(G2frame.itemPicked)
             if 'Itth' in itemPicked:
                 Data['IOtth'][0] = max(tth,0.001)
@@ -8455,7 +8455,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 wave = Data['wavelength']
                 itemNum = G2frame.itemPicked.itemNumber
                 tth,azm,thick = Masks['Arcs'][itemNum]
-                tthN,azmN,D,dsp = G2img.GetTthAzmDsp2(Xpos,Ypos,Data)
+                tthN,azmN,dsp = G2img.GetTthAzmDsp2(Xpos,Ypos,Data)
                 if event.button == 1:
                     if pickType == 'ArcInner':
                         angO = angI = tthN

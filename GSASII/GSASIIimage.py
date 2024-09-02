@@ -553,14 +553,15 @@ def GetDetXYfromThAzm(Th,Azm,data):
     '''
     dsp = data['wavelength']/(2.0*npsind(Th))    
     return GetDetectorXY(dsp,Azm,data)
-                    
+
+# this suite not used for integration - only image plotting & mask positioning                    
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
     Use only for detector 2-theta = 0
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-       G is ? and dsp is the d-space
+       and dsp is the d-space - not used in integration
     '''
     wave = data['wavelength']
     cent = data['center']
@@ -589,7 +590,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     Use for detector 2-theta != 0.
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-        G is ? and dsp is the d-space
+        and dsp is the d-space - not used in integration
     '''
     
     def costth(xyz):
@@ -651,7 +652,7 @@ def GetAzm(x,y,data):
         return GetTthAzmDsp(x,y,data)[1]
     else:
         return GetTthAzmDsp2(x,y,data)[1]
-    
+# these two are used only for integration & finding pixel masks    
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration for detector 2-theta = 0

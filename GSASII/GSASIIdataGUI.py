@@ -5871,7 +5871,6 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         
         # save Tree to file and from here forward, work from the .gpx file not from the data tree
         self.OnFileSave(event)
-        breakpoint()
         Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(self.GSASprojectfile)
         for h in seqList: # check constraints are OK for each histogram to be processed
             errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,

@@ -5357,7 +5357,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                      ' Use whole star',' Filter by','preserve axes',
                      'test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,'',True,'',False,100],
-            limits=[[None,None,None],[None,None,None],[None,None,None],
+            limits=[['0','0','0'],['0','0','0'],['0','0','0'],
                     [True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],testAtoms,[True,False],[1,100]],
             testfxns = [[strTest,strTest,strTest],

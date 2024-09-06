@@ -70,7 +70,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         self.powderentry[0] = filename
         fp = open(filename,'rb')
         if 'ver. 1' in self.formatName:
-            raise Exception    #for now
+            raise Exception('Read of Bruker "RAW " (pre-version #) file not supported')    #for now
         elif 'ver. 2' in self.formatName:
             fp.seek(4)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
@@ -98,7 +98,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         fp.seek(pos)                                    
                         x = np.array([start2Th+i*step for i in range(nSteps)])
                         y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
-                        y = np.where(y<0.,y,1.)
+                        y = np.where(y<0.,1.,y)
                         w = 1./y
                         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                         break

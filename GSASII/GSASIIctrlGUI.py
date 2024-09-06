@@ -2583,7 +2583,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
 
     txtSizer = wx.BoxSizer(wx.VERTICAL)
     txt = wx.StaticText(spanel,wx.ID_ANY,txt)
-    txt.Wrap(600)
+    txt.Wrap(width-20)
     txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     txtSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
     spanel.SetSizer(txtSizer)

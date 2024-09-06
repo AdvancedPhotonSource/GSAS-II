@@ -16720,7 +16720,8 @@ of the crystal structure.
         if (PatternId):
             UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
             UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-            flag = not any(['magAtms' in i for i in UCdata[5]])
+            if len(UCdata) >5:
+                flag = not any(['magAtms' in i for i in UCdata[5]])
         else:
             del data['magPhases']
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,flag)

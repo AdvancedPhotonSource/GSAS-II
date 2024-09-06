@@ -45,8 +45,18 @@ keV = 12.397639
 ################################################################################
         
 def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
-    ''' Takes RB info from RBModels in Phase and RB data in rigidbodyDict along with
+    '''Takes RB info from RBModels in Phase and RB data in rigidbodyDict along with
     current RB values in parmDict & modifies atom contents (fxyz & Uij) of parmDict
+    Takes RB parameters from parmDict and rigid body desriptions from rigidbodyDict
+    and atomic information from Phases to compute parmDict values.
+
+    :param dict parmDict: parameter dict. This is updated by this routine.
+    :param dict Phases: nested dict with information on all phases (from data tree)
+    :param dict rigidbodyDict: dict with information on all rigid bodies (from data tree)
+    :param bool Update: if True, the rigidbodyDict is updated with parameters in
+      parmDict. (Default: False.)
+
+    :returns: a list of parameters that are set by this routine
     '''
     atxIds = ['Ax:','Ay:','Az:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
@@ -61,6 +71,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
         RBData = rigidbodyDict
     else:
         RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
+    changedPrms = []
     if RBIds['Vector']:                       # first update the vector magnitudes
         VRBData = RBData['Vector']
         for i,rbId in enumerate(VRBIds):
@@ -108,13 +119,18 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 atId = RBObj['Ids'][i]
                 if parmDict[pfx+'Afrac:'+str(AtLookup[atId])]:
                     parmDict[pfx+'Afrac:'+str(AtLookup[atId])] = RBObj['AtomFrac'][0]
+                    changedPrms.append(pfx+'Afrac:'+str(AtLookup[atId]))
+
                 for j in [0,1,2]:
                     parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
+                    changedPrms.append(pfx+atxIds[j]+str(AtLookup[atId]))
                 if UIJ[i][0] == 'A':
                     for j in range(6):
                         parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = UIJ[i][j+2]
+                        changedPrms.append(pfx+atuIds[j]+str(AtLookup[atId]))
                 elif UIJ[i][0] == 'I':
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
+                    changedPrms.append(pfx+'AUiso:'+str(AtLookup[atId]))
             
         for irb,RBObj in enumerate(RBModels.get('Residue',[])):
             jrb = RRBIds.index(RBObj['RBId'])
@@ -145,13 +161,17 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 atId = RBObj['Ids'][i]
                 if parmDict[pfx+'Afrac:'+str(AtLookup[atId])]:
                     parmDict[pfx+'Afrac:'+str(AtLookup[atId])] = RBObj['AtomFrac'][0]
+                    changedPrms.append(pfx+'Afrac:'+str(AtLookup[atId]))
                 for j in [0,1,2]:
                     parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
+                    changedPrms.append(pfx+atxIds[j]+str(AtLookup[atId]))
                 if UIJ[i][0] == 'A':
                     for j in range(6):
                         parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = UIJ[i][j+2]
+                        changedPrms.append(pfx+atuIds[j]+str(AtLookup[atId]))
                 elif UIJ[i][0] == 'I':
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
+                    changedPrms.append(pfx+'AUiso:'+str(AtLookup[atId]))
                     
         for irb,RBObj in enumerate(RBModels.get('Spin',[])):
             iAt = AtLookup[RBObj['Ids'][0]]
@@ -168,9 +188,10 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 for item in RBObj['SHC'][ish]:
                     name = pfx+'RBSSh;%d;%s:%d:%d'%(ish,item,iAt,jrb)
                     RBObj['SHC'][ish][item][0] = parmDict[name]
+    return changedPrms
                     
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
-    'Computes rigid body derivatives; there are none for Spin RBs'
+    'Computes rigid body derivatives w/r to RB params; N.B.: there are none for Spin RBs'
     atxIds = ['dAx:','dAy:','dAz:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     OIds = ['Oa:','Oi:','Oj:','Ok:']
@@ -325,7 +346,69 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
-                                
+
+def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
+    '''Computes s.u. values for atoms in rigid bodies
+
+    :param dict parmDict: parameter dict. This is not change by this routine.
+    :param dict Phases: nested dict with information on all phases (from data tree)
+    :param dict rigidbodyDict: dict with information on all rigid bodies (from data tree)
+    :param np.array covMatrix: covariance matrix (length NxN)
+    :param np.array CvaryList: list of refined parameters (length N)
+    :param np.array Csig: s.u. values for items in CvaryList  (length N)
+
+    :returns: a dict with s.u. values for parameters that are generated 
+      by Rigid Bodies. Will be an empty dict if there are no RBs in use.
+    '''
+    def extendChanges(prms):
+        '''Propagate changes due to constraint and rigid bodies 
+        from varied parameters to dependent parameters
+        '''
+        # apply constraints
+        G2mv.Dict2Map(prms)
+        # apply rigid body constraints
+        ApplyRBModels(prms,Phases,rigidbodyDict)
+        # apply shifts to atoms
+        for dk in prms:
+            if not '::dA' in dk: continue
+            if prms[dk] == 0: continue
+            k = dk.replace('::dA','::A')
+            prms[k] += prms[dk]
+            prms[dk] = 0
+    RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
+    prms = copy.deepcopy(parmDict)
+    if len(covMatrix) == 0:
+        return {}
+    
+    changedPrms = ApplyRBModels(parmDict,Phases,RBData)
+    if changedPrms is None: return {}
+    # evaluate the derivatives w/each atom parm with respect to the varied parms
+    RBsu = {}
+    derivs = {}
+    for k in sorted(changedPrms):
+        RBsu[k] = 0
+        derivs[k] = []
+    for var,sig in zip(CvaryList,Csig):
+        if sig == 0:
+            for k in changedPrms:
+                derivs[k].append(0.0)
+            continue
+        # apply shift & compute coords
+        prmsP = copy.copy(parmDict)
+        prmsM = copy.copy(parmDict)
+        prmsP[var] += sig
+        extendChanges(prmsP)
+        prmsM[var] -= sig
+        extendChanges(prmsM)
+        # save deriv
+        for k in changedPrms:
+            derivs[k].append((prmsP[k]-prmsM[k])/(2*sig))
+    # apply derivatives to covar matrix
+    for k in changedPrms:
+        Avec = np.array(derivs[k])
+        RBsu[k] = np.sqrt(np.inner(Avec.T,np.inner(covMatrix,Avec)))
+    return RBsu
+
 def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
     ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
     :param array HKL: reflection hkl set to be considered

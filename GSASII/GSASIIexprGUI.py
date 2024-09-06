@@ -38,7 +38,7 @@ def IndexParmDict(parmDict,wildcard):
       2 is histogram/phase parms, 3 is histogram parms and 4 are global parameters
     '''
     prex = re.compile('[0-9]+::.*')
-    hrex = re.compile(':[0-9]+:.*')
+    hrex = re.compile(':[0-9\*]+:.*')
     parmLists = {}
     for i in (1,2,3,4):
         parmLists[i] = []
@@ -674,9 +674,9 @@ class ExpressionDialog(wx.Dialog):
                     self.depVarDict.get(self.dependentVar,'?')
                     )
             if self.wildCard:
-                msg = " with first defined values"
+                msg = " with first defined value(s)"
             else:
-                msg = " using parameter values"
+                msg = " using parameter value(s)"
             self.setEvalResult(f"Expression evaluates to: {s}{depVal}{msg}")
             self.OKbtn.Enable()
             if self.ExtraBtn: self.ExtraBtn.Enable()

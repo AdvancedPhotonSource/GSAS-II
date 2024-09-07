@@ -2,6 +2,7 @@
 import sys
 import wx
 import numpy as np
+import copy
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 import GSASIIspc as G2spc
@@ -246,9 +247,12 @@ class testMagSym(wx.Frame):
         showMOps.Bind(wx.EVT_BUTTON,OnShowMOps)
         printSizer.Add(showMOps,0,WACV)
         mainSizer.Add(printSizer,0,WACV)
-        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Mag Gen: %s'%str(SGData['SGSpin'])))
-        spn = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
-        mainSizer.Add(wx.StaticText(self.testSSPanel,label='From symbol: %s'%str(spn)))
+        SGData1 = copy.deepcopy(SGData)
+        SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,SGData1['MagSpGrp'])
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Mag Gen: %s'%str(SGData1['SGSpin'])))
+        SGData1['GenSym'],SGData1['GenFlg'],BNSsym = G2spc.GetGenSym(SGData1)
+        SGData1['MagSpGrp'] = G2spc.MagSGSym(SGData1)
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%str(SGData1['MagSpGrp'])))
         self.testSSPanel.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.testSSPanel)
         Size[0] = 800

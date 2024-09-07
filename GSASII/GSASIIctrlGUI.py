@@ -10163,9 +10163,10 @@ def ImportMsg(parent,msgs):
     could not be installed (due to uninstalled Python packages). Then 
     offer the chance to install GSAS-II packages using :func:`SelectPkgInstall`
     '''
-    ShowScrolledInfo(parent,
-                    'Messages from importer(s)\n\n  '+
-                    '\n\n  '.join(msgs),
+    text = ('Message(s) from load of importers\n\n  '+
+                '\n\n'.join(msgs)+
+                '\n\nNote: These errors only need to be addressed if you want to use the importers listed above')
+    ShowScrolledInfo(parent,text,
                     header='Importer load problems',
                     width=650,
                     buttonlist=[('Install packages',SelectPkgInstall), wx.ID_CLOSE]

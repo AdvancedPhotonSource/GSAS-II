@@ -53,6 +53,9 @@ DEBUG = False    #True to skip printing of reflection/powder profile lists
 
 CIFdic = None
 
+errormsg = []
+warnmsg = []
+values = {}
 cellNames = ['length_a','length_b','length_c',
              'angle_alpha','angle_beta ','angle_gamma',
              'volume']
@@ -518,7 +521,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                 else:
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
-                    sig = sigDict.get(dvar,sigdig)
+                    sig = sigDict.get(dvar,self.RBsuDict.get(dvar,sigdig))
+                    if sig == 0: sig = sigdig
                     #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                     #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
@@ -539,7 +543,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                 sigdig = -0.0009
                 var = pfx+varnames[cia+j]+":"+str(i)
                 val = parmDict.get(var,at[cia+j])
-                sig = sigDict.get(var,sigdig)
+                sig = sigDict.get(var,self.RBsuDict.get(var,sigdig))
+                if sig == 0: sig = sigdig
                 s += PutInCol(G2mth.ValEsd(val,sig),11)
             WriteCIFitem(fp, s)
     # save information about rigid bodies
@@ -697,7 +702,7 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                 else:
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
-                    sig = sigDict.get(dvar,sigdig)
+                    sig = sigDict.get(dvar,sigdig) # magnetic atoms not in rigid bodies
                     #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                     #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
@@ -945,6 +950,7 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     parmDict = seqData[hist]['parmDict']
     sigDict = dict(zip(seqData[hist]['varyList'],seqData[hist]['sig']))
+    RBsuDict = seqData[hist].get('RBsuDict',{})      # retrieve rigid body s.u. values
     Atoms = phasedict['Atoms']
     cfrac = cx+3
     fpfx = str(phasedict['pId'])+'::Afrac:'
@@ -1014,7 +1020,8 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
                 else:
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
-                    sig = sigDict.get(dvar,sigdig)
+                    sig = sigDict.get(dvar,RBsuDict.get(dvar,sigdig))
+                    if sig == 0: sig = sigdig
                     #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                     #    sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
@@ -1028,14 +1035,15 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
                      '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
         for i,at in enumerate(Atoms):
             fval = parmDict.get(fpfx+str(i),at[cfrac])
-            if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+            if fval == 0.0: continue # ignore any atoms that have a occupancy set to exactly 0
             if at[cia] == 'I': continue
             s = PutInCol(labellist[i],6) # label
             for j in (2,3,4,5,6,7):
                 sigdig = -0.0009
                 var = pfx+varnames[cia+j]+":"+str(i)
                 val = parmDict.get(var,at[cia+j])
-                sig = sigDict.get(var,sigdig)
+                sig = sigDict.get(var,RBsuDict.get(var,sigdig))
+                if sig == 0: sig = sigdig
                 s += PutInCol(G2mth.ValEsd(val,sig),11)
             WriteCIFitem(fp, s)
     # save information about rigid bodies
@@ -1648,7 +1656,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem(self.fp, '_pd_proc_info_datetime', self.CIFdate)
                 WriteCIFitem(self.fp, '_pd_calc_method', 'Rietveld Refinement')
                 
-            #WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',DAT2)
             WriteCIFitem(self.fp, '_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             if self.ifHKLF:
                 controls = self.OverallParms['Controls']
@@ -1673,12 +1680,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             except:
                 GOF = '?'
             WriteCIFitem(self.fp, '_refine_ls_goodness_of_fit_all',GOF)
-            try:
-                DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
-            except:
-                DAT1 = 0
-            if DAT1:
-                WriteCIFitem(self.fp, '_refine_ls_shift/su_max','%.4f'%DAT1)
+            WriteCIFitem(self.fp, '_refine_ls_shift/su_max ',values['maxshft'])
+            WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',values['avgshft'])
 
             # get restraint info
             # restraintDict = self.OverallParms.get('Restraints',{})
@@ -1713,7 +1716,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem(self.fp, '_pd_proc_info_datetime', self.CIFdate)
                 WriteCIFitem(self.fp, '_pd_calc_method', 'Rietveld Refinement')
                 
-            #WriteCIFitem(self.fp, '_refine.ls_shift_over_su_mean',DAT2)
             WriteCIFitem(self.fp, '_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             if self.ifHKLF:
                 controls = self.OverallParms['Controls']
@@ -1738,12 +1740,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             except:
                 GOF = '?'
             WriteCIFitem(self.fp, '_refine.ls_goodness_of_fit_all',GOF)
-            try:
-                DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
-            except:
-                DAT1 = 0
-            if DAT1:
-                WriteCIFitem(self.fp, '_refine.ls_shift_over_su_max','%.4f'%DAT1)
+            WriteCIFitem(self.fp, '_refine.ls_shift_over_su_max ',values['maxshft'])
+            WriteCIFitem(self.fp, '_refine.ls_shift_over_su_mean',values['avgshft'])
 
             # get restraint info
             # restraintDict = self.OverallParms.get('Restraints',{})
@@ -3561,7 +3559,32 @@ class ExportCIF(G2IO.ExportBaseclass):
                 saveSize = None
             self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
-            vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,'Creating file '+self.filename))
+            # def ShowMsg(txt,head):
+            #     dlg = wx.MessageDialog(self.cifdefs,txt,head)
+            #     dlg.CenterOnParent()
+            #     dlg.ShowModal()
+            #     dlg.Destroy()
+
+            if errormsg or warnmsg:
+                if errormsg:
+                    hbox = wx.BoxSizer(wx.HORIZONTAL)
+                    hbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,f' Found {len(errormsg)} error(s)'),0,wx.RIGHT,5)
+                    but = wx.Button(self.cifdefs, wx.ID_ANY,'Show error(s)')
+                    but.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(self.cifdefs,
+                                        '\n\n'.join(errormsg),header='Error message(s)',width=400))
+                    hbox.Add(but)
+                    vbox.Add(hbox)
+                if warnmsg:
+                    hbox = wx.BoxSizer(wx.HORIZONTAL)
+                    hbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,f' Found {len(warnmsg)} warning(s)'),0,wx.RIGHT,5)
+                    but = wx.Button(self.cifdefs, wx.ID_ANY,'Show warning(s)')
+                    but.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(self.cifdefs,
+                                        '\n\n'.join(warnmsg),header='Warning(s)',width=400))
+                    hbox.Add(but)
+                    vbox.Add(hbox)
+                G2G.HorizontalLine(vbox,self.cifdefs)
+
+            vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,f'Creating file {self.filename}'))
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit CIF Author')
             but.Bind(wx.EVT_BUTTON,EditAuthor)
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
@@ -3653,9 +3676,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
             btnsizer = wx.StdDialogButtonSizer()
             btn = wx.Button(self.cifdefs, wx.ID_OK, "Create CIF")
-            btn.SetDefault()
+            if errormsg:
+                btn.Enable(False)
+            else:
+                btn.SetDefault()
             btnsizer.AddButton(btn)
             btn = wx.Button(self.cifdefs, wx.ID_CANCEL)
+            if errormsg:
+                btn.SetDefault()
             btnsizer.AddButton(btn)
             btnsizer.Realize()
             vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
@@ -3837,6 +3865,10 @@ class ExportCIF(G2IO.ExportBaseclass):
 #==============================================================================
 ####  MasterExporter code starts here    ======================================
 #==============================================================================
+        errormsg.clear()
+        warnmsg.clear()
+        values['maxshft'] = '?'
+        values['avgshft'] = '?'
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         if not self.CIFname: # Get a name for the CIF. If not defined, use the GPX name (save, if that is needed).
@@ -3926,6 +3958,62 @@ class ExportCIF(G2IO.ExportBaseclass):
                 seqHistList = [h for i,h in enumerate(seqHistList) if self.seqData['Use'][i]]
                 
         #===============================================================================
+        # test for errors & warnings; get max & mean final refinement LSQ shifts
+        #===============================================================================
+        if seqmode:
+            if not self.seqData: # this should not happen. Must have a seq. table to get to menu w/exporter cmd
+                print('No sequential table. You must complete a refinement.')
+                return
+            missing = []
+            oldref = 0
+            for h in self.G2frame.testSeqRefineMode():
+                if h not in seqHistList:
+                    missing.append(h)
+            for h in seqHistList:
+                if 'Rvals' not in self.seqData[h]:
+                    print('Warning no Rvals in Seq Res for {h!r}')
+                elif 'lastShifts' not in self.seqData[h]['Rvals']:
+                    oldref += 1
+            if missing:
+                missing = '"' + '", "'.join(missing) + '"'
+                warnmsg.append(f'Not all histograms selected for sequential refinement have entries in Sequential results table. You probably want to rerun the refinement. Missing: {missing}')
+            if oldref:
+                warnmsg.append(f'Refinements for {oldref} histogram(s) were performed with an older GSAS-II version. The refinement must be rerun to include the final least-squares shifts and rigid body uncertainties in the CIF.')
+            else:
+                maxshift = 0.
+                sumshift = 0.
+                numshift = 0
+                for h in seqHistList:
+                    for p,s in zip(self.seqData[h]['varyList'],self.seqData[h]['sig']):
+                        ShftOverSig = abs(self.seqData[h]['Rvals']['lastShifts'][p]/s)
+                        numshift += 1
+                        maxshift = max(maxshift,ShftOverSig)
+                        sumshift += ShftOverSig
+                if numshift > 0:
+                    values['maxshft'] = f'{maxshift:.4f}'
+                    values['avgshft'] = f'{sumshift/numshift:.4f}'
+        else:
+            if (not self.OverallParms['Covariance'] or
+                    'varyList' not in self.OverallParms['Covariance'] or
+                    'sig' not in self.OverallParms['Covariance']):
+                warnmsg.append('This project does not contain refinement results, so parameter uncertainties cannot be supplied. You are recommended to complete refinement before exporting the project.')
+            elif 'Rvals' not in self.OverallParms['Covariance']:
+                warnmsg.append('Unexpected: no R-factors saved! You are recommended to rerun the refinement before exporting the project.')
+            elif 'lastShifts' not in self.OverallParms['Covariance']['Rvals']:
+                warnmsg.append(f'Refinement was performed with an older GSAS-II version. The refinement cycle must be rerun to include the final least-squares shifts in the CIF.')
+            else:
+                maxshift = 0.
+                sumshift = 0.
+                numshift = 0
+                for p,s in zip(self.OverallParms['Covariance']['varyList'],self.OverallParms['Covariance']['sig']):
+                        ShftOverSig = abs(self.OverallParms['Covariance']['Rvals']['lastShifts'][p]/s)
+                        numshift += 1
+                        maxshift = max(maxshift,ShftOverSig)
+                        sumshift += ShftOverSig
+                if numshift > 0:
+                    values['maxshft'] = f'{maxshift:.4f}'
+                    values['avgshft'] = f'{sumshift/numshift:.4f}'
+        #===============================================================================
         ### full CIF export starts here (Sequential too)
         #===============================================================================
         # load saved CIF author name
@@ -3934,40 +4022,9 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.OverallParms['Controls']['CellHistSelection'] = self.OverallParms[
             'Controls'].get('CellHistSelection',{})
         self.CellHistSelection = self.OverallParms['Controls']['CellHistSelection']
-        if not self.OverallParms['Covariance']:
-            dlg = wx.MessageDialog(
-                self.G2frame,
-                'This project does not contain refinement results, so parameter uncertainties'+
-                ' cannot be supplied.\n\n'+
-                'You are recommended to complete refinement before exporting the project.'+
-                '\nDo you wish to continue anyway? (Use No to stop export)',
-                'No refinement results',wx.YES|wx.NO)
-            dlg.CenterOnParent()
-            ret = dlg.ShowModal()
-            dlg.Destroy()
-            if ret != wx.ID_YES:
-                self.filename = ''
-                self.OpenFile(delayOpen=True)
-                return
-        elif self.OverallParms['Controls']['max cyc'] > 1:
-            dlg = wx.MessageDialog(
-                self.G2frame,
-                'GSAS-II reports the maximum shift to s.u. ratio over all cycles in the last refinement,'+
-                ' while CIF expects it over only the last cycle. \n\n'+
-                'Do you want to set the maximum cycles to 1 and repeat the last refinement'+
-                ' so these will be the same before creating CIF? (Use No to continue)',
-                'Max(shift/esd) in question',wx.YES|wx.NO)
-            dlg.CenterOnParent()
-            ret = dlg.ShowModal()
-            dlg.Destroy()
-            if ret == wx.ID_YES:
-                self.OverallParms['Controls']['max cyc'] = 1
-                self.G2frame.OnRefine(None)
-                self.InitExport(event)  # restart export using updated project
-                self.loadTree()
                 
         # create a dict with refined values and their uncertainties
-        self.loadParmDict()
+        self.loadParmDict(True)
         # is there anything to export?
         if len(self.Phases) == len(self.powderDict) == len(self.xtalDict) == 0:
            self.G2frame.ErrorDialog(
@@ -4060,15 +4117,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 elif P == 1:
                     default += 1
         if default > 0:
-            dlg = wx.MessageDialog(
-                self.G2frame,
-                'Temperature/Pressure values appear to be defaulted for some powder histograms (See Sample Parameters for each PWDR tree entry). Do you want to use those values?',
-                'Check T and P values',
-                wx.OK|wx.CANCEL)
-            ret = dlg.ShowModal()
-            dlg.CenterOnParent()
-            dlg.Destroy()
-            if ret != wx.ID_OK: return
+            warnmsg.append(
+                f'Temperature and/or Pressure values appear to be defaulted in at least {default} places (See/edit in Sample Parameters for each PWDR tree entry). Do you want to report defaulted values in the CIF file?')
         if oneblock:
             # select a dataset to use (there should only be one set in one block,
             # but take whatever comes 1st)
@@ -4208,12 +4258,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # ``template_publ.cif`` or a modified version
                 
                 # overall info block
+                WriteCIFitem(self.fp, '')
                 WriteCIFitem(self.fp, 'data_'+str(self.CIFname)+'_overall')
                 WriteOverall('seq')
                 hist = seqHistList[0]
                 instnam = self.Histograms[hist]["Sample Parameters"]['InstrName']
                 writeCIFtemplate(self.OverallParms['Controls'],'powder',instnam,
                                      cifKey="seqCIF_template") # powder template for all histograms
+                WriteCIFitem(self.fp, '_refine_ls_shift/su_max ',values['maxshft'])
+                WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',values['avgshft'])
                 instnam = instnam.replace(' ','')
                 #============================================================
                 if phaseWithHist:
@@ -4814,7 +4867,7 @@ class ExportPhaseCIF(ExportCIF):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        # create a dict with refined values and their uncertainties
+        # create a dict with refined values w/o uncertainties
         self.loadParmDict()
         self.multiple = True
         self.currentExportType = 'phase'
@@ -4966,7 +5019,7 @@ def PickleCIFdict(fil):
         fp.close()
     except IOError:
         dictobj = cif.CifDic(fil)
-    if DEBUG: print('loaded '+fil)
+    #if DEBUG: print('loaded '+fil)
     for item in dictobj.keys():
         cifdic[item] = {}
         for j in (
@@ -4981,7 +5034,7 @@ def PickleCIFdict(fil):
         fp = open(fil,'wb')
         pickle.dump(cifdic,fp)
         fp.close()
-        if DEBUG: print('wrote '+fil)
+        #if DEBUG: print('wrote '+fil)
     except:
         print ('Unable to write '+fil)
     return cifdic
@@ -5004,7 +5057,7 @@ def LoadCIFdic():
             fp = open(fil,'rb')
             try:
                 cifdic.update(pickle.load(fp))
-                if DEBUG: print('reloaded '+fil)
+                #if DEBUG: print('reloaded '+fil)
                 break
             finally:
                 fp.close()
@@ -5532,6 +5585,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         but.Bind(wx.EVT_BUTTON,self._onGetTemplateFile)
         hbox =  wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(but,0,0,2)
+        hbox.Add((5,-1))
         but = wx.Button(panel,wx.ID_ANY,"Edit Template")
         but.Bind(wx.EVT_BUTTON,self._onEditTemplateContents)
         if self.CIF_template is None: but.Disable() # nothing to edit!

@@ -1316,7 +1316,7 @@ class ExportBaseclass(object):
         else:
             raise Exception('This should not happen!')
 
-    def loadParmDict(self):
+    def loadParmDict(self,computeSU=False):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the
         refined parameters in another dict (self.sigDict).
@@ -1403,11 +1403,15 @@ class ExportBaseclass(object):
         G2mv.Map2Dict(self.parmDict,varyList)   # changes varyList
         G2mv.Dict2Map(self.parmDict)   # add the constrained values to the parameter dictionary
         # and add their uncertainties into the esd dictionary (sigDict)
-        if covDict.get('covMatrix') is not None:
+        if covDict.get('covMatrix') is not None and computeSU:
             self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],noSym=True))
             if 'depSigDict' in self.OverallParms['Covariance']:
                 self.sigDict.update(
                     {i:v[1] for i,v in self.OverallParms['Covariance']['depSigDict'].items()})
+            # compute the s.u.'s on rigid bodies
+            import GSASIIstrMath as G2stMth
+            self.RBsuDict = G2stMth.computeRBsu(self.parmDict,Phases,rigidbodyDict,
+                            covDict['covMatrix'],covDict['varyList'],covDict['sig'])
 
     def loadTree(self):
         '''Load the contents of the data tree into a set of dicts
@@ -1855,9 +1859,11 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     not accessed via the usual export menus
     '''
     import G2export_CIF
-    #import imp
-    #imp.reload(G2export_CIF)   #TODO for debug
+    ##################### debug code to reload exporter before each use ####
+    #import importlib as imp
+    #imp.reload(G2export_CIF)
     #print('reload G2export_CIF')
+    ########################################################################
     obj = G2export_CIF.ExportProjectCIF(G2frame)
     obj.Exporter(None,seqData=seqData,Controls=Controls)
     

@@ -1296,7 +1296,7 @@ def GetSGSpin(SGData,MSgSym):
     if SGLaue in ['-1',]:
         if "'" in mFlds[1]:
             mSpn[1] = -1
-    elif SGLaue in ['2/m','4/m']: #all ok
+    elif SGLaue in ['2/m','4/m','6/m']: #all ok
         Uniq = {'a':1,'b':2,'c':3,'':1}
         Id = [0,1]
         if len(mFlds) > 2:
@@ -1305,30 +1305,24 @@ def GetSGSpin(SGData,MSgSym):
         for i in range(len(GenSym)):
             if "'" in sym[i]:
                 mSpn[i+1] = -1
-    elif SGLaue == '6/m':
-        sym = mFlds[1].split('/')
-        for i in range(len(GenSym)):
-            if "'" in sym[i]:
-                mSpn[i+1] = -1
-                     
     elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         for i in [0,1,2]:
             if "'" in mFlds[i+1]:
                 mSpn[i+1] = -1
     elif SGLaue == '6/mmm': #ok
-        if len(GenSym) == 2:
+        if len(GenSym) == 2: #622, -6m2, -62m, 6mm
             for i in [0,1]:
                 if "'" in mFlds[i+1]:
-                    mSpn[i+1] = -1
-        else:
+                    mSpn[i] = -1
+        else: #6/mmm
             sym = mFlds[1].split('/')
             if "'" in sym[1]:
-                mSpn[0] = -1
+                mSpn[1] = -1
             for i in [1,2]:
                 if "'" in mFlds[i+1]:
                     mSpn[i] = -1
     elif SGLaue == '4/mmm':
-        if len(GenSym) == 2:
+        if len(GenSym) == 2: #422, -4m2, -42m, 4mm
             for i in [0,1]:
                 if "'" in mFlds[i+1]:
                     mSpn[i] = -1
@@ -1341,6 +1335,7 @@ def GetSGSpin(SGData,MSgSym):
                     if "'" in mFlds[i+1]:
                         mSpn[i+1] = -1
             else:
+                print('why here? ',SGData['SpGrp'],GenSym)
                 for i in [0,1]:
                     if "'" in mFlds[i+2]:
                         mSpn[i+1] = -1

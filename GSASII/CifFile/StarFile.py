@@ -1935,7 +1935,7 @@ class BlockCollection(object):
             blockorder = self.block_input_order
         top_block_names = [(a,self.child_table[a].block_id) for a in blockorder if self.child_table[a].parent is None]
         for blockref,blockname in top_block_names:
-            print('Writing %s, ' % blockname + repr(self[blockref]))
+            #print('Writing %s, ' % blockname + repr(self[blockref]))
             outstring.write('\n' + 'data_' +blockname+'\n')
             all_names.remove(blockref)
             if self.standard == 'Dic':              #put contents before save frames
@@ -1966,7 +1966,8 @@ class BlockCollection(object):
         if len(all_names)>0:
             print('WARNING: following blocks not output: %s' % repr(all_names))
         else:
-            print('All blocks output.')
+            #print('All blocks output.')
+            pass
         return returnstring
 
     def block_to_string_nested(self,block_ref,block_id,outstring,indentlevel=0):

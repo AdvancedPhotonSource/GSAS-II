@@ -1082,7 +1082,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             sigDict = dict(zip(varyList,sig))
             # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
-
+        
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             SeqResult[histogram] = {
@@ -1094,7 +1094,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 'parmDict':parmDict,
                 }
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-#            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)   # TODO: why is this not called? Do rigid body prms get updated?
+            SeqResult[histogram]['RBsuDict'] = G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
+                            covMatrix,varyList,sig)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,
                                          pFile=printFile,covMatrix=covMatrix,varyList=varyList)

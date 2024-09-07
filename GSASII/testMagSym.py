@@ -224,7 +224,7 @@ class testMagSym(wx.Frame):
             text[0] += " 1'"
             text[3] += "1'"
         mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Magnetic space group: %s  '%(SGData['MagSpGrp'])),0,WACV)
-        mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Special position test:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Mag Gen: %s'%str(SGData['SGSpin'])))
         SpPos = wx.BoxSizer(wx.HORIZONTAL)
         SpPos.Add(wx.StaticText(self.testSSPanel,label=' X,Y,Z:'),0,WACV)
         xyz = wx.TextCtrl(self.testSSPanel,value=self.XYZ,style=wx.TE_PROCESS_ENTER)
@@ -236,7 +236,7 @@ class testMagSym(wx.Frame):
         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
         magStr = [str(smag) for smag in CSI[0]]
         magVal = [str(val) for val in CSI[1]]
-        CSItxt = wx.StaticText(self.testSSPanel,label=' site sym: %6s, mult: %3d, CSI: %s %s'%(SytSym,Mul,magStr,magVal))
+        CSItxt = wx.StaticText(self.testSSPanel,label=' site sym: %6s, mult: %3d, MCSI: %s %s'%(SytSym,Mul,magStr,magVal))
         mainSizer.Add(CSItxt,0,WACV)
         testHKL = wx.Button(self.testSSPanel,-1,'Extinction test')
         testHKL.Bind(wx.EVT_BUTTON,OnTestHKL)
@@ -254,7 +254,7 @@ class testMagSym(wx.Frame):
         mainSizer.Add(printSizer,0,WACV)
         SGData1 = copy.deepcopy(SGData)
         SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,SGData1['MagSpGrp'])
-        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Mag Gen: %s'%str(SGData1['SGSpin'])))
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='New Mag Gen: %s'%str(SGData1['SGSpin'])))
         SGData1['GenSym'],SGData1['GenFlg'],BNSsym = G2spc.GetGenSym(SGData1)
         SGData1['MagSpGrp'] = G2spc.MagSGSym(SGData1)
         mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%str(SGData1['MagSpGrp'])))

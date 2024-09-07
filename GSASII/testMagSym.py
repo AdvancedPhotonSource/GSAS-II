@@ -154,6 +154,11 @@ class testMagSym(wx.Frame):
                            
         def OnShowMOps(event):
             text,table = G2spc.SGPrint(SGData,AddInv=True)
+            text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+            text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+            if SGData['SGGray'] and "1'" not in text[0]:
+                text[0] += " 1'"
+                text[3] += "1'"
             G2G.SGMagSpinBox(self.testSSPanel,msg,text,table,SGData['SGCen'],OprNames,SpnFlp,SGData['SGGray']).Show()
 
         def OnTestHKL(event):

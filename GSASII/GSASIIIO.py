@@ -1332,6 +1332,7 @@ class ExportBaseclass(object):
         self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
+        self.RBsuDict = {}
         rigidbodyDict = {}
         covDict = {}
         consDict = {}

@@ -25,6 +25,14 @@ import GSASIIElem as G2elem
 nxs = np.newaxis
 Bohr = 0.529177
 
+# Wavelength data
+#These from Intl. Tables C, Table 4.2.2.1, p. 177-179
+waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
+        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'GaKa':[1.34003,1.34394],
+        'MoKa':[0.70926,0.713543],'AgKa':[0.559363,0.563775],'InKa':[0.512094,0.516525]}
+# meanwaves computed as (2*Ka1+Ka2)/3
+meanwaves = {'CuKa':1.54178,'TiKa':2.74963,'CrKa':2.29092,'FeKa':1.93728,
+        'CoKa':1.79021,'MoKa':0.71069,'AgKa':0.56083,'GaKa':1.34134,'Inka':0.51357}
 
 getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
 def GetFormFactorCoeff(El):

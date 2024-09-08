@@ -444,7 +444,7 @@ def RBheader(fp):
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
-                          RBparms={}):
+                          RBparms={},RBsuDict={}):
     'Write atom positions to CIF'
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     General = phasedict['General']
@@ -521,7 +521,7 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                 else:
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
-                    sig = sigDict.get(dvar,self.RBsuDict.get(dvar,sigdig))
+                    sig = sigDict.get(dvar,RBsuDict.get(dvar,sigdig))
                     if sig == 0: sig = sigdig
                     #if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
                     #    sig = -abs(sig)
@@ -543,7 +543,7 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist,
                 sigdig = -0.0009
                 var = pfx+varnames[cia+j]+":"+str(i)
                 val = parmDict.get(var,at[cia+j])
-                sig = sigDict.get(var,self.RBsuDict.get(var,sigdig))
+                sig = sigDict.get(var,RBsuDict.get(var,sigdig))
                 if sig == 0: sig = sigdig
                 s += PutInCol(G2mth.ValEsd(val,sig),11)
             WriteCIFitem(fp, s)
@@ -2634,7 +2634,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     self.labellist = []
                 WriteAtomsNuclear(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist,
-                                      self.OverallParms['Rigid bodies'])
+                                      self.OverallParms['Rigid bodies'],
+                                      self.RBsuDict)
             else:
                 try:
                     self.labellist
@@ -2815,11 +2816,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
                 sratio = self.sigDict.get('I(L2)/I(L1)',-0.0009)
                 lam1 = self.parmDict.get('Lam1',inst['Lam1'][1])
-                slam1 = self.sigDict.get('Lam1',-0.00009)
+                slam1 = self.sigDict.get('Lam1',-0.00009)  # unneeded, can't be refined
                 lam2 = self.parmDict.get('Lam2',inst['Lam2'][1])
-                slam2 = self.sigDict.get('Lam2',-0.00009)
+                slam2 = self.sigDict.get('Lam2',-0.00009)  # unneeded, can't be refined
                 # always assume Ka1 & Ka2 if two wavelengths are present
-                WriteCIFitem(self.fp, '_diffrn_radiation_type','K\\a~1,2~')
+                source = inst.get('Source',['?','?'])[1][:2]
+                WriteCIFitem(self.fp, '_diffrn_radiation_type',source+r' K\a~1,2~')
                 WriteCIFitem(self.fp, 'loop_' +
                              '\n   _diffrn_radiation_wavelength' +
                              '\n   _diffrn_radiation_wavelength_wt' +
@@ -3071,6 +3073,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             ndecSU = max(0,8-int(np.log10(maxSU))-1) # 8 sig figs should be enough
             lowlim,highlim = histblk['Limits'][1]
 
+            excluded = ''
             if DEBUG:
                 print('DEBUG: skipping profile list')
             else:
@@ -3095,7 +3098,25 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += PutInCol(Yfmt(ndec,ybkg),11)
                     s += PutInCol(Yfmt(ndecSU,yw),9)
                     WriteCIFitem(self.fp, "  "+s)
-                    
+            # get ranges of excluded points
+            masked = np.where(histblk['Data'][0].mask)[0]
+            start = 0
+            exclIndx = []
+            for i in np.where(np.diff(masked)-1)[0]:
+                exclIndx.append((masked[start],masked[i]))
+                start = i+1
+            if exclIndx:
+                exclIndx.append((masked[start],masked[-1]))
+            for iS,iE in exclIndx:
+                if excluded: excluded += '\n'
+                if 'T' in inst['Type'][0]:
+                    excluded += f"    from {histblk['Data'][0].data[iS]:.4f} to {histblk['Data'][0].data[iE]:.4f} msec"
+                else:
+                    excluded += f"    from {histblk['Data'][0].data[iS]:.3f} to {histblk['Data'][0].data[iE]:.3f} 2theta" 
+            if excluded:
+                excluded += '\n explain here why region(s) were excluded'
+                WriteCIFitem(self.fp, '_pd_proc_info_excluded_regions',excluded)
+        
         def WritePowderDataMM(histlbl,seq=False):
             'Write out the selected powder diffraction histogram info'
             histblk = self.Histograms[histlbl]
@@ -3387,6 +3408,23 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += PutInCol(Yfmt(ndec,ybkg),11)
                     s += PutInCol(Yfmt(ndecSU,yw),9)
                     WriteCIFitem(self.fp, "  "+s)
+            # get ranges of excluded points
+            masked = np.where(histblk['Data'][0].mask)[0]
+            start = 0
+            exclIndx = []
+            for i in np.where(np.diff(masked)-1)[0]:
+                exclIndx.append((masked[start],masked[i]))
+                start = i+1
+            exclIndx.append((masked[start],masked[-1]))
+            for iS,iE in exclIndx:
+                if excluded: excluded += '\n'
+                if 'T' in inst['Type'][0]:
+                    excluded += f"    from {histblk['Data'][0].data[iS]:.4f} to {histblk['Data'][0].data[iE]:.4f} msec"
+                else:
+                    excluded += f"    from {histblk['Data'][0].data[iS]:.3f} to {histblk['Data'][0].data[iE]:.3f} 2theta" 
+            if excluded:
+                excluded += '\n explain here why region(s) were excluded'
+                WriteCIFitem(self.fp, '_pd_proc_info_excluded_regions',excluded)
 
         def WriteSingleXtalData(histlbl):
             'Write out the selected single crystal histogram info'
@@ -3992,6 +4030,17 @@ class ExportCIF(G2IO.ExportBaseclass):
                 if numshift > 0:
                     values['maxshft'] = f'{maxshift:.4f}'
                     values['avgshft'] = f'{sumshift/numshift:.4f}'
+                # check Lam1/Lam2 histograms for valid Source type
+                badsource = []
+                for n,hist in enumerate(seqHistList):
+                    histblk = self.Histograms[hist]
+                    inst = histblk['Instrument Parameters'][0]
+                    if 'Lam1' not in inst: continue
+                    source = inst.get('Source',['?','?'])[1]
+                    if len([i for i,t in enumerate(G2el.waves.keys()) if t.lower().startswith(source.lower())]) != 1:
+                        badsource.append(str(n))
+                if badsource:
+                    warnmsg.append(f'X-ray target questionable for histogram(s) {", ".join(badsource)}. Set in instrument parameters.')
         else:
             if (not self.OverallParms['Covariance'] or
                     'varyList' not in self.OverallParms['Covariance'] or
@@ -4000,7 +4049,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             elif 'Rvals' not in self.OverallParms['Covariance']:
                 warnmsg.append('Unexpected: no R-factors saved! You are recommended to rerun the refinement before exporting the project.')
             elif 'lastShifts' not in self.OverallParms['Covariance']['Rvals']:
-                warnmsg.append(f'Refinement was performed with an older GSAS-II version. The refinement cycle must be rerun to include the final least-squares shifts in the CIF.')
+                warnmsg.append('Refinement was performed with an older GSAS-II version. The refinement cycle must be rerun to include the final least-squares shifts in the CIF.')
             else:
                 maxshift = 0.
                 sumshift = 0.
@@ -4013,6 +4062,17 @@ class ExportCIF(G2IO.ExportBaseclass):
                 if numshift > 0:
                     values['maxshft'] = f'{maxshift:.4f}'
                     values['avgshft'] = f'{sumshift/numshift:.4f}'
+            # check Lam1/Lam2 histograms for valid Source type
+            badsource = []
+            for n,hist in enumerate(self.Histograms):
+                histblk = self.Histograms[hist]
+                inst = histblk['Instrument Parameters'][0]
+                if 'Lam1' not in inst: continue
+                source = inst.get('Source',['?','?'])[1]
+                if len([i for i,t in enumerate(G2el.waves.keys()) if t.lower().startswith(source.lower())]) != 1:
+                    badsource.append(str(n))
+            if badsource:
+                warnmsg.append(f'X-ray target questionable for histogram(s) {", ".join(badsource)}. Set in instrument parameters.')
         #===============================================================================
         ### full CIF export starts here (Sequential too)
         #===============================================================================
@@ -4118,7 +4178,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     default += 1
         if default > 0:
             warnmsg.append(
-                f'Temperature and/or Pressure values appear to be defaulted in at least {default} places (See/edit in Sample Parameters for each PWDR tree entry). Do you want to report defaulted values in the CIF file?')
+                f'Temperature and/or Pressure values appear to be defaulted in at least {default} places (See/edit in Sample Parameters for each PWDR tree entry). Do you want to report these defaulted values in the CIF file?')
         if oneblock:
             # select a dataset to use (there should only be one set in one block,
             # but take whatever comes 1st)
@@ -4196,6 +4256,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                          str(self.shortauthorname) + "|" + instnam)
             WriteAudit()
             writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
+            # ``template_publ.cif`` or a modified version
+            WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
             if MM:
                 WriteOverallMM()
             else:
@@ -4223,6 +4285,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
                 histblk = self.Histograms[hist]["Sample Parameters"]
                 writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
+                # ``template_powder.cif`` or a modified version
                 if hist.startswith("PWDR") and MM:
                     WritePowderDataMM(hist)
                 else:
@@ -4256,6 +4319,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                              str(self.shortauthorname) + "|Overall")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
                 # ``template_publ.cif`` or a modified version
+                WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
                 
                 # overall info block
                 WriteCIFitem(self.fp, '')
@@ -4265,6 +4329,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 instnam = self.Histograms[hist]["Sample Parameters"]['InstrName']
                 writeCIFtemplate(self.OverallParms['Controls'],'powder',instnam,
                                      cifKey="seqCIF_template") # powder template for all histograms
+                # ``template_powder.cif`` or a modified version
                 WriteCIFitem(self.fp, '_refine_ls_shift/su_max ',values['maxshft'])
                 WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',values['avgshft'])
                 instnam = instnam.replace(' ','')
@@ -4407,6 +4472,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     writeCIFtemplate(self.OverallParms['Controls'],'powder',
                                          self.Histograms[hist]["Sample Parameters"]['InstrName'],
                                          cifKey="seqCIF_template") # powder template for all histograms
+                    # ``template_powder.cif`` or a modified version
                     WriteCIFitem(self.fp, '\n# PHASE INFO FOR HISTOGRAM '+hist)
                     # loop over phases, add a block header if there is more than one phase
                     for j,phasenam in enumerate(sorted(self.Phases.keys())):
@@ -4443,7 +4509,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
         else:
             #======================================================================
-            #### multiblock: multiple phases and/or histograms export
+            #### multiblock export: multiple phases and/or histograms (not seq.)
             #======================================================================
             oneblock = False
             for phasenam in sorted(self.Phases.keys()):
@@ -4467,6 +4533,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                              str(self.shortauthorname) + "|PubInfo")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
                 # ``template_publ.cif`` or a modified version
+                WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
                 
                 # overall info -- it is not strictly necessary to separate this from the previous
                 # publication block, but I think this makes sense
@@ -4584,6 +4651,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[hist])
                         histprm = self.Histograms[hist]["Sample Parameters"]
                         writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
+                        # ``template_powder.cif`` or a modified version
 
                         # get xray wavelength and compute & write f' & f''
                         lam = None
@@ -5593,6 +5661,7 @@ class CIFtemplateSelect(wx.BoxSizer):
             hbox.Add(but,0,0,2)
             but = wx.Button(panel,wx.ID_ANY,"Reset to default template")
             but.Bind(wx.EVT_BUTTON,_onResetTemplate)
+            hbox.Add((5,-1))
         hbox.Add(but,0,0,2)
         self.Add(hbox)
     def _onGetTemplateFile(self,event):

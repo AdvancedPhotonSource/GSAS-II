@@ -3065,9 +3065,11 @@ class MultiDataDialog(wx.Dialog):
                     val = Obj.GetValue().strip()
                     if testfxn(val):
                         self.values[tid][idl] = val
-                        Obj.SetBackgroundColour(wx.WHITE)
+                        Obj.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+                        Obj.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
                     else:
                         Obj.SetBackgroundColour(wx.YELLOW)
+                        Obj.SetForegroundColour("red")
                     Obj.SetValue('%s'%(val))                    
                 self.values[tid][idl] = Obj.GetValue()
             elif 'bool' in fmt:
@@ -3087,9 +3089,11 @@ class MultiDataDialog(wx.Dialog):
                 val = Obj.GetValue()
                 if testfxn(val):
                     self.values[tid] = val
-                    Obj.SetBackgroundColour(wx.WHITE)
+                    Obj.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+                    Obj.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
                 else:
                     Obj.SetBackgroundColour(wx.YELLOW)
+                    Obj.SetForegroundColour("red")
                 Obj.SetValue('%s'%(val))                    
             elif 'choice' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
@@ -10256,38 +10260,40 @@ if __name__ == '__main__':
     G2frame = frm
 
 
-    nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
-    dm = ['1','2','3','4','5','6']
-    kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
-    dlg = MultiDataDialog(G2frame,title='options',
-                prompts=[' k-vector 1 (x,y,z)',
-                         ' k-vector 2 (x,y,z)'],
-                values=[3*['0','','2',''],3*[' ','','2','']],
-                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,'']],
-                formats=[kfmt,kfmt])
-    if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
-    
     testAtoms = ['']
     
     nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
     dm = ['1','2','3','4','5','6']
     kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+    def strTest(text):
+            if '.' in text: # no decimals
+                return False
+            elif text.strip() in  [' ','0','1','-1','3/2']: # specials
+                return True
+            elif '/' in text: #process fraction 
+                nums = text.split('/')
+                return (0 < int(nums[1]) < 10) and (0 < abs(int(nums[0])) < int(nums[1]))
+            return False
 
     msg = 'test of MultiDataDialog'
+    kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
     dlg = MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
-                prompts=[' k-vector 1 (x,y,z)',
-                         ' k-vector 2 (x,y,z)',
-                         ' k-vector 3 (x,y,z)',
-                         ' Use whole star',' Filter by','preserve axes',
-                         'test for mag. atoms','all have moment','max unique'],
-                values=[3*['0','','2',''],3*[' ','','2',''],3*[' ','','2',''],
-                        False,'',True,'',False,100],
-                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,''],3*[nm,'',dm,''],
-                        [True,False],['',' Landau transition',' Only maximal subgroups',],
-                        [True,False],testAtoms,[True,False],[1,100]],
-                formats=[kfmt,kfmt,kfmt,
-                        'bool','choice','bool','choice','bool','%d',],
-                header=msg)
+            prompts=[' k-vector 1',' k-vector 2',' k-vector 3',
+                     ' Use whole star',' Filter by','preserve axes',
+                     'test for mag. atoms','all have moment','max unique'],
+            values=kvec+[False,'',True,'',False,100],
+            limits=[['0','0','0'],['0','0','0'],['0','0','0'],
+                    [True,False],['',' Landau transition',' Only maximal subgroups',],
+                [True,False],testAtoms,[True,False],[1,100]],
+            testfxns = [[strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        None,None,None,None,None,None],
+            formats=[['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
+                     'bool','choice','bool','choice','bool','%d',],
+            header=msg)
     if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
     
 
@@ -10304,7 +10310,8 @@ if __name__ == '__main__':
 
     #   parent = wx.App.GetMainTopWindow()
     #   print(MultiColMultiSelDlg(parent, title, header, colInfo, choices))
-    
+
+    sys.exit()
     app.MainLoop()
     
 #    choices = [wx.ID_YES,wx.ID_NO]

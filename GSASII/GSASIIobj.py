@@ -35,6 +35,15 @@ DefaultControls = {
 '''Values to be used as defaults for the initial contents of the ``Controls``
 data tree item.
 '''
+
+restraintNames = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
+                  ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
+                  ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
+                  ['General','General']]
+'''Names of restraint keys for the restraint dict and the location of 
+the restraints in each dict
+'''
+    
 def StripUnicode(string,subs='.'):
     '''Strip non-ASCII characters from strings
 

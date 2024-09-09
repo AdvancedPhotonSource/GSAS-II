@@ -645,10 +645,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         if phase not in restraintDict:
             continue
         phaseRest = restraintDict[phase]
-        names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs'],['General','General'],
-            ['Moments','Moments']]
+        names = G2obj.restraintNames
         for name,rest in names:
             pWsum[name] = 0.
             pWnum[name] = 0
@@ -845,9 +842,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         sam = SamSym[textureData['Model']]
         phaseRest = restraintDict.get(phase,{})
-        names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
-            'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
-            'ChemComp':'Sites','Texture':'HKLs','Moments':'Moments'}
+        names = dict(G2obj.restraintNames)
         lasthkl = np.array([0,0,0])
         for ip,pName in enumerate(pNames): # loop over restraints
             pnames = pName.split(':')

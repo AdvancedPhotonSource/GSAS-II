@@ -1515,9 +1515,12 @@ class ExportBaseclass(object):
         item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
         while item:
             name = self.G2frame.GPXtree.GetItemText(item)
-            item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
-            if not item2: 
+            if name == 'Restraints':
                 self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
+            else:
+                item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
+                if not item2: 
+                    self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
             item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
         # index powder and single crystal histograms
         for hist in self.Histograms:

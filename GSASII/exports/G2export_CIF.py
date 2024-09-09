@@ -45,7 +45,7 @@ import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO        
-#import GSASIImapvars as G2mv
+import GSASIImapvars as G2mv
 import GSASIIElem as G2el
 import GSASIIfiles as G2fil
 
@@ -1683,19 +1683,16 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '_refine_ls_shift/su_max ',values['maxshft'])
             WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',values['avgshft'])
 
-            # get restraint info
-            # restraintDict = self.OverallParms.get('Restraints',{})
-            # for i in  self.OverallParms['Constraints']:
-            #     print i
-            #     for j in self.OverallParms['Constraints'][i]:
-            #         print j
-            #WriteCIFitem(self.fp, '_refine_ls_number_restraints',TEXT)
-            # other things to consider reporting
-            # _refine_ls_number_reflns
-            # _refine_ls_goodness_of_fit_obs
-            # _refine_ls_wR_factor_obs
-            # _refine_ls_restrained_S_all
-            # _refine_ls_restrained_S_obs
+            # get restraint & constraint info
+            restraintDict = self.OverallParms.get('Restraints',{})
+            restrCount = 0
+            for p in restraintDict:
+                for k,sk in G2obj.restraintNames:
+                    if k in restraintDict[p]:
+                        restrCount += len(restraintDict[p][k].get(sk,[]))
+            WriteCIFitem(self.fp, '_refine_ls_number_restraints',str(restrCount))
+            WriteCIFitem(self.fp, '_refine_ls_number_constraints',
+                             str(G2mv.CountUserConstraints()))
 
             # include an overall profile r-factor, if there is more than one powder histogram
             try:
@@ -1742,20 +1739,16 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '_refine.ls_goodness_of_fit_all',GOF)
             WriteCIFitem(self.fp, '_refine.ls_shift_over_su_max ',values['maxshft'])
             WriteCIFitem(self.fp, '_refine.ls_shift_over_su_mean',values['avgshft'])
-
-            # get restraint info
-            # restraintDict = self.OverallParms.get('Restraints',{})
-            # for i in  self.OverallParms['Constraints']:
-            #     print i
-            #     for j in self.OverallParms['Constraints'][i]:
-            #         print j
-            #WriteCIFitem(self.fp, '_refine_ls_number_restraints',TEXT)
-            # other things to consider reporting
-            # _refine_ls_number_reflns
-            # _refine_ls_goodness_of_fit_obs
-            # _refine_ls_wR_factor_obs
-            # _refine_ls_restrained_S_all
-            # _refine_ls_restrained_S_obs
+            # get restraint & constraint info
+            restraintDict = self.OverallParms.get('Restraints',{})
+            restrCount = 0
+            for p in restraintDict:
+                for k,sk in G2obj.restraintNames:
+                    if k in restraintDict[p]:
+                        restrCount += len(restraintDict[p][k].get(sk,[]))
+            WriteCIFitem(self.fp, '_refine_ls_number_restraints',str(restrCount))
+            WriteCIFitem(self.fp, '_refine_ls_number_constraints',
+                             str(G2mv.CountUserConstraints()))
 
             # include an overall profile r-factor, if there is more than one powder histogram
             try:
@@ -3625,7 +3618,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,f'Creating file {self.filename}'))
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit CIF Author')
             but.Bind(wx.EVT_BUTTON,EditAuthor)
-            vbox.Add(but,0,wx.ALIGN_CENTER,3)
+            vbox.Add(but,0,wx.ALIGN_CENTER)
+            vbox.Add((-1,2))
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit Instrument Name(s)')
             but.Bind(wx.EVT_BUTTON,EditInstNames)
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
@@ -3652,16 +3646,18 @@ class ExportCIF(G2IO.ExportBaseclass):
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                 cpnl.SetSizer(cbox)
                 if phasedict['General']['Type'] == 'nuclear':
+                    cbox.Add((-1,2))
                     but = wx.Button(cpnl, wx.ID_ANY,'Edit distance/angle ranges')
                     cbox.Add(but,0,wx.ALIGN_LEFT,0)
-                    cbox.Add((-1,2))
                     but.phasedict = self.Phases[phasenam]  # set a pointer to current phase info
                     but.Bind(wx.EVT_BUTTON,EditRanges)     # phase bond/angle ranges
+                    cbox.Add((-1,2))
                     but = wx.Button(cpnl, wx.ID_ANY,'Set distance/angle publication flags')
                     but.phase = phasenam  # set a pointer to current phase info
                     but.Bind(wx.EVT_BUTTON,SelectDisAglFlags)     # phase bond/angle ranges
                     cbox.Add(but,0,wx.ALIGN_LEFT,0)
                 if self._CellSelectNeeded(phasenam):
+                    cbox.Add((-1,2))
                     but = wx.Button(cpnl, wx.ID_ANY,'Select cell temperature')
                     cbox.Add(but,0,wx.ALIGN_LEFT,0)
                     cbox.Add((-1,2))
@@ -4097,14 +4093,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             return
         self.OpenFile(delayOpen=True)
         
-        #if self.ExportSelect('default'): return
-        # Someday: get restraint & constraint info
-        #restraintDict = self.OverallParms.get('Restraints',{})
-        #for i in  self.OverallParms['Constraints']:
-        #    print i
-        #    for j in self.OverallParms['Constraints'][i]:
-        #        print j
-
         self.quickmode = False # full CIF
         phasenam = None # include all phases
         # Will this require a multiblock CIF?
@@ -4297,6 +4285,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         elif seqHistList:
             #======================================================================
             #### sequential fit export (multiblock)
+            #   may have one block/seq. or multiple, depending on # of phases
+            #   variable phaseWithHist controls this.
             #======================================================================
             for phasenam in sorted(self.Phases.keys()):
                 rId = phasedict['ranId']
@@ -4307,7 +4297,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
                 dlg.CenterOnParent()
 
-                # publication info block
+                # 1) publication info block
                 step = 1
                 dlg.Update(step,"Exporting overall section")
                 WriteCIFitem(self.fp, '\ndata_'+self.CIFname+'_publ')
@@ -4321,7 +4311,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # ``template_publ.cif`` or a modified version
                 WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
                 
-                # overall info block
+                # 2) overall info block
                 WriteCIFitem(self.fp, '')
                 WriteCIFitem(self.fp, 'data_'+str(self.CIFname)+'_overall')
                 WriteOverall('seq')
@@ -4414,7 +4404,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                             s += PutInCol(str(tblValues[c][r]),15)
                     WriteCIFitem(self.fp,s+'\n')
 
-                # sample template info: a block for each phase in project
+                # 3) overall phase info (w/sample template): a block for each 
+                #    phase in project
                 histblk = self.Histograms[seqHistList[0]]
                 if phaseWithHist:    # include sample info in overall block
                     step += 1
@@ -4432,8 +4423,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                         writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
                         WriteSeqOverallPhaseInfo(phasenam,histblk)
 
-                # create a block for each histogram, include phase in block for one-phase refinements
-                # or separate blocks for each phase & histogram if more than one phase
+                # 4) create a block for each seq. ref (per histogram), include 
+                #     phase in block for one-phase refinements or in separate 
+                #     blocks for each phase & histogram if more than one phase
                 for i,hist in enumerate(seqHistList):
                     print('processing hist #',i,'hId=',self.Histograms[hist]['hId'],hist)
                     hId = self.Histograms[hist]['hId']
@@ -4473,6 +4465,21 @@ class ExportCIF(G2IO.ExportBaseclass):
                                          self.Histograms[hist]["Sample Parameters"]['InstrName'],
                                          cifKey="seqCIF_template") # powder template for all histograms
                     # ``template_powder.cif`` or a modified version
+                    # get restraint & constraint info
+                    restraintDict = self.OverallParms.get('Restraints',{})
+                    restrCount = 0
+                    for p in restraintDict:
+                        # make sure phase is used here
+                        if p not in self.Phases: continue # should not happen!
+                        if hist not in self.Phases[p]['Histograms']: continue
+                        if not self.Phases[p]['Histograms'][hist]['Use']: continue
+                        for k,sk in G2obj.restraintNames:
+                            if k in restraintDict[p]:
+                                restrCount += len(restraintDict[p][k].get(sk,[]))
+                    WriteCIFitem(self.fp, '_refine_ls_number_restraints',str(restrCount))
+                    WriteCIFitem(self.fp, '_refine_ls_number_constraints',
+                                str(G2mv.CountUserConstraints()))
+                    #breakpoint()  # TODO: check above reporting
                     WriteCIFitem(self.fp, '\n# PHASE INFO FOR HISTOGRAM '+hist)
                     # loop over phases, add a block header if there is more than one phase
                     for j,phasenam in enumerate(sorted(self.Phases.keys())):
@@ -4715,6 +4722,12 @@ class ExportProjectCIF(ExportCIF):
         self.exporttype = ['project']
 
     def Exporter(self,event=None,seqData=None,Controls=None):
+        #### debug stuff ##################################
+        #from importlib import reload
+        #reload(G2mv)
+        #print('reloaded GSASIImapvars')
+        #### end debug stuff ##############################
+        
         self.CIFname = ''
         self.seqData = seqData
         self.Controls = Controls

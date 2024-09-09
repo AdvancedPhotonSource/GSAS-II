@@ -131,6 +131,9 @@ def InitVars():
     constrVarList = []
     indepVarList = []
     depVarList = []
+    global constrParms
+    for k in constrParms:
+        constrParms[k] = []
 
 def VarKeys(constr):
     """Finds the keys in a constraint that represent parameters
@@ -1648,6 +1651,32 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     for key in sorted(lineDict):
         s += lineDict[key] + '\n'
     return s
+
+def CountUserConstraints():
+    '''Count the number of user-supplied constraints in use for the 
+    current refinement. Symmetry generated constraints are not counted
+    as well as constraints that involve variables that are not varied.
+
+    This is used for CIF reporting.
+
+    :returns: an integer count
+    '''
+    varyList = saveVaryList
+    global dependentParmList,arrayList,invarrayList,indParmList,symGenList
+
+    count = 0
+    for varlist,mapvars,multarr,invmultarr,symFlag in zip(
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        if symFlag: continue
+        if multarr is None:
+            for i,mv in enumerate(mapvars):
+                if mv not in varyList: continue
+                count += len(varlist)
+        else:
+            # constraints = original # vars - number still generated
+            # = number of fixed items in constraint
+            count += sum([1 for mv in mapvars if mv not in varyList])
+    return count
 
 def getInvConstraintEq(var,varyList):
     '''For a dependent variable, find the constraint that 

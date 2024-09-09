@@ -2032,13 +2032,14 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
-    'Documents Restraint settings in .lst file'
+    '''Documents Restraint settings in .lst file
+
+    TODO: pass in parmDict to evaluate general restraints
+    '''
     if phaseRest:
         Amat = G2lat.cell2AB(cell)[0]
         cx,ct,cs = AtPtrs[:3]
-        names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments']]
+        names = G2obj.restraintNames
         for name,rest in names:
             if name not in phaseRest:
                 continue                           
@@ -2132,6 +2133,20 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if num:
                             sum = np.sum(Z)
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
+                elif name == 'General':
+                    pFile.write('  target   sig     obs  expression        variables \n')
+                    for expObj,target,esd in itemRest[rest]:
+                        val = '?'
+                        calcobj = G2obj.ExpressionCalcObj(expObj)
+                        # need to get parmDict to evaluate the value
+                        #calcobj.SetupCalc(parmDict)
+                        #val = ' {:8.3g} '.format(calcobj.EvalExpression())
+                        txt = ''
+                        for i in expObj.assgnVars:
+                            if txt: txt += '; '
+                            txt += str(i) + '=' + str(expObj.assgnVars[i])
+                        if len(txt) > 80: txt = txt[:77]+'...'
+                        pFile.write(f'{target:8.5g}{esd:6.3g}{val:>8s}  {expObj.expression:17s} {txt}\n')
 
 def SummRestraints(restraintDict):
     'Summarize number of Restraints in a single line'
@@ -2140,10 +2155,7 @@ def SummRestraints(restraintDict):
         s = ""
         phaseRest = restraintDict[ph]
         if phaseRest:
-            names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-                ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-                ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
-                         ['General','General']]
+            names = G2obj.restraintNames
             for name,rest in names:
                 if name not in phaseRest: continue
                 itemRest = phaseRest[name]

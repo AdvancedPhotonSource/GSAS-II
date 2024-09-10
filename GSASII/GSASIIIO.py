@@ -1323,16 +1323,14 @@ class ExportBaseclass(object):
 
         Expands the parm & sig dicts to include values derived from constraints.
 
-        This could be made faster for sequential fits by reducing the histogram list to only
-        the active histogram being exported.
+        This could be made faster for sequential fits as info for each histogram is loaded
+        later when iterating over histograms. 
         '''
-        # TODO: this does not expand wild-card constraints properly for sequential fits.
-        # this needs revisiting for sequential exports if constraints need to be generated correctly.
-        
         self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
-        self.RBsuDict = {}
+        self.RBsuDict = {} # dict with s.u. values for atoms in a rigid body
+        self.constList = [] # constraint entries from data tree
         rigidbodyDict = {}
         covDict = {}
         consDict = {}
@@ -1365,13 +1363,13 @@ class ExportBaseclass(object):
             covDict.get('varyList',[]),
             covDict.get('sig',[])))
         # expand to include constraints: first compile a list of constraints
-        constList = []
+        self.constList = []
         for item in consDict:
             if item.startswith('_'): continue
-            constList += consDict[item]
+            self.constList += consDict[item]
         # now process the constraints
         G2mv.InitVars()
-        constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
+        constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList)
         varyList = covDict.get('varyListStart')
         if varyList is None and len(constrDict) == 0:
             # no constraints can use varyList

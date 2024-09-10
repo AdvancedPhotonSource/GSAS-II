@@ -2202,7 +2202,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         page = event.GetSelection()
         #G2frame.restrBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         text = G2frame.restrBook.GetPageText(page)
-        G2frame.dataWindow.RestraintEdit.SetLabel(G2G.wxID_RESRCHANGEVAL,'Change value')
+        G2frame.dataWindow.RestraintEdit.SetLabel(G2G.wxID_RESRCHANGEVAL,'Change target value')
         G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,False)
         if text == 'Bond':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)

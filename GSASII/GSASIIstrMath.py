@@ -649,109 +649,112 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         for name,rest in names:
             pWsum[name] = 0.
             pWnum[name] = 0
-            if name not in phaseRest:
-                continue
-            itemRest = phaseRest[name]
-            if itemRest[rest] and itemRest['Use']:
-                wt = itemRest.get('wtFactor',1.)
-                if name in ['Bond','Angle','Plane','Chiral']:
-                    for i,[indx,ops,obs,esd] in enumerate(itemRest[rest]):
-                        pNames.append(str(pId)+':'+name+':'+str(i))
-                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
-                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                        if name == 'Bond':
-                            calc = G2mth.getRestDist(XYZ,Amat)
-                        elif name == 'Angle':
-                            calc = G2mth.getRestAngle(XYZ,Amat)
-                        elif name == 'Plane':
-                            calc = G2mth.getRestPlane(XYZ,Amat)
-                        elif name == 'Chiral':
-                            calc = G2mth.getRestChiral(XYZ,Amat)
-                        pVals.append(obs-calc)
-                        pWt.append(wt/esd**2)
-                        pWsum[name] += wt*((obs-calc)/esd)**2
-                        pWnum[name] += 1
-                elif name in ['Torsion','Rama']:
-                    coeffDict = itemRest['Coeff']
-                    for i,[indx,ops,cofName,esd] in enumerate(itemRest[rest]):
-                        pNames.append(str(pId)+':'+name+':'+str(i))
-                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
-                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                        if name == 'Torsion':
-                            tor = G2mth.getRestTorsion(XYZ,Amat)
-                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-                        else:
-                            phi,psi = G2mth.getRestRama(XYZ,Amat)
-                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
-                        pVals.append(restr)
-                        pWt.append(wt/esd**2)
-                        pWsum[name] += wt*(restr/esd)**2
-                        pWnum[name] += 1
-                elif name == 'ChemComp':
-                    for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
-                        pNames.append(str(pId)+':'+name+':'+str(i))
-                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
-                        frac = np.array(G2mth.GetAtomFracByID(pId,parmDict,AtLookup,indx))
-                        calc = np.sum(mul*frac*factors)
-                        pVals.append(obs-calc)
-                        pWt.append(wt/esd**2)                    
-                        pWsum[name] += wt*((obs-calc)/esd)**2
-                        pWnum[name] += 1
-                elif name == 'Moments':
-                    for i,[indx,obs,esd] in enumerate(itemRest[rest]):
-                        pNames.append(str(pId)+':'+name+':'+str(i))
-                        moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
-                        obs = 0.
-                        calcs = []
-                        for i,mom in enumerate(moms):
-                            calcs.append(G2mth.GetMag(mom,cell))
-                            obs += calcs[-1]
-                        obs /= len(indx)
-                        for calc in calcs:
-                            pVals.append(obs-calc)
-                            pWt.append(wt/esd**2)                    
-                            pWsum[name] += wt*((obs-calc)/esd)**2
-                            pWnum[name] += 1
-                    
-                elif name == 'Texture':
-                    SHkeys = list(textureData['SH Coeff'][1].keys())
-                    SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
-                    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-                    for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
-                        PH = np.array(hkl)
-                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
-                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
-                        Z1 = ma.masked_greater(Z,0.0)           #is this + or -?
-                        IndZ1 = np.array(ma.nonzero(Z1))
-                        for ind in IndZ1.T:
-                            pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                            pVals.append(Z1[ind[0]][ind[1]])
-                            pWt.append(wt/esd1**2)
-                            pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd1)**2
-                            pWnum[name] += 1
-                        if ifesd2:
-                            Z2 = 1.-Z
-                            for ind in np.ndindex(grid,grid):
-                                pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                                pVals.append(Z2[ind[0]][ind[1]])
-                                pWt.append(wt/esd2**2)
-                                pWsum[name] += wt*(Z2/esd2)**2
-                                pWnum[name] += 1
-                elif name == 'General':
-                    for i,(eq,obs,esd) in enumerate(itemRest[rest]):
-                        calcobj = G2obj.ExpressionCalcObj(eq)
-                        calcobj.SetupCalc(parmDict)
-                        calc = calcobj.EvalExpression()
-                        try:
-                            pVals.append(obs-calc)
-                            pWt.append(wt/esd**2)                    
-                            pWsum[name] += wt*((obs-calc)/esd)**2
-                            pWnum[name] += 1
+            try: # needed for when a phase is not used in a seq. fit
+                if name not in phaseRest:
+                    continue
+                itemRest = phaseRest[name]
+                if itemRest[rest] and itemRest['Use']:
+                    wt = itemRest.get('wtFactor',1.)
+                    if name in ['Bond','Angle','Plane','Chiral']:
+                        for i,[indx,ops,obs,esd] in enumerate(itemRest[rest]):
                             pNames.append(str(pId)+':'+name+':'+str(i))
-                        except:
-                            print('Error computing General restraint #{}'.format(i+1))
+                            XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                            if name == 'Bond':
+                                calc = G2mth.getRestDist(XYZ,Amat)
+                            elif name == 'Angle':
+                                calc = G2mth.getRestAngle(XYZ,Amat)
+                            elif name == 'Plane':
+                                calc = G2mth.getRestPlane(XYZ,Amat)
+                            elif name == 'Chiral':
+                                calc = G2mth.getRestChiral(XYZ,Amat)
+                            pVals.append(obs-calc)
+                            pWt.append(wt/esd**2)
+                            pWsum[name] += wt*((obs-calc)/esd)**2
+                            pWnum[name] += 1
+                    elif name in ['Torsion','Rama']:
+                        coeffDict = itemRest['Coeff']
+                        for i,[indx,ops,cofName,esd] in enumerate(itemRest[rest]):
+                            pNames.append(str(pId)+':'+name+':'+str(i))
+                            XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                            if name == 'Torsion':
+                                tor = G2mth.getRestTorsion(XYZ,Amat)
+                                restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                            else:
+                                phi,psi = G2mth.getRestRama(XYZ,Amat)
+                                restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                            pVals.append(restr)
+                            pWt.append(wt/esd**2)
+                            pWsum[name] += wt*(restr/esd)**2
+                            pWnum[name] += 1
+                    elif name == 'ChemComp':
+                        for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
+                            pNames.append(str(pId)+':'+name+':'+str(i))
+                            mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
+                            frac = np.array(G2mth.GetAtomFracByID(pId,parmDict,AtLookup,indx))
+                            calc = np.sum(mul*frac*factors)
+                            pVals.append(obs-calc)
+                            pWt.append(wt/esd**2)                    
+                            pWsum[name] += wt*((obs-calc)/esd)**2
+                            pWnum[name] += 1
+                    elif name == 'Moments':
+                        for i,[indx,obs,esd] in enumerate(itemRest[rest]):
+                            pNames.append(str(pId)+':'+name+':'+str(i))
+                            moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
+                            obs = 0.
+                            calcs = []
+                            for i,mom in enumerate(moms):
+                                calcs.append(G2mth.GetMag(mom,cell))
+                                obs += calcs[-1]
+                            obs /= len(indx)
+                            for calc in calcs:
+                                pVals.append(obs-calc)
+                                pWt.append(wt/esd**2)                    
+                                pWsum[name] += wt*((obs-calc)/esd)**2
+                                pWnum[name] += 1
+
+                    elif name == 'Texture':
+                        SHkeys = list(textureData['SH Coeff'][1].keys())
+                        SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
+                        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+                        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                        for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
+                            PH = np.array(hkl)
+                            phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                            ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
+                            R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
+                            Z1 = ma.masked_greater(Z,0.0)           #is this + or -?
+                            IndZ1 = np.array(ma.nonzero(Z1))
+                            for ind in IndZ1.T:
+                                pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
+                                pVals.append(Z1[ind[0]][ind[1]])
+                                pWt.append(wt/esd1**2)
+                                pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd1)**2
+                                pWnum[name] += 1
+                            if ifesd2:
+                                Z2 = 1.-Z
+                                for ind in np.ndindex(grid,grid):
+                                    pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
+                                    pVals.append(Z2[ind[0]][ind[1]])
+                                    pWt.append(wt/esd2**2)
+                                    pWsum[name] += wt*(Z2/esd2)**2
+                                    pWnum[name] += 1
+                    elif name == 'General':
+                        for i,(eq,obs,esd) in enumerate(itemRest[rest]):
+                            calcobj = G2obj.ExpressionCalcObj(eq)
+                            calcobj.SetupCalc(parmDict)
+                            calc = calcobj.EvalExpression()
+                            try:
+                                pVals.append(obs-calc)
+                                pWt.append(wt/esd**2)                    
+                                pWsum[name] += wt*((obs-calc)/esd)**2
+                                pWnum[name] += 1
+                                pNames.append(str(pId)+':'+name+':'+str(i))
+                            except:
+                                print('Error computing General restraint #{}'.format(i+1))
+            except:
+                pass
     for phase in Phases:
         name = 'SH-Pref.Ori.'
         pId = Phases[phase]['pId']
@@ -845,124 +848,127 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         names = dict(G2obj.restraintNames)
         lasthkl = np.array([0,0,0])
         for ip,pName in enumerate(pNames): # loop over restraints
-            pnames = pName.split(':')
-            if pId == int(pnames[0]):
-                name = pnames[1]
-                if 'PWL' in pName:
-                    pDerv[varyList.index(pName)][ip] += 1.
-                    continue
-                elif 'SH-' in pName:
-                    continue
-                Id = int(pnames[2]) 
-                itemRest = phaseRest[name]
-                if name in ['Bond','Angle','Plane','Chiral']:
-                    indx,ops,obs,esd = itemRest[names[name]][Id]
-                    dNames = []
-                    for ind in indx:
-                        dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
-                    XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
-                    if name == 'Bond':
-                        deriv = G2mth.getRestDeriv(G2mth.getRestDist,XYZ,Amat,ops,SGData)
-                    elif name == 'Angle':
-                        deriv = G2mth.getRestDeriv(G2mth.getRestAngle,XYZ,Amat,ops,SGData)
-                    elif name == 'Plane':
-                        deriv = G2mth.getRestDeriv(G2mth.getRestPlane,XYZ,Amat,ops,SGData)
-                    elif name == 'Chiral':
-                        deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
-                elif name in ['Torsion','Rama']:
-                    coffDict = itemRest['Coeff']
-                    indx,ops,cofName,esd = itemRest[names[name]][Id]
-                    dNames = []
-                    for ind in indx:
-                        dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
-                    XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
-                    if name == 'Torsion':
-                        deriv = G2mth.getTorsionDeriv(XYZ,Amat,coffDict[cofName])
-                    else:
-                        deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
-                elif name == 'ChemComp':
-                    indx,factors,obs,esd = itemRest[names[name]][Id]
-                    dNames = []
-                    for ind in indx:
-                        dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
-                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
-                        deriv = mul*factors
-                elif name == 'Moments':
-                    indx,obs,esd = itemRest[names[name]][Id]
-                    dNames = []
-                    deriv = []
-                    moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
-                    for i,ind in enumerate(indx):
-                        calc = G2mth.GetMag(moms[i],cell)
-                        dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
-                        deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))                   
-                elif 'Texture' in name:
-                    deriv = []
-                    dNames = []
-                    hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
-                    hkl = np.array(hkl)
-                    if np.any(lasthkl-hkl):
-                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-                        ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
-                        lasthkl = copy.copy(hkl)                        
-                    if 'unit' in name:
-                        pass
-                    else:
-                        gam = float(pnames[3])
-                        psi = float(pnames[4])
-                        for SHname in ODFln:
-                            l,m,n = eval(SHname[1:])
-                            Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
-                            dNames += [str(pId)+'::'+SHname]
-                            deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
-                elif name == 'General':
-                    deriv = []
-                    dNames = []
-                    eq,obs,esd = itemRest[name][Id]
-                    calcobj = G2obj.ExpressionCalcObj(eq)
-                    parmlist = list(eq.assgnVars.values()) # parameters used in this expression
-                    for parm in parmlist: # expand list if any parms are determined by constraints
-                        if parm in G2mv.GetDependentVars():
-                            parmlist += G2mv.GetIndependentVars()
-                            break
-                    for ind,var in enumerate(varyList):
-                        drv = 0
-                        if var in parmlist:
-                            step = stepDict.get(var,1e-5)
-                            calc = []
-                            # apply step to parameter
-                            oneparm = True
-                            for s in -step,2*step:
-                                parmDict[var] += s
-                                # extend shift if needed to other parameters
-                                if var in G2mv.indepVarList:
-                                    G2mv.Dict2Map(parmDict)
-                                    oneparm = False
-                                elif var in sum(G2mv.dependentParmList,[]):
-                                    G2mv.Map2Dict(parmDict,[])
-                                    oneparm = False
-                                if 'RB' in var:
-                                    ApplyRBModels(parmDict,Phases,rigidbodyDict)
-# test
-                                    oneparm = False
-                                calcobj.SetupCalc(parmDict)
-                                calc.append(calcobj.EvalExpression())
-                            drv = (calc[1]-calc[0])*.5/step
-                            # restore the dict
-                            if oneparm:
-                                parmDict[var] = parmDict0[var]
-                            else:
-                                parmDict = parmDict0.copy()
+            try:  # needed for when a phase is not used in a seq. fit
+                pnames = pName.split(':')
+                if pId == int(pnames[0]):
+                    name = pnames[1]
+                    if 'PWL' in pName:
+                        pDerv[varyList.index(pName)][ip] += 1.
+                        continue
+                    elif 'SH-' in pName:
+                        continue
+                    Id = int(pnames[2]) 
+                    itemRest = phaseRest[name]
+                    if name in ['Bond','Angle','Plane','Chiral']:
+                        indx,ops,obs,esd = itemRest[names[name]][Id]
+                        dNames = []
+                        for ind in indx:
+                            dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
+                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                        if name == 'Bond':
+                            deriv = G2mth.getRestDeriv(G2mth.getRestDist,XYZ,Amat,ops,SGData)
+                        elif name == 'Angle':
+                            deriv = G2mth.getRestDeriv(G2mth.getRestAngle,XYZ,Amat,ops,SGData)
+                        elif name == 'Plane':
+                            deriv = G2mth.getRestDeriv(G2mth.getRestPlane,XYZ,Amat,ops,SGData)
+                        elif name == 'Chiral':
+                            deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
+                    elif name in ['Torsion','Rama']:
+                        coffDict = itemRest['Coeff']
+                        indx,ops,cofName,esd = itemRest[names[name]][Id]
+                        dNames = []
+                        for ind in indx:
+                            dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
+                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                        if name == 'Torsion':
+                            deriv = G2mth.getTorsionDeriv(XYZ,Amat,coffDict[cofName])
                         else:
+                            deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
+                    elif name == 'ChemComp':
+                        indx,factors,obs,esd = itemRest[names[name]][Id]
+                        dNames = []
+                        for ind in indx:
+                            dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
+                            mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
+                            deriv = mul*factors
+                    elif name == 'Moments':
+                        indx,obs,esd = itemRest[names[name]][Id]
+                        dNames = []
+                        deriv = []
+                        moms = G2mth.GetAtomMomsByID(pId,parmDict,AtLookup,indx)
+                        for i,ind in enumerate(indx):
+                            calc = G2mth.GetMag(moms[i],cell)
+                            dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
+                            deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))                   
+                    elif 'Texture' in name:
+                        deriv = []
+                        dNames = []
+                        hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
+                        hkl = np.array(hkl)
+                        if np.any(lasthkl-hkl):
+                            phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                            ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
+                            lasthkl = copy.copy(hkl)                        
+                        if 'unit' in name:
+                            pass
+                        else:
+                            gam = float(pnames[3])
+                            psi = float(pnames[4])
+                            for SHname in ODFln:
+                                l,m,n = eval(SHname[1:])
+                                Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
+                                dNames += [str(pId)+'::'+SHname]
+                                deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
+                    elif name == 'General':
+                        deriv = []
+                        dNames = []
+                        eq,obs,esd = itemRest[name][Id]
+                        calcobj = G2obj.ExpressionCalcObj(eq)
+                        parmlist = list(eq.assgnVars.values()) # parameters used in this expression
+                        for parm in parmlist: # expand list if any parms are determined by constraints
+                            if parm in G2mv.GetDependentVars():
+                                parmlist += G2mv.GetIndependentVars()
+                                break
+                        for ind,var in enumerate(varyList):
                             drv = 0
-                        pDerv[ind][ip] = drv
-                # Add derivatives into matrix, if needed
-                for dName,drv in zip(dNames,deriv):
-                    try:
-                        ind = varyList.index(dName)
-                        pDerv[ind][ip] += drv
-                    except ValueError:
-                        pass
+                            if var in parmlist:
+                                step = stepDict.get(var,1e-5)
+                                calc = []
+                                # apply step to parameter
+                                oneparm = True
+                                for s in -step,2*step:
+                                    parmDict[var] += s
+                                    # extend shift if needed to other parameters
+                                    if var in G2mv.indepVarList:
+                                        G2mv.Dict2Map(parmDict)
+                                        oneparm = False
+                                    elif var in sum(G2mv.dependentParmList,[]):
+                                        G2mv.Map2Dict(parmDict,[])
+                                        oneparm = False
+                                    if 'RB' in var:
+                                        ApplyRBModels(parmDict,Phases,rigidbodyDict)
+    # test
+                                        oneparm = False
+                                    calcobj.SetupCalc(parmDict)
+                                    calc.append(calcobj.EvalExpression())
+                                drv = (calc[1]-calc[0])*.5/step
+                                # restore the dict
+                                if oneparm:
+                                    parmDict[var] = parmDict0[var]
+                                else:
+                                    parmDict = parmDict0.copy()
+                            else:
+                                drv = 0
+                            pDerv[ind][ip] = drv
+                    # Add derivatives into matrix, if needed
+                    for dName,drv in zip(dNames,deriv):
+                        try:   # if parameter is not refined
+                            ind = varyList.index(dName)
+                            pDerv[ind][ip] += drv
+                        except ValueError:
+                            pass
+            except:
+                pass
         
         lasthkl = np.array([0,0,0])
         for ip,pName in enumerate(pNames):

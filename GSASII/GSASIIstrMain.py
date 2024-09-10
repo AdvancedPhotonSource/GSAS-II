@@ -1147,7 +1147,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             printFile.close()
             G2fil.G2Print (' ***** Refinement stopped *****')
             return False,Msg.msg
-        except G2obj.G2Exception as Msg:  # cell metric error, others?
+        except (G2obj.G2Exception,Exception) as Msg:  # cell metric error, others?
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement error *****')

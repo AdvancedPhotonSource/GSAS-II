@@ -864,80 +864,6 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict,
         for xyz in np.inner(Amat,at[cx:cx+3]):
             s += PutInCol(G2mth.ValEsd(xyz,-0.009),8)
         WriteCIFitem(fp, s)
-    # save information about rigid bodies
-#     header = False
-#     num = 0
-#     rbAtoms = []
-#     for irb,RBObj in enumerate(phasedict['RBModels'].get('Residue',[])):
-#         if not header:
-#             header = True
-#             RBheader(fp)
-#         jrb = RBparms['RBIds']['Residue'].index(RBObj['RBId'])
-#         rbsx = str(irb)+':'+str(jrb)
-#         num += 1
-#         WriteCIFitem(fp,'',str(num))
-#         RBModel = RBparms['Residue'][RBObj['RBId']]
-#         SGData = phasedict['General']['SGData']
-#         Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
-#         s = '''GSAS-II residue rigid body "{}" with {} atoms
-#   Site symmetry @ origin: {}, multiplicity: {}
-# '''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
-#         for i in G2stIO.WriteResRBModel(RBModel):
-#             s += i
-#         s += '\n Location:\n'
-#         for i in G2stIO.WriteRBObjPOAndSig(pfx,'RBR',rbsx,parmDict,sigDict):
-#             s += i+'\n'
-#         for i in G2stIO.WriteRBObjTLSAndSig(pfx,'RBR',rbsx,
-#                         RBObj['ThermalMotion'][0],parmDict,sigDict):
-#             s += i
-#         nTors = len(RBObj['Torsions'])
-#         if nTors:
-#             for i in G2stIO.WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,
-#                         nTors):
-#                 s += i
-#         WriteCIFitem(fp,'',s.rstrip())
-        
-#         pId = phasedict['pId']
-#         for i in RBObj['Ids']:
-#             lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
-#             rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
-#         #GSASIIpath.IPyBreak()
-
-#     for irb,RBObj in enumerate(phasedict['RBModels'].get('Vector',[])):
-#         if not header:
-#             header = True
-#             RBheader(fp)
-#         jrb = RBparms['RBIds']['Vector'].index(RBObj['RBId'])
-#         rbsx = str(irb)+':'+str(jrb)
-#         num += 1
-#         WriteCIFitem(fp,'',str(num))
-#         RBModel = RBparms['Vector'][RBObj['RBId']]
-#         SGData = phasedict['General']['SGData']
-#         Sytsym,Mult = G2spc.SytSym(RBObj['Orig'][0],SGData)[:2]
-#         s = '''GSAS-II vector rigid body "{}" with {} atoms
-#   Site symmetry @ origin: {}, multiplicity: {}
-# '''.format(RBObj['RBname'],len(RBModel['rbTypes']),Sytsym,Mult)
-#         for i in G2stIO.WriteVecRBModel(RBModel,sigDict,irb):
-#             s += i
-#         s += '\n Location:\n'
-#         for i in G2stIO.WriteRBObjPOAndSig(pfx,'RBV',rbsx,parmDict,sigDict):
-#             s += i+'\n'
-#         for i in G2stIO.WriteRBObjTLSAndSig(pfx,'RBV',rbsx,
-#                         RBObj['ThermalMotion'][0],parmDict,sigDict):
-#             s += i
-#         WriteCIFitem(fp,'',s.rstrip())
-        
-#         pId = phasedict['pId']
-#         for i in RBObj['Ids']:
-#             lbl = G2obj.LookupAtomLabel(pId,G2obj.LookupAtomId(pId,i))[0]
-#             rbAtoms.append('{:7s} 1_555 {:3d} ?'.format(lbl,num))
-
-#     if rbAtoms:
-#         WriteCIFitem(fp,'loop_\n    _restr_rigid_body.id'+
-#             '\n    _restr_rigid_body.atom_site_label\n    _restr_rigid_body.site_symmetry'+
-#             '\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details')
-#         for i,l in enumerate(rbAtoms):
-#             WriteCIFitem(fp,'   {:5d} {}'.format(i+1,l))
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
@@ -2386,41 +2312,6 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             WriteCIFitem(self.fp, '_symmetry_cell_setting',
                          phasedict['General']['SGData']['SGSys'])
-
-              # moved to WriteSeqPhaseVals()
-#             if phasedict['General']['Type'] in ['nuclear','macromolecular']:
-#                 spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
-#                 # regularize capitalization and remove trailing H/R
-#                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-#                 WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
-    
-#                 # generate symmetry operations including centering and center of symmetry
-#                 SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
-#                     phasedict['General']['SGData'])
-#                 WriteCIFitem(self.fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
-#                 for i,op in enumerate(SymOpList,start=1):
-#                     WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,op.lower()))
-#             elif phasedict['General']['Type'] == 'magnetic':
-#                 parentSpGrp = phasedict['General']['SGData']['SpGrp'].strip()
-#                 parentSpGrp = parentSpGrp[0].upper() + parentSpGrp[1:].lower().rstrip('rh ')
-#                 WriteCIFitem(self.fp, '_parent_space_group.name_H-M_alt',parentSpGrp)
-# #                [Trans,Uvec,Vvec] = phasedict['General']['SGData']['fromParent']         #save these
-#                 spacegroup = phasedict['General']['SGData']['MagSpGrp'].strip()
-#                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-#                 WriteCIFitem(self.fp, '_space_group_magn.name_BNS',spacegroup)
-#                 WriteCIFitem(self.fp, '_space_group.magn_point_group',phasedict['General']['SGData']['MagPtGp'])
-
-#                 # generate symmetry operations including centering and center of symmetry
-#                 SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
-#                     phasedict['General']['SGData'])
-#                 SpnFlp = phasedict['General']['SGData']['SpnFlp']
-#                 WriteCIFitem(self.fp, 'loop_\n    _space_group_symop_magn_operation.id\n    _space_group_symop_magn_operation.xyz')
-#                 for i,op in enumerate(SymOpList,start=1):
-#                     if SpnFlp[i-1] >0:
-#                         opr = op.lower()+',+1'
-#                     else:
-#                         opr = op.lower()+',-1'
-#                     WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,opr))
                     
             lam = None
             if 'X' in histblk['Instrument Parameters'][0]['Type'][0]:
@@ -3899,6 +3790,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 #==============================================================================
 ####  MasterExporter code starts here    ======================================
 #==============================================================================
+        global errormsg,warnmsg
         errormsg.clear()
         warnmsg.clear()
         values['maxshft'] = '?'
@@ -4244,7 +4136,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                          str(self.shortauthorname) + "|" + instnam)
             WriteAudit()
             writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
-            # ``template_publ.cif`` or a modified version
+            # ``template_publ.cif`` -- could be customized
             WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
             if MM:
                 WriteOverallMM()
@@ -4273,7 +4165,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
                 histblk = self.Histograms[hist]["Sample Parameters"]
                 writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
-                # ``template_powder.cif`` or a modified version
+                # ``template_powder.cif`` -- could be customized
                 if hist.startswith("PWDR") and MM:
                     WritePowderDataMM(hist)
                 else:
@@ -4308,7 +4200,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
                              str(self.shortauthorname) + "|Overall")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
-                # ``template_publ.cif`` or a modified version
+                # ``template_publ.cif`` -- could be customized
                 WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
                 
                 # 2) overall info block
@@ -4319,7 +4211,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 instnam = self.Histograms[hist]["Sample Parameters"]['InstrName']
                 writeCIFtemplate(self.OverallParms['Controls'],'powder',instnam,
                                      cifKey="seqCIF_template") # powder template for all histograms
-                # ``template_powder.cif`` or a modified version
+                # ``template_powder.cif`` -- could be customized
                 WriteCIFitem(self.fp, '_refine_ls_shift/su_max ',values['maxshft'])
                 WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',values['avgshft'])
                 instnam = instnam.replace(' ','')
@@ -4423,9 +4315,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                         writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
                         WriteSeqOverallPhaseInfo(phasenam,histblk)
 
-                # 4) create a block for each seq. ref (per histogram), include 
-                #     phase in block for one-phase refinements or in separate 
-                #     blocks for each phase & histogram if more than one phase
+                # 4) create at least one block for each seq. ref (per histogram), looping over
+                #        histograms in the sequential refinement results.
+                #     Include the phase in each block for one-phase refinements or in separate 
+                #        blocks for each phase & histogram if more than one phase (controlled by
+                #        variable phaseWithHist)
                 for i,hist in enumerate(seqHistList):
                     print('processing hist #',i,'hId=',self.Histograms[hist]['hId'],hist)
                     hId = self.Histograms[hist]['hId']
@@ -4435,6 +4329,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem(self.fp, '# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem(self.fp, '\ndata_'+self.CIFname+"_pwd_"+str(i))
                     WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[hist])
+                    # create pointers & phase fraction info when multiphase
                     if not phaseWithHist:
                         WriteCIFitem(self.fp, '\n# POINTERS TO PHASE BLOCKS')
                         phaseBlockName = {}
@@ -4464,7 +4359,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     writeCIFtemplate(self.OverallParms['Controls'],'powder',
                                          self.Histograms[hist]["Sample Parameters"]['InstrName'],
                                          cifKey="seqCIF_template") # powder template for all histograms
-                    # ``template_powder.cif`` or a modified version
+                    # ``template_powder.cif`` -- could be customized
                     # get restraint & constraint info
                     restraintDict = self.OverallParms.get('Restraints',{})
                     restrCount = 0
@@ -4477,9 +4372,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                             if k in restraintDict[p]:
                                 restrCount += len(restraintDict[p][k].get(sk,[]))
                     WriteCIFitem(self.fp, '_refine_ls_number_restraints',str(restrCount))
+                    # load the constraints specific to the current histogram
+                    varyList = copy.copy(list(self.seqData[hist].get('varyListStart',[])))
+                    G2mv.InitVars()
+                    constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList,'auto-wildcard',hId)
+                    G2mv.EvaluateMultipliers(constrDict,self.parmDict)
+                    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
                     WriteCIFitem(self.fp, '_refine_ls_number_constraints',
                                 str(G2mv.CountUserConstraints()))
-                    #breakpoint()  # TODO: check above reporting
+                    
                     WriteCIFitem(self.fp, '\n# PHASE INFO FOR HISTOGRAM '+hist)
                     # loop over phases, add a block header if there is more than one phase
                     for j,phasenam in enumerate(sorted(self.Phases.keys())):
@@ -4539,7 +4440,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
                              str(self.shortauthorname) + "|PubInfo")
                 writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
-                # ``template_publ.cif`` or a modified version
+                # ``template_publ.cif`` -- could be customized
                 WriteCIFitem(self.fp, '_refine_ls_weighting_scheme','sigma')
                 
                 # overall info -- it is not strictly necessary to separate this from the previous
@@ -4658,7 +4559,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         WriteCIFitem(self.fp, '_pd_block_id',datablockidDict[hist])
                         histprm = self.Histograms[hist]["Sample Parameters"]
                         writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
-                        # ``template_powder.cif`` or a modified version
+                        # ``template_powder.cif`` -- could be customized
 
                         # get xray wavelength and compute & write f' & f''
                         lam = None

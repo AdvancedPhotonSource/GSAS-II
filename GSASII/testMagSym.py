@@ -256,8 +256,18 @@ class testMagSym(wx.Frame):
         SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,SGData1['MagSpGrp'])
         mainSizer.Add(wx.StaticText(self.testSSPanel,label='New Mag Gen: %s'%str(SGData1['SGSpin'])))
         SGData1['GenSym'],SGData1['GenFlg'],BNSsym = G2spc.GetGenSym(SGData1)
-        SGData1['MagSpGrp'] = G2spc.MagSGSym(SGData1)
-        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%str(SGData1['MagSpGrp'])))
+        MagSpGrp = G2spc.MagSGSym(SGData1).replace(' ','')
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%MagSpGrp))
+        
+        SpGp = MagSpGrp.replace("'",'')
+        SpGrp = G2spc.StandardizeSpcName(SpGp)
+        SGData1 = G2spc.SpcGroup(SpGrp)[1]
+        MSpGrp = G2spc.SplitMagSpSG(MagSpGrp)
+        SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,MSpGrp)
+        SGData1['GenSym'],SGData1['GenFlg'],BNSsym = G2spc.GetGenSym(SGData1)
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Symbol Mag Gen: %s'%str(SGData1['SGSpin'])))
+        MagSpGrp = G2spc.MagSGSym(SGData1).replace(' ','')
+        mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%MagSpGrp))
         self.testSSPanel.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.testSSPanel)
         Size[0] = 800

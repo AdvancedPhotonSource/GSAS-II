@@ -984,7 +984,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                 magSym[i+1] += "'"
                 SGData['MagPtGp'] += "'"
     elif SGLaue == '6/mmm': #ok
-        magPtGp = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            magPtGp = list(SGPtGrp[1:])
+            magPtGp[0] = '-'+magPtGp[0]
+        else:
+            magPtGp = list(SGPtGrp)
         if len(GenSym) == 2:
             for i in [0,1]:
                 if SpnFlp[i+1] < 0:
@@ -1012,7 +1016,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             magPtGp[0] = '/'.join(Ptsym)
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue == '4/mmm':
-        magPtGp = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            magPtGp = list(SGPtGrp[1:])
+            magPtGp[0] = '-'+magPtGp[0]
+        else:
+            magPtGp = list(SGPtGrp)
         if len(GenSym) == 2:
             for i in [0,1]:
                 if SpnFlp[i+1] < 0:

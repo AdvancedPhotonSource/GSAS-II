@@ -1309,36 +1309,19 @@ def GetSGSpin(SGData,MSgSym):
         for i in [0,1,2]:
             if "'" in mFlds[i+1]:
                 mSpn[i+1] = -1
-    elif SGLaue == '6/mmm': #ok
-        if len(GenSym) == 2: #622, -6m2, -62m, 6mm
+    elif SGLaue in ['4/mmm','6/mmm']: #ok
+        if len(GenSym) == 2: #422, -4m2, -42m, 4mm, 622, -6m2, -62m, 6mm
             for i in [0,1]:
                 if "'" in mFlds[i+1]:
                     mSpn[i] = -1
-        else: #6/mmm
+            mSpn[2] = mSpn[0]*mSpn[1]
+        else: #4/mmm, 6/mmm
             sym = mFlds[1].split('/')
             if "'" in sym[1]:
                 mSpn[1] = -1
             for i in [1,2]:
                 if "'" in mFlds[i+1]:
-                    mSpn[i] = -1
-    elif SGLaue == '4/mmm':
-        if len(GenSym) == 2: #422, -4m2, -42m, 4mm
-            for i in [0,1]:
-                if "'" in mFlds[i+1]:
-                    mSpn[i] = -1
-        else:
-            if '/' in mFlds[1]:    #P 4/m m m, etc.
-                sym = mFlds[1].split('/')
-                if "'" in sym[1]:
-                    mSpn[1] = -1
-                for i in [1,2]:
-                    if "'" in mFlds[i+1]:
-                        mSpn[i+1] = -1
-            else:
-                print('why here? ',SGData['SpGrp'],GenSym)
-                for i in [0,1]:
-                    if "'" in mFlds[i+2]:
-                        mSpn[i+1] = -1
+                    mSpn[i+1] = -1
     elif SGLaue in ['3','3m1','31m']:   #ok 
         if len(GenSym) == 1:    #all ok
             Id = 2

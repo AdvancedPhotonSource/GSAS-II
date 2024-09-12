@@ -1406,6 +1406,15 @@ def GenMagOps(SGData):
         SpnFlp = SGData['SpnFlp']
     else:
         SpnFlp = np.ones(Nsym,dtype=np.int32)
+        if SGData['SGLaue'] == '6/m': # treat special as algorithm below fails 
+            if SGData['SGSpin'] == [1,-1,1]:
+                SpnFlp = [1,-1,1,-1,1,-1,1,-1,1,-1,1,-1]
+            elif SGData['SGSpin'] == [1,1,-1]:
+                SpnFlp = [1,1,1,1,1,1,-1,-1,-1,-1,-1,-1]
+            elif SGData['SGSpin'] == [1,-1,-1]:
+                SpnFlp = [1,-1,1,-1,1,-1,-1,1,-1,1,-1,1]
+            return OprNames,SpnFlp
+#everything else        
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
         Nfl = len(GenFlg)

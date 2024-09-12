@@ -1055,7 +1055,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     magSym[1] += "'"
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue in ['3','3m1','31m']:   #ok 
-        Ptsym = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            Ptsym = list(SGPtGrp[1:])
+            Ptsym[0] = '-'+Ptsym[0]
+        else:
+            Ptsym = list(SGPtGrp)
         if len(GenSym) == 1:    #all ok
             Id = 2
             if (len(magSym) == 4) and (magSym[2] == '1'):

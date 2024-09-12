@@ -89,7 +89,7 @@ class testMagSym(wx.Frame):
             Obj = event.GetEventObject()
             BNSlatt = Obj.GetValue()
             SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
-            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+#            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
             if not BNSlatt:
                 SGData['BNSlattsym'] = ['',[]]
             else:
@@ -265,6 +265,10 @@ class testMagSym(wx.Frame):
         MSpGrp = G2spc.SplitMagSpSG(MagSpGrp)
         SGData1['SGSpin'] = G2spc.GetSGSpin(SGData1,MSpGrp)
         SGData1['GenSym'],SGData1['GenFlg'],BNSsym = G2spc.GetGenSym(SGData1)
+        if '_' in MSpGrp[0]:
+            SGData1['BNSlattsym'] = [MSpGrp[0],BNSsym[MSpGrp[0]]]
+        else:
+            SGData1['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
         mainSizer.Add(wx.StaticText(self.testSSPanel,label='Symbol Mag Gen: %s'%str(SGData1['SGSpin'])))
         MagSpGrp = G2spc.MagSGSym(SGData1).replace(' ','')
         mainSizer.Add(wx.StaticText(self.testSSPanel,label='Gives symbol: %s'%MagSpGrp))

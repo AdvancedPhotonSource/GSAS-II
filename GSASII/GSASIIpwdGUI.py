@@ -76,7 +76,7 @@ npcosd = lambda x: np.cos(x*math.pi/180.)
 
 class SubCellsDialog(wx.Dialog):
     'Display magnetic subcell space group information from selection in Unit Cells table of results from k-SUBGROUPSMAG'
-    def __init__(self,parent,title,controls,SGData,items,phaseDict):
+    def __init__(self,parent,title,controls,SGData,items,phaseDict,ifPick=False):
         wx.Dialog.__init__(self,parent,-1,title,
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -84,6 +84,8 @@ class SubCellsDialog(wx.Dialog):
         self.SGData = SGData         #for parent phase
         self.items = items
         self.phaseDict = phaseDict
+        self.Pick = 0
+        self.ifPick = ifPick
         
         self.Draw()
     
@@ -109,6 +111,9 @@ class SubCellsDialog(wx.Dialog):
                     msg = 'Space Group Information'
                     G2G.SGMessageBox(self.panel,msg,text,table).Show()
             elif c == 1:
+                self.Pick = r
+                self.Draw()
+            elif c == 2:
                 maxequiv = phase['maxequiv']
                 mSGData = phase['SGData']
                 Uvec = phase['Uvec']
@@ -136,13 +141,13 @@ class SubCellsDialog(wx.Dialog):
                     else:
                         CSI = G2spc.GetCSxinel(SytSym)
                         atMxyz.append([SytSym,CSI[0]])
-                G2phsG.UseMagAtomDialog(self.panel,pname,Atms,AtCods,atMxyz,ifMag=ifMag,ifOK=True).Show()
-            elif c in [2,3]:
-                if c == 2:
+                G2phsG.UseMagAtomDialog(self.panel,pname,Atms,AtCods,atMxyz,ifMag=ifMag,ifOK=True).ShowModal()
+            elif c in [3,4]:
+                if c == 3:
                     title = 'Conjugacy list for '+pname
                     items = phase['altList']
                     
-                elif c == 3:
+                elif c == 4:
                     title = 'Super groups list list for '+pname
                     items = phase['supList']
                     if not items[0]:
@@ -153,13 +158,21 @@ class SubCellsDialog(wx.Dialog):
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         rowLabels = [str(i+1) for i in range(len(self.items))]
-        colLabels = ['Space Gp','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
-        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
-            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
+        if self.ifPick:
+            colLabels = ['Space Gp','Pick','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+            Types = [wg.GRID_VALUE_STRING,]+[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
+                3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
+        else:
+            colLabels = ['Space Gp','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+            Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
+                3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
-        for ip in self.items:
+        for kp,ip in enumerate(self.items):
             phase = self.phaseDict[ip]
             natms = phase.get('nAtoms',1)
+            pick = False
+            if kp == self.Pick:
+                pick = True
             try:
                 nConj = len(phase['altList'])
                 nSup = len(phase['supList'])
@@ -169,7 +182,10 @@ class SubCellsDialog(wx.Dialog):
             cell  = list(phase['Cell'])
             trans = G2spc.Trans2Text(phase['Trans'])
             vec = G2spc.Latt2text([phase['Uvec'],])
-            row = [phase['Name'],natms,nConj,nSup,trans,vec]+cell
+            if self.ifPick:
+                row = [phase['Name'],pick,natms,nConj,nSup,trans,vec]+cell
+            else:
+                row = [phase['Name'],natms,nConj,nSup,trans,vec]+cell
             table.append(row)
         CellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -191,12 +207,13 @@ class SubCellsDialog(wx.Dialog):
         self.panel.Fit()
         self.Fit()
 
+    def GetSelection(self):
+        return self.Pick
                 
     def OnOk(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.Destroy()
-#        self.EndModal(wx.ID_OK)
+        self.EndModal(wx.ID_OK)
 
 class RDFDialog(wx.Dialog):
     'Display controls for generating RDF plot in Background'
@@ -1683,7 +1700,7 @@ def UpdateBackground(G2frame,data):
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
         
     def OnMakeRDF(event):
-        'Make a Radial Distribution Fuunction from the background - useful for selecting Debye background positions'
+        'Make a Radial Distribution Function from the background - useful for selecting Debye background positions'
         dlg = RDFDialog(G2frame)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -4907,18 +4924,31 @@ def UpdateUnitCellsGrid(G2frame, data):
                 if c == 4:
                     title = 'Conjugacy list for '+pname
                     items = phase['altList']
-                    
+                    ifPick = True
                 elif c == 5:
                     title = 'Super groups list for '+pname
                     items = phase['supList']
                     if not items[0]:
                         wx.MessageBox(pname+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
                         return
-                    
-                SubCellsDialog(G2frame,title,controls,SGData,items,phaseDict).ShowModal()
+                    ifPick = False
+                Pick = -1
+                dlg = SubCellsDialog(G2frame,title,controls,SGData,items,phaseDict,ifPick)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        altList = copy.copy(phase['altList'])
+                        print(altList)
+                        Pick = dlg.GetSelection()
+                        pickPhase = phaseDict[altList[Pick]]
+                        pickPhase['altList'] = altList
+                        baseList[r] = altList[Pick]
+                finally:
+                    dlg.Destroy()
+                if Pick >= 0:
+                    data = [controls,bravais,cells,dminx,ssopt,magcells]
+                    G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+                    wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
-            data = [controls,bravais,cells,dminx,ssopt,magcells]
-            G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
             
     def OnRefreshKeep(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)

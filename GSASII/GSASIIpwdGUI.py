@@ -4937,7 +4937,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         altList = copy.copy(phase['altList'])
-                        print(altList)
                         Pick = dlg.GetSelection()
                         pickPhase = phaseDict[altList[Pick]]
                         pickPhase['altList'] = altList

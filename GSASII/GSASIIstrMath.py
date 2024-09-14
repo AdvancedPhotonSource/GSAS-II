@@ -350,7 +350,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
     '''Computes s.u. values for atoms in rigid bodies
 
-    :param dict parmDict: parameter dict. This is not change by this routine.
+    :param dict parmDict: parameter dict. This is not changed by this routine.
     :param dict Phases: nested dict with information on all phases (from data tree)
     :param dict rigidbodyDict: dict with information on all rigid bodies (from data tree)
     :param np.array covMatrix: covariance matrix (length NxN)

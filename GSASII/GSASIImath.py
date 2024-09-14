@@ -2417,6 +2417,9 @@ def BessIn(nmax,x):
 ################################################################################
 
 def CalcDist(distance_dict, distance_atoms, parmDict):
+    '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond distances
+    when defined in an expression. 
+    '''
     if not len(parmDict):
         return 0.
     pId = distance_dict['pId']
@@ -2440,6 +2443,9 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     return dist    
     
 def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
+    '''Used to compute s.u. values on distances tracked in the sequential 
+    results table
+    '''
     if not len(parmDict):
         return None
     pId = distance_dict['pId']
@@ -2454,6 +2460,9 @@ def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
     return deriv
    
 def CalcAngle(angle_dict, angle_atoms, parmDict):
+    '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond angles
+    when defined in an expression. 
+    '''
     if not len(parmDict):
         return 0.
     pId = angle_dict['pId']
@@ -2484,6 +2493,9 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
     return angle
 
 def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
+    '''Used to compute s.u. values on angles tracked in the sequential 
+    results table
+    '''
     if not len(parmDict):
         return None
     pId = angle_dict['pId']
@@ -2526,7 +2538,7 @@ def getSyXYZ(XYZ,ops,SGData):
     return XYZout
     
 def getRestDist(XYZ,Amat):
-    '''default doc string
+    '''Compute interatomic distance(s) for use in restraints
     
     :param type name: description
     
@@ -2536,7 +2548,7 @@ def getRestDist(XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
     
 def getRestDeriv(Func,XYZ,Amat,ops,SGData):
-    '''default doc string
+    '''Compute numerical derivatives of restraints for use in minimization
     
     :param type name: description
     
@@ -2556,7 +2568,7 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     return deriv.flatten()
 
 def getRestAngle(XYZ,Amat):
-    '''default doc string
+    '''Compute interatomic angle(s) for use in restraints
     
     :param type name: description
     
@@ -2578,7 +2590,7 @@ def getRestAngle(XYZ,Amat):
     return acosd(angle)
     
 def getRestPlane(XYZ,Amat):
-    '''default doc string
+    '''Compute deviations from a best plane through atoms for use in restraints
     
     :param type name: description
     
@@ -2600,7 +2612,7 @@ def getRestPlane(XYZ,Amat):
     return Evec[Order[0]]
     
 def getRestChiral(XYZ,Amat):    
-    '''default doc string
+    '''compute a chiral restraint
     
     :param type name: description
     
@@ -2614,7 +2626,7 @@ def getRestChiral(XYZ,Amat):
     return nl.det(VecA)
     
 def getRestTorsion(XYZ,Amat):
-    '''default doc string
+    '''compute a torsion restraint
     
     :param type name: description
     
@@ -2778,7 +2790,9 @@ def getRestPolefigDerv(HKL,Grid,SHCoeff):
     pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
-    '''default doc string
+    '''computes the numerical derivative of the distance between two atoms
+    used here in :func:`CalcDistDeriv` and in 
+    :func:`GSASIIstrMain.RetDistAngle`
     
     :param type name: description
     
@@ -2810,6 +2824,9 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
     
 def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
+    '''computes the numerical derivative of the angle between two vectors
+    (generated from pairs of atoms) used here in :func:`getAngSig`.
+    '''
     
     def calcAngle(Oxyz,ABxyz,Amat,Tunit,symNo,SGData):
         vec = np.zeros((2,3))
@@ -2853,12 +2870,18 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
     return deriv
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
-    '''default doc string
+    '''Compute an interatomic angle and its uncertainty from two vectors 
+    between an orgin atom and two atoms around that atom.
     
-    :param type name: description
+    :param np.array VA: an interatomic vector (in what units?) 
+    :param np.array VB: an interatomic vector
+    :param np.array Amat: unit cell parameters as an A vector
+    :param dict SGData: symmetry information 
+    :param dict covData: covariance information including 
+      the covariance matrix and the list of varied parameters. If not 
+      supplied the s.u. values is returned as zero.
     
-    :returns: type name: description
-    
+    :returns: angle, sigma(angle)
     '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
@@ -2922,7 +2945,7 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    '''default doc string
+    '''not used
     
     :param type name: description
     
@@ -2971,7 +2994,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Dist,sig
 
 def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    '''default doc string
+    '''Not used
     
     :param type name: description
     

@@ -4940,6 +4940,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         Pick = dlg.GetSelection()
                         pickPhase = phaseDict[altList[Pick]]
                         pickPhase['altList'] = altList
+                        pickPhase['Use'] = phase['Use']
                         baseList[r] = altList[Pick]
                 finally:
                     dlg.Destroy()
@@ -4947,7 +4948,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                     data = [controls,bravais,cells,dminx,ssopt,magcells]
                     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
                     wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-                
             
     def OnRefreshKeep(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)

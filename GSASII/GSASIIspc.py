@@ -1406,15 +1406,6 @@ def GenMagOps(SGData):
         SpnFlp = SGData['SpnFlp']
     else:
         SpnFlp = np.ones(Nsym,dtype=np.int32)
-        if SGData['SGLaue'] == '6/m': # treat special as algorithm below fails 
-            if SGData['SGSpin'] == [1,-1,1]:
-                SpnFlp = [1,-1,1,-1,1,-1,1,-1,1,-1,1,-1]
-            elif SGData['SGSpin'] == [1,1,-1]:
-                SpnFlp = [1,1,1,1,1,1,-1,-1,-1,-1,-1,-1]
-            elif SGData['SGSpin'] == [1,-1,-1]:
-                SpnFlp = [1,-1,1,-1,1,-1,-1,1,-1,1,-1,1]
-            return OprNames,SpnFlp
-#everything else        
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
         Nfl = len(GenFlg)
@@ -1427,6 +1418,13 @@ def GenMagOps(SGData):
                         print('index error: ',Nsym,ieqv,Nfl,iunq)
                         FlpSpn = FlpSpn+[1,]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
+        if SGData['SGLaue'] == '6/m': # treat special as algorithm above fails 
+            if SGData['SGSpin'] == [1,-1,1]:
+                SpnFlp = [1,-1,1,-1,1,-1,1,-1,1,-1,1,-1]
+            elif SGData['SGSpin'] == [1,1,-1]:
+                SpnFlp = [1,1,1,1,1,1,-1,-1,-1,-1,-1,-1]
+            elif SGData['SGSpin'] == [1,-1,-1]:
+                SpnFlp = [1,-1,1,-1,1,-1,-1,1,-1,1,-1,1]
         for incv in range(Ncv):
             if incv:
                 try:

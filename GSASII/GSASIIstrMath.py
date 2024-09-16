@@ -2009,13 +2009,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             if not SGData['SGGray']:     #correct -fixed Mx,My,Mz contribution              
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
-#  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz                            
+#  calc mag. structure factors; Nref,Ntau,Nops,Natm,Mxyz
+            Rs = [-1.,-1.,-1.,-1.]                           
             fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (-MmodAR+H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(MmodAI-H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
+                (Rs[0]*MmodAR+Rs[1]*H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Rs[2]*MmodAI+Rs[3]*H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
-                        
+            Is = [-1.,1.,1.,-1.]
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
-                (-MmodAR-H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(-MmodAI-H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
+                (Is[0]*MmodAR+Is[1]*H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Is[2]*MmodAI+Is[3]*H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:

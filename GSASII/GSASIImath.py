@@ -1864,8 +1864,8 @@ def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
     BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
     phi =  np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
-    psin = np.sin(-twopi*phi)      #tau,ops,atms
-    pcos = np.cos(-twopi*phi)
+    psin = np.sin(twopi*phi)      #tau,ops,atms
+    pcos = np.cos(twopi*phi)
     MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz
     MmodBR = BMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Re sin term
     MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im sin term

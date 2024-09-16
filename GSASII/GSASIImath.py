@@ -2871,15 +2871,15 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
     '''Compute an interatomic angle and its uncertainty from two vectors 
-    between an orgin atom and two atoms around that atom.
+    each between an orgin atom and either of a pair of nearby atoms.
     
-    :param np.array VA: an interatomic vector (in what units?) 
-    :param np.array VB: an interatomic vector
+    :param np.array VA: an interatomic vector as a structure
+    :param np.array VB: an interatomic vector also as a structure
     :param np.array Amat: unit cell parameters as an A vector
     :param dict SGData: symmetry information 
     :param dict covData: covariance information including 
       the covariance matrix and the list of varied parameters. If not 
-      supplied the s.u. values is returned as zero.
+      supplied, the s.u. values are returned as zeros.
     
     :returns: angle, sigma(angle)
     '''

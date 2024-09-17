@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
-########### SVN repository information ###################
-# $Date: 2024-09-16 19:49:14 -0500 (Mon, 16 Sep 2024) $
-# $Author: toby $
-# $Revision: 5797 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIElem.py $
-# $Id: GSASIIElem.py 5797 2024-09-17 00:49:14Z toby $
-########### SVN repository information ###################
 """
 Routines used to define element settings follow. 
 """
@@ -15,7 +8,6 @@ import math
 import sys
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5797 $")
 import copy
 import numpy as np
 import atmdata

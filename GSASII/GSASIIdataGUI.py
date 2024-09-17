@@ -8261,7 +8261,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
     def OnShowShift(event):
-        breakpoint()
         if 'cycle' in event.EventObject.GetLabel():
             shftesd = [data['Rvals']['lastShifts'].get(k,0)/s for k,s in
                            zip(data['varyList'],data['sig'])]

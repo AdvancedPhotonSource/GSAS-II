@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-09-16 19:49:14 -0500 (Mon, 16 Sep 2024) $
-# $Author: toby $
-# $Revision: 5797 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $
-# $Id: GSASIIIO.py 5797 2024-09-17 00:49:14Z toby $
-########### SVN repository information ###################
 '''
 Misc routines for input and output, including image reading follow. 
 
@@ -31,15 +24,11 @@ import numpy.ma as ma
 
 import copy
 import platform
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle as cPickle
 import sys
 import re
 import random as ran
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5797 $")
 try:
     import GSASIIdataGUI as G2gd
 except ImportError:

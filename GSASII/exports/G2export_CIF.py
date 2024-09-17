@@ -33,7 +33,6 @@ except ImportError:
     wx = Placeholder()
     wxscroll = Placeholder()
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5797 $")
 import GSASIIIO as G2IO
 try:
     import GSASIIctrlGUI as G2G

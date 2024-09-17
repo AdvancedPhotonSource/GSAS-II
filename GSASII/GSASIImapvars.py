@@ -17,7 +17,7 @@ from __future__ import division, print_function
 import copy
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5796 $")
+GSASIIpath.SetVersionNumber("$Revision: 5797 $")
 import GSASIIobj as G2obj 
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed

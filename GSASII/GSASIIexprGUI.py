@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIexprGUI - Expression Definition and Evaluation
 ########### SVN repository information ###################
-# $Date: 2023-09-29 15:47:55 -0500 (Fri, 29 Sep 2023) $
-# $Author: vondreele $
-# $Revision: 5663 $
+# $Date: 2024-09-16 19:49:14 -0500 (Mon, 16 Sep 2024) $
+# $Author: toby $
+# $Revision: 5797 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIexprGUI.py $
-# $Id: GSASIIexprGUI.py 5663 2023-09-29 20:47:55Z vondreele $
+# $Id: GSASIIexprGUI.py 5797 2024-09-17 00:49:14Z toby $
 ########### SVN repository information ###################
 '''Routines for users to input Python expressions used within 
 GSAS-II computations follow.
@@ -18,7 +18,7 @@ import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5663 $")
+GSASIIpath.SetVersionNumber("$Revision: 5797 $")
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
 import GSASIImath as G2mth

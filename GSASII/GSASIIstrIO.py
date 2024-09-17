@@ -1651,10 +1651,21 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         SGData = General['SGData']
         SGtext,SGtable = G2spc.SGPrint(SGData)
         if General['Type'] == 'magnetic':
+            SGtext,SGtable = G2spc.SGPrint(SGData,AddInv=True)
+            SGtext[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+            SGtext[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+            if SGData['SGGray'] and "1'" not in SGtext[0]:
+                SGtext[0] += " 1'"
+                SGtext[3] += "1'"
             MFtable = G2el.GetMFtable(General['AtomTypes'],General['Lande g'])
             MFtables.update(MFtable)
             phaseDict[pfx+'isMag'] = True
             SpnFlp = SGData['SpnFlp']
+            newTable = []
+            for itm,text in enumerate(SGtable):
+                opr = text.split(')')[1]
+                newTable += ['(%2d)%s   %2d'%(itm+1,opr,int(SpnFlp[itm])),]
+            SGtable = newTable
         Atoms = PhaseData[name]['Atoms']
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']

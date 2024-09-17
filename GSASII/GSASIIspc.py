@@ -3933,7 +3933,8 @@ def SpaceGroupNumber(spcgroup):
 
 spgbyNum = []
 '''Space groups indexed by number'''
-spgbyNum = [None,
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spgbyNum = [None,
         'P 1','P -1',                                                   #1-2
         'P 2','P 21','C 2','P m','P c','C m','C c','P 2/m','P 21/m',
         'C 2/m','P 2/c','P 21/c','C 2/c',                               #3-15
@@ -3991,7 +3992,8 @@ spgbyNum = [None,
 altSettingOrtho = {}
 ''' A dictionary of alternate settings for orthorhombic unit cells
 '''
-altSettingOrtho = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    altSettingOrtho = {
         'P 2 2 2' :{'abc':'P 2 2 2','cab':'P 2 2 2','bca':'P 2 2 2','acb':'P 2 2 2','bac':'P 2 2 2','cba':'P 2 2 2'},
         'P 2 2 21' :{'abc':'P 2 2 21','cab':'P 21 2 2','bca':'P 2 21 2','acb':'P 2 21 2','bac':'P 2 2 21','cba':'P 21 2 2'},
         'P 21 21 2':{'abc':'P 21 21 2','cab':'P 2 21 21','bca':'P 21 2 21','acb':'P 21 2 21','bac':'P 21 21 2','cba':'P 2 21 21'},
@@ -4056,7 +4058,8 @@ spg2origins = {}
 ''' A dictionary of all spacegroups that have 2nd settings; the value is the 
 1st --> 2nd setting transformation vector as X(2nd) = X(1st)-V, nonstandard ones are included.
 '''
-spg2origins = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spg2origins = {
         'P n n n':[-.25,-.25,-.25],
         'P b a n':[-.25,-.25,0],'P n c b':[0,-.25,-.25],'P c n a':[-.25,0,-.25],
         'P m m n':[-.25,-.25,0],'P n m m':[0,-.25,-.25],'P m n m':[-.25,0,-.25],
@@ -4078,7 +4081,8 @@ separate the different crystallographic directions.
 Note that the symmetry codes here will recognize many non-standard space group 
 symbols with different settings. They are ordered by Laue group
 '''
-spglist = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spglist = {
     'P1' : ('P 1','P -1',), # 1-2
     'C1' : ('C 1','C -1',),
     'P2/m': ('P 2','P 21','P m','P a','P c','P n',
@@ -4180,7 +4184,8 @@ sgequiv_2002_orthorhombic = {}
 ''' A dictionary of orthorhombic space groups that were renamed in the 2002 Volume A,
  along with the pre-2002 name. The e designates a double glide-plane
 '''
-sgequiv_2002_orthorhombic = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    sgequiv_2002_orthorhombic = {
         'AEM2':'A b m 2','B2EM':'B 2 c m','CM2E':'C m 2 a',
         'AE2M':'A c 2 m','BME2':'B m a 2','C2ME':'C 2 m b',
         'AEA2':'A b a 2','B2EB':'B 2 c b','CC2E':'C c 2 a',

@@ -2014,7 +2014,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fams = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (Rs[0]*MmodAR+Rs[1]*H[3,i]*MmodBR)*cosm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Rs[2]*MmodAI+Rs[3]*H[3,i]*MmodBI)*sinm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz
-            Is = [-1.,1.,1.,-1.]
+            Is = [1.,-1.,1.,1.]
             fbms = TMcorr[:,nxs,nxs,:,nxs]*SGData['MagMom'][nxs,nxs,:,nxs,nxs]*np.array([np.where(H[3,i]!=0,(
                 (Is[0]*MmodAR+Is[1]*H[3,i]*MmodBR)*sinm[i,nxs,:,:,nxs]+GamI[nxs,:,nxs,nxs]*(Is[2]*MmodAI+Is[3]*H[3,i]*MmodBI)*cosm[i,nxs,:,:,nxs]),
                 0.) for i in range(mRef)])/2.          #Nref,Ntau,Nops,Natm,Mxyz

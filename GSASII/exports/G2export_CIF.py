@@ -2347,8 +2347,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                 spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
                 # regularize capitalization and remove trailing H/R
                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-                WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
-    
+                #WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
+                WriteCIFitem(self.fp, '_space_group_name_H-M_alt',spacegroup)
+                HallSym = G2spc.GetHallSpaceGroup(phasedict['General']['SGData'])
+                if HallSym is None:
+                    WriteCIFitem(self.fp, '_space_group_name_Hall','.  # not defined -- non standard setting')
+                else:
+                    WriteCIFitem(self.fp, '_space_group_name_Hall',HallSym)
                 # generate symmetry operations including centering and center of symmetry
                 SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                     phasedict['General']['SGData'])
@@ -2467,7 +2472,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                 spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
                 # regularize capitalization and remove trailing H/R
                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-                WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
+                #WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
+                WriteCIFitem(self.fp, '_space_group_name_H-M_alt',spacegroup)
+                HallSym = G2spc.GetHallSpaceGroup(phasedict['General']['SGData'])
+                if HallSym is None:
+                    WriteCIFitem(self.fp, '_space_group_name_Hall','.  # not defined -- non standard setting')
+                else:
+                    WriteCIFitem(self.fp, '_space_group_name_Hall',HallSym)
     
                 # generate symmetry operations including centering and center of symmetry
                 SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
@@ -2606,7 +2617,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
             # regularize capitalization and remove trailing H/R
             spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-            WriteCIFitem(self.fp, '_symmetry.space_group_name_H-M',spacegroup)
+            #WriteCIFitem(self.fp, '_symmetry.space_group_name_H-M',spacegroup)
+            WriteCIFitem(self.fp, '_space_group.name_H-M_alt',spacegroup)
+            HallSym = G2spc.GetHallSpaceGroup(phasedict['General']['SGData'])
+            if HallSym is None:
+                WriteCIFitem(self.fp, '_space_group.name_Hall','.  # not defined -- non standard setting')
+            else:
+                WriteCIFitem(self.fp, '_space_group.name_Hall',HallSym)
 
             # generate symmetry operations including centering and center of symmetry
             SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(

@@ -234,7 +234,10 @@ def GetTifData(filename):
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'i4'),dtype=np.int32)
             elif IFD[258][2][0] == 16:
                 image = File.read(2*Npix)
-                pixy = [109.92,109.92]      #for LCLS ImageJ tif files
+                if sizexy == [400,250]:
+                    pixy = [175.2,175.2]        #for Sect36 ImageJ files
+                else:
+                    pixy = [109.92,109.92]      #for LCLS ImageJ tif files
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'u2'),dtype=np.int32)
         else:   #gain map from  11-ID-C?
             pixy = [200.,200.]

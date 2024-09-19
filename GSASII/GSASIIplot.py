@@ -9743,9 +9743,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     Q = rbObj['Orient'][0]
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 elif event.RightIsDown():
-                    if rbObj['Orig'][1]:
-                        if rbObj.get('fillMode'): rbObj['needsFill'] = True
-                        SetRBTranslation(newxy)
+                    if 'fixOrig' in rbObj:
+                        if rbObj.get('fixOrig',False): return
+                    elif not rbObj['Orig'][1]: # is refine flag set?
+                        return
+                    if rbObj.get('fillMode'): rbObj['needsFill'] = True
+                    SetRBTranslation(newxy)
                     Tx,Ty,Tz = rbObj['Orig'][0]
                     G2frame.G2plotNB.status.SetStatusText('New origin: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
                 elif event.MiddleIsDown():
@@ -10960,8 +10963,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
     txID = -1
     ForthirdPI = 4.0*math.pi/3.0
-    RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
-    RBdata = G2frame.GPXtree.GetItemPyData(RBId)
+    #RBId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Rigid bodies')
+    #RBdata = G2frame.GPXtree.GetItemPyData(RBId)
     generalData = data['General']
     RBmodels = data['RBModels']
     SpnRB = RBmodels.get('Spin',[])

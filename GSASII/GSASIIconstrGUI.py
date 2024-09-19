@@ -3910,6 +3910,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             if sel == 0: return # 1st entry is blank
             rbname = rbchoice[sel-1]
             resRBsel = RBnames[rbname]
+            rbData = data['Residue'][resRBsel]
             G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
             wx.CallLater(100,UpdateResidueRB)
             

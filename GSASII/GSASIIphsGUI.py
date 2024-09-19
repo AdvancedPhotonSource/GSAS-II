@@ -14365,7 +14365,7 @@ of the crystal structure.
             
             G2plt.PlotStructure(G2frame,data,True,UpdateTable)
             
-            if rbType != 'Spin':
+            if rbType == 'Spin':
                 mainSizer.Add(wx.StaticText(RigidBodies,label=' Spinning rigid body:'),0)
             else:
                 mainSizer.Add(wx.StaticText(RigidBodies,label=

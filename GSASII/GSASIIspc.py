@@ -3946,6 +3946,10 @@ def GetHallSpaceGroup(SGData):
             return spgHall[key[:-1]][0]
         except:
             pass
+    if key[1:3] in ['m3','n3','a3','d3']: # fix old-style cubic names
+        keyB3 = key.replace('3','-3')
+        if keyB3 in spgHall: return spgHall[keyB3][0]
+    # give up
     return None
 
 spgbyNum = []

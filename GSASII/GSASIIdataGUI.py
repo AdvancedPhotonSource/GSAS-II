@@ -5360,7 +5360,7 @@ If you continue from this point, it is quite likely that all intensity computati
             txt = txt.replace('Pwd=','Histogram: ')
             tbl.append([x,(' T' if x in varyList else '  '),derivCalcs[x][1],txt])
         G2G.G2ScrolledGrid(self,'Parameter Impact Results','Impact Results',tbl,colLbls,colTypes,
-            maxSize=(700,400),comment=' Cite: B.H. Toby, IUCrJ, to be published')
+            maxSize=(700,400),comment=' Cite: Toby, B. H. (2024). "A simple solution to the Rietveld refinement recipe problem." J. Appl. Cryst. 57(1): 175-180.')
 
     def OnExpressionCalc(self,event):
         '''Compute an arbitrary expression (supplied by user) as well as the 

@@ -1324,6 +1324,205 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
                             G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)))
     return AtomLabels,DistArray,AngArray
 
+def mkParmDictfromTree(G2frame):
+    '''Load the GSAS-II refinable parameters from the tree into dict parmDict
+    Update refined values to those from the last cycle 
+    '''
+    G2frame.CheckNotebook()
+    parmDict = {}
+    #self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
+    #self.RBsuDict = {} # dict with s.u. values for atoms in a rigid body
+    rigidbodyDict = {}
+    covDict = {}
+    consDict = {}
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if G2frame.GPXtree.IsEmpty(): return # nothing to do
+    item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+    while item:
+        name = G2frame.GPXtree.GetItemText(item)
+        if name == 'Rigid bodies':
+             rigidbodyDict = G2frame.GPXtree.GetItemPyData(item)
+        elif name == 'Covariance':
+             covDict = G2frame.GPXtree.GetItemPyData(item)
+        elif name == 'Constraints':
+             consDict = G2frame.GPXtree.GetItemPyData(item)
+        item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+    rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    parmDict.update(rbDict)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave =  \
+        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+    parmDict.update(phaseDict)
+    hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
+    parmDict.update(hapDict)
+    histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+    parmDict.update(histDict)
+    parmDict.update(zip(
+            covDict.get('varyList',[]),
+            covDict.get('variables',[])))
+    #self.sigDict = dict(zip(
+    #        covDict.get('varyList',[]),
+    #        covDict.get('sig',[])))
+    # expand to include constraints: first compile a list of constraints
+    constList = []
+    for item in consDict:
+        if item.startswith('_'): continue
+        constList += consDict[item]
+    # now process the constraints
+    G2mv.InitVars()
+    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
+    varyList = covDict.get('varyListStart')
+    if varyList is None and len(constrDict) == 0:
+        # no constraints can use varyList
+        varyList = covDict.get('varyList')
+    elif varyList is None:
+        varyList = []
+        # # old GPX file from before pre-constraint varyList is saved
+        # print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
+        # raise Exception(' *** Export aborted ***')
+    else:
+        varyList = list(varyList)
+        # add symmetry-generated constraints
+    rigidbodyDict = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave = \
+        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+    msg = G2mv.EvaluateMultipliers(constrDict,phaseDict)
+    if msg:
+        print('Unable to interpret constraint multiplier(s): '+msg)
+        return None
+    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+    if errmsg:
+        # this really should not happen
+        print (' *** ERROR - constraints are internally inconsistent ***')
+        print ('Errors: ',errmsg)
+        if warnmsg: print ('Warnings'+warnmsg)
+        return None
+    G2mv.Map2Dict(parmDict,varyList)   # changes varyList
+    G2mv.Dict2Map(parmDict)   # add the constrained values to the parameter dictionary
+    return parmDict,rigidbodyDict,covDict
+
+def RetDistAngleRB(DisAglCtls,DisAglData,parmDict,Phases,RBData,dlg=None):
+    '''Compute and return distances and angles, accounting for impact of Rigid Body and 
+    constraint uncertainties.
+
+    :param dict DisAglCtls: contains distance/angle radii usually defined using
+       :func:`GSASIIctrlGUI.DisAglDialog`
+    :param dict DisAglData: contains phase data:
+       Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
+       for distance/angle origins and atoms to be used as targets.
+       Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
+
+    :returns: AtomLabels,DistArray,AngArray where:
+
+      **AtomLabels** is a dict of atom labels, keys are the atom number
+
+      **DistArray** is a dict keyed by the origin atom number where the value is a list
+      of distance entries. The value for each distance is a list containing:
+
+        0) the target atom number (int);
+        1) the unit cell offsets added to x,y & z (tuple of int values)
+        2) the symmetry operator number (which may be modified to indicate centering and center of symmetry)
+        3) an interatomic distance in A (float)
+        4) an uncertainty on the distance in A or 0.0 (float)
+
+      **AngArray** is a dict keyed by the origin (central) atom number where
+      the value is a list of
+      angle entries. The value for each angle entry consists of three values:
+
+        0) a distance item reference for one neighbor (int)
+        1) a distance item reference for a second neighbor (int)
+        2) a angle, uncertainty pair; the s.u. may be zero (tuple of two floats)
+
+      The AngArray distance reference items refer directly to the index of the items in the
+      DistArray item for the list of distances for the central atom.
+    '''
+    import numpy.ma as ma
+
+    SGData = DisAglData['SGData']
+    Cell = DisAglData['Cell']
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])
+    covData = {}
+    if len(DisAglData.get('covData',{})):
+        covData = DisAglData['covData']
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        pfx = str(DisAglData['pId'])+'::'
+
+    Factor = DisAglCtls['Factors']
+    Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
+    indices = (-2,-1,0,1,2)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+    origAtoms = DisAglData['OrigAtoms']
+    targAtoms = DisAglData['TargAtoms']
+    AtomLabels = {}
+    for Oatom in origAtoms:
+        AtomLabels[Oatom[0]] = Oatom[1]
+    for Oatom in targAtoms:
+        AtomLabels[Oatom[0]] = Oatom[1]
+    DistArray = {}
+    AngArray = {}
+    for iO,Oatom in enumerate(origAtoms):
+        DistArray[Oatom[0]] = []
+        AngArray[Oatom[0]] = []
+        OxyzNames = ''
+        IndBlist = []
+        Dist = []
+        Vect = []
+        VectA = []
+        angles = []
+        for Tatom in targAtoms:
+            Xvcov = []
+            TxyzNames = ''
+            if len(DisAglData.get('covData',{})):
+                OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
+                TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
+                Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
+            BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
+            AsumR = (Radii[Oatom[2]][1]+Radii[Tatom[2]][1])*Factor[1]
+            for [Txyz,Top,Tunit,Spn] in G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False):
+                Dx = (Txyz-np.array(Oatom[3:6]))+Units
+                dx = np.inner(Amat,Dx)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                if np.any(IndB):
+                    for indb in IndB:
+                        for i in range(len(indb)):
+                            if str(dx.T[indb][i]) not in IndBlist:
+                                IndBlist.append(str(dx.T[indb][i]))
+                                unit = Units[indb][i]
+                                tunit = (unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
+                                sig = 0.0
+                                if len(Xvcov):
+                                    pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
+                                    sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,Xvcov)))
+                                Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
+                                if (Dist[-1][-2]-AsumR) <= 0.:
+                                    Vect.append(dx.T[indb][i]/Dist[-1][-2])
+                                    VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
+                                else:
+                                    Vect.append([0.,0.,0.])
+                                    VectA.append([])
+        if dlg is not None:
+            dlg.Update(iO,newmsg='Atoms done=%d'%(iO))
+        for D in Dist:
+            DistArray[Oatom[0]].append(D[1:])
+        Vect = np.array(Vect)
+        angles = np.zeros((len(Vect),len(Vect)))
+        angsig = np.zeros((len(Vect),len(Vect)))
+        for i,veca in enumerate(Vect):
+            if np.any(veca):
+                for j,vecb in enumerate(Vect):
+                    if np.any(vecb):
+                        angles[i][j],angsig[i][j] = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                        if i <= j: continue
+                        AngArray[Oatom[0]].append((i,j,
+                            G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)))
+    return AtomLabels,DistArray,AngArray
+
+
 def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
     '''Print distances and angles
 

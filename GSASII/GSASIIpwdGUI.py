@@ -5979,10 +5979,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)        
     if G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases'):
         G2frame.dataWindow.LoadCell.Enable(True)
-    peakList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-    # in case we are loading this without visiting the Peak List first, initialize
-    peakList['xtraMode'] = peakList.get('xtraMode',False)
-    G2frame.dataWindow.XtraPeakMode.Check(peakList['xtraMode'])
+    pkId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
+    if pkId:
+        peakList = G2frame.GPXtree.GetItemPyData(pkId)
+        # in case we are loading this without visiting the Peak List first, initialize
+        peakList['xtraMode'] = peakList.get('xtraMode',False)
+        G2frame.dataWindow.XtraPeakMode.Check(peakList['xtraMode'])
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)

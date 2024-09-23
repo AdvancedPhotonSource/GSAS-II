@@ -4218,6 +4218,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
+    def OnTryAll(event):
+        for controls[13] in SPGlist[controls[5]]:
+            print(controls[13])
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            ssopt['Use'] = False
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event)
+        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
+        
     def SetCellValue(Obj,ObjId,value):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[6] = controls[7] = controls[8] = value
@@ -6142,6 +6151,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         pass
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
+    tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
+    tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
+    littleSizer.Add(tryAll,0,WACV)
     if 'E' not in Inst['Type'][0]:
         SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
         SSopt.SetValue(ssopt.get('Use',False))

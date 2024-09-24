@@ -2862,6 +2862,7 @@ def UpdateInstrumentGrid(G2frame,data):
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
             [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
+            Reference = "Reference?"
             if insVal['Type'][2] in ['A','B','C']:               #constant wavelength
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
@@ -2880,10 +2881,23 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(RefineBox(item),0,WACV)
                 if 'C' in insVal['Type']:
                     itemList = ['U','V','W','X','Y','Z','SH/L']
+                    Reference = """References:
+    Thompson, P., Cox, D.E. & Hastings, J.B. (1987). J. Appl. Cryst. 20,79-83.
+    Finger, L. W., Cox, D. E. & Jephcoat, A. P. (1994). J. Appl. Cryst. 27, 892-900.
+                        """
                 elif 'B' in insVal['Type']:
                     itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+                    if 'X' in data['Type']:
+                        Reference = "Reference: Von Dreele, R.B., Clarke, S.M. & Walsh, J.P.S. (2021). J. Appl. Cryst., 54, 3-6."
+                    else:
+                        Reference = "Reference: R.B. Von Dreele (2024). J. Appl. Cryst. 57, X-X"
                 else: #'A'
                     itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']                
+                    Reference = """References:
+    Thompson, P., Cox, D.E. & Hastings, J.B. (1987). J. Appl. Cryst. 20,79-83.
+    Finger, L. W., Cox, D. E. & Jephcoat, A. P. (1994). J. Appl. Cryst. 27, 892-900.
+    Von Dreele, R.B., Clarke, S.M. & Walsh, J.P.S. (2021). J. Appl. Cryst., 54, 3-6.
+                        """
                 for item in itemList:
                     nDig = (10,3)
                     if item == 'SH/L':
@@ -2924,6 +2938,11 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(itemVal,0,WACV)
                         instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
+                Reference = """References:
+    Von Dreele, R., Jorgensen, J. D. & Windsor, C. G. (1982) J. Appl. Cryst. 15, 581-589. 
+    Huq, A., Kirkham, M., Peterson, P.F., Hodges, J.P. Whitfield, P.S., Page, K., Hugle, T.,
+        Iverson, E.B., Parizzia, A. & Rennich, G. (2019). J. Appl. Cryst. 52, 1189–1201.
+                """
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flight path: '),0,WACV)
                 txt = '%8.3f'%(insVal['fltPath'])
@@ -2972,6 +2991,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append([item,2])
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'PKS' in insVal['Type']:   #peak positions only
+                Reference = ''
                 key = 'Lam'
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
@@ -2993,6 +3013,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         refFlgElem.append([item,2])
                 
         elif 'S' in insVal['Type']:                       #single crystal data
+            Reference = ''
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 if 'EC' in insVal['Type']:
@@ -3016,6 +3037,7 @@ def UpdateInstrumentGrid(G2frame,data):
             else:                                   #time of flight (neutrons)
                 pass                                #for now
         elif insVal['Type'][0] in ['L','R',]:
+            Reference = ''
             if 'C' in insVal['Type']:        
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
@@ -3033,6 +3055,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 pass                                #for now
 
         mainSizer.Add(instSizer,0)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=Reference))
         G2frame.dataWindow.SetDataSize()
         G2frame.dataWindow.SetSizer(mainSizer)
         # end of MakeParameterWindow

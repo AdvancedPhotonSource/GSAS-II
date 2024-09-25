@@ -4242,13 +4242,34 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnTryAll(event):
+        ssopt['SgResults'] = []
         for controls[13] in SPGlist[controls[5]]:
-            print(controls[13])
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             ssopt['Use'] = False
             G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event)
-        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
+            ssopt['SgResults'] += [OnHklShow(event,False),]
+        ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
+        ssopt['SgResults'][0][1] = True
+        controls[13] = ssopt['SgResults'][0][0]
+        ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+        G2frame.dataWindow.RefineCell.Enable(True)
+        OnHklShow(event,False)
+        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
+
+    def OnSelectSgrp(event):
+        r,c = event.GetRow(),event.GetCol()
+        if c == 1:
+            for i in range(len(ssopt['SgResults'])):
+                ssopt['SgResults'][i][1] = False
+                SgTable.SetValue(i,1,False)
+            SgTable.SetValue(r,1,True)
+            SgDisplay.ForceRefresh()
+            ssopt['SgResults'][r][1] = True
+            controls[13] = ssopt['SgResults'][r][0]
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event,False)
+            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
         
     def SetCellValue(Obj,ObjId,value):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
@@ -4333,12 +4354,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-#    def OnUpdatePlot(event):
-#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-#        OnHklShow(event)
-        #G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
-        
-    def OnHklShow(event=None):
+    def OnHklShow(event=None,Print=True):
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
@@ -4381,14 +4397,19 @@ def UpdateUnitCellsGrid(G2frame, data):
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
                 M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
         G2frame.HKL = np.array(G2frame.HKL)
-        if len(G2frame.HKL):
-            print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'  \
-                %(M20,X20,float(len(peaks[0]))/len(G2frame.HKL),Symb))
+        frfnd = 0.0
+        Nhkl = len(G2frame.HKL)
+        if Nhkl:
+            frfnd = min(1.0,float(len(peaks[0]))/Nhkl)
+            if Print:
+                print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'%(M20,X20,frfnd,Symb))
+            result = [Symb,False,M20,X20,Nhkl,frfnd]
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2plt.PlotPatterns(G2frame)
+        return result
             
     def OnSortCells(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
@@ -4417,6 +4438,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[5] = bravaisSymb[cell[0]]
             controls[6:13] = cell[1:8]
             controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+            ssopt['SgResults'] = []
             # G2frame.dataWindow.RefineCell.Enable(True) # set in UpdateUnitCellsGrid
         elif magcells:
             for phase in magcells:
@@ -5763,7 +5785,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.EndBusyCursor()
             return
 
-        # grab the search option. By default, we woule search over those
+        # grab the search option. By default, we would search over those
         # high symmetry points only.
         kvs_option_map = {
             "HighSymPts": 0,
@@ -6329,6 +6351,31 @@ def UpdateUnitCellsGrid(G2frame, data):
         mainSizer.Add(ssSizer,0)
 
     G2frame.dataWindow.currentGrids = []
+    if len(ssopt.get('SgResults',[])):
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Space Group Results:'))
+        colLabels = ['Sp Grp','use','M20','X20','Nhkl','fr. found']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        rowLabels = []
+        table = []
+        for result in ssopt['SgResults']:
+            rowLabels.append('')
+            row = result
+            table.append(row)
+        SgTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        SgDisplay = G2G.GSGrid(G2frame.dataWindow)
+        SgDisplay.SetTable(SgTable, True)
+        SgDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,OnSelectSgrp)
+        SgDisplay.SetRowLabelSize(0)
+        SgDisplay.AutoSizeColumns(False)
+        for r in range(SgDisplay.GetNumberRows()):
+            for c in range(SgDisplay.GetNumberCols()):
+                if c == 1:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=True)
+        mainSizer.Add(SgDisplay)
+        
     if cells:
         mode = 0
         try: # for Cell sym, 1st entry is cell xform matrix;

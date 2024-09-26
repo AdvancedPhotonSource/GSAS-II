@@ -5485,7 +5485,11 @@ def UpdateUnitCellsGrid(G2frame, data):
       Symmetry-Based Computational Tools for Magnetic Crystallography,
       J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
       Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1146/annurev-matsci-070214-021008 and
+      Determining magnetic structures in GSAS-II using the Bilbao Crystallographic Server
+      tool k-SUBGROUPSMAG, R.B. Von Dreele & L. Elcoro, Acta Cryst. 2024, B80.
+      doi: https://doi.org/10.1107/S2052520624008436
+      ''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
             
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()

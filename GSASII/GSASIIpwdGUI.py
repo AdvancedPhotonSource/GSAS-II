@@ -4148,12 +4148,14 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'][0] = xpos
             ssopt['ModVec'][1] = ypos
         vec = ssopt['ModVec']
+        print(SGData['MagSpGrp'])
         print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
+        print(SGData['MagSpGrp'])
         print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -5957,6 +5959,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
         
     #### UpdateUnitCellsGrid code starts here
+    Indx = {}
     G2frame.ifSetLimitsMode = 0
     G2frame.CancelSetLimitsMode.Enable(False)
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
@@ -6239,7 +6242,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     if 'N' in Inst['Type'][0]:
         neutSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'MagSpGrp' in SGData:
-            Indx = {}
             GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
             SGData['GenSym'] = GenSym
             SGData['SGGray'] = False
@@ -6304,10 +6306,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
+        SpSg = SGData['SpGrp']
         if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
             indChoice = ['1',]
-        SpSg = controls[13]
-        SGData = G2spc.SpcGroup(SpSg)[1]
+            SpSg = SGData['MagSpGrp']
         ssChoice = G2spc.SSChoice(SGData)
         if ssopt['ssSymb'] not in ssChoice:
             ssopt['ssSymb'] = ssopt['ssSymb'][:-1]
@@ -6320,7 +6322,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
-        Indx = {}
         for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -4148,7 +4148,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'][0] = xpos
             ssopt['ModVec'][1] = ypos
         vec = ssopt['ModVec']
-        print(SGData['MagSpGrp'])
         print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)

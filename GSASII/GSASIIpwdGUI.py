@@ -4155,7 +4155,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
-        print(SGData['MagSpGrp'])
         print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)

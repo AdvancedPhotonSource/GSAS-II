@@ -347,7 +347,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
 
-def mkParmDictfromTree(G2frame):,computeSU=False):
+def mkParmDictfromTree(G2frame):#,computeSU=False):
     '''Load the GSAS-II refinable parameters from the tree into dict parmDict
     Update refined values to those from the last cycle 
 

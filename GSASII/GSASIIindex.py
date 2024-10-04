@@ -264,7 +264,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
                 if values.size > 1:
                     Vec.append(max(-1.,min(1.0,values[i])))
                 else:
-                    Vec.append(max(0.0,min(1.0,values)))                    
+                    Vec.append(max(0.0,min(1.0,values[0])))                    
                 i += 1
             else:
                 Vec.append(vec[j])

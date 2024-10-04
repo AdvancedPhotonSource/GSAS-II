@@ -2862,6 +2862,7 @@ def UpdateInstrumentGrid(G2frame,data):
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
             [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
+            Reference = "Reference?"
             if insVal['Type'][2] in ['A','B','C']:               #constant wavelength
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
@@ -2880,10 +2881,23 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(RefineBox(item),0,WACV)
                 if 'C' in insVal['Type']:
                     itemList = ['U','V','W','X','Y','Z','SH/L']
+                    Reference = """References:
+    Thompson, P., Cox, D.E. & Hastings, J.B. (1987). J. Appl. Cryst. 20,79-83.
+    Finger, L. W., Cox, D. E. & Jephcoat, A. P. (1994). J. Appl. Cryst. 27, 892-900.
+                        """
                 elif 'B' in insVal['Type']:
                     itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+                    if 'X' in data['Type']:
+                        Reference = "Reference: Von Dreele, R.B., Clarke, S.M. & Walsh, J.P.S. (2021). J. Appl. Cryst., 54, 3-6."
+                    else:
+                        Reference = "Reference: R.B. Von Dreele (2024). J. Appl. Cryst. 57, X-X"
                 else: #'A'
                     itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']                
+                    Reference = """References:
+    Thompson, P., Cox, D.E. & Hastings, J.B. (1987). J. Appl. Cryst. 20,79-83.
+    Finger, L. W., Cox, D. E. & Jephcoat, A. P. (1994). J. Appl. Cryst. 27, 892-900.
+    Von Dreele, R.B., Clarke, S.M. & Walsh, J.P.S. (2021). J. Appl. Cryst., 54, 3-6.
+                        """
                 for item in itemList:
                     nDig = (10,3)
                     if item == 'SH/L':
@@ -2924,6 +2938,11 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(itemVal,0,WACV)
                         instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
+                Reference = """References:
+    Von Dreele, R., Jorgensen, J. D. & Windsor, C. G. (1982) J. Appl. Cryst. 15, 581-589. 
+    Huq, A., Kirkham, M., Peterson, P.F., Hodges, J.P. Whitfield, P.S., Page, K., Hugle, T.,
+        Iverson, E.B., Parizzia, A. & Rennich, G. (2019). J. Appl. Cryst. 52, 1189–1201.
+                """
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flight path: '),0,WACV)
                 txt = '%8.3f'%(insVal['fltPath'])
@@ -2972,6 +2991,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append([item,2])
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'PKS' in insVal['Type']:   #peak positions only
+                Reference = ''
                 key = 'Lam'
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
@@ -2993,6 +3013,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         refFlgElem.append([item,2])
                 
         elif 'S' in insVal['Type']:                       #single crystal data
+            Reference = ''
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 if 'EC' in insVal['Type']:
@@ -3016,6 +3037,7 @@ def UpdateInstrumentGrid(G2frame,data):
             else:                                   #time of flight (neutrons)
                 pass                                #for now
         elif insVal['Type'][0] in ['L','R',]:
+            Reference = ''
             if 'C' in insVal['Type']:        
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
@@ -3033,6 +3055,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 pass                                #for now
 
         mainSizer.Add(instSizer,0)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=Reference))
         G2frame.dataWindow.SetDataSize()
         G2frame.dataWindow.SetSizer(mainSizer)
         # end of MakeParameterWindow
@@ -4218,6 +4241,36 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
+    def OnTryAll(event):
+        ssopt['SgResults'] = []
+        for controls[13] in SPGlist[controls[5]]:
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            ssopt['Use'] = False
+            G2frame.dataWindow.RefineCell.Enable(True)
+            ssopt['SgResults'] += [OnHklShow(event,False),]
+        ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
+        ssopt['SgResults'][0][1] = True
+        controls[13] = ssopt['SgResults'][0][0]
+        ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+        G2frame.dataWindow.RefineCell.Enable(True)
+        OnHklShow(event,False)
+        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
+
+    def OnSelectSgrp(event):
+        r,c = event.GetRow(),event.GetCol()
+        if c == 1:
+            for i in range(len(ssopt['SgResults'])):
+                ssopt['SgResults'][i][1] = False
+                SgTable.SetValue(i,1,False)
+            SgTable.SetValue(r,1,True)
+            SgDisplay.ForceRefresh()
+            ssopt['SgResults'][r][1] = True
+            controls[13] = ssopt['SgResults'][r][0]
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event,False)
+            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
+        
     def SetCellValue(Obj,ObjId,value):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[6] = controls[7] = controls[8] = value
@@ -4301,12 +4354,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-#    def OnUpdatePlot(event):
-#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-#        OnHklShow(event)
-        #G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
-        
-    def OnHklShow(event=None):
+    def OnHklShow(event=None,Print=True):
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
@@ -4349,14 +4397,19 @@ def UpdateUnitCellsGrid(G2frame, data):
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
                 M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
         G2frame.HKL = np.array(G2frame.HKL)
-        if len(G2frame.HKL):
-            print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'  \
-                %(M20,X20,float(len(peaks[0]))/len(G2frame.HKL),Symb))
+        frfnd = 0.0
+        Nhkl = len(G2frame.HKL)
+        if Nhkl:
+            frfnd = min(1.0,float(len(peaks[0]))/Nhkl)
+            if Print:
+                print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'%(M20,X20,frfnd,Symb))
+            result = [Symb,False,M20,X20,Nhkl,frfnd]
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2plt.PlotPatterns(G2frame)
+        return result
             
     def OnSortCells(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
@@ -4385,6 +4438,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[5] = bravaisSymb[cell[0]]
             controls[6:13] = cell[1:8]
             controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+            ssopt['SgResults'] = []
             # G2frame.dataWindow.RefineCell.Enable(True) # set in UpdateUnitCellsGrid
         elif magcells:
             for phase in magcells:
@@ -5431,7 +5485,11 @@ def UpdateUnitCellsGrid(G2frame, data):
       Symmetry-Based Computational Tools for Magnetic Crystallography,
       J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
       Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1146/annurev-matsci-070214-021008 and
+      Determining magnetic structures in GSAS-II using the Bilbao Crystallographic Server
+      tool k-SUBGROUPSMAG, R.B. Von Dreele & L. Elcoro, Acta Cryst. 2024, B80.
+      doi: https://doi.org/10.1107/S2052520624008436
+      ''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
             
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5731,7 +5789,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.EndBusyCursor()
             return
 
-        # grab the search option. By default, we woule search over those
+        # grab the search option. By default, we would search over those
         # high symmetry points only.
         kvs_option_map = {
             "HighSymPts": 0,
@@ -5899,6 +5957,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
         
     #### UpdateUnitCellsGrid code starts here
+    Indx = {}
     G2frame.ifSetLimitsMode = 0
     G2frame.CancelSetLimitsMode.Enable(False)
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
@@ -5979,10 +6038,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)        
     if G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases'):
         G2frame.dataWindow.LoadCell.Enable(True)
-    peakList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-    # in case we are loading this without visiting the Peak List first, initialize
-    peakList['xtraMode'] = peakList.get('xtraMode',False)
-    G2frame.dataWindow.XtraPeakMode.Check(peakList['xtraMode'])
+    pkId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
+    if pkId:
+        peakList = G2frame.GPXtree.GetItemPyData(pkId)
+        # in case we are loading this without visiting the Peak List first, initialize
+        peakList['xtraMode'] = peakList.get('xtraMode',False)
+        G2frame.dataWindow.XtraPeakMode.Check(peakList['xtraMode'])
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6140,6 +6201,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         pass
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
+    tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
+    tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
+    littleSizer.Add(tryAll,0,WACV)
     if 'E' not in Inst['Type'][0]:
         SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
         SSopt.SetValue(ssopt.get('Use',False))
@@ -6176,7 +6240,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     if 'N' in Inst['Type'][0]:
         neutSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'MagSpGrp' in SGData:
-            Indx = {}
             GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
             SGData['GenSym'] = GenSym
             SGData['SGGray'] = False
@@ -6241,10 +6304,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
+        SpSg = SGData['SpGrp']
         if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
             indChoice = ['1',]
-        SpSg = controls[13]
-        SGData = G2spc.SpcGroup(SpSg)[1]
+            SpSg = SGData['MagSpGrp']
         ssChoice = G2spc.SSChoice(SGData)
         if ssopt['ssSymb'] not in ssChoice:
             ssopt['ssSymb'] = ssopt['ssSymb'][:-1]
@@ -6257,7 +6320,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
-        Indx = {}
         for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6292,6 +6354,31 @@ def UpdateUnitCellsGrid(G2frame, data):
         mainSizer.Add(ssSizer,0)
 
     G2frame.dataWindow.currentGrids = []
+    if len(ssopt.get('SgResults',[])):
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Space Group Results:'))
+        colLabels = ['Sp Grp','use','M20','X20','Nhkl','fr. found']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        rowLabels = []
+        table = []
+        for result in ssopt['SgResults']:
+            rowLabels.append('')
+            row = result
+            table.append(row)
+        SgTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        SgDisplay = G2G.GSGrid(G2frame.dataWindow)
+        SgDisplay.SetTable(SgTable, True)
+        SgDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,OnSelectSgrp)
+        SgDisplay.SetRowLabelSize(0)
+        SgDisplay.AutoSizeColumns(False)
+        for r in range(SgDisplay.GetNumberRows()):
+            for c in range(SgDisplay.GetNumberCols()):
+                if c == 1:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=True)
+        mainSizer.Add(SgDisplay)
+        
     if cells:
         mode = 0
         try: # for Cell sym, 1st entry is cell xform matrix;

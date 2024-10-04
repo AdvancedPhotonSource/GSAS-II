@@ -5567,15 +5567,24 @@ If you continue from this point, it is quite likely that all intensity computati
                 ' You should reconsider which parameters you refine. Check covariance matrix.\n'
             text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+            if GSASIIpath.GetConfigValue('debug'):
+                start = time.time()
+                print('post dialog')
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('refPlotUpdate @',time.time()-start)
                     if refPlotUpdate: refPlotUpdate({},restore=True)
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('reloadFromGPX @',time.time()-start)
                     self.reloadFromGPX(rtext,Rvals)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
                 dlg2.Destroy()
+            if GSASIIpath.GetConfigValue('debug'):
+                print('done @',time.time()-start)
         elif 'psing' in Rvals:
             if 'msg' in Rvals:
                 msg = 'Refinement results:\n\n'

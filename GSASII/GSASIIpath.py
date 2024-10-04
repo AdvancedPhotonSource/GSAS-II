@@ -211,6 +211,9 @@ def HowIsG2Installed():
             rev = '-rev'
         if g2URL in g2repo.remote().urls:
             return 'github'+rev
+        elif g2URL.replace('https://github.com/',
+                           'git@github.com:') in g2repo.remote().urls:
+            return 'github'+rev
         G2_installed_result = 'git'+rev
         return G2_installed_result
     except:

@@ -86,12 +86,8 @@ prevResId = None
 prevVecId = None
 prevSpnId = None
 
-if '2' in platform.python_version_tuple()[0]:
-    GkDelta = unichr(0x0394)
-    Angstr = unichr(0x00c5)
-else:
-    GkDelta = chr(0x0394)
-    Angstr = chr(0x00c5)   
+GkDelta = chr(0x0394)
+Angstr = chr(0x00c5)   
 
 RMCmisc = {}
 ranDrwDict = {}
@@ -7425,38 +7421,39 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not len(data['Atoms']):
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - RMC not available for display'))
-            return mainSizer            
-        runFile = ' '
-        choice = ['RMCProfile','fullrmc','PDFfit']
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
-        RMCsel.SetStringSelection(G2frame.RMCchoice)
-        RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
-        topSizer.Add(RMCsel,0)
-        topSizer.Add((20,0))
-        txt = wx.StaticText(G2frame.FRMC,
-            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
-        txt.Wrap(400)
-        topSizer.Add(txt,0)
-        mainSizer.Add(topSizer,0)
-        RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
-        mainSizer.Add(RMCmisc['RMCnote'])
-        G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-        if G2frame.RMCchoice == 'fullrmc':
-            RMCPdict = data['RMC']['fullrmc']
-            mainSizer.Add(fullrmcSizer(RMCPdict))
-                
-        elif G2frame.RMCchoice ==  'RMCProfile':
-            RMCPdict = data['RMC']['RMCProfile']
-            mainSizer.Add(RMCProfileSizer(RMCPdict))
-            
-        else:       #PDFfit
-            mainSizer.Add(PDFfitSizer(data))
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - PDF fitting not possible'))
+        else:
+            runFile = ' '
+            choice = ['RMCProfile','fullrmc','PDFfit']
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
+            RMCsel.SetStringSelection(G2frame.RMCchoice)
+            RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
+            topSizer.Add(RMCsel,0)
+            topSizer.Add((20,0))
+            txt = wx.StaticText(G2frame.FRMC,
+                label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
+            txt.Wrap(400)
+            topSizer.Add(txt,0)
+            mainSizer.Add(topSizer,0)
+            RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
+            mainSizer.Add(RMCmisc['RMCnote'])
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            if G2frame.RMCchoice == 'fullrmc':
+                RMCPdict = data['RMC']['fullrmc']
+                mainSizer.Add(fullrmcSizer(RMCPdict))
+
+            elif G2frame.RMCchoice ==  'RMCProfile':
+                RMCPdict = data['RMC']['RMCProfile']
+                mainSizer.Add(RMCProfileSizer(RMCPdict))
+
+            else:       #PDFfit
+                mainSizer.Add(PDFfitSizer(data))
 
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
+
         if G2frame.RMCchoice == 'PDFfit' and not checkPDFfit(G2frame):
             RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
         elif G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
@@ -7476,7 +7473,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 wx.EndBusyCursor()
             else:
                 RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
-            return mainSizer
         
     def OnSetupRMC(event):
         generalData = data['General']
@@ -16820,106 +16816,15 @@ def checkPDFfit(G2frame):
     except:
         pass
 
-    # See if if we can import the GSAS-II supplied PDFfit
-    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
-    print(pdffitloc,'\n',GSASIIpath.binaryPath)
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        pass
-        #print('Failed to import PDFfit2 with error:\n'+str(err))
-    
-    if not os.path.exists(pdffitloc):
-        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
-        return False
-
-    import glob
-    # see if we can fix things so the GSAS-II version can be used
-    if not GSASIIpath.condaTest() and glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-        msg = ('GSAS-II supplies a version of PDFfit2 that should be compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install GSL (GNU Software Library).')
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 will not load; No conda')
-        return False
-    elif not GSASIIpath.condaTest():
-        msg = ('GSAS-II does not supply a version of PDFfit2 compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install the GSL (GNU Software Library) and use "pip install diffpy.pdffit2".'+
-        ' This is best done in a separate Python installation/virtual environment.')
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 not provided; No conda')
-        return False
-
+    # Last effort: With conda we should be able to create a separate
+    # Python in a separate environment
     try:     # have conda. Can we access it programmatically?
         import conda.cli.python_api
     except:
-        if not glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            msg = 'GSAS-II does not supply PDFfit2 for the version of Python that you are using'
-        else:
-            msg = 'GSAS-II supplies PDFfit2 that should be compatible with the version of Python that you are using. The problem is likely that the GSL package needs to be installed.'
-        msg += ('\n\nYou do not have the conda package installed in this '+
-                    'environment. This is needed for GSAS-II to install software.'+
-                    '\n\nDo you want to have conda installed for you?')
-        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return False
-        dlg.Destroy()
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install conda. This may take a few minutes...')
-            GSASIIpath.addCondaPkg()
-        finally:
-            wx.EndBusyCursor()
-        try:     # have conda. Can we access it programmatically?
-            import conda.cli.python_api
-        except:
-            print('command line conda install did not provide package. Unexpected!')
-            return False
-        
-    if ('gsl' not in conda.cli.python_api.run_command(
-             conda.cli.python_api.Commands.LIST,'gsl')[0].lower()
-        and
-             glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*'))):
-        msg = ('The gsl (GNU Software Library), needed by PDFfit2, '+
-                   ' is not installed in this Python. Do you want to have this installed?')
-        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return False
-        dlg.Destroy()
-
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install gsl. This may take a few minutes...')
-            res = GSASIIpath.condaInstall(['gsl','-c','conda-forge'])
-        finally:
-            wx.EndBusyCursor()
-        if res:
-            msg = 'Installation of the GSL package failed with error:\n' + str(res)
-            G2G.G2MessageBox(G2frame,msg,'Install GSL Error')
-            
-    # GSAS-II supplied version for PDFfit now runs?
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        msg = 'Failed to import PDFfit2 with error:\n'+str(err)
-        print(msg)
-        if glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
-
-    # Last effort: With conda we should be able to create a separate Python in a separate
-    # environment
-    msg = ('Do you want to try using conda to install PDFfit2 into a separate environment? '+
+        G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
+        return
+    
+    msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
                '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
                'this new Python environment.')
     dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
@@ -16930,12 +16835,10 @@ def checkPDFfit(G2frame):
         wx.BeginBusyCursor()
         print('Preparing to create a conda environment. This may take a few minutes...')
         # for now use the older diffpy version of pdffit:
-        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.2 -c conda-forge -c diffpy
+        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
         res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2=1.2',
-                         '-c', 'conda-forge', '-c', 'diffpy'])
-        # someday perhaps this will work:
-        #   conda create -n pdffit2 python conda gsl diffpy.pdffit2 -c conda-forge
+                    ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
+                         '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
     finally:
         wx.EndBusyCursor()
     if os.path.exists(PDFpython):
@@ -16944,15 +16847,24 @@ def checkPDFfit(G2frame):
         GSASIIpath.SetConfigValue(vars)
         G2G.SaveConfigVars(vars)
         print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
+        print('\n\nSuccess: PDFfit2 installed.')
         return True
     else:
-        msg = 'Failed to install PDFfit2 with error:\n'+str(PDFpython)
-        print(msg)
+        print(f'Failed to install PDFfit2 with error:\n{PDFpython}')
+        if ('PackagesNotFoundError' in PDFpython
+                and 'darwin' in sys.platform
+                and 'arm' in platform.machine()):
+            msg = ('It appears that PDFfit2 is not yet available as a conda package for Macs with arm processors. '+
+                       '\n\nYou could install PDFfit2 with x86 Python and use that '+
+                       'in compatibility mode.')
+        else:
+            msg = ('An attempt to install PDFfit2 has failed. '+
+                       'Do you have write access to where GSAS-II is installed? '+
+                       'You may be able to install PDFfit2 manually.')
+        msg += '\n\nIf you install PDFfit2 yourself, set the pdffit2_exec config variable to the install location'
         G2G.G2MessageBox(G2frame,
-            'Install failed. See console for error message\n\n'+
-            'All attempts to install PDFfit2 have failed. '+
-            'Do you have write access to where GSAS-II is installed?',
-            'PDFfit2 install error')
+                'PDFfit2 Install failed. See console for error message\n\n'+msg,
+                'PDFfit2 install error')
         return False
 
 def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):

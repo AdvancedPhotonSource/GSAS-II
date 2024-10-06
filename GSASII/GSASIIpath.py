@@ -2204,7 +2204,9 @@ def condaEnvCreate(envname, packageList, force=False):
     when there is a potential conflict between packages and it would 
     be better to keep the packages separate (which is one of the reasons
     conda supports environments). Note that conda should be run from the 
-    case environment; this attempts to deal with issues if it is not. 
+    base environment; this attempts to deal with issues if it is not. 
+
+    Currently, this is used only to install diffpy.PDFfit2.
 
     :param str envname: the name of the environment to be created. 
       If the environment exists, it will be overwritten only if force is True.
@@ -2223,14 +2225,15 @@ def condaEnvCreate(envname, packageList, force=False):
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
                             'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        return True,'not running under conda?'
+        p = sys.exec_prefix
+    else:
+        # workaround for bug that avoids nesting packages if running from an
+        # environment (see https://github.com/conda/conda/issues/11493)
+        p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
     try:
         import conda.cli.python_api
     except:
         return True,'conda package not available (in environment)'
-    # workaround for bug that avoids nesting packages if running from an
-    # environment (see https://github.com/conda/conda/issues/11493)
-    p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
     if not os.path.exists(os.path.join(p,'envs')):
         msg = ('Error derived installation path not found: '+
                   os.path.join(p,'envs'))
@@ -2246,12 +2249,11 @@ def condaEnvCreate(envname, packageList, force=False):
         (out, err, rc) = conda.cli.python_api.run_command(
             conda.cli.python_api.Commands.CREATE,
             packageList + pathList,
-    use_exception_handler=True, stdout=sys.stdout, stderr=sys.stderr
-            )
-        #print('rc=',rc)
-        #print('out=',out)
-        #print('err=',err)
-        if rc != 0: return True,str(out)
+            use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
+        print(out)
+        if rc != 0:
+            print(err)
+            return True,str(out+err)
         if sys.platform == "win32":
             newpython = os.path.join(newenv,'python.exe')
         else:

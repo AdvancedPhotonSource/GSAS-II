@@ -5709,12 +5709,11 @@ For DIFFaX use cite:
             gitCheckUpdates(self.frame)
         elif GSASIIpath.HowIsG2Installed().startswith('svn'):
             msg = '''
-Note: GSAS-II is migrating to GitHub from the APS subversion server (where 
-your current version of GSAS-II was installed from.) 
+As of October 2024, updates for GSAS-II are no longer available from the APS 
+subversion server (where your current version of GSAS-II was installed from.) 
 
-To use the new server, you must reinstall GSAS-II from https://bit.ly/G2download
+To obtain updates to GSAS-II, you must reinstall GSAS-II from https://bit.ly/G2download
 (https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1).
-After September 2024, it will not be possible to update, unless you reinstall.
 
 See web page GSASII.github.io for information on how to install.
 '''

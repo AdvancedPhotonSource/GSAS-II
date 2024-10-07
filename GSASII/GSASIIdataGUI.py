@@ -5575,6 +5575,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 if dlg2.ShowModal() == wx.ID_OK:
                     if GSASIIpath.GetConfigValue('debug'):
                         print('refPlotUpdate @',time.time()-start)
+                        start = time.time()
                     if refPlotUpdate: refPlotUpdate({},restore=True)
                     if GSASIIpath.GetConfigValue('debug'):
                         print('reloadFromGPX @',time.time()-start)
@@ -5869,19 +5870,32 @@ If you continue from this point, it is quite likely that all intensity computati
         refinement.) Done after events are completed to avoid crashes.
         :param rtext str: string info from caller to be put in Notebook after reload
         '''
+        if GSASIIpath.GetConfigValue('debug'):
+            start = time.time()
+            print('start reloadFromGPX')
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = []
         self.Extinct = []
+        if GSASIIpath.GetConfigValue('debug'):
+            print('ProjFileOpen @',time.time()-start)
         G2IO.ProjFileOpen(self,False)
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
+        if GSASIIpath.GetConfigValue('debug'):
+            print('RestoreExposedItems @',time.time()-start)
         self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
         if rtext is not None:
+            if GSASIIpath.GetConfigValue('debug'):
+                print('AddToNotebook @',time.time()-start)
             self.AddToNotebook(rtext,'REF')
             for tag,entry in (['VARS','varyList'],['CNSTR','contrSumm'],
                                   ['RSTR','restrSumm'],['RB','RBsumm']):
                 if entry in Rvals and Rvals[entry]:
                     self.AddToNotebook(Rvals[entry],tag,TimeStamp=False)
+        if GSASIIpath.GetConfigValue('debug'):
+            print('ResetPlots @',time.time()-start)
         self.ResetPlots()
+        if GSASIIpath.GetConfigValue('debug'):
+            print('reloadFromGPX done @',time.time()-start)
         
     def SaveTreeSetting(self):
         'Save the current selected tree item by name (since the id will change)'

@@ -61,8 +61,11 @@ class HDF5_Reader(G2obj.ImportImage):
             if not self.buffer.get('init'):
                 self.buffer['init'] = True
                 self.Comments = self.visit(fp)
-                if imagenum > len(self.buffer['imagemap']):
+                if len(self.buffer['imagemap']) == 0:
                     self.errors = 'No valid images found in file'
+                    return False
+                if imagenum > len(self.buffer['imagemap']):
+                    self.errors = f"Only {len(self.buffer['imagemap'])} images found in file. {imagenum} cannot be read."
                     return False
                 
             self.Data,self.Npix,self.Image = self.readDataset(fp,imagenum)
@@ -72,7 +75,9 @@ class HDF5_Reader(G2obj.ImportImage):
             self.LoadImage(ParentFrame,filename,imagenum)
             self.repeatcount = imagenum 
             self.repeat = imagenum < len(self.buffer['imagemap'])
-            if GSASIIpath.GetConfigValue('debug'): print('Read image #'+str(imagenum)+' from file '+filename)
+            tag = self.buffer['imagemap'][imagenum-1][0]
+            self.Data['ImageSection'] = tag # save section of file here
+            if GSASIIpath.GetConfigValue('debug'): print(f'Read image #{imagenum} ({tag}) from file {filename}')
             return True
         except IOError:
             print ('cannot open file '+ filename)
@@ -83,9 +88,9 @@ class HDF5_Reader(G2obj.ImportImage):
     def visit(self, fp):
         '''Recursively visit each node in an HDF5 file. For nodes
         ending in 'data' look at dimensions of contents. If the shape is
-        length 2 or 4 assume an image and index in self.buffer['imagemap']
+        length 2, 3, or 4 assume an image and index in self.buffer['imagemap']
         ''' 
-        datakeywords = ['data','images']
+        datakeywords = ['data','images','dark','bright']
         head = []
         def func(name, dset):
             if not hasattr(dset,'shape'): return # not array, can't be image

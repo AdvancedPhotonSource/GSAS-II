@@ -284,8 +284,11 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     ImgNames = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
     TreeLbl = 'IMG '+os.path.basename(imagefile)
     ImageTag = Data.get('ImageTag')
+    ImageSection = Data.get('ImageSection','')  #used only in HDF5 at present
     if ImageTag:
-        TreeLbl += ' #'+'%04d'%(ImageTag)
+        if ImageSection:
+            TreeLbl += f" {ImageSection}"
+        TreeLbl += f' #{ImageTag:04d}'
         imageInfo = (imagefile,ImageTag)
     else:
         imageInfo = imagefile

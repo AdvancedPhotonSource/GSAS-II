@@ -7567,7 +7567,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     def RunPDFfit(event):
         generalData = data['General']
         ISOdict = data['ISODISTORT']
-        PDFfit_exec,_ = G2pwd.findPDFfit()  #returns location of python with PDFfit installed and path(s) for  pdffit
+        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python with PDFfit installed
         if not PDFfit_exec:
             wx.MessageBox(''' PDFfit2 is not currently installed for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
@@ -16798,9 +16798,7 @@ def checkPDFfit(G2frame):
     in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
     defined, no attempt is made to check that it actually runs. 
     Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the 
-    install command. The fallback is to check if a .so/.pyd file has been supplied with 
-    GSAS-II. This requires that GSL (GNU Scientific Library) be installed. If the current 
-    Python is being run from conda, this will be loaded.
+    install command.
 
     :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
     '''
@@ -16841,7 +16839,7 @@ def checkPDFfit(G2frame):
                          '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
     finally:
         wx.EndBusyCursor()
-    if os.path.exists(PDFpython):
+    if os.path.exists(PDFpython) and is_exe(PDFpython):
         vars = G2G.GetConfigValsDocs()
         vars['pdffit2_exec'][1] = PDFpython
         GSASIIpath.SetConfigValue(vars)

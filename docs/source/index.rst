@@ -39,6 +39,7 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
     :numbered: 4
 
     packages.rst
+    GSASIIorg.rst
     GSASII.rst
     GSASIIobj.rst
     GSASIIutil.rst

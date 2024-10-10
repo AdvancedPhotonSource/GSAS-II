@@ -127,16 +127,10 @@ class G2TreeCtrl(wx.TreeCtrl):
         return textlist
     
     def GetItemPyData(self,treeId):
-        if 'phoenix' in wx.version():
-            return wx.TreeCtrl.GetItemData(self,treeId)
-        else:
-            return wx.TreeCtrl.GetItemPyData(self,treeId)
+        return wx.TreeCtrl.GetItemData(self,treeId)
 
     def SetItemPyData(self,treeId,data):
-        if 'phoenix' in wx.version():
-            return wx.TreeCtrl.SetItemData(self,treeId,data)
-        else:
-            return wx.TreeCtrl.SetItemPyData(self,treeId,data)
+        return wx.TreeCtrl.SetItemData(self,treeId,data)
 
     def UpdateSelection(self):
         TId = self.GetFocusedItem()

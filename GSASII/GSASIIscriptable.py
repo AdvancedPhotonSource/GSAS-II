@@ -287,24 +287,10 @@ def make_empty_project(author=None, filename=None):
     filename = os.path.abspath(filename)
     gsasii_version = str(GSASIIpath.GetVersionNumber())
     LoadG2fil()
-    try:
-        import matplotlib as mpl
-        python_library_versions = G2fil.get_python_versions([mpl, np, sp])
-    except ImportError:
-        python_library_versions = G2fil.get_python_versions([np, sp])
 
     controls_data = dict(G2obj.DefaultControls)
-    controls_data['LastSavedAs'] = filename
-    controls_data['LastSavedUsing'] = gsasii_version
-    if GSASIIpath.HowIsG2Installed().startswith('git'):
-        try:
-            g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
-            commit = g2repo.head.commit
-            controls_data['LastSavedUsing'] += f" git {commit.hexsha[:6]} script"
-        except:
-            pass
-
-    controls_data['PythonVersions'] = python_library_versions
+    #controls_data['LastSavedAs'] = filename
+    #controls_data['LastSavedUsing'] = gsasii_version
     if author:
         controls_data['Author'] = author
 
@@ -932,10 +918,28 @@ class G2Project(G2ObjectWrapper):
         """Saves the project, either to the current filename, or to a new file.
 
         Updates self.filename if a new filename provided"""
-        # TODO update LastSavedUsing ?
+        controls_data = self.data['Controls']['data']
+        # place info in .gpx about GSAS-II
+        #    module versions
+        try:
+            import matplotlib as mpl
+            python_library_versions = G2fil.get_python_versions([mpl, np, sp])
+        except ImportError:
+            python_library_versions = G2fil.get_python_versions([np, sp])
+        controls_data['PythonVersions'] = python_library_versions
+        #    G2 version info 
+        controls_data['LastSavedUsing'] = gsasii_version
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
+            try:
+                g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
+                commit = g2repo.head.commit
+                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:6]} script"
+            except:
+                pass
+        #    .gpx name
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))
-            self.data['Controls']['data']['LastSavedAs'] = filename
+            controls_data['LastSavedAs'] = filename
             self.filename = filename
         elif not self.filename:
             raise AttributeError("No file name to save to")

@@ -296,6 +296,14 @@ def make_empty_project(author=None, filename=None):
     controls_data = dict(G2obj.DefaultControls)
     controls_data['LastSavedAs'] = filename
     controls_data['LastSavedUsing'] = gsasii_version
+    if GSASIIpath.HowIsG2Installed().startswith('git'):
+        try:
+            g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
+            commit = g2repo.head.commit
+            controls_data['LastSavedUsing'] += f" git {commit.hexsha[:6]} script"
+        except:
+            pass
+
     controls_data['PythonVersions'] = python_library_versions
     if author:
         controls_data['Author'] = author

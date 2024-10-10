@@ -788,7 +788,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
     G2frame.SetTitleByGPX()
     if LastSavedUsing:
         try:
-            G2G.updateNotifier(G2frame,int(LastSavedUsing))
+            G2G.updateNotifier(G2frame,int(LastSavedUsing.split()[0]))
         except:
             pass
     
@@ -808,6 +808,13 @@ def ProjFileSave(G2frame):
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
             Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
+            if GSASIIpath.HowIsG2Installed().startswith('git'):
+                try:
+                    g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
+                    commit = g2repo.head.commit
+                    Controls['LastSavedUsing'] += f" git {commit.hexsha[:6]}"
+                except:
+                    pass
             Controls['PythonVersions'] = G2frame.PackageVersions
         except:
             pass

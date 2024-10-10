@@ -6334,12 +6334,8 @@ def GetConfigValsDocs():
     import config_example
     import ast
     fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
-    if '3' in platform.python_version_tuple()[0]: 
-        with open(fname, 'r',encoding='utf-8') as f:
-            fstr = f.read()
-    else:
-        with open(fname, 'r') as f:
-            fstr = f.read()
+    with open(fname, 'r',encoding='utf-8') as f:
+        fstr = f.read()
     fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
     if not fstr.endswith('\n'):
         fstr += '\n'
@@ -6349,9 +6345,9 @@ def GetConfigValsDocs():
     for node in ast.walk(tree):
         if isinstance(node,ast.Assign):
             key = node.targets[0].id
-            d[key] = [config_example.__dict__.get(key),
-                      GSASIIpath.configDict.get(key),
-                      GSASIIpath.configDict.get(key),'']
+            default = config_example.__dict__.get(key)
+            start = GSASIIpath.configDict.get(key,default)
+            d[key] = [default, start, start, '']
         elif isinstance(node,ast.Expr) and key:
             d[key][3] = node.value.s.strip()
         else:
@@ -6530,7 +6526,24 @@ class SelectConfigSetting(wx.Dialog):
             self.resetBtn.Enable(True)
         except:
             pass
-        
+        self.ShowColor()
+
+    def ShowColor(self):
+        if self.colorChip:
+            var = self.choice[0]
+            if self.vars[var][1]:
+                color = self.vars[var][1]
+            else:
+                color = self.vars[var][0]
+            self.colorText.SetLabel(color)
+            # set the color if valid
+            try:
+                self.colorChip.SetBackgroundColour(wx.Colour('#'+color))
+            except:
+                self.colorChip.SetLabel('Invalid color')
+                self.colorChip.SetBackgroundColour('yellow')
+                self.colorChip.SetForegroundColour('black')
+
     def OnApplyChanges(self,event=None):
         'Set config variables to match the current settings'
         GSASIIpath.SetConfigValue(self.vars)
@@ -6569,6 +6582,21 @@ class SelectConfigSetting(wx.Dialog):
             self.OnChange()
         dlg.Destroy()
 
+    def onSelColor(self,event):
+        'Select a color from a menu'
+        dlg = wx.ColourDialog(self)
+        dlg.GetColourData().SetChooseFull(True) # Show the full color dialog
+        if dlg.ShowModal() == wx.ID_OK:
+            c = dlg.GetColourData().GetColour()
+            #self.colorChip.SetBackgroundColour(c)
+            # convert to mpl format w/o '#' prefix
+            mplcolor = ''.join([f"{i:x}" if i > 15 else f"0{i:x}" for i in c.Get()])
+            var = self.choice[0]
+            self.vars[var][1] = mplcolor
+            #self.strEd.SetValue(self.vars[var][1])
+            self.OnChange()
+        dlg.Destroy()
+        
     def onSelExec(self,event):
         'Select an executable file from a menu'
         var = self.choice[0]
@@ -6615,6 +6643,8 @@ class SelectConfigSetting(wx.Dialog):
             self.varsizer.DeleteWindows()
         var = self.choice[0]
         showdef = True
+        self.colorText = None
+        self.colorChip = None
         if var not in self.vars:
             raise Exception("How did this happen?")
         if 'enum_'+var in self.vars:
@@ -6658,6 +6688,12 @@ class SelectConfigSetting(wx.Dialog):
                 btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelExec)
                 sz = (400,-1)
+            elif var.endswith('_color') and var != 'Contour_color':
+                self.colorText = wx.StaticText(self,wx.ID_ANY,size=(80,20))
+                self.colorChip = wx.StaticText(self,wx.ID_ANY,size=(80,30))
+                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn.Bind(wx.EVT_BUTTON,self.onSelColor)
+                sz = (400,-1)
             else:
                 btn = None
                 sz = (250,-1)
@@ -6676,9 +6712,15 @@ class SelectConfigSetting(wx.Dialog):
                 self.colSel = EnumSelector(self,self.vars[var],1,calList,
                                                OnChange=self.OnChange)       
                 self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            elif self.colorChip:
+                hSizer = wx.BoxSizer(wx.HORIZONTAL)
+                hSizer.Add(self.colorText, 0, wx.ALL, 5)
+                hSizer.Add(self.colorChip, 0, wx.ALL, 5)
+                self.varsizer.Add(hSizer, 0, wx.ALL|wx.ALIGN_CENTRE, 5)
+                self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
             else:
                 self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,
-                    OKcontrol=self.OnChange,size=sz)
+                    OKcontrol=self.OnChange,size=sz,notBlank=False)
                 if self.vars[var][1] is not None:
                     self.strEd.SetValue(self.vars[var][1])
                 if btn:
@@ -6710,6 +6752,7 @@ class SelectConfigSetting(wx.Dialog):
         else:
             self.docinfo.SetLabel("(not documented)")
         self.docinfo.Wrap(500)
+        self.ShowColor()
         self.sizer.Fit(self)
         self.CenterOnParent()
         wx.CallAfter(self.SendSizeEvent)

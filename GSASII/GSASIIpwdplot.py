@@ -294,7 +294,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
                                  plotType=plottype,extraKeys=extraKeys)
                 if abs(Page.startExclReg - event.xdata) < 0.1: return
-                LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
+                LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
                 mn = min(Page.startExclReg, event.xdata)
                 mx = max(Page.startExclReg, event.xdata)
@@ -694,9 +694,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 xy[0] = G2lat.Dsp2pos(Parms,xy[0])
 #            if Page.plotStyle['sqrtPlot']:
 #                xy[1] = xy[1]**2
-        PatternId = G2frame.PatternId
-        PickId = G2frame.PickId
-        if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
+        if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
             # Peak List: add peaks by clicking on points,
             # Or, by dragging lines: move peaks; move limits
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
@@ -722,12 +720,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+        elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
             # Limits: add excluded region or move limits by use of menu command
             # and then pick a point
             # Or, drag line for limits/excluded region
             if ind.all() != [0]:                                    #picked a data point
-                LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
+                LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 limData = G2frame.GPXtree.GetItemPyData(LimitId)
                 # Q & d not currently allowed on limits plot
                 # if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
@@ -761,7 +759,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
                 
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Unit Cells List':
+        elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Unit Cells List':
             # By dragging lines: move limits
             if ind.all() == [0]:                         # picked a limit line
                 # prepare to animate move of line
@@ -774,9 +772,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
 
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Models':
+        elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Models':
             if ind.all() != [0]:                                    #picked a data point
-                LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
+                LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
                 if mouse.button==1:
                     data[1][0] = min(xy[0],data[1][1])
@@ -786,8 +784,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
-        elif PickId and (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
-                'PWDR' in G2frame.GPXtree.GetItemText(PickId)
+        elif G2frame.PickId and (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists' or
+                'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)
                 ):
             G2frame.itemPicked = pick
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -827,7 +825,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     f.set_color(v) # reset colors back to original values
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragTickmarks)
             
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Background':
+        elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background':
             # selected a fixed background point. Can move it or delete it.
             backPts = G2frame.dataWindow.wxID_BackPts
             for mode in backPts: # what menu is selected?
@@ -873,8 +871,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, G2frame.PickId is not set')
             return
         
-        PickId = G2frame.PickId                             # points to item in tree
-        if G2frame.GPXtree.GetItemText(PickId) == 'Background' and event.xdata:
+        if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background' and event.xdata:
             if Page.toolbar.AnyActive():    # prevent ops. if a toolbar zoom button pressed
                 # after any mouse release event (could be a zoom), redraw magnification lines
                 if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
@@ -921,7 +918,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
-            data = G2frame.GPXtree.GetItemPyData(PickId)
+            data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
             ypos = event.ydata
             Page.plotStyle['delOffset'] = -ypos
             G2frame.itemPicked = None
@@ -937,13 +934,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             except:
                 return
             magIndex = G2frame.MagLines.index(G2frame.itemPicked)
-            data = G2frame.GPXtree.GetItemPyData(PickId)
+            data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
             data[0]['Magnification'][magIndex][0] = xpos
             wx.CallAfter(G2gd.UpdatePWHKPlot,G2frame,plottype,G2frame.PatternId)
             return
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
-        if G2frame.GPXtree.GetItemText(PickId) in ['Peak List','Limits','Unit Cells List'] and xpos:
+        if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Limits','Unit Cells List'] and xpos:
             lines = []
             for line in G2frame.Lines: 
                 lines.append(line.get_xdata()[0])
@@ -987,7 +984,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         tbl[lineNo-2-nxcl][0] = xpos
                     peaks['sigDict'] = {}        #no longer valid
                 G2pdG.UpdatePeakGrid(G2frame,peaks)
-        elif G2frame.GPXtree.GetItemText(PickId) in ['Models',] and xpos:
+        elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Models',] and xpos:
             lines = []
             for line in G2frame.Lines: 
                 lines.append(line.get_xdata()[0])
@@ -1001,10 +998,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 data[1][lineNo] = xpos
                 data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
                 data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
-        elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
-            'PWDR' in G2frame.GPXtree.GetItemText(PickId)) and xpos:
-            Id = G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists')
-            if Id:     
+        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists' or
+            'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)) and xpos:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists')
+            if Id:
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
                     if pick in Page.phaseList:
@@ -1362,10 +1359,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     #G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     Page.tickDict = {}
     DifLine = ['']
-    PickId = G2frame.PickId
-    PatternId = G2frame.PatternId
     ifLimits = False
-    if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+    if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
         ifLimits = True
         Page.plotStyle['qPlot'] = False
         Page.plotStyle['dPlot'] = False
@@ -1445,10 +1440,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Lines = []
     exclLines = []
     time0 = time.time()
-    if G2frame.SinglePlot and PatternId:
+    if G2frame.SinglePlot and G2frame.PatternId:
         try:
-            Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
-            Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
+            Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+            Pattern.append(G2frame.GPXtree.GetItemText(G2frame.PatternId))
             PlotList = [Pattern,]
             # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
             # Pattern[0]['BackFile'] = ['',-1.0,False]
@@ -1635,8 +1630,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
         ExMask.append(np.full(len(xye[0]),False))
-        if PickId:   # when is this not true?
-            ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
+        if G2frame.PickId:   # when is this not true?
+            ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(G2frame.PatternId)
             # recompute mask from excluded regions, in case they have changed
             xye0 = xye[0]  # no mask in case there are no limits
             for excl in limits[2:]:
@@ -1803,7 +1798,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 xlim = Plot.get_xlim()
                 DX = xlim[1]-xlim[0]
                 X += 0.002*offsetX*DX*N
-            if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
                 Xum = ma.getdata(X) # unmasked version of X, use for data limits (only)
             else:
                 Xum = X[:]
@@ -1998,11 +1993,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         print('file',plotOpt['CSVfile'],'written')
                         
                 Page.SetToolTipString('')
-                if PickId:
-                    if G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
+                if G2frame.PickId:
+                    if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
-                        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+                        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
                         if G2frame.dataWindow.XtraPeakMode.IsChecked():
                             peaks['xtraPeaks'] = peaks.get('xtraPeaks',[])
                             tbl = peaks['xtraPeaks']
@@ -2032,10 +2027,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             plotVline(Page,Plot,SatLines,Parms,pos,'k',False)
 #                        for pos in peaks['xtraPeaks']:
 #                            plotVline(Page,Plot,Lines,Parms,pos[0],'r',False)
-                    if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+                    if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.SetToolTipString(tip)
-                        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))  # used anywhere?
+                        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))  # used anywhere?
                         
             else:   #not picked
                 ymax = 1.
@@ -2076,16 +2071,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if not magLineList:
         Plot.set_title(Title)
 
-    if PickId and not G2frame.Contour:
-        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+    if G2frame.PickId and not G2frame.Contour:
+        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         orange = [255/256.,128/256.,0.]
         if 'PWDR' in plottype and G2frame.SinglePlot and G2frame.CumeChi:
             CY = np.cumsum(W**2*(Y-Z)**2)
             scale = np.max(CY)/np.max(Y)
             CY /= scale
             Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
-        if G2frame.GPXtree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-            peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
+        if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
+            peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
             if not len(peaks): return # are there any peaks?
             for peak in peaks[0]:
                 if peak[2]:
@@ -2121,12 +2116,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=3)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
-        elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 
-                  'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode
+        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists'] or 
+                  'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
                   or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
-                    G2frame.GPXtree.GetItemText(PickId) == 'Peak List')
+                    G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
+            Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
             refColors=['b','r','c','g','m','k']
@@ -2208,7 +2203,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         G2frame.Lines = Lines
         G2frame.MagLines = magMarkers
-    if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Background':
+    if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background':
         mag2th = [0]+[x for x,m in data[0].get('Magnification',[])][1:]
         magmult = [m for x,m in data[0].get('Magnification',[])]
         # plot fixed background points

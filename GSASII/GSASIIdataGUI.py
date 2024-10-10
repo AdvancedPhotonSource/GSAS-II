@@ -5570,8 +5570,8 @@ If you continue from this point, it is quite likely that all intensity computati
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.reloadFromGPX(rtext,Rvals)
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
@@ -6095,7 +6095,6 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             dlg.CenterOnParent()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL):
@@ -6107,6 +6106,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
                     SelectDataTreeItem(self,sId)
                     self.GPXtree.SelectItem(sId)
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
                 else:
                     if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:

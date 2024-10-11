@@ -85,7 +85,7 @@ class ExportJSON(G2IO.ExportBaseclass):
                     self.Write(json.dumps([
                         "=========== '{}' SubItem of Tree '{}' ==============".format(name2,name)]))
                     self.Write(', ')
-                    data = {name:{name2:G2frame.GPXtree.GetItemPyData(item)}}
+                    data = {name:{name2:G2frame.GPXtree.GetItemPyData(item2)}}
                     self.Write(json.dumps(data, indent=2, cls=JsonEncoder))
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            

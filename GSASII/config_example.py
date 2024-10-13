@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
-########### SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
-# $Author: toby $
-# $Revision: 5789 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/config_example.py $
-# $Id: config_example.py 5789 2024-05-24 15:06:45Z toby $
-########### SVN repository information ###################
 '''
 This file contains optional configuration options for GSAS-II. The variables
 in this file can be copied to file config.py, which is imported if present.
@@ -16,21 +9,28 @@ be present, but if in use it will typically be found with the GSAS-II source
 directory (GSASIIpath.Path2GSAS2) or a directory for local GSAS-II
 modifications (~/.G2local/ or /Documents and Settings/<User>/.G2local/).  
 Note that the contents of config.py is usually changed 
-using GSASIIctrlGUI.SelectConfigSetting.
+using :func:`GSASIIctrlGUI.SelectConfigSetting`.
 
 When defining new config variables for GSAS-II, define them here with a
 default value: use None or a string for strings, or use integers or real
-values. Include a doc string after each variable is defined to explain
-what it does. Use names ending in _location or _directory for items
-that will contain directory names. Use names ending in _exec for executable
-files (.exe on windows).
+values as defaults to ensure that only values of that type are allowed. 
+Include a doc string after each variable is defined to explain
+what it does. 
+
+If a name ends with a particular keyword, then specialized edit 
+routines are used. 
+
+* Names ending in _location or _directory are for items
+* Names ending in _exec for executable files (.exe on windows).
+* Names ending in _color for colors, to be specified as RGBA values 
+  (note that Contour_color is restricted to color maps). 
 
 For example::
 
-    test_int = 0
-    test_float = 0.0
-    test_string = None (or)
-    test_string = 'value'
+    int_config = 0
+    float_config = 0.0
+    string_config = None (or)
+    string_config = 'value'
 '''
 
 debug = False
@@ -198,9 +198,38 @@ Instprm_default = False
 '''when True, GSAS-II instprm file are shown as default; when False, old GSAS stype prm, etc files are default
 '''
 
-Plot_Colors = 'k r g b m c'
-'''The colors for line plots: use one of 'k'-black, 'r'-red, 'b'-blue, 'g'-green, 'm'-magenta, 'c'-cyan for the
-line colors in order of obs., calc., back., diff., color5 & color6 separated by spaces; 6 items required.
+Ref_Colors = 'b r c g m k'
+'''The colors for reflection tick marks by phase. 
+Use one of 'k'-black, 'r'-red, 'b'-blue, 'g'-green, 'm'-magenta, 'c'-cyan 
+for the line colors, or any other valid matplotlib color name or hex code. 
+'''
+
+Obs_color = '0000ffff'
+'''The color for plotting the observed powder diffraction pattern.
+Colors are specified as hex RGBA values, as used in Matplotlib (without 
+preceding #). 
+The default is 0000ffff, which sets the color to blue. 
+'''
+
+Calc_color = '008000ff'
+'''The color for plotting the computed powder diffraction pattern.
+Colors are specified as hex RGBA values, as used in Matplotlib (without 
+preceding #). 
+The default is 00ff00ff, which sets the color to green. 
+'''
+
+Diff_color = '00bfbfff'
+'''The color for plotting the obs-calc powder diffraction pattern.
+Colors are specified as hex RGBA values, as used in Matplotlib (without 
+preceding #). 
+The default is 00ffffff, which sets the color to cyan. 
+'''
+
+Bkg_color = 'ff0000ff'
+'''The color for plotting the background powder diffraction pattern.
+Colors are specified as hex RGBA values, as used in Matplotlib (without 
+preceding #). 
+The default is ff0000ff, which sets the color to red.
 '''
 
 PDF_Rmax = 100.

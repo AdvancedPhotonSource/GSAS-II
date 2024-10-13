@@ -2048,6 +2048,32 @@ def UpdatePhaseData(G2frame,Item,data):
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
+
+            def onDefColor(event):
+                '''Called when a color bar in elements table is clicked on.
+                Changes default color for element in all phases
+                N.B. Change is not saved; will go back to original color when
+                GSAS-II is restarted.
+                Changes colors of matching atoms in Draw Atoms table for 
+                current phase -- only. 
+                '''
+                if not hasattr(event.GetEventObject(),'atomNum'): return
+                anum = event.GetEventObject().atomNum
+                (R,G,B) = generalData['Color'][anum]
+                dlg = wx.ColourDialog(event.GetEventObject().GetTopLevelParent())
+                dlg.GetColourData().SetChooseFull(False)
+                dlg.GetColourData().SetColour(wx.Colour(R,G,B))
+                if dlg.ShowModal() == wx.ID_OK:
+                    El = generalData['AtomTypes'][anum]
+                    RGB = dlg.GetColourData().GetColour()[0:3]
+                    G2elem.SetAtomColor(El, RGB)
+                    cx,ct,cs,ci = data['Drawing']['atomPtrs']
+                    for atom in data['Drawing']['Atoms']:
+                        if atom[ct] != El: continue
+                        atom[cs+2] = RGB
+                    breakpoint()
+                    wx.CallAfter(UpdateGeneral)
+                dlg.Destroy()
                     
             elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
@@ -2083,9 +2109,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 elemTxt = G2G.ReadOnlyTextCtrl(General,value='%.2f'%(rad))
                 elemSizer.Add(elemTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Default color'),0,WACV)
-            for R,G,B in generalData['Color']:
+            for i,(R,G,B) in enumerate(generalData['Color']):
                 colorTxt = G2G.ReadOnlyTextCtrl(General,value='')
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
+                colorTxt.atomNum = i
+                colorTxt.Bind(wx.EVT_SET_FOCUS,onDefColor)
                 elemSizer.Add(colorTxt,0,WACV)
             if generalData['Type'] == 'magnetic':
                 elemSizer.Add(wx.StaticText(General,label=' Lande g factor: '),0,WACV)

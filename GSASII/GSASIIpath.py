@@ -53,7 +53,7 @@ path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # lo
 fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
 intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
-def GetConfigValue(key,default=None):
+def GetConfigValue(key,default=None,getDefault=False):
     '''Return the configuration file value for key or a default value if not present
     
     :param str key: a value to be found in the configuration (config.py) file
@@ -61,6 +61,10 @@ def GetConfigValue(key,default=None):
       the config file is not found. Defaults to None
     :returns: the value found or the default.
     '''
+    if getDefault:
+        if default is not None:
+            raise ValueError('Cannot use default and getDefault together')
+        default = GetConfigDefault(key)
     try:
         return configDict.get(key,default)
     except NameError: # this happens when building docs
@@ -81,6 +85,18 @@ def SetConfigValue(parmdict):
             if parmdict[var][1] == '': continue
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
+
+def GetConfigDefault(key):
+    '''Return the default value for a config value
+    
+    :param str key: a value to be found in the configuration (config_example.py) file
+    :returns: the default value or None
+    '''
+    try:
+        import config_example
+    except:
+        return None
+    return config_example.__dict__.get(key)
 
 def addPrevGPX(fil,cDict):
     '''Add a GPX file to the list of previous files. 

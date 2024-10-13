@@ -1205,6 +1205,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     plottype = plotType
+    
+    # get powder pattern colors from config settings
+    pwdrCol = {}
+    for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
+        pwdrCol[i] = '#' + GSASIIpath.GetConfigValue(i,getDefault=True)
 
     if not G2frame.PatternId:
         return
@@ -1428,15 +1433,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     magLineList = [] # null value indicates no magnification
     Page.toolbar.updateActions = None # no update actions
     G2frame.cid = None
-    Page.keyPress = OnPlotKeyPress    
-    try:
-        colors = GSASIIpath.GetConfigValue('Plot_Colors').split()
-        for color in colors:
-            if color not in ['k','r','g','b','m','c']:
-                print('**** bad color code: '+str(color)+' - redo Preferences/Plot Colors ****')
-                raise Exception
-    except:
-        colors = ['b','g','r','c','m','k']
+    Page.keyPress = OnPlotKeyPress
+    # assemble a list of validated colors (not currently needed)
+    # valid_colors = []
+    # invalid_colors = []
+    # try:
+    #     colors = GSASIIpath.GetConfigValue('Plot_Colors').split()
+    #     for color in colors:
+    #         #if color not in ['k','r','g','b','m','c']:
+    #         if mpl.colors.is_color_like(color):
+    #             valid_colors.append(color)
+    #         else:
+    #             invalid_colors.append(color)
+    # except:
+    #     pass
+    # if invalid_colors:
+    #     print(f'**** bad color code(s): "{", ".join(invalid_colors)}" - redo Preferences/Plot Colors ****')
+    # if len(valid_colors) < 3:
+    #     colors = ['b','g','r','c','m','k']
+    # else:
+    #     colors = valid_colors
     Lines = []
     exclLines = []
     time0 = time.time()
@@ -1878,7 +1894,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                         if 'PWDR' in plottype and len(limits[2:]):
                             DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
-                    DifLine = Plot1.plot(X,DZ,colors[3],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+                    DifLine = Plot1.plot(X,DZ,pwdrCol['Diff_color'],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     if Page.plotStyle.get('font',False):
                         Plot1.tick_params(labelsize=14)
                     else:
@@ -1891,12 +1907,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_yscale("log",nonpositive='mask') # >=3.3
                         except:
                             Plot.set_yscale("log",nonpositive='mask')
-                        Plot.plot(X,Y,marker=pP,color=colors[0],linewidth=lW,picker=True,pickradius=3.,
+                        Plot.plot(X,Y,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
                             clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
-                            Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'),linewidth=1.5)
+                            Plot.plot(X,Z,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:
-                                Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
+                                Plot.plot(X,W,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.set_xscale("log",nonpositive='mask') # >=3.3
@@ -1907,45 +1923,45 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if G2frame.ErrorBars:
                             if Page.plotStyle['sqPlot']:
                                 Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                    ecolor=colors[0],
+                                    ecolor=pwdrCol['Obs_color'],
                                 picker=True,pickradius=3.,clip_on=Clip_on)
                             else:
                                 Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                    ecolor=colors[0],
+                                    ecolor=pwdrCol['Obs_color'],
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
                         else:
-                            Plot.plot(X,YB,marker=pP,color=colors[0],linewidth=lW,
+                            Plot.plot(X,YB,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                        Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'),linewidth=1.5)     #const. background
-                        Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
+                        Plot.plot(X,W,pwdrCol['Calc_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #const. background
+                        Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                 else:  # not logPlot
                     ymax = 1.
                     if Page.plotStyle['Normalize'] and Y.max() != 0 and not G2frame.SinglePlot:
                         ymax = Y.max()
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,linewidth=lW,
+                            ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,(Z-W)/ymax,colors[1],picker=False,
+                                CalcLine = Plot.plot(X,(Z-W)/ymax,pwdrCol['Calc_color'],picker=False,
                                     label=incCptn('calc-bkg'),linewidth=1.5)               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,color=colors[0],marker=pP,linewidth=lW,
+                            Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
+                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y/ymax,color=colors[0],marker=pP,linewidth=lW,
+                            ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
-                            CalcLine = Plot.plot(X,Z/ymax,colors[1],picker=False,label=incCptn('calc'),linewidth=1.5)                 #Ic
+                            CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)                 #Ic
                         else:
-                            Plot.plot(X,YB,color=colors[0],marker=pP,linewidth=lW,
+                            Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'),linewidth=1.5)
+                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W/ymax,colors[2],picker=False,label=incCptn('bkg'),linewidth=1.5)                 #Ib
+                        BackLine = Plot.plot(X,W/ymax,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)                 #Ib
                         if not G2frame.Weight and np.any(Z):
-                            DifLine = Plot.plot(X,D/ymax,colors[3],linewidth=1.5,
+                            DifLine = Plot.plot(X,D/ymax,pwdrCol['Diff_color'],linewidth=1.5,
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                     
@@ -2124,7 +2140,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
-            refColors=['b','r','c','g','m','k']
+            # assemble a list of validated colors for tickmarks
+            valid_colors = []
+            invalid_colors = []
+            for color in GSASIIpath.GetConfigValue('Ref_Colors',getDefault=True).split():
+                try:
+                    if mpl.colors.is_color_like(color):
+                        valid_colors.append(color)
+                    else:
+                        invalid_colors.append(color)
+                except:
+                    pass
+            if invalid_colors:
+                print(f'**** bad color code(s): "{", ".join(invalid_colors)}" - redo Preferences/Ref_Colors ****')
+            if len(valid_colors) < 3:
+                refColors=['b','r','c','g','m','k']
+            else:
+                refcolors = valid_colors
+
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
             Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
             for pId,phase in enumerate(Page.phaseList):

@@ -182,8 +182,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.CumeChi = not G2frame.CumeChi 
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
-        elif event.key == 'F' and 'PWDR' in plottype:
-            Page.plotStyle['font'] = not Page.plotStyle.get('font',False)
+        elif event.key == 'T' and 'PWDR' in plottype:
+            Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -1184,10 +1184,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Title = '{} cycle #{}'.format(plotItem,cycle)
         else:
             Title = plotItem
-        if Page.plotStyle['sqrtPlot']:
-            Plot.set_title(r'$\sqrt{I}$ for '+Title)
-        else:
-            Plot.set_title(Title)
+        if Page.plotStyle.get('title',True):
+            if Page.plotStyle['sqrtPlot']:
+                Plot.set_title(r'$\sqrt{I}$ for '+Title)
+            else:
+                Plot.set_title(Title)
         Page.canvas.draw()
         
     def incCptn(string):
@@ -1387,7 +1388,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
-                'c: contour on','x: toggle excluded regions','F: toggle axis font',
+                'c: contour on','x: toggle excluded regions','T: toggle plot title',
                 'g: toggle grid','X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
@@ -1895,10 +1896,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if 'PWDR' in plottype and len(limits[2:]):
                             DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
                     DifLine = Plot1.plot(X,DZ,pwdrCol['Diff_color'],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
-                    if Page.plotStyle.get('font',False):
-                        Plot1.tick_params(labelsize=14)
-                    else:
-                        Plot1.tick_params(reset=True)
+                    Plot1.tick_params(labelsize=14)
                     Plot1.axhline(0.,color='k')
                     
                 if Page.plotStyle['logPlot']:
@@ -1965,10 +1963,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                     
-                    if Page.plotStyle.get('font',False):
-                        Plot.tick_params(labelsize=14)
-                    else:
-                        Plot.tick_params(reset=True)
+                    Plot.tick_params(labelsize=14)
                     # write a .csv file; not fully tested, but probably works where allowed
                     if 'PWDR' in plottype and G2frame.SinglePlot and plotOpt['saveCSV']:
                         plotOpt['saveCSV'] = False
@@ -2084,7 +2079,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     if timeDebug:
         print('plot fill time: %.3f'%(time.time()-time0))
-    if not magLineList:
+    if Page.plotStyle.get('title',True) and not magLineList:
         Plot.set_title(Title)
 
     if G2frame.PickId and not G2frame.Contour:
@@ -3491,8 +3486,8 @@ def changePlotSettings(G2frame,Plot):
             P.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
             for l in P.spines.values():
                 l.set_linewidth(plotOpt['lineWid'])
-                
-        Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
+        if Page.plotStyle.get('title',True):        
+            Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
         for i,P in enumerate(Plot.figure.axes):
             if not P.get_visible(): continue
             if i == 0:

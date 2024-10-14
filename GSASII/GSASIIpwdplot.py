@@ -2156,7 +2156,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if len(valid_colors) < 3:
                 refColors=['b','r','c','g','m','k']
             else:
-                refcolors = valid_colors
+                refColors = valid_colors
 
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
             Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}

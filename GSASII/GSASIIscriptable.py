@@ -55,7 +55,7 @@ import GSASIIimage as G2img
 import GSASIIlattice as G2lat
 import GSASIImapvars as G2mv
 
-# Delay imports to not slow down small scripts that don't need them
+# Delay imports loading to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
 '''Readers by reader type'''
 exportersByExtension = {}
@@ -285,12 +285,9 @@ def make_empty_project(author=None, filename=None):
     if not filename:
         filename = 'test_output.gpx'
     filename = os.path.abspath(filename)
-    gsasii_version = str(GSASIIpath.GetVersionNumber())
     LoadG2fil()
 
     controls_data = dict(G2obj.DefaultControls)
-    #controls_data['LastSavedAs'] = filename
-    #controls_data['LastSavedUsing'] = gsasii_version
     if author:
         controls_data['Author'] = author
 
@@ -928,7 +925,7 @@ class G2Project(G2ObjectWrapper):
             python_library_versions = G2fil.get_python_versions([np, sp])
         controls_data['PythonVersions'] = python_library_versions
         #    G2 version info 
-        controls_data['LastSavedUsing'] = gsasii_version
+        controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         if GSASIIpath.HowIsG2Installed().startswith('git'):
             try:
                 g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)

@@ -2382,7 +2382,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                         opr = op.lower()+',-1'
                     WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,opr))
 
-            WriteCIFitem(self.fp,"_cell_measurement_temperature",T)
             if not phaseWithHist: # reported with histogram, but in separate block
                 WriteCIFitem(self.fp,"_diffrn_ambient_temperature",T)
             defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
@@ -2426,7 +2425,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '_pd_phase_name', phasenam)
             cellList,cellSig = self.GetCell(phasenam,unique=True)
             if quick:  # leave temperature as unknown
-                WriteCIFitem(self.fp,"_cell_measurement_temperature","?")
+                T = '?'
             else: # get T set in _CellSelectT and possibly get new cell params
                 T,hRanId = self.CellHistSelection.get(phasedict['ranId'],
                                                           ('?',None))
@@ -2434,10 +2433,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                     T = G2mth.ValEsd(T,-1.0)
                 except:
                     pass
-            if not oneblock: # temperature should be written when the histogram saved later
+            if not oneblock:
+                # temperature is written with histogram, but duplicate it
+                # with phase in a multiblock CIF
                 WriteCIFitem(self.fp,"_diffrn_ambient_temperature",T)
 
-            WriteCIFitem(self.fp,"_cell_measurement_temperature",T)
             if not quick:  # get cell info with s.u.'s
                 for h in self.Histograms:
                     if self.Histograms[h]['ranId'] == hRanId:
@@ -2579,12 +2579,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             T,hRanId = self.CellHistSelection.get(phasedict['ranId'],
                                                           ('?',None))
             try:
-                    T = G2mth.ValEsd(T,-1.0)
+                T = G2mth.ValEsd(T,-1.0)
             except:
-                    pass
+                pass
             if not oneblock:
                 WriteCIFitem(self.fp,"_diffrn.ambient_temperature",T)
-            WriteCIFitem(self.fp,"_cell_measurement.temp",T)
             for h in self.Histograms:
                 if self.Histograms[h]['ranId'] == hRanId:
                     pId = phasedict['pId']
@@ -3871,9 +3870,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             if self.Phases[phaseOnly]['General']['Type'] == 'macromolecular':
-                WritePhaseInfoMM(phaseOnly)
+                WritePhaseInfoMM(phaseOnly,quick=True)
             else:
-                WritePhaseInfo(phaseOnly)
+                WritePhaseInfo(phaseOnly,quick=True)
             return
         elif histOnly: #====Histogram only CIF ================================
             print('Writing CIF output to file '+self.filename)

@@ -309,12 +309,14 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
             ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?
             values += [v,]
     dmin = getDmin(peaks)-0.005
-    if 'T' in Inst['Type'][0]:    
-        result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,full_output=True,
-            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,difC,Z,dlg))
+    if 'T' in Inst['Type'][0]:
+        if 'Brute' in ssopt['kMethod']:
+            result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,full_output=True,
+                args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,difC,Z,dlg))
     else:
-        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,full_output=True,
-            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,wave,Z,dlg))
+        if 'Brute' in ssopt['kMethod']:
+            result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,full_output=True,
+                args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,wave,Z,dlg))
     return Val2Vec(ssopt['ModVec'],Vref,result[0]),result
                 
 def IndexPeaks(peaks,HKL):

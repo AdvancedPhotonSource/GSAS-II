@@ -4152,6 +4152,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
+    def OnMeths(event):
+        ssopt['kMethod'] = method.GetValue()
+        G2frame.kvecSearch['mode'] = False
+        if 'SeekPath' in ssopt['kMethod']:
+            G2frame.kvecSearch['mode'] = True
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
         print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
@@ -4714,7 +4721,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         r,c =  event.GetRow(),event.GetCol()
         if cells:
             if cells[0][0] == '?':  # k-vector table
-                # uncheck all rowes then check only the one used row
+                # uncheck all rows then check only the one used row
                 for i in range(len(cells)):
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
@@ -6339,19 +6346,28 @@ def UpdateUnitCellsGrid(G2frame, data):
                     size=wx.Size(50,20),style=wx.TE_READONLY)
                 modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                 ssSizer.Add(modVal,0,WACV)
-        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
+        mainSizer.Add(ssSizer,0)
+        kSizer = wx.BoxSizer(wx.HORIZONTAL)
+        kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' k-vector max. M: '),0,WACV)
         maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
-        ssSizer.Add(maxMH,0,WACV)
+        kSizer.Add(maxMH,0,WACV)
         if len(peaks[0]):
+            ssopt['kMethod'] = ssopt.get('kMethod','Brute')
+            kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' search method: '),0,WACV)
+            meths = ['Brute','SeekPath']
+            method = wx.ComboBox(G2frame.dataWindow,value=ssopt['kMethod'],
+                choices=meths,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            method.Bind(wx.EVT_COMBOBOX,OnMeths)
+            kSizer.Add(method,0,WACV)
             findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
             findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
-            ssSizer.Add(findMV,0,WACV)
+            kSizer.Add(findMV,0,WACV)
             findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
             findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
-            ssSizer.Add(findallMV,0,WACV)
-        mainSizer.Add(ssSizer,0)
+            kSizer.Add(findallMV,0,WACV)
+        mainSizer.Add(kSizer,0)
 
     G2frame.dataWindow.currentGrids = []
     if len(ssopt.get('SgResults',[])):

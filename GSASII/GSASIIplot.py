@@ -140,8 +140,13 @@ try:
         0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
         0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-    '''This can be done on request for other colors - any new names must be explicitly added to color list
-    obtained from mpl.cm.datad.keys() (currently 10 places in GSAS-II code)
+    '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors. 
+    _Old_Paired_data is the pre-2.0 Paired color map found in 
+    matplotlib._cm.py and is used to creat color map GSPaired.
+
+    This can be done on request for other color maps. N.B. any new names 
+    must be explicitly added to the color list obtained from 
+    mpl.cm.datad.keys() (currently 10 places in GSAS-II code).
     '''
     oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
     try:

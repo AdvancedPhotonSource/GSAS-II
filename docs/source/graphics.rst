@@ -1,4 +1,4 @@
-*Plotting routines*
+*Visualization routines*
 ===============================
 
 *Summary/Contents*
@@ -23,7 +23,7 @@ plotting routine                               action
 :func:`~GSASIIplot.PlotPeakWidths`             Plot instrument broadening terms as function of 2-theta/TOF
 :func:`~GSASIIplot.PlotCovariance`             Show covariance terms in 2D 
 :func:`~GSASIIplot.PlotStructure`              Crystal structure plotting with balls, sticks, lines,
-                                                  ellipsoids, polyhedra and magnetic moments
+                                               ellipsoids, polyhedra and magnetic moments
 :func:`~GSASIIplot.PlotBeadModel`              Plots representation of protein shape from small angle scattering
 :func:`~GSASIIplot.Plot1DSngl`                 1D stick plots of structure factors                              
 :func:`~GSASIIplot.PlotSngl`                   Structure factor plotting
@@ -44,11 +44,11 @@ plotting routine                               action
 :func:`~GSASIIplot.ModulationPlot`             Plots modulation information
 :func:`~GSASIIplot.PlotTorsion`                Plots MC torsion angles
 :func:`~GSASIIplot.PlotRama`                   Ramachandran of energetically allowed regions for dihedral
-                                                  angles in protein
+                                               angles in protein
 :func:`~GSASIIplot.PlotSelectedSequence`       Plot one or more sets of values selected from the sequential
-                                                  refinement table
+                                               refinement table
 :func:`~GSASIIplot.PlotIntegration`            Rectified plot of 2D image after image integration with 2-theta and
-                                                  azimuth as coordinates
+                                               azimuth as coordinates
 :func:`~GSASIIplot.PlotTRImage`                test plot routine
 :func:`~GSASIIplot.PlotRigidBody`              show rigid body structures as balls & sticks
 :func:`~GSASIIplot.PlotLayers`                 show layer structures as balls & sticks
@@ -112,7 +112,7 @@ plotInvalid                 False              Used to track if a plot has been 
                                                are called. 
 ======================    ===============     ============================================================
 
-*GSASIIplot Classes and routines*
+*GSASIIplot Classes and Routines*
 ------------------------------------
 
 .. automodule:: GSASIIplot
@@ -120,7 +120,7 @@ plotInvalid                 False              Used to track if a plot has been 
     :private-members:
     :special-members:
 
-*GSASIIpwdplot Classes and routines*
+*GSASIIpwdplot Routines*
 ---------------------------------------
 
 .. automodule:: GSASIIpwdplot

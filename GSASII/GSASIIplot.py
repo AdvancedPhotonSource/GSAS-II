@@ -45,7 +45,7 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-from GSASIIpwdplot import PlotPatterns,ReplotPattern
+import GSASIIpwdplot as G2pwpl
 try:
     import pytexture as ptx
     ptx.pyqlmninit()
@@ -571,7 +571,7 @@ class G2PlotNoteBook(wx.Panel):
     def SetHelpButton(self,help):
         '''Adds a Help button to the status bar on plots.
         
-        TODO: This has a problem with PlotPatterns where creation of the 
+        TODO: This has a problem with G2pwpl.PlotPatterns where creation of the 
         HelpButton causes the notebook tabs to be duplicated. A manual 
         resize fixes that, but the SendSizeEvent has not worked. 
         '''
@@ -669,7 +669,7 @@ class GSASIItoolbar(Toolbar):
         if len(axlist) == 1:
              ax = axlist[0]
              ax1 = None
-        elif len(axlist) == 3: # used in "w" mode in PlotPatterns
+        elif len(axlist) == 3: # used in "w" mode in G2pwpl.PlotPatterns
              _,ax,ax1 = axlist
              xmin,xmax,ymin1,ymax1 = ax1.axis()
         else:
@@ -2969,7 +2969,7 @@ def PlotSASDSizeDist(G2frame):
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
@@ -3021,7 +3021,7 @@ def PlotSASDPairDist(G2frame):
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:

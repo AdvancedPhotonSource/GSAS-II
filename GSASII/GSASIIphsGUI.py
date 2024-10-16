@@ -34,6 +34,7 @@ import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIddataGUI as G2ddG
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 # if GSASIIpath.GetConfigValue('debug'):
 #     print('Debug reloading',G2plt)
 #     import imp
@@ -9575,7 +9576,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 XY = np.vstack((profile[0],rat))
                 G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
                     labelY='difference',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR',newPlot=True)
         else:   #selected area
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = simCodes[1]
@@ -9597,7 +9598,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         # see pwd.SetupPDFEval() and pwd.OptimizePDF() for an example minimization
         wx.EndBusyCursor()
         wx.CallAfter(UpdateLayerData)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSeqSimulate(event):
         

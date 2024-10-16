@@ -32,6 +32,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 import GSASIIdataGUI as G2gd
 import GSASIIphsGUI as G2phsG
 import GSASIIctrlGUI as G2G
@@ -733,7 +734,7 @@ def UpdatePeakGrid(G2frame, data):
         for pos,mag in refs:
             data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnCopyPeaks(event):
         'Copy peaks to other histograms'
@@ -781,7 +782,7 @@ def UpdatePeakGrid(G2frame, data):
             dlg.Destroy()
         data = {'peaks':peaks,'sigDict':{}}
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSavePeaks(event):
         'Save peak to file suitable for OnLoadPeaks'
@@ -818,7 +819,7 @@ def UpdatePeakGrid(G2frame, data):
         file.close()
         G2frame.dataWindow.UnDo.Enable(False)
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def SaveState():
         'Saves result of a peaak fit for possible UnDo'
@@ -935,7 +936,7 @@ def UpdatePeakGrid(G2frame, data):
         for i in sorted(sel,reverse=True):
             del tbl[i]
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnClearPeaks(event):
         'Clear the Peak fit table'
@@ -946,7 +947,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         UpdatePeakGrid(G2frame,peaks)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnPeakFit(oneCycle=False,noFit=False):
         'Do peak fitting by least squares'
@@ -1003,7 +1004,7 @@ def UpdatePeakGrid(G2frame, data):
             bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             return
         # try:
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
@@ -1020,7 +1021,7 @@ def UpdatePeakGrid(G2frame, data):
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2frame.AddToNotebook(text,'PF')
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         
     def OnResetSigGam(event):
@@ -1102,7 +1103,7 @@ def UpdatePeakGrid(G2frame, data):
         else:
             event.Skip()
             return
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
             
     def SelectVars(rows):
@@ -1161,7 +1162,7 @@ def UpdatePeakGrid(G2frame, data):
             reflGrid.ClearSelection()
             reflGrid.SelectRow(r,True)
             wx.CallAfter(G2frame.reflGrid.ForceRefresh)
-            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+            wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
         elif c > 0:     #column label: just select it (& redisplay)
             reflGrid.ClearSelection()
             reflGrid.SelectCol(c,True)
@@ -1191,7 +1192,7 @@ def UpdatePeakGrid(G2frame, data):
     def OnXtraMode(event):
         data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
         
     def OnSetPeakWidMode(event):
         '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 
@@ -1589,7 +1590,7 @@ def UpdateBackground(G2frame,data):
         finally:
             dlg.Destroy()
         CalcBack(G2frame.PatternId)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallLater(100,UpdateBackground,G2frame,newback)
 
     def OnBkgFit(event):
@@ -1677,7 +1678,7 @@ def UpdateBackground(G2frame,data):
         pwddata[3][xBeg:xFin] *= 0.
         pwddata[5][xBeg:xFin] *= 0.
         pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,xdata,bxye)[0]
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
         
@@ -1687,7 +1688,7 @@ def UpdateBackground(G2frame,data):
             return
         else:
             data[1]['FixedPoints'] = []
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
     
     def OnPeaksMove(event):
         'Move a background peak'
@@ -1749,7 +1750,7 @@ def UpdateBackground(G2frame,data):
         def AfterChange(invalid,value,tc):
             if invalid: return
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1794,7 +1795,7 @@ def UpdateBackground(G2frame,data):
                     del(data[1]['debyeTerms'][-1])
             if N == 0:
                 CalcBack(G2frame.PatternId)
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
             wx.CallAfter(UpdateBackground,G2frame,data)
 
         def KeyEditPeakGrid(event):
@@ -1817,7 +1818,7 @@ def UpdateBackground(G2frame,data):
         
         def OnCellChange(event):
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
 
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1861,7 +1862,7 @@ def UpdateBackground(G2frame,data):
                     del(data[1]['peaksList'][-1])
             if N == 0:
                 CalcBack(G2frame.PatternId)
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             # this callback is crashing wx when there is an open
             # peaksGrid cell editor, at least on Mac. Code below
             # should fix this, but it does not.
@@ -1894,7 +1895,7 @@ def UpdateBackground(G2frame,data):
                             
         def OnCellChange(event):
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1947,13 +1948,13 @@ def UpdateBackground(G2frame,data):
             else:
                 data[1]['background PWDR'][2] = False
             CalcBack()
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             wx.CallLater(100,UpdateBackground,G2frame,data)
         
         def AfterChange(invalid,value,tc):
             if invalid: return
             CalcBack()
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
         def OnBackFit(event):
             data[1]['background PWDR'][2] = not data[1]['background PWDR'][2]            
@@ -2010,7 +2011,7 @@ def UpdateBackground(G2frame,data):
             xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
             addAutoBack(G2frame,data,xydata)
             wx.CallAfter(UpdateBackground,G2frame,data)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         elif bkgdict['autoPrms']['Mode'] == 'fit':
             xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
             npts = len(xydata[0])
@@ -2020,7 +2021,7 @@ def UpdateBackground(G2frame,data):
             OnBkgFit(event)
         else:
             wx.CallAfter(UpdateBackground,G2frame,data)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
 
     def copyAutoBack(event):
         '''reproduce the auto background computation on selected 
@@ -2267,8 +2268,7 @@ class autoBackground(wx.Dialog):
         the auto background
         '''
         self.xydata[4] = G2pwd.autoBkgCalc(self.bkgdict,self.xydata[1].data)
-        import GSASIIplot as G2plt
-        G2plt.PlotPatterns(self.G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(self.G2frame,plotType='PWDR')
     
 ################################################################################
 #####  Limits
@@ -2280,7 +2280,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
     def AfterChange(invalid,value,tc):
         if invalid: return
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=datatype)  #unfortunately this resets the plot width
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,newPlot=False,plotType=datatype)  #unfortunately this resets the plot width
 
     def LimitSizer():
         limits = wx.FlexGridSizer(0,3,0,5)
@@ -2299,7 +2299,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             del(data[item+2])
-            G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
+            G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
             wx.CallAfter(UpdateLimitsGrid,G2frame,data,datatype)
         
         Indx = {}
@@ -2332,7 +2332,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
             G2frame.ifSetLimitsMode = 0
             G2frame.CancelSetLimitsMode.Enable(False)
         G2frame.plotFrame.Raise()
-        G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
+        G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
         
     def OnLimitCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -3467,7 +3467,7 @@ def UpdateSampleGrid(G2frame,data):
                     data['Scale'][0] = 1.0
             finally:
                 dlg.Destroy()
-            G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
             UpdateSampleGrid(G2frame,data)
             return
         #SASD rescaliing                
@@ -3497,7 +3497,7 @@ def UpdateSampleGrid(G2frame,data):
         refProfile = G2frame.GPXtree.GetItemPyData(refId)[1]
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         UpdateSampleGrid(G2frame,data)
         
     def OnRescaleAll(event):
@@ -3532,7 +3532,7 @@ def UpdateSampleGrid(G2frame,data):
                             wi /= Scale**2
         finally:
             dlg.Destroy()
-        G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],
@@ -3605,7 +3605,7 @@ def UpdateSampleGrid(G2frame,data):
                     sampleData.update(copyDict)
         finally:
             dlg.Destroy()            
-        G2plt.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
+        G2pwpl.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
 
     def OnSampleFlagCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'])
@@ -3651,7 +3651,7 @@ def UpdateSampleGrid(G2frame,data):
         if invalid:
             return
         if tc.key == 0 and 'SASD' in histName:          #a kluge for Scale!
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif tc.key == 'Thick':
             wx.CallAfter(UpdateSampleGrid,G2frame,data)            
             
@@ -3887,7 +3887,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                 G2plt.PlotPowderLines(G2frame)
             else:
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
     def OnReload(event):
         peaks = []
@@ -4408,7 +4408,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame)
         return result
             
     def OnSortCells(event):
@@ -4646,7 +4646,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnIndexPeaks(event):
@@ -4700,7 +4700,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
-                    G2plt.PlotPatterns(G2frame)
+                    G2pwpl.PlotPatterns(G2frame)
             G2frame.dataWindow.CopyCell.Enable(True)
             G2frame.dataWindow.IndexPeaks.Enable(True)
             G2frame.dataWindow.MakeNewPhase.Enable(True)
@@ -4826,7 +4826,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         G2frame.HKL.append(list_tmp)
                     G2frame.HKL = np.array(G2frame.HKL)
 
-                    G2plt.PlotPatterns(G2frame)
+                    G2pwpl.PlotPatterns(G2frame)
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False
@@ -4844,7 +4844,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                         G2plt.PlotPowderLines(G2frame)
                     else:
-                        G2plt.PlotPatterns(G2frame)
+                        G2pwpl.PlotPatterns(G2frame)
                 except:
                     pass
             elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
@@ -4895,7 +4895,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = magcells[next]['SGData']
         A = G2lat.cell2A(magcells[next]['Cell'][:6])  
         G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-        G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         magDisplay.ForceRefresh()
         # change Scroll to display new setting
         xscroll = G2frame.dataWindow.GetScrollPos(wx.HORIZONTAL)
@@ -4935,7 +4935,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 mSGData = phase['SGData']
                 A = G2lat.cell2A(phase['Cell'][:6])  
                 G2frame.HKL = G2pwd.getHKLpeak(1.0,mSGData,A,Inst)
-                G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+                G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
             elif c == 2:
                 if MagCellsTable.GetValue(r,c):
                     MagCellsTable.SetValue(r,c,False)
@@ -5402,7 +5402,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  
             G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-            G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -5539,7 +5539,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  
             G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-            G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -7312,7 +7312,7 @@ def UpdateModelsGrid(G2frame,data):
     def RefreshPlots(newPlot=False):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
         elif 'Size' in PlotText:
             G2plt.PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
@@ -7780,7 +7780,7 @@ def UpdateModelsGrid(G2frame,data):
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
             PDBtext = 'P(R) dif: %.3f r-value: %.3f Nbeads: %d'%(PRcalc[r][-1],pattern[-1],len(selAtoms[1]))
 #            RefreshPlots(True)
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             G2plt.PlotSASDPairDist(G2frame)
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults,PDBtext)
         
@@ -8236,7 +8236,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
-        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        G2pwpl.PlotPatterns(G2frame,plotType='REFD')
         wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
         
     def OnModelPlot(event):
@@ -8373,7 +8373,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
-        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        G2pwpl.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
     def DoUnDo():
@@ -8427,7 +8427,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
@@ -8493,7 +8493,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
 
         overall = wx.BoxSizer(wx.HORIZONTAL)
         overall.Add(wx.StaticText(G2frame.dataWindow,label=' Scale: '),0,WACV)
@@ -8535,7 +8535,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             if Name == 'unit scatter':
                 data['Layers'][item]['iDenMul'] = [0.,False]
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
         def OnCheckBox(event):
@@ -8549,7 +8549,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['Layers'].insert(ind+1,{'Name':'vacuum','DenMul':[1.0,False],})
             data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
         def OnDeleteLayer(event):
@@ -8558,7 +8558,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             del data['Layers'][ind]
             data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
 
         def Recalculate(invalid,value,tc):
@@ -8569,7 +8569,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
 
         def OnMoveParm(event):
             Obj = event.GetEventObject()
@@ -8760,7 +8760,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
     
     Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:3]

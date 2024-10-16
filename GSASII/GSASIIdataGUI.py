@@ -57,6 +57,7 @@ import GSASIIfiles as G2fil
 import GSASIIstrIO as G2stIO
 import GSASIIlattice as G2lat
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
@@ -4099,7 +4100,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     self.PickIdText = None
                     self.PatternId = 0
                     if nItems['PWDR']:
-                        wx.CallAfter(G2plt.PlotPatterns,self,True)
+                        wx.CallAfter(G2pwpl.PlotPatterns,self,True)
                     else:
                         self.G2plotNB.Delete('Powder Patterns')
                         self.lastPlotType = None
@@ -5538,7 +5539,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
-            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+            refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
         try:
@@ -5620,7 +5621,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
-            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+            refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
 
@@ -6071,7 +6072,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             dlgp = G2G.RefinementProgress('Residual for histogram 0','Powder profile Rwp =',parent=self)
         self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
-            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+            refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
         try:
@@ -8184,7 +8185,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             pass
         elif 'xylim' in dir(G2frame):
             NewPlot = False
-        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
+        G2pwpl.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
     elif kind == 'HKLF':
         Name = G2frame.GPXtree.GetItemText(item)
         phaseName = G2pdG.IsHistogramInAnyPhase(G2frame,Name)
@@ -8606,18 +8607,18 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if G2frame.Contour:
                 G2frame.Contour = False
                 newPlot = True
-        G2plt.PlotPatterns(G2frame,newPlot)
+        G2pwpl.PlotPatterns(G2frame,newPlot)
     elif G2frame.GPXtree.GetItemText(item) == 'Background':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateBackground(G2frame,data)
-        G2plt.PlotPatterns(G2frame,True)
+        G2pwpl.PlotPatterns(G2frame,True)
     elif G2frame.GPXtree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
-        G2plt.PlotPatterns(G2frame,plotType=datatype,newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]
@@ -8631,7 +8632,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2pdG.UpdateModelsGrid(G2frame,data)
         elif prfx1 == 'REFD':
             G2pdG.UpdateREFDModelsGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType=prfx1)
+        G2pwpl.PlotPatterns(G2frame,plotType=prfx1)
         if prfx1 == 'SASD':
             if len(data['Size']['Distribution']):
                 G2plt.PlotSASDSizeDist(G2frame)
@@ -8654,7 +8655,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.GPXtree.SetItemPyData(item,data)
     
         G2pdG.UpdateSampleGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,True,plotType=datatype)
+        G2pwpl.PlotPatterns(G2frame,True,plotType=datatype)
     elif G2frame.GPXtree.GetItemText(item) == 'Index Peak List':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         for i in G2frame.ExportPeakList: i.Enable(True)
@@ -8673,7 +8674,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if G2frame.Contour:
                     G2frame.Contour = False
                     newPlot = True
-            G2plt.PlotPatterns(G2frame,newPlot)
+            G2pwpl.PlotPatterns(G2frame,newPlot)
     elif G2frame.GPXtree.GetItemText(item) == 'Unit Cells List':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
@@ -8705,8 +8706,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if G2frame.Contour:
                     G2frame.Contour = False
                     newPlot = True
-            G2plt.PlotPatterns(G2frame,newPlot)
-            G2plt.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame,newPlot)
+            G2pwpl.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.dataWindow.HideShow.Enable(False)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
@@ -8720,7 +8721,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if G2frame.Contour:
                 G2frame.Contour = False
                 newPlot = True
-        G2plt.PlotPatterns(G2frame,newPlot)
+        G2pwpl.PlotPatterns(G2frame,newPlot)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections
         G2frame.dataWindow.HideShow.Enable(True)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)

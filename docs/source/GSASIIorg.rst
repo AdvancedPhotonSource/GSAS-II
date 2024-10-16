@@ -913,28 +913,72 @@ Instrument Parameters[1]    Pdabc               (list of 4 float lists) Original
 Powder Reflection Data Structure
 --------------------------------
 
-For every phase in a histogram, the ``Reflection Lists`` value is a dict
+The data tree entry for powder diffraction histograms contains an
+entry labeled ``Reflection Lists`` containing a dict keyed by phase
+name, for every phase linked to the histogram. Each entry is itself a
+dict with four entries, with keys:
+
+==========  ====================================================
+  key         explanation
+==========  ====================================================
+RefList      This contains the reflection list, as described 
+             below.
+FF           Contains a dict with two entries, 
+             ``El`` which contains a list of (n) element types
+             and
+             ``FF` which contains a 55x(n) np.array of 
+             of form factor values
+Type         Contains a string specifying the type of 
+             histogram, such as 'PXC'
+Super        Contains a bool value, which is True when
+             the phase has a superspace spacegroup (3+1 
+             dimension).
+==========  ====================================================
+
 one element of which is `'RefList'`, which is a np.array containing
 reflections. The columns in that array are documented below.
 
 ==========  ====================================================
   index         explanation
 ==========  ====================================================
- 0,1,2          h,k,l (float)
- 3              (int) multiplicity
- 4              (float) d-space, :math:`\AA`
- 5              (float) pos, two-theta
- 6              (float) sig, Gaussian width
- 7              (float) gam, Lorenzian width
- 8              (float) :math:`F_{obs}^2`
- 9              (float) :math:`F_{calc}^2`
- 10             (float) reflection phase, in degrees
- 11             (float) intensity correction for reflection, this times
+ 0,1,2           h,k,l 
+ 3               multiplicity
+ 4               d-space, :math:`\AA`
+ 5               pos, two-theta
+ 6               sig, Gaussian width
+ 7               gam, Lorenzian width
+ 8               :math:`F_{obs}^2`
+ 9               :math:`F_{calc}^2`
+ 10              reflection phase, in degrees
+ 11              intensity correction for reflection, this times
                 :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
- 12             (float) Preferred orientation correction
- 13             (float) Transmission (absorption correction)
- 14             (float) Extinction correction
+ 12              Preferred orientation correction
+ 13              Transmission (absorption correction)
+ 14              Extinction correction
 ==========  ====================================================
+
+Note that when the ``Super`` entry in the phase's main dict is True,
+indicating that the phase is a 3+1 super-space group, the columns are: 
+
+==========  ====================================================
+  index         explanation
+==========  ====================================================
+ 0,1,2,3         h,k,l,m
+ 4               multiplicity
+ 5               d-space, :math:`\AA`
+ 6               pos, two-theta
+ 7               sig, Gaussian width
+ 8               gam, Lorenzian width
+ 9               :math:`F_{obs}^2`
+ 10               :math:`F_{calc}^2`
+ 11              reflection phase, in degrees
+ 12              intensity correction for reflection, this times
+                :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
+ 13              Preferred orientation correction
+ 14              Transmission (absorption correction)
+ 15              Extinction correction
+==========  ====================================================
+
 
 .. _Xtal_table:
 

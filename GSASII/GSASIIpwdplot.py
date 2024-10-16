@@ -184,6 +184,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
+        elif event.key == 'f' and 'PWDR' in plottype: # short or full length tick-marks
+            Page.plotStyle['flTicks'] = not Page.plotStyle.get('flTicks',False)
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -395,7 +397,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
-        'PlotPatterns: Update the status line with info based on the mouse position'
+        '''PlotPatterns: respond to motion of the cursor. The status line 
+        will be updated with info based on the mouse position. 
+        Also displays reflection labels as tooltips when mouse is over tickmarks
+        '''
         global PlotList
         G2plt.SetCursor(Page)
         # excluded region animation
@@ -688,8 +693,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             ind = event.ind
             xy = list(list(zip(np.take(xpos,ind),np.take(ypos,ind)))[0])
             # convert from plot units
+            xtick = xy[0] # selected tickmarck pos in 2theta/TOF or d-space (not Q)
             if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+                xtick = xy[0]
             elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,xy[0])
 #            if Page.plotStyle['sqrtPlot']:
@@ -802,6 +809,38 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
+                # if event.mouseevent.button == 3:
+                #     G2frame.itemPicked = None # prevent tickmark repositioning
+                #     ph = event.artist.get_label()
+                #     if ph not in Phases:
+                #         print(f'Tickmark label ({ph}) not in Reflection Lists, very odd')
+                #         return
+                #     # find column for d-space or 2theta/TOF 
+                #     Super = 0
+                #     if Phases[ph].get('Super',False):
+                #         Super = 1
+                #     if Page.plotStyle['dPlot']:
+                #         indx = 4 + Super
+                #     else:
+                #         indx = 5 + Super
+                #     limx = Plot.get_xlim()
+                #     dT = tolerance = np.fabs(limx[1]-limx[0])/100.
+                #     if Page.plotStyle['qPlot']:
+                #         if 'T' in Parms['Type'][0]: # TOF
+                #             dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
+                #         elif 'E' in Parms['Type'][0]: # energy dispersive x-rays
+                #             pass    #for now
+                #         else: # 'C' or  'B' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
+                #             wave = G2mth.getWave(Parms)
+                #             dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
+                #     found_indices = np.where(np.fabs(Phases[ph]['RefList'][:,indx]-xtick) < dT/2.)
+                #     found = Phases[ph]['RefList'][:,:6][found_indices]
+                #     if Super:
+                #         print(Phases[ph]['RefList'][:,:4][found_indices])
+                #     else:
+                #         print(Phases[ph]['RefList'][:,:3][found_indices])
+                #     #breakpoint()
+                #     return
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if pick not in Page.phaseList: # picked something other than a tickmark
                     return
@@ -1330,14 +1369,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.canvas.mpl_disconnect(b)
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
     if not G2frame.PickId:
         print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
         return
     elif 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
-        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        refColors=['b','r','c','g','m','k']
-        Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
-        Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
         Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
         G2frame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataWindow.moveDiffCurve.GetId())
         G2frame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataWindow.moveTickLoc.GetId())
@@ -1349,6 +1386,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveTickSpc.Enable(False)
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
+    # assemble a list of validated colors for tickmarks
+    valid_colors = []
+    invalid_colors = []
+    for color in GSASIIpath.GetConfigValue('Ref_Colors',getDefault=True).split():
+        try:
+            if mpl.colors.is_color_like(color):
+                valid_colors.append(color)
+            else:
+                invalid_colors.append(color)
+        except:
+            pass
+    if invalid_colors and not hasattr(Page,'phaseColors'): # show error once
+        print(f'**** bad color code(s): "{", ".join(invalid_colors)}" - redo Preferences/Ref_Colors ****')
+    if len(valid_colors) < 3:
+        refColors=['b','r','c','g','m','k']
+    else:
+        refColors = valid_colors
+    Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
+    Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
     # save information needed to reload from tree and redraw
     try:
         if not refineMode:
@@ -1389,6 +1445,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','T: toggle plot title',
+                'f: toggle full-length ticks',
                 'g: toggle grid','X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
@@ -2132,34 +2189,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                   or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
+            #Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
-            # assemble a list of validated colors for tickmarks
-            valid_colors = []
-            invalid_colors = []
-            for color in GSASIIpath.GetConfigValue('Ref_Colors',getDefault=True).split():
-                try:
-                    if mpl.colors.is_color_like(color):
-                        valid_colors.append(color)
-                    else:
-                        invalid_colors.append(color)
-                except:
-                    pass
-            if invalid_colors:
-                print(f'**** bad color code(s): "{", ".join(invalid_colors)}" - redo Preferences/Ref_Colors ****')
-            if len(valid_colors) < 3:
-                refColors=['b','r','c','g','m','k']
-            else:
-                refColors = valid_colors
-
-            Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
-            Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue
-                if phase not in Page.phaseColors:
-                    continue
+                if phase in Page.phaseColors:
+                    plcolor = Page.phaseColors[phase]
+                else: # how could this happen? 
+                    plcolor = 'k'
+                    #continue
                 peaks = Phases[phase].get('RefList',[])
                 if not len(peaks):
                     continue
@@ -2168,16 +2208,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-                plsym = Page.phaseColors[phase]+'|' # yellow should never happen!
+                plsym = '|' + plcolor
                 if Page.plotStyle['qPlot']:
-                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,plsym,mew=w,ms=l,
-                                picker=True,pickradius=3.,label=phase)
+                    xtick = 2*np.pi/peak.T[0]
                 elif Page.plotStyle['dPlot']:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,plsym,mew=w,ms=l,
-                                picker=True,pickradius=3.,label=phase)
+                    xtick = peak.T[0]
                 else:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,plsym,mew=w,ms=l,
-                                picker=True,pickradius=3.,label=phase)
+                    xtick = peak.T[1]
+                if not Page.plotStyle.get('flTicks',False): # short or full length tick-marks
+                    Page.tickDict[phase],_ = Plot.plot(xtick,pos,plsym,mew=w,ms=l,
+                                                       picker=True,pickradius=3.,label=phase)
+                else:
+                    Page.tickDict[phase] = []
+                    for xt in xtick:
+                        Page.tickDict[phase].append(Plot.axvline(xt,color=plcolor,
+                                                    picker=True,pickradius=3.,label=phase,lw=0.5))
             handles,legends = Plot.get_legend_handles_labels()  #got double entries in the phase legends for some reason
             if handles:
                 labels = dict(zip(legends,handles))     #this removes duplicate phase entries

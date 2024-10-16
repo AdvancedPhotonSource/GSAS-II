@@ -89,7 +89,7 @@ variable                   default             use
 ======================    ===============     ============================================================
 replotFunction              None               Defines a routine to be called to update the plot 
                                                after a refinement (unless None). Use
-                                               :meth:`G2PlotNoteBook.RegisterRedrawRoutine`
+                                               :meth:`GSASIIplot.G2PlotNoteBook.RegisterRedrawRoutine`
                                                to define this (and replotArgs & replotKwArgs). 
                                                Plotting functions that take significant time
                                                to complete should probably not use this.)
@@ -98,9 +98,10 @@ replotArgs                  []                 Defines the positional arguments 
 replotKwArgs                {}                 Defines the keyword arguments to be supplied to
                                                the replotFunction function or method. 
 plotRequiresRedraw         True                If set to True, after a refinement, the plot will be
-                                               closed (in :func:`GSASIIdataGUI.GSASII.CleanupOldPlots`)
+                                               closed (in :func:`GSASIIdataGUI.GSASII.ResetPlots`)
                                                if it was not updated after the refinement. Set this to
-                                               False using :meth:`G2PlotNoteBook.SetNoDelete`
+                                               False using
+                                               :meth:`GSASIIplot.G2PlotNoteBook.SetNoDelete`
                                                for plots that should not be deleted or do
                                                not change based on refinement results.
 plotInvalid                 False              Used to track if a plot has been updated. Set to False
@@ -118,6 +119,9 @@ plotInvalid                 False              Used to track if a plot has been 
     :members: 
     :private-members:
     :special-members:
+
+*GSASIIpwdplot Classes and routines*
+---------------------------------------
 
 .. automodule:: GSASIIpwdplot
     :members: 

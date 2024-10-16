@@ -39,7 +39,7 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
     :numbered: 4
 
     packages.rst
-    GSASIIorg.rst
+    objvarorg.rst
     GSASII.rst
     GSASIIobj.rst
     GSASIIutil.rst
@@ -51,7 +51,7 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
     GSASIIimage.rst
     GSASIImath.rst
     GSASIIindex.rst
-    GSASIIplot.rst
+    graphics.rst
     GSASIIpwd.rst
     SAS.rst
     GSASIIscriptable.rst

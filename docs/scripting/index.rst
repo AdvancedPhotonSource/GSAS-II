@@ -24,7 +24,7 @@ included here.
     :numbered: 4
 
     packages.rst
-    GSASIIorg.rst
+    objvarorg.rst
     GSASIIobj.rst
     GSASIIscriptable.rst
     scrpt-indices.rst

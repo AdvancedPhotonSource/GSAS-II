@@ -924,10 +924,10 @@ dict with four entries, with keys:
 RefList      This contains the reflection list, as described 
              below.
 FF           Contains a dict with two entries, 
-             ``El`` which contains a list of (n) element types
-             and
-             ``FF` which contains a 55x(n) np.array of 
-             of form factor values
+             ``El`` which contains a list of ``n`` 
+             element types and
+             ``FF`` which contains a 55 x ``n`` np.array of 
+             of form factor values.
 Type         Contains a string specifying the type of 
              histogram, such as 'PXC'
 Super        Contains a bool value, which is True when
@@ -950,8 +950,9 @@ reflections. The columns in that array are documented below.
  8               :math:`F_{obs}^2`
  9               :math:`F_{calc}^2`
  10              reflection phase, in degrees
- 11              intensity correction for reflection, this times
-                :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
+ 11              intensity correction for reflection, this 
+                 times :math:`F_{obs}^2` or :math:`F_{calc}^2` 
+                 gives Iobs or Icalc
  12              Preferred orientation correction
  13              Transmission (absorption correction)
  14              Extinction correction
@@ -970,10 +971,11 @@ indicating that the phase is a 3+1 super-space group, the columns are:
  7               sig, Gaussian width
  8               gam, Lorenzian width
  9               :math:`F_{obs}^2`
- 10               :math:`F_{calc}^2`
+ 10              :math:`F_{calc}^2`
  11              reflection phase, in degrees
- 12              intensity correction for reflection, this times
-                :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
+ 12              intensity correction for reflection, this
+                 times :math:`F_{obs}^2` or :math:`F_{calc}^2`
+                 gives Iobs or Icalc
  13              Preferred orientation correction
  14              Transmission (absorption correction)
  15              Extinction correction

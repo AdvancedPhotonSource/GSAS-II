@@ -636,6 +636,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             coords = G2frame.itemPicked.set_data(coords)
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
+            
+        def OnDragLabel(event):
+            '''Respond to dragging of a HKL label
+            '''
+            if event.xdata is None: return   # ignore if cursor out of window
+            if G2frame.itemPicked is None: return # not sure why this happens
+            try:
+                coords = list(G2frame.itemPicked.get_position())
+                coords[1] = event.ydata
+                data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                data[0]['HKLmarkers'] = data[0].get('HKLmarkers',{})
+                k1,k2 = G2frame.itemPicked.key
+                if Page.plotStyle['sqrtPlot']:
+                    data[0]['HKLmarkers'][k1][k2][0] = np.sign(coords[1])*coords[1]**2
+                else:
+                    data[0]['HKLmarkers'][k1][k2][0] = coords[1]
+                Page.canvas.restore_region(savedplot)
+                G2frame.itemPicked.set_position(coords)
+                Page.figure.gca().draw_artist(G2frame.itemPicked)
+                Page.canvas.blit(Page.figure.gca().bbox)
+            except:
+                pass
 
         def OnDragTickmarks(event):
             '''Respond to dragging of the reflection tick marks
@@ -673,6 +695,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.itemPicked.set_data(coords)
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
+            
+        def DeleteHKLlabel(HKLmarkers,key):
+            '''Delete an HKL label'''
+            del HKLmarkers[key[0]][key[1]]
+            G2frame.itemPicked = None
+            PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
         ####====== start of OnPickPwd
         global Page
@@ -684,7 +712,31 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             mouse = 1
             pick = G2frame.itemPicked
             ind = np.array([0])
-        else: 
+        elif str(event.artist).startswith('Text'):  # respond to a right or left click on a HKL Label
+            if G2frame.itemPicked is not None:  # only allow one selection 
+                return
+            pick = event.artist
+            xpos,ypos = pick.get_position()
+            if event.mouseevent.button == 3: # right click, delete HKL label
+                # but only 1st of the picked items, if multiple
+                G2frame.itemPicked = pick
+                data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                data[0]['HKLmarkers'] = data[0].get('HKLmarkers',{})
+                # finish event processing before deleting the selection, so that
+                # any other picked items are skipped
+                wx.CallLater(100,DeleteHKLlabel,data[0]['HKLmarkers'],pick.key)
+                return
+            # prepare to drag label (vertical position only)
+            G2frame.itemPicked = pick
+            pick.set_alpha(.3) # grey out text
+            Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+            Page.figure.gca()
+            Page.canvas.draw() # refresh & save bitmap
+            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+            G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLabel)
+            pick.set_alpha(1.0)
+            return
+        else:
             if G2frame.itemPicked is not None: return
             pick = event.artist
             mouse = event.mouseevent
@@ -694,10 +746,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xy = list(list(zip(np.take(xpos,ind),np.take(ypos,ind)))[0])
             # convert from plot units
             xtick = xy[0] # selected tickmarck pos in 2theta/TOF or d-space (not Q)
-            if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+            if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta/TOF
                 xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
                 xtick = xy[0]
-            elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+            elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta/TOF
                 xy[0] = G2lat.Dsp2pos(Parms,xy[0])
 #            if Page.plotStyle['sqrtPlot']:
 #                xy[1] = xy[1]**2
@@ -809,38 +861,58 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
-                # if event.mouseevent.button == 3:
-                #     G2frame.itemPicked = None # prevent tickmark repositioning
-                #     ph = event.artist.get_label()
-                #     if ph not in Phases:
-                #         print(f'Tickmark label ({ph}) not in Reflection Lists, very odd')
-                #         return
-                #     # find column for d-space or 2theta/TOF 
-                #     Super = 0
-                #     if Phases[ph].get('Super',False):
-                #         Super = 1
-                #     if Page.plotStyle['dPlot']:
-                #         indx = 4 + Super
-                #     else:
-                #         indx = 5 + Super
-                #     limx = Plot.get_xlim()
-                #     dT = tolerance = np.fabs(limx[1]-limx[0])/100.
-                #     if Page.plotStyle['qPlot']:
-                #         if 'T' in Parms['Type'][0]: # TOF
-                #             dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
-                #         elif 'E' in Parms['Type'][0]: # energy dispersive x-rays
-                #             pass    #for now
-                #         else: # 'C' or  'B' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
-                #             wave = G2mth.getWave(Parms)
-                #             dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
-                #     found_indices = np.where(np.fabs(Phases[ph]['RefList'][:,indx]-xtick) < dT/2.)
-                #     found = Phases[ph]['RefList'][:,:6][found_indices]
-                #     if Super:
-                #         print(Phases[ph]['RefList'][:,:4][found_indices])
-                #     else:
-                #         print(Phases[ph]['RefList'][:,:3][found_indices])
-                #     #breakpoint()
-                #     return
+                #################################################################
+                if event.mouseevent.button == 3:
+                    G2frame.itemPicked = None # prevent tickmark repositioning
+                    ph = event.artist.get_label()
+                    if ph not in Phases:
+                        print(f'Tickmark label ({ph}) not in Reflection Lists, very odd')
+                        return
+                    # find column for d-space or 2theta/TOF 
+                    Super = 0
+                    if Phases[ph].get('Super',False):
+                        Super = 1
+                    if Page.plotStyle['dPlot']:
+                        indx = 4 + Super
+                    else:
+                        indx = 5 + Super
+                    limx = Plot.get_xlim()
+                    dT = tolerance = np.fabs(limx[1]-limx[0])/100.
+                    if Page.plotStyle['qPlot']:
+                        if 'T' in Parms['Type'][0]: # TOF
+                            dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
+                        elif 'E' in Parms['Type'][0]: # energy dispersive x-rays
+                            pass    #for now
+                        else: # 'C' or  'B' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
+                            wave = G2mth.getWave(Parms)
+                            dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
+                    # locate picked tick markers
+                    found_indices = np.where(np.fabs(Phases[ph]['RefList'][:,indx]-xtick) < dT/2.)
+                    if len(found_indices) == 0: return
+                    # get storage location for labeled reflections
+                    data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                    data[0]['HKLmarkers'] = data[0].get('HKLmarkers',{})
+                    n = 3
+                    if Super: n = 4
+                    data[0]['HKLmarkers'][ph] = data[0]['HKLmarkers'].get(ph,{})
+                    ytick = ypos[0] # position for tick mark
+                    for i,refl in enumerate(Phases[ph]['RefList'][found_indices]):
+                        ytick -= 3*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/100
+                        key = f"{refl[5+Super]:.7g}"
+                        data[0]['HKLmarkers'][ph][key] = data[0][
+                            'HKLmarkers'][ph].get(key,[None,[]])
+                        if Page.plotStyle['sqrtPlot']:
+                            data[0]['HKLmarkers'][ph][key][0] = np.sign(ytick)*ytick**2 
+                        else:
+                            data[0]['HKLmarkers'][ph][key][0] = ytick
+                        # add reflection if not already present
+                        for hkl in data[0]['HKLmarkers'][ph][key][1]:
+                            if sum(np.abs(refl[:n] - hkl)) == 0: break
+                        else:
+                            data[0]['HKLmarkers'][ph][key][1].append(tuple(np.rint(refl[:n]).astype(int)))
+                    wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                    return
+                #################################################################
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if pick not in Page.phaseList: # picked something other than a tickmark
                     return
@@ -1238,6 +1310,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return string
         else:
             return '_'+string
+    
+    def onDelHKLallLabels(event):
+        '''Delete all HKL markers in all phases'''
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+        data[0]['HKLmarkers'] = {}
+        PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
 #### beginning PlotPatterns execution
     global exclLines,Page
@@ -1381,6 +1459,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataWindow.moveTickSpc.GetId())
         G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2frame.dataWindow.setPlotLim.GetId())
         G2frame.Bind(wx.EVT_MENU, onPlotFormat, id=G2frame.dataWindow.setPlotFmt.GetId())
+        G2frame.Bind(wx.EVT_MENU, onDelHKLallLabels, id=G2G.wxID_DELHKLLBLS)
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
@@ -2134,6 +2213,45 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
+    #============================================================
+    # plot HKL labels
+    props = dict(boxstyle='round,pad=0.15', facecolor='#ccc',
+                     alpha=0.5, ec='#ccc')
+    markHKLs = (
+        G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
+          or 
+        'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
+        or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
+                    G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
+                )
+    for ph,markerlist in data[0].get('HKLmarkers',{}).items():
+        if Page.plotStyle['logPlot'] or not markHKLs: continue
+        if ph not in Page.phaseColors: continue
+        color = Page.phaseColors[ph]
+        for key,(ypos,hkls) in markerlist.items():
+            if len(hkls) == 0: continue
+            fmt = len(hkls[0])*'{:.0f}'
+            # are commas needed?
+            # (perhaps someday we figure out how to have 1 bar in place of -1)
+            for hkl in hkls:
+                if np.any([True for i in hkl if abs(i) > 9 or i < 0]):
+                    fmt.replace('}{','},{')
+                    break
+            lbl = ''
+            for hkl in hkls:
+                if lbl: lbl += '\n'
+                lbl += fmt.format(*hkl)
+            xpos = float(key)
+            if Page.plotStyle['qPlot']:
+                xpos = 2.*np.pi/G2lat.Pos2dsp(Parms,xpos)
+            elif Page.plotStyle['dPlot']:
+                xpos = G2lat.Pos2dsp(Parms,xpos)
+            if Page.plotStyle['sqrtPlot']:
+                ypos = np.sqrt(abs(ypos))*np.sign(ypos)
+            artist = Plot.text(xpos,ypos,lbl,fontsize=8,c=color,ha='center',
+                      va='top',bbox=props,picker=True)
+            artist.key = (ph,key)
+    #============================================================
     if timeDebug:
         print('plot fill time: %.3f'%(time.time()-time0))
     if Page.plotStyle.get('title',True) and not magLineList:
@@ -2352,7 +2470,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if DifLine[0]:
             G2frame.dataWindow.moveDiffCurve.Enable(True)
     if refineMode: return refPlotUpdate
-            
+
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     '''Show a customizable "Rietveld" plot and export as a publication-quality
     file. Will only work when a single pattern is displayed. 

@@ -6565,8 +6565,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.moveTickSpc = self.ErrorAnal.Append(wx.ID_ANY,'Set tick space','Click to set spacing between phase tick marks')
         self.setPlotLim = self.ErrorAnal.Append(wx.ID_ANY,'Set plot limits...','Allows entry of plot min & max values')
         self.setPlotFmt = self.ErrorAnal.Append(wx.ID_ANY,'Set plot formatting...','Allows changes to text size and line widths, etc.')
-        G2G.Define_wxId('wxID_DELHKLLBLS')
-        self.ErrorAnal.Append(G2G.wxID_DELHKLLBLS,'Clear hkl labels','Delete all labeled reflections')
+        G2G.Define_wxId('wxID_CHHKLLBLS')
+        self.ErrorAnal.Append(G2G.wxID_CHHKLLBLS,'hkl label config...','Configure labels on reflections or delete them')
         self.PostfillDataMenu()
             
         # HKLF - wxIDs defined in PWDR & SASD above

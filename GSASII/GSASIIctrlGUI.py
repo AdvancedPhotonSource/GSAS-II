@@ -1301,6 +1301,29 @@ class G2ChoiceButton(wx.Choice):
     :param int/str strKey: the dict key or the list index for the string value 
       The ``strLoc[strKey]`` element must exist or strLoc must be None (default).
     :param function onChoice: name of a function to call when the choice is made.
+
+    Example 1::
+
+        data['Orientation'] = 1
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['Horizontal','Vertical'],
+                            data,'Orientation',
+                            onChoice=replot)
+
+      This will select "Vertical" as the initial value and data['Orientation']
+      will be set to 0 or 1 (as int values).
+
+    Example 2::
+
+        data[0]['Font'] = '8'
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['6','8','10','12','14','16'],
+                            None,None,
+                            data[0],'Font',
+                            onChoice=replot)
+
+      This will select "8" as the initial value and data[0]['Font']
+      will be set to one of the size options as a string.
     '''
     def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
                  onChoice=None,**kwargs):
@@ -2175,6 +2198,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
       does not have refine flag.
 
     Example::
+
       array = data 
       labelLst = ['v1','v2']
       elemKeysLst = [['v1'], ['v2',0]]
@@ -2976,7 +3000,7 @@ class MultiDataDialog(wx.Dialog):
     :param str header: a string to be placed at the top of the 
        window. Ignored if None (the default.)
 
-    example 1::
+    Example 1::
 
         dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
                 prompts=['lattice constants tolerance',
@@ -2989,7 +3013,7 @@ class MultiDataDialog(wx.Dialog):
         latTol,coordTol,occTol = dlg.GetValues()
         dlg.Destroy()
 
-    example 2::
+    Example 2::
 
         nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
         dm = ['1','2','3','4','5','6']

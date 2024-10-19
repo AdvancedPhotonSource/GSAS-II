@@ -116,6 +116,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     PlotPatterns(G2frame,plotType=plotType)
 
 def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
+    '''shortcut to plot vertical lines for limits, etc.'''
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
             picker=pick,pickradius=2.,linestyle='dotted'))
@@ -128,16 +129,16 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False):
-    '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
-    2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
-    plotting available.
+    '''Powder pattern plotting package - displays single or multiple powder 
+    patterns as intensity vs 2-theta, q or TOF. Can display multiple patterns 
+    as "waterfall plots" or contour plots. Log I plotting available.
 
-    Note that plotting information will be found in:
+    Note that information needed for plotting will be found in:
        G2frame.PatternId (contains the tree item for the current histogram)
        
        G2frame.PickId (contains the actual selected tree item (can be child of histogram)
 
-       G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
+       G2frame.HKL (used for tool tip display of hkl for selected phase reflection list). Not used for HKL markers.
     '''
     global PlotList
     def PublishPlot(event):
@@ -862,7 +863,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
                 #################################################################
-                if event.mouseevent.button == 3:
+                if event is not None and event.mouseevent.button == 3:
+                    data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                    font = int(data[0]['HKLconfig'].get('Font','8'))
+                    angle = data[0]['HKLconfig'].get('Orientation',0)
                     G2frame.itemPicked = None # prevent tickmark repositioning
                     ph = event.artist.get_label()
                     if ph not in Phases:
@@ -880,6 +884,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     dT = tolerance = np.fabs(limx[1]-limx[0])/100.
                     if Page.plotStyle['qPlot']:
                         if 'T' in Parms['Type'][0]: # TOF
+                            q = 2.*np.pi/G2lat.Pos2dsp(Parms,xpos)
                             dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
                         elif 'E' in Parms['Type'][0]: # energy dispersive x-rays
                             pass    #for now
@@ -895,9 +900,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     n = 3
                     if Super: n = 4
                     data[0]['HKLmarkers'][ph] = data[0]['HKLmarkers'].get(ph,{})
-                    ytick = ypos[0] # position for tick mark
+                    # position for 1st tick mark
+                    ytick = ypos[0] - 3*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/100
                     for i,refl in enumerate(Phases[ph]['RefList'][found_indices]):
-                        ytick -= 3*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/100
                         key = f"{refl[5+Super]:.7g}"
                         data[0]['HKLmarkers'][ph][key] = data[0][
                             'HKLmarkers'][ph].get(key,[None,[]])
@@ -910,6 +915,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             if sum(np.abs(refl[:n] - hkl)) == 0: break
                         else:
                             data[0]['HKLmarkers'][ph][key][1].append(tuple(np.rint(refl[:n]).astype(int)))
+                        # offset next tick label position
+                        ytick -= (1+angle)*3*(font/8.)*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/100
                     wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                     return
                 #################################################################
@@ -1311,12 +1318,68 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             return '_'+string
     
-    def onDelHKLallLabels(event):
-        '''Delete all HKL markers in all phases'''
+    def onHKLabelConfig(event):
+        '''Configure all HKL markers in all phases'''
+        def replot(*args):
+            PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
+        def onDelAll(event):
+            '''Delete all HKL markers in all phases'''
+            data[0]['HKLmarkers'] = {}
+            dlg.EndModal(wx.ID_OK)
+            replot()
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-        data[0]['HKLmarkers'] = {}
-        PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
-
+        data[0]['HKLconfig'] = data[0].get('HKLconfig',{})
+        dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(wx.StaticText(dlg,label='Configure Reflection (hkl) Labels'),
+                      0,wx.ALIGN_CENTER_HORIZONTAL|wx.RIGHT|wx.LEFT|wx.BOTTOM,15)
+        hsizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
+        sizer.Add(hsizer)
+        hsizer.Add(wx.StaticText(dlg,label='Label Orientation: '))
+        data[0]['HKLconfig']['Orientation'] = data[0][
+                'HKLconfig'].get('Orientation',0)
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['Horizontal','Vertical'],
+                            data[0]['HKLconfig'],'Orientation',
+                            onChoice=replot)
+        hsizer.Add(choice)
+        #
+        hsizer.Add(wx.StaticText(dlg,label='Font size: '))
+        data[0]['HKLconfig']['Font'] = data[0][
+                'HKLconfig'].get('Font','8')
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['6','8','10','12','14','16'],
+                            None,None,
+                            data[0]['HKLconfig'],'Font',
+                            onChoice=replot)
+        hsizer.Add(choice)
+        #
+        hsizer.Add(wx.StaticText(dlg,label='Box transparency: '))
+        data[0]['HKLconfig']['alpha'] = data[0][
+                'HKLconfig'].get('alpha',2)
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['0','25%','50%','75%','100%'],
+                            data[0]['HKLconfig'],'alpha',
+                            onChoice=replot)
+        hsizer.Add(choice)
+        #
+        btn = wx.Button(dlg, wx.ID_ANY,'Delete all labels')
+        btn.Bind(wx.EVT_BUTTON, onDelAll)
+        sizer.Add((-1,10))
+        sizer.Add(btn, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_OK)
+        btn.SetDefault()
+        btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        dlg.CenterOnParent()
+        dlg.ShowModal()
+        return
+            
 #### beginning PlotPatterns execution
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
@@ -1459,7 +1522,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataWindow.moveTickSpc.GetId())
         G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2frame.dataWindow.setPlotLim.GetId())
         G2frame.Bind(wx.EVT_MENU, onPlotFormat, id=G2frame.dataWindow.setPlotFmt.GetId())
-        G2frame.Bind(wx.EVT_MENU, onDelHKLallLabels, id=G2G.wxID_DELHKLLBLS)
+        G2frame.Bind(wx.EVT_MENU, onHKLabelConfig, id=G2G.wxID_CHHKLLBLS)
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
@@ -2215,8 +2278,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     #============================================================
     # plot HKL labels
+    data[0]['HKLconfig'] = data[0].get('HKLconfig',{})
+    alpha = data[0]['HKLconfig'].get('alpha',2)
+    font = int(data[0]['HKLconfig'].get('Font','8'))
+    angle = int(90 * data[0]['HKLconfig'].get('Orientation',0))
     props = dict(boxstyle='round,pad=0.15', facecolor='#ccc',
-                     alpha=0.5, ec='#ccc')
+                     alpha=(4 - alpha)/4., ec='#ccc')
     markHKLs = (
         G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
           or 
@@ -2230,17 +2297,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         color = Page.phaseColors[ph]
         for key,(ypos,hkls) in markerlist.items():
             if len(hkls) == 0: continue
-            fmt = len(hkls[0])*'{:.0f}'
-            # are commas needed?
-            # (perhaps someday we figure out how to have 1 bar in place of -1)
+            comma = False             # are commas needed?
             for hkl in hkls:
-                if np.any([True for i in hkl if abs(i) > 9 or i < 0]):
-                    fmt.replace('}{','},{')
+                if np.any([True for i in hkl if abs(i) > 9]):
+                    comma = True
                     break
             lbl = ''
             for hkl in hkls:
+                hkllbl = ''
                 if lbl: lbl += '\n'
-                lbl += fmt.format(*hkl)
+                for i in hkl:
+                    if hkllbl and comma: hkllbl += ','
+                    if i < 0:
+                        lbl += r'$\overline{' + f'{-i}' + r'}$'
+                    else:
+                        lbl += f'{i}'
             xpos = float(key)
             if Page.plotStyle['qPlot']:
                 xpos = 2.*np.pi/G2lat.Pos2dsp(Parms,xpos)
@@ -2248,8 +2319,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 xpos = G2lat.Pos2dsp(Parms,xpos)
             if Page.plotStyle['sqrtPlot']:
                 ypos = np.sqrt(abs(ypos))*np.sign(ypos)
-            artist = Plot.text(xpos,ypos,lbl,fontsize=8,c=color,ha='center',
-                      va='top',bbox=props,picker=True)
+            artist = Plot.text(xpos,ypos,lbl,fontsize=font,c=color,ha='center',
+                      va='top',bbox=props,picker=True,rotation=angle)
             artist.key = (ph,key)
     #============================================================
     if timeDebug:
@@ -2472,8 +2543,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if refineMode: return refPlotUpdate
 
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
-    '''Show a customizable "Rietveld" plot and export as a publication-quality
-    file. Will only work when a single pattern is displayed. 
+    '''Creates a window to show a customizable "Rietveld" plot. Exports that 
+    plot as a publication-quality file. Will only work only when a single 
+    pattern is displayed.
 
     :param wx.Frame G2Frame: the main GSAS-II window
     :param list Pattern: list of np.array items with obs, calc (etc.) diffraction pattern
@@ -2545,64 +2617,6 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)
         figure.canvas.draw()
         
-    # blocks of code used in grace .agr files
-    linedef = '''@{0} legend "{1}"
-@{0} line color {2}
-@{0} errorbar color {2}
-@{0} symbol color {2}
-@{0} symbol {3}
-@{0} symbol fill color {2}
-@{0} linewidth {4}
-@{0} symbol linewidth {6}
-@{0} line type {7}
-@{0} symbol size {5}
-@{0} symbol char 46
-@{0} symbol fill pattern 1
-@{0} hidden false
-@{0} errorbar off\n'''
-    linedef1 = '''@{0} legend "{1}"
-@{0} line color {2}
-@{0} errorbar color {2}
-@{0} symbol color {2}
-@{0} symbol fill color {2}
-@{0} symbol 11
-@{0} linewidth 0
-@{0} linestyle 0
-@{0} symbol size {3}
-@{0} symbol linewidth {4}
-@{0} symbol char 124
-@{0} symbol fill pattern 1
-@{0} hidden false\n'''
-    linedef2 = '''@{0} legend "{1}"
-@{0} line color {2}
-@{0} errorbar color {2}
-@{0} symbol color {2}
-@{0} symbol fill color {2}
-@{0} symbol 0
-@{0} linewidth 0
-@{0} linestyle 0
-@{0} symbol size 1
-@{0} symbol linewidth 0
-@{0} symbol char 124
-@{0} symbol fill pattern 1
-@{0} hidden false
-@{0} errorbar on
-@{0} errorbar size 0
-@{0} errorbar riser linewidth {3}\n'''
-    linedef3 = '''@{0} legend "{1}"
-@{0} line color {2}
-@{0} errorbar color {2}
-@{0} symbol color {2}
-@{0} symbol {3}
-@{0} symbol fill color {2}
-@{0} linewidth {4}
-@{0} symbol linewidth {6}
-@{0} line type {7}
-@{0} symbol size {5}
-@{0} symbol char 46
-@{0} symbol fill pattern 1
-@{0} hidden false
-@{0} errorbar off\n'''    
         
     def CopyRietveld2Grace(Pattern,Plot,Page,plotOpt,filename):
         '''Copy the contents of the Rietveld graph from the plot window to
@@ -2619,6 +2633,64 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             return (np.sum(([np.array(mpcls.to_rgb(c)) for c in colorlist] -
                                 np.array(color[:3]))**2,axis=1)).argmin()
 
+        # blocks of code used in grace .agr files
+        linedef = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol {3}
+@{0} symbol fill color {2}
+@{0} linewidth {4}
+@{0} symbol linewidth {6}
+@{0} line type {7}
+@{0} symbol size {5}
+@{0} symbol char 46
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar off\n'''
+        linedef1 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol fill color {2}
+@{0} symbol 11
+@{0} linewidth 0
+@{0} linestyle 0
+@{0} symbol size {3}
+@{0} symbol linewidth {4}
+@{0} symbol char 124
+@{0} symbol fill pattern 1
+@{0} hidden false\n'''
+        linedef2 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol fill color {2}
+@{0} symbol 0
+@{0} linewidth 0
+@{0} linestyle 0
+@{0} symbol size 1
+@{0} symbol linewidth 0
+@{0} symbol char 124
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar on
+@{0} errorbar size 0
+@{0} errorbar riser linewidth {3}\n'''
+        linedef3 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol {3}
+@{0} symbol fill color {2}
+@{0} linewidth {4}
+@{0} symbol linewidth {6}
+@{0} line type {7}
+@{0} symbol size {5}
+@{0} symbol char 46
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar off\n'''    
         grace_symbols = {"":0, "o":1 ,"s":2, "D":3, "^":4, "3":5, 'v':6,
             "4": 7, "+":8, "P":8, "x":9, "X":9, "*":10, ".":11}
 
@@ -3644,11 +3716,11 @@ def changePlotSettings(G2frame,Plot):
             for l in P.get_yaxis().get_ticklabels():
                 l.set_fontsize(plotOpt['labelSize'])
             for l in P.lines: 
-                l.set_linewidth(plotOpt['lineWid'])
-            P.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
-            P.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
+                l.set_linewidth(float(plotOpt['lineWid']))
+            P.get_xaxis().set_tick_params(width=float(plotOpt['lineWid']))
+            P.get_yaxis().set_tick_params(width=float(plotOpt['lineWid']))
             for l in P.spines.values():
-                l.set_linewidth(plotOpt['lineWid'])
+                l.set_linewidth(float(plotOpt['lineWid']))
         if Page.plotStyle.get('title',True):        
             Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
         for i,P in enumerate(Plot.figure.axes):

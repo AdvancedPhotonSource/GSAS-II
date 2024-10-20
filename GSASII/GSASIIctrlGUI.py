@@ -1310,8 +1310,8 @@ class G2ChoiceButton(wx.Choice):
                             data,'Orientation',
                             onChoice=replot)
 
-      This will select "Vertical" as the initial value and data['Orientation']
-      will be set to 0 or 1 (as int values).
+    This will show "Vertical" as the initial value, and based on what is 
+    selected, ``data['Orientation']`` will be set to 0 or 1 (as an int value).
 
     Example 2::
 
@@ -1322,8 +1322,9 @@ class G2ChoiceButton(wx.Choice):
                             data[0],'Font',
                             onChoice=replot)
 
-      This will select "8" as the initial value and data[0]['Font']
-      will be set to one of the size options as a string.
+    This will show "8" as the initial value, and based on what is selected,
+    ``data[0]['Font']`` will be set to a string with one of the size 
+    options ("6"... "16").
     '''
     def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
                  onChoice=None,**kwargs):

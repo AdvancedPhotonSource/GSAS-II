@@ -609,10 +609,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
             btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
             btnsizer.Add(btn)
 
-        #btn = wx.Button(dlg, wx.ID_CANCEL)
-        #btnsizer.AddButton(btn)
         btnsizer.Add((1,1),1,wx.EXPAND,1)
-        #btnsizer.Realize()
         mainSizer.Add((-1,5),1,wx.EXPAND,1)
         mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
         mainSizer.Add((-1,10))
@@ -805,11 +802,6 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDerivCalc, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Evaluate expression and s.u.','Perform uncertainty analysis on an expression of GSAS-II parameters')
         self.Bind(wx.EVT_MENU, self.OnExpressionCalc, id=item.GetId())
-        
-        item = parent.Append(wx.ID_ANY,'Save partials as csv','Save the computed partials as a csv file')
-        self.Refine.append(item)
-        item.Enable(state) # disabled during sequential fits
-        self.Bind(wx.EVT_MENU, self.OnSavePartials, id=item.GetId())
         
         item = parent.Append(wx.ID_ANY,'Setup Cluster Analysis','Setup Cluster Analysis')
         self.Bind(wx.EVT_MENU, self.OnClusterAnalysis, id=item.GetId())        
@@ -6567,6 +6559,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.setPlotFmt = self.ErrorAnal.Append(wx.ID_ANY,'Set plot formatting...','Allows changes to text size and line widths, etc.')
         G2G.Define_wxId('wxID_CHHKLLBLS')
         self.ErrorAnal.Append(G2G.wxID_CHHKLLBLS,'hkl label config...','Configure labels on reflections or delete them')
+        G2G.Define_wxId('wxID_CHPHPARTIAL')
+        G2frame.PartialConfig = self.ErrorAnal.Append(G2G.wxID_CHPHPARTIAL,'Phase partial config...','Configure how individual phase profiles are shown')
+        G2G.Define_wxId('wxID_PHPARTIALCSV')
+        G2frame.PartialCSV = self.ErrorAnal.Append(G2G.wxID_PHPARTIALCSV,'Save partials as csv','Save the computed partials as a csv file')
         self.PostfillDataMenu()
             
         # HKLF - wxIDs defined in PWDR & SASD above

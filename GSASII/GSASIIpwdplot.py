@@ -85,6 +85,7 @@ plotOpt['fmtChoices']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
+partialOpts = {}  # options for display of partials
 
 #### PlotPatterns ################################################################################
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
@@ -1318,15 +1319,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             return '_'+string
     
+    def Replot(*args):
+        PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
+        
     def onHKLabelConfig(event):
         '''Configure all HKL markers in all phases'''
-        def replot(*args):
-            PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
         def onDelAll(event):
             '''Delete all HKL markers in all phases'''
             data[0]['HKLmarkers'] = {}
             dlg.EndModal(wx.ID_OK)
-            replot()
+            Replot()
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         data[0]['HKLconfig'] = data[0].get('HKLconfig',{})
         dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -1341,7 +1343,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         choice = G2G.G2ChoiceButton(dlg,
                             ['Horizontal','Vertical'],
                             data[0]['HKLconfig'],'Orientation',
-                            onChoice=replot)
+                            onChoice=Replot)
         hsizer.Add(choice)
         #
         hsizer.Add(wx.StaticText(dlg,label='Font size: '))
@@ -1351,7 +1353,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             ['6','8','10','12','14','16'],
                             None,None,
                             data[0]['HKLconfig'],'Font',
-                            onChoice=replot)
+                            onChoice=Replot)
         hsizer.Add(choice)
         #
         hsizer.Add(wx.StaticText(dlg,label='Box transparency: '))
@@ -1360,7 +1362,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         choice = G2G.G2ChoiceButton(dlg,
                             ['0','25%','50%','75%','100%'],
                             data[0]['HKLconfig'],'alpha',
-                            onChoice=replot)
+                            onChoice=Replot)
         hsizer.Add(choice)
         #
         btn = wx.Button(dlg, wx.ID_ANY,'Delete all labels')
@@ -1379,6 +1381,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         dlg.CenterOnParent()
         dlg.ShowModal()
         return
+    
+    def onPartialConfig(event):
+        '''respond to Phase partials config menu command. 
+        Computes partials if needed and then displays a window with options
+        for each phase. Plot is refreshed each time a setting is changed.
+        '''
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        phPartialFile = Controls['PhasePartials']
+        if phPartialFile is None or not os.path.exists(phPartialFile):
+            dlg = wx.MessageDialog(G2frame,
+                'Phase partials (intensity profiles for each individual phase) have not been computed. Do you want to compute them?',
+                    'Confirm compute',wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result != wx.ID_YES: return
+            G2frame.OnRefinePartials(None)
+        if not Page.plotStyle['partials']:
+            Page.plotStyle['partials'] = True
+            Replot()
+        configPartialDisplay(G2frame,Page.phaseColors,Replot)
             
 #### beginning PlotPatterns execution
     global exclLines,Page
@@ -1386,7 +1410,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     plottype = plotType
-    
+
     # get powder pattern colors from config settings
     pwdrCol = {}
     for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
@@ -1523,6 +1547,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2frame.dataWindow.setPlotLim.GetId())
         G2frame.Bind(wx.EVT_MENU, onPlotFormat, id=G2frame.dataWindow.setPlotFmt.GetId())
         G2frame.Bind(wx.EVT_MENU, onHKLabelConfig, id=G2G.wxID_CHHKLLBLS)
+        if len(G2frame.Refine): # extend state for new menus to match main
+            state = G2frame.Refine[0].IsEnabled()
+        else:
+            state = False
+        G2frame.Bind(wx.EVT_MENU, onPartialConfig, id=G2G.wxID_CHPHPARTIAL)
+        G2frame.PartialConfig.Enable(state)
+        G2frame.Bind(wx.EVT_MENU, G2frame.OnSavePartials, id=G2G.wxID_PHPARTIALCSV)
+        G2frame.PartialCSV.Enable(state) # disabled during sequential fits
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
@@ -1546,7 +1578,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         refColors = valid_colors
     Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
-    Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
+    if not hasattr(Page,'phaseColors'): Page.phaseColors = {}
+    for i,p in enumerate(Phases):
+        Page.phaseColors[p] = Page.phaseColors.get(p,refColors[i%len(refColors)])
     # save information needed to reload from tree and redraw
     try:
         if not refineMode:
@@ -2397,7 +2431,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-                plsym = '|' + plcolor
                 if Page.plotStyle['qPlot']:
                     xtick = 2*np.pi/peak.T[0]
                 elif Page.plotStyle['dPlot']:
@@ -2405,8 +2438,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     xtick = peak.T[1]
                 if not Page.plotStyle.get('flTicks',False): # short or full length tick-marks
-                    Page.tickDict[phase],_ = Plot.plot(xtick,pos,plsym,mew=w,ms=l,
-                                                       picker=True,pickradius=3.,label=phase)
+                    Page.tickDict[phase],_ = Plot.plot(xtick,pos,'|',mew=w,ms=l,
+                                                       picker=True,pickradius=3.,
+                                                       label=phase,color=plcolor)
                 else:
                     Page.tickDict[phase] = []
                     for xt in xtick:
@@ -2501,6 +2535,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     # plot the partials. TODO: get partials to show up in publication plot
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
     if 'PWDR' in plottype and G2frame.SinglePlot and Page.plotStyle['partials'] and 'hId' in data[0]:
+        initPartialOpts(Page.phaseColors)
         x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])            
         if x is not None and len(ypList) > 1:
             if Page.plotStyle['qPlot']:
@@ -2509,13 +2544,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 x = G2lat.Pos2dsp(Parms,x)
             olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
             for ph in ypList:
+                if not partialOpts[ph]['Show']: continue
+                pcolor = partialOpts[ph]['color']
+                pwidth = partialOpts[ph]['width']
+                pLinStyl = partialOpts[ph]['MPLstyle']
                 if G2frame.SubBack:
                     y = ypList[ph]
                 else:
                     y = ypList[ph]+yb
                 if Page.plotStyle['sqrtPlot']:
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
-                Plot.plot(x,y,Page.phaseColors.get(ph,'k'),picker=False,label=ph,linewidth=1.5,dashes=(5,5))
+                Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
+                              linestyle=pLinStyl)
                 plotOpt['lineList'].append(ph)   # needed?
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
@@ -3851,4 +3891,94 @@ def uneqImgShow(figure,ax,Xlist,Ylist,cmap,vmin,vmax,Ylbls=[]):
     mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=mpl.colors.Normalize(vmin,vmax))
     # does not plot grid lines at present
     # if mpl.rcParams['axes.grid'] 
-    
+
+def initPartialOpts(phaseColors):
+    '''Make sure that the options for display of partials are all defined
+    '''
+    for p in phaseColors:
+        partialOpts[p] = partialOpts.get(p,{})
+        partialOpts[p]['Show'] = partialOpts[p].get('Show',True)
+        partialOpts[p]['color'] = partialOpts[p].get('color',phaseColors[p])
+        partialOpts[p]['width'] = partialOpts[p].get('width','1')
+        partialOpts[p]['style'] = partialOpts[p].get('style',2) # index in ltypeChoices/ltypeMPLname (see below)
+        partialOpts[p]['MPLstyle'] = partialOpts[p].get('MPLstyle','--')
+        
+def configPartialDisplay(G2frame,phaseColors,RefreshPlot):
+    '''Select which phase are diplayed with phase partials and how they are 
+    displayed
+    '''
+    def OnSelectColor(event):
+        '''Respond to a change in color
+        '''
+        p = event.GetEventObject().phase
+        c = event.GetValue()
+        # convert wx.Colour to mpl color string
+        partialOpts[p]['color'] = mpl.colors.to_hex(np.array(c.Get())/255)
+        phaseColors[p] = partialOpts[p]['color']
+        RefreshPlot()
+        
+    def StyleChange(*args):
+        'define MPL line style from line style index'
+        for p in partialOpts:
+            try: 
+                partialOpts[p]['MPLstyle'] = ltypeMPLname[partialOpts[p]['style']]
+            except:
+                partialOpts[p]['MPLstyle'] = '-'
+        RefreshPlot()
+
+    import  wx.lib.colourselect as csel
+    parent=G2frame
+    dlg = wx.Dialog(parent,
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(
+        wx.StaticText(dlg,wx.ID_ANY,'Set options for display of Phase partials\n(profiles for each phase)',
+                          style=wx.ALIGN_CENTER),
+        0,wx.ALIGN_CENTER)
+    mainSizer.Add((-1,10))
+    headers = ['phase name  ',' Show ',' Color ','Width','Line type']
+    gsizer = wx.FlexGridSizer(cols=len(headers),hgap=2,vgap=2)
+    for h in headers:
+        txt = wx.StaticText(dlg,wx.ID_ANY,h)
+        txt.Wrap(150)
+        gsizer.Add(txt,0,wx.ALIGN_CENTER|wx.BOTTOM,6)
+    initPartialOpts(phaseColors)
+    for p in phaseColors:
+        txt = wx.StaticText(dlg,wx.ID_ANY,p)
+        txt.Wrap(150)
+        gsizer.Add(txt,0,wx.ALIGN_LEFT)
+        #
+        ch = G2G.G2CheckBox(dlg,'',partialOpts[p],'Show',RefreshPlot)
+        gsizer.Add(ch,0,wx.ALIGN_CENTER)
+        #
+        c = wx.Colour(mpl.colors.to_hex(partialOpts[p]['color']))
+        b = csel.ColourSelect(dlg, -1, '', c)
+        b.phase = p
+        b.Bind(csel.EVT_COLOURSELECT, OnSelectColor)
+        gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
+        #
+        lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
+        ch = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,
+                                partialOpts[p],'width',RefreshPlot,
+                                size=(50,-1))
+        gsizer.Add(ch,0,wx.ALIGN_CENTER)
+        #
+        ltypeChoices = ('solid','dotted','dashed','dash-dot','loosely dashed','loosely dashdotted')
+        ltypeMPLname = ('-',    ':',     '--',    '-.',      (0, (5, 10)),    (0, (3, 10, 1, 10)))
+        ch = G2G.G2ChoiceButton(dlg,ltypeChoices,
+                                partialOpts[p],'style',
+                                None,None,StyleChange)
+        gsizer.Add(ch,0,wx.ALIGN_CENTER)
+    mainSizer.Add(gsizer)
+    # OK/Cancel buttons
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,5,wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER,0)
+    mainSizer.Layout()
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    dlg.ShowModal()
+    StyleChange()

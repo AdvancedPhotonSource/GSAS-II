@@ -148,7 +148,7 @@ def UpdateImageData(G2frame,data):
         dlg.Destroy()
         
     def OnMakeGainMap(event):
-        import scipy.ndimage.filters as sdif
+        #import scipy.ndimage.filters as sdif
         sumImg = GetImageZ(G2frame,data)
         masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))

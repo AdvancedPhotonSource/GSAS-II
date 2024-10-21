@@ -9992,8 +9992,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
-        if 'showSlice' not in drawingData:
-            drawingData['showSlice'] = ''
+        try:  # patch of sorts; this had been set to a string; needs to be an int between 0 & 3
+            int(drawingData['showSlice'])
+        except:
+            drawingData['showSlice'] = 0
         if 'sliceSize' not in drawingData:
             drawingData['sliceSize'] = 5.0
         if 'contourColor' not in drawingData:

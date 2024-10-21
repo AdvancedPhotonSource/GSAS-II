@@ -6884,7 +6884,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         ImageParams.Append(G2G.wxID_IMXFERCONTROLS,'Xfer controls','Transfer integration controls to other detector distances')
         ImageParams.Append(G2G.wxID_IMRESETDIST,'Reset dist','Reset all detector dist to set dist')
         G2G.Define_wxId('wxID_IMDRWPHS')
-        ImageParams.Append(G2G.wxID_IMDRWPHS,'Draw phase','Display the rings from a selected phase')
+        ImageParams.Append(G2G.wxID_IMDRWPHS,'Superimpose phase','Display the rings from selected phase(s) on image')
         self.PostfillDataMenu()
             
         # IMG / Masks

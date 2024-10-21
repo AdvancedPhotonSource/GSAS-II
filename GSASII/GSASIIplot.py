@@ -5524,9 +5524,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 
         # plot the selected phase as green rings
         try:
-            for tth in G2frame.PhaseRing2Th:
+            for tth,rColor,rWidth,rStype in G2frame.PhaseRing2Th:
                 (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,Data['wavelength'])
-                Plot.plot(x1,y1,'g',picker=False)
+                Plot.plot(x1,y1,rColor,picker=False,
+                              linestyle=rStype,linewidth=rWidth)
         except:
             pass
 

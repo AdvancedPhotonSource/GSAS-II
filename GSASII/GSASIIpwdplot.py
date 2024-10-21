@@ -3927,8 +3927,7 @@ def configPartialDisplay(G2frame,phaseColors,RefreshPlot):
         RefreshPlot()
 
     import  wx.lib.colourselect as csel
-    parent=G2frame
-    dlg = wx.Dialog(parent,
+    dlg = wx.Dialog(G2frame,
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(
@@ -3963,8 +3962,8 @@ def configPartialDisplay(G2frame,phaseColors,RefreshPlot):
                                 size=(50,-1))
         gsizer.Add(ch,0,wx.ALIGN_CENTER)
         #
-        ltypeChoices = ('solid','dotted','dashed','dash-dot','loosely dashed','loosely dashdotted')
-        ltypeMPLname = ('-',    ':',     '--',    '-.',      (0, (5, 10)),    (0, (3, 10, 1, 10)))
+        ltypeChoices = ('solid','dotted','dashed','dash-dot','dense dashed','dense dashdotted')
+        ltypeMPLname = ('-',    ':',     '--',    '-.',      (0, (5, 1)),    (0, (3, 1, 1, 1)))
         ch = G2G.G2ChoiceButton(dlg,ltypeChoices,
                                 partialOpts[p],'style',
                                 None,None,StyleChange)

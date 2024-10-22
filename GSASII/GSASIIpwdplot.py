@@ -85,6 +85,11 @@ plotOpt['fmtChoices']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
+for xy in 'x','y':
+    for minmax in 'min','max':
+        key = f'{xy}{minmax}'
+        plotOpt[key] = 0.0
+        plotOpt[key+'_use'] = False
 partialOpts = {}  # options for display of partials
 
 #### PlotPatterns ################################################################################
@@ -2534,6 +2539,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
     # plot the partials. TODO: get partials to show up in publication plot
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
+    plotOpt['phaseList']  = []
     if 'PWDR' in plottype and G2frame.SinglePlot and Page.plotStyle['partials'] and 'hId' in data[0]:
         initPartialOpts(Page.phaseColors)
         x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])            
@@ -2556,7 +2562,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
                 Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
                               linestyle=pLinStyl)
-                plotOpt['lineList'].append(ph)   # needed?
+                plotOpt['phaseList'].append(ph)
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
@@ -2618,6 +2624,11 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         plotOpt['markerWid'] = '1'
         plotOpt['markerSiz'] = '8'
         plotOpt['markerSym'] = '+'
+        lims = {}
+        lims['xmin'],lims['xmax'] = Plot.get_xlim()
+        lims['ymin'],lims['ymax'] = Plot.get_ylim()
+        for key in 'xmin','xmax','ymin','ymax':
+            if not plotOpt[key+'_use']: plotOpt[key] = lims[key]
         #if mpl.__version__.split('.')[0] == '1':
         #    G2G.G2MessageBox(G2frame.plotFrame,
         #        ('You are using an older version of Matplotlib ({}). '.format(mpl.__version__) +
@@ -2645,7 +2656,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 plotOpt['colors'][lbl] = MPL2rgba(l.get_color())
                 plotOpt['legend'][lbl] = True
             elif l in Page.tickDict.values():
-                plotOpt['phaseList'] .append(lbl)
+                plotOpt['phaseList'].append(lbl)
                 if lbl in plotOpt['colors']: continue
                 plotOpt['colors'][lbl] = MPL2rgba(l.get_color())
                 plotOpt['legend'][lbl] = True
@@ -3474,7 +3485,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         plotOpt['colors'][lbl] = (c.Red()/255.,c.Green()/255.,c.Blue()/255.,c.alpha/255.)
         RefreshPlot()
 
-    # start of PublishRietveldPlot
+    #### start of PublishRietveldPlot
     if plotOpt['initNeeded']: Initialize()
     GetColors()            
     dlg = wx.Dialog(G2frame.plotFrame,title="Publication plot creation",
@@ -3543,52 +3554,72 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     
     # table of colors and legend options
     cols = 1+len(plotOpt['lineList']) + len(plotOpt['phaseList'] )
+    import wx.lib.scrolledpanel as wxscroll
+    gpanel = wxscroll.ScrolledPanel(dlg,size=(600,105))
     gsizer = wx.FlexGridSizer(cols=cols,hgap=2,vgap=2)
     gsizer.Add((-1,-1))
     for lbl in plotOpt['lineList']:
-        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,lbl),0,wx.ALL)
+        gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,lbl),0,wx.ALL)
     for lbl in plotOpt['phaseList']:
         if lbl not in plotOpt['phaseLabels']: plotOpt['phaseLabels'][lbl] = lbl
-        val = G2G.ValidatedTxtCtrl(dlg,plotOpt['phaseLabels'],lbl,size=(110,-1),
+        val = G2G.ValidatedTxtCtrl(gpanel,plotOpt['phaseLabels'],lbl,size=(110,-1),
                                    style=wx.TE_CENTRE,OnLeave=RefreshPlot)
         gsizer.Add(val,0,wx.ALL)
-    gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Show'),0,wx.ALL)
+    gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Show'),0,wx.ALL)
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
         if lbl not in plotOpt['Show']:
             plotOpt['Show'][lbl] = True
-        ch = G2G.G2CheckBox(dlg,'',plotOpt['Show'],lbl,RefreshPlot)
+        ch = G2G.G2CheckBox(gpanel,'',plotOpt['Show'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
-    gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Include in legend'),0,wx.ALL)
+    gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Include in legend'),0,wx.ALL)
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
         if lbl not in plotOpt['legend']:
             plotOpt['legend'][lbl] = False
-        ch = G2G.G2CheckBox(dlg,'',plotOpt['legend'],lbl,RefreshPlot)
+        ch = G2G.G2CheckBox(gpanel,'',plotOpt['legend'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
-    gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Color'),0,wx.ALL)
+    gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Color'),0,wx.ALL)
     plotOpt['colorButtons'] = {}
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
         import  wx.lib.colourselect as csel
         if lbl not in  plotOpt['colors']:
             plotOpt['colors'][lbl] = (0.5, 0.5, 0.5, 1)
         color = wx.Colour(*[int(255*i) for i in plotOpt['colors'][lbl]])
-        b = csel.ColourSelect(dlg, -1, '', color)
+        b = csel.ColourSelect(gpanel, -1, '', color)
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
         plotOpt['colorButtons'][b] = lbl
         gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER)
+    # plot limits
+    vlbox = wx.BoxSizer(wx.VERTICAL)
+    vlbox.Add(wx.StaticText(dlg,wx.ID_ANY,'plot limit overrides'),0,wx.TOP|wx.ALIGN_CENTER,5)
+    limsizer = wx.FlexGridSizer(cols=3,hgap=2,vgap=2)
+    for xy in 'x','y':
+        for minmax in 'min','max':
+            key = f'{xy}{minmax}'
+            txt = wx.StaticText(dlg,wx.ID_ANY,key)
+            limsizer.Add(txt,0,wx.ALIGN_RIGHT)
+            ch = G2G.G2CheckBox(dlg,'',plotOpt,key+'_use',RefreshPlot)
+            limsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
+            val = G2G.ValidatedTxtCtrl(dlg,plotOpt,key,size=(90,-1),
+                                   style=wx.TE_CENTRE,OnLeave=RefreshPlot)
+            limsizer.Add(val,0,wx.ALL)
+    vlbox.Add(limsizer,0,wx.BOTTOM,5)
     hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add((1,1),1,wx.EXPAND,1)
-    hbox.Add(gsizer,0,wx.ALL)
-    hbox.Add((1,1),1,wx.EXPAND,1)
+    hbox.Add((5,-1))
+    hbox.Add(vlbox,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    # assemble controls box
+    hbox.Add((10,-1))
+    hbox.Add((-1,-1),1,wx.EXPAND,0)
+    gpanel.SetSizer(gsizer)
+    gpanel.SetAutoLayout(1)
+    gpanel.SetupScrolling()
+    hbox.Add(gpanel,0,wx.ALIGN_CENTER)
+    hbox.Add((-1,-1),1,wx.EXPAND,0)
     vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
 
     # hard copy options
     hbox = wx.BoxSizer(wx.HORIZONTAL)
     txt = wx.StaticText(dlg,wx.ID_ANY,'Hard copy  ')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    txt = wx.StaticText(dlg,wx.ID_ANY,'Pixels/inch:')
-    hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',xmin=60,xmax=1600,size=(40,-1))
-    hbox.Add(val,0,wx.ALL)
     txt = wx.StaticText(dlg,wx.ID_ANY,' Width (in):')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'width',xmin=3.,xmax=20.,nDig=(5,1),size=(45,-1))
@@ -3601,6 +3632,11 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     val = G2G.EnumSelector(dlg,plotOpt,'format',plotOpt['fmtChoices'])
     hbox.Add(val,0,wx.ALL)
+    # TODO: would be nice to gray this out when format will ignore this
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Pixels/inch:')
+    hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',xmin=60,xmax=1600,size=(40,-1))
+    hbox.Add(val,0,wx.ALL)
     vbox.Add(hbox,0,wx.ALL|wx.ALIGN_CENTER)
 
     # screen preview
@@ -3609,16 +3645,25 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     vbox.Add(canvas,1,wx.ALL|wx.EXPAND,1)
 
     # buttons at bottom
-    btnsizer = wx.StdDialogButtonSizer()
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+#    btnsizer.Add((5,-1))
+#    def OnSavePlotOpt
+#    btn = wx.Button(dlg, wx.ID_ANY,'save\nsettings')
+#    btnsizer.Add(btn)
+#    btnsizer.Add((5,-1))
+#    btn = wx.Button(dlg, wx.ID_ANY,'load\nsettings')
+#    btnsizer.Add(btn)
+    btnsizer.Add((-1,-1),1,wx.EXPAND)
     btn = wx.Button(dlg, wx.ID_CANCEL)
-    btnsizer.AddButton(btn)
+    btnsizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
+    btnsizer.Add((5,-1))
     btn = wx.Button(dlg, wx.ID_SAVE)
-    #btn.SetDefault()
+    btn.SetDefault()
     btn.Bind(wx.EVT_BUTTON,onSave)
-    btnsizer.AddButton(btn)
-    btnsizer.Realize()
+    btnsizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
+    btnsizer.Add((-1,-1),1,wx.EXPAND)
     vbox.Add((-1,5))
-    vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    vbox.Add(btnsizer, 0, wx.EXPAND|wx.TOP|wx.BOTTOM,2)
     dlg.SetSizer(vbox)
     vbox.Fit(dlg)
     dlg.Layout()
@@ -3656,9 +3701,14 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelSize'])
     ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelSize'])
     ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelSize'])
-    ax0.set_xlim(Plot.get_xlim())
-    ax1.set_xlim(Plot.get_xlim())
-    ax0.set_ylim(Plot.get_ylim())
+    lims = {}
+    lims['xmin'],lims['xmax'] = Plot.get_xlim()
+    lims['ymin'],lims['ymax'] = Plot.get_ylim()
+    for key in 'xmin','xmax','ymin','ymax':
+        if plotOpt[key+'_use']: lims[key] = plotOpt[key]
+    ax0.set_xlim((lims['xmin'],lims['xmax']))
+    ax1.set_xlim((lims['xmin'],lims['xmax']))
+    ax0.set_ylim((lims['ymin'],lims['ymax']))
     
     legLbl = []
     legLine = []
@@ -3730,7 +3780,6 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                     horizontalalignment=l.get_horizontalalignment(),
                     fontsize=float(plotOpt['labelSize']))
     rsig = np.sqrt(Pattern[1][2])
-    rsig[rsig>1] = 1
     if obsartist:
         ax1.plot(obsartist.get_xdata(),Pattern[1][5]*rsig,color='k')
     if legLine:

@@ -1,6 +1,14 @@
 [build-system]
-requires = ["meson-python", "pybind11"]
 build-backend = "mesonpy"
+requires = ["meson-python",
+#     "pybind11",
+    'ninja',
+    'wheel',
+    'Cython',
+    "numpy",
+    'pyproject-metadata>=0.5.0',
+    'tomli>=1.0.0',
+]
 
 
 [project]
@@ -173,3 +181,6 @@ messages_control.disable = [
   "missing-function-docstring",
   "wrong-import-position",
 ]
+
+[project.gui-scripts]
+GSAS-II = 'GSASII.GSASII:main'

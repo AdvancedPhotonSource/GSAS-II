@@ -81,7 +81,6 @@ plotOpt['initNeeded'] = True
 plotOpt['lineList']  = ('obs','calc','bkg','zero','diff')
 plotOpt['phaseList']  = []
 plotOpt['phaseLabels']  = {}
-plotOpt['fmtChoices']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
@@ -292,9 +291,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 except AttributeError:
                     G2G.G2MessageBox(G2frame,'To create an excluded region, after clicking on "OK", move to the beginning of the region and press the "e" key. Then move to the end of the region and press "e" again','How to exclude')
                     return
-                Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                axis.axvline(Page.startExclReg,color='b',dashes=(2,3))
                 Page.canvas.draw() 
-                Page.savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                Page.savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 y1, y2= Page.figure.axes[0].get_ylim()
                 Page.vLine = Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
                 Page.canvas.draw()
@@ -422,8 +425,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Page.canvas.restore_region(Page.savedplot)
                 Page.vLine.set_xdata([event.xdata,event.xdata])
-                Page.figure.gca().draw_artist(Page.vLine)
-                Page.canvas.blit(Page.figure.gca().bbox)
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                axis.draw_artist(Page.vLine)
+                Page.canvas.blit(axis.bbox)
                 return
         elif Page.excludeMode or Page.savedplot: # reset if out of mode somehow
             Page.savedplot = None            
@@ -629,8 +636,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.itemPicked is None: return # not sure why this happens, if it does
             Page.canvas.restore_region(savedplot)
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
-            Page.figure.gca().draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(Page.figure.gca().bbox)
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
+            axis.draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(axis.bbox)
             
         def OnDragLine(event):
             '''Respond to dragging of a plot line
@@ -641,8 +652,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             coords = G2frame.itemPicked.get_data()
             coords[0][0] = coords[0][1] = event.xdata
             coords = G2frame.itemPicked.set_data(coords)
-            Page.figure.gca().draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(Page.figure.gca().bbox)
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
+            axis.draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(axis.bbox)
             
         def OnDragLabel(event):
             '''Respond to dragging of a HKL label
@@ -661,8 +676,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     data[0]['HKLmarkers'][k1][k2][0] = coords[1]
                 Page.canvas.restore_region(savedplot)
                 G2frame.itemPicked.set_position(coords)
-                Page.figure.gca().draw_artist(G2frame.itemPicked)
-                Page.canvas.blit(Page.figure.gca().bbox)
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                axis.draw_artist(G2frame.itemPicked)
+                Page.canvas.blit(axis.bbox)
             except:
                 pass
 
@@ -691,7 +710,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.canvas.blit(axis.bbox)
 
         def OnDragDiffCurve(event):
-            '''Respond to dragging of the difference curve
+            '''Respond to dragging of the difference curve. 
             '''
             if event.ydata is None: return   # ignore if cursor out of window
             if G2frame.itemPicked is None: return # not sure why this happens 
@@ -700,7 +719,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             coords[1][:] += Page.diffOffset + event.ydata
             Page.diffOffset = -event.ydata
             G2frame.itemPicked.set_data(coords)
-            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.figure.gca().draw_artist(G2frame.itemPicked) #  Diff curve only found in 1-window plot
             Page.canvas.blit(Page.figure.gca().bbox)
             
         def DeleteHKLlabel(HKLmarkers,key):
@@ -733,13 +752,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 # any other picked items are skipped
                 wx.CallLater(100,DeleteHKLlabel,data[0]['HKLmarkers'],pick.key)
                 return
-            # prepare to drag label (vertical position only)
+            # prepare to drag HKL label (vertical position only)
             G2frame.itemPicked = pick
             pick.set_alpha(.3) # grey out text
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-            Page.figure.gca()
             Page.canvas.draw() # refresh & save bitmap
-            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
+            savedplot = Page.canvas.copy_from_bbox(axis.bbox)
             G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLabel)
             pick.set_alpha(1.0)
             return
@@ -781,9 +803,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                Page.figure.gca()
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
                 Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
@@ -819,9 +844,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                Page.figure.gca()
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
                 Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
                 
@@ -832,9 +860,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                Page.figure.gca()
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
                 Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
 
@@ -855,16 +886,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 ):
             G2frame.itemPicked = pick
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-            Page.figure.gca()
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
             if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
                 Page.canvas.draw() # save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 Page.diffOffset = Page.plotStyle['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
             elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
                 pick.set_dashes((1,4)) # set line as dotted sparse
                 Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
@@ -966,9 +1000,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     G2frame.itemPicked = pick
                     pick.set_marker('|') # change the point appearance
                     Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                    Page.figure.gca()
+                    if G2frame.Weight:
+                        axis = Page.figure.axes[1]
+                    else:
+                        axis = Page.figure.gca()
                     Page.canvas.draw() # refresh with changed point & save bitmap
-                    savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                    savedplot = Page.canvas.copy_from_bbox(axis.bbox)
                     G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMarker)
                     pick.set_marker('D') # put it back
                 elif mode == 'Del':
@@ -1026,8 +1063,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     break
             if mode == 'Add':
                 backDict['FixedPoints'].append(xy)
-                Plot = Page.figure.gca()
-                Plot.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=True,pickradius=3.)
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                axis.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=True,pickradius=3.)
                 Page.canvas.draw()
                 return
             elif G2frame.itemPicked is not None: # end of drag in move
@@ -2518,11 +2558,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 mult = magmult[np.searchsorted(mag2th, x, side = 'right')-1]
             else:
                 mult = 1.
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
             # "normal" intensity modes only!
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
                 break
             if y < 0 and (Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']):
-                y = Page.figure.gca().get_ylim()[0] # put out of range point at bottom of plot
+                y = axis.get_ylim()[0] # put out of range point at bottom of plot
             elif Page.plotStyle['sqrtPlot']:
                 y = math.sqrt(y)
             if Page.plotStyle['qPlot']:     #Q - convert from 2-theta
@@ -2588,7 +2632,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.dataWindow.moveDiffCurve.Enable(True)
     if refineMode: return refPlotUpdate
 
-def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
+def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
     '''Creates a window to show a customizable "Rietveld" plot. Exports that 
     plot as a publication-quality file. Will only work only when a single 
     pattern is displayed.
@@ -2598,6 +2642,16 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     :param mpl.axes Plot: axes of the graph in plot window
     :param wx.Panel Page: tabbed panel containing the plot
     '''
+    def Init_fmts():
+        figure = mplfig.Figure(dpi=200,figsize=(6,8))
+        canvas = hcCanvas(figure)
+        fmtDict = canvas.get_supported_filetypes()
+        plotWidgets['fmtChoices'] = [fmtDict[j]+', '+j for j in sorted(fmtDict)]
+        plotWidgets['fmtChoices'].append('Data file with plot elements, csv')
+        plotWidgets['fmtChoices'].append('Grace input file, agr')
+        plotWidgets['fmtChoices'].append('Igor Pro input file, itx')
+        if sys.platform == "win32":
+            plotWidgets['fmtChoices'].append('OriginPro connection')
     def Initialize():
         '''Set up initial values in plotOpt
         '''
@@ -2605,19 +2659,13 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         # create a temporary hard-copy figure to get output options
         figure = mplfig.Figure(dpi=200,figsize=(6,8))
         canvas = hcCanvas(figure)
-        fmtDict = canvas.get_supported_filetypes()
         figure.clear()
-        plotOpt['fmtChoices'] = [fmtDict[j]+', '+j for j in sorted(fmtDict)]
-        plotOpt['fmtChoices'].append('Data file with plot elements, csv')
-        plotOpt['fmtChoices'].append('Grace input file, agr')
-        plotOpt['fmtChoices'].append('Igor Pro input file, itx')
-        if sys.platform == "win32":
-            plotOpt['fmtChoices'].append('OriginPro connection')
+        fmtDict = canvas.get_supported_filetypes()
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
             else:
-                plotOpt['format'] = plotOpt['fmtChoices'][0]
+                plotOpt['format'] = plotWidgets['fmtChoices'][0]
         plotOpt['lineWid'] = '1'
         plotOpt['tickSiz'] = '6'
         plotOpt['tickWid'] = '1'
@@ -3477,20 +3525,50 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         '''Respond to a change in color
         '''
 #        lbl = plotOpt['colorButtons'].get(list(event.GetEventObject())[:3])
-        if event.GetEventObject() not in plotOpt['colorButtons']:
+        if event.GetEventObject() not in plotWidgets['colorButtons']:
             print('Unexpected button',str(event.GetEventObject()))
             return
-        lbl = plotOpt['colorButtons'][event.GetEventObject()]
+        lbl = plotWidgets['colorButtons'][event.GetEventObject()]
         c = event.GetValue()
         plotOpt['colors'][lbl] = (c.Red()/255.,c.Green()/255.,c.Blue()/255.,c.alpha/255.)
         RefreshPlot()
 
+    def OnSavePlotOpt(event):
+        'Save current "publish" settings to a JSON file with extension .pltopts'
+        import json
+        filroot = os.path.splitext(G2frame.GSASprojectfile)[0]+'.pltopts'
+        saveFile = G2G.askSaveFile(G2frame,filroot,'.pltopts',
+                                        'Saved plot options')
+        if saveFile:
+            json.dump(plotOpt,open(saveFile,'w'))
+            print(f'Plot options written to {saveFile!r}')
+            
+    def OnLoadPlotOpt(event):
+        'Set current "publish" settings from saved settings in a JSON file (extension .pltopts)'
+        import json
+        filroot = os.path.splitext(G2frame.GSASprojectfile)[0]+'.pltopts'
+        fdlg = wx.FileDialog(dlg, 'Choose saved plot options file',
+                    filroot,
+                    style=wx.FD_OPEN, wildcard='plot options file(*.pltopts)|*.pltopts')
+        if fdlg.ShowModal() == wx.ID_OK:
+            filroot = fdlg.GetPath()
+            plotOpt.update(json.load(open(filroot,'r')))
+            wx.CallAfter(PublishRietveldPlot,G2frame,Pattern,Plot,Page,reuse=dlg)
+        fdlg.Destroy()
+
     #### start of PublishRietveldPlot
-    if plotOpt['initNeeded']: Initialize()
-    GetColors()            
-    dlg = wx.Dialog(G2frame.plotFrame,title="Publication plot creation",
+    plotWidgets = {}
+    Init_fmts()
+    if reuse:
+        dlg = reuse
+        vbox = dlg.GetSizer()
+        vbox.Clear()
+    else:
+        if plotOpt['initNeeded']: Initialize()
+        GetColors()            
+        dlg = wx.Dialog(G2frame.plotFrame,title="Publication plot creation",
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-    vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox = wx.BoxSizer(wx.VERTICAL)
     
     # size choices
     symChoices = ('+','x','.','o','^','v','*','|')
@@ -3578,7 +3656,7 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
         ch = G2G.G2CheckBox(gpanel,'',plotOpt['legend'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
     gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Color'),0,wx.ALL)
-    plotOpt['colorButtons'] = {}
+    plotWidgets['colorButtons'] = {}
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
         import  wx.lib.colourselect as csel
         if lbl not in  plotOpt['colors']:
@@ -3586,7 +3664,7 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
         color = wx.Colour(*[int(255*i) for i in plotOpt['colors'][lbl]])
         b = csel.ColourSelect(gpanel, -1, '', color)
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
-        plotOpt['colorButtons'][b] = lbl
+        plotWidgets['colorButtons'][b] = lbl
         gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER)
     # plot limits
     vlbox = wx.BoxSizer(wx.VERTICAL)
@@ -3630,13 +3708,14 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     hbox.Add(val,0,wx.ALL)
     txt = wx.StaticText(dlg,wx.ID_ANY,'File format:')
     hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.EnumSelector(dlg,plotOpt,'format',plotOpt['fmtChoices'])
-    hbox.Add(val,0,wx.ALL)
+    fmtval = G2G.EnumSelector(dlg,plotOpt,'format',plotWidgets['fmtChoices'])
+    hbox.Add(fmtval,0,wx.ALL)
     # TODO: would be nice to gray this out when format will ignore this
-    txt = wx.StaticText(dlg,wx.ID_ANY,'Pixels/inch:')
-    hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    val = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',xmin=60,xmax=1600,size=(40,-1))
-    hbox.Add(val,0,wx.ALL)
+    ptxt = wx.StaticText(dlg,wx.ID_ANY,'Pixels/inch:')
+    pval = G2G.ValidatedTxtCtrl(dlg,plotOpt,'dpi',xmin=60,xmax=1600,
+                                    size=(40,-1))
+    hbox.Add(ptxt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+    hbox.Add(pval,0,wx.ALL)
     vbox.Add(hbox,0,wx.ALL|wx.ALIGN_CENTER)
 
     # screen preview
@@ -3646,24 +3725,24 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
 
     # buttons at bottom
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-#    btnsizer.Add((5,-1))
-#    def OnSavePlotOpt
-#    btn = wx.Button(dlg, wx.ID_ANY,'save\nsettings')
-#    btnsizer.Add(btn)
-#    btnsizer.Add((5,-1))
-#    btn = wx.Button(dlg, wx.ID_ANY,'load\nsettings')
-#    btnsizer.Add(btn)
+    btnsizer.Add((5,-1))
+    btn = wx.Button(dlg, wx.ID_ANY,'save\nsettings',size=(80,-1))
+    btn.Bind(wx.EVT_BUTTON,OnSavePlotOpt)
+    btnsizer.Add(btn)
+    btnsizer.Add((5,-1))
+    btn = wx.Button(dlg, wx.ID_ANY,'load\nsettings',size=(80,-1))
+    btn.Bind(wx.EVT_BUTTON,OnLoadPlotOpt)
+    btnsizer.Add(btn)
     btnsizer.Add((-1,-1),1,wx.EXPAND)
     btn = wx.Button(dlg, wx.ID_CANCEL)
     btnsizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
     btnsizer.Add((5,-1))
     btn = wx.Button(dlg, wx.ID_SAVE)
-    btn.SetDefault()
     btn.Bind(wx.EVT_BUTTON,onSave)
     btnsizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
     btnsizer.Add((-1,-1),1,wx.EXPAND)
-    vbox.Add((-1,5))
-    vbox.Add(btnsizer, 0, wx.EXPAND|wx.TOP|wx.BOTTOM,2)
+    btnsizer.Add((170,-1),1,wx.EXPAND) # empty box to center buttons
+    vbox.Add(btnsizer, 0, wx.EXPAND|wx.TOP|wx.BOTTOM,4)
     dlg.SetSizer(vbox)
     vbox.Fit(dlg)
     dlg.Layout()
@@ -3672,8 +3751,10 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)     # preview plot
     figure.canvas.draw()
 
-    dlg.ShowModal()
-    dlg.Destroy()
+    if not reuse:
+        dlg.ShowModal()
+        dlg.Destroy()
+    fmtval.SetFocus()   # move focus off from pixel size
     return
 
 def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):

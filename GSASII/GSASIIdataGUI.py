@@ -1842,12 +1842,21 @@ If you continue from this point, it is quite likely that all intensity computati
                     if key in rd.instdict:
                         Iparm1[key] = rd.instdict[key]
             lastdatafile = rd.powderentry[0]
-            if 'phoenix' in wx.version():
-                HistName = 'PWDR '+rd.idstring
-            else:
-                HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
-            # make new histogram names unique
-            if HistName in PWDRlist:
+            HistName = 'PWDR '+rd.idstring
+            # do some error checking
+            if len(rd.powderdata[0]) == 0 or len(rd.powderdata[1]) == 0:
+                G2G.G2MessageBox(self,
+                    f'No data in file {rd.powderentry[0]} skipping',
+                                     'Invalid file')
+                Id = 0
+                continue
+            elif len(rd.powderdata[0]) or len(rd.powderdata[1]):
+                G2G.G2MessageBox(self,
+                    f'Unequal X and Y lengths in file {rd.powderentry[0]} skipping',
+                                     'Invalid file')
+                Id = 0
+                continue
+            elif HistName in PWDRlist:
                 dlg = wx.MessageDialog(self,'Skip %s?'%(HistName),'Duplicate data name',wx.YES_NO)
                 try:
                     if dlg.ShowModal() == wx.ID_YES:
@@ -1855,6 +1864,7 @@ If you continue from this point, it is quite likely that all intensity computati
                         continue
                 finally:
                     dlg.Destroy()
+            # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
             try:
                 print('Read powder data '+HistName+ 
@@ -1893,8 +1903,8 @@ If you continue from this point, it is quite likely that all intensity computati
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
             elif 'PNB' in Iparm1['Type'][0]:
                 Iparm1['Lam'][1] = rd.Wave
-            Ymin = np.min(rd.powderdata[1])                 
-            Ymax = np.max(rd.powderdata[1])                 
+            Ymin = np.min(rd.powderdata[1])
+            Ymax = np.max(rd.powderdata[1])
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
@@ -8183,6 +8193,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
             pass
         elif 'xylim' in dir(G2frame):
             NewPlot = False
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     from importlib import reload
+        #     reload(G2pwpl)
+        #     print('reloading G2pwpl and closing all plots')
+        #     for lbl in G2frame.G2plotNB.plotList:
+        #         G2frame.G2plotNB.Delete(lbl)
+        #     G2frame.lastPlotType = None
         G2pwpl.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
     elif kind == 'HKLF':
         Name = G2frame.GPXtree.GetItemText(item)

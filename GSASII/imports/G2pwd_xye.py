@@ -191,6 +191,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     print (S.strip())
                 break
         N = len(x)
+        if N == 0: return False
         x = np.array(x)
         y = np.nan_to_num(np.array(y))
         w = np.nan_to_num(np.array(w))

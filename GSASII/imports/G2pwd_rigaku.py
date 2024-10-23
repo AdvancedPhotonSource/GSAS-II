@@ -82,7 +82,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                 self.stepsize = stepsize
             elif warn_once and abs(self.stepsize - stepsize) > max(abs(stepsize),abs(self.stepsize))/10000. :
                 print('Warning: Inconsistent step size for Rigaku .txt file on line '+
-                          f'{i+1} here {stepsize:.5f} prev {self.stepsize:.5f}')
+                          f'{i+1}\n\tHere {stepsize:.5f} prev {self.stepsize:.5f}')
                 warn_once = False
 #                fp.close()
 #                return False

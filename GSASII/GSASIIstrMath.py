@@ -3950,7 +3950,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
                         if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2
             
-        elif 'E' in histType:
+        elif 'E' in histType:  # Energy-dispersive X-ray
             
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3989,7 +3989,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     yc[iBeg:iFin] += refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
             
-        elif 'T' in histType:
+        elif 'T' in histType:   # TOF 
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
                     h,k,l,m = refl[:4]

@@ -33,11 +33,12 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     def ContentsValidator(self, filename):
         self.vals = None
         self.stepsize = None
+        warn_once = True
         j = 0
         prevAngle = None
         header = True
         self.skip = -1
-        fp = open(filename,'r')
+        fp = open(filename,'rb')
         for i,line in enumerate(fp):
             sline = line.split()
             vals = len(sline)
@@ -79,11 +80,12 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
             prevAngle = angle
             if self.stepsize is None:
                 self.stepsize = stepsize
-            elif abs(self.stepsize - stepsize) > max(abs(stepsize),abs(self.stepsize))/10000. :
-                print('Inconsistent step size for Rigaku .txt file on line '+
-                        str(i+1) + ' here '+ repr(stepsize) + ' prev '+ repr(self.stepsize))
-                fp.close()
-                return False
+            elif warn_once and abs(self.stepsize - stepsize) > max(abs(stepsize),abs(self.stepsize))/10000. :
+                print('Warning: Inconsistent step size for Rigaku .txt file on line '+
+                          f'{i+1} here {stepsize:.5f} prev {self.stepsize:.5f}')
+                warn_once = False
+#                fp.close()
+#                return False
             if j > 30:
                 fp.close()
                 return True
@@ -95,7 +97,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
         x = []
         y = []
         w = []
-        fp = open(filename,'r')
+        fp = open(filename,'rb')
         for i,line in enumerate(fp):
             if i < self.skip: continue
             sline = line.split()

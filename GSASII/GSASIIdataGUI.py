@@ -1850,7 +1850,7 @@ If you continue from this point, it is quite likely that all intensity computati
                                      'Invalid file')
                 Id = 0
                 continue
-            elif len(rd.powderdata[0]) or len(rd.powderdata[1]):
+            elif len(rd.powderdata[0]) != len(rd.powderdata[1]):
                 G2G.G2MessageBox(self,
                     f'Unequal X and Y lengths in file {rd.powderentry[0]} skipping',
                                      'Invalid file')

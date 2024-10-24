@@ -79,7 +79,6 @@ plotOpt['colors'] = {}
 plotOpt['format'] = None
 plotOpt['initNeeded'] = True
 plotOpt['lineList']  = ('obs','calc','bkg','zero','diff')
-plotOpt['phaseList']  = []
 plotOpt['phaseLabels']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
@@ -1449,7 +1448,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
             
-#### beginning PlotPatterns execution
+    #### beginning PlotPatterns execution
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
@@ -2399,7 +2398,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['sqrtPlot']:
                 ypos = np.sqrt(abs(ypos))*np.sign(ypos)
             artist = Plot.text(xpos,ypos,lbl,fontsize=font,c=color,ha='center',
-                      va='top',bbox=props,picker=True,rotation=angle)
+                      va='top',bbox=props,picker=True,rotation=angle,
+                      label='_'+ph)
             artist.key = (ph,key)
     #============================================================
     if timeDebug:
@@ -2482,18 +2482,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     xtick = peak.T[0]
                 else:
                     xtick = peak.T[1]
-                if not Page.plotStyle.get('flTicks',False): # short or full length tick-marks
-                    Page.tickDict[phase],_ = Plot.plot(xtick,pos,'|',mew=w,ms=l,
-                                                       picker=True,pickradius=3.,
-                                                       label=phase,color=plcolor)
-                else:
-                    Page.tickDict[phase] = []
-                    for xt in xtick:
-                        Page.tickDict[phase].append(Plot.axvline(xt,color=plcolor,
-                                                    picker=True,pickradius=3.,label=phase,lw=0.5))
-            handles,legends = Plot.get_legend_handles_labels()  #got double entries in the phase legends for some reason
+                if not Page.plotStyle.get('flTicks',False):     # short tick-marks
+                    Page.tickDict[phase],_ = Plot.plot(
+                        xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
+                        label=phase,color=plcolor)
+                    # N.B. above creates two Line2D objects, 2nd is ignored.
+                    # Not sure what each does.
+                else:                                           # full length tick-marks
+                    if len(xtick) > 0:
+                        # create an ~hidden tickmark to create a legend entry
+                        Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
+                                                label=phase,color=plcolor)[0]
+                    for xt in xtick: # a separate line for each reflection position
+                            Plot.axvline(xt,color=plcolor,
+                                        picker=True,pickradius=3.,
+                                        label='_FLT_'+phase,lw=0.5)
+            handles,legends = Plot.get_legend_handles_labels() 
             if handles:
-                labels = dict(zip(legends,handles))     #this removes duplicate phase entries
+                labels = dict(zip(legends,handles))     # remove duplicate phase entries
                 handles = [labels[item] for item in labels]
                 legends = list(labels.keys())
                 if len(Phases) and obsInCaption: 
@@ -2581,9 +2587,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     break
             Plot.plot(x,y*mult,'rD',clip_on=Clip_on,picker=True,pickradius=10.)
 
-    # plot the partials. TODO: get partials to show up in publication plot
+    # plot the partials
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
-    plotOpt['phaseList']  = []
     if 'PWDR' in plottype and G2frame.SinglePlot and Page.plotStyle['partials'] and 'hId' in data[0]:
         initPartialOpts(Page.phaseColors)
         x, yb, ypList = G2frame.LoadPartial(data[0]['hId'])            
@@ -2606,7 +2611,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
                 Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
                               linestyle=pLinStyl)
-                plotOpt['phaseList'].append(ph)
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
@@ -2684,13 +2688,12 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
         #                     'Old matplotlib')
         
     def GetColors():
-        '''Set up initial values in plotOpt for colors and legend
+        '''Set up initial values in plotOpt for colors and legend. Also catalog phases.
         '''
         if hasattr(mpcls,'to_rgba'):
             MPL2rgba = mpcls.to_rgba
         else:
             MPL2rgba = mpcls.ColorConverter().to_rgba
-        plotOpt['phaseList']  = []
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()
             if 'magline' in lbl:
@@ -2703,17 +2706,19 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
                 if lbl in plotOpt['colors']: continue
                 plotOpt['colors'][lbl] = MPL2rgba(l.get_color())
                 plotOpt['legend'][lbl] = True
-            elif l in Page.tickDict.values():
-                plotOpt['phaseList'].append(lbl)
-                if lbl in plotOpt['colors']: continue
-                plotOpt['colors'][lbl] = MPL2rgba(l.get_color())
-                plotOpt['legend'][lbl] = True
+        plotWidgets['phaseList'].clear()
+        for ph,l in Page.tickDict.items():
+            plotWidgets['phaseList'].append(ph)
+            if lbl in plotOpt['colors']: continue
+            plotOpt['colors'][ph] = MPL2rgba(l.get_color())
+            plotOpt['legend'][ph] = True
+        return
 
     def RefreshPlot(*args,**kwargs):
         '''Update the plot on the dialog
         '''
         figure.clear()
-        CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)
+        CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,plotWidgets['phaseList'])
         figure.canvas.draw()
         
         
@@ -2860,7 +2865,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
                 lbl = l.get_label()[1:]
             else:
                 continue
-            c = plotOpt['colors'].get(lbl,l.get_color())
+            c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
             gc = ClosestColorNumber(c)
             if sum(c) == 4.0: # white on white, skip
                 continue
@@ -2905,7 +2910,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
         for l in Plot.lines:
             glbl = lbl = l.get_label()
             if l not in Page.tickDict.values(): continue
-            c = plotOpt['colors'].get(lbl,l.get_color())
+            c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
             gc = ClosestColorNumber(c)
             siz = float(plotOpt['tickSiz'])*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/(100*6) # 1% for siz=6
             mkwid = float(plotOpt['tickWid'])
@@ -3067,12 +3072,12 @@ in a cmd.exe window to do this.
                 if lbl == 'obs':
                     lblList.append('x')
                     valueList.append(l.get_xdata())
-                c = plotOpt['colors'].get(lbl,l.get_color())
+                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue
                 lblList.append(lbl)
                 valueList.append(l.get_ydata())
             elif l in Page.tickDict.values():
-                c = plotOpt['colors'].get(lbl,l.get_color())
+                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue
                 tickpos[lbl] = l.get_ydata()[0]
                 lblList.append(lbl)
@@ -3275,8 +3280,7 @@ in a cmd.exe window to do this.
                     .format(InameDict[lbl],plotOpt['lineWid']))
             else:
                 continue
-            c = plotOpt['colors'].get(lbl,l.get_color())
-            #if sum(c) == 4.0: continue
+            c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
             Icolor[InameDict[lbl]] = [j*65535 for j in c[0:3]]
             if lbl != 'zero':
                 valueList.append(l.get_ydata())
@@ -3375,7 +3379,7 @@ X SetAxis Res_bot {0}, {1}
             lbl = l.get_label()
             if not plotOpt['Show'].get(lbl,True): continue
             if l in Page.tickDict.values():
-                c = plotOpt['colors'].get(lbl,l.get_color())
+                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue # white is invisible
                 ticknum += 1
                 phasename = 'tick{}'.format(ticknum)
@@ -3452,12 +3456,12 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
                 if lbl == 'obs':
                     lblList.append('x')
                     valueList.append(l.get_xdata())
-                c = plotOpt['colors'].get(lbl,l.get_color())
+                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue
                 lblList.append(lbl)
                 valueList.append(l.get_ydata())
             elif l in Page.tickDict.values():
-                c = plotOpt['colors'].get(lbl,l.get_color())
+                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue
                 tickpos[lbl] = l.get_ydata()[0]
                 lblList.append(lbl)
@@ -3501,7 +3505,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         '''Write the current plot to a file
         '''
         hcfigure = mplfig.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
-        CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
+        CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure,plotWidgets['phaseList'])
         if 'OriginPro' in plotOpt['format']:
             CopyRietveld2Origin(Pattern,Plot,Page,plotOpt,G2frame)
             dlg.EndModal(wx.ID_OK)
@@ -3558,6 +3562,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
 
     #### start of PublishRietveldPlot
     plotWidgets = {}
+    plotWidgets['phaseList'] = []
     Init_fmts()
     if reuse:
         dlg = reuse
@@ -3631,33 +3636,33 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     vbox.Add(sizebox,0,wx.ALL|wx.EXPAND)
     
     # table of colors and legend options
-    cols = 1+len(plotOpt['lineList']) + len(plotOpt['phaseList'] )
+    cols = 1+len(plotOpt['lineList']) + len(plotWidgets['phaseList'] )
     import wx.lib.scrolledpanel as wxscroll
     gpanel = wxscroll.ScrolledPanel(dlg,size=(600,105))
     gsizer = wx.FlexGridSizer(cols=cols,hgap=2,vgap=2)
     gsizer.Add((-1,-1))
     for lbl in plotOpt['lineList']:
         gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,lbl),0,wx.ALL)
-    for lbl in plotOpt['phaseList']:
+    for lbl in plotWidgets['phaseList']:
         if lbl not in plotOpt['phaseLabels']: plotOpt['phaseLabels'][lbl] = lbl
         val = G2G.ValidatedTxtCtrl(gpanel,plotOpt['phaseLabels'],lbl,size=(110,-1),
                                    style=wx.TE_CENTRE,OnLeave=RefreshPlot)
         gsizer.Add(val,0,wx.ALL)
     gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Show'),0,wx.ALL)
-    for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
+    for lbl in list(plotOpt['lineList']) + list(plotWidgets['phaseList'] ):
         if lbl not in plotOpt['Show']:
             plotOpt['Show'][lbl] = True
         ch = G2G.G2CheckBox(gpanel,'',plotOpt['Show'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
     gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Include in legend'),0,wx.ALL)
-    for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
+    for lbl in list(plotOpt['lineList']) + list(plotWidgets['phaseList'] ):
         if lbl not in plotOpt['legend']:
             plotOpt['legend'][lbl] = False
         ch = G2G.G2CheckBox(gpanel,'',plotOpt['legend'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
     gsizer.Add(wx.StaticText(gpanel,wx.ID_ANY,'Color'),0,wx.ALL)
     plotWidgets['colorButtons'] = {}
-    for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
+    for lbl in list(plotOpt['lineList']) + list(plotWidgets['phaseList']):
         import  wx.lib.colourselect as csel
         if lbl not in  plotOpt['colors']:
             plotOpt['colors'][lbl] = (0.5, 0.5, 0.5, 1)
@@ -3748,7 +3753,7 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     dlg.Layout()
     dlg.CenterOnParent()
 
-    CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)     # preview plot
+    CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,plotWidgets['phaseList'])     # preview plot
     figure.canvas.draw()
 
     if not reuse:
@@ -3757,7 +3762,7 @@ Note that the OriginPro connection export requires Origin 2021 or later.'''
     fmtval.SetFocus()   # move focus off from pixel size
     return
 
-def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
+def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,phaseList):
     '''Copy the contents of the Rietveld graph from the plot window to another
     mpl figure which can be on screen or can be a file for hard copy.
     Uses values from Pattern to also generate a delta/sigma plot below the 
@@ -3768,6 +3773,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     :param wx.Panel Page: The tabbed panel for the Rietveld plot
     :param matplotlib.figure.Figure figure: The figure object from the Rietveld plot
     '''
+    # set up axes
     gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
     ax0 = figure.add_subplot(gs[0])
     ax1 = figure.add_subplot(gs[1])
@@ -3782,10 +3788,11 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelSize'])
     ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelSize'])
     ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelSize'])
+    # set axes ranges, get ranges from display
     lims = {}
     lims['xmin'],lims['xmax'] = Plot.get_xlim()
     lims['ymin'],lims['ymax'] = Plot.get_ylim()
-    for key in 'xmin','xmax','ymin','ymax':
+    for key in 'xmin','xmax','ymin','ymax':   # apply limit overrides where use flag is set
         if plotOpt[key+'_use']: lims[key] = plotOpt[key]
     ax0.set_xlim((lims['xmin'],lims['xmax']))
     ax1.set_xlim((lims['xmin'],lims['xmax']))
@@ -3794,16 +3801,14 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     legLbl = []
     legLine = []
     obsartist = None
+    # get the obs/calc... & magnification lines and xfer them
     for i,l in enumerate(Plot.lines):
-        if l.get_label() in ('obs','calc','bkg','zero','diff'):
-            lbl = l.get_label()
-        elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+        lbl = l.get_label()
+        if lbl[1:] in ('obs','calc','bkg','zero','diff'):
             lbl = l.get_label()[1:]
-        else:
-            lbl = l.get_label()
-        if 'magline' in lbl:
+        if 'magline' in lbl:                              # magnification lines
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
-        elif lbl in ('obs','calc','bkg','zero','diff'):
+        elif lbl in ('obs','calc','bkg','zero','diff'):   # data segments
             if not plotOpt['Show'].get(lbl,True): continue
             marker = l.get_marker()
             lineWid = l.get_lw()
@@ -3816,7 +3821,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                 mew = float(plotOpt['markerWid'])
             else:
                 lineWid = float(plotOpt['lineWid'])
-            c = plotOpt['colors'].get(lbl,l.get_color())
+            c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
             if sum(c) == 4.0: continue
             if plotOpt['legend'].get(lbl):
                 uselbl = lbl
@@ -3834,9 +3839,9 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             if plotOpt['legend'].get(lbl):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
-        elif l in Page.tickDict.values():
+        elif l in Page.tickDict.values():                 # reflection tickmarks
             if not plotOpt['Show'].get(lbl,True): continue
-            c = plotOpt['colors'].get(lbl,l.get_color())
+            c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
             #siz = l.get_markersize()
             siz = float(plotOpt['tickSiz'])
             #mew = l.get_mew()
@@ -3853,16 +3858,55 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             if plotOpt['legend'].get(lbl):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
+        elif '_FLT_' in lbl:                              # full-length vertical reflection markers
+            ph = lbl[5:]
+            c = plotOpt['colors'][ph]
+            ax0.axvline(l.get_xdata()[0],color=c,lw=float(plotOpt['tickWid']))
+        elif lbl in plotOpt['colors']:                    # draw phase partials
+            if l.get_marker() != 'None': continue # ignore 2nd tickmark artist
+            if not plotOpt['Show'].get(lbl,True): continue # remove partial w/tickmarks
+            c = plotOpt['colors'][lbl]
+            lineWid = float(plotOpt['lineWid'])
+            # xfer the phase partials to the new plot, overriding the phase color and line width
+            ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
+                linewidth=lineWid,
+                linestyle=l.get_ls())
+#        elif GSASIIpath.GetConfigValue('debug'):
+#            print('other line:',lbl)
+
+    # copy text items: magnification labels and reflection markers
     for l in Plot.texts:
-        if 'magline' not in l.get_label(): continue
-        ax0.annotate(l.get_text(),
+        lbl = l.get_label()
+        if lbl[1:] in phaseList:                           # reflection markers
+            if not plotOpt['Show'].get(lbl[1:],True): continue # remove marker w/tickmarks
+            p = l.get_bbox_patch()
+            props = {'facecolor':p.get_facecolor(),
+                     'edgecolor':p.get_facecolor(),
+                     'alpha':p.get_alpha(),
+                     'boxstyle':p.get_boxstyle()}
+            c = plotOpt['colors'][lbl[1:]]
+            ax0.text(l.get_position()[0],l.get_position()[1],
+                      l.get_text(),
+                      fontsize=float(plotOpt['labelSize']),
+                      c=c,
+                      ha='center',
+                      va='top',
+                      bbox=props,
+                      rotation=l.get_rotation())
+        elif 'maglbl' in lbl:                             # label on a magnification region
+            ax0.annotate(l.get_text(),
                     xy=(l.get_position()), xycoords=l.xycoords,
                     verticalalignment='bottom',
                     horizontalalignment=l.get_horizontalalignment(),
                     fontsize=float(plotOpt['labelSize']))
+#        elif GSASIIpath.GetConfigValue('debug'):
+#            print('other text:',l.get_label())
+            
+    # generate the (obs-calc)/sigma values and plot them
     rsig = np.sqrt(Pattern[1][2])
     if obsartist:
         ax1.plot(obsartist.get_xdata(),Pattern[1][5]*rsig,color='k')
+    # show the legend, if anything is in it (list legLine)
     if legLine:
         ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelSize']})
     

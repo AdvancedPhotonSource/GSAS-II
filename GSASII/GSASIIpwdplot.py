@@ -3446,10 +3446,13 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
             if 'magline' in lbl:
                 pass
             elif lbl in ('obs','calc','bkg','zero','diff'):
-                if lbl == 'obs':
+                c = plotOpt['colors'].get(lbl,l.get_color())
+                if sum(c) == 4.0: continue  #skip over any "white" entries
+                if lbl == 'zero': continue
+                if lbl == 'obs':  # include all observed data
+                    lblList.append('obs')
+                    valueList.append(Pattern[1][1].data)
                     continue
-                c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
-                if sum(c) == 4.0: continue
                 lblList.append(lbl)
                 valueList.append(l.get_ydata())
             elif l in Page.tickDict.values():

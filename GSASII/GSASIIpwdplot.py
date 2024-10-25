@@ -89,6 +89,7 @@ for xy in 'x','y':
         plotOpt[key] = 0.0
         plotOpt[key+'_use'] = False
 partialOpts = {}  # options for display of partials
+savedX = None     # contains the X values in plot units for "master" pattern, with mask
 
 #### PlotPatterns ################################################################################
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
@@ -176,7 +177,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
             return
         newPlot = False
-        if event.key == 'w':    # and not Page.plotStyle['qPlot'] and not Page.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
+        if event.key == 'w':
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and not G2frame.Contour and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
@@ -1453,6 +1454,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global DifLine # BHT: probably does not need to be global
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
+    global savedX
     plottype = plotType
 
     # get powder pattern colors from config settings
@@ -1941,14 +1943,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Lmask = Emask = np.full(len(xye0),False)
 
         if G2frame.Contour:
-            xye0 = xye[0]   # drop mask                
-                
+            xye0 = xye[0]   # drop mask for contouring
+
+        # convert all X values and then reapply mask
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
+            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = G2lat.Pos2dsp(Parms,xye0)
+            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
         else:
             X = copy.deepcopy(xye0)
+        if ifpicked and not G2frame.Contour:
+            savedX = copy.deepcopy(X)
+            
         if not lenX:
             lenX = len(X)
         # show plot magnification factors
@@ -2076,7 +2082,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif ContourX is None:
                 ContourX = X
             Nseq += 1
-        else:
+        else:   # not contour plot
             if not G2frame.plusPlot:
                 pP = ''
                 lW = 1.5
@@ -2096,7 +2102,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Xum = ma.getdata(X) # unmasked version of X, use for data limits (only)
             else:
                 Xum = X[:]
-            if ifpicked:
+            if ifpicked:      # plotting of "master" pattern (histogram selected in data tree)
                 ZI = copy.copy(xye[3])      #Yc
                 if Page.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -2875,7 +2881,6 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
             mkwid = l.get_mew()
             glinetyp = 1
             if lbl == 'obs':
-                obsartist = l
                 gsiz = float(plotOpt['markerSiz'])/8.
                 marker = plotOpt['markerSym']
                 gmw = float(plotOpt['markerWid'])
@@ -2933,11 +2938,9 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
             fp.write(linedef2.format("s"+str(datnum),'',gc,mkwid))
     #======================================================================
     # Start (obs-cal)/sigma plot
-        rsig = np.sqrt(Pattern[1][2])
-        rsig[rsig>1] = 1
+        wtFactor = Pattern[0]['wtFactor']
+        ysig = (Pattern[1][1]-Pattern[1][3])*np.sqrt(wtFactor*Pattern[1][2])
         fp.write("@type xy\n")
-        l = obsartist
-        ysig = Pattern[1][5]*rsig
         # scaling for bottom box
         fp.write('@g{0} hidden false\n@with g{0}\n@legend {1}\n'.format(1,"off"))
         fp.write('@world xmin {}\n@world xmax {}\n'.format(Plot.get_xlim()[0],Plot.get_xlim()[1]))
@@ -2973,16 +2976,9 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
         ytick = yti * 10**int(np.log10(ytick/yti)+.5)
         fp.write('@{}axis tick major {}\n'.format('x',xticks[1]-xticks[0]))
         fp.write('@{}axis tick major {}\n'.format('y',ytick))
-        rsig = np.sqrt(Pattern[1][2])
-        rsig[rsig>1] = 1
         fp.write("@type xy\n")
-        l = obsartist
-        if ma.any(l.get_xdata().mask):
-            for x,y,m in zip(l.get_xdata(),Pattern[1][5]*rsig,l.get_xdata().mask):
-                if not m: fp.write("{} {}\n".format(x,y))
-        else:
-            for x,y in zip(l.get_xdata(),Pattern[1][5]*rsig):
-                fp.write("{} {}\n".format(x,y))
+        for x,y,m in zip(savedX,ysig,savedX.mask):
+            if not m: fp.write("{} {}\n".format(x,y))
         fp.write("&\n")
         fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))
         fp.close()
@@ -3060,12 +3056,9 @@ in a cmd.exe window to do this.
         tickpos = {}
 
         for i,l in enumerate(Plot.lines):
-            if l.get_label() in ('obs','calc','bkg','zero','diff'):
-                lbl = l.get_label()
-            elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
-                lbl = l.get_label()[1:]
-            else:
-                lbl = l.get_label()
+            lbl = l.get_label()
+            if lbl[1:] in ('obs','calc','bkg','zero','diff'):
+                lbl = lbl[1:]
             if 'magline' in lbl:
                 pass
             elif lbl in ('obs','calc','bkg','zero','diff'):
@@ -3106,11 +3099,6 @@ in a cmd.exe window to do this.
                 lbl = 'mag'
                 lblList.append(lbl)
                 valueList.append([l.get_text(),l.get_position()[0]])
-        # invert lists into columns, use iterator for all values
-        #if hasattr(itertools,'zip_longest'): #Python 3+
-        #    invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
-        #else:
-        #    invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
 
         # Start Origin instance
         if op and op.oext:
@@ -3229,22 +3217,22 @@ in a cmd.exe window to do this.
         igor_symbols = {"o":19, "s":18, "D":29, "^":17, "3":46, 'v':23,
                 "4":49, "+":1, "P":60, "x":0, "X":62, "*":2}
         def Write2cols(fil,dataItems):
-                '''Write a line to a file in space-separated columns. 
-                Skips masked items. 
+            '''Write a line to a file in space-separated columns. 
+            Skips masked items. 
 
-                :param object fil: file object
-                :param list dataItems: items to write as row in file
-                '''
-                line = ''
-                for item in dataItems:
-                    if ma.is_masked(item): return
-                    if line: line += ' '
-                    item = str(item)
-                    if ' ' in item:
-                        line += '"'+item+'"'
-                    else:
-                        line += item
-                fil.write(line+'\n')
+            :param object fil: file object
+            :param list dataItems: items to write as row in file
+            '''
+            line = ''
+            for item in dataItems:
+                if ma.is_masked(item): return
+                if line: line += ' '
+                item = str(item)
+                if ' ' in item:
+                    line += '"'+item+'"'
+                else:
+                    line += item
+            fil.write(line+'\n')
         proj = os.path.splitext(G2frame.GSASprojectfile)[0]
         if not proj: proj = 'GSASIIproject'
         proj = proj.replace(' ','')
@@ -3285,11 +3273,6 @@ in a cmd.exe window to do this.
             if lbl != 'zero':
                 valueList.append(l.get_ydata())
         valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
-        # invert lists into columns, use iterator for all values
-        if hasattr(itertools,'zip_longest'): #Python 3+
-            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
-        else:
-            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
         fp = open(filename,'w')
         fp.write('''IGOR
 X setDataFolder root:
@@ -3301,7 +3284,8 @@ X string GSAXSProjectName = GetDataFolder(0)
 WAVES /D/O TwoTheta, Intensity, FitIntensity, Background, Difference, NormResidual
 BEGIN
 '''.format(proj))
-        for row in invertIter:
+        # invert lists into columns, use iterator for all values
+        for row in itertools.zip_longest(*valueList,fillvalue=' '):
             Write2cols(fp,row)
         fp.write('''END
 X //  ***   static part of the code, NB reflection tickmarks later ****
@@ -3429,7 +3413,8 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
             s += r'\\s({}) {}'.format(nam,txt)
         fp.write('X Legend/C/N=text0/J "{}"\n'.format(s))
         fp.close()
-                
+        print('file',filename,'written')
+
     def CopyRietveld2csv(Pattern,Plot,Page,filename):
         '''Copy the contents of the Rietveld graph from the plot window to
         .csv file
@@ -3438,24 +3423,20 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
 
         lblList = []
         valueList = []
-
-        lblList.append('Axis-limits')
-        valueList.append(list(Plot.get_xlim())+list(Plot.get_ylim()))
-
         tickpos = {}
+        lblList.append('used')
+        valueList.append([0 if i else 1 for i in savedX.mask])
+        lblList.append('x')
+        valueList.append(savedX.data)
         for i,l in enumerate(Plot.lines):
-            if l.get_label() in ('obs','calc','bkg','zero','diff'):
-                lbl = l.get_label()
-            elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+            lbl = l.get_label()
+            if lbl[1:] in ('obs','calc','bkg','zero','diff'):
                 lbl = l.get_label()[1:]
-            else:
-                lbl = l.get_label()
             if 'magline' in lbl:
                 pass
             elif lbl in ('obs','calc','bkg','zero','diff'):
                 if lbl == 'obs':
-                    lblList.append('x')
-                    valueList.append(l.get_xdata())
+                    continue
                 c = plotOpt['colors'].get(lbl,mpl.colors.to_rgba(l.get_color()))
                 if sum(c) == 4.0: continue
                 lblList.append(lbl)
@@ -3474,11 +3455,16 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
                 valueList[-1].append(tickpos[i])
         # add (obs-calc)/sigma [=(obs-calc)*sqrt(weight)]
         lblList.append('diff/sigma')
-        valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
+        wtFactor = Pattern[0]['wtFactor']
+        DZ = (Pattern[1][1]-Pattern[1][3])*np.sqrt(wtFactor*Pattern[1][2])
+        valueList.append(DZ)
+
         if sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
             lblList.append('excluded')
             valueList.append(1*Pattern[1][0].mask)
-        # magnifcation values
+        lblList.append('Axis-limits')
+        valueList.append(list(Plot.get_xlim())+list(Plot.get_ylim()))
+        # magnification values
         for l in Plot.texts:
             lbl = l.get_label()
             if 'magline' not in lbl: continue
@@ -3490,14 +3476,10 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
                 lbl = 'mag'
                 lblList.append(lbl)
                 valueList.append([l.get_text(),l.get_position()[0]])
-        # invert lists into columns, use iterator for all values
-        if hasattr(itertools,'zip_longest'): #Python 3+
-            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
-        else:
-            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
         fp = open(filename,'w')
         G2plt.Write2csv(fp,lblList,header=True)
-        for row in invertIter:
+        # invert lists into columns, use iterator for all values
+        for row in itertools.zip_longest(*valueList,fillvalue=' '):
             G2plt.Write2csv(fp,row)
         fp.close()
         
@@ -3800,12 +3782,11 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,phaseList):
     
     legLbl = []
     legLine = []
-    obsartist = None
     # get the obs/calc... & magnification lines and xfer them
     for i,l in enumerate(Plot.lines):
         lbl = l.get_label()
         if lbl[1:] in ('obs','calc','bkg','zero','diff'):
-            lbl = l.get_label()[1:]
+            lbl = lbl[1:]
         if 'magline' in lbl:                              # magnification lines
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
         elif lbl in ('obs','calc','bkg','zero','diff'):   # data segments
@@ -3815,7 +3796,6 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,phaseList):
             siz = l.get_markersize()
             mew = l.get_mew()
             if lbl == 'obs':
-                obsartist = l
                 siz = float(plotOpt['markerSiz'])
                 marker = plotOpt['markerSym']
                 mew = float(plotOpt['markerWid'])
@@ -3903,9 +3883,9 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure,phaseList):
 #            print('other text:',l.get_label())
             
     # generate the (obs-calc)/sigma values and plot them
-    rsig = np.sqrt(Pattern[1][2])
-    if obsartist:
-        ax1.plot(obsartist.get_xdata(),Pattern[1][5]*rsig,color='k')
+    wtFactor = Pattern[0]['wtFactor']
+    DZ = (Pattern[1][1]-Pattern[1][3])*np.sqrt(wtFactor*Pattern[1][2])
+    ax1.plot(savedX,DZ,color='k')
     # show the legend, if anything is in it (list legLine)
     if legLine:
         ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelSize']})

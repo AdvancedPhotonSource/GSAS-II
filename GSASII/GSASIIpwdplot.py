@@ -3426,7 +3426,18 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         tickpos = {}
         lblList.append('used')
         valueList.append([0 if i else 1 for i in savedX.mask])
-        lblList.append('x')
+        if 'TOF' in Plot.xaxis.get_label_text():
+            lblList.append('x, TOF (msec)')
+        elif 'Q,' in Plot.xaxis.get_label_text():
+            lblList.append('x, Q (A-1)')
+        elif 'd,' in Plot.xaxis.get_label_text():
+            lblList.append('x, d-space (A)')
+        elif 'E,' in Plot.xaxis.get_label_text():
+            lblList.append('x, E (keV)')
+        elif 'theta' in Plot.xaxis.get_label_text():
+            lblList.append('x, 2theta (deg)')
+        else:
+            lblList.append('x, ?')
         valueList.append(savedX.data)
         for i,l in enumerate(Plot.lines):
             lbl = l.get_label()

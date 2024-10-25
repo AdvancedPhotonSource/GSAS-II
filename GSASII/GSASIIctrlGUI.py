@@ -9556,7 +9556,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     '''If the filename is a zip file, extract a file from that
     archive.
 
-    :param list Selection: used to predefine the name of the file
+    :param list selection: used to predefine the name of the file
       to be extracted. Filename case and zip directory name are
       ignored in selection; the first matching file is used.
 

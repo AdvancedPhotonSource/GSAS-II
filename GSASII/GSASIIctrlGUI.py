@@ -1759,11 +1759,13 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND,1)
+        txt = wx.StaticText(self,wx.ID_ANY,title)
+        #txt.SetMinSize((-1,35))
+        topSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add((10,-1))
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
@@ -9552,7 +9554,7 @@ class ScrolledStaticText(wx.StaticText):
 #===========================================================================
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
                        confirmoverwrite=True, parent=None,
-                       multipleselect=False):
+                       multipleselect=False,msg=''):
     '''If the filename is a zip file, extract a file from that
     archive.
 
@@ -9570,6 +9572,9 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
       file to be extracted, a list of file(s) is returned.
       If only one file is present, do not ask which one, otherwise
       offer a list of choices (unless selection is used).
+
+    :param str msg: a message explaining what is being read. Default
+      is blank.
     
     :returns: the name of the file that has been created or a
       list of files (see multipleselect)
@@ -9595,7 +9600,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         if selection.lower() in choices:
             zlist = [choices.index(selection.lower())]
         else:
-            print('debug: file '+str(selection)+' was not found in '+str(filename))
+            #print('debug: file '+str(selection)+' was not found in '+str(filename))
             zlist = [-1]
     elif len(zinfo) == 1 and confirmread:
         result = wx.ID_NO
@@ -9619,7 +9624,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
+        dlg = G2MultiChoiceDialog(parent,
+            msg+f'Select file(s) to extract from zip file\n{filename}',
             'Choose file(s)',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()
@@ -9630,8 +9636,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         # select one from a from list
         choices = [i.filename for i in zinfo]
         dlg = wx.SingleChoiceDialog(parent,
-            'Select file to extract from zip file'+str(filename),'Choose file',
-            choices,)
+            msg+f'Select a file to extract from zip file\n{filename}',
+            'Choose a file',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = [dlg.GetSelection()]
         else:

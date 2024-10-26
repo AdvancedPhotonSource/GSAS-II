@@ -946,6 +946,7 @@ class GSASII(wx.Frame):
         self.lastimport = ''
         self.zipfile = None
         singlereader = True
+        cleanupList = []
         if reader is None:
             singlereader = False
             multiple = False
@@ -985,7 +986,7 @@ class GSASII(wx.Frame):
         if len(readerlist) > 1: 
             typ = ' (type to be guessed)'
         else:
-            typ = '( type '+readerlist[0].formatName+')'
+            typ = ' (type '+readerlist[0].formatName+')'
         filelist = G2G.GetImportFile(self,message="Choose "+label+" input file"+typ,
             defaultFile="",wildcard=choices,style=mode)
         rd_list = []
@@ -995,12 +996,15 @@ class GSASII(wx.Frame):
             ext = os.path.splitext(filename)[1].lower()
             if ext == '.zip' and '.zarr.zip' not in filename.lower():
                 extractedfiles = G2G.ExtractFileFromZip(
-                    filename,parent=self,
+                    filename,parent=self,msg=f'Reading {label} file(s)\n\n',
                     multipleselect=True)
                 if extractedfiles is None: continue # error or Cancel 
                 if extractedfiles != filename:
                     self.zipfile = filename # save zip name
                     filelist1 += extractedfiles
+                    txt = '\n\t'.join(extractedfiles)
+                    print(f"Created temporary files\n\t{txt}")
+                    cleanupList += extractedfiles
                     continue
             filelist1.append(filename)
         filelist = filelist1
@@ -1010,10 +1014,13 @@ class GSASII(wx.Frame):
             ext = os.path.splitext(filename)[1].lower()
             if ext == '.zip' and '.zarr.zip' not in filename.lower():
 #            if os.path.splitext(filename)[1].lower() == '.zip':
-                extractedfile = G2G.ExtractFileFromZip(filename,parent=self)
+                extractedfile = G2G.ExtractFileFromZip(filename,parent=self,
+                            msg=f'Reading a {label} file\n\n')
                 if extractedfile is None: continue # error or Cancel 
                 if extractedfile != filename:
                     filename,self.zipfile = extractedfile,filename # now use the file that was created
+                    print(f"Created temporary file {extractedfile}")
+                    cleanupList += [extractedfile]
             # determine which formats are compatible with this file
             primaryReaders = []
             secondaryReaders = []
@@ -1025,15 +1032,17 @@ class GSASII(wx.Frame):
                     primaryReaders.append(rd)
             if len(secondaryReaders) + len(primaryReaders) == 0 and reader:
                 self.ErrorDialog('Not supported','The selected reader cannot read file '+filename)
-                return []
+                continue
             elif len(secondaryReaders) + len(primaryReaders) == 0:
                 self.ErrorDialog('No Format','No matching format for file '+filename)
-                return []
+                continue
 
             fp = None
             msg = ''
             if len(filelist) == 1 and Preview:
-                if self.PreviewFile(filename): return []
+                if self.PreviewFile(filename):
+                    G2fil.CleanupFromZip(label,cleanupList)
+                    return []
             self.lastimport = filename # this is probably not what I want to do -- it saves only the
             # last name in a series. See rd.readfilename for a better name.
 
@@ -1127,6 +1136,7 @@ class GSASII(wx.Frame):
                         pass
                     self.ErrorDialog('Read Error','No reader was able to read file '+filename+msg)
             if fp: fp.close()
+        G2fil.CleanupFromZip(label,cleanupList)
         return rd_list
 
     def _Add_ImportMenu_Phase(self,parent):
@@ -1659,12 +1669,18 @@ If you continue from this point, it is quite likely that all intensity computati
         #1st priority: is there an instrument parameter file matching the current file
         # with extension .instprm, .prm, .inst, or .ins? If so read it
         basename = os.path.splitext(filename)[0]
+        #-- look for an instrument file matching the name of the data file -------------
+        print('looking for default instrument parameter file named\n\t',
+                  os.path.split(basename)[1],
+                  'with extensions .prm, .inst, .ins or .instprm')
         for ext in '.prm','.inst','.ins','.instprm':
             if self.zipfile:
                 instfile = G2G.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(basename + ext)[1],parent=self)
                 if instfile == None:
                     continue
+                print(f'created {instfile} from {self.zipfile}')
+                self.cleanupList.append(instfile)
             else:
                 instfile = basename + ext
             if not os.path.exists(instfile):
@@ -1690,20 +1706,18 @@ If you continue from this point, it is quite likely that all intensity computati
                     #print 'debug: open/read failed',instfile
                     pass # fail silently
 
-        #2nd priority: is there an instrument parameter file defined for the current data set?
-        # or if this is a read on a set of set of files, use the last one again
-        #if rd.instparm as found in data file header or (lastdatafile == filename and lastIparmfile):
+        #-- look for an instrument file matching the name of the data file -------------
+        #  2nd choice: is there an instrument parameter file defined in the
+        #     current data set? (rd.instparm as found in data file header)
+        #  Alternately, if reading a set of files, reuse the last one again
+        #     (lastIparmfile)
         if rd.instparm or lastIparmfile:
             if rd.instparm:
                 instfile = os.path.join(os.path.split(filename)[0],rd.instparm)
             else:
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
-#            if self.zipfile:
-#                instfile = G2G.ExtractFileFromZip(self.zipfile,
-#                    selection=os.path.split(instfile)[1],parent=self)
             if instfile != None and os.path.exists(instfile):
-                #print 'debug: try read',instfile
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
                     Lines = self.OpenPowderInstprm(instfile)
                     if Lines is not None:
@@ -1725,26 +1739,34 @@ If you continue from this point, it is quite likely that all intensity computati
             else:
                 self.ErrorDialog('Open Error',u'Error opening instrument parameter file '
                     +u'{} requested by file {}'.format(instfile,filename))
-        #Finally - ask user for Instrument parameters file - seems it can't be in a zip file
+        #-- No other choice: ask the User for an instrument file -----------------------
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
-            pth = os.path.dirname(filename)     #look in same place data was found
-#            pth = G2G.GetImportPath(self)
-            if not pth: pth = '.'
-            extOrd = [0,1]
-            if GSASIIpath.GetConfigValue('Instprm_default',False):
-                extOrd = [1,0]
-            extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|','GSAS-II iparm file (*.instprm)|*.instprm|']
-            dlg = wx.FileDialog(self,
-                u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
-                pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
-            if os.path.exists(lastIparmfile):
-                dlg.SetFilename(os.path.split(lastIparmfile)[-1])
-            if dlg.ShowModal() == wx.ID_OK:
-                instfile = dlg.GetPath()
-            dlg.Destroy()
-            if not instfile: 
-                return GetDefaultParms(self,rd) #on Cancel/break
+            if self.zipfile:
+                instfile = G2G.ExtractFileFromZip(self.zipfile,parent=self,
+                    msg=f'Reading an instrument parameter file\n\n')
+                if instfile == None:
+                    self.zipfile = None
+                    continue
+                print(f'created {instfile} from {self.zipfile}')
+                self.cleanupList.append(instfile)
+            else:
+                pth = os.path.dirname(filename)     #look in same place data was found
+                if not pth: pth = '.'
+                extOrd = [0,1]
+                if GSASIIpath.GetConfigValue('Instprm_default',False):
+                    extOrd = [1,0]
+                extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|','GSAS-II iparm file (*.instprm)|*.instprm|']
+                dlg = wx.FileDialog(self,
+                    u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
+                    pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
+                if os.path.exists(lastIparmfile):
+                    dlg.SetFilename(os.path.split(lastIparmfile)[-1])
+                if dlg.ShowModal() == wx.ID_OK:
+                    instfile = dlg.GetPath()
+                dlg.Destroy()
+                if not instfile: 
+                    return GetDefaultParms(self,rd) #on Cancel/break
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
                 if Lines is not None:
@@ -1766,6 +1788,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 else:
                     self.ErrorDialog('Read Error',
                                      u'Error opening/reading file {}'.format(instfile))
+
     def EnableRefineCommand(self):
         '''Check that phases are connected to histograms - if so then Refine is enabled
         '''
@@ -1817,6 +1840,7 @@ If you continue from this point, it is quite likely that all intensity computati
 #        lastVals = []
         self.EnablePlot = False
         Iparms = {}
+        self.cleanupList = []   # inst parms created in GetPowderIparm
         for rd in rdlist:
             if 'Instrument Parameters' in rd.pwdparms:
                 Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
@@ -1975,6 +1999,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.GPXtree.Expand(Id)
                 self.GPXtree.SelectItem(Id)
 
+        G2fil.CleanupFromZip('instprm',self.cleanupList)
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()

@@ -1434,6 +1434,30 @@ end tell
             fp.write(f"{script}\n")
         fp.close()
         subprocess.Popen(cmds,start_new_session=True)
+
+def CleanupFromZip(label,cleanupList):
+    '''Delete files extracted from a zip archive, typically created with 
+    :func:`GSASIIctrl.ExtractFileFromZip` during the data import process. 
+
+    Note that image files should not be deleted as they will be reused 
+    every time the image is displayed, but everything else will be saved
+    in the data tree and the file copy is not needed.
+
+    :param str label: for imports, this is the type of file being read
+    :param list cleanupList
+    '''
+    if 'image' in label:
+        print("images don't get removed. Retaining zip-extracted file(s):")
+        print('\t','\n\t'.join(cleanupList))
+        return
+    else:
+        print("Zip-extracted file(s) will be deleted:")
+        for f in cleanupList:
+            try:
+                os.remove(f)
+                print('\tdeleted:',f)
+            except:
+                print('\tdelete failed:',f)
         
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):

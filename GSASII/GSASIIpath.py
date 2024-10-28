@@ -258,15 +258,30 @@ def GetVersionNumber():
     :returns: an int value usually, but a value of 'unknown' might occur 
     '''
     if HowIsG2Installed().startswith('git'):
-        g2repo = openGitRepo(path2GSAS2)
-        for h in list(g2repo.iter_commits('HEAD'))[:50]: # (don't go too far back)
-            tags = g2repo.git.tag('--points-at',h).split('\n')
+        # look for a recorded tag -- this is quick
+        try:
+            import git_verinfo as gv
             try:
-                for item in tags:
+                for item in gv.git_tags:
                     if item.isnumeric(): return int(item)
             except:
                 pass
-        
+            try:
+                for item in gv.git_prevtags:
+                    if item.isnumeric(): return int(item)
+            except:
+                pass
+        except:
+            pass
+        # no luck, ask Git for the most recent tag (must start & end with a number)
+        try:
+            g2repo = openGitRepo(path2GSAS2)
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]').split('-')
+            if tag.isnumeric(): return int(tag)
+        except:
+            pass
+        return "unknown"
+    
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is not None: return rev
@@ -287,7 +302,7 @@ def GetVersionNumber():
     except:
         pass
         
-    # all else failed, use the SetVersionNumber value
+    # all else failed, use the svn SetVersionNumber value (global version)
     if version > 5000:  # a small number must be wrong
         return version
     else:
@@ -302,21 +317,7 @@ def getG2VersionInfo():
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
-        tags = g2repo.git.tag('--points-at',commit).split('\n')
-        tags = [i for i in tags if i.isnumeric()]
-        # get sequential version # (tag)
-        gversion = ""
-        if len(tags) >= 1:
-            gversion = f"Tag: #{tags[0]}"
-        else:
-            for h in list(g2repo.iter_commits(commit))[:50]: # (don't go too far back)
-                for t in g2repo.git.tag('--points-at',h).split('\n'):
-                    if t.isnumeric():
-                        gversion = f"Last tag: #{t}"
-                        break
-                if gversion: break
-            else:
-                gversion = "No tag?!" # if all else fails
+        gversion = f"Tag: #{GetVersionNumber()}"
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +

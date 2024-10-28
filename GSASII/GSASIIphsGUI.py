@@ -12804,7 +12804,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for histoName in newList:
                         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
-                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
+                        data['Histograms'][histoName] = {
+                            'Histogram':histoName,'Show':False,
+                            'LeBail':False,'newLeBail':True,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],'Type':Inst['Type'][0],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -12812,7 +12814,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],
                             'Layer Disp':[0.0,False],                         
-                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' ','FixedSeqVars':[]}
+                            'Extinction':[0.0,False],
+                            'Flack':[0.0,False],
+                            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                            'Fix FXU':' ','FixedSeqVars':[]}
                         refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

@@ -1539,6 +1539,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         ShowIsoDistortCalc(G2frame)
 
     #### UpdateConstraints execution starts here ##############################
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     if Clear:
         G2frame.dataWindow.ClearData() 
     if not data:  # usually created in CheckNotebook
@@ -1675,7 +1676,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     Indx = {}
     G2frame.Page = [0,'phs']
     
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     SetStatusLine('')
     
     G2frame.Bind(wx.EVT_MENU, OnAddConstraint, id=G2G.wxID_CONSTRAINTADD)

@@ -1446,6 +1446,7 @@ def CleanupFromZip(label,cleanupList):
     :param str label: for imports, this is the type of file being read
     :param list cleanupList
     '''
+    if not cleanupList: return
     if 'image' in label:
         print("images don't get removed. Retaining zip-extracted file(s):")
         print('\t','\n\t'.join(cleanupList))

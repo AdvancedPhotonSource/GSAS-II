@@ -204,29 +204,35 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
                 if not SpGrp:
                     SpGrp = blk.get("_space_group_name_H-M_alt",'')
-                if not SpGrp:   #try magnetic           
+                try:
+                    SpGrp = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
+                except:
+                    pass
+                if not SpGrp:   #try magnetic
                     MSpGrp = blk.get("_space_group.magn_name_BNS",'')
                     if not MSpGrp:
                         MSpGrp = blk.get("_space_group_magn.name_BNS",'')
-                        if not MSpGrp:
-                            msg = 'No recognizable space group name was found in the CIF.'
-                            self.errors = msg
-                            self.warnings += '\n'+msg
-                            return False
+                        # if not MSpGrp:
+                        #     msg = 'No recognizable space group name was found in the CIF.'
+                        #     self.errors = msg
+                        #     self.warnings += '\n'+msg
+                        #     return False
                     SpGrp = blk.get('_parent_space_group.name_H-M_alt')
                     if not SpGrp:
                         SpGrp = blk.get('_parent_space_group.name_H-M')
+                    if SpGrp and MSpGrp:
 #                    SpGrp = MSpGrp.replace("'",'')
-                    SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
-                    if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
-                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
-                    magnetic = True
-                    self.MPhase['General']['Type'] = 'magnetic'
-                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
-                    if not SpGrp:
+                        SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
+                        if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
+                        SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                        magnetic = True
+                        self.MPhase['General']['Type'] = 'magnetic'
+                        self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+                    elif not SpGrp:
                         print (MSpGrp)
                         self.warnings += 'No space group name was found in the CIF.'
-                        return False
+                        #return False
+                        SpGrp = 'P 1'
                 else:
                     SpGrp = SpGrp.replace('_','').split('(')[0]
                     SpGrp = G2spc.fullHM2shortHM(SpGrp)

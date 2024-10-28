@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIconstrGUI - constraint GUI routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
-# $Id: GSASIIconstrGUI.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Constraints and rigid bodies GUI routines follow.
 
@@ -25,7 +18,6 @@ import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO

@@ -54,7 +54,7 @@ GSAS-II is free open source software.
   and its
   [associated web site](https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser)
   will be maintained for the immediate future. 
-* Code documentation: https://gsasii.readthedocs.io.
+* Code documentation: https://gsas-ii.readthedocs.io.
 
 ## Please Cite
 If you use GSAS-II in any part of your project, please cite it in your

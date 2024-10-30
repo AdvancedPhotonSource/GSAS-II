@@ -1621,6 +1621,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2plt.PlotExposedImage(G2frame,event=None)
         
     # UpdateImageControls starts here: Image Controls main code             
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ImageMenu)
     #patch: fix for old files:
     if 'azmthOff' not in data:
         data['azmthOff'] = 0.0
@@ -1658,7 +1659,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['type'] = 'PWDR'
     typeDict = {'PWDR':typeList[0],'SASD':typeList[1],}
     G2frame.dataWindow.ClearData()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ImageMenu)
     G2frame.Bind(wx.EVT_MENU, OnCalibrate, id=G2G.wxID_IMCALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2G.wxID_IMRECALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibAll, id=G2G.wxID_IMRECALIBALL)
@@ -2183,14 +2183,15 @@ def UpdateMasks(G2frame,data):
         RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)
         G2plt.PlotXY(G2frame,[RingInt,],labelX='Azimuth',labelY='Intensity',newPlot=True,
             Title='Ring Mask Intensity: 2%s=%.2f'%(GkTheta,data['Rings'][ringId][0]),lines=True)
-                    
+
+    # UpdateMasks starts here
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MaskMenu)
     G2frame.dataWindow.ClearData()
     startScroll = None
     if G2frame.dataWindow:
         startScroll = G2frame.dataWindow.GetScrollPos(wx.VERTICAL) # save scroll position
     else:
         CleanupMasks(data) # posting page for 1st time; clean out anything unfinished
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MaskMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyMask, id=G2G.wxID_MASKCOPY)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
@@ -2850,6 +2851,7 @@ def UpdateStressStrain(G2frame,data):
         data['Sample load'] = 0.0
 # end patches
     
+    # UpdateStressStrain starts here
     G2frame.dataWindow.ClearData()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.StrStaMenu)
     G2frame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2G.wxID_APPENDDZERO)
@@ -4380,7 +4382,7 @@ def testColumnMetadata(G2frame):
         elif key in lbldict.values():
             l += ["  {} = {}".format(key,metadata[key])]
         else:
-            t += ["** Unexpected:  {}".format(key,metadata[key])]
+            t += [f"** Unexpected: {key}:{metadata[key]}"]
     if type(metadata['filename']) is str:
         l += ["","Filename: "+ metadata['filename']]
     else:

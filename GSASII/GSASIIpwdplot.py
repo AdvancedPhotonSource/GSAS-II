@@ -1580,12 +1580,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.canvas.mpl_disconnect(b)
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
     if not G2frame.PickId:
         print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
         return
     elif 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
         Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
         G2frame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataWindow.moveDiffCurve.GetId())
         G2frame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataWindow.moveTickLoc.GetId())
@@ -1606,6 +1606,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveTickSpc.Enable(False)
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
+        Page.phaseList = Phases = []
+    else:
+        Page.phaseList = Phases = []
     # assemble a list of validated colors for tickmarks
     valid_colors = []
     invalid_colors = []
@@ -1623,7 +1626,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         refColors=['b','r','c','g','m','k']
     else:
         refColors = valid_colors
-    Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     if not hasattr(Page,'phaseColors'): Page.phaseColors = {}
     for i,p in enumerate(Phases):
         Page.phaseColors[p] = Page.phaseColors.get(p,refColors[i%len(refColors)])

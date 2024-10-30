@@ -89,6 +89,6 @@ if __name__ == '__main__':
     import GSASIIdataGUI as G2gd
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin": 
-        wx.CallLater(100,application.ClearStartup)
+        wx.CallLater(50,application.ClearStartup)
     GSASIIpath.InvokeDebugOpts()
     application.MainLoop()

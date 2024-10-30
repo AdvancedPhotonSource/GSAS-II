@@ -8117,6 +8117,7 @@ class OpenGitTutorial(wx.Dialog):
         The data files associated with that directory are then downloaded.
         '''
         tutdir = self.onWebBrowse(event)
+        if tutdir is None: return
         GSASIIpath.downloadDirContents([tutdir,'data'],self.tutorialPath)
 
     def onWebBrowse(self,event):

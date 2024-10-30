@@ -4141,7 +4141,7 @@ def UpdatePhaseData(G2frame,Item,data):
             data.update(copy.deepcopy(orgData))   # get rid of prev phase
             magchoice = subKeep[sel]
             spg = magchoice['SGData']['SpGrp'].replace(' ','')
-            subId = subIds[sel]
+            #subId = subIds[sel]
             # generate the new phase            
             newPhase = copy.deepcopy(data)
             generalData = newPhase['General']
@@ -7975,7 +7975,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         batch.write(exstr+'\n')
         batch.write('pause\n')
         batch.close()
-        Proc = subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+        subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         
@@ -11242,7 +11242,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 ranDrwDict['opt'] = dlg.GetSelection()
-                sellbl = ranDrwDict['optList'][dlg.GetSelection()]
+                ranDrwDict['optList'][dlg.GetSelection()]
             else:
                 return
         finally:
@@ -12387,7 +12387,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         # sanity check: should this project be fitting texture?
         mainSizer.Add(wx.StaticText(Texture,label=
             ' NB: Normally texture model fitting generally requires multiple datasets with differing sample orientations/detector values'))
-        msg = ''
         if G2frame.testSeqRefineMode() and G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential results'):
             mainSizer.Add(wx.StaticText(Texture,label=
                 " Sequential result found. Use Texture/Refine texture above. See Method B in texture tutorial."))
@@ -13615,10 +13614,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevResId is not None:
                 resId = prevResId
             try:
-                rbName = RBnames[resId]
+                RBnames[resId]
             except:
                 resId = 0
-                rbName = RBnames[resId]
+                #rbName = RBnames[resId]
             rbObj = data['RBModels']['Residue'][resId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -13644,10 +13643,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevVecId is not None:
                 vecId = prevVecId
             try:
-                rbName = RBnames[vecId]
+                RBnames[vecId]
             except:
                 vecId = 0
-                rbName = RBnames[vecId]
+                #rbName = RBnames[vecId]
             rbObj = data['RBModels']['Vector'][vecId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -13669,10 +13668,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevSpnId is not None:
                 spnId = prevSpnId
                 try:
-                    rbName = RBnames[spnId]
+                    RBnames[spnId]
                 except:
                     spnId = 0
-                    rbName = RBnames[spnId]
+                    #rbName = RBnames[spnId]
             rbObj = data['RBModels']['Spin'][spnId]
             data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -15900,7 +15899,7 @@ of the crystal structure.
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            Ind = getAtomSelections(MapPeaks)
+            Ind = getAtomSelections(mapPeaks)
             Ind.sort()
             Ind.reverse()
             for ind in Ind:
@@ -16632,7 +16631,12 @@ of the crystal structure.
         return
         
     #### UpdatePhaseData execution starts here
-#patch
+    # make sure that the phase menu bars get created before selecting
+    # any (this will only be true on the first call to UpdatePhaseData)
+    if callable(G2frame.dataWindow.DataGeneral):
+        G2frame.dataWindow.DataGeneral()
+
+    #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
     if 'MCSA' not in data:
@@ -16911,7 +16915,7 @@ def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
     try: 
         sgnum = int(sgnum)
         sgsym = G2spc.spgbyNum[sgnum]
-        sgname = sgsym.replace(" ","")
+        #sgname = sgsym.replace(" ","")
     except:
         print(f'Problem with processing space group name {sglbl} and number {sgnum}')
         return

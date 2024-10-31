@@ -5507,9 +5507,10 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     self.reloadFromGPX(rtext,Rvals)
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
-                else:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
+                if refPlotUpdate:
+                    refPlotUpdate({},restore=True)
+                    refPlotUpdate = None
+                self.ResetPlots()
             finally:
                 dlg2.Destroy()
         elif 'psing' in Rvals:
@@ -5583,10 +5584,16 @@ If you continue from this point, it is quite likely that all intensity computati
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.reloadFromGPX(rtext)
+                    if refPlotUpdate:
+                        refPlotUpdate({},restore=True)
+                        refPlotUpdate = None
+                    self.ResetPlots()
                 else:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
+                    if refPlotUpdate:
+                        refPlotUpdate({},restore=True)
+                        refPlotUpdate = None
+                    self.ResetPlots()
                     return True
             finally:
                 dlg2.Destroy()
@@ -5810,7 +5817,6 @@ If you continue from this point, it is quite likely that all intensity computati
                                   ['RSTR','restrSumm'],['RB','RBsumm']):
                 if entry in Rvals and Rvals[entry]:
                     self.AddToNotebook(Rvals[entry],tag,TimeStamp=False)
-        self.ResetPlots()
         
     def SaveTreeSetting(self):
         'Save the current selected tree item by name (since the id will change)'
@@ -6044,9 +6050,13 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
                     SelectDataTreeItem(self,sId)
                     self.GPXtree.SelectItem(sId)
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
+                    if refPlotUpdate:
+                        refPlotUpdate({},restore=True)
+                        refPlotUpdate = None
                 else:
-                    if refPlotUpdate: refPlotUpdate({},restore=True)
+                    if refPlotUpdate:
+                        refPlotUpdate({},restore=True)
+                        refPlotUpdate = None
             finally:
                 dlg.Destroy()
             

@@ -788,7 +788,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
-                if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                if XtraPeakMode:
                     data['xtraPeaks'] = data.get('xtraPeaks',[])
                     data['xtraPeaks'].append(XY)
                     data['sigDict'] = {}    #now invalid
@@ -1133,7 +1133,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif lineNo > 1+nxcl:
                 PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                if XtraPeakMode:
                     tbl = peaks['xtraPeaks']
                 else:
                     tbl = peaks['peaks']
@@ -1288,8 +1288,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         changePlotSettings(G2frame,Plot)
         
     def refPlotUpdate(Histograms,cycle=None,restore=False):
-        '''called to update an existing plot during a Rietveld fit; it only updates the curves, 
-        not the reflection marks or the legend
+        '''called to update an existing plot during a Rietveld fit; it only 
+        updates the curves, not the reflection marks or the legend
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
@@ -1456,6 +1456,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
     plottype = plotType
+    XtraPeakMode = False   # Ignore if peak list menubar is not yet created
+    try:
+        XtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+    except:
+        pass
 
     # get powder pattern colors from config settings
     pwdrCol = {}
@@ -2257,7 +2262,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         l = []
                         PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                         peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                        if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                        if XtraPeakMode:
                             tbl = peaks['xtraPeaks']
                         else:
                             tbl = peaks['peaks']
@@ -2294,7 +2299,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
                         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-                        if G2frame.dataWindow.XtraPeakMode.IsChecked():
+                        if XtraPeakMode:
                             peaks['xtraPeaks'] = peaks.get('xtraPeaks',[])
                             tbl = peaks['xtraPeaks']
                             color = 'r'
@@ -2374,7 +2379,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
           or 
         'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-        or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
+        or (XtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 )
     for ph,markerlist in data[0].get('HKLmarkers',{}).items():
@@ -2462,7 +2467,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists'] or 
                   'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-                  or (G2frame.dataWindow.XtraPeakMode.IsChecked() and
+                  or (XtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
             #Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))

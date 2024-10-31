@@ -5450,11 +5450,11 @@ If you continue from this point, it is quite likely that all intensity computati
             return
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         if Controls.get('newLeBail',False):
-            dlgtxt = '''Do Le Bail refinement of intensities first?
+            dlgtxt = '''Reset Le Bail structure factors?
             
-    If Yes, resets starting structure factors; recommended after major parameter changes.
-    If No, then previous structure factors are used.'''
-            dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Refinement',style=wx.YES_NO)            
+    Yes: all structure factors are reset to start at unity; Le Bail-only fitting will be used before any least-squares cycles.\n
+    No: least-squares starts with previously set structure factors.'''
+            dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Mode',style=wx.YES_NO)
             result = wx.ID_NO
             try:
                 result = dlgb.ShowModal()
@@ -5478,7 +5478,7 @@ If you continue from this point, it is quite likely that all intensity computati
         else:
             refPlotUpdate = None
         try:
-            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate,newLeBail=Controls.get('newLeBail',False))
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -5528,7 +5528,10 @@ If you continue from this point, it is quite likely that all intensity computati
                 dlg.Destroy()
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
-            
+        # a fit has been done, no need to reset intensities again
+        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        Controls['newLeBail'] = False
+
     def OnLeBail(self,event):
         '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
         either single or sequentially
@@ -5544,7 +5547,6 @@ If you continue from this point, it is quite likely that all intensity computati
             rChi2initial = '?'
         
         if GSASIIpath.GetConfigValue('G2RefinementWindow'):            
-#            Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
             if (self.testSeqRefineMode()):
                 l = len(self.testSeqRefineMode())
             else:
@@ -5577,7 +5579,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 text += txt
                 rtext += txt
             text += '\nLoad new result & continue refinement?'
-            dlg2 = wx.MessageDialog(self,text,'LeBail fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
+            dlg2 = wx.MessageDialog(self,text,'LeBail-only fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
@@ -5656,7 +5658,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         
         try:
-            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=None,newLeBail=False)
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=None)
         except Exception as msg:
             print('Refinement failed with message',msg)
             Controls['deriv type'] = saveDervtype

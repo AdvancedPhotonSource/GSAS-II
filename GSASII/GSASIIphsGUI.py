@@ -2369,6 +2369,20 @@ def UpdatePhaseData(G2frame,Item,data):
                        
         def PawleySizer():
             # find d-space range in used histograms
+            def enablePawley(*args):
+                for c in PawleyCtrlsList:
+                    c.Enable(generalData['doPawley'])
+                # If Pawley is on, turn off Le Bail settings (since they will
+                # be hidden)
+                if generalData['doPawley']:
+                    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.GPXtree.root, 'Controls'))
+                    Controls['newLeBail'] = False
+                    for h in data['Histograms']:
+                        data['Histograms'][h]['LeBail'] = False
+                    G2G.G2MessageBox(G2frame,title='Note:',
+                            msg='Use Pawley Create in Operations menu of Pawley'+
+                            ' Reflections tab to complete the Pawley setup')
+                
             dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
             
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2381,24 +2395,30 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Pawley dmax'] = min(generalData['Pawley dmax'],dmax)
             generalData['Pawley dmin'] = max(generalData['Pawley dmin'],dmin)
 
+            PawleyCtrlsList = []
             pawlRef = G2G.G2CheckBoxFrontLbl(General,' Do Pawley refinement?',
-                                         generalData,'doPawley')
+                                         generalData,'doPawley',enablePawley)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label='  dmin: '),0,WACV)
             pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(75,-1),
                 xmin=dmin,xmax=20.,nDig=(10,5))
+            PawleyCtrlsList.append(pawlMin)
             pawleySizer.Add(pawlMin,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label='  dmax: '),0,WACV)
             pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(75,-1),
                 xmin=2.0,xmax=dmax,nDig=(10,5))
+            PawleyCtrlsList.append(pawlMax)
             pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,-1),
                 xmin=0.,xmax=1.,nDig=(10,3,'g'))
+            PawleyCtrlsList.append(pawlNegWt)
             pawleySizer.Add(pawlNegWt,0,WACV)
             pawleyOuter = wx.BoxSizer(wx.VERTICAL)
             pawleyOuter.Add(pawleySizer)
             pawleyOuter.Add(wx.StaticText(General,label=lbl),0,wx.LEFT,120)
+            for c in PawleyCtrlsList:
+                c.Enable(generalData['doPawley'])
             return pawleyOuter
             
         def MapSizer():
@@ -12805,7 +12825,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
                         data['Histograms'][histoName] = {
                             'Histogram':histoName,'Show':False,
-                            'LeBail':False,'newLeBail':True,
+                            'LeBail':False,'newLeBail':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],'Type':Inst['Type'][0],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -15492,13 +15512,16 @@ of the crystal structure.
         SetPhaseWindow(PawleyRefList,mainSizer)
                     
     def OnPawleySet(event):
-        '''Set Pawley parameters and optionally recompute
+        '''Open dialog to set Pawley parameters and optionally recompute reflections. 
+        This is called from the Phase/Pawley Reflections "Pawley Settings" 
+        menu command. These settings are also available on the Phase/General tab.
         '''
         def DisablePawleyOpts(*args):
-            for c in controlsList:
+            'dis-/enable Pawley options'
+            for c in PawleyCtrlsList:
                 c.Enable(generalData['doPawley'])
-
-        controlsList = []
+                
+        PawleyCtrlsList = []
         dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
         generalData = data['General']
         prevPawleySetting = generalData['doPawley']
@@ -15526,7 +15549,7 @@ of the crystal structure.
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
             xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float)
 #            xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
-        controlsList.append(pawlVal)
+        PawleyCtrlsList.append(pawlVal)
         pawleySizer.Add(pawlVal,0,WACV)
         #pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
         #temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
@@ -15535,7 +15558,7 @@ of the crystal structure.
         #    pawlVal.SetValue(generalData['Pawley dmin'])        
         #pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
         #    xmin=0.314,xmax=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
-        #controlsList.append(pawlQVal)
+        #PawleyCtrlsList.append(pawlQVal)
         #pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
 
@@ -15543,7 +15566,7 @@ of the crystal structure.
         pawleySizer.Add(wx.StaticText(genDlg,label='   Pawley dmax: '),0,WACV)
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmax',
             xmin=2.,xmax=dmax,nDig=(10,5),typeHint=float)
-        controlsList.append(pawlVal)
+        PawleyCtrlsList.append(pawlVal)
         pawleySizer.Add(pawlVal,0,WACV)
         mainSizer.Add(pawleySizer)
         
@@ -15552,7 +15575,7 @@ of the crystal structure.
         pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
             xmin=0.,xmax=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
-        controlsList.append(pawlNegWt)
+        PawleyCtrlsList.append(pawlNegWt)
         mainSizer.Add(pawleySizer)
 
         # make OK button
@@ -15574,7 +15597,13 @@ of the crystal structure.
         res = genDlg.ShowModal()
         genDlg.Destroy()
         if res == wx.ID_NO: return
-
+        # If Pawley is on, turn off Le Bail settings (since they will
+        # be hidden)
+        if generalData['doPawley']:
+            Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.GPXtree.root, 'Controls'))
+            Controls['newLeBail'] = False
+            for h in data['Histograms']:
+                data['Histograms'][h]['LeBail'] = False
         # ask to generate the reflections if the extraction setting or dmin has changed
         if generalData['doPawley'] and res == wx.ID_OK and (
                 not prevPawleySetting or startDmin != generalData['Pawley dmin']):
@@ -16634,7 +16663,9 @@ of the crystal structure.
     # make sure that the phase menu bars get created before selecting
     # any (this will only be true on the first call to UpdatePhaseData)
     if callable(G2frame.dataWindow.DataGeneral):
+        wx.BeginBusyCursor()        
         G2frame.dataWindow.DataGeneral()
+        wx.EndBusyCursor()
 
     #patch
     if 'RBModels' not in data:

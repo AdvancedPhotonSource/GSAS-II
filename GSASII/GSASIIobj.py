@@ -2208,6 +2208,33 @@ def validateAtomDrawType(typ,generalData={}):
     #         return typ
     return 'vdW balls'
 
+def patchControls(Controls):
+    '''patch routine to convert variable names used in parameter limits 
+    to G2VarObj objects 
+    (See :ref:`Parameter Limits<ParameterLimits>` description.)
+    '''
+    import GSASIIfiles as G2fil
+    #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
+    for d in 'parmMaxDict','parmMinDict':
+        if d not in Controls: Controls[d] = {}
+        for k in Controls[d]:  
+            if type(k) is str:
+                G2fil.G2Print("Applying patch to Controls['{}']".format(d))
+                Controls[d] = {G2VarObj(k):v for k,v in Controls[d].items()}
+                break
+    conv = False
+    if 'parmFrozen' not in Controls: Controls['parmFrozen'] = {}
+    for k in Controls['parmFrozen']:
+        for item in Controls['parmFrozen'][k]:
+            if type(item) is str:
+                conv = True
+                Controls['parmFrozen'][k] = [G2VarObj(i) for i in Controls['parmFrozen'][k]]
+                break
+    if conv: G2fil.G2Print("Applying patch to Controls['parmFrozen']")
+    if 'newLeBail' not in Controls:
+        Controls['newLeBail'] = False
+    # end patch
+
 if __name__ == "__main__":
     # test variable descriptions
     for var in '0::Afrac:*',':1:Scale','1::dAx:0','::undefined':

@@ -14,32 +14,13 @@ import datetime as dt
 try:
     import numpy as np
 except ImportError:
-    print("skipping numpy in GSASIIpath")
-try:
-    import requests
-except:
-    print('Python requests package not installed (required for web access')
+    print("numpy import failed in GSASIIpath")
 
 # fix up path before using git. Needed when using conda without
 #   activate (happens on MacOS w/GSAS-II.app)
 pyPath = os.path.dirname(os.path.realpath(sys.executable))
 if sys.platform != "win32" and pyPath not in os.environ['PATH'].split(':'):
     os.environ['PATH'] = pyPath + ':' + os.environ['PATH']
-    
-try:
-    import git
-except ImportError as msg:
-    if 'Failed to initialize' in msg.msg:
-        print('The gitpython package is unable to locate a git installation.')
-        print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
-    elif 'No module' in msg.msg:
-        print('Python gitpython module not installed')
-    else:
-        print(f'gitpython failed to import, but why? Error:\n{msg}')
-    print('Note: git and gitpython are required for GSAS-II to self-update')
-except Exception as msg:
-    print(f'git import failed with unexpected error:\n{msg}')
-    print('Note: git and gitpython are required for GSAS-II to self-update')
 
 # hard-coded github repo locations
 G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools"
@@ -381,6 +362,10 @@ BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
 
 def openGitRepo(repo_path):
+    try:
+        import git
+    except:
+        return None        
     try:  # patch 3/2024 for svn dir organization
         return git.Repo(path2GSAS2)
     except git.InvalidGitRepositoryError:
@@ -404,6 +389,10 @@ def gitLookup(repo_path,gittag=None,githash=None):
         * message is the check-in message (str)
         * date_time is the check-in date as a datetime object
     '''
+    try:
+        import git
+    except:
+        return None        
     g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
         raise ValueError("Cannot specify a hash and a tag")
@@ -529,6 +518,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
        older version) or the branch has been changed, the values for each 
        of the three items above will be None.
     '''
+    try:
+        import git
+    except:
+        print('Failed to import git in gitCheckForUpdates()')
+        return (None,None,None)
     fetched = False
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
@@ -689,6 +683,11 @@ def getGitBinaryReleases(cache=False):
       download a tar containing that binary distribution. 
     '''
     # Get first page of releases
+    try:
+        import requests
+    except:
+        print('Unable to install binaries in getGitBinaryReleases():\n requests module not available')
+        return
     releases = []
     tries = 0
     while tries < 5: # this has been known to fail, so retry
@@ -811,9 +810,13 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     :returns: None
     '''
     # packages not commonly used so import them here not on startup
-    import requests
     import tempfile
     import tarfile
+    try:
+        import requests
+    except:
+        print('Unable to install binaries in InstallGitBinary():\n requests module not available')
+        return
     # download to scratch
     tar = tempfile.NamedTemporaryFile(suffix='.tgz',delete=False)
     try:
@@ -893,6 +896,11 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     The second example will provide the contents of the 
     "TOF Sequential Single Peak Fit"/data directory. 
     '''
+    try:
+        import requests
+    except:
+        print('Unable to search GitHub in dirGitHub():\n requests module not available')
+        return
     dirname = ''
     for item in dirlist:
         dirname += item + '/'
@@ -930,6 +938,11 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
     '''Download the entire contents of a directory from a repository 
     on GitHub. Used to download data for a tutorial.
     '''
+    try:
+        import requests
+    except:
+        print('Unable to download Tutorial data in downloadDirContents():\n requests module not available')
+        return
     filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
     if filList is None:
         print(f'Directory {"/".join(dirlist)!r} does not have any files')
@@ -2404,6 +2417,7 @@ if __name__ == '__main__':
     separate process. 
     '''
     # check what type of update is being called for
+    import git
     gitUpdate = False
     preupdateType = None
     updateType = None

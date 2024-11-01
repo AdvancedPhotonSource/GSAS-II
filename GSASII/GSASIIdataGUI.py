@@ -454,6 +454,29 @@ def ShowVersions():
     except:
         pass
     print(GSASIIpath.getG2VersionInfo())
+    
+    # warn if problems with Git
+    try:
+        import git
+    except ImportError as msg:
+        if 'Failed to initialize' in msg.msg:
+            print('The gitpython package is unable to locate a git installation.')
+            print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
+        elif 'No module' in msg.msg:
+            print('Warning: Python gitpython module not installed')
+        else:
+            print(f'gitpython failed to import, but why? Error:\n{msg}')
+        print('Note: git and gitpython are required for GSAS-II to self-update')
+    except Exception as msg:
+        print(f'git import failed with unexpected error:\n{msg}')
+        print('Note: git and gitpython are required for GSAS-II to self-update')
+
+    # warn if problems with requests package
+    try:
+        import requests
+    except:
+        print('Warning: Python requests package not installed (required for\n'+
+              ' GSAS-II to access web pages or self-install binary modules)')
 
     if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
         path2repo = os.path.dirname(GSASIIpath.path2GSAS2)

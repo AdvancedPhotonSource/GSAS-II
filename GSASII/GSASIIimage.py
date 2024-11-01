@@ -16,10 +16,6 @@ from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
 import GSASIIpath
-try:
-    import GSASIIplot as G2plt
-except ImportError: # expected in scriptable w/o matplotlib and/or wx
-    pass
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
@@ -985,13 +981,19 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
+        import GSASIIplot as G2plt
         G2plt.PlotImage(G2frame,newImage=True)        
     return [vals,varyList,sigList,parmDict,covar]
 
 def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.
+
+    Called only from ``OnImRelease`` (mouse release) in 
+    :func:`GSASIIplot.PlotImage`, thus expected to be used from GUI 
+    only (not scripted)
     '''
+    import GSASIIplot as G2plt
     G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']

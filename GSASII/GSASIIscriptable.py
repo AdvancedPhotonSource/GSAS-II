@@ -31,16 +31,13 @@ import argparse
 import os.path as ospath
 import sys
 import platform
-import pickle as cPickle
-strtypes = (str,bytes)
+import pickle
 import copy
 import os
 import random as ran
 
-import numpy.ma as ma
-import scipy.interpolate as si
 import numpy as np
-import scipy as sp
+import numpy.ma as ma
 
 import GSASIIpath
 GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these modules can be imported
@@ -238,7 +235,7 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
             data.append([name[0],item['data']])
             for item2 in name[1:]:
                 data.append([item2,item[item2]])
-            cPickle.dump(data,file,1)
+            pickle.dump(data,file,1)
     finally:
         file.close()
     G2fil.G2Print('gpx file saved as %s'%ProjFile)
@@ -724,32 +721,6 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     Imax = np.max(sumImg)
     Controls['range'] = [(0,Imax),[0,Imax]]
     return np.asarray(sumImg,dtype='int32')
-
-def patchControls(Controls):
-    '''patch routine to convert variable names used in parameter limits 
-    to G2VarObj objects 
-    (See :ref:`Parameter Limits<ParameterLimits>` description.)
-    '''
-    #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-    for d in 'parmMaxDict','parmMinDict':
-        if d not in Controls: Controls[d] = {}
-        for k in Controls[d]:  
-            if type(k) is str:
-                G2fil.G2Print("Applying patch to Controls['{}']".format(d))
-                Controls[d] = {G2obj.G2VarObj(k):v for k,v in Controls[d].items()}
-                break
-    conv = False
-    if 'parmFrozen' not in Controls: Controls['parmFrozen'] = {}
-    for k in Controls['parmFrozen']:
-        for item in Controls['parmFrozen'][k]:
-            if type(item) is str:
-                conv = True
-                Controls['parmFrozen'][k] = [G2obj.G2VarObj(i) for i in Controls['parmFrozen'][k]]
-                break
-    if conv: G2fil.G2Print("Applying patch to Controls['parmFrozen']")
-    if 'newLeBail' not in Controls:
-        Controls['newLeBail'] = False
-    # end patch
 
 def _constr_type(var):
     '''returns the constraint type based on phase/histogram use 
@@ -2697,7 +2668,7 @@ class G2Project(G2ObjectWrapper):
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
         if G2obj.TestIndexAll(): self.index_ids()
-        patchControls(Controls)
+        G2obj.patchControls(Controls)
 
         if mode == 'remove':
             if variable is None and histogram is None:
@@ -2761,7 +2732,7 @@ class G2Project(G2ObjectWrapper):
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
         if G2obj.TestIndexAll(): self.index_ids()
-        patchControls(Controls)
+        G2obj.patchControls(Controls)
         if histogram:
             hist = self.histogram(histogram)
             if hist:
@@ -2816,7 +2787,7 @@ class G2Project(G2ObjectWrapper):
             for key in ('parmMinDict','parmMaxDict','parmFrozen'):
                 if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
             if G2obj.TestIndexAll(): self.index_ids()
-            patchControls(self.data['Controls']['data'])
+            G2obj.patchControls(self.data['Controls']['data'])
         if control == 'cycles':
             return self.data['Controls']['data']['max cyc']
         elif control == 'sequential':
@@ -2873,7 +2844,7 @@ class G2Project(G2ObjectWrapper):
             for key in ('parmMinDict','parmMaxDict','parmFrozen'):
                 if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
             if G2obj.TestIndexAll(): self.index_ids()
-            patchControls(self.data['Controls']['data'])
+            G2obj.patchControls(self.data['Controls']['data'])
         if control == 'cycles':
             self.data['Controls']['data']['max cyc'] = int(value)
         elif control == 'seqCopy':
@@ -3501,6 +3472,7 @@ class G2PwdrData(G2ObjectWrapper):
                 instDict['SH/L'] = max(instDict['SH/L'], 0.002)
             return dataType, instDict, insVary
 
+        import scipy.interpolate as si
         bgrnd = self.data['Background']
 
         # Need our fixed points in order
@@ -4639,7 +4611,7 @@ class G2Phase(G2ObjectWrapper):
                     mustrain = self.data['Histograms'][h]['Mustrain']
                     newType = mustrain[0]
                     direction = None
-                    if isinstance(val, strtypes):
+                    if isinstance(val, (str,bytes)):
                         if val in ['isotropic', 'uniaxial', 'generalized']:
                             newType = val
                         else:
@@ -4657,7 +4629,7 @@ class G2Phase(G2ObjectWrapper):
                             if 'refine' in val:
                                 mustrain[2][0] = False
                                 types = val['refine']
-                                if isinstance(types, strtypes):
+                                if isinstance(types, (str,bytes)):
                                     types = [types]
                                 elif isinstance(types, bool):
                                     mustrain[2][1] = types
@@ -4695,7 +4667,7 @@ class G2Phase(G2ObjectWrapper):
                     size = self.data['Histograms'][h]['Size']
                     newType = size[0]
                     direction = None
-                    if isinstance(val, strtypes):
+                    if isinstance(val, (str,bytes)):
                         if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
                             newType = val
                         else:

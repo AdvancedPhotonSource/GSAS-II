@@ -44,7 +44,6 @@ import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
@@ -4757,7 +4756,7 @@ class VirtualVarBox(wx.ListCtrl):
     def __init__(self, parent):
         self.parmWin = parent
         #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-        G2sc.patchControls(self.parmWin.Controls)
+        G2obj.patchControls(self.parmWin.Controls)
         # end patch
         wx.ListCtrl.__init__(
             self, parent, -1,
@@ -8205,6 +8204,7 @@ class OpenGitTutorial(wx.Dialog):
 AutoLoadWindow = None
 
 def AutoLoadFiles(G2frame,FileTyp='pwd'):
+    import GSASIIscriptable as G2sc
     def OnBrowse(event):
         '''Responds when the Browse button is pressed to load a file.
         The routine determines which button was pressed and gets the

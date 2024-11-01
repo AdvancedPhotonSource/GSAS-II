@@ -27,7 +27,6 @@ import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -258,7 +257,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-    G2sc.patchControls(Controls)
+    G2obj.patchControls(Controls)
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement

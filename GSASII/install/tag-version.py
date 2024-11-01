@@ -5,12 +5,16 @@
 # not used on every check-in but don't go too many days/mosds without a new
 # version #
 
-# perhaps someday include as a clean or smudge step:
+# perhaps someday include as a clean (run on git add) or smudge
+# step (run on git pull). 
+# Alternately, on commit/pull might get a count of how many untagged
+# check-ins there have been. 
 #
 #    [filter "createVersionFile"]
 #       clean  = python git_filters.py --tag-version
 #       smudge = python git_filters.py --record-version
-# for debug, redirect output to a log file
+# for debug of auto-run scripts, include a redirect in the script to
+# send output to a log file:
 #    sys.stderr = sys.stdout = open('/tmp/gitfilter.log','a')
 #
 import os
@@ -102,4 +106,9 @@ if __name__ == '__main__':
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')
 
-    print('Now do a git add, git commit & git push')
+    print('Now do\n\t git add \n\t git commit \n\t git push \n\t git push --follow-tags (better than git push --tags?)')
+
+# Git 2.4 has added the push.followTags option to turn that flag on by default which you can set with:
+#
+#    git config --global push.followTags true
+# or by adding followTags = true to the [push] section of your ~/.gitconfig file.

@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_PILTIF.py $
-# $Id: G2img_PILTIF.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
+Read TIF files using the PIL/Pillow module.
+
 The metadata can be specified in a file with the same name and path as 
 the TIFF file except that the the extension is .metadata.
 
@@ -37,15 +32,10 @@ CenterPixelY                     Location of beam center as a pixel number (in X
 '''
 
 from __future__ import division, print_function
-import struct as st
-import numpy as np
-import time
 import GSASIIobj as G2obj
-import GSASIIpath
 import GSASIIfiles as G2fil
 import G2img_1TIF
 DEBUG = False
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class TIF_LibraryReader(G2obj.ImportImage):
     '''Reads TIF files using a standard library routine. Metadata (such as pixel 

@@ -6,7 +6,6 @@ from __future__ import division, print_function
 import sys
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -221,7 +220,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
     #                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
                     h,k,l = [int(h),int(k),int(l)]
                 elif self.Super == 1:
-                    h,k,l,m1,Fo,sigFo,Tw = SF.split()
+                    h,k,l,m1,Fo,sigFo,Tw = S.split()
     #                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
                     h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
                 Tw = Tw.strip()

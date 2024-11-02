@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-02-06 15:54:24 -0600 (Mon, 06 Feb 2023) $
-# $Author: vondreele $
-# $Revision: 5495 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_rigaku.py $
-# $Id: G2pwd_rigaku.py 5495 2023-02-06 21:54:24Z vondreele $
-########### SVN repository information ###################
 
 from __future__ import division, print_function
 import os
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5495 $")
 npsind = lambda x: np.sin(np.pi*x/180.)
 class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
@@ -232,7 +223,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
             w = []
             sq = []
             wave = 1.540593   #Cuka1 default
-            Temperature = 300
+            #Temperature = 300
             block = 0
             while True:
                 line = fp.readline()[:-1]

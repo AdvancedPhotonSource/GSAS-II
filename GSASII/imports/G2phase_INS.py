@@ -8,7 +8,6 @@ import random as ran
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
-import GSASIIpath
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .INS file and pulls out a selected phase'

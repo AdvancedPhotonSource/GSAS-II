@@ -7,7 +7,6 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
-import GSASIIpath
 import CifFile as cif # PyCifRW from James Hester
 
 class CIFhklReader(G2obj.ImportStructFactor):

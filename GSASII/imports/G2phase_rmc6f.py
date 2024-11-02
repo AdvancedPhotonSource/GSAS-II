@@ -8,7 +8,6 @@ import numpy as np
 import random as ran
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
-import GSASIIpath
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .rmc6f file and pulls out the phase'

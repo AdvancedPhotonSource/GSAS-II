@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-10-21 21:12:26 -0500 (Sat, 21 Oct 2023) $
-# $Author: toby $
-# $Revision: 5684 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_SFRM.py $
-# $Id: G2img_SFRM.py 5684 2023-10-22 02:12:26Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -15,7 +8,6 @@ import os
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
-GSASIIpath.SetVersionNumber("$Revision: 5684 $")
 class SFRM_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read Bruker Advance image data .sfrm/.grfm file.
     '''
@@ -102,7 +94,7 @@ def GetSFRMData(self,filename):
         elif 'HDRBLKS' in line:
             imageBeg = 512*int(fields[0])
         elif 'NOVERFL' in line:
-            Nunder = int(fields[0])
+            #Nunder = int(fields[0])
             N2byte = 2*int(fields[1])
             if N2byte%16:
                 N2byte = (N2byte//16+1)*16

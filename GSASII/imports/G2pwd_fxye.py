@@ -6,7 +6,6 @@ import os.path as ospath
 import platform
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'

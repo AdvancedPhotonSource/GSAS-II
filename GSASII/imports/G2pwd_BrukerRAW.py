@@ -12,7 +12,6 @@ try:
 except:
     xml = None
 import GSASIIobj as G2obj
-#import GSASIIctrlGUI as G2G
 import GSASIIfiles as G2fil
 import GSASIIpath
 class raw_ReaderClass(G2obj.ImportPowderData):

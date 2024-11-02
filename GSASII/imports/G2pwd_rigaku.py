@@ -6,7 +6,6 @@ import os.path as ospath
 import platform
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded
@@ -148,8 +147,6 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
-    # TODO: refactor this: 
-    #    Should not count on ContentsValidator being called before Reader
 
     def ContentsValidator(self, filename):
         if '2' in platform.python_version_tuple()[0]:

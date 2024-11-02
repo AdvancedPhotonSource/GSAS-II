@@ -8836,7 +8836,7 @@ def SetDataMenuBar(G2frame,menu=None):
     elif callable(menu):  # if pointer to menu is a function, call it to create
         # the menu. That function should call G2frame.SetDataMenuBar to
         # post the menubar.
-        if GSASIIpath.GetConfigValue('debug'): print('creating menu')
+        #if GSASIIpath.GetConfigValue('debug'): print('creating menu')
         menu()
         return
     else:

@@ -242,12 +242,16 @@ Scripting Requirements
 -----------------------
 
 The GSAS-II scripting interface (:mod:`GSASIIscriptable`) will not
-run without two Python extension packages:
+run without the NumPy Python extension package:
 
-* NumPy (http://docs.scipy.org/doc/numpy/reference/), 
+* NumPy (http://docs.scipy.org/doc/numpy/reference/),
+
+While not required, and not used very much in GSAS-II scripting,
+installing the SciPy is recommended:
+
 * SciPy (http://docs.scipy.org/doc/scipy/reference/).
 
-These fortunately are common and are easy to install. There are
+These packages fortunately are common and are easy to install. There are
 some relatively minor scripting capabilities that will only run when a few
 additional packages are installed:
   

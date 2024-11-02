@@ -812,6 +812,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
+            if len(event.artist.get_data()[0]) != 2: return  # don't select a tickmark to drag
             # Limits: add excluded region or move limits by use of menu command
             # and then pick a point
             # Or, drag line for limits/excluded region
@@ -1609,6 +1610,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
+    elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']:
+        # get reflection positions for other places where they are displayed
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
+        Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
         Page.phaseList = Phases = []
@@ -2465,7 +2471,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=3)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
-        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists'] or 
+        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits'] or 
                   'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
                   or (XtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')

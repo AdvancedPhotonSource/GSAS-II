@@ -106,7 +106,12 @@ def ShowVersions():
     '''Show the versions all of required Python packages, etc.
     '''
     out = ''
-    pkgList = [('Python',None), ('numpy',np), ('scipy',sp)]
+    pkgList = [('Python',None), ('numpy',np)]
+    try:
+        import scipy
+        pkgList.append(('scipy',scipy))
+    except:
+        pass
     try:
         import IPython
         pkgList.append(('IPython',IPython))
@@ -888,13 +893,17 @@ class G2Project(G2ObjectWrapper):
         Updates self.filename if a new filename provided"""
         controls_data = self.data['Controls']['data']
         # place info in .gpx about GSAS-II
-        #    module versions
+        #  report versions of modules; ignore what has not been used
+        modList = [np]
         try:
-            import matplotlib as mpl
-            python_library_versions = G2fil.get_python_versions([mpl, np, sp])
-        except ImportError:
-            python_library_versions = G2fil.get_python_versions([np, sp])
-        controls_data['PythonVersions'] = python_library_versions
+            modList += [mpl]
+        except NameError:
+            pass
+        try:
+            modList += [sp]
+        except NameError:
+            pass        
+        controls_data['PythonVersions'] = G2fil.get_python_versions(modList)
         #    G2 version info 
         controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         if GSASIIpath.HowIsG2Installed().startswith('git'):
@@ -4852,9 +4861,11 @@ class G2Phase(G2ObjectWrapper):
                 if item == 'PhaseFraction': item = 'Scale'
                 if item not in use:
                     del copydict[item]
-
-        G2fil.G2Print('Copying item(s) {} from histogram {}'.format(list(copydict.keys()),sourcehist))
-        G2fil.G2Print(' to histogram(s) {}'.format([self._decodeHist(h) for h in targethistlist]))
+        txt = ', '.join(copydict.keys())
+        G2fil.G2Print(f'copyHAPvalues for phase {self.name}')
+        G2fil.G2Print(f'Copying item(s): {txt}\n from histogram: {sourcehist}')
+        txt = '\n\t'.join([self._decodeHist(h) for h in targethistlist])
+        G2fil.G2Print(f' to histogram(s):\n\t{txt}')
         for h in targethistlist:
             h = self._decodeHist(h)
             if h not in self.data['Histograms']:

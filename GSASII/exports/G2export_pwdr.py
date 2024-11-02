@@ -1,24 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_pwdr.py $
-# $Id: G2export_pwdr.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_pwdr` follow:
 '''
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
-import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 
-class ExportPowderFXYE(G2IO.ExportBaseclass):
+class ExportPowderFXYE(G2fil.ExportBaseclass):
     '''Used to create a FXYE file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -111,7 +100,7 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
             self.Writer(hist,prmname=prmname)
             print('Histogram '+hist+' written to '+self.fullpath)
 
-class ExportPowderXYE(G2IO.ExportBaseclass):
+class ExportPowderXYE(G2fil.ExportBaseclass):
     '''Used to create a Topas XYE file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

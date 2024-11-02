@@ -1531,11 +1531,12 @@ class ImportImage(ImportBaseclass):
         :meth:`Reader`. This returns a list of reader objects for each read image.
         Also used in :func:`GSASIIscriptable.import_generic`.
 
-      * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
+      * Images are read alternatively in :func:`GSASIImiscGUI.ReadImages`, which puts image info
         directly into the data tree.
 
       * Unlike all other data types read by GSAS-II, images are only kept in memory as 
-        they are used and function :func:`GSASIIIO.GetImageData` is used to reread images
+        they are used and function :func:`GSASIIfiles.GetImageData` or 
+        :func:`GSASIIfiles.RereadImageData` is used to reread images
         if they are reloaded. For quick retrieval of previously read images, it may be useful to 
         save sums of images or save a keyword (see ``ImageTag``, below
 

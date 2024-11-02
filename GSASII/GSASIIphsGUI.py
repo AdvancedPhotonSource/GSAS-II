@@ -40,7 +40,7 @@ import GSASIIpwdplot as G2pwpl
 #     import imp
 #     imp.reload(G2plt)
 import GSASIIdataGUI as G2gd
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
@@ -3733,7 +3733,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Restraints[ophsnam]['Angle']['Angles'] = []
             # Now generate .gpx files and show results
             for num,s in structDict.items():   # loop over supergroup settings
-                f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+                f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
                 if f: gpxList.append(msgs[num])
         ans = showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,pagelist[0],msgs[0])
         for i in fileList: os.unlink(i) # cleanup tmp web pages
@@ -3771,7 +3771,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 del pagelist[key]
                 structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
                 for num,s in structDict.items():   # loop over supergroup settings
-                    f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+                    f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
                     if f:
                         gpxList.append(msgs[num])
                 fndStruct = SUBGROUPS.find2SearchAgain(pagelist,'')

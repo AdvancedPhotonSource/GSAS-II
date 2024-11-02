@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-19 13:31:53 -0500 (Fri, 19 Apr 2024) $
-# $Author: vondreele $
-# $Revision: 5782 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_rmc6f.py $
-# $Id: G2phase_rmc6f.py 5782 2024-04-19 18:31:53Z vondreele $
-########### SVN repository information ###################
-'''
+'''Class to read a phase from a RMCprofile output file
 '''
 from __future__ import division, print_function
 import sys
@@ -15,9 +8,7 @@ import numpy as np
 import random as ran
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
-import GSASIIctrlGUI as G2G
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5782 $")
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .rmc6f file and pulls out the phase'
@@ -51,6 +42,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         fp = open(filename, 'r')
         Phase = {}
         Title = os.path.split(filename)
+        import GSASIIctrlGUI as G2G
         G2G.SaveGPXdirectory(Title[0])
         Title = os.path.splitext(Title[1])[0]
         Atoms = []

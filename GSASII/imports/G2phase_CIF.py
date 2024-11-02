@@ -15,11 +15,6 @@ import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import GSASIIpath
 import GSASIIfiles as G2fil
-import SUBGROUPS
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
 import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
@@ -121,6 +116,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
             try:
+                import GSASIIctrlGUI as G2G
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
             except: # no wxPython
@@ -673,12 +669,15 @@ shift later as an alternative to the above.'''
                 else:
                     msg += '\nIf you say "no" here you will need to do this yourself manually.'
                 try:
+                    import GSASIIctrlGUI as G2G
                     ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
                 except Exception as err: # fails if non-interactive (no wxPython)
                     print(err)
                     print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                     ans = True
-                if ans: SUBGROUPS.createStdSetting(filename,self)
+                if ans:
+                    import SUBGROUPS
+                    SUBGROUPS.createStdSetting(filename,self)
         return returnstat
         
     def ISODISTORT_test(self,blk):

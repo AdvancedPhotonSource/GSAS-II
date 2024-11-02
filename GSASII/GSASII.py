@@ -8,8 +8,8 @@ MacOS. For other platforms ``wx.App()`` is called directly.
 '''
 
 import sys
-import platform
-import scipy.optimize # addresses problem with build for wx on Pi
+#import platform
+import scipy.optimize # loading here addresses problem with build for wx on Pi
 try:
     import wx
     # the next line removes the need for pythonw. Thanks to Matt Newville!

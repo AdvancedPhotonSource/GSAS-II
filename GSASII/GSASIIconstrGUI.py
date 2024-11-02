@@ -31,7 +31,6 @@ import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIphsGUI as G2phG
-import GSASIIIO as G2IO
 import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -2473,7 +2472,7 @@ unselected atoms appear much darker than selected atoms.
                 else:
                     print('nothing selected')
                     return
-                obj = G2IO.ExportBaseclass(G2frame,'XYZ','.xyz')
+                obj = G2fil.ExportBaseclass(G2frame,'XYZ','.xyz')
                 #obj.InitExport(None)
                 if obj.ExportSelect():    # set export parameters; ask for file name
                     return

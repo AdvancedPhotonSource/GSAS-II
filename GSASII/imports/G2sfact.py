@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-12 21:06:19 -0500 (Fri, 12 Apr 2024) $
-# $Author: toby $
-# $Revision: 5776 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sfact.py $
-# $Id: G2sfact.py 5776 2024-04-13 02:06:19Z toby $
-########### SVN repository information ###################
-'''
+'''Classes to read single crystal reflection files in formats used by:
+Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
 from __future__ import division, print_function
 import sys
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5776 $")
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -597,15 +590,15 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
         except:
             return False
 
-class NIST_hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
+class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron CW F**2, sig(F**2) reflections from a NIST hb3a int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = u'Neutron NIST hb3a  CW HKL F2'
-            longFormatName = u'Neutron NIST hb3a  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
+            formatName = u'Neutron HFIR HB-3A  CW HKL F2'
+            longFormatName = u'Neutron HIFR HB-3A  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
         else:
-            formatName = u'Neutron NIST hb3a  CW HKL F\u00b2'
-            longFormatName = u'Neutron NIST hb3a  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
+            formatName = u'Neutron NIST HIFR  CW HKL F\u00b2'
+            longFormatName = u'Neutron HFIR HB-3A  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,

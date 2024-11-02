@@ -486,7 +486,7 @@ def gitTestGSASII(verbose=True,g2repo=None):
     code = 0
     if g2repo.is_dirty():                     # has changed files
         code += 1
-        count_modified_files = len(g2repo.index.diff(None))
+        #count_modified_files = len(g2repo.index.diff(None))
     if g2repo.head.is_detached:
         code += 2                             # detached
     else:
@@ -618,7 +618,7 @@ def gitGetUpdate(mode='Background'):
     else:
         g2repo = openGitRepo(path2GSAS2)
         g2repo.remote().fetch()
-        if GetConfigValue('debug'): print(f'Updates fetched')
+        if GetConfigValue('debug'): print('Updates fetched')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
     '''Provides the history of commits to the master, either as tags 
@@ -659,7 +659,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
                     for i in history[:maxdepth]]
         return [[i[0]] if i[1]=='' else i for i in r1]
     else:
-        raise ValueError(f'gitHistory has invalid value specified: {value}')
+        raise ValueError(f'gitHistory has invalid values specified: {values}')
 
 def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
@@ -715,7 +715,8 @@ def getGitBinaryReleases(cache=False):
             # prevents us from using a query to get them
             if cache and count > 4:
                 fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
-                for key in dict(zip(versions,URLs)):
+                res = dict(zip(versions,URLs))
+                for key in res:
                     fp.write(f'{key} : {res[key]}\n')
                 fp.close()
             return dict(zip(versions,URLs))
@@ -1588,12 +1589,12 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
     modcount = 0
     x = ET.fromstring(out)
     for i0 in x.iter('entry'):
-        filename = i0.attrib.get('path','?')
-        wc_rev = ''
+        #filename = i0.attrib.get('path','?')
+        #wc_rev = ''
         status = ''
         switched = ''
         for i1 in i0.iter('wc-status'):
-            wc_rev = i1.attrib.get('revision','')
+            #wc_rev = i1.attrib.get('revision','')
             status = i1.attrib.get('item','')
             switched = i1.attrib.get('switched','')
             if i1.attrib.get('wc-locked',''): locked += 1
@@ -1603,12 +1604,12 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
             modcount += 1
         elif status == "normal":
             updatecount += 1
-        file_rev = ''
-        for i2 in i1.iter('commit'):
-            file_rev = i2.attrib.get('revision','')
-        local_status = ''
-        for i1 in i0.iter('repos-status'):
-            local_status = i1.attrib.get('item','')
+        #file_rev = ''
+        #for i2 in i1.iter('commit'):
+        #    file_rev = i2.attrib.get('revision','')
+        #local_status = ''
+        #for i1 in i0.iter('repos-status'):
+        #    local_status = i1.attrib.get('item','')
         #print(filename,wc_rev,file_rev,status,local_status,switched)
     return updatecount,modcount,locked
 
@@ -2305,7 +2306,7 @@ def addCondaPkg():
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
         return None
-    condaexe = os.environ['CONDA_EXE']
+    #condaexe = os.environ['CONDA_EXE']
     currenv = os.environ['CONDA_DEFAULT_ENV']
     if sys.platform == "win32":
         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
@@ -2383,6 +2384,7 @@ else:
     print('Created file',newfil)
     try:
         import G2script
+        G2script
     except ImportError:
         print('Unexpected error: import of G2script failed!')
         return
@@ -2411,6 +2413,108 @@ BinaryPathLoaded = False
 binaryPath = ''
 IPyBreak = DoNothing
 pdbBreak = DoNothing
+
+def postURL(URL,postdict,getcookie=None,usecookie=None,
+                timeout=None,retry=2,mode='get'):
+    '''Posts a set of values as from a web form using the "get" or "post" 
+    protocols. 
+    If access fails to an https site, the access is retried with http.
+
+    :param str URL: the URL to post; typically something 
+       like 'http://www.../dir/page?'
+    :param dict postdict: contains keywords and values, such
+       as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
+    :param dict getcookie: dict to save cookies created in call, or None
+       (default) if not needed. 
+    :param dict usecookie: dict containing cookies to be used in call, 
+       or None (default) if not needed.
+    :param int timeout: specifies a timeout period for the get or post (default 
+      is None, which means the timeout period is set by the server). The value 
+      when specified is the time in seconds to wait before giving up on the 
+      request.
+    :param int retry: the number of times to retry the request, if it times out.
+      This is only used if timeout is specified. The default is 2. Note that
+      if retry is left at the default value (2), The timeout is increased by
+      25% for the second try.
+    :param str mode: either 'get' (default) or 'post'. Determines how
+       the request will be submitted. 
+    :returns: a string with the response from the web server or None
+       if access fails.
+    '''
+    try:
+        import requests # delay this until now, since rarely needed
+    except:
+        # this import seems to fail with the Anaconda pythonw on
+        # macs; it should not!
+        print('Warning: failed to import requests. Python config error')
+        return None
+
+    if mode == 'get':
+        reqopt = requests.get
+    else:
+        reqopt = requests.post
+    
+    repeat = True
+    count = 0
+    while repeat:
+        count += 1
+        r = None
+        repeat = False
+        try:
+            if timeout is not None:
+                r = reqopt(URL,params=postdict,cookies=usecookie,
+                                     timeout=timeout)
+            else:
+                r = reqopt(URL,params=postdict,cookies=usecookie)
+            if r.status_code == 200:
+                if GetConfigValue('debug'): print('request OK')
+                page = r.text
+                if getcookie is not None:
+                    getcookie.update(r.cookies)
+                return page # success
+            else:
+                print('request to {} failed. Reason={}'.format(URL,r.reason))
+        except requests.exceptions.ConnectionError as msg:
+            if 'time' in str(msg) and 'out' in str(msg): 
+                print(f'server timeout accessing {URL}')
+                if GetConfigValue('debug'): print('full error=',msg)
+                if timeout is not None and count < retry:
+                    if retry == 2:
+                        timeout *= 1.25
+                        print(f'retry with timout={timeout} sec')
+                    repeat = True
+            else:
+                print('connection error - not on internet?')
+                if URL.startswith('https:'):
+                    print('Retry with http://')
+                    repeat = True
+                    URL = URL.replace('https:','http:')
+        except requests.exceptions.Timeout as msg:
+            print(f'timeout accessing {URL}')
+            if GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
+            if timeout is not None and count <= retry: repeat = True
+        except requests.exceptions.ReadTimeout as msg:
+            print(f'timeout reading from {URL}')
+            if GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
+        except requests.exceptions.ConnectTimeout:
+            print(f'timeout accessing {URL}')
+        except Exception as msg:    # other error
+            print(f'Error accessing {URL}')
+            if GetConfigValue('debug'): print(msg)
+        finally:
+            if r: r.close()
+    else:
+        return None
 
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a 
@@ -2567,12 +2671,12 @@ to update/regress repository from git repository:
         try:
             g2repo = openGitRepo(path2GSAS2)
             g2repo.remote().fetch()
-            fp.write(f'Updates fetched\n')
+            fp.write('Updates fetched\n')
         except Exception as msg:
             fp.write(f'Update failed with message {msg}\n')
 
         if g2repo.head.is_detached:
-            fp.write(f'Status: reverted to an old install\n')
+            fp.write('Status: reverted to an old install\n')
         else:
             try:
                 rc,lc,_ = gitCheckForUpdates(False,g2repo)

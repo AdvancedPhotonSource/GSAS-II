@@ -4388,7 +4388,7 @@ class G2Phase(G2ObjectWrapper):
            :meth:`~G2Phase.get_cell`
 
         """
-        # translated from GSASIIstrIO.ExportBaseclass.GetCell
+        # translated from GSASIIfiles.ExportBaseclass.GetCell
         import GSASIImapvars as G2mv
         try:
             pfx = str(self.id) + '::'

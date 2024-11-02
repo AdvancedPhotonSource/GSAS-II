@@ -5,15 +5,11 @@
 # note documentation in docs/source/exports.rst
 #
 from __future__ import division, print_function
-import platform
 import datetime as dt
 import os.path
 import sys
 import numpy as np
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle as pickle
-else:
-    import pickle
+import pickle
 import copy
 import re
 interactive = False
@@ -22,6 +18,7 @@ try:
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
     interactive = True
+    import GSASIIctrlGUI as G2G
 except ImportError:
     # Avoid wx dependency for Scriptable
     class Placeholder(object):
@@ -33,11 +30,6 @@ except ImportError:
     wx = Placeholder()
     wxscroll = Placeholder()
 import GSASIIpath
-import GSASIIIO as G2IO
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
@@ -58,13 +50,6 @@ values = {}
 cellNames = ['length_a','length_b','length_c',
              'angle_alpha','angle_beta ','angle_gamma',
              'volume']
-def striphist(var,insChar=''):
-    'strip a histogram number from a var name'
-    sv = var.split(':')
-    if len(sv) <= 1: return var
-    if sv[1]:
-        sv[1] = insChar
-    return ':'.join(sv)
 
 def getCellwStrain(phasedict,seqData,pId,histname):
     'Get cell parameters and their errors for a sequential fit'
@@ -84,7 +69,7 @@ def getCellwStrain(phasedict,seqData,pId,histname):
             #AiLookup[seqData[histname]['newCellDict'][pfx+v][0]] = pfx+v
             DijLookup[pfx+v] = seqData[histname]['newCellDict'][pfx+v][0]
     covData = {  # relabeled with p:h:Dij as p::Ai
-        'varyList': [DijLookup.get(striphist(v),v) for v in seqData[histname]['varyList']], 
+        'varyList': [DijLookup.get(G2fil.striphist(v),v) for v in seqData[histname]['varyList']], 
         'covMatrix': seqData[histname]['covMatrix']}
     # apply symmetry
     cellDict = dict(zip(Albls,Avals))
@@ -174,7 +159,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
         foundNames.append(name)
         maxPWL = 5
         for var,val,sig in zip(seqData[name]['varyList'],seqData[name]['variables'],seqData[name]['sig']):
-            svar = striphist(var,'*') # wild-carded
+            svar = G2fil.striphist(var,'*') # wild-carded
             if 'PWL' in svar:
                 if int(svar.split(':')[-1]) > maxPWL:
                     continue
@@ -187,7 +172,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
             vallookup[name] = dict(zip(seqData[name]['varyList'],seqData[name]['variables']))
             posdict[name] = {}
             for var in seqData[name]['varyList']:
-                svar = striphist(var,'*')
+                svar = G2fil.striphist(var,'*')
                 if 'PWL' in svar:
                     if int(svar.split(':')[-1]) > maxPWL:
                         continue
@@ -243,7 +228,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
                     if phfx+item.split('::')[1] in seqData[name]['varyList']:
                         esdLookUp[newCellDict[item][0]] = item
                         dLookup[item] = newCellDict[item][0]
-                covData = {'varyList': [dLookup.get(striphist(v),v) for v in seqData[name]['varyList']],
+                covData = {'varyList': [dLookup.get(G2fil.striphist(v),v) for v in seqData[name]['varyList']],
                     'covMatrix': seqData[name]['covMatrix']}
                 A = RecpCellTerms[pId][:] # make copy of starting A values
                 # update with refined values
@@ -309,10 +294,10 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
         if name in posdict:
             varsellist = [posdict[name].get(i) for i in range(varcols)]
             # translate variable names to how they will be used in the headings
-            vs = [striphist(v,'*') for v in seqData[name]['varyList']]
+            vs = [G2fil.striphist(v,'*') for v in seqData[name]['varyList']]
             # determine the index for each column (or None) in the seqData[]['variables'] and ['sig'] lists
             sellist = [vs.index(v) if v is not None else None for v in varsellist]
-            #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(seqData[name]['varyList'])]
+            #sellist = [i if G2fil.striphist(v,'*') in varsellist else None for i,v in enumerate(seqData[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([seqData[name]['variables'][s] if s is not None else None for s in sellist])
         esds.append([seqData[name]['sig'][s] if s is not None else None for s in sellist])
@@ -328,7 +313,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
     for name in histNames:
         for var in seqData[name].get('depParmDict',{}):
             val,sig = seqData[name]['depParmDict'][var]
-            svar = striphist(var,'*')
+            svar = G2fil.striphist(var,'*')
             if svar not in depValDict:
                depValDict[svar] = [val]
                depSigDict[svar] = [sig]
@@ -1378,12 +1363,12 @@ def WriteCompositionMM(fp, phasedict, phasenam, parmDict, quickmode=True, keV=No
     WriteCIFitem(fp,  '_chemical_formula.weight',
                   G2mth.ValEsd(cellmass/Z,-0.09,True))
 
-class ExportCIF(G2IO.ExportBaseclass):
+class ExportCIF(G2fil.ExportBaseclass):
     '''Base class for CIF exports. Not used directly. Exporters are defined 
     in subclasses that call :meth:`MasterExporter`.
     '''
     def __init__(self,G2frame,formatName,extension,longFormatName=None,):
-        G2IO.ExportBaseclass.__init__(self,G2frame,formatName,extension,longFormatName=None)
+        G2fil.ExportBaseclass.__init__(self,G2frame,formatName,extension,longFormatName=None)
         self.exporttype = []
         self.author = ''
         self.CIFname = ''
@@ -4654,7 +4639,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 class ExportProjectCIF(ExportCIF):
     '''Used to create a CIF of an entire project
 
-    also called directly in :func:`GSASIIIO.ExportSequentialFullCIF`
+    also called directly in :func:`GSASIImiscGUI.ExportSequentialFullCIF`
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
@@ -5369,11 +5354,11 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     df = self.cifdic[item].get('_definition')
                     if df:
                         try:
-                            txt.SetToolTip(G2IO.trim(df))
+                            txt.SetToolTip(G2fil.trim(df))
                         except:
-                            txt.SetToolTipString(G2IO.trim(df))
+                            txt.SetToolTipString(G2fil.trim(df))
                         but = CIFdefHelp(self,
-                                         "Definition for "+item+":\n\n"+G2IO.trim(df),
+                                         "Definition for "+item+":\n\n"+G2fil.trim(df),
                                          self.parent,
                                          self.parent.helptxt)
                         fbox.Add(but,(j+2,i+1),flag=wx.ALIGN_CENTER)
@@ -5397,11 +5382,11 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     df = self.cifdic[item].get('_definition')
                     if df:
                         try:
-                            txt.SetToolTip(G2IO.trim(df))
+                            txt.SetToolTip(G2fil.trim(df))
                         except:
-                            txt.SetToolTipString(G2IO.trim(df))
+                            txt.SetToolTipString(G2fil.trim(df))
                         but = CIFdefHelp(self,
-                                         "Definition for "+item+":\n\n"+G2IO.trim(df),
+                                         "Definition for "+item+":\n\n"+G2fil.trim(df),
                                          self.parent,
                                          self.parent.helptxt)
                         hbox.Add(but,0,wx.ALL,2)
@@ -5474,7 +5459,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 values = ['?']+self.cifdic[dataname]['_enumeration']
                 choices = ['undefined']
                 for i in self.cifdic[dataname].get('_enumeration_detail',values):
-                    choices.append(G2IO.trim(i))
+                    choices.append(G2fil.trim(i))
                 ent = G2G.EnumSelector(self, dct, item, choices, values, size=(200, -1))
                 return ent
             if self.cifdic[dataname].get('_type') == 'numb':

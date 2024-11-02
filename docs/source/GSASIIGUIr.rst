@@ -172,7 +172,7 @@ GSASIIctrlGUI Classes & Routines
     :members: 
 
 ---------------------------------------------
-*GSASIIIO: Misc I/O routines*
+*GSASIImiscGUI: Misc I/O routines*
 ---------------------------------------------
 
 Module with miscellaneous routines for input and output. Many
@@ -180,12 +180,10 @@ are GUI routines to interact with user.
 
 Includes support for image reading.
 
-Also includes base class for data export routines (TODO: should move)
-
-GSASIIIO Classes & Routines
+GSASIImiscGUI Classes & Routines
 ---------------------------------------------
        
-.. automodule:: GSASIIIO
+.. automodule:: GSASIImiscGUI
     :members: 
 
 ---------------------------------------------

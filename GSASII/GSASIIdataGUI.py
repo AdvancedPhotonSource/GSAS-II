@@ -44,7 +44,7 @@ except ImportError:
     pass
 import GSASIIpath
 import GSASIImath as G2mth
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIfiles as G2fil
 import GSASIIstrIO as G2stIO
 import GSASIIlattice as G2lat
@@ -1723,8 +1723,8 @@ If you continue from this point, it is quite likely that all intensity computati
         '''Check that phases are connected to histograms - if so then 
         Data/Remove Histogram is enabled
         '''
-        if callable(G2frame.dataWindow.DataGeneral): # will fail w/o Phase menus
-            G2frame.dataWindow.DataGeneral()
+        if callable(self.dataWindow.DataGeneral): # will fail w/o Phase menus
+            self.dataWindow.DataGeneral()
         haveData = False
         sub = GetGPXtreeItemId(self,self.root,'Phases')
         if sub: 
@@ -3696,7 +3696,7 @@ If you continue from this point, it is quite likely that all intensity computati
                             i = TextList.index(name)
                             Npix,imagefile,imagetag = DataList[i]
                             imagefile = G2IO.GetCheckImageFile(self,IdList[i])[1]
-                            image = G2IO.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)
+                            image = G2fil.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)
                             if First:
                                 newImage = np.zeros_like(image)
                                 First = False
@@ -5178,7 +5178,7 @@ If you continue from this point, it is quite likely that all intensity computati
         values.
 
         Note that similar things are done in
-        :meth:`GSASIIIO.ExportBaseclass.loadParmDict` (from the tree) and 
+        :meth:`GSASIIfiles.ExportBaseclass.loadParmDict` (from the tree) and 
         :func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine` (from
         a GPX file).
 

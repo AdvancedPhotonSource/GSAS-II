@@ -260,7 +260,7 @@ calls. This is done in GSAS-II from several locations:
   :func:`GSASIIconstrGUI.CheckConstraints`
 
 * To write parameters in the Export sections of the program, 
-  :func:`GSASIIIO.loadParmDict` loads results as well as constraints 
+  :func:`GSASIIfiles.ExportBaseclass.loadParmDict` loads results as well as constraints 
   from the tree. This works a bit differently from the above, so it
   makes direct calls to the constraints routines. 
 

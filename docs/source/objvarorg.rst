@@ -55,7 +55,7 @@ exception of images (which are too large). For images, a reference to
 the file location is saved and images are loaded from the file when
 needed.
 
-To save a GSAS-II project, routine :func:`GSASIIIO.ProjFileSave` is
+To save a GSAS-II project, routine :func:`GSASIImiscGUI.ProjFileSave` is
 used to convert the tree contents to a "flat" format and write it to a
 file. The tree is transversed, and for each first-level tree item, a
 list is created, where the first item in that list is a two-element
@@ -67,7 +67,7 @@ objects. Finally the outermost list is converted to a binary
 representation and written to disk with the Python pickle
 function. Note that GSAS-II does not use any data tree items other
 than first-level and second-level. 
-Routine :func:`GSASIIIO.ProjFileOpen` is used to read a GSAS-II
+Routine :func:`GSASIImiscGUI.ProjFileOpen` is used to read a GSAS-II
 project file and populate the data tree. GSAS-II project files are
 written with the ``.gpx`` extension.
 
@@ -1225,7 +1225,7 @@ The parameter dictionary contains all of the variable parameters for the refinem
 The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>).
 It is prepared in two ways. When loaded from the tree
 (in :meth:`GSASIIdataGUI.GSASII.MakeLSParmDict` and
-:meth:`GSASIIIO.ExportBaseclass.loadParmDict`),
+:meth:`GSASIIfiles.ExportBaseclass.loadParmDict`),
 the values are lists with two elements: ``[value, refine flag]``
 
 When loaded from the GPX file (in

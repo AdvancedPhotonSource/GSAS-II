@@ -761,7 +761,7 @@ def SetupGeneral(data, dirname):
     be done after changes to the Atoms array.
 
     Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`), 
-    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`SUBGROUPS.saveNewPhase`,
+    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`GSASIImiscGUI.saveNewPhase`,
     and in :func:`GSASIIscriptable.SetupGeneral`.
     '''
     generalData = data['General']

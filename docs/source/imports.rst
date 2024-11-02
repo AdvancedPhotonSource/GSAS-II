@@ -175,10 +175,10 @@ histograms or multiple images from a single file. Variable
 *Reader support routines*
 ____________________________________
 
-Note that GSASIIIO supplies three GUI routines, 
-:meth:`~GSASIIIO.BlockSelector` 
-:meth:`~GSASIIIO.MultipleBlockSelector` and 
-:meth:`~GSASIIIO.MultipleChoiceSelector` that are useful for 
+Note that GSASIIctrlGUI supplies three GUI routines, 
+:meth:`~GSASIIctrlGUI.BlockSelector` 
+:meth:`~GSASIIctrlGUI.MultipleBlockSelector` and 
+:meth:`~GSASIIctrlGUI.MultipleChoiceSelector` that are useful for 
 selecting amongst one or more datasets (and perhaps phases) or data items for 
 ``Reader()`` routines that may encounter more than one set of information
 in a file. 

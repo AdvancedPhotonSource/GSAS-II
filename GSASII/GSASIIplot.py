@@ -36,7 +36,7 @@ except (ImportError, ValueError) as err:
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG

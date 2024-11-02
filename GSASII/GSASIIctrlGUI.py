@@ -48,7 +48,7 @@ import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
 import GSASIIstrMain as G2stMn
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import config_example
 from tutorialIndex import tutorialIndex
 if sys.version_info[0] >= 3:

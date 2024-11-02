@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_CIF.py $
-# $Id: G2pwd_CIF.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
-'''
+'''Class to read a phase from a CIF
 '''
 from __future__ import division, print_function
 import numpy as np
@@ -14,12 +7,7 @@ import os.path
 import GSASIIobj as G2obj
 import CifFile as cif # PyCifRW from James Hester
 import GSASIIpath
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
 asind = lambda x: 180.*np.arcsin(x)/np.pi
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class CIFpwdReader(G2obj.ImportPowderData):
     'Routines to import powder data from a CIF file'
@@ -179,6 +167,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 choices.append(
                     'Block '+str(blk)+', '+str(l)+' points. X='+sx+' & Y='+sy
                     )
+            import GSASIIctrlGUI as G2G
             selections = G2G.MultipleBlockSelector(
                 choices,
                 ParentFrame=ParentFrame,
@@ -218,6 +207,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             choices.append(such)
             chlbls.append('Divide intensities by data item')
             choices.append(['none']+modch)
+            import GSASIIctrlGUI as G2G
             res = G2G.MultipleChoicesSelector(choices,chlbls)
             if not res:
                 self.errors = "Abort: data items not selected"

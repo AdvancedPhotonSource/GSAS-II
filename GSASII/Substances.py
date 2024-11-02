@@ -1,12 +1,4 @@
-#/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-10-31 11:22:16 -0500 (Tue, 31 Oct 2023) $
-# $Author: vondreele $
-# $Revision: 5693 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/Substances.py $
-# $Id: Substances.py 5693 2023-10-31 16:22:16Z vondreele $
-########### SVN repository information ###################
 """
 Defines materials commonly found in small angle & reflectometry experiments.
 GSASII substances as a dictionary ''Substances.Substances'' with these materials.

@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #testDeriv.py
-########### SVN repository information ###################
-# $Date: 2023-12-12 12:48:03 -0600 (Tue, 12 Dec 2023) $
-# $Author: vondreele $
-# $Revision: 5706 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/testDeriv.py $
-# $Id: testDeriv.py 5706 2023-12-12 18:48:03Z vondreele $
-########### SVN repository information ###################
 '''
 To use set ``DEBUG=True`` in GSASIIstrMain.py (line 40, as of version
 2546); run the least squares - zero cycles is sufficient.  Do the "Save
@@ -23,14 +16,9 @@ calculation & for the 1st selected derivative (rest should be the same).
 
 import sys
 import os
-import platform
 import copy
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-    import StringIO
-else:
-    import pickle as cPickle
-    import io as StringIO
+import pickle as cPickle
+import io as StringIO
 import cProfile,pstats
 import wx
 import numpy as np

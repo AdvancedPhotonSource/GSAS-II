@@ -103,7 +103,7 @@ def addPrevGPX(fil,cDict):
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):
-    '''Set the subversion (svn) version number
+    '''Set the subversion (svn) version number. No longer in use.
 
     :param str RevString: something like "$Revision: 5796 $"
       that is set by subversion when the file is retrieved from subversion.

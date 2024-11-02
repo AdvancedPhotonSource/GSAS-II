@@ -1524,7 +1524,8 @@ def CleanupFromZip(label,cleanupList):
     in the data tree and the file copy is not needed.
 
     :param str label: for imports, this is the type of file being read
-    :param list cleanupList
+    :param list cleanupList: a list of files that have been extracted from 
+      the zip archive and can be deleted.
     '''
     if not cleanupList: return
     if 'image' in label:

@@ -2072,7 +2072,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     for atom in data['Drawing']['Atoms']:
                         if atom[ct] != El: continue
                         atom[cs+2] = RGB
-                    breakpoint()
                     wx.CallAfter(UpdateGeneral)
                 dlg.Destroy()
                     

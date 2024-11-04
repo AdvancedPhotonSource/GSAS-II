@@ -1,29 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2022-11-06 12:25:48 -0600 (Sun, 06 Nov 2022) $
-# $Author: toby $
-# $Revision: 5365 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_Bracket.py $
-# $Id: G2export_Bracket.py 5365 2022-11-06 18:25:48Z toby $
-########### SVN repository information ###################
 
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT
 from __future__ import division, print_function
-import wx
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5365 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 from collections import OrderedDict
 from GSASIImath import ValEsd
 
-class Exportbracket(G2IO.ExportBaseclass):
+class Exportbracket(G2fil.ExportBaseclass):
     '''Enables export of parameters that are commonly needed for publications, in bracket notation
     '''
 
     def __init__(self, G2frame):
-        G2IO.ExportBaseclass.__init__(self,G2frame=G2frame,formatName='Bracket notation CSV',
+        G2fil.ExportBaseclass.__init__(self,G2frame=G2frame,formatName='Bracket notation CSV',
             extension='.csv',longFormatName='Export commonly needed parameters')
         self.exporttype = ['project']
 
@@ -47,7 +37,11 @@ class Exportbracket(G2IO.ExportBaseclass):
         self.InitExport(event)
         if self.ExportSelect(): return  # set export parameters; get file name
         self.OpenFile()
-        wx.BeginBusyCursor()
+        try:
+            import wx
+            wx.BeginBusyCursor()
+        except:
+            pass
 
         # Export model parameters in bracket notation
         try:
@@ -65,19 +59,18 @@ class Exportbracket(G2IO.ExportBaseclass):
             for phasedict in self.Phases.items():
                 phasenam = phasedict[0]
                 cellList, cellSig = self.GetCell(phasenam)
-                # Initialise lattice parameter letter
-                lp_letter = "a"
+
+                # Set up list of cell quantity symbols and units, to be used for generating text in output CSV
+                cell_quantity_symbols = ["a", "b", "c", "alpha", "beta", "gamma", "Volume"]
+                cell_quantity_units = ["(Å)", "(Å)", "(Å)", "(°)", "(°)", "(°)", "(Å³)"]
+
                 for i in range(0, len(cellList)):
-                # for cell in cellList:
                     if cellSig[i] > 0:
                         # Formulate lattice parameter in bracket notation
                         current_lp_bracket = ValEsd(cellList[i], cellSig[i])
                         # Write to dictionary that will later be exported to CSV
-                        model_parameters[phasenam + " " + lp_letter + " (Å)"] = current_lp_bracket
-                        # Increment lattice parameter letter
-                        lp_letter = chr(ord(lp_letter[0]) + 1)
-                    else:
-                        break
+                        model_parameters[phasenam + " " + cell_quantity_symbols[i] + " " +
+                                         cell_quantity_units[i]] = current_lp_bracket
 
                 # Get phase and weight fractions uncertainties, if they have been refined
                 for hist_num,hist_name in enumerate(self.Histograms):
@@ -203,17 +196,21 @@ class Exportbracket(G2IO.ExportBaseclass):
                 self.Write('%s, %s,'%(name,model_parameters[name]))
 
         finally:
-            wx.EndBusyCursor()
+            try:
+                import wx
+                wx.EndBusyCursor()
+            except:
+                pass
         self.CloseFile()
 
 
-class Export3col(G2IO.ExportBaseclass):
+class Export3col(G2fil.ExportBaseclass):
     '''Enables export of parameters that are commonly needed for publications, with esds
     in a separate column
     '''
 
     def __init__(self, G2frame):
-        G2IO.ExportBaseclass.__init__(self,G2frame=G2frame,formatName='common prm CSV',
+        G2fil.ExportBaseclass.__init__(self,G2frame=G2frame,formatName='common prm CSV',
             extension='.csv',longFormatName='Export commonly needed parameters with s.u. in a separate column')
         self.exporttype = ['project']
 
@@ -247,7 +244,11 @@ class Export3col(G2IO.ExportBaseclass):
         self.InitExport(event)
         if self.ExportSelect(): return  # set export parameters; get file name
         self.OpenFile()
-        wx.BeginBusyCursor()
+        try:
+            import wx
+            wx.BeginBusyCursor()
+        except:
+            pass
 
         # Export model parameters in bracket notation
         try:
@@ -391,6 +392,10 @@ class Export3col(G2IO.ExportBaseclass):
                 self.Write('{:}, {:}, {:}'.format(name,*model_parameters[name]))
 
         finally:
-            wx.EndBusyCursor()
+            try:
+                import wx
+                wx.EndBusyCursor()
+            except:
+                pass
         self.CloseFile()
         

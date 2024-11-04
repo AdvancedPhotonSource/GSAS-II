@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-11-30 08:10:11 -0600 (Thu, 30 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5702 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $
-# $Id: GSASIIlattice.py 5702 2023-11-30 14:10:11Z vondreele $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIlattice` Classes & routines follow
 '''
@@ -22,7 +15,6 @@ import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
-GSASIIpath.SetVersionNumber("$Revision: 5702 $")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi

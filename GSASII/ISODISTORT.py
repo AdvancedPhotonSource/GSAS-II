@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 23:37:57 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5578 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/ISODISTORT.py $
-# $Id: ISODISTORT.py 5578 2023-05-12 04:37:57Z toby $
-########### SVN repository information ###################
 from __future__ import division, print_function
 import subprocess as subp
 import os
@@ -16,7 +9,7 @@ except:
     print('Module requests not installed, access to ISODISTORT not possible')
 import copy
 import GSASIIscriptable as G2sc
-import tempfile
+#import tempfile
 isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 

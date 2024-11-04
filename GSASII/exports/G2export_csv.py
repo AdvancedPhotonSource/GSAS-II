@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Classes in :mod:`G2export_csv` follow:
 '''
@@ -7,9 +6,6 @@
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
-import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
@@ -28,7 +24,7 @@ def WriteList(obj,headerItems):
         line += '"'+lbl+'"'
     obj.Write(line)
 
-class ExportPhaseCSV(G2IO.ExportBaseclass):
+class ExportPhaseCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -104,7 +100,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
         # if more than one phase is selected, put them into a single file
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
-            i = self.Phases[phasenam]['pId']
+            #i = self.Phases[phasenam]['pId']
             self.Write('"'+"Phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile)+'"')
             self.Write('\n"Space group:","'+str(phasedict['General']['SGData']['SpGrp'].strip())+'"')
             # get cell parameters & print them
@@ -147,7 +143,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
             print('Phase '+phasenam+' written to file '+self.fullpath)
         self.CloseFile()
 
-class ExportPowderCSV(G2IO.ExportBaseclass):
+class ExportPowderCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -230,7 +226,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             self.Writer(hist)
             print('Histogram '+hist+' written to file '+self.fullpath)
 
-class ExportMultiPowderCSV(G2IO.ExportBaseclass):
+class ExportMultiPowderCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a stack of powder data sets suitable for display 
     purposes only; no y-calc or weights are exported only x & y-obs
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -282,7 +278,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
         self.CloseFile()
         print('...file '+self.fullpath+' written')
 
-class ExportPowderReflCSV(G2IO.ExportBaseclass):
+class ExportPowderReflCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file of reflections from a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -335,7 +331,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                 if 'T' in phasDict['Type']:
                     fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
@@ -359,7 +355,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                 if 'T' in phasDict['Type']:
                     fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
@@ -379,7 +375,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         FWHM = G2pwd.getgamFW(g,s)
                         self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
         
-class ExportSASDCSV(G2IO.ExportBaseclass):
+class ExportSASDCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a small angle data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -464,7 +460,7 @@ class ExportSASDCSV(G2IO.ExportBaseclass):
             self.Writer(hist)
             print('Histogram '+hist+' written to file '+self.fullpath)
 
-class ExportREFDCSV(G2IO.ExportBaseclass):
+class ExportREFDCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a reflectometry data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -531,7 +527,7 @@ class ExportREFDCSV(G2IO.ExportBaseclass):
             self.Writer(hist)
             print('Histogram '+hist+' written to file '+self.fullpath)
 
-class ExportSingleCSV(G2IO.ExportBaseclass):
+class ExportSingleCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -576,7 +572,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
         phasDict = histblk['Data']
-        tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+        #tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
         if phasDict.get('Super',False):
             WriteList(self,("h","k","l","m",'d-sp',"F_obs","F_calc","phase","mult","Icorr"))
             fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
@@ -592,7 +588,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.CloseFile()
         print(f'{hist!r} written to file {self.filename} in {self.fullpath}')
 
-class ExportStrainCSV(G2IO.ExportBaseclass):
+class ExportStrainCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

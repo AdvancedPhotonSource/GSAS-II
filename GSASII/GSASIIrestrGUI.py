@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIrestr - restraint GUI routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIrestrGUI.py $
-# $Id: GSASIIrestrGUI.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''Restraint GUI routines follow.
 '''
 from __future__ import division, print_function
@@ -16,7 +9,6 @@ import numpy as np
 import numpy.ma as ma
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -351,12 +343,24 @@ def UpdateRestraints(G2frame,data,phaseName):
 
     def AddMogulBondRestraint(bondRestData):
         mogul,colNums = getMOGULFile()
+        badNames = []
+        badCount = 0
         for line in mogul:
             items = line.split(',')
             if 'bond' == items[colNums[0]]:
                 oName,tName = items[colNums[1]].split()
-                oInd = Names.index(oName)
-                tInd = Names.index(tName)
+                try:
+                    oInd = Names.index(oName)
+                except:
+                    badCount += 1
+                    badNames.append(oName)
+                    continue
+                try:
+                    tInd = Names.index(tName)
+                except:
+                    badCount += 1
+                    badNames.append(tName)
+                    continue
                 if items[colNums[2]] != 'No hits':
                     dist = float(items[colNums[4]])
                     esd = float(items[colNums[5]])
@@ -367,7 +371,10 @@ def UpdateRestraints(G2frame,data,phaseName):
                 if newBond not in bondRestData['Bonds']:
                     bondRestData['Bonds'].append(newBond)              
         UpdateBondRestr(bondRestData)
-            
+        if badNames:
+            msg = f'{badCount} restraints were skipped beccause these atom(s) were not found: {" ".join(set(badNames))}'
+            wx.GetApp().Yield()
+            G2G.G2MessageBox(G2frame,msg,'Missing atoms')
     def AddAngleRestraint(angleRestData):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
         Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}
@@ -2195,7 +2202,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         page = event.GetSelection()
         #G2frame.restrBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         text = G2frame.restrBook.GetPageText(page)
-        G2frame.dataWindow.RestraintEdit.SetLabel(G2G.wxID_RESRCHANGEVAL,'Change value')
+        G2frame.dataWindow.RestraintEdit.SetLabel(G2G.wxID_RESRCHANGEVAL,'Change target value')
         G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,False)
         if text == 'Bond':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
@@ -2295,6 +2302,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     #### UpdateRestraints execution starts here
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
     covdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     Nvars = 0
     Rvals = {}

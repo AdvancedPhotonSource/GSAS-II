@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
-########### SVN repository information ###################
-# $Date: 2024-03-30 08:47:38 -0500 (Sat, 30 Mar 2024) $
-# $Author: vondreele $
-# $Revision: 5774 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIindex.py $
-# $Id: GSASIIindex.py 5774 2024-03-30 13:47:38Z vondreele $
-########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIindex` follow. 
 '''
@@ -16,8 +9,6 @@ from __future__ import division, print_function
 import math
 import time
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5774 $")
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
@@ -264,7 +255,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
                 if values.size > 1:
                     Vec.append(max(-1.,min(1.0,values[i])))
                 else:
-                    Vec.append(max(0.0,min(1.0,values)))                    
+                    Vec.append(max(0.0,min(1.0,values[0])))                    
                 i += 1
             else:
                 Vec.append(vec[j])

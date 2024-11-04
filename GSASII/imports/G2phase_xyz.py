@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_xyz.py $
-# $Id: G2phase_xyz.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 #
 '''
 '''
@@ -13,14 +6,9 @@
 from __future__ import division, print_function
 import sys
 import os.path
-import math
 import random as ran
-import numpy as np
 import GSASIIobj as G2obj
-import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class XYZ_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a XYZ file'

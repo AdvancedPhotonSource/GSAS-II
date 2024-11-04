@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-03-06 10:33:02 -0600 (Wed, 06 Mar 2024) $
-# $Author: toby $
-# $Revision: 5753 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_BrukerRAW.py $
-# $Id: G2pwd_BrukerRAW.py 5753 2024-03-06 16:33:02Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -14,10 +7,13 @@ import os
 import os.path as ospath
 import struct as st
 import numpy as np
+try:
+    import xmltodict as xml
+except:
+    xml = None
 import GSASIIobj as G2obj
-import GSASIIctrlGUI as G2G
+import GSASIIfiles as G2fil
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5753 $")
 class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
@@ -73,7 +69,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         self.powderentry[0] = filename
         fp = open(filename,'rb')
         if 'ver. 1' in self.formatName:
-            raise Exception    #for now
+            raise Exception('Read of Bruker "RAW " (pre-version #) file not supported')    #for now
         elif 'ver. 2' in self.formatName:
             fp.seek(4)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
@@ -101,7 +97,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         fp.seek(pos)                                    
                         x = np.array([start2Th+i*step for i in range(nSteps)])
                         y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
-                        y = np.where(y<0.,y,1.)
+                        y = np.where(y<0.,1.,y)
                         w = 1./y
                         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                         break
@@ -220,25 +216,35 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             formatName = 'Bruker brml',
             longFormatName = 'Bruker .brml powder data file'
             )
+        if xml is None:
+            self.UseReader = False
+            msg = 'Bruker .brml Reader skipped because xmltodict module is not installed.'
+            if GSASIIpath.condaTest():
+                msg += ' To fix this press "Install packages" button below'
+            G2fil.ImportErrorMsg(msg,{'Bruker .brml Importer':['xmltodict']})
         self.scriptable = True
         self.data = None
 
+    # TODO: refactor this: 
+    #   Should not count on ContentsValidator being called before Reader
     def ContentsValidator(self, filename):
+        if xml is None:
+            return False
+        # try:
+        #     import xmltodict as xml
+        # except:
+        #     print('Attempting to conda install xmltodict - please wait')
+        #     res = GSASIIpath.condaInstall('xmltodict')
+        #     if res:
+        #         msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
+        #         G2G.G2MessageBox(self,msg,'Install xmltodict Error')
+        #         return False
+        #     try:
+        #         import xmltodict as xml
+        #     except:
+        #         return False
         try:
-            import xmltodict as xml
-        except:
-            print('Attempting to conda install xmltodict - please wait')
-            res = GSASIIpath.condaInstall('xmltodict')
-            if res:
-                msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
-                G2G.G2MessageBox(self,msg,'Install xmltodict Error')
-                return False
-            try:
-                import xmltodict as xml
-            except:
-                return False
-        try:
-            import zipfile as ZF        
+            import zipfile as ZF
             with ZF.ZipFile(filename, 'r') as zipObj:
                 zipObj.extract('Experiment0/RawData0.xml')
             with open('Experiment0/RawData0.xml') as fd:
@@ -255,7 +261,8 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             
     def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Bruker brml file'
-        print(filename)
+        if xml is None:
+            return False
         datano = 1
         try:
             nSteps = int(self.data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['MeasurementPoints'])
@@ -285,7 +292,4 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             
         w = np.where(y>0,1/y,0.)
         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
-        
-        
-            
         return True

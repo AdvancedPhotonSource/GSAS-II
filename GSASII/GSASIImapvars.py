@@ -1,13 +1,6 @@
 # TODO: revisit SeqRefine and :meth:`GSASIIdataGUI.GSASII.OnSeqRefine` and :func:`GSASIIseqGUI.UpdateSeqResults`
 
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $
-# $Id: GSASIImapvars.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 """
 Classes and routines defined in :mod:`GSASIImapvars` follow. 
 
@@ -24,7 +17,6 @@ from __future__ import division, print_function
 import copy
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIobj as G2obj 
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed
@@ -138,6 +130,9 @@ def InitVars():
     constrVarList = []
     indepVarList = []
     depVarList = []
+    global constrParms
+    for k in constrParms:
+        constrParms[k] = []
 
 def VarKeys(constr):
     """Finds the keys in a constraint that represent parameters
@@ -1436,6 +1431,64 @@ def _showEquiv(varlist,mapvars,invmultarr,longmsg=False):
                 s1 += " / " + str(m[0])
     return s1
 
+def VarRemapSumm():
+    '''Summarize the constraints in a single line
+
+    :returns: a string summarizing the contraint relationships. May be blank
+    '''
+    varyList = saveVaryList
+    s = ''
+    depVars = constrParms['dep-equiv']+constrParms['dep-constr']
+        
+    userOut = 0
+    symOut = 0
+    consOut = 0
+    varOut = 0
+    freeOut = 0
+    variedOut = 0
+    global dependentParmList,arrayList,invarrayList,indParmList,symGenList
+    for varlist,mapvars,multarr,invmultarr,symFlag in zip(
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        for i,mv in enumerate(mapvars):
+            if multarr is None:
+                if symFlag:
+                    symOut += 1
+                else:
+                    userOut += 1
+                continue            
+            if mv in varyList: 
+                variedOut += 1
+            if type(mv) is float:
+                consOut += 1
+            elif '::nv-' in mv:
+                varOut += 1
+            else:
+                freeOut += 1
+    numHold = len([i for i in holdParmList if i not in depVars])
+    if userOut:
+        if s: s += '; '
+        s += f'Equivalences: {userOut}'
+    if numHold > 0:
+        if s: s += '; '
+        s += f'Hold param: {numHold}'
+#    if symOut:  # don't need to log this
+#        if s: s += '; '
+#        s += f'Sym gen param: {symOut}'
+    if consOut + freeOut:
+        if s: s += '; '
+        s += f'Constr Eqns: {consOut + freeOut}'
+    if freeOut:
+        s += f' ({freeOut} generated)'
+    if varOut:
+        if s: s += '; '
+        s += f'New Var Eqns: {varOut}'
+    if variedOut:
+        s += f' ({freeOut} varied)'
+    if len(depVars) > 0:
+        if s: s += '. '
+        s += f'Depend. param: {len(depVars)}'
+    return s
+    
 def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     '''List out the saved relationships. This should be done after the constraints have been
     defined using :func:`StoreEquivalence`, :func:`GroupConstraints` and :func:`GenerateConstraints`.
@@ -1597,6 +1650,32 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     for key in sorted(lineDict):
         s += lineDict[key] + '\n'
     return s
+
+def CountUserConstraints():
+    '''Count the number of user-supplied constraints in use for the 
+    current refinement. Symmetry generated constraints are not counted
+    as well as constraints that involve variables that are not varied.
+
+    This is used for CIF reporting.
+
+    :returns: an integer count
+    '''
+    varyList = saveVaryList
+    global dependentParmList,arrayList,invarrayList,indParmList,symGenList
+
+    count = 0
+    for varlist,mapvars,multarr,invmultarr,symFlag in zip(
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        if symFlag: continue
+        if multarr is None:
+            for i,mv in enumerate(mapvars):
+                if mv not in varyList: continue
+                count += len(varlist)
+        else:
+            # constraints = original # vars - number still generated
+            # = number of fixed items in constraint
+            count += sum([1 for mv in mapvars if mv not in varyList])
+    return count
 
 def getInvConstraintEq(var,varyList):
     '''For a dependent variable, find the constraint that 

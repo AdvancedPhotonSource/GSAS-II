@@ -129,14 +129,13 @@ _pd_proc_ls_special_details
 _computing_molecular_graphics     ?
 _computing_publication_material   ?
 
-_refine_ls_weighting_scheme       ?        
 _refine_ls_weighting_details      ?
-_refine_ls_hydrogen_treatment     ?        
-_refine_ls_extinction_method      ?        
-_refine_ls_extinction_coef        ?         
-_refine_ls_number_constraints     ?        
+# consider updating based on how you treat H atom positions in your refinement:
+_refine_ls_hydrogen_treatment     undef
+_refine_ls_extinction_method      ?
+_refine_ls_extinction_coef        ?
 
-_refine_ls_restrained_S_all       ?        
+_refine_ls_restrained_S_all       ?
 _refine_ls_restrained_S_obs       ?
 
 #==============================================================================

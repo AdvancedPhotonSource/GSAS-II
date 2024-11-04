@@ -1,23 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_PDB.py $
-# $Id: G2export_PDB.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_PDB` follow:
 '''
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 import GSASIIlattice as G2lat
 
-class ExportPhasePDB(G2IO.ExportBaseclass):
+class ExportPhasePDB(G2fil.ExportBaseclass):
     '''Used to create a PDB file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -127,7 +117,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
-            fp = self.OpenFile()
+            #fp = self.OpenFile()
             Atoms = phasedict['Atoms']
             cx,ct,cs,cia = General['AtomPtrs']
             seqList = {}
@@ -192,7 +182,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             self.CloseFile()
             print('Phase '+phasenam+' written to PDB file '+self.fullpath)
 
-class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
+class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
     '''Used to create a Cartesian XYZ file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

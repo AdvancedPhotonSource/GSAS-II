@@ -196,6 +196,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     '''
     ifConverged = False
     deltaChi2 = -10.
+    lastShifts = None
     x0 = np.array(x0, ndmin=1, dtype=np.float64) # make sure that x0 float 1-D
     # array (in case any parameters were set to int)
     n = len(x0)
@@ -336,6 +337,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 chitol *= 2
             else:   # refinement succeeded
                 x0 += XvecAll
+                lastShifts = XvecAll    # save shifts in last cycle (for CIF)
                 lam /= 10. # drop lam on next cycle
                 break
         # complete current cycle
@@ -397,6 +399,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if len(psing_prev):
             ins = [j-i for i,j in enumerate(psing_prev)]
             Bmat = np.insert(np.insert(Bmat,ins,0,1),ins,0,0)
+        if lastShifts is not None:
+            info['lastShifts'] = lastShifts
         return [x0,Bmat,info]
     except nl.LinAlgError:
         G2fil.G2Print('Warning: Hessian too ill-conditioned to get full covariance matrix')
@@ -423,6 +427,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':-1,'Xvec':None, 'chisq0':chisqf}
         info['psing'] = [i for i in range(n) if i not in indices]
+        if lastShifts is not None:
+            info['lastShifts'] = lastShifts
         return [x0,None,info]
     # expand Bmat by filling with zeros if columns have been dropped
     psing = [i for i in range(n) if i not in indices]
@@ -432,9 +438,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     info.update({'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':Nzeros,
         'Converged':ifConverged, 'DelChi2':deltaChi2, 'Xvec':XvecAll, 'chisq0':chisq00})
     info['psing'] = [i for i in range(n) if i not in indices]
+    if lastShifts is not None:
+        info['lastShifts'] = lastShifts
     setSVDwarn(info,Amat,Nzeros,indices)
     return [x0,Bmat,info]
-            
+    
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
     '''
@@ -1856,8 +1864,8 @@ def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
     BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
     phi =  np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
-    psin = np.sin(-twopi*phi)      #tau,ops,atms
-    pcos = np.cos(-twopi*phi)
+    psin = np.sin(twopi*phi)      #tau,ops,atms
+    pcos = np.cos(twopi*phi)
     MmodAR = AMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Re cos term; tau,ops,atms, Mxyz
     MmodBR = BMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Re sin term
     MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im sin term
@@ -2409,6 +2417,9 @@ def BessIn(nmax,x):
 ################################################################################
 
 def CalcDist(distance_dict, distance_atoms, parmDict):
+    '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond distances
+    when defined in an expression. 
+    '''
     if not len(parmDict):
         return 0.
     pId = distance_dict['pId']
@@ -2432,6 +2443,9 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     return dist    
     
 def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
+    '''Used to compute s.u. values on distances tracked in the sequential 
+    results table
+    '''
     if not len(parmDict):
         return None
     pId = distance_dict['pId']
@@ -2446,6 +2460,9 @@ def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
     return deriv
    
 def CalcAngle(angle_dict, angle_atoms, parmDict):
+    '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond angles
+    when defined in an expression. 
+    '''
     if not len(parmDict):
         return 0.
     pId = angle_dict['pId']
@@ -2476,6 +2493,9 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
     return angle
 
 def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
+    '''Used to compute s.u. values on angles tracked in the sequential 
+    results table
+    '''
     if not len(parmDict):
         return None
     pId = angle_dict['pId']
@@ -2518,7 +2538,7 @@ def getSyXYZ(XYZ,ops,SGData):
     return XYZout
     
 def getRestDist(XYZ,Amat):
-    '''default doc string
+    '''Compute interatomic distance(s) for use in restraints
     
     :param type name: description
     
@@ -2528,7 +2548,7 @@ def getRestDist(XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
     
 def getRestDeriv(Func,XYZ,Amat,ops,SGData):
-    '''default doc string
+    '''Compute numerical derivatives of restraints for use in minimization
     
     :param type name: description
     
@@ -2548,7 +2568,7 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     return deriv.flatten()
 
 def getRestAngle(XYZ,Amat):
-    '''default doc string
+    '''Compute interatomic angle(s) for use in restraints
     
     :param type name: description
     
@@ -2570,7 +2590,7 @@ def getRestAngle(XYZ,Amat):
     return acosd(angle)
     
 def getRestPlane(XYZ,Amat):
-    '''default doc string
+    '''Compute deviations from a best plane through atoms for use in restraints
     
     :param type name: description
     
@@ -2592,7 +2612,7 @@ def getRestPlane(XYZ,Amat):
     return Evec[Order[0]]
     
 def getRestChiral(XYZ,Amat):    
-    '''default doc string
+    '''compute a chiral restraint
     
     :param type name: description
     
@@ -2606,7 +2626,7 @@ def getRestChiral(XYZ,Amat):
     return nl.det(VecA)
     
 def getRestTorsion(XYZ,Amat):
-    '''default doc string
+    '''compute a torsion restraint
     
     :param type name: description
     
@@ -2770,7 +2790,9 @@ def getRestPolefigDerv(HKL,Grid,SHCoeff):
     pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
-    '''default doc string
+    '''computes the numerical derivative of the distance between two atoms
+    used here in :func:`CalcDistDeriv` and in 
+    :func:`GSASIIstrMain.RetDistAngle`
     
     :param type name: description
     
@@ -2802,6 +2824,9 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
     
 def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
+    '''computes the numerical derivative of the angle between two vectors
+    (generated from pairs of atoms) used here in :func:`getAngSig`.
+    '''
     
     def calcAngle(Oxyz,ABxyz,Amat,Tunit,symNo,SGData):
         vec = np.zeros((2,3))
@@ -2845,12 +2870,18 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
     return deriv
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
-    '''default doc string
+    '''Compute an interatomic angle and its uncertainty from two vectors 
+    each between an orgin atom and either of a pair of nearby atoms.
     
-    :param type name: description
+    :param np.array VA: an interatomic vector as a structure
+    :param np.array VB: an interatomic vector also as a structure
+    :param np.array Amat: unit cell parameters as an A vector
+    :param dict SGData: symmetry information 
+    :param dict covData: covariance information including 
+      the covariance matrix and the list of varied parameters. If not 
+      supplied, the s.u. values are returned as zeros.
     
-    :returns: type name: description
-    
+    :returns: angle, sigma(angle)
     '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
@@ -2914,7 +2945,7 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    '''default doc string
+    '''not used
     
     :param type name: description
     
@@ -2963,7 +2994,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Dist,sig
 
 def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    '''default doc string
+    '''Not used
     
     :param type name: description
     

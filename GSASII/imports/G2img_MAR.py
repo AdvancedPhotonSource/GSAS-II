@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_MAR.py $
-# $Id: G2img_MAR.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -15,7 +8,6 @@ import time
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 class MAR_ReaderClass(G2obj.ImportImage):
     '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
     '''
@@ -44,7 +36,7 @@ def GetMAR345Data(filename,imageOnly=False):
     try:
         import pack_f as pf
     except:
-        print ('**** ERROR - Unable to load the GSAS MAR image decompression, pack_f')
+        print ('**** ERROR - Unable to load the GSAS-II MAR image decompression, pack_f')
         return None,None,None,None
 
     if not imageOnly:

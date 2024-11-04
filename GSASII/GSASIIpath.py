@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
 '''
@@ -21,32 +14,13 @@ import datetime as dt
 try:
     import numpy as np
 except ImportError:
-    print("skipping numpy in GSASIIpath")
-try:
-    import requests
-except:
-    print('Python requests package not installed (required for web access')
+    print("numpy import failed in GSASIIpath")
 
 # fix up path before using git. Needed when using conda without
 #   activate (happens on MacOS w/GSAS-II.app)
 pyPath = os.path.dirname(os.path.realpath(sys.executable))
 if sys.platform != "win32" and pyPath not in os.environ['PATH'].split(':'):
     os.environ['PATH'] = pyPath + ':' + os.environ['PATH']
-    
-try:
-    import git
-except ImportError as msg:
-    if 'Failed to initialize' in msg.msg:
-        print('The gitpython package is unable to locate a git installation.')
-        print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
-    elif 'No module' in msg.msg:
-        print('Python gitpython module not installed')
-    else:
-        print(f'gitpython failed to import, but why? Error:\n{msg}')
-    print('Note: git and gitpython are required for GSAS-II to self-update')
-except Exception as msg:
-    print(f'git import failed with unexpected error:\n{msg}')
-    print('Note: git and gitpython are required for GSAS-II to self-update')
 
 # hard-coded github repo locations
 G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools"
@@ -60,7 +34,7 @@ path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # lo
 fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
 intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
-def GetConfigValue(key,default=None):
+def GetConfigValue(key,default=None,getDefault=False):
     '''Return the configuration file value for key or a default value if not present
     
     :param str key: a value to be found in the configuration (config.py) file
@@ -68,6 +42,10 @@ def GetConfigValue(key,default=None):
       the config file is not found. Defaults to None
     :returns: the value found or the default.
     '''
+    if getDefault:
+        if default is not None:
+            raise ValueError('Cannot use default and getDefault together')
+        default = GetConfigDefault(key)
     try:
         return configDict.get(key,default)
     except NameError: # this happens when building docs
@@ -88,6 +66,18 @@ def SetConfigValue(parmdict):
             if parmdict[var][1] == '': continue
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
+
+def GetConfigDefault(key):
+    '''Return the default value for a config value
+    
+    :param str key: a value to be found in the configuration (config_example.py) file
+    :returns: the default value or None
+    '''
+    try:
+        import config_example
+    except:
+        return None
+    return config_example.__dict__.get(key)
 
 def addPrevGPX(fil,cDict):
     '''Add a GPX file to the list of previous files. 
@@ -113,12 +103,12 @@ def addPrevGPX(fil,cDict):
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):
-    '''Set the subversion (svn) version number
+    '''Set the subversion (svn) version number. No longer in use.
 
-    :param str RevString: something like "$Revision: 5790 $"
+    :param str RevString: something like "$Revision: 5796 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5790 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5796 $")`` in every python
     file.
     '''
     try:
@@ -218,6 +208,9 @@ def HowIsG2Installed():
             rev = '-rev'
         if g2URL in g2repo.remote().urls:
             return 'github'+rev
+        elif g2URL.replace('https://github.com/',
+                           'git@github.com:') in g2repo.remote().urls:
+            return 'github'+rev
         G2_installed_result = 'git'+rev
         return G2_installed_result
     except:
@@ -246,15 +239,30 @@ def GetVersionNumber():
     :returns: an int value usually, but a value of 'unknown' might occur 
     '''
     if HowIsG2Installed().startswith('git'):
-        g2repo = openGitRepo(path2GSAS2)
-        for h in list(g2repo.iter_commits('HEAD'))[:50]: # (don't go too far back)
-            tags = g2repo.git.tag('--points-at',h).split('\n')
+        # look for a recorded tag -- this is quick
+        try:
+            import git_verinfo as gv
             try:
-                for item in tags:
+                for item in gv.git_tags:
                     if item.isnumeric(): return int(item)
             except:
                 pass
-        
+            try:
+                for item in gv.git_prevtags:
+                    if item.isnumeric(): return int(item)
+            except:
+                pass
+        except:
+            pass
+        # no luck, ask Git for the most recent tag (must start & end with a number)
+        try:
+            g2repo = openGitRepo(path2GSAS2)
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]').split('-')
+            if tag.isnumeric(): return int(tag)
+        except:
+            pass
+        return "unknown"
+    
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is not None: return rev
@@ -275,7 +283,7 @@ def GetVersionNumber():
     except:
         pass
         
-    # all else failed, use the SetVersionNumber value
+    # all else failed, use the svn SetVersionNumber value (global version)
     if version > 5000:  # a small number must be wrong
         return version
     else:
@@ -290,21 +298,7 @@ def getG2VersionInfo():
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
-        tags = g2repo.git.tag('--points-at',commit).split('\n')
-        tags = [i for i in tags if i.isnumeric()]
-        # get sequential version # (tag)
-        gversion = ""
-        if len(tags) >= 1:
-            gversion = f"Tag: #{tags[0]}"
-        else:
-            for h in list(g2repo.iter_commits(commit))[:50]: # (don't go too far back)
-                for t in g2repo.git.tag('--points-at',h).split('\n'):
-                    if t.isnumeric():
-                        gversion = f"Last tag: #{t}"
-                        break
-                if gversion: break
-            else:
-                gversion = "No tag?!" # if all else fails
+        gversion = f"Tag: #{GetVersionNumber()}"
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -368,6 +362,10 @@ BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
 
 def openGitRepo(repo_path):
+    try:
+        import git
+    except:
+        return None        
     try:  # patch 3/2024 for svn dir organization
         return git.Repo(path2GSAS2)
     except git.InvalidGitRepositoryError:
@@ -391,6 +389,10 @@ def gitLookup(repo_path,gittag=None,githash=None):
         * message is the check-in message (str)
         * date_time is the check-in date as a datetime object
     '''
+    try:
+        import git
+    except:
+        return None        
     g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
         raise ValueError("Cannot specify a hash and a tag")
@@ -484,7 +486,7 @@ def gitTestGSASII(verbose=True,g2repo=None):
     code = 0
     if g2repo.is_dirty():                     # has changed files
         code += 1
-        count_modified_files = len(g2repo.index.diff(None))
+        #count_modified_files = len(g2repo.index.diff(None))
     if g2repo.head.is_detached:
         code += 2                             # detached
     else:
@@ -516,6 +518,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
        older version) or the branch has been changed, the values for each 
        of the three items above will be None.
     '''
+    try:
+        import git
+    except:
+        print('Failed to import git in gitCheckForUpdates()')
+        return (None,None,None)
     fetched = False
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
@@ -611,7 +618,7 @@ def gitGetUpdate(mode='Background'):
     else:
         g2repo = openGitRepo(path2GSAS2)
         g2repo.remote().fetch()
-        if GetConfigValue('debug'): print(f'Updates fetched')
+        if GetConfigValue('debug'): print('Updates fetched')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
     '''Provides the history of commits to the master, either as tags 
@@ -652,7 +659,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
                     for i in history[:maxdepth]]
         return [[i[0]] if i[1]=='' else i for i in r1]
     else:
-        raise ValueError(f'gitHistory has invalid value specified: {value}')
+        raise ValueError(f'gitHistory has invalid values specified: {values}')
 
 def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
@@ -676,6 +683,11 @@ def getGitBinaryReleases(cache=False):
       download a tar containing that binary distribution. 
     '''
     # Get first page of releases
+    try:
+        import requests
+    except:
+        print('Unable to install binaries in getGitBinaryReleases():\n requests module not available')
+        return
     releases = []
     tries = 0
     while tries < 5: # this has been known to fail, so retry
@@ -703,7 +715,8 @@ def getGitBinaryReleases(cache=False):
             # prevents us from using a query to get them
             if cache and count > 4:
                 fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
-                for key in dict(zip(versions,URLs)):
+                res = dict(zip(versions,URLs))
+                for key in res:
                     fp.write(f'{key} : {res[key]}\n')
                 fp.close()
             return dict(zip(versions,URLs))
@@ -798,9 +811,13 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     :returns: None
     '''
     # packages not commonly used so import them here not on startup
-    import requests
     import tempfile
     import tarfile
+    try:
+        import requests
+    except:
+        print('Unable to install binaries in InstallGitBinary():\n requests module not available')
+        return
     # download to scratch
     tar = tempfile.NamedTemporaryFile(suffix='.tgz',delete=False)
     try:
@@ -880,6 +897,11 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     The second example will provide the contents of the 
     "TOF Sequential Single Peak Fit"/data directory. 
     '''
+    try:
+        import requests
+    except:
+        print('Unable to search GitHub in dirGitHub():\n requests module not available')
+        return
     dirname = ''
     for item in dirlist:
         dirname += item + '/'
@@ -917,6 +939,11 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
     '''Download the entire contents of a directory from a repository 
     on GitHub. Used to download data for a tutorial.
     '''
+    try:
+        import requests
+    except:
+        print('Unable to download Tutorial data in downloadDirContents():\n requests module not available')
+        return
     filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
     if filList is None:
         print(f'Directory {"/".join(dirlist)!r} does not have any files')
@@ -1562,12 +1589,12 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
     modcount = 0
     x = ET.fromstring(out)
     for i0 in x.iter('entry'):
-        filename = i0.attrib.get('path','?')
-        wc_rev = ''
+        #filename = i0.attrib.get('path','?')
+        #wc_rev = ''
         status = ''
         switched = ''
         for i1 in i0.iter('wc-status'):
-            wc_rev = i1.attrib.get('revision','')
+            #wc_rev = i1.attrib.get('revision','')
             status = i1.attrib.get('item','')
             switched = i1.attrib.get('switched','')
             if i1.attrib.get('wc-locked',''): locked += 1
@@ -1577,12 +1604,12 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
             modcount += 1
         elif status == "normal":
             updatecount += 1
-        file_rev = ''
-        for i2 in i1.iter('commit'):
-            file_rev = i2.attrib.get('revision','')
-        local_status = ''
-        for i1 in i0.iter('repos-status'):
-            local_status = i1.attrib.get('item','')
+        #file_rev = ''
+        #for i2 in i1.iter('commit'):
+        #    file_rev = i2.attrib.get('revision','')
+        #local_status = ''
+        #for i1 in i0.iter('repos-status'):
+        #    local_status = i1.attrib.get('item','')
         #print(filename,wc_rev,file_rev,status,local_status,switched)
     return updatecount,modcount,locked
 
@@ -1863,10 +1890,29 @@ def TestSPG(fpth):
     # test to see if a shared library can be used
     try:
         import pyspg
+    except ModuleNotFoundError as err:
+        print(70*'=')
+        print(f'Binary module pyspg not found in {fpth!r}\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    except ImportError as err:
+        print(70*'=')
+        print(f'Module pyspg in {fpth!r} could not be loaded\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    except Exception as err:
+        print(70*'=')
+        print(f'Error importing module pyspg in {fpth!r}\nerror msg: {err}')
+        print(70*'=')
+        sys.path = savpath
+        return False
+    try:
         pyspg.sgforpy('P -1')
     except Exception as err:
         print(70*'=')
-        print(f'Failed to run pyspg in {fpth!r}\nerror: {err}')
+        print(f'Module pyspg in {fpth!r} could not be run\nerror msg: {err}')
         print(70*'=')
         sys.path = savpath
         return False
@@ -1909,7 +1955,10 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         if os.path.exists(newpath):
             if newpath in searchpathlist: return
             searchpathlist.append(newpath)
+    searched = []
     for loc in binseapath:
+        if loc in searched: continue
+        searched.append(loc)
         # Look at bin directory (created by a local compile) before looking for standard dist files
         searchpathlist = []
         appendIfExists(searchpathlist,loc,'bin')
@@ -1932,9 +1981,9 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
             elif v > inpver:
                 vmax = v
                 break
-        if vmin in versions:
+        if vmin in versions and versions[vmin] not in searchpathlist:
             searchpathlist.append(versions[vmin])
-        if vmax in versions:
+        if vmax in versions and versions[vmax] not in searchpathlist:
             searchpathlist.append(versions[vmax])
         for fpth in searchpathlist:
             if TestSPG(fpth):
@@ -2117,16 +2166,17 @@ def condaInstall(packageList):
         return None
     try:
         (out, err, rc) = conda.cli.python_api.run_command(
-            conda.cli.python_api.Commands.INSTALL,packageList
-#    use_exception_handler=True#, stdout=sys.stdout, stderr=sys.stderr)
-            )
+            conda.cli.python_api.Commands.INSTALL,packageList,
+            search_path=('conda-forge'),
+#    use_exception_handler=True#, stdout=sys.stdout,
+            stderr=sys.stderr)
         #print('rc=',rc)
         print('Ran conda. output follows...')
         print(70*'='+'\n'+out+'\n'+70*'=')
         #print('err=',err)
         if rc != 0: return str(out)
     except Exception as msg:
-        print("Error occurred, see below\n",msg)  
+        print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
     return None
     
@@ -2185,7 +2235,9 @@ def condaEnvCreate(envname, packageList, force=False):
     when there is a potential conflict between packages and it would 
     be better to keep the packages separate (which is one of the reasons
     conda supports environments). Note that conda should be run from the 
-    case environment; this attempts to deal with issues if it is not. 
+    base environment; this attempts to deal with issues if it is not. 
+
+    Currently, this is used only to install diffpy.PDFfit2.
 
     :param str envname: the name of the environment to be created. 
       If the environment exists, it will be overwritten only if force is True.
@@ -2204,14 +2256,15 @@ def condaEnvCreate(envname, packageList, force=False):
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
                             'CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        return True,'not running under conda?'
+        p = sys.exec_prefix
+    else:
+        # workaround for bug that avoids nesting packages if running from an
+        # environment (see https://github.com/conda/conda/issues/11493)
+        p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
     try:
         import conda.cli.python_api
     except:
         return True,'conda package not available (in environment)'
-    # workaround for bug that avoids nesting packages if running from an
-    # environment (see https://github.com/conda/conda/issues/11493)
-    p = os.path.dirname(os.path.dirname(os.environ['CONDA_EXE']))
     if not os.path.exists(os.path.join(p,'envs')):
         msg = ('Error derived installation path not found: '+
                   os.path.join(p,'envs'))
@@ -2227,12 +2280,11 @@ def condaEnvCreate(envname, packageList, force=False):
         (out, err, rc) = conda.cli.python_api.run_command(
             conda.cli.python_api.Commands.CREATE,
             packageList + pathList,
-    use_exception_handler=True, stdout=sys.stdout, stderr=sys.stderr
-            )
-        #print('rc=',rc)
-        #print('out=',out)
-        #print('err=',err)
-        if rc != 0: return True,str(out)
+            use_exception_handler=True) # ,stdout=sys.stdout, stderr=sys.stderr)
+        print(out)
+        if rc != 0:
+            print(err)
+            return True,str(out+err)
         if sys.platform == "win32":
             newpython = os.path.join(newenv,'python.exe')
         else:
@@ -2254,7 +2306,7 @@ def addCondaPkg():
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
         return None
-    condaexe = os.environ['CONDA_EXE']
+    #condaexe = os.environ['CONDA_EXE']
     currenv = os.environ['CONDA_DEFAULT_ENV']
     if sys.platform == "win32":
         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
@@ -2332,6 +2384,7 @@ else:
     print('Created file',newfil)
     try:
         import G2script
+        G2script
     except ImportError:
         print('Unexpected error: import of G2script failed!')
         return
@@ -2361,11 +2414,114 @@ binaryPath = ''
 IPyBreak = DoNothing
 pdbBreak = DoNothing
 
+def postURL(URL,postdict,getcookie=None,usecookie=None,
+                timeout=None,retry=2,mode='get'):
+    '''Posts a set of values as from a web form using the "get" or "post" 
+    protocols. 
+    If access fails to an https site, the access is retried with http.
+
+    :param str URL: the URL to post; typically something 
+       like 'http://www.../dir/page?'
+    :param dict postdict: contains keywords and values, such
+       as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
+    :param dict getcookie: dict to save cookies created in call, or None
+       (default) if not needed. 
+    :param dict usecookie: dict containing cookies to be used in call, 
+       or None (default) if not needed.
+    :param int timeout: specifies a timeout period for the get or post (default 
+      is None, which means the timeout period is set by the server). The value 
+      when specified is the time in seconds to wait before giving up on the 
+      request.
+    :param int retry: the number of times to retry the request, if it times out.
+      This is only used if timeout is specified. The default is 2. Note that
+      if retry is left at the default value (2), The timeout is increased by
+      25% for the second try.
+    :param str mode: either 'get' (default) or 'post'. Determines how
+       the request will be submitted. 
+    :returns: a string with the response from the web server or None
+       if access fails.
+    '''
+    try:
+        import requests # delay this until now, since rarely needed
+    except:
+        # this import seems to fail with the Anaconda pythonw on
+        # macs; it should not!
+        print('Warning: failed to import requests. Python config error')
+        return None
+
+    if mode == 'get':
+        reqopt = requests.get
+    else:
+        reqopt = requests.post
+    
+    repeat = True
+    count = 0
+    while repeat:
+        count += 1
+        r = None
+        repeat = False
+        try:
+            if timeout is not None:
+                r = reqopt(URL,params=postdict,cookies=usecookie,
+                                     timeout=timeout)
+            else:
+                r = reqopt(URL,params=postdict,cookies=usecookie)
+            if r.status_code == 200:
+                if GetConfigValue('debug'): print('request OK')
+                page = r.text
+                if getcookie is not None:
+                    getcookie.update(r.cookies)
+                return page # success
+            else:
+                print('request to {} failed. Reason={}'.format(URL,r.reason))
+        except requests.exceptions.ConnectionError as msg:
+            if 'time' in str(msg) and 'out' in str(msg): 
+                print(f'server timeout accessing {URL}')
+                if GetConfigValue('debug'): print('full error=',msg)
+                if timeout is not None and count < retry:
+                    if retry == 2:
+                        timeout *= 1.25
+                        print(f'retry with timout={timeout} sec')
+                    repeat = True
+            else:
+                print('connection error - not on internet?')
+                if URL.startswith('https:'):
+                    print('Retry with http://')
+                    repeat = True
+                    URL = URL.replace('https:','http:')
+        except requests.exceptions.Timeout as msg:
+            print(f'timeout accessing {URL}')
+            if GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
+            if timeout is not None and count <= retry: repeat = True
+        except requests.exceptions.ReadTimeout as msg:
+            print(f'timeout reading from {URL}')
+            if GetConfigValue('debug'): print('full error=',msg)
+            if timeout is not None and count < retry:
+                if retry == 2:
+                    timeout *= 1.25
+                    print(f'retry with timout={timeout} sec')
+                repeat = True
+        except requests.exceptions.ConnectTimeout:
+            print(f'timeout accessing {URL}')
+        except Exception as msg:    # other error
+            print(f'Error accessing {URL}')
+            if GetConfigValue('debug'): print(msg)
+        finally:
+            if r: r.close()
+    else:
+        return None
+
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a 
     separate process. 
     '''
     # check what type of update is being called for
+    import git
     gitUpdate = False
     preupdateType = None
     updateType = None
@@ -2515,12 +2671,12 @@ to update/regress repository from git repository:
         try:
             g2repo = openGitRepo(path2GSAS2)
             g2repo.remote().fetch()
-            fp.write(f'Updates fetched\n')
+            fp.write('Updates fetched\n')
         except Exception as msg:
             fp.write(f'Update failed with message {msg}\n')
 
         if g2repo.head.is_detached:
-            fp.write(f'Status: reverted to an old install\n')
+            fp.write('Status: reverted to an old install\n')
         else:
             try:
                 rc,lc,_ = gitCheckForUpdates(False,g2repo)

@@ -10,12 +10,10 @@ Adaptation of G2img_1ID_32bit_TIFsum.py revision 4902 for use with the 1ID SAXS 
 from __future__ import division, print_function
 import struct as st
 import GSASIIobj as G2obj
-import GSASIIpath
 import GSASIIfiles as G2fil
 import numpy as np
 import time
 DEBUG = False
-GSASIIpath.SetVersionNumber("$Revision: 1 $")
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
     for files that can be identified from known instruments and will
@@ -87,8 +85,7 @@ def GetTifData(filename):
     '''
     
     import struct as st
-    import array as ar
-    import ReadMarCCDFrame as rmf
+    #import ReadMarCCDFrame as rmf
     image = None
     File = open(filename,'rb')
     dataType = 5

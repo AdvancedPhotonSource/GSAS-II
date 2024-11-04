@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-27 13:47:39 -0500 (Thu, 27 Jun 2024) $
-# $Author: toby $
-# $Revision: 5791 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $
-# $Id: GSASIIstrIO.py 5791 2024-06-27 18:47:39Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIstrIO` routines, used for refinement to 
 read from GPX files and print to the .LST file. 
@@ -30,7 +23,6 @@ else:
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -1659,10 +1651,21 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         SGData = General['SGData']
         SGtext,SGtable = G2spc.SGPrint(SGData)
         if General['Type'] == 'magnetic':
+            SGtext,SGtable = G2spc.SGPrint(SGData,AddInv=True)
+            SGtext[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+            SGtext[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+            if SGData['SGGray'] and "1'" not in SGtext[0]:
+                SGtext[0] += " 1'"
+                SGtext[3] += "1'"
             MFtable = G2el.GetMFtable(General['AtomTypes'],General['Lande g'])
             MFtables.update(MFtable)
             phaseDict[pfx+'isMag'] = True
             SpnFlp = SGData['SpnFlp']
+            newTable = []
+            for itm,text in enumerate(SGtable):
+                opr = text.split(')')[1]
+                newTable += ['(%2d)%s   %2d'%(itm+1,opr,int(SpnFlp[itm])),]
+            SGtable = newTable
         Atoms = PhaseData[name]['Atoms']
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
@@ -2040,13 +2043,14 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
-    'needs a doc string'
+    '''Documents Restraint settings in .lst file
+
+    TODO: pass in parmDict to evaluate general restraints
+    '''
     if phaseRest:
         Amat = G2lat.cell2AB(cell)[0]
         cx,ct,cs = AtPtrs[:3]
-        names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments']]
+        names = G2obj.restraintNames
         for name,rest in names:
             if name not in phaseRest:
                 continue                           
@@ -2140,7 +2144,42 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if num:
                             sum = np.sum(Z)
                         pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
-        
+                elif name == 'General':
+                    pFile.write('  target   sig     obs  expression        variables \n')
+                    for expObj,target,esd in itemRest[rest]:
+                        val = '?'
+                        calcobj = G2obj.ExpressionCalcObj(expObj)
+                        # need to get parmDict to evaluate the value
+                        #calcobj.SetupCalc(parmDict)
+                        #val = ' {:8.3g} '.format(calcobj.EvalExpression())
+                        txt = ''
+                        for i in expObj.assgnVars:
+                            if txt: txt += '; '
+                            txt += str(i) + '=' + str(expObj.assgnVars[i])
+                        if len(txt) > 80: txt = txt[:77]+'...'
+                        pFile.write(f'{target:8.5g}{esd:6.3g}{val:>8s}  {expObj.expression:17s} {txt}\n')
+
+def SummRestraints(restraintDict):
+    'Summarize number of Restraints in a single line'
+    res = ''
+    for ph in restraintDict:
+        s = ""
+        phaseRest = restraintDict[ph]
+        if phaseRest:
+            names = G2obj.restraintNames
+            for name,rest in names:
+                if name not in phaseRest: continue
+                itemRest = phaseRest[name]
+                if not itemRest['Use']: continue
+                if rest not in itemRest: continue
+                if len(itemRest[rest]) > 0:
+                    if s: s += '; '
+                    s += f"{name} restrs.: {len(itemRest[rest])}, Weight {itemRest['wtFactor']}"
+        if s:
+            if res: res += '. '
+            res += f'Phase {ph} Restraints: {s}'
+    return res
+
 def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters
     
@@ -3283,8 +3322,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         hapVary.append(pfx+bab)
                 Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],])
                 if len(Twins) == 1:
-                    hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
-                    if hapData.get('Flack',[0,False])[1]:
+                    hapData['Flack'] = hapData.get('Flack',[0.,False])
+                    hapDict[pfx+'Flack'] = hapData['Flack'][0]
+                    if hapData['Flack'][1]:
                         hapVary.append(pfx+'Flack')
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []
@@ -3324,6 +3364,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
                     if not SGData['SGInv'] and len(Twins) == 1:
+                        hapData['Flack'] = hapData.get('Flack',[0.,False])
                         pFile.write(' Flack parameter: %10.3f Refine? %s\n'%(hapData['Flack'][0],hapData['Flack'][1]))
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):

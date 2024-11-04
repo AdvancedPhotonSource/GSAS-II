@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
-########### SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
-# $Author: toby $
-# $Revision: 5767 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIElem.py $
-# $Id: GSASIIElem.py 5767 2024-03-17 17:50:24Z toby $
-########### SVN repository information ###################
 """
 Routines used to define element settings follow. 
 """
@@ -15,16 +8,23 @@ import math
 import sys
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5767 $")
 import copy
 import numpy as np
 import atmdata
 import GSASIImath as G2mth
 import ElementTable as ET
-import GSASIIElem as G2elem
+#import GSASIIElem as G2elem   # but this module is GSASIIElem. Why are we doing this?
 nxs = np.newaxis
 Bohr = 0.529177
 
+# Wavelength data
+#These from Intl. Tables C, Table 4.2.2.1, p. 177-179
+waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
+        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'GaKa':[1.34003,1.34394],
+        'MoKa':[0.70926,0.713543],'AgKa':[0.559363,0.563775],'InKa':[0.512094,0.516525]}
+# meanwaves computed as (2*Ka1+Ka2)/3
+meanwaves = {'CuKa':1.54178,'TiKa':2.74963,'CrKa':2.29092,'FeKa':1.93728,
+        'CoKa':1.79021,'MoKa':0.71069,'AgKa':0.56083,'GaKa':1.34134,'Inka':0.51357}
 
 getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
 def GetFormFactorCoeff(El):
@@ -256,6 +256,15 @@ def FixValence(El):
     if '-0' in El:
         El = El.split('-0')[0]
     return El
+
+def SetAtomColor(El,RGB):
+    'Overrides the default color in the atoms table; not saved'
+    Elem = ET.ElTable
+    Elements = [elem[0][0] for elem in Elem]
+    if 'Q' in El: El = 'Q'      #patch - remove Qa, etc.
+    ElS = getElSym(El)
+    ET.ElTable[Elements.index(ElS)] = ET.ElTable[Elements.index(ElS)][0:6] + (
+        tuple(RGB),)
     
 def GetAtomInfo(El,ifMag=False):
     'reads element information from atmdata.py'
@@ -752,7 +761,7 @@ def SetupGeneral(data, dirname):
     be done after changes to the Atoms array.
 
     Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`), 
-    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`SUBGROUPS.saveNewPhase`,
+    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`GSASIImiscGUI.saveNewPhase`,
     and in :func:`GSASIIscriptable.SetupGeneral`.
     '''
     generalData = data['General']
@@ -900,7 +909,8 @@ def SetupGeneral(data, dirname):
                     continue
                 nSh = len(Srb['RBId'])
                 for iSh in range(nSh):
-                    Info = G2elem.GetAtomInfo(Srb['atType'][iSh])
+#                    Info = G2elem.GetAtomInfo(Srb['atType'][iSh])
+                    Info = GetAtomInfo(Srb['atType'][iSh])
                     if Info['Symbol'] not in generalData['AtomTypes']:
                         generalData['AtomTypes'].append(Info['Symbol'])
                         generalData['Z'] = Info['Z']

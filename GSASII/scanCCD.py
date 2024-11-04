@@ -12,7 +12,7 @@ import numpy.ma as ma
 import wx
 import matplotlib as mpl
 import GSASIIpath
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIimage as G2img
 import GSASIIplot as G2plt
 import GSASIIfiles as G2fil
@@ -105,7 +105,7 @@ class scanCCD(wx.Frame):
                 self.data['imScale'] = 8
                 self.Image = []
                 for imagefile in self.imagefiles:
-                    Comments,Data,Npix,image = G2IO.GetImageData(self,imagefile)
+                    Comments,Data,Npix,image = G2fil.GetImageData(self,imagefile)
                     if Comments:
                         A = G2img.ImageCompress(image,self.data['imScale'])
                         if len(self.Image):
@@ -196,7 +196,7 @@ class scanCCD(wx.Frame):
             GoOn = True
             for ifile,imagefile in enumerate(self.imagefiles):
                 if ifile >= self.data['skip']:
-                    image = G2IO.GetImageData(self,imagefile)[3]
+                    image = G2fil.GetImageData(self,imagefile)[3]
                     image = np.fliplr(image)
                     for iBlk in range(N):
                         iBeg = iBegi+iBlk*blkSize

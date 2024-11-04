@@ -1,99 +1,55 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-05-17 20:36:24 -0500 (Fri, 17 May 2024) $
-# $Author: toby $
-# $Revision: 5787 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $
-# $Id: GSASIIIO.py 5787 2024-05-18 01:36:24Z toby $
-########### SVN repository information ###################
 '''
-Misc routines for input and output, including image reading follow. 
+Misc routines for GUI-based input and output, including image reading follow. 
 
-TODO: This module needs some work to separate wx from non-wx routines. GUI 
-routines should probably move to GSASIIctrlGUI.
+This module contains quite a bit of older code that could use some attention,
+or possibly movement into other modules. It was previously called GSASIIIO.py
+which is why most modules reference it as G2IO. 
+
 '''
 
 from __future__ import division, print_function
 
-# Allow this to be imported without wx present. Was needed for G2scriptable, but is
-# likely not needed anymore
-try:
-    import wx
-except ImportError:
-    # was needed by sphinx, but probably not anymore
-    class Placeholder(object):
-        def __init__(self):
-            self.Dialog = object
-    wx = Placeholder()
+# # Allow this to be imported without wx present.
+# try:
+#     import wx
+# except ImportError:
+#     print('wx failed')
+#     # was needed by sphinx, but probably not anymore
+#     class Placeholder(object):
+#         def __init__(self):
+#             self.Dialog = object
+#     wx = Placeholder()
 import math
-import numpy as np
-import numpy.ma as ma
-
+import os
+import re
 import copy
 import platform
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle as cPickle
 import sys
-import re
 import random as ran
+
+import numpy as np
+import numpy.ma as ma
+import wx
+
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5787 $")
-try:
-    import GSASIIdataGUI as G2gd
-except ImportError:
-    pass
+import GSASIIdataGUI as G2gd
 import GSASIIobj as G2obj
-import GSASIIlattice as G2lat
-try:
-    import GSASIIpwdGUI as G2pdG
-    import GSASIIimgGUI as G2imG
-except ImportError:
-    pass
+import GSASIIpwdGUI as G2pdG
+import GSASIIimgGUI as G2imG
 import GSASIIElem as G2el
-import GSASIIstrIO as G2stIO
-import GSASIImapvars as G2mv
 import GSASIIfiles as G2fil
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
-import os
-import os.path as ospath
+import GSASIIctrlGUI as G2G
+import GSASIImath as G2mth
+import GSASIIElem as G2elem
+import GSASIIspc as G2spc
+import GSASIIlattice as G2lat
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
 if GSASIIpath.GetConfigValue('Transpose'): TRANSP = True
 npsind = lambda x: np.sin(x*np.pi/180.)
-
-def sfloat(S):
-    'Convert a string to float. An empty field or a unconvertable value is treated as zero'
-    if S.strip():
-        try:
-            return float(S)
-        except ValueError:
-            pass
-    return 0.0
-
-def sint(S):
-    'Convert a string to int. An empty field is treated as zero'
-    if S.strip():
-        return int(S)
-    else:
-        return 0
-
-def trim(val):
-    '''Simplify a string containing leading and trailing spaces
-    as well as newlines, tabs, repeated spaces etc. into a shorter and
-    more simple string, by replacing all ranges of whitespace
-    characters with a single space. 
-
-    :param str val: the string to be simplified
-
-    :returns: the (usually) shortened version of the string
-    '''
-    return re.sub('\\s+', ' ', val).strip()
 
 def FileDlgFixExt(dlg,file):
     'this is needed to fix a problem in linux wx.FileDialog'
@@ -216,7 +172,7 @@ def GetCheckImageFile(G2frame,treeId):
         dlg = wx.FileDialog(G2frame, 'Previous image file ('+prevnam+') not found; open here', '.', prevnam,
                             wildcard,wx.FD_OPEN)
         try:
-            dlg.SetFilename(''+ospath.split(imagefile)[1])
+            dlg.SetFilename(''+os.path.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
                 imagefile = dlg.GetPath()
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
@@ -295,8 +251,11 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     ImgNames = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
     TreeLbl = 'IMG '+os.path.basename(imagefile)
     ImageTag = Data.get('ImageTag')
+    ImageSection = Data.get('ImageSection','')  #used only in HDF5 at present
     if ImageTag:
-        TreeLbl += ' #'+'%04d'%(ImageTag)
+        if ImageSection:
+            TreeLbl += f" {ImageSection}"
+        TreeLbl += f' #{ImageTag:04d}'
         imageInfo = (imagefile,ImageTag)
     else:
         imageInfo = imagefile
@@ -372,81 +331,6 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.PickId = Id
     G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.Image = Id
-
-def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
-    '''Read a single image with an image importer. This is called to reread an image
-    after it has already been imported with :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`
-    (or :func:`ReadImages` in Auto Integration) so it is not necessary to reload metadata.
-
-    :param wx.Frame G2frame: main GSAS-II Frame and data object.
-    :param str imagefile: name of image file
-    :param bool imageOnly: If True return only the image,
-      otherwise  (default) return more (see below)
-    :param int/str ImageTag: specifies a particular image to be read from a file.
-      First image is read if None (default).
-    :param str formatName: the image reader formatName
-
-    :returns: an image as a numpy array or a list of four items:
-      Comments, Data, Npix and the Image, as selected by imageOnly
-
-    '''
-    # determine which formats are compatible with this file
-    primaryReaders = []
-    secondaryReaders = []
-    for rd in G2frame.ImportImageReaderlist:
-        flag = rd.ExtensionValidator(imagefile)
-        if flag is None: 
-            secondaryReaders.append(rd)
-        elif flag:
-            if not FormatName:
-                primaryReaders.append(rd)
-            elif FormatName in rd.formatName:       #This is a kluge because the rd.formatName was changed!
-                primaryReaders.append(rd)
-    if len(secondaryReaders) + len(primaryReaders) == 0:
-        print('Error: No matching format for file '+imagefile)
-        raise Exception('No image read')
-    errorReport = ''
-    if not imagefile:
-        return
-    for rd in primaryReaders+secondaryReaders:
-        rd.ReInitialize() # purge anything from a previous read
-        rd.errors = "" # clear out any old errors
-        if not rd.ContentsValidator(imagefile): # rejected on cursory check
-            errorReport += "\n  "+rd.formatName + ' validator error'
-            if rd.errors: 
-                errorReport += ': '+rd.errors
-                continue
-        if imageOnly:
-            ParentFrame = None # prevent GUI access on reread
-        else:
-            ParentFrame = G2frame
-        if GSASIIpath.GetConfigValue('debug'):
-            flag = rd.Reader(imagefile,ParentFrame,blocknum=ImageTag)
-        else:
-            flag = False
-            try:
-                flag = rd.Reader(imagefile,ParentFrame,blocknum=ImageTag)
-            except rd.ImportException as detail:
-                rd.errors += "\n  Read exception: "+str(detail)
-            except Exception as detail:
-                import traceback
-                rd.errors += "\n  Unhandled read exception: "+str(detail)
-                rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
-        if flag: # this read succeeded
-            if rd.Image is None:
-                raise Exception('No image read. Strange!')
-            if GSASIIpath.GetConfigValue('Transpose'):
-                print ('Transposing Image!')
-                rd.Image = rd.Image.T
-            #rd.readfilename = imagefile
-            if imageOnly:
-                return rd.Image
-            else:
-                return rd.Comments,rd.Data,rd.Npix,rd.Image
-    else:
-        print('Error reading file '+imagefile)
-        print('Error messages(s)\n'+errorReport)
-        raise Exception('No image read')    
 
 def ReadImages(G2frame,imagefile):
     '''Read one or more images from a file and put them into the Tree
@@ -576,10 +460,7 @@ try:
     objectScanIgnore += [ma.MaskedArray] # fails in doc builds
 except AttributeError:
     pass
-    
-if '2' in platform.python_version_tuple()[0]:
-    objectScanIgnore += [unicode,long,]
-    
+        
 def objectScan(data,tag,indexStack=[]):
     '''Recursively scan an object looking for unexpected data types.
     This is used in debug mode to scan .gpx files for objects we did not
@@ -796,7 +677,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
     G2frame.SetTitleByGPX()
     if LastSavedUsing:
         try:
-            G2G.updateNotifier(G2frame,int(LastSavedUsing))
+            G2G.updateNotifier(G2frame,int(LastSavedUsing.split()[0]))
         except:
             pass
     
@@ -816,6 +697,13 @@ def ProjFileSave(G2frame):
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
             Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
+            if GSASIIpath.HowIsG2Installed().startswith('git'):
+                try:
+                    g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
+                    commit = g2repo.head.commit
+                    Controls['LastSavedUsing'] += f" git {commit.hexsha[:6]}"
+                except:
+                    pass
             Controls['PythonVersions'] = G2frame.PackageVersions
         except:
             pass
@@ -1025,780 +913,9 @@ def IndexPeakListSave(G2frame,peaks):
         wx.EndBusyCursor()
     print ('index peak list saved')
 
-def striphist(var,insChar=''):
-    'strip a histogram number from a var name'
-    sv = var.split(':')
-    if len(sv) <= 1: return var
-    if sv[1]:
-        sv[1] = insChar
-    return ':'.join(sv)
-
-######################################################################
-# base classes for reading various types of data files
-#   not used directly, only by subclassing
-######################################################################
-class ExportBaseclass(object):
-    '''Defines a base class for the exporting of GSAS-II results.
-
-    This class is subclassed in the various exports/G2export_*.py files. Those files
-    are imported in :meth:`GSASIIdataGUI.GSASII._init_Exports` which defines the
-    appropriate menu items for each one and the .Exporter method is called
-    directly from the menu item.
-
-    Routines may also define a .Writer method, which is used to write a single
-    file without invoking any GUI objects.
-    '''
-    # TODO: review exporters producing exceptions where .Writer can't be used where G2frame is None (see CIF)
-    # TODO: review conflicting uses of .Writer with mode (SeqRef) & elsewhere
-    # TODO: move this class to G2fil
-    def __init__(self,G2frame,formatName,extension,longFormatName=None,):
-        self.G2frame = G2frame
-        self.formatName = formatName # short string naming file type
-        self.extension = extension
-        if longFormatName: # longer string naming file type
-            self.longFormatName = longFormatName
-        else:
-            self.longFormatName = formatName
-        self.OverallParms = {}
-        self.Phases = {}
-        self.Histograms = {}
-        self.powderDict = {}
-        self.sasdDict = {}
-        self.refdDict = {}
-        self.xtalDict = {}
-        self.parmDict = {}
-        self.sigDict = {}
-        self.fp = None
-        # updated in InitExport:
-        self.currentExportType = None # type of export that has been requested
-        # updated in ExportSelect (when used):
-        self.phasenam = None # a list of selected phases
-        self.histnam = None # a list of selected histograms
-        self.filename = None # name of file to be written (single export) or template (multiple files)
-        self.dirname = '' # name of directory where file(s) will be written
-        self.fullpath = '' # name of file being written -- full path
-        
-        # items that should be defined in a subclass of this class
-        self.exporttype = []  # defines the type(s) of exports that the class can handle.
-        # The following types are defined: 'project', "phase", "powder", "single"
-        self.multiple = False # set as True if the class can export multiple phases or histograms
-        # self.multiple is ignored for "project" exports
-
-    def InitExport(self,event):
-        '''Determines the type of menu that called the Exporter and
-        misc initialization. 
-        '''
-        self.filename = None # name of file to be written (single export)
-        self.dirname = '' # name of file to be written (multiple export)
-        if event:
-            self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
-
-    def MakePWDRfilename(self,hist):
-        '''Make a filename root (no extension) from a PWDR histogram name
-
-        :param str hist: the histogram name in data tree (starts with "PWDR ")
-        '''
-        file0 = ''
-        file1 = hist[5:]
-        # replace repeated blanks
-        while file1 != file0:
-            file0 = file1
-            file1 = file0.replace('  ',' ').strip()
-        file0 = file1.replace('Azm= ','A')
-        # if angle has unneeded decimal places on aziumuth, remove them
-        if file0[-3:] == '.00': file0 = file0[:-3]
-        file0 = file0.replace('.','_')
-        file0 = file0.replace(' ','_')
-        return file0
-
-    def ExportSelect(self,AskFile='ask'):
-        '''Selects histograms or phases when needed. Sets a default file name when
-        requested into self.filename; always sets a default directory in self.dirname.
-
-        :param bool AskFile: Determines how this routine processes getting a
-          location to store the current export(s).
-          
-          * if AskFile is 'ask' (default option), get the name of the file to be written;
-            self.filename and self.dirname are always set. In the case where
-            multiple files must be generated, the export routine should do this
-            based on self.filename as a template.
-          * if AskFile is 'dir', get the name of the directory to be used;
-            self.filename is not used, but self.dirname is always set. The export routine
-            will always generate the file name.
-          * if AskFile is 'single', get only the name of the directory to be used when
-            multiple items will be written (as multiple files) are used
-            *or* a complete file name is requested when a single file
-            name is selected. self.dirname is always set and self.filename used
-            only when a single file is selected.  
-          * if AskFile is 'default', creates a name of the file to be used from
-            the name of the project (.gpx) file. If the project has not been saved,
-            then the name of file is requested.
-            self.filename and self.dirname are always set. In the case where
-            multiple file names must be generated, the export routine should do this
-            based on self.filename.
-          * if AskFile is 'default-dir', sets self.dirname from the project (.gpx)
-            file. If the project has not been saved, then a directory is requested.
-            self.filename is not used.
-
-        :returns: True in case of an error
-        '''
-        
-        numselected = 1
-        if self.currentExportType == 'phase':
-            if len(self.Phases) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any phases.')
-                return True
-            elif len(self.Phases) == 1:
-                self.phasenam = list(self.Phases.keys())
-            elif self.multiple: 
-                choices = sorted(self.Phases.keys())
-                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
-                if phasenum is None: return True
-                self.phasenam = [choices[i] for i in phasenum]
-                if not self.phasenam: return True
-                numselected = len(self.phasenam)
-            else:
-                choices = sorted(self.Phases.keys())
-                phasenum = G2G.ItemSelector(choices,self.G2frame)
-                if phasenum is None: return True
-                self.phasenam = [choices[phasenum]]
-                numselected = len(self.phasenam)
-        elif self.currentExportType == 'single':
-            if len(self.xtalDict) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any single crystal data.')
-                return True
-            elif len(self.xtalDict) == 1:
-                self.histnam = list(self.xtalDict.values())
-            elif self.multiple:
-                choices = sorted(self.xtalDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
-                if not hnum: return True
-                self.histnam = [choices[i] for i in hnum]
-                numselected = len(self.histnam)
-            else:
-                choices = sorted(self.xtalDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame)
-                if hnum is None: return True
-                self.histnam = [choices[hnum]]
-                numselected = len(self.histnam)
-        elif self.currentExportType == 'powder':
-            if len(self.powderDict) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any powder data.')
-                return True
-            elif len(self.powderDict) == 1:
-                self.histnam = list(self.powderDict.values())
-            elif self.multiple:
-                choices = sorted(self.powderDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
-                if not hnum: return True
-                self.histnam = [choices[i] for i in hnum]
-                numselected = len(self.histnam)
-            else:
-                choices = sorted(self.powderDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame)
-                if hnum is None: return True
-                self.histnam = [choices[hnum]]
-                numselected = len(self.histnam)
-        elif self.currentExportType == 'sasd':
-            if len(self.sasdDict) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any small angle data.')
-                return True
-            elif len(self.sasdDict) == 1:
-                self.histnam = self.sasdDict.values()
-            elif self.multiple:
-                choices = sorted(self.sasdDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
-                if not hnum: return True
-                self.histnam = [choices[i] for i in hnum]
-                numselected = len(self.histnam)
-            else:
-                choices = sorted(self.sasdDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame)
-                if hnum is None: return True
-                self.histnam = [choices[hnum]]
-                numselected = len(self.histnam)
-        elif self.currentExportType == 'refd':
-            if len(self.refdDict) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any reflectivity data.')
-                return True
-            elif len(self.refdDict) == 1:
-                self.histnam = self.refdDict.values()
-            elif self.multiple:
-                choices = sorted(self.refdDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
-                if not hnum: return True
-                self.histnam = [choices[i] for i in hnum]
-                numselected = len(self.histnam)
-            else:
-                choices = sorted(self.refdDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame)
-                if hnum is None: return True
-                self.histnam = [choices[hnum]]
-                numselected = len(self.histnam)
-        elif self.currentExportType == 'image':
-            if len(self.Histograms) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any images.')
-                return True
-            elif len(self.Histograms) == 1:
-                self.histnam = list(self.Histograms.keys())
-            else:
-                choices = sorted(self.Histograms.keys())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
-                if self.multiple:
-                    if not hnum: return True
-                    self.histnam = [choices[i] for i in hnum]
-                else:
-                    if hnum is None: return True
-                    self.histnam = [choices[hnum]]
-                numselected = len(self.histnam)
-        if self.currentExportType == 'map':
-            # search for phases with maps
-            mapPhases = []
-            choices = []
-            for phasenam in sorted(self.Phases):
-                phasedict = self.Phases[phasenam] # pointer to current phase info            
-                if len(phasedict['General']['Map'].get('rho',[])):
-                    mapPhases.append(phasenam)
-                    if phasedict['General']['Map'].get('Flip'):
-                        choices.append('Charge flip map: '+str(phasenam))
-                    elif phasedict['General']['Map'].get('MapType'):
-                        choices.append(
-                            str(phasedict['General']['Map'].get('MapType'))
-                            + ' map: ' + str(phasenam))
-                    else:
-                        choices.append('unknown map: '+str(phasenam))
-            # select a map if needed
-            if len(mapPhases) == 0:
-                self.G2frame.ErrorDialog(
-                    'Empty project',
-                    'Project does not contain any maps.')
-                return True
-            elif len(mapPhases) == 1:
-                self.phasenam = mapPhases
-            else: 
-                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
-                if self.multiple:
-                    if not phasenum: return True
-                    self.phasenam = [mapPhases[i] for i in phasenum]
-                else:
-                    if phasenum is None: return True
-                    self.phasenam = [mapPhases[phasenum]]
-            numselected = len(self.phasenam)
-
-        # items selected, now set self.dirname and usually self.filename 
-        if AskFile == 'ask' or (AskFile == 'single' and numselected == 1) or (
-            AskFile == 'default' and not self.G2frame.GSASprojectfile
-            ):
-            filename = self.askSaveFile()
-            if not filename: return True
-            self.dirname,self.filename = os.path.split(filename)
-        elif AskFile == 'dir' or AskFile == 'single' or (
-            AskFile == 'default-dir' and not self.G2frame.GSASprojectfile
-            ):
-            self.dirname = self.askSaveDirectory()
-            if not self.dirname: return True
-        elif AskFile == 'default-dir' or AskFile == 'default':
-            self.dirname,self.filename = os.path.split(
-                os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
-                )
-        else:
-            raise Exception('This should not happen!')
-
-    def loadParmDict(self):
-        '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
-        refined values to those from the last cycle and set the uncertainties for the
-        refined parameters in another dict (self.sigDict).
-
-        Expands the parm & sig dicts to include values derived from constraints.
-
-        This could be made faster for sequential fits by reducing the histogram list to only
-        the active histogram being exported.
-        '''
-        # TODO: this does not expand wild-card constraints properly for sequential fits.
-        # this needs revisiting for sequential exports if constraints need to be generated correctly.
-        
-        self.G2frame.CheckNotebook()
-        self.parmDict = {}
-        self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
-        rigidbodyDict = {}
-        covDict = {}
-        consDict = {}
-        Histograms,Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
-        item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
-        while item:
-            name = self.G2frame.GPXtree.GetItemText(item)
-            if name == 'Rigid bodies':
-                 rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(item)
-            elif name == 'Covariance':
-                 covDict = self.G2frame.GPXtree.GetItemPyData(item)
-            elif name == 'Constraints':
-                 consDict = self.G2frame.GPXtree.GetItemPyData(item)
-            item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
-        rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-        self.parmDict.update(rbDict)
-        rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave =  \
-            G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
-        self.parmDict.update(phaseDict)
-        hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
-        self.parmDict.update(hapDict)
-        histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
-        self.parmDict.update(histDict)
-        self.parmDict.update(zip(
-            covDict.get('varyList',[]),
-            covDict.get('variables',[])))
-        self.sigDict = dict(zip(
-            covDict.get('varyList',[]),
-            covDict.get('sig',[])))
-        # expand to include constraints: first compile a list of constraints
-        constList = []
-        for item in consDict:
-            if item.startswith('_'): continue
-            constList += consDict[item]
-        # now process the constraints
-        G2mv.InitVars()
-        constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
-        varyList = covDict.get('varyListStart')
-        if varyList is None and len(constrDict) == 0:
-            # no constraints can use varyList
-            varyList = covDict.get('varyList')
-        elif varyList is None:
-            varyList = []
-            # # old GPX file from before pre-constraint varyList is saved
-            # print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
-            # raise Exception(' *** Export aborted ***')
-        else:
-            varyList = list(varyList)
-        # add symmetry-generated constraints
-        rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(   
-            G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Rigid bodies'))
-        rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave = \
-            G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
-        msg = G2mv.EvaluateMultipliers(constrDict,phaseDict)
-        if msg:
-            print('Unable to interpret multiplier(s): '+msg)
-            raise Exception(' *** CIF creation aborted ***')
-        errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
-        if errmsg:
-            # this really should not happen
-            print (' *** ERROR - constraints are internally inconsistent ***')
-            print ('Errors: ',errmsg)
-            if warnmsg: print ('Warnings'+warnmsg)
-            raise Exception(' *** CIF creation aborted ***')
-        G2mv.Map2Dict(self.parmDict,varyList)   # changes varyList
-        G2mv.Dict2Map(self.parmDict)   # add the constrained values to the parameter dictionary
-        # and add their uncertainties into the esd dictionary (sigDict)
-        if covDict.get('covMatrix') is not None:
-            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],noSym=True))
-            if 'depSigDict' in self.OverallParms['Covariance']:
-                self.sigDict.update(
-                    {i:v[1] for i,v in self.OverallParms['Covariance']['depSigDict'].items()})
-
-    def loadTree(self):
-        '''Load the contents of the data tree into a set of dicts
-        (self.OverallParms, self.Phases and self.Histogram as well as self.powderDict
-        & self.xtalDict)
-        
-        * The childrenless data tree items are overall parameters/controls for the
-          entire project and are placed in self.OverallParms
-        * Phase items are placed in self.Phases
-        * Data items are placed in self.Histogram. The key for these data items
-          begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
-        '''
-        self.OverallParms = {}
-        self.powderDict = {}
-        self.sasdDict = {}
-        self.refdDict = {}
-        self.xtalDict = {}
-        self.Phases = {}
-        self.Histograms = {}
-        self.SeqRefdata = None
-        self.SeqRefhist = None
-        self.DelayOpen = False
-        if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
-        histType = None        
-        if self.currentExportType == 'phase':
-            # if exporting phases load them here
-            sub = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Phases')
-            if not sub:
-                print ('no phases found')
-                return True
-            item, cookie = self.G2frame.GPXtree.GetFirstChild(sub)
-            while item:
-                phaseName = self.G2frame.GPXtree.GetItemText(item)
-                self.Phases[phaseName] =  self.G2frame.GPXtree.GetItemPyData(item)
-                item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
-            # Get rigid body info into self.OverallParms 
-            for key in ('Rigid bodies','Covariance'):
-                item = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,key)
-                if item:
-                    self.OverallParms[key] = self.G2frame.GPXtree.GetItemPyData(item)
-                item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
-            return
-        elif self.currentExportType == 'single':
-            histType = 'HKLF'
-        elif self.currentExportType == 'powder':
-            histType = 'PWDR'
-        elif self.currentExportType == 'image':
-            histType = 'IMG'
-        elif self.currentExportType == 'sasd':
-            histType = 'SASD'
-        elif self.currentExportType == 'refd':
-            histType = 'REFD'
-
-        if histType: # Loading just one kind of tree entry
-            item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
-            while item:
-                name = self.G2frame.GPXtree.GetItemText(item)
-                if name.startswith(histType):
-                    if self.Histograms.get(name): # there is already an item with this name
-                        print('Histogram name '+str(name)+' is repeated. Renaming')
-                        if name[-1] == '9':
-                            name = name[:-1] + '10'
-                        elif name[-1] in '012345678':
-                            name = name[:-1] + str(int(name[-1])+1)
-                        else:                            
-                            name += '-1'
-                    self.Histograms[name] = {}
-                    # the main info goes into Data, but the 0th
-                    # element contains refinement results, carry
-                    # that over too now. 
-                    self.Histograms[name]['Data'] = self.G2frame.GPXtree.GetItemPyData(item)[1]
-                    self.Histograms[name][0] = self.G2frame.GPXtree.GetItemPyData(item)[0]
-                    item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
-                    while item2: 
-                        child = self.G2frame.GPXtree.GetItemText(item2)
-                        self.Histograms[name][child] = self.G2frame.GPXtree.GetItemPyData(item2)
-                        item2, cookie2 = self.G2frame.GPXtree.GetNextChild(item, cookie2)
-                item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
-            # index powder and single crystal histograms by number
-            for hist in self.Histograms:
-                if hist.startswith("PWDR"): 
-                    d = self.powderDict
-                elif hist.startswith("HKLF"): 
-                    d = self.xtalDict
-                elif hist.startswith("SASD"):
-                    d = self.sasdDict
-                elif hist.startswith("REFD"):
-                    d = self.refdDict
-                else:
-                    return                    
-                i = self.Histograms[hist].get('hId')
-                if i is None and not d.keys():
-                    i = 0
-                elif i is None or i in d.keys():
-                    i = max(d.keys())+1
-                d[i] = hist
-            return
-        # else standard load: using all interlinked phases and histograms
-        self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
-        item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
-        while item:
-            name = self.G2frame.GPXtree.GetItemText(item)
-            item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
-            if not item2: 
-                self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
-            item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
-        # index powder and single crystal histograms
-        for hist in self.Histograms:
-            i = self.Histograms[hist]['hId']
-            if hist.startswith("PWDR"): 
-                self.powderDict[i] = hist
-            elif hist.startswith("HKLF"): 
-                self.xtalDict[i] = hist
-            elif hist.startswith("SASD"):
-                self.sasdDict[i] = hist
-            elif hist.startswith("REFD"):
-                self.refdDict[i] = hist
-
-    def dumpTree(self,mode='type'):
-        '''Print out information on the data tree dicts loaded in loadTree.
-        Used for testing only.
-        '''
-        if self.SeqRefdata and self.SeqRefhist:
-            print('Note that dumpTree does not show sequential results')
-        print ('\nOverall')
-        if mode == 'type':
-            def Show(arg): return type(arg)
-        else:
-            def Show(arg): return arg
-        for key in self.OverallParms:
-            print ('  '+key+Show(self.OverallParms[key]))
-        print ('Phases')
-        for key1 in self.Phases:
-            print ('    '+key1+Show(self.Phases[key1]))
-        print ('Histogram')
-        for key1 in self.Histograms:
-            print ('    '+key1+Show(self.Histograms[key1]))
-            for key2 in self.Histograms[key1]:
-                print ('      '+key2+Show(self.Histograms[key1][key2]))
-
-    def defaultSaveFile(self):
-        return os.path.abspath(
-            os.path.splitext(self.G2frame.GSASprojectfile
-                             )[0]+self.extension)
-        
-    def askSaveFile(self):
-        '''Ask the user to supply a file name
-
-        :returns: a file name (str) or None if Cancel is pressed
-
-        '''
-        #pth = G2G.GetExportPath(self.G2frame)
-        if self.G2frame.GSASprojectfile:
-            defnam = os.path.splitext(
-                os.path.split(self.G2frame.GSASprojectfile)[1]
-                )[0]+self.extension
-        else:
-            defnam = 'default' + self.extension
-        return G2G.askSaveFile(self.G2frame,defnam,self.extension,self.longFormatName)
-
-    def askSaveDirectory(self):
-        '''Ask the user to supply a directory name. Path name is used as the
-        starting point for the next export path search. 
-
-        :returns: a directory name (str) or None if Cancel is pressed
-
-        TODO: Can this be replaced with G2G.askSaveDirectory?
-        '''
-        pth = G2G.GetExportPath(self.G2frame)
-        dlg = wx.DirDialog(
-            self.G2frame, 'Input directory where file(s) will be written', pth,
-            wx.DD_DEFAULT_STYLE)
-        dlg.CenterOnParent()
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetPath()
-                self.G2frame.LastExportDir = filename
-            else:
-                filename = None
-        finally:
-            dlg.Destroy()
-        return filename
-
-    # Tools for file writing. 
-    def OpenFile(self,fil=None,mode='w',delayOpen=False):
-        '''Open the output file
-
-        :param str fil: The name of the file to open. If None (default)
-          the name defaults to self.dirname + self.filename.
-          If an extension is supplied, it is not overridded,
-          but if not, the default extension is used. 
-        :param str mode:  The mode can 'w' to write a file, or 'a' to append to it. If 
-          the mode is 'd' (for debug), output is displayed on the console. 
-        :returns: the file object opened by the routine which is also
-          saved as self.fp
-        '''
-        if mode == 'd': # debug mode
-            self.fullpath = '(stdout)'
-            self.fp = sys.stdout
-            return
-        if not fil:
-            if not os.path.splitext(self.filename)[1]:
-                self.filename += self.extension
-            fil = os.path.join(self.dirname,self.filename)
-        self.fullpath = os.path.abspath(fil)
-        self.DelayOpen = False
-        if delayOpen:
-            self.DelayOpen = True
-            self.fp = None
-            return
-        self.fp = open(self.fullpath,mode)
-        return self.fp
-
-    def openDelayed(self,mode='w'):
-        self.DelayOpen = False
-        self.fp = open(self.fullpath,mode)
-        return self.fp
-
-    def Write(self,line):
-        '''write a line of output, attaching a line-end character
-
-        :param str line: the text to be written. 
-        '''
-        if self.fp is None:
-            raise Exception('Attempt to Write without use of OpenFile')
-        self.fp.write(line+'\n')
-        
-    def CloseFile(self,fp=None):
-        '''Close a file opened in OpenFile
-
-        :param file fp: the file object to be closed. If None (default)
-          file object self.fp is closed. 
-        '''
-        if self.fp is None and self.DelayOpen:
-            if GSASIIpath.GetConfigValue('debug'): 
-                print('Delayed open: close before file not created')
-            return
-        if self.fp is None:
-            if GSASIIpath.GetConfigValue('debug'): 
-                raise Exception('Attempt to CloseFile without use of OpenFile')
-            else:
-                print('Attempt to CloseFile without use of OpenFile')
-                return
-        if self.fp == sys.stdout: return # debug mode
-        if fp is None:
-            fp = self.fp
-            self.fp = None
-        if fp is not None: fp.close()
-        
-    def SetSeqRef(self,data,hist):
-        '''Set the exporter to retrieve results from a sequential refinement
-        rather than the main tree
-        '''
-        self.SeqRefdata = data
-        self.SeqRefhist = hist
-        data_name = data[hist]
-        for i,val in zip(data_name['varyList'],data_name['sig']):
-            self.sigDict[i] = val
-            self.sigDict[striphist(i)] = val
-        for i in data_name['parmDict']:
-            self.parmDict[striphist(i)] = data_name['parmDict'][i]
-            self.parmDict[i] = data_name['parmDict'][i]
-            # zero out the dA[xyz] terms, they would only bring confusion
-            key = i.split(':')
-            if len(key) < 3: continue
-            if key[2].startswith('dA'):
-                self.parmDict[i] = 0.0
-        for i,(val,sig) in data_name.get('depParmDict',{}).items():
-            self.parmDict[i] = val
-            self.sigDict[i] = sig
-        #GSASIIpath.IPyBreak()
-
-    # Tools to pull information out of the data arrays
-    def GetCell(self,phasenam,unique=False):
-        """Gets the unit cell parameters and their s.u.'s for a selected phase
-
-        :param str phasenam: the name for the selected phase
-        :param bool unique: when True, only directly refined parameters
-          (a in cubic, a & alpha in rhombohedral cells) are assigned 
-          positive s.u. values. Used as True for CIF generation.
-        :returns: `cellList,cellSig` where each is a 7 element list corresponding
-          to a, b, c, alpha, beta, gamma, volume where `cellList` has the
-          cell values and `cellSig` has their uncertainties.
-        """
-        if self.SeqRefdata and self.SeqRefhist:
-            return self.GetSeqCell(phasenam,self.SeqRefdata[self.SeqRefhist])
-        phasedict = self.Phases[phasenam] # pointer to current phase info
-        try:
-            pfx = str(phasedict['pId'])+'::'
-            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            cellSig = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,
-                self.OverallParms['Covariance'],unique=unique)  # returns 7 vals, includes sigVol
-            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
-            return cellList,cellSig
-        except KeyError:
-            cell = phasedict['General']['Cell'][1:]
-            return cell,7*[0]
-            
-    def GetSeqCell(self,phasenam,data_name):
-        """Gets the unit cell parameters and their s.u.'s for a selected phase
-        and histogram in a sequential fit
-
-        :param str phasenam: the name for the selected phase
-        :param dict data_name: the sequential refinement parameters for the selected histogram
-        :returns: `cellList,cellSig` where each is a 7 element list corresponding
-          to a, b, c, alpha, beta, gamma, volume where `cellList` has the
-          cell values and `cellSig` has their uncertainties.
-        """
-        phasedict = self.Phases[phasenam]
-        SGdata = phasedict['General']['SGData']
-        pId = phasedict['pId']
-        RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
-        ESDlookup = {}
-        Dlookup = {}
-        varied = [striphist(i) for i in data_name['varyList']]
-        for item,val in data_name['newCellDict'].items():
-            if item in varied:
-                ESDlookup[val[0]] = item
-                Dlookup[item] = val[0]
-        A = RecpCellTerms[:]
-        for i in range(6):
-            var = str(pId)+'::A'+str(i)
-            if var in ESDlookup:
-                A[i] = data_name['newCellDict'][ESDlookup[var]][1] # override with refined value
-        cellDict = dict(zip([str(pId)+'::A'+str(i) for i in range(6)],A))
-        zeroDict = {i:0.0 for i in cellDict}
-        A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata,cellDict,zeroDict)
-        covData = {
-            'varyList': [Dlookup.get(striphist(v),v) for v in data_name['varyList']],
-            'covMatrix': data_name['covMatrix']
-            }
-        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2stIO.getCellEsd(str(pId)+'::',SGdata,A,covData)
-                
-    def GetAtoms(self,phasenam):
-        """Gets the atoms associated with a phase. Can be used with standard
-        or macromolecular phases
-
-        :param str phasenam: the name for the selected phase
-        :returns: a list of items for eac atom where each item is a list containing:
-          label, typ, mult, xyz, and td, where
-
-          * label and typ are the atom label and the scattering factor type (str)
-          * mult is the site multiplicity (int)
-          * xyz is contains a list with four pairs of numbers:
-            x, y, z and fractional occupancy and
-            their standard uncertainty (or a negative value)
-          * td is contains a list with either one or six pairs of numbers:
-            if one number it is U\\ :sub:`iso` and with six numbers it is
-            U\\ :sub:`11`, U\\ :sub:`22`, U\\ :sub:`33`, U\\ :sub:`12`, U\\ :sub:`13` & U\\ :sub:`23`
-            paired with their standard uncertainty (or a negative value)
-        """
-        phasedict = self.Phases[phasenam] # pointer to current phase info            
-        cx,ct,cs,cia = phasedict['General']['AtomPtrs']
-        cfrac = cx+3
-        fpfx = str(phasedict['pId'])+'::Afrac:'        
-        atomslist = []
-        for i,at in enumerate(phasedict['Atoms']):
-            if phasedict['General']['Type'] == 'macromolecular':
-                label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
-            else:
-                label = at[ct-1]
-            fval = self.parmDict.get(fpfx+str(i),at[cfrac])
-            fsig = self.sigDict.get(fpfx+str(i),-0.009)
-            mult = at[cs+1]
-            typ = at[ct]
-            xyz = []
-            for j,v in enumerate(('x','y','z')):
-                val = at[cx+j]
-                pfx = str(phasedict['pId']) + '::A' + v + ':' + str(i)
-                val = self.parmDict.get(pfx, val)
-                dpfx = str(phasedict['pId'])+'::dA'+v+':'+str(i)
-                sig = self.sigDict.get(dpfx,-0.000009)
-                xyz.append((val,sig))
-            xyz.append((fval,fsig))
-            td = []
-            if at[cia] == 'I':
-                pfx = str(phasedict['pId'])+'::AUiso:'+str(i)
-                val = self.parmDict.get(pfx,at[cia+1])
-                sig = self.sigDict.get(pfx,-0.0009)
-                td.append((val,sig))
-            else:
-                for i,var in enumerate(('AU11','AU22','AU33','AU12','AU13','AU23')):
-                    pfx = str(phasedict['pId'])+'::'+var+':'+str(i)
-                    val = self.parmDict.get(pfx,at[cia+2+i])
-                    sig = self.sigDict.get(pfx,-0.0009)
-                    td.append((val,sig))
-            atomslist.append((label,typ,mult,xyz,td))
-        return atomslist
 ######################################################################
 def ExportPowderList(G2frame):
-    '''Returns a list of extensions supported by :func:`GSASIIIO:ExportPowder`
+    '''Returns a list of extensions supported by :func:`ExportPowder`
     along with their descriptions (note that a extension may be repeated
     but descriptions are unique).
     This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only.
@@ -1855,9 +972,11 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     not accessed via the usual export menus
     '''
     import G2export_CIF
-    #import imp
-    #imp.reload(G2export_CIF)   #TODO for debug
+    ##################### debug code to reload exporter before each use ####
+    #import importlib as imp
+    #imp.reload(G2export_CIF)
     #print('reload G2export_CIF')
+    ########################################################################
     obj = G2export_CIF.ExportProjectCIF(G2frame)
     obj.Exporter(None,seqData=seqData,Controls=Controls)
     
@@ -2063,107 +1182,86 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def postURL(URL,postdict,getcookie=None,usecookie=None,
-                timeout=None,retry=2,mode='get'):
-    '''Posts a set of values as from a web form using the "get" or "post" 
-    protocols. 
-    If access fails to an https site, the access is retried with http.
-
-    :param str URL: the URL to post; typically something 
-       like 'http://www.../dir/page?'
-    :param dict postdict: contains keywords and values, such
-       as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
-    :param dict getcookie: dict to save cookies created in call, or None
-       (default) if not needed. 
-    :param dict usecookie: dict containing cookies to be used in call, 
-       or None (default) if not needed.
-    :param int timeout: specifies a timeout period for the get or post (default 
-      is None, which means the timeout period is set by the server). The value 
-      when specified is the time in seconds to wait before giving up on the 
-      request.
-    :param int retry: the number of times to retry the request, if it times out.
-      This is only used if timeout is specified. The default is 2. Note that
-      if retry is left at the default value (2), The timeout is increased by
-      25% for the second try.
-    :param str mode: either 'get' (default) or 'post'. Determines how
-       the request will be submitted. 
-    :returns: a string with the response from the web server or None
-       if access fails.
+def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
+    '''create a .gpx file from a structure from the BilbaoSite pseudosym site
+    saved in newData
     '''
-    try:
-        import requests # delay this until now, since rarely needed
+    def fmtCell(cell):
+        s = ''
+        for i in cell[0:3]: s += f"{i:.3f}, "
+        for i in cell[3:5]: s += f"{i:.2f}, "
+        s += f"{cell[5]:.2f}"
+        return s
+    if newData is None:
+        print(phlbl,'empty structure')
+        return
+    elif type(newData) is str:
+        msgs[phlbl] = newData
+        return
+    # create a new phase
+    try: 
+        sgnum = int(newData[0].strip())
+        sgsym = G2spc.spgbyNum[sgnum]
+        sgname = sgsym.replace(" ","")
     except:
-        # this import seems to fail with the Anaconda pythonw on
-        # macs; it should not!
-        print('Warning: failed to import requests. Python config error')
-        return None
+        print(f'Problem with processing record:\n{newData}')
+        return
+    newPhase = copy.deepcopy(phData)
+    newPhase['ranId'] = ran.randint(0,sys.maxsize),
+    if 'magPhases' in phData: del newPhase['magPhases']
+    generalData = newPhase['General']
+    generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
+    generalData['Cell'][1:7] = [float(i) for i in newData[1].split()]
+    generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    Atoms = newPhase['Atoms'] = []
+    for a in newData[3:]:
+        if not a.strip(): continue
+        try: 
+            elem,n,wyc,x,y,z = a.split()
+            atom = []
+            atom.append(elem+n)
+            atom.append(elem)
+            atom.append('')
+            for i in x,y,z: atom.append(float(i))
+            atom.append(1.0)
+            SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
+            atom.append(SytSym)
+            atom.append(Mult)
+            atom.append('I')
+            atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+            atom.append(ran.randint(0,sys.maxsize))
+            Atoms.append(atom)
+        except:
+            print(f'error in atom line {a}')
+        #finally: pass
+    phData.update(newPhase)
+    G2elem.SetupGeneral(phData,phData['General']['Mydir'])  # fixup composition info
+    # save new file
+    G2frame.GSASprojectfile = os.path.splitext(orgFilName
+                            )[0]+'_super_'+sgname.replace('/','$')+'.gpx'
+    while os.path.exists(G2frame.GSASprojectfile):
+        s = re.split(r'_([\d]+)\.gpx',G2frame.GSASprojectfile)
+        if len(s) == 1:
+            G2frame.GSASprojectfile = os.path.splitext(G2frame.GSASprojectfile)[0] + '_1.gpx'
+        else:
+            num = 10
+            try:
+                num = int(s[1]) + 1
+            except:
+                pass
+            G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
+    ProjFileSave(G2frame)
+    # get transformed contents
+    nacomp,nccomp = G2mth.phaseContents(phData)
+    msgs[phlbl] = f"With space group {sgsym} and cell={fmtCell(generalData['Cell'][1:7])}"
+    msgs[phlbl] += f", vol={generalData['Cell'][7]:.2f} A^3"
+    msgs[phlbl] += f", project file created as {G2frame.GSASprojectfile}"
 
-    if mode == 'get':
-        reqopt = requests.get
-    else:
-        reqopt = requests.post
-    
-    repeat = True
-    count = 0
-    while repeat:
-        count += 1
-        r = None
-        repeat = False
-        try:
-            if timeout is not None:
-                r = reqopt(URL,params=postdict,cookies=usecookie,
-                                     timeout=timeout)
-            else:
-                r = reqopt(URL,params=postdict,cookies=usecookie)
-            if r.status_code == 200:
-                if GSASIIpath.GetConfigValue('debug'): print('request OK')
-                page = r.text
-                if getcookie is not None:
-                    getcookie.update(r.cookies)
-                return page # success
-            else:
-                print('request to {} failed. Reason={}'.format(URL,r.reason))
-        except requests.exceptions.ConnectionError as msg:
-            if 'time' in str(msg) and 'out' in str(msg): 
-                print(f'server timeout accessing {URL}')
-                if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
-                if timeout is not None and count < retry:
-                    if retry == 2:
-                        timeout *= 1.25
-                        print(f'retry with timout={timeout} sec')
-                    repeat = True
-            else:
-                print('connection error - not on internet?')
-                if URL.startswith('https:'):
-                    print('Retry with http://')
-                    repeat = True
-                    URL = URL.replace('https:','http:')
-        except requests.exceptions.Timeout as msg:
-            print(f'timeout accessing {URL}')
-            if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
-            if timeout is not None and count < retry:
-                if retry == 2:
-                    timeout *= 1.25
-                    print(f'retry with timout={timeout} sec')
-                repeat = True
-            if timeout is not None and count <= retry: repeat = True
-        except requests.exceptions.ReadTimeout as msg:
-            print(f'timeout reading from {URL}')
-            if GSASIIpath.GetConfigValue('debug'): print('full error=',msg)
-            if timeout is not None and count < retry:
-                if retry == 2:
-                    timeout *= 1.25
-                    print(f'retry with timout={timeout} sec')
-                repeat = True
-        except requests.exceptions.ConnectTimeout:
-            print(f'timeout accessing {URL}')
-        except Exception as msg:    # other error
-            print(f'Error accessing {URL}')
-            if GSASIIpath.GetConfigValue('debug'): print(msg)
-        finally:
-            if r: r.close()
-    else:
-        return None
+    msgs[phlbl] += f". After transform, unit cell {G2mth.fmtPhaseContents(nccomp)}"
+    msgs[phlbl] += f", density={G2mth.getDensity(generalData)[0]:.2f} g/cm^3"
+    msgs[phlbl] += f". Asymmetric unit {G2mth.fmtPhaseContents(nacomp)} ({len(phData['Atoms'])} atoms)."
+    return G2frame.GSASprojectfile
 
 if __name__ == '__main__':
     import GSASIIdataGUI
@@ -2186,7 +1284,7 @@ if __name__ == '__main__':
     # if dlg.ShowModal() == wx.ID_OK:
     #     print 'Got OK'
     imagefile = '/tmp/NDC5_00237_3.ge3'
-    Comments, Data, Npix, Image = GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
+    Comments, Data, Npix, Image = G2fil.GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
 
     print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
 

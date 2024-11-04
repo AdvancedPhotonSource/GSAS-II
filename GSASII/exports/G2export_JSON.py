@@ -1,12 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-08-09 08:23:55 -0500 (Wed, 09 Aug 2023) $
-# $Author: toby $
-# $Revision: 5643 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_JSON.py $
-# $Id: G2export_JSON.py 5643 2023-08-09 13:23:55Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_JSON` follow:
 
 This code is to honor my friend Robert Papoular, who wants to see what is 
@@ -14,11 +6,8 @@ inside a .gpx file.
 '''
 from __future__ import division, print_function
 import json
-import wx
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5643 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 
 class JsonEncoder(json.JSONEncoder):
     '''This provides the ability to turn np arrays and masked arrays
@@ -40,11 +29,11 @@ class JsonEncoder(json.JSONEncoder):
             #breakpoint()
             return "sorry, I don't know how to show a {} object".format(str(type(obj)))
     
-class ExportJSON(G2IO.ExportBaseclass):
+class ExportJSON(G2fil.ExportBaseclass):
     '''Implement JSON export of entire projects
     '''
     def __init__(self,G2frame):
-        G2IO.ExportBaseclass.__init__(self,
+        G2fil.ExportBaseclass.__init__(self,
             G2frame=G2frame,
             formatName = 'ASCII JSON dump',
             extension='.json',
@@ -59,7 +48,11 @@ class ExportJSON(G2IO.ExportBaseclass):
         self.OpenFile()
         self.Write('[\n')
         first = True
-        wx.BeginBusyCursor()
+        try:
+            import wx
+            wx.BeginBusyCursor()
+        except:
+            pass
         G2frame = self.G2frame
         # crawl through the tree, dumping as we go
         try:
@@ -85,11 +78,15 @@ class ExportJSON(G2IO.ExportBaseclass):
                     self.Write(json.dumps([
                         "=========== '{}' SubItem of Tree '{}' ==============".format(name2,name)]))
                     self.Write(', ')
-                    data = {name:{name2:G2frame.GPXtree.GetItemPyData(item)}}
+                    data = {name:{name2:G2frame.GPXtree.GetItemPyData(item2)}}
                     self.Write(json.dumps(data, indent=2, cls=JsonEncoder))
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
         finally:
-            wx.EndBusyCursor()
+            try:
+                import wx
+                wx.EndBusyCursor()
+            except:
+                pass
         self.Write(']\n')
         self.CloseFile()

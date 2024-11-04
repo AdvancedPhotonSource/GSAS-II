@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #GSAS-II Data/Model Comparison
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/G2compare.py $
-# $Id: G2compare.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -40,7 +33,6 @@ except ImportError:
 import scipy as sp
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 import GSASIIfiles as G2fil
 import GSASIIplot as G2plt
 import GSASIIdataGUI as G2gd
@@ -101,11 +93,11 @@ def cPickleLoad(fp):
        return cPickle.load(fp,encoding='latin-1')
             
 def main(application):
-    '''Start up the GSAS-II GUI'''                        
-    knownVersions = ['3.6','3.7','3.8','3.9']
-    if platform.python_version()[:3] not in knownVersions: 
+    '''Start up the GSAS-II GUI'''
+    knownVersions = ['3.9','3.10','3.11','3.12']
+    if '.'.join(platform.python_version().split('.')[:2]) not in knownVersions: 
         dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 3.6+\n Yours is '+sys.version.split()[0],
+                f'GSAS-II Compare requires Python 3.9+\n Yours is {sys.version.split()[0]}',
                 'Python version error',  wx.OK)
         try:
             dlg.ShowModal()
@@ -392,7 +384,7 @@ be included for the files beginning with "B" only.
 
     def LoadPwdr(self,fil):
         '''Load PWDR entries from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         G2frame = self
         filep = open(fil,'rb')
@@ -476,7 +468,7 @@ be included for the files beginning with "B" only.
 
     def LoadPhase(self,fil):
         '''Load Phase entries from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         G2frame = self
         filep = open(fil,'rb')
@@ -538,7 +530,7 @@ be included for the files beginning with "B" only.
 
     def LoadProject(self,fil):
         '''Load the Covariance entry from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         import datetime
         G2frame = self

@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIexprGUI - Expression Definition and Evaluation
-########### SVN repository information ###################
-# $Date: 2023-09-29 15:47:55 -0500 (Fri, 29 Sep 2023) $
-# $Author: vondreele $
-# $Revision: 5663 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIexprGUI.py $
-# $Id: GSASIIexprGUI.py 5663 2023-09-29 20:47:55Z vondreele $
-########### SVN repository information ###################
 '''Routines for users to input Python expressions used within 
 GSAS-II computations follow.
 '''
@@ -18,7 +11,6 @@ import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5663 $")
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
@@ -38,7 +30,7 @@ def IndexParmDict(parmDict,wildcard):
       2 is histogram/phase parms, 3 is histogram parms and 4 are global parameters
     '''
     prex = re.compile('[0-9]+::.*')
-    hrex = re.compile(':[0-9]+:.*')
+    hrex = re.compile(':[0-9\*]+:.*')
     parmLists = {}
     for i in (1,2,3,4):
         parmLists[i] = []
@@ -673,8 +665,11 @@ class ExpressionDialog(wx.Dialog):
                 depVal = '; Variable "' + self.dependentVar + '" = ' + str(
                     self.depVarDict.get(self.dependentVar,'?')
                     )
-            self.setEvalResult("Expression evaluates to: "+str(s)+depVal+
-                                   " with first defined values")
+            if self.wildCard:
+                msg = " with first defined value(s)"
+            else:
+                msg = " using parameter value(s)"
+            self.setEvalResult(f"Expression evaluates to: {s}{depVal}{msg}")
             self.OKbtn.Enable()
             if self.ExtraBtn: self.ExtraBtn.Enable()
         finally:  

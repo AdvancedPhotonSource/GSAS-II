@@ -9,7 +9,7 @@ These modules are used to access external web sites.
 
 Extraction of  space subgroups for a given space group and a propagation vector
 from the GSAS version of SUBGROUPS & k-SUBGROUPSMAG web page on the Bilbao Crystallographic server. Note that the web pages are special to GSAS-II. 
-This uses the :func:`GSASIIIO.postURL` function for web access. 
+This uses the :func:`GSASIIpath.postURL` function for web access. 
 
 .. automodule:: SUBGROUPS
     :members: 

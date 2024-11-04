@@ -15,7 +15,6 @@ try:
     # import wx.wizard as wz
     import wx.aui
     import wx.lib.scrolledpanel as wxscroll
-    import wx.html        # could postpone this for quicker startup
     import wx.lib.mixins.listctrl  as  listmix
     import wx.richtext as wxrt
     import wx.lib.filebrowsebutton as wxfilebrowse
@@ -42,16 +41,14 @@ import GSASIIpath
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
-import GSASIIlog as log
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
 import GSASIIstrMain as G2stMn
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import config_example
 from tutorialIndex import tutorialIndex
 if sys.version_info[0] >= 3:
@@ -113,7 +110,6 @@ class G2TreeCtrl(wx.TreeCtrl):
         self.root = self.AddRoot('Loaded Data: ')
         self.SelectionChanged = None
         self.textlist = None
-        log.LogInfo['Tree'] = self
 
     def _getTreeItemsList(self,item):
         '''Get the full tree hierarchy from a reference to a tree item.
@@ -129,62 +125,15 @@ class G2TreeCtrl(wx.TreeCtrl):
         return textlist
     
     def GetItemPyData(self,treeId):
-        if 'phoenix' in wx.version():
-            return wx.TreeCtrl.GetItemData(self,treeId)
-        else:
-            return wx.TreeCtrl.GetItemPyData(self,treeId)
+        return wx.TreeCtrl.GetItemData(self,treeId)
 
     def SetItemPyData(self,treeId,data):
-        if 'phoenix' in wx.version():
-            return wx.TreeCtrl.SetItemData(self,treeId,data)
-        else:
-            return wx.TreeCtrl.SetItemPyData(self,treeId,data)
+        return wx.TreeCtrl.SetItemData(self,treeId,data)
 
     def UpdateSelection(self):
         TId = self.GetFocusedItem()
         self.SelectItem(self.root)
         self.SelectItem(TId)
-
-    # def onSelectionChanged(self,event):
-    #     '''Log each press on a tree item here. 
-    #     '''
-    #     if not self.G2frame.treePanel:
-    #         return
-    #     if self.SelectionChanged:
-    #         textlist = self._getTreeItemsList(event.GetItem())
-    #         if log.LogInfo['Logging'] and event.GetItem() != self.root:
-    #             textlist[0] = self.GetRelativeHistNum(textlist[0])
-    #             if textlist[0] == "Phases" and len(textlist) > 1:
-    #                 textlist[1] = self.GetRelativePhaseNum(textlist[1])
-    #             log.MakeTreeLog(textlist)
-    #         if textlist == self.textlist:
-    #             return      #same as last time - don't get it again
-    #         self.textlist = textlist
-    #         self.SelectionChanged(event)
-
-    # def Bind(self,eventtype,handler,*args,**kwargs):
-    #     '''Override the Bind() function so that page change events can be trapped
-    #     '''
-    #     if eventtype == wx.EVT_TREE_SEL_CHANGED:
-    #         self.SelectionChanged = handler
-    #         wx.TreeCtrl.Bind(self,eventtype,self.onSelectionChanged)
-    #         return
-    #     wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
-
-    # commented out, disables Logging
-    # def GetItemPyData(self,*args,**kwargs):
-    #    '''Override the standard method to wrap the contents
-    #    so that the source can be logged when changed
-    #    '''
-    #    data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
-    #    textlist = self._getTreeItemsList(args[0])
-    #    if type(data) is dict:
-    #        return log.dictLogged(data,textlist)
-    #    if type(data) is list:
-    #        return log.listLogged(data,textlist)
-    #    if type(data) is tuple: #N.B. tuples get converted to lists
-    #        return log.listLogged(list(data),textlist)
-    #    return data
 
     def GetRelativeHistNum(self,histname):
         '''Returns list with a histogram type and a relative number for that
@@ -530,7 +479,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def SetValue(self,val):
         if self.result is not None: # note that this bypasses formatting
             self.result[self.key] = val
-            log.LogVarChange(self.result,self.key)
         self._setValue(val)
 
     def _setValue(self,val,show=True):
@@ -621,6 +569,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
+            self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -673,7 +622,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
-        log.LogVarChange(self.result,self.key)
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -827,7 +775,6 @@ class NumberValidator(wxValidator):
             val = tc.GetValue().strip()
             if val == '?' or val == '.':
                 self.result[self.key] = val
-                log.LogVarChange(self.result,self.key)
                 return
         try:
             val = self.typ(tc.GetValue())
@@ -854,7 +801,6 @@ class NumberValidator(wxValidator):
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
-            log.LogVarChange(self.result,self.key)
 
     def ShowValidity(self,tc):
         '''Set the control colors to show invalid input
@@ -975,7 +921,6 @@ class ASCIIValidator(wxValidator):
             self.result[self.key] = tc.GetValue().encode('ascii','replace')
         else:
             self.result[self.key] = tc.GetValue()
-        log.LogVarChange(self.result,self.key)
 
     def OnChar(self, event):
         '''Called each type a key is pressed
@@ -1175,14 +1120,12 @@ def HorizontalLine(sizer,parent):
         sizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
 
 ################################################################################
-class G2LoggedButton(wx.Button):
-    '''A version of wx.Button that creates logging events. Bindings are saved
+class G2Button(wx.Button):
+    '''A version of wx.Button. Bindings are saved
     in the object, and are looked up rather than directly set with a bind.
-    An index to these buttons is saved as log.ButtonBindingLookup
     :param wx.Panel parent: parent widget
     :param int id: Id for button
     :param str label: label for button
-    :param str locationcode: a label used internally to uniquely indentify the button
     :param function handler: a routine to call when the button is pressed
     '''
     def __init__(self,parent,id=wx.ID_ANY,label='',locationcode='',
@@ -1191,12 +1134,9 @@ class G2LoggedButton(wx.Button):
         self.label = label
         self.handler = handler
         self.locationcode = locationcode
-        key = locationcode + '+' + label # hash code to find button
         self.Bind(wx.EVT_BUTTON,self.onPress)
-        log.ButtonBindingLookup[key] = self
     def onPress(self,event):
         'create log event and call handler'
-        log.MakeButtonLog(self.locationcode,self.label)
         self.handler(event)
         
 ################################################################################
@@ -1264,6 +1204,76 @@ class EnumSelector(wx.ComboBox):
         if self.OnChange: self.OnChange(event)
 
 ################################################################################
+class popupSelectorButton(wx.Button):
+    '''Create a button that will invoke a menu with choices that can 
+    be selected. Do special stuff if the first item is "all"
+
+    TODO: It might be better to make this a wx.ComboCtrl if I can figure out
+    how to make that work, or perhaps make that an option
+
+    :param wx.Frame parent: a panel or frame that is the parent to this 
+      button
+    :param str lbl: a label for the button
+    :param list choices: a list of str's with labels for the items in the
+      menu
+    :param list selected: a list of bool's that determine if the menu item
+      is initial selected
+    :param: dict choiceDict: a dict with both choices and their 
+      values (selections). Use this or choices & selected, not both. 
+      If this is used, the values are set as radiobutton choices, 
+      only the most recent setting is selected. 
+    :param function OnChange: an optional function that is called after the 
+      menu is removed
+    :param others: other keyword parameters are allowed. They will be 
+      passed to the OnChange routine. 
+    '''
+    def __init__(self,parent,lbl,choices=None,selected=None,
+                     choiceDict=None, OnChange=None,**kw):
+        self.parent = parent
+        self.choices = choices
+        self.selected = selected
+        self.choiceDict = None
+        if choiceDict is not None:
+            self.choices = list(choiceDict.keys())
+            self.selected = list(choiceDict.values())
+            self.choiceDict = choiceDict
+        self.OnChange = OnChange
+        self.kw = kw
+        wx.Button.__init__(self,parent,label=lbl)
+        self.Bind(wx.EVT_BUTTON, self.popupSelector)
+    
+    def popupSelector(self,event):
+        '''Show the menu and then get current values. Optionally call the 
+        OnChange routine. 
+        '''
+        menu = wx.Menu()
+        menuList = []
+        #breakpoint()
+        for i in range(len(self.choices)):
+            menuList.append(
+                menu.Append(wx.ID_ANY, self.choices[i], '', wx.ITEM_CHECK)
+                )
+            if self.selected[i]: menuList[-1].Check()
+        self.parent.PopupMenu(menu)
+        new = -1
+        for i,m in enumerate(menuList):
+            if self.selected[i] != m.IsChecked(): new = i
+            self.selected[i] = m.IsChecked()
+        if self.choiceDict is not None:
+            self.selected = len(self.selected) * [False]
+            for i in self.choiceDict: self.choiceDict[i] = False
+            self.choiceDict[self.choices[new]] = True
+            self.selected[new] = True
+        elif self.choices[0] == "all":
+            # special handling when 1st item is all: turn on everything
+            # when all is selected.
+            if new == 0:
+                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+                
+        menu.Destroy()
+        if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)
+
+################################################################################
 class G2ChoiceButton(wx.Choice):
     '''A customized version of a wx.Choice that automatically initializes
     the control to match a supplied value and saves the choice directly
@@ -1289,6 +1299,30 @@ class G2ChoiceButton(wx.Choice):
     :param int/str strKey: the dict key or the list index for the string value 
       The ``strLoc[strKey]`` element must exist or strLoc must be None (default).
     :param function onChoice: name of a function to call when the choice is made.
+
+    Example 1::
+
+        data['Orientation'] = 1
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['Horizontal','Vertical'],
+                            data,'Orientation',
+                            onChoice=replot)
+
+    This will show "Vertical" as the initial value, and based on what is 
+    selected, ``data['Orientation']`` will be set to 0 or 1 (as an int value).
+
+    Example 2::
+
+        data[0]['Font'] = '8'
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['6','8','10','12','14','16'],
+                            None,None,
+                            data[0],'Font',
+                            onChoice=replot)
+
+    This will show "8" as the initial value, and based on what is selected,
+    ``data[0]['Font']`` will be set to a string with one of the size 
+    options ("6"... "16").
     '''
     def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
                  onChoice=None,**kwargs):
@@ -1305,7 +1339,6 @@ class G2ChoiceButton(wx.Choice):
                 self.SetSelection(self.indLoc[self.indKey])
                 if self.strLoc is not None and self.strKey is not None:
                     self.strLoc[self.strKey] = self.GetStringSelection()
-                #log.LogVarChange(self.strLoc,self.strKey)
             except (KeyError,ValueError,TypeError):
                 pass
         elif self.strLoc is not None and self.strKey is not None:
@@ -1313,7 +1346,6 @@ class G2ChoiceButton(wx.Choice):
                 self.SetSelection(choiceList.index(self.strLoc[self.strKey]))
                 if self.indLoc is not None:
                     self.indLoc[self.indKey] = self.GetSelection()
-                    log.LogVarChange(self.indLoc,self.indKey)
             except (KeyError,ValueError,TypeError):
                 pass
         self.Bind(wx.EVT_CHOICE, self._OnChoice)
@@ -1323,10 +1355,8 @@ class G2ChoiceButton(wx.Choice):
     def _OnChoice(self,event):
         if self.indLoc is not None:
             self.indLoc[self.indKey] = self.GetSelection()
-            log.LogVarChange(self.indLoc,self.indKey)
         if self.strLoc is not None:
             self.strLoc[self.strKey] = self.GetStringSelection()
-            log.LogVarChange(self.strLoc,self.strKey)
         if self.onChoice:
             self.onChoice()
     def setByString(self,string):
@@ -1363,7 +1393,6 @@ class G2CheckBox(wx.CheckBox):
         self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
     def _OnCheckBox(self,event):
         self.loc[self.key] = self.GetValue()
-        log.LogVarChange(self.loc,self.key)
         if self.OnChange: self.OnChange(event)
 
 def G2CheckBoxFrontLbl(parent,label,loc,key,OnChange=None):
@@ -1404,7 +1433,6 @@ def G2RadioButtons(parent,loc,key,choices,values=None,OnChange=None):
             if GSASIIpath.GetConfigValue('debug'): print('Strange: unknown button')
             return
         loc[key] = values[buttons.index(event.GetEventObject())]
-        #log.LogVarChange(self.loc,self.key)
         if OnChange: OnChange(event)
     if not values:
         values = list(range(len(choices)))
@@ -1729,11 +1757,13 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND,1)
+        txt = wx.StaticText(self,wx.ID_ANY,title)
+        #txt.SetMinSize((-1,35))
+        topSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add((10,-1))
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
@@ -2169,6 +2199,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
       does not have refine flag.
 
     Example::
+
       array = data 
       labelLst = ['v1','v2']
       elemKeysLst = [['v1'], ['v2',0]]
@@ -2347,6 +2378,20 @@ class G2SingleChoiceDialog(wx.Dialog):
       note that ``wx.OK`` and ``wx.CANCEL`` controls
       the presence of the eponymous buttons in the dialog.
     :returns: the name of the created dialog
+
+    Example::
+
+            dlg = G2SingleChoiceDialog(G2frame,'Select option from list',
+                                           'Select option',optList)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = optList[dlg.GetSelection()]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+
     '''
     def __init__(self,parent, title, header, ChoiceList, 
                  monoFont=False, filterBox=True, **kw):
@@ -2533,9 +2578,21 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
     :param int width: lateral of window in pixels (defaults to 600)
     :param int height: vertical dimension of window in pixels (defaults to 400)
     :param str header: title to be placed on window
-    :param list buttonlist: list of button Ids to show. The default is None 
-      which places a single "Close" button and returns wx.ID_CANCEL 
+    :param list buttonlist: list of button Ids to show, or one or more 
+      pairs of values, where the first is a label to place on the button 
+      and the second is a routine that is called if the button is pressed.
+      The default is None which places a single "Close" button that 
+      returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
+
+    example::
+
+       res = ShowScrolledInfo(self.frame,msg,header='Please Note',buttonlist=[
+               ('Open', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+               ('Skip', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+              ])
+       if res == wx.ID_OK:
+           pass
     '''
     
     dlg = wx.Dialog(parent.GetTopLevelParent(),wx.ID_ANY,header, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -2545,7 +2602,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
 
     txtSizer = wx.BoxSizer(wx.VERTICAL)
     txt = wx.StaticText(spanel,wx.ID_ANY,txt)
-    txt.Wrap(600)
+    txt.Wrap(width-20)
     txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     txtSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
     spanel.SetSizer(txtSizer)
@@ -2556,8 +2613,12 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
         btnsizer.Add(btn)
     else:
         for b in buttonlist:
-            btn = wx.Button(dlg, b) 
-            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
+            if isinstance(b, (list, tuple)):
+                btn = wx.Button(dlg, wx.ID_ANY, b[0]) 
+                btn.Bind(wx.EVT_BUTTON,b[1])
+            else:
+                btn = wx.Button(dlg, b) 
+                btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
             btnsizer.Add(btn)
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
     dlg.SetSizer(mainSizer)
@@ -2895,20 +2956,52 @@ class SingleIntDialog(SingleFloatDialog):
 
 ################################################################################
 class MultiDataDialog(wx.Dialog):
-    '''Dialog to obtain multiple values from user
+    '''Dialog to obtain multiple values from user. Use ``dlg.GetValues()`` to 
+    get the values set in the window.
 
     :param wx.Frame parent: parent frame for dialog to be created
     :param str title: title to place on top of window
-    :param list prompts: a string to describe each item
-    :param list values: a set of initial values for each item
+    :param list prompts: a string to describe each item. Each entry
+      in this list will designate a row in the generated window. 
+    :param list values: a list of initial values for each item. Use a 
+      nested list when multiple entries are placed on a single row of 
+      the window (see discussion of formats, below). Number of items
+      in the outer list should match the length of ``prompts``. The 
+      total number of items should match ``formats``.
     :param list limits: A nested list with an upper and lower value 
-       for each item
-    :param list format: an "old-style" format string used to display 
-       each item value
-    :param str header: a string to be placed at the top of the 
-       window, if specified
+       for each item or for a choice/edit control a list of allowed 
+       values. Use a nested list when multiple entries are placed on 
+       a single row of the window (see discussion of formats, below).
+       Number of items in the outer list should match the length of 
+       ``prompts``. The total number of items should match ``formats``.
+    :param list testfxns: A nested list of string test functions.
+       The total number of items should match ``formats`` or should be
+       left as the default (None).
+    :param list formats: A list of values for each entry in the 
+       window. Several different types of values are possible: 
 
-    example::
+       * An "old-style" format string (e.g. ``%5d`` or ``%.3f``) 
+         which will be used to display each item's value
+
+       * Or a keyword that specifies how the values are used. 
+         Allowed keywords are:
+
+         * ``choice``: for a pull-down list;
+         * ``bool``: for a yes/no checkbox;
+         * ``str``: for a text entry 
+         * ``edit``: for a pull-down list that allows one to enter an arbitrary value.
+
+       * Alternately, a value can be a list of items, in which case multiple 
+         entries are placed on a single row of the window. When this is done, 
+         any value in the list other than ``choice`` or ``edit`` is used as 
+         text to be placed between the ComboBoxes.
+
+       The number of items in the outer list should match the length 
+       of ``prompts``.
+    :param str header: a string to be placed at the top of the 
+       window. Ignored if None (the default.)
+
+    Example 1::
 
         dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
                 prompts=['lattice constants tolerance',
@@ -2920,9 +3013,22 @@ class MultiDataDialog(wx.Dialog):
         dlg.ShowModal()
         latTol,coordTol,occTol = dlg.GetValues()
         dlg.Destroy()
+
+    Example 2::
+
+        nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
+        dm = ['1','2','3','4','5','6']
+        kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+        dlg = MultiDataDialog(G2frame,title='options',
+                prompts=[' k-vector 1 (x,y,z)',
+                         ' k-vector 2 (x,y,z)'],
+                values=[3*['0','','2',''],3*[' ','','2','']],
+                limits=[3*[nm[1:],'',dm,''],3*[nm,'',dm,'']],
+                formats=[kfmt,kfmt])
+        if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
 '''
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
-                     formats=['%.5g',],header=None):
+                     testfxns=None,formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -2930,17 +3036,60 @@ class MultiDataDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.formats = formats
+        if testfxns is None:
+            self.testfxns = []
+            for i in formats:
+                if type(i) is list:
+                    self.testfxns.append(len(i)*[None])
+                else:
+                    self.testfxns.append(None)                    
+        else:
+            self.testfxns = testfxns
         self.header = header
         self.Draw()
         
     def Draw(self):
         
+        def OnEditItem(event):
+            if event: event.Skip()
+            Obj = event.GetEventObject()
+            fmt = Indx[Obj][-1]
+            if type(fmt) is list:
+                tid,idl,limits = Indx[Obj][:3]
+            else:
+                tid,idl = Indx[Obj],0
+            val = Obj.GetValue()
+            try:
+                eval(val)
+                self.values[tid][idl] = val
+                return
+            except:
+                pass
+            try:   # deal with mixed fractions (example: 1 3/4)
+                val = val.replace(' ','+')
+                val = str(eval(val))
+                self.values[tid][idl] = val
+                return
+            except:
+                pass
+                    
         def OnValItem(event):
             if event: event.Skip()
             Obj = event.GetEventObject()
             fmt = Indx[Obj][-1]
             if type(fmt) is list:
                 tid,idl,limits = Indx[Obj][:3]
+                if 'testfxn' in fmt:
+                    testfxn = Indx[Obj][3][tid]
+                    val = Obj.GetValue().strip()
+                    if testfxn(val):
+                        self.values[tid][idl] = val
+                        Obj.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+                        Obj.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
+                    else:
+                        Obj.SetBackgroundColour(wx.YELLOW)
+                        Obj.SetForegroundColour("red")
+                    Obj.SetValue('%s'%(val))                    
                 self.values[tid][idl] = Obj.GetValue()
             elif 'bool' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
@@ -2954,18 +3103,19 @@ class MultiDataDialog(wx.Dialog):
                     val = self.values[tid]
                 self.values[tid] = val
                 Obj.SetValue('%s'%(val))
+            elif 'testfxn' in fmt:
+                tid,x,testfxn = Indx[Obj][:3]
+                val = Obj.GetValue()
+                if testfxn(val):
+                    self.values[tid] = val
+                    Obj.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+                    Obj.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
+                else:
+                    Obj.SetBackgroundColour(wx.YELLOW)
+                    Obj.SetForegroundColour("red")
+                Obj.SetValue('%s'%(val))                    
             elif 'choice' in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
-            # else:
-            #     tid,limits = Indx[Obj][:2]
-            #     try:
-            #         val = float(Obj.GetValue())
-            #         if val < limits[0] or val > limits[1]:
-            #             raise ValueError
-            #     except ValueError:
-            #         val = self.values[tid]
-            #     self.values[tid] = val
-            #     Obj.SetValue(fmt%(val))
             
         Indx = {}
         if self.panel: self.panel.Destroy()
@@ -2979,15 +3129,37 @@ class MultiDataDialog(wx.Dialog):
             HorizontalLine(mainSizer,self.panel)
             mainSizer.Add((-1,5))
         lineSizer = wx.FlexGridSizer(0,2,5,5)
-        for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
+        for tid,[prompt,value,limits,testfxn,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.testfxns,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            if type(fmt) is list:  #let's assume these are 'choice' for now
+            if type(fmt) is list:
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
                 for idl,item in enumerate(fmt):
-                    listItem = wx.ComboBox(self.panel,value=limits[idl][0],choices=limits[idl],style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    if value[idl] in limits[idl]:
+                        initVal = value[idl]
+                    else:
+                        initVal = limits[idl][0]
+                    if 'edit' in item:
+                        style = wx.CB_DROPDOWN
+                        listItem = wx.ComboBox(self.panel,value=initVal,
+                            choices=limits[idl],style=style)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
+                        listItem.Bind(wx.EVT_TEXT,OnEditItem)
+                        listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    elif 'testfxn' in item:
+                        listItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
+                        listItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                        listItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+                        listItem.SetValue('%s'%value[idl])
+                    elif 'choice' in item:
+                        style = wx.CB_READONLY|wx.CB_DROPDOWN
+                        listItem = wx.ComboBox(self.panel,value=initVal,
+                            choices=limits[idl],style=style)
+                        Indx[listItem] = [tid,idl,limits,testfxn,fmt]
+                        listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    else:
+                        listItem = wx.StaticText(self.panel,wx.ID_ANY,item)
                     valItem.Add(listItem,0,WACV)
-                    Indx[listItem] = [tid,idl,limits,fmt]
             elif 'bool' in fmt:
                 valItem = wx.CheckBox(self.panel,label='')
                 valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
@@ -2997,9 +3169,17 @@ class MultiDataDialog(wx.Dialog):
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
                 valItem.SetValue('%s'%value)
+            elif 'edit' in fmt:
+                valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_DROPDOWN)
+                valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                valItem.Bind(wx.EVT_TEXT,OnEditItem)
             elif 'choice' in fmt:
                 valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+            elif 'testfxn' in fmt:
+                valItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
+                valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
             else:
                 if '%' in fmt:
                     if 'd' in fmt:
@@ -3012,7 +3192,8 @@ class MultiDataDialog(wx.Dialog):
                 # valItem = wx.TextCtrl(self.panel,value=fmt%(value),style=wx.TE_PROCESS_ENTER)
                 # valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 # valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
-            Indx[valItem] = [tid,limits,fmt]
+            if type(fmt) is not list:
+                Indx[valItem] = [tid,limits,fmt]
             lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
         mainSizer.Add(lineSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -3051,8 +3232,11 @@ class SingleStringDialog(wx.Dialog):
     :param str title: title string for dialog
     :param str prompt: string to tell use what they are inputting
     :param str value: default input value, if any
-    :param tuple size: specifies default size and width for dialog 
-      [default (200,-1)]
+    :param tuple size: specifies default size and width for the text 
+      entry section of the dialog [default (200,-1)]. If the vertical 
+      size (the second number) is greater than 20 (~ a single line) then 
+      the textbox will allow inclusion of new-line characters. In single-line
+      mode, return causes the dialog to close.
     :param str help: if supplied, a help button is added to the dialog that
       can be used to display the supplied help text/URL for setting this 
       variable. (Default is '', which is ignored.)
@@ -3068,22 +3252,25 @@ class SingleStringDialog(wx.Dialog):
         self.CenterOnParent()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1.Add((-1,-1),1,wx.EXPAND)
+        if help:
+            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
+        mainSizer.Add(sizer1,0,wx.EXPAND)
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
         if choices:
             self.valItem = wx.ComboBox(self.panel, wx.ID_ANY, value,
                                 size=size,choices=[value]+choices,
                                 style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+        elif size[1] > 20:
+            self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size,
+                                style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
         else:
             self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
-        if help:
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-            sizer1.Add((-1,-1),1,wx.EXPAND)
-            sizer1.Add(HelpButton(self.panel,help),0,wx.ALL)
-        else:
-            sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
-        mainSizer.Add(sizer1,0,wx.EXPAND)
+        #sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+        #mainSizer.Add(sizer1,0,wx.EXPAND)
+        mainSizer.Add(self.valItem,1,wx.EXPAND)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()
@@ -3631,7 +3818,8 @@ class MultiColumnSelection(wx.Dialog):
       and unspecified columns are left blank.
     :param list colWidths: a list of int values specifying the column width for each
       column in the table (pixels). There must be a value for every column label (colLabels).
-    :param str checkLbl: A label for a row of checkboxes added at the beginning of the table
+    :param str checkLbl: A label for a row of checkboxes added at the beginning of the table.
+       This option seems to be broken.
     :param int height: an optional height (pixels) for the table (defaults to 400)
     :param bool centerCols: if True, items in each column are centered. Default is False
     
@@ -3723,6 +3911,76 @@ class MultiColumnSelection(wx.Dialog):
         if self.list.GetNextSelected(-1) == -1: return
         self.Selection = self.list.GetNextSelected(-1)
         self.EndModal(wx.ID_OK)
+
+def MultiColMultiSelDlg(parent, title, header, colInfo, choices):
+    '''Provides a dialog widget that can be used to select multiple items
+    from a multicolumn list. 
+    
+    :param wx.Frame parent: the parent frame (or None)
+    :param str title: A title for the dialog window
+    :param str header: A instruction string for the dialog window
+    :param list colInfo: contains three items for each column: a label for the column, 
+      a width for the column (in pixels), and True if the column should be right justified.
+    :param list choices: a nested list with values for each row in the table. Within each row
+      should be a list of values for each column. There must be at least one value, but it is
+      OK to have more or fewer values than there are column labels (colInfo). Extra are ignored
+      and unspecified columns are left blank.
+    :returns: a list of bool values for each entry in choices, True if selected, or
+      None is the dialog is cancelled.
+    
+    Example use::
+
+      choices = [('xmltodict', 'Bruker .brml Importer'),
+                 ('zarr', 'MIDAS Zarr importer'),
+                 ('h5py', 'HDF5 image importer'),
+                 ('hdf5', 'HDF5 image importer')]
+      colInfo = [('package', 50, False),
+                 ('needed by', 200, True)]
+      res = G2G.MultiColMultiSelDlg(parent, 'window title', 'Instructions', colInfo, choices)
+    '''
+    dlg = wx.Dialog(parent,wx.ID_ANY,title,
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,header)
+    txt.Wrap(300)
+    mainSizer.Add(txt)
+    lst = wx.ListCtrl(dlg, wx.ID_ANY, style=wx.LC_REPORT)
+    lst.EnableCheckBoxes()
+    lst.InsertColumn(0, 'Sel')
+    lst.SetColumnWidth(0, 30)
+    cols = len(colInfo)
+    for i,(lbl,wid,rgt) in enumerate(colInfo):
+        if rgt:
+            lst.InsertColumn(i+1, lbl, wx.LIST_FORMAT_RIGHT)
+        else:
+            lst.InsertColumn(i+1, lbl)
+        if type(wid) is int:
+            lst.SetColumnWidth(i+1, wid)
+        else:
+            lst.SetColumnWidth(i+1, wx.LIST_AUTOSIZE)
+    for line in choices:
+        index = lst.InsertItem(lst.GetItemCount(),'')
+        for i,lbl in enumerate(line[:cols]):
+            lst.SetItem(index, i+1, lbl)
+    mainSizer.Add(lst,1,wx.EXPAND,1)
+    btnsizer = wx.StdDialogButtonSizer()
+    btn = wx.Button(dlg, wx.ID_OK, 'Install Selected')
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    btnsizer.AddButton(btn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return [lst.IsItemChecked(i) for i,c in enumerate(choices)]
+        return
+    finally:
+        dlg.Destroy()
         
 ################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
@@ -4498,7 +4756,7 @@ class VirtualVarBox(wx.ListCtrl):
     def __init__(self, parent):
         self.parmWin = parent
         #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-        G2sc.patchControls(self.parmWin.Controls)
+        G2obj.patchControls(self.parmWin.Controls)
         # end patch
         wx.ListCtrl.__init__(
             self, parent, -1,
@@ -5307,25 +5565,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
         
     def PageChangeEvent(self,event):
         pass
-#        G2frame = self.parent.G2frame
-#        page = event.GetSelection()
-#        if self.PageChangeHandler:
-#            if log.LogInfo['Logging']:
-#                log.MakeTabLog(
-#                    G2frame.dataWindow.GetTitle(),
-#                    G2frame.dataDisplay.GetPageText(page)
-#                    )
-#            self.PageChangeHandler(event)
-            
-#    def Bind(self,eventtype,handler,*args,**kwargs):
-#        '''Override the Bind() function so that page change events can be trapped
-#        '''
-#        if eventtype == wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED:
-#            self.PageChangeHandler = handler
-#            wx.aui.AuiNotebook.Bind(self,eventtype,self.PageChangeEvent)
-#            return
-#        wx.aui.AuiNotebook.Bind(self,eventtype,handler,*args,**kwargs)
-                                                      
+                                                                  
     def Clear(self):
         GSNoteBook.DeleteAllPages(self)
         
@@ -5487,6 +5727,28 @@ For DIFFaX use cite:
         if GSASIIpath.HowIsG2Installed().startswith('git'):
             gitCheckUpdates(self.frame)
         elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+            msg = '''
+As of October 2024, updates for GSAS-II are no longer available from the APS 
+subversion server (where your current version of GSAS-II was installed from.) 
+
+To obtain updates to GSAS-II, you must reinstall GSAS-II from https://bit.ly/G2download
+(https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1).
+
+See web page GSASII.github.io for information on how to install.
+'''
+            res = ShowScrolledInfo(self.frame,msg,header='Please Note',
+                                height=200,
+                                buttonlist=[
+           ('Open download site',
+            lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+           ('Skip download for now',
+            lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+                                    ])
+            if res == wx.ID_OK:
+                ShowWebPage(
+                    'https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/tag/v1.0.1',
+                    self.frame,
+                    browser=True)
             svnCheckUpdates(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
@@ -5708,64 +5970,87 @@ def updateNotifier(G2frame,fileVersion):
     dlg.Destroy()
                   
 ################################################################################
-class MyHtmlPanel(wx.Panel):
-    '''Defines a panel to display HTML help information, as an alternative to
-    displaying help information in a web browser.
+def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
+    '''Creates a child wx.Frame with an OS-managed web browser. The window 
+    is modeless, so it can be left open without affecting GSAS-II operations,
+    but will be closed when GSAS-II is ended if a ``parent`` window is 
+    specified.
+
+    The web browser is filled with a supplied URL or HTML text. 
+    Reuses the previous window unless ``newFrame`` is set to True.
+
+    :param wx.Frame parent: name of main GSAS-II window (G2frame), if None
+      a toplevel window is created (probably not a good idea).
+    :param str URL: web page to be viewed. This is ignored if ``HTML`` 
+      (below) is specified, but argument ``URL`` is not optional.
+    :param wx.Size size: initial size of Frame to be created. Defaults 
+      to (750,450).
+    :param bool newFrame: When True, a new frame is opened even if the 
+      previously-used frame exists. Default is False.
+    :param str HTML: HTML text of a web page to be displayed. If this 
+      is specified, the contents of the URL argument is ignored.
+
+    :returns: the wx.Frame object used to display the web page
     '''
-    def __init__(self, frame, newId):
-        self.frame = frame
-        wx.Panel.__init__(self, frame, newId)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        back = wx.Button(self, -1, "Back")
-        back.Bind(wx.EVT_BUTTON, self.OnBack)
-        self.htmlwin = G2HtmlWindow(self, newId, size=(750,450))
-        sizer.Add(self.htmlwin, 1,wx.EXPAND)
-        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(frame)        
-        self.Bind(wx.EVT_SIZE,self.OnHelpSize)
-    def OnHelpSize(self,event):         #does the job but weirdly!!
-        anchor = self.htmlwin.GetOpenedAnchor()
-        if anchor:            
-            self.htmlwin.ScrollToAnchor(anchor)
-            wx.CallAfter(self.htmlwin.ScrollToAnchor,anchor)
-            if event: event.Skip()
-    def OnBack(self, event):
-        self.htmlwin.HistoryBack()
-    def LoadFile(self,file):
-        pos = file.rfind('#')
-        if pos != -1:
-            helpfile = file[:pos]
-            helpanchor = file[pos+1:]
-        else:
-            helpfile = file
-            helpanchor = None
-        self.htmlwin.LoadPage(helpfile)
-        if helpanchor is not None:
-            self.htmlwin.ScrollToAnchor(helpanchor)
-            xs,ys = self.htmlwin.GetViewStart()
-            self.htmlwin.Scroll(xs,ys-1)
-################################################################################
-class G2HtmlWindow(wx.html.HtmlWindow):
-    '''Displays help information in a primitive HTML browser type window
-    '''
-    def __init__(self, parent, *args, **kwargs):
-        self.parent = parent
-        wx.html.HtmlWindow.__init__(self, parent, *args, **kwargs)
-    def LoadPage(self, *args, **kwargs):
-        wx.html.HtmlWindow.LoadPage(self, *args, **kwargs)
-        self.TitlePage()
-    def OnLinkClicked(self, *args, **kwargs):
-        wx.html.HtmlWindow.OnLinkClicked(self, *args, **kwargs)
-        xs,ys = self.GetViewStart()
-        self.Scroll(xs,ys-1)
-        self.TitlePage()
-    def HistoryBack(self, *args, **kwargs):
-        wx.html.HtmlWindow.HistoryBack(self, *args, **kwargs)
-        self.TitlePage()
-    def TitlePage(self):
-        self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
-            self.GetOpenedPageTitle())
+    def copyURL(event):
+        '''Copies URL name to paste buffer
+        '''
+        txt = event.GetEventObject().GetValue()
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(txt))
+            wx.TheClipboard.Close()
+
+    import wx.html2  # don't import until needed, as this is only used here
+    global lastWebFrame
+    if not newFrame:
+        try:
+            if not lastWebFrame.IsBeingDeleted():
+                if HTML:
+                    lastWebFrame.wv.SetPage(HTML,'')
+                else:
+                    lastWebFrame.wv.LoadURL(URL)
+                return
+        except:
+            pass
+    dlg = wx.Frame(parent,size=size)
+    lastWebFrame = dlg
+    dlg.Show()
+    sizer=wx.BoxSizer(wx.VERTICAL)
+    dlg.wv = wx.html2.WebView.New(dlg)
+    # place HTML title into window title
+    dlg.wv.Bind(wx.EVT_UPDATE_UI, lambda event:
+                    dlg.SetTitle(dlg.wv.GetCurrentTitle()))
+    lastWebView = dlg.wv
+    sizer.Add(dlg.wv,1,wx.EXPAND)
+    # row of buttons & URL label on bottom of window
+    bsizer=wx.BoxSizer(wx.HORIZONTAL)
+    dlg.back = wx.Button(dlg, -1, "Back")
+    dlg.back.Bind(wx.EVT_BUTTON, lambda event:dlg.wv.GoBack())
+    # 1st history entry is a blank page. Disable Back button to prevent loading that
+    dlg.back.Bind(wx.EVT_UPDATE_UI, lambda event: event.Enable(
+            len(dlg.wv.GetBackwardHistory()) > 1))
+    dlg.back.Enable(False)
+    bsizer.Add(dlg.back,0,wx.ALIGN_CENTER_VERTICAL)
+    # read-only TextCtrl to show the URL
+    urltxt = wx.TextCtrl(dlg,wx.ID_ANY,URL,style=wx.TE_READONLY|wx.TE_CENTER|wx.TE_PROCESS_ENTER)
+    urltxt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+    urltxt.Bind(wx.EVT_UPDATE_UI, lambda event: event.SetText(dlg.wv.GetCurrentURL()))
+    # Can't get copy to work on URL, so Enter copies contents to paste buffer
+    urltxt.Bind(wx.EVT_TEXT_ENTER, copyURL)
+    bsizer.Add(urltxt,1,wx.EXPAND)
+    close = wx.Button(dlg, -1, "Close")
+    close.Bind(wx.EVT_BUTTON, lambda event:dlg.Destroy())
+    bsizer.Add(close,0,wx.ALIGN_CENTER_VERTICAL)
+    sizer.Add(bsizer,0,wx.EXPAND|wx.TOP|wx.BOTTOM,3)
+    # load URL/HTML contents
+    if HTML:
+        dlg.wv.SetPage(HTML,'')
+    else:
+        dlg.wv.LoadURL(URL)
+    dlg.SetSizer(sizer)
+    sizer.Layout()
+    dlg.SendSizeEvent()
+    return dlg
 
 ################################################################################
 def StripIndents(msg,singleLine=False):
@@ -6091,12 +6376,8 @@ def GetConfigValsDocs():
     import config_example
     import ast
     fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
-    if '3' in platform.python_version_tuple()[0]: 
-        with open(fname, 'r',encoding='utf-8') as f:
-            fstr = f.read()
-    else:
-        with open(fname, 'r') as f:
-            fstr = f.read()
+    with open(fname, 'r',encoding='utf-8') as f:
+        fstr = f.read()
     fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
     if not fstr.endswith('\n'):
         fstr += '\n'
@@ -6106,9 +6387,9 @@ def GetConfigValsDocs():
     for node in ast.walk(tree):
         if isinstance(node,ast.Assign):
             key = node.targets[0].id
-            d[key] = [config_example.__dict__.get(key),
-                      GSASIIpath.configDict.get(key),
-                      GSASIIpath.configDict.get(key),'']
+            default = config_example.__dict__.get(key)
+            start = GSASIIpath.configDict.get(key,default)
+            d[key] = [default, start, start, '']
         elif isinstance(node,ast.Expr) and key:
             d[key][3] = node.value.s.strip()
         else:
@@ -6165,8 +6446,8 @@ def SaveConfigVars(vars,parent=None):
                 os.mkdir(g2local)
             except:
                 if parent:
-                    G2MessageBox(parent,u'Error trying to create directory '+g2local,
-                        'Unable to save')
+                    G2MessageBox(parent,
+                                     f'Error trying to create directory {g2local}. Unable to save')
                 else:
                     print(u'Error trying to create directory '+g2local)
                 return True
@@ -6287,7 +6568,24 @@ class SelectConfigSetting(wx.Dialog):
             self.resetBtn.Enable(True)
         except:
             pass
-        
+        self.ShowColor()
+
+    def ShowColor(self):
+        if self.colorChip:
+            var = self.choice[0]
+            if self.vars[var][1]:
+                color = self.vars[var][1]
+            else:
+                color = self.vars[var][0]
+            self.colorText.SetLabel(color)
+            # set the color if valid
+            try:
+                self.colorChip.SetBackgroundColour(wx.Colour('#'+color))
+            except:
+                self.colorChip.SetLabel('Invalid color')
+                self.colorChip.SetBackgroundColour('yellow')
+                self.colorChip.SetForegroundColour('black')
+
     def OnApplyChanges(self,event=None):
         'Set config variables to match the current settings'
         GSASIIpath.SetConfigValue(self.vars)
@@ -6326,6 +6624,21 @@ class SelectConfigSetting(wx.Dialog):
             self.OnChange()
         dlg.Destroy()
 
+    def onSelColor(self,event):
+        'Select a color from a menu'
+        dlg = wx.ColourDialog(self)
+        dlg.GetColourData().SetChooseFull(True) # Show the full color dialog
+        if dlg.ShowModal() == wx.ID_OK:
+            c = dlg.GetColourData().GetColour()
+            #self.colorChip.SetBackgroundColour(c)
+            # convert to mpl format w/o '#' prefix
+            mplcolor = ''.join([f"{i:x}" if i > 15 else f"0{i:x}" for i in c.Get()])
+            var = self.choice[0]
+            self.vars[var][1] = mplcolor
+            #self.strEd.SetValue(self.vars[var][1])
+            self.OnChange()
+        dlg.Destroy()
+        
     def onSelExec(self,event):
         'Select an executable file from a menu'
         var = self.choice[0]
@@ -6372,6 +6685,8 @@ class SelectConfigSetting(wx.Dialog):
             self.varsizer.DeleteWindows()
         var = self.choice[0]
         showdef = True
+        self.colorText = None
+        self.colorChip = None
         if var not in self.vars:
             raise Exception("How did this happen?")
         if 'enum_'+var in self.vars:
@@ -6415,6 +6730,12 @@ class SelectConfigSetting(wx.Dialog):
                 btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelExec)
                 sz = (400,-1)
+            elif var.endswith('_color') and var != 'Contour_color':
+                self.colorText = wx.StaticText(self,wx.ID_ANY,size=(80,20))
+                self.colorChip = wx.StaticText(self,wx.ID_ANY,size=(80,30))
+                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn.Bind(wx.EVT_BUTTON,self.onSelColor)
+                sz = (400,-1)
             else:
                 btn = None
                 sz = (250,-1)
@@ -6433,9 +6754,15 @@ class SelectConfigSetting(wx.Dialog):
                 self.colSel = EnumSelector(self,self.vars[var],1,calList,
                                                OnChange=self.OnChange)       
                 self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            elif self.colorChip:
+                hSizer = wx.BoxSizer(wx.HORIZONTAL)
+                hSizer.Add(self.colorText, 0, wx.ALL, 5)
+                hSizer.Add(self.colorChip, 0, wx.ALL, 5)
+                self.varsizer.Add(hSizer, 0, wx.ALL|wx.ALIGN_CENTRE, 5)
+                self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
             else:
                 self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,
-                    OKcontrol=self.OnChange,size=sz)
+                    OKcontrol=self.OnChange,size=sz,notBlank=False)
                 if self.vars[var][1] is not None:
                     self.strEd.SetValue(self.vars[var][1])
                 if btn:
@@ -6467,6 +6794,7 @@ class SelectConfigSetting(wx.Dialog):
         else:
             self.docinfo.SetLabel("(not documented)")
         self.docinfo.Wrap(500)
+        self.ShowColor()
         self.sizer.Fit(self)
         self.CenterOnParent()
         wx.CallAfter(self.SendSizeEvent)
@@ -6955,7 +7283,8 @@ class gitVersionSelector(wx.Dialog):
         # end patch 
         self.initial_commit = self.g2repo.commit('HEAD')
         self.initial_commit_info = self.docCommit(self.initial_commit)
-        
+        if parent is None:
+            parent = wx.GetApp().GetMainTopWindow()
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',
                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -7220,7 +7549,7 @@ htmlFrame = None
 htmlFirstUse = True
 #helpLocDict = {}  # to be implemented if we ever split gsasii.html over multiple files
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
-def ShowHelp(helpType,frame):
+def ShowHelp(helpType,frame,helpMode=None):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse,htmlPanel,htmlFrame
     # no defined link to use, create a default based on key
@@ -7235,21 +7564,15 @@ def ShowHelp(helpType,frame):
     else: 
         helplink = 'gsasII.html'
     # determine if a web browser or the internal viewer should be used for help info
-    if GSASIIpath.GetConfigValue('Help_mode'):
+    if helpMode:
+        pass
+    elif GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
     else:
         helpMode = 'browser'
     if helpMode == 'internal':
-        helplink = os.path.join(path2GSAS2,'help',helplink)
-        try:
-            htmlPanel.LoadFile(helplink)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(helplink)
+        helplink = 'file://' + os.path.abspath(os.path.join(path2GSAS2,'help',helplink))
+        viewWebPage(frame,helplink)
     else:
         import webbrowser     # postpone this until now for quicker startup
         wb = webbrowser
@@ -7289,25 +7612,26 @@ def ShowHelp(helpType,frame):
         else:
             wb.open(pfx+helplink, new=0, autoraise=True)
 
-def ShowWebPage(URL,frame):
+def ShowWebPage(URL,frame,browser=False,internal=False):
     '''Called to show a tutorial web page.
+
+    :param str URL: web page URL
+    :param wx.Frame frame: parent window (or None)
+    :param bool browser: If True, forces the page to be opened in a web 
+      browser, regardless of the ``Help_mode`` config setting. 
     '''
     global htmlFirstUse,htmlPanel,htmlFrame
     # determine if a web browser or the internal viewer should be used for help info
-    if GSASIIpath.GetConfigValue('Help_mode'):
+    if GSASIIpath.GetConfigValue('Help_mode') and not browser and not internal:
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
+    elif internal:
+        helpMode = 'internal'
     else:
+#    elif browser:
         helpMode = 'browser'
+        
     if helpMode == 'internal':
-        try:
-            htmlPanel.LoadFile(URL)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(URL)
+        viewWebPage(frame,URL)
     else:
         import webbrowser     # postpone this until now for quicker startup
         if URL.startswith('http'): 
@@ -7804,6 +8128,7 @@ class OpenGitTutorial(wx.Dialog):
         The data files associated with that directory are then downloaded.
         '''
         tutdir = self.onWebBrowse(event)
+        if tutdir is None: return
         GSASIIpath.downloadDirContents([tutdir,'data'],self.tutorialPath)
 
     def onWebBrowse(self,event):
@@ -7879,6 +8204,7 @@ class OpenGitTutorial(wx.Dialog):
 AutoLoadWindow = None
 
 def AutoLoadFiles(G2frame,FileTyp='pwd'):
+    import GSASIIscriptable as G2sc
     def OnBrowse(event):
         '''Responds when the Browse button is pressed to load a file.
         The routine determines which button was pressed and gets the
@@ -7902,14 +8228,65 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 'Choose instrument parameter file',
                 '', '',extList, wx.FD_OPEN)
             if os.path.exists(Settings['instfile']):
-                d.SetFilename(Settings['instfile'])
+                dr,f = os.path.split(Settings['instfile'])
+                d.SetDirectory(dr)
+                d.SetFilename(f)
             try:
                 if d.ShowModal() == wx.ID_OK:
                     Settings['instfile'] = d.GetPath()
                     fInp4.SetValue(Settings['instfile'])
+                    # change the "read from" directory if defaulted
+                    if Settings['indir'] == os.getcwd():
+                        Settings['indir'] = os.path.dirname(d.GetPath())
+                        fInp3.SetValue(Settings['indir'])
             finally:
                 d.Destroy()
         TestInput()
+        
+    def OnFileOfFiles(event):
+        '''Read from a list of files and add those files in the order
+        specified in that file.
+        '''
+        # get a list of existing histograms
+        if FileTyp == 'pwd':
+            treePrfx = 'PWDR '
+        else:
+            treePrfx = 'PDF  '
+        ReadList = []
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith(treePrfx) and name not in ReadList:
+                    ReadList.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        Settings['ReadList'] = ReadList
+        extList = 'text file (*.txt,*.csv)|*.txt;*.csv'
+        d = wx.FileDialog(dlg,
+                'Choose a text file with file names',
+                '', '',extList, wx.FD_OPEN)
+        filelist = []
+        try:
+            if d.ShowModal() == wx.ID_OK:
+                if not os.path.exists(Settings['instfile']): return
+                if not os.path.exists(d.GetPath()): return
+                with open(d.GetPath(),'r') as fp:
+                    for line in fp: # split lines at comma/tab, strip quotes, etc
+                        if line.startswith('#'): continue
+                        line = line.split(',')[0]
+                        line = line.split('\t')[0]
+                        f = line.replace('"','').replace("'",'').strip()
+                        if not os.path.exists(f) and not os.path.abspath(f):
+                            f = os.path.join(Settings['indir'],f)
+                        if not os.path.exists(f):
+                            print(f'Skipping file {f}, not found')
+                        else:
+                            filelist.append(f)
+                G2frame.CheckNotebook()
+                RunTimerPWDR(None,filelist)
+                wx.CallAfter(dlg.Destroy)
+        finally:
+            d.Destroy()
     def onSetFmtSelection():
         extSel.Clear()
         extSel.AppendItems(fileReaders[Settings['fmt']].extensionlist)
@@ -7930,6 +8307,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         if FileTyp == 'pwd' and not os.path.exists(Settings['instfile']):
             valid = False
         btnstart.Enable(valid)
+        FofFbtn.Enable(valid)
     def OnStart(event):
         if btnstart.GetLabel() == 'Pause':
             Settings['timer'].Stop()
@@ -7956,12 +8334,13 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     ReadList.append(name)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         Settings['ReadList'] = ReadList
-    def RunTimerPWDR(event):
-        if GSASIIpath.GetConfigValue('debug'):
-            import datetime
-            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
-        filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
-        if not filelist: return
+    def RunTimerPWDR(event,filelist=None):
+        if filelist is None:
+            if GSASIIpath.GetConfigValue('debug'):
+                import datetime
+                print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
+            if not filelist: return
         #if GSASIIpath.GetConfigValue('debug'): print(filelist)
         Id = None
         for f in filelist:
@@ -8051,22 +8430,6 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 # apply user-supplied corrections to powder data
                 if 'CorrectionCode' in Iparm1:
                     print('Warning: CorrectionCode from instprm file not applied')
-                # code below produces error on Py2.7: unqualified exec is not
-                # allowed in this function because it is a nested function
-                # no attempt made to address this.
-                #
-                #    print('Applying corrections from instprm file')
-                #    corr = Iparm1['CorrectionCode'][0]
-                #    try:
-                #        exec(corr)
-                #        print('done')
-                #    except Exception as err:
-                #        print(u'error: {}'.format(err))
-                #        print('with commands -------------------')
-                #        print(corr)
-                #        print('---------------------------------')
-                #    finally:
-                #        del Iparm1['CorrectionCode']
                 rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
                 G2frame.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
                 G2frame.GPXtree.SetItemPyData(
@@ -8114,6 +8477,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             G2frame.EnablePlot = True
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)
+        dlg.Raise()
             
     def RunTimerGR(event):
         if GSASIIpath.GetConfigValue('debug'):
@@ -8227,16 +8591,35 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format:'))
     fmtSel = G2ChoiceButton(mnpnl,fmtchoices,Settings,'fmt',onChoice=onSetFmtSelection)
-    sizer.Add(fmtSel,1,wx.EXPAND)
+    sizer.Add(fmtSel)
+    sizer.Add((-1,-1),1,wx.EXPAND,1)
+    msg = '''This window serves two purposes. It can be used to read files 
+as they are added to a directory or it can be used to read files from an 
+externally-created file list. For either, set the file format and an 
+instrument parameter file must be specified.
+%%
+* For automatic reading, the files must be found in the directory specified by
+"Read from:" and the selected extension. The "File filter:" can be used to 
+limit the files to those matching a wildcard, (for example, if 
+"202408*pow*.*" is used as a filter, then files must begin with "202408" 
+and must also contain the string "pow".) 
+%%
+* For reading from a list of files, press the "Read from file with a list 
+of files" button. The input file must contain a list of files, one per line. 
+Lines beginning in '#' are ignored. If more than one column is used 
+(separated by commas or tabs), the file name should be the first column. 
+File names can be in quotes, but this is not required. The extension 
+is ignored, as is the "File filter". The "Read from" directory will be used 
+if the file name does not contain a full path and the file is not in the 
+current working directory.
+'''
+    sizer.Add(HelpButton(mnpnl,msg,wrap=400),0,wx.RIGHT,5)
     mnsizer.Add(sizer,0,wx.EXPAND)
 
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select extension:'))
     extSel = G2ChoiceButton(mnpnl,[],Settings,'ext',Settings,'extStr',onChoice=onSetExtSelection)
     sizer.Add(extSel,0)
-    mnsizer.Add(sizer,0,wx.EXPAND)
-    
-    sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add((-1,-1),1,wx.EXPAND,1)
     sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'  File filter: '))
     flterInp = ValidatedTxtCtrl(mnpnl,Settings,'filter')
@@ -8261,7 +8644,10 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         btn4.Bind(wx.EVT_BUTTON, OnBrowse)
         sizer.Add(btn4,0,wx.ALIGN_CENTER_VERTICAL)
         mnsizer.Add(sizer,0,wx.EXPAND)
-    
+        # read a list of files
+        FofFbtn = wx.Button(mnpnl,  wx.ID_ANY, 'Read from file with a list of files')
+        FofFbtn.Bind(wx.EVT_BUTTON, OnFileOfFiles)
+        mnsizer.Add(FofFbtn)
     # buttons on bottom
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     sizer.Add((-1,-1),1,wx.EXPAND)
@@ -8275,9 +8661,9 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer.Add(btnclose)
     sizer.Add((-1,-1),1,wx.EXPAND)
     mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
-    
     mnpnl.SetSizer(mnsizer)
     mnsizer.Fit(dlg)
+    dlg.CenterOnParent()
     dlg.Show()
     AutoLoadWindow = dlg # save window reference
 
@@ -9181,11 +9567,11 @@ class ScrolledStaticText(wx.StaticText):
 #===========================================================================
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
                        confirmoverwrite=True, parent=None,
-                       multipleselect=False):
+                       multipleselect=False,msg=''):
     '''If the filename is a zip file, extract a file from that
     archive.
 
-    :param list Selection: used to predefine the name of the file
+    :param list selection: used to predefine the name of the file
       to be extracted. Filename case and zip directory name are
       ignored in selection; the first matching file is used.
 
@@ -9199,6 +9585,9 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
       file to be extracted, a list of file(s) is returned.
       If only one file is present, do not ask which one, otherwise
       offer a list of choices (unless selection is used).
+
+    :param str msg: a message explaining what is being read. Default
+      is blank.
     
     :returns: the name of the file that has been created or a
       list of files (see multipleselect)
@@ -9224,7 +9613,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         if selection.lower() in choices:
             zlist = [choices.index(selection.lower())]
         else:
-            print('debug: file '+str(selection)+' was not found in '+str(filename))
+            #print('debug: file '+str(selection)+' was not found in '+str(filename))
             zlist = [-1]
     elif len(zinfo) == 1 and confirmread:
         result = wx.ID_NO
@@ -9248,7 +9637,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
+        dlg = G2MultiChoiceDialog(parent,
+            msg+f'Select file(s) to extract from zip file\n{filename}',
             'Choose file(s)',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()
@@ -9259,8 +9649,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         # select one from a from list
         choices = [i.filename for i in zinfo]
         dlg = wx.SingleChoiceDialog(parent,
-            'Select file to extract from zip file'+str(filename),'Choose file',
-            choices,)
+            msg+f'Select a file to extract from zip file\n{filename}',
+            'Choose a file',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = [dlg.GetSelection()]
         else:
@@ -9317,30 +9707,30 @@ def gitFetch(G2frame):
     pdlg = wx.ProgressDialog('Updating','Performing git update',11,
                     style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
                     parent=G2frame)
-    pdlg.CenterOnParent()
-    if hasattr(G2frame,'UpdateTask'):     # check if git update has completed
-        count = 0
-        while G2frame.UpdateTask.poll() is None:
-            count += 1
-            if count > 10:
-                G2MessageBox(G2frame,
-                    'Background git update has not completed, try again later', 
-                    title='Warning')
-                pdlg.Destroy()
-                wx.EndBusyCursor()
-                return
-            time.sleep(1)
-            ok,_ = pdlg.Update(count)
-            wx.GetApp().Yield()
-            if not ok:
-                pdlg.Destroy()
-                wx.EndBusyCursor()
-                return
-    if GSASIIpath.GetConfigValue('debug'): print('background update complete')
-    # try update one more time just to make sure
-    GSASIIpath.gitGetUpdate('immediate')
-    pdlg.Destroy()
-    wx.EndBusyCursor()
+    try:
+        pdlg.CenterOnParent()
+        if hasattr(G2frame,'UpdateTask'):     # check if git update has completed
+            count = 0
+            while G2frame.UpdateTask.poll() is None:
+                count += 1
+                if count > 10:
+                    G2MessageBox(G2frame,
+                        'Background git update has not completed, try again later', 
+                        title='Warning')
+                    return
+                time.sleep(1)
+                ok,_ = pdlg.Update(count)
+                wx.GetApp().Yield()
+                if not ok:
+                    return
+        if GSASIIpath.GetConfigValue('debug'): print('background update complete')
+        # try update one more time just to make sure
+        GSASIIpath.gitGetUpdate('immediate')
+    except Exception as msg:
+        raise Exception(msg)
+    finally:
+        pdlg.Destroy()
+        wx.EndBusyCursor()
             
 def gitCheckUpdates(G2frame):
     '''Used to update to the latest GSAS-II version, but checks for a variety
@@ -9566,9 +9956,10 @@ def gitSelectBranch(event):
     Expected to be used by developers and by expert users only.
     '''
     G2frame = wx.App.GetMainTopWindow()
-    if not GSASIIpath.HowIsG2Installed().startswith('git-rev'):
+    gitInst = GSASIIpath.HowIsG2Installed()
+    if not gitInst.startswith('github-rev'):
         G2MessageBox(G2frame,
-            'Unable to switch branches unless GSAS-II has been installed from GitHub',
+            'Unable to switch branches unless GSAS-II has been installed from GitHub; installed as: '+gitInst,
             'Not a git install')
         return
     if not os.path.exists(GSASIIpath.path2GSAS2): 
@@ -9850,6 +10241,82 @@ def svnSelectVersion(G2frame):
     GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
     return
 
+# Importer GUI stuff
+def ImportMsg(parent,msgs):
+    '''Show a message with the warnings from importers that 
+    could not be installed (due to uninstalled Python packages). Then 
+    offer the chance to install GSAS-II packages using :func:`SelectPkgInstall`
+    '''
+    text = ('Message(s) from load of importers\n\n  '+
+                '\n\n'.join(msgs)+
+                '\n\nNote: These errors only need to be addressed if you want to use the importers listed above')
+    ShowScrolledInfo(parent,text,
+                    header='Importer load problems',
+                    width=650,
+                    buttonlist=[('Install packages',SelectPkgInstall), wx.ID_CLOSE]
+                         )
+
+def SelectPkgInstall(event):
+    '''Offer the user a chance to install Python packages needed by one or 
+    more importers. There might be times where something like this will be 
+    useful for other GSAS-II actions.
+    '''
+    dlg = event.GetEventObject().GetParent()
+    dlg.EndModal(wx.ID_OK)
+    G2frame = wx.App.GetMainTopWindow()
+    choices = []
+    for key in G2fil.condaRequestList:
+        for item in G2fil.condaRequestList[key]:
+            choices.append((item,key))
+    msg = 'Select packages to install'
+    if GSASIIpath.condaTest():
+        msg += ' using conda'
+    else:
+        msg += ' using pip'
+    sel = MultiColMultiSelDlg(G2frame, 'Install packages?', msg,
+                             [('package',120,0),('needed by',300,0)], choices)
+    if sel is None: return
+    if not any(sel): return
+    pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
+    if GSASIIpath.condaTest():
+        if not GSASIIpath.condaTest(True):
+            GSASIIpath.addCondaPkg()
+        err = GSASIIpath.condaInstall(pkgs)
+        if err:
+            print(f'Error from conda: {err}')
+            return
+    else:
+        err = GSASIIpath.pipInstall(pkgs)
+        if err:
+            print(f'Error from pip: {err}')
+            return
+    msg = '''You must restart GSAS-II to access the importer(s) 
+requiring the installed package(s). 
+
+Select "Yes" to save, "No" to skip the save, or "Cancel"
+to discontinue the restart process and continue GSAS-II 
+without the importer(s). 
+
+If "Yes", GSAS-II will reopen the project after the update.
+'''
+    dlg = wx.MessageDialog(G2frame, msg, 'Save and restart?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        project = os.path.abspath(G2frame.GSASprojectfile)
+        print(f"Restarting GSAS-II with project file {project!r}")
+    else:
+        print("Restarting GSAS-II without a project file ")
+        project = None
+    G2fil.openInNewTerm(project)
+    print ('exiting GSAS-II')
+    sys.exit()
+
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
@@ -9860,15 +10327,72 @@ if __name__ == '__main__':
     #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',20,50,.1)
     #ms.Add(siz)
     text = 'this is a long string that will be scrolled'
-    ms.Add(ScrolledStaticText(frm,label=text))
-    txt = ScrolledStaticText(frm,label=text, lbllen=20)
-    smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
-    smallfont.SetPointSize(10)
-    txt.SetFont(smallfont)
-    ms.Add(txt)
-    ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
+    #ms.Add(ScrolledStaticText(frm,label=text))
+    #txt = ScrolledStaticText(frm,label=text, lbllen=20)
+    #smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
+    #smallfont.SetPointSize(10)
+    #txt.SetFont(smallfont)
+    #ms.Add(txt)
+    #ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
     frm.SetSizer(ms)
     frm.Show(True)
+
+    G2frame = frm
+
+    #ShowWebPage('http://wxpython.org',G2frame,internal=True)
+    #ShowHelp('hist/phase',G2frame,'internal')
+    testAtoms = ['']
+    
+    nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
+    dm = ['1','2','3','4','5','6']
+    kfmt = ['choice','/','choice',',    ','choice','/','choice',',    ','choice','/','choice',' ']
+    def strTest(text):
+            if '.' in text: # no decimals
+                return False
+            elif text.strip() in  [' ','0','1','-1','3/2']: # specials
+                return True
+            elif '/' in text: #process fraction 
+                nums = text.split('/')
+                return (0 < int(nums[1]) < 10) and (0 < abs(int(nums[0])) < int(nums[1]))
+            return False
+
+    msg = 'test of MultiDataDialog'
+    kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
+    dlg = MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
+            prompts=[' k-vector 1',' k-vector 2',' k-vector 3',
+                     ' Use whole star',' Filter by','preserve axes',
+                     'test for mag. atoms','all have moment','max unique'],
+            values=kvec+[False,'',True,'',False,100],
+            limits=[['0','0','0'],['0','0','0'],['0','0','0'],
+                    [True,False],['',' Landau transition',' Only maximal subgroups',],
+                [True,False],testAtoms,[True,False],[1,100]],
+            testfxns = [[strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        [strTest,strTest,strTest],
+                        None,None,None,None,None,None],
+            formats=[['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
+                     ['testfxn','testfxn','testfxn'],
+                     'bool','choice','bool','choice','bool','%d',],
+            header=msg)
+    if dlg.ShowModal() == wx.ID_OK: print(dlg.GetValues())
+    
+
+    # if True:
+    #   title='title here'
+    #   header = 'this is where a header goes. this is where a header to explain what to do goes this is where a header to explain what to do goes'
+    #   choices = [('xmltodict', 'Bruker .brml Importer'),
+    #              ('zarr', 'MIDAS Zarr importer'),
+    #              ('h5py', 'HDF5 image importer'),
+    #              ('hdf5', 'HDF5 image importer'),
+    #              ('test',),('val','used','ignored'),[]]
+    #   colInfo = [('package',100, False),
+    #                ('needed by',200, False)]
+
+    #   parent = wx.App.GetMainTopWindow()
+    #   print(MultiColMultiSelDlg(parent, title, header, colInfo, choices))
+
+    sys.exit()
     app.MainLoop()
     
 #    choices = [wx.ID_YES,wx.ID_NO]

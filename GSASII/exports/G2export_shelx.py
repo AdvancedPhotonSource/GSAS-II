@@ -1,22 +1,12 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_shelx.py $
-# $Id: G2export_shelx.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_shelx` follow:
 '''
 from __future__ import division, print_function
 import os.path
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 import GSASIIspc as G2spc
 
-class ExportPhaseShelx(G2IO.ExportBaseclass):
+class ExportPhaseShelx(G2fil.ExportBaseclass):
     '''Used to create a SHELX .ins file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -48,7 +38,7 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
-            fp = self.OpenFile()
+            #fp = self.OpenFile()
             # title line
             self.Write("TITL from "+str(self.G2frame.GSASprojectfile)+", phase "+str(phasenam))
             # get & write cell parameters
@@ -61,7 +51,7 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
             # generate symmetry operations not including centering and center of symmetry
             for Opr in phasedict['General']['SGData']['SGOps']:
                 sym = G2spc.MT2text(Opr).lower().replace(" ,",", ")
-                self.Write('SYMM '+G2IO.trim(sym))
+                self.Write('SYMM '+G2fil.trim(sym))
             # scan through atom types, count the number of times that each element occurs
             AtomsList = self.GetAtoms(phasenam)
             maxmult = 0

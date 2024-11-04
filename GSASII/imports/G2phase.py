@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-11-02 11:44:46 -0500 (Thu, 02 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5696 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase.py $
-# $Id: G2phase.py 5696 2023-11-02 16:44:46Z vondreele $
-########### SVN repository information ###################
 #
 '''
 '''
@@ -23,8 +16,6 @@ except ImportError:
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5696 $")
 try:  # fails on doc build
     R2pisq = 1./(2.*np.pi**2)
 except TypeError:

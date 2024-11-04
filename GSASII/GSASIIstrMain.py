@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-02-21 22:58:44 -0600 (Wed, 21 Feb 2024) $
-# $Author: toby $
-# $Revision: 5737 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrMain.py $
-# $Id: GSASIIstrMain.py 5737 2024-02-22 04:58:44Z toby $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIstrMain` routines, used for refinement are found below.
 '''
@@ -25,7 +18,6 @@ import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-GSASIIpath.SetVersionNumber("$Revision: 5737 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImapvars as G2mv
@@ -35,7 +27,6 @@ import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -266,7 +257,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-    G2sc.patchControls(Controls)
+    G2obj.patchControls(Controls)
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
@@ -276,6 +267,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     Rvals = {}
     chisq0 = None
     Lastshft = None
+    IfOK = True
     while True:
         G2mv.Map2Dict(parmDict,varyList)
         begin = time.time()
@@ -308,6 +300,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 refPlotUpdate=refPlotUpdate)
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
+            if 'lastShifts' in result[2]:
+                Rvals['lastShifts'] = dict(zip(varyList,result[2]['lastShifts']))
             if 'Ouch#4' in  result[2]:
                 Rvals['Aborted'] = True
             if 'msg' in result[2]:
@@ -315,7 +309,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             Controls['Marquardt'] = -3  #reset to default
             if 'chisq0' in result[2] and chisq0 is None:
                 chisq0 = result[2]['chisq0']
-            if result[1] is None:
+            if maxCyc == 0:
+                covMatrix = []
+                sig = len(varyList)*[None,]
+            elif result[1] is None:
                 IfOK = False
                 covMatrix = []
                 sig = len(varyList)*[None,]
@@ -435,7 +432,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,allDerivs=False):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     '''Global refinement -- refines to minimize against all histograms. 
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
@@ -455,7 +452,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     parmDict = {}
     G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
-    Controls['newLeBail'] = newLeBail
+    Controls['newLeBail'] = Controls.get('newLeBail',False)
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)
@@ -627,6 +624,25 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
         else:
             Rvals['msg'] = Msg.msg
         return False,Rvals
+
+    # document the refinement further: RB, constraints, restraints, what's varied
+    Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
+    s = G2mv.VarRemapSumm()
+    if s: Rvals['contrSumm'] = f'Constraints: {s}' 
+    Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)
+    Rvals['RBsumm'] = ''
+    for ph in Phases:
+        s = ''
+        for i in 'Vector','Residue':
+            try: 
+                l = len(Phases[ph]['RBModels'][i])
+                if s: s += '; '
+                s += f'{l} {i} bodies'
+            except:
+                pass
+        if s:
+            if not Rvals['RBsumm']: Rvals['RBsumm'] += 'Rigid Bodies: '
+            Rvals['RBsumm'] += f'{ph}: {s}'
     
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
@@ -1065,7 +1081,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             sigDict = dict(zip(varyList,sig))
             # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
-
+        
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             SeqResult[histogram] = {
@@ -1077,7 +1093,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 'parmDict':parmDict,
                 }
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-#            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)   # TODO: why is this not called? Do rigid body prms get updated?
+            SeqResult[histogram]['RBsuDict'] = G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
+                            covMatrix,varyList,sig)
             G2stIO.SetISOmodes(parmDict,sigDict,Phases,None)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,
                                          pFile=printFile,covMatrix=covMatrix,varyList=varyList)
@@ -1129,7 +1146,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             printFile.close()
             G2fil.G2Print (' ***** Refinement stopped *****')
             return False,Msg.msg
-        except G2obj.G2Exception as Msg:  # cell metric error, others?
+        except (G2obj.G2Exception,Exception) as Msg:  # cell metric error, others?
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
             G2fil.G2Print (' ***** Refinement error *****')

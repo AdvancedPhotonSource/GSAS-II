@@ -1,12 +1,4 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date:  $
-# $Author:  $
-# $Revision: $
-# $URL: $
-# $Id: $
-########### SVN repository information ###################
 """
 Routines to move information between Python interpreters for code 
 development/debugging purposes. This is helpful to move numpy 
@@ -15,8 +7,8 @@ data objects to Jupyter notebooks.
 This will need more work to be used on Windows [where it will need 
 to use C:/TEMP or the equilvalent, see tempfile.gettempdir()]
 
-These routines are imported into GSAS-II module GSASIIfiles, but 
-this module is kept separate and small so that it can be copied 
+Not currently used anywhere in GSAS-II but is easy to insert if needed.
+This module is kept separate and small so that it can be copied 
 to locations outside of the GSASII project directory where it 
 may be imported easily.
 

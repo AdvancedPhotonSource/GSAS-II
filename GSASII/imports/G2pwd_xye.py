@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-04-16 08:03:40 -0500 (Tue, 16 Apr 2024) $
-# $Author: vondreele $
-# $Revision: 5777 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_xye.py $
-# $Id: G2pwd_xye.py 5777 2024-04-16 13:03:40Z vondreele $
-########### SVN repository information ###################
 '''
+Importer for various two/three column formats with 2theta vs intensity 
+or Q vs intensity with an optional 3rd column for s.u.(I)
 '''
 
 from __future__ import division, print_function
@@ -17,14 +12,13 @@ import GSASIIpath
 
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
-GSASIIpath.SetVersionNumber("$Revision: 5777 $")
 class xye_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye/.chi file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.xye','.qye','.chi','.qchi',),
             strictExtension=False,
-            formatName = 'Topas xye or 2th Fit2D chi',
+            formatName = 'Topas xye/qye or 2th Fit2D chi/qchi',
             longFormatName = 'Topas .xye/.qye or 2th Fit2D .chi/.qchi powder data file'
             )
         self.scriptable = True
@@ -197,6 +191,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     print (S.strip())
                 break
         N = len(x)
+        if N == 0: return False
         x = np.array(x)
         y = np.nan_to_num(np.array(y))
         w = np.nan_to_num(np.array(w))

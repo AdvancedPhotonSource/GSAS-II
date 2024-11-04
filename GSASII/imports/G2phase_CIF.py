@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_CIF.py $
-# $Id: G2phase_CIF.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 '''
 # Routines to import Phase information from CIF files
@@ -22,12 +15,6 @@ import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import GSASIIpath
 import GSASIIfiles as G2fil
-import SUBGROUPS
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
@@ -129,6 +116,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
             try:
+                import GSASIIctrlGUI as G2G
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
             except: # no wxPython
@@ -204,29 +192,35 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
                 if not SpGrp:
                     SpGrp = blk.get("_space_group_name_H-M_alt",'')
-                if not SpGrp:   #try magnetic           
+                try:
+                    SpGrp = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
+                except:
+                    pass
+                if not SpGrp:   #try magnetic
                     MSpGrp = blk.get("_space_group.magn_name_BNS",'')
                     if not MSpGrp:
                         MSpGrp = blk.get("_space_group_magn.name_BNS",'')
-                        if not MSpGrp:
-                            msg = 'No recognizable space group name was found in the CIF.'
-                            self.errors = msg
-                            self.warnings += '\n'+msg
-                            return False
+                        # if not MSpGrp:
+                        #     msg = 'No recognizable space group name was found in the CIF.'
+                        #     self.errors = msg
+                        #     self.warnings += '\n'+msg
+                        #     return False
                     SpGrp = blk.get('_parent_space_group.name_H-M_alt')
                     if not SpGrp:
                         SpGrp = blk.get('_parent_space_group.name_H-M')
+                    if SpGrp and MSpGrp:
 #                    SpGrp = MSpGrp.replace("'",'')
-                    SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
-                    if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
-                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
-                    magnetic = True
-                    self.MPhase['General']['Type'] = 'magnetic'
-                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
-                    if not SpGrp:
+                        SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
+                        if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
+                        SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                        magnetic = True
+                        self.MPhase['General']['Type'] = 'magnetic'
+                        self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+                    elif not SpGrp:
                         print (MSpGrp)
                         self.warnings += 'No space group name was found in the CIF.'
-                        return False
+                        #return False
+                        SpGrp = 'P 1'
                 else:
                     SpGrp = SpGrp.replace('_','').split('(')[0]
                     SpGrp = G2spc.fullHM2shortHM(SpGrp)
@@ -675,12 +669,15 @@ shift later as an alternative to the above.'''
                 else:
                     msg += '\nIf you say "no" here you will need to do this yourself manually.'
                 try:
+                    import GSASIIctrlGUI as G2G
                     ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
                 except Exception as err: # fails if non-interactive (no wxPython)
                     print(err)
                     print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                     ans = True
-                if ans: SUBGROUPS.createStdSetting(filename,self)
+                if ans:
+                    import SUBGROUPS
+                    SUBGROUPS.createStdSetting(filename,self)
         return returnstat
         
     def ISODISTORT_test(self,blk):

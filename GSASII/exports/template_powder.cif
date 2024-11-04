@@ -8,11 +8,6 @@ _exptl_special_details
 ; ?
 ;
 
-# if regions of the data are excluded, the reason(s) are supplied here:
-_pd_proc_info_excluded_regions
-; ?
-;
-
 # The following item is used to identify the equipment used to record 
 # the powder pattern when the diffractogram was measured at a laboratory 
 # other than the authors' home institution, e.g. when neutron or synchrotron

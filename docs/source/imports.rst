@@ -1,5 +1,5 @@
 --------------------------------------------------------
-*GSAS-II Import Modules*
+*GSAS-II Importer Modules*
 --------------------------------------------------------
 
 Imports are implemented by deriving a class from 
@@ -12,26 +12,224 @@ or :class:`GSASIIobj.ImportImage`. These classes are in turn
 derived from :class:`GSASIIobj.ImportBaseclass`.
 
 Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`, etc.) are used to
-determine which menu an import routine should be placed into. (N.B. this
+determine which menu an importer routine should be placed
+into. (N.B. in retrospect this
 naming was an unnecessary choice; importer types could have been determined
 from the base class.)
-To implement import of 
-a phase, a single crystal or a powder dataset, respectively, name the
-file with the appropriate file name and place the file anywhere in the
-path defined in ``sys.path``  and the next time GSAS-II is started,
+To implement the import of 
+a phase, a single crystal or a powder dataset, etc., create a file
+named with the appropriate file name prefix and place the file anywhere in the
+path defined in ``sys.path``. The next time GSAS-II is started,
 the file should be read by Python and the new format will appear in
-the appropriate import menu. 
+the appropriate importer menu. 
 Importers are documented below, separated by type. Importers tend to
 be fairly simple files, where many are in the range of 50-100 lines,
 and where more than half of those lines are directly copied from other
 importers without any changes. Details on this are given in the
-:ref:`Writing a Import Routine<import_routines>` section, below.
+:ref:`Writing a Importer Routine<import_routines>` section,
+immediately below.
+
+.. _import_routines: 
 
 ======================================
- Phase Import Routines
+ Writing an Importer Routine
 ======================================
 
-Phase import routines are classes derived from
+When writing a importer routine, one should create a new class derived
+from
+:class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
+:class:`GSASIIobj.ImportPowderData` ,
+:class:`GSASIIobj.ImportSmallAngleData`,  
+:class:`GSASIIobj.ImportReflectometryData`,  
+:class:`GSASIIobj.ImportPDFData`,  
+or :class:`GSASIIobj.ImportImage`. As described below, 
+all these classes will implement
+an ``__init__()`` and a ``Reader()`` method, and most will supply a 
+``ContentsValidator()`` method, too.
+See the appropriate class documentation 
+for details on what values each type of ``Reader()`` should
+set. General principles on how an importer works are described below. 
+
+__init__()
+--------------
+ 
+The ``__init__`` method will follow standard boilerplate: 
+
+.. code-block:: python
+
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.ext1','ext2'),
+            strictExtension=True,
+            formatName = 'example image',
+            longFormatName = 'A longer description that this is an example image format'
+            )
+
+The first line in the ``__init__`` method calls the parent class 
+``__init__`` method with the following parameters: 
+
+  * ``extensionlist``: a list of extensions that may be used for this type of file.
+  * ``strictExtension``: Should be True if only files with extensions in
+    ``extensionlist`` are allows; False if all file types should be offered
+    in the file browser. Also if False, the importer class will be
+    used on all files when "guess from format" is tried, though 
+    readers with matching extensions will be tried first. 
+    It is a very good idea to supply  a :ref:`ContentsValidator <ContentsValidator>`
+    method when ``strictExtension`` is False.
+  * ``formatName``: a string to be used in the menu. Should be short. 
+  * ``longFormatName``: a longer string to be used to describe the
+    format in help. 
+
+Note that if an importer detects a condition which prevents its use,
+for example because a required Python package is not present, it can
+set the value of ``self.UseReader`` to False. Another possible use for
+this would be an importer that requires a network connection to a
+remote site. Setting ``self.UseReader`` to False must be done in the 
+``__init__`` method and will prevent the
+importer from being used or included in the expected menu. 
+
+Reader()
+--------------
+
+The class must supply a ``Reader`` method that actually performs the
+reading. All readers must have at a minimum these arguments::
+
+    def Reader(self, filename, filepointer, ParentFrame, **unused):
+
+where the arguments have the following uses: 
+
+ * ``filename``: a string with the name of the file being read
+ * ``filepointer``: a file object (created by :func:`open`) that accesses
+   the file and is points to the beginning of the file when Reader is
+   called. 
+ * ``ParentFrame``: a reference to the main GSAS-II (tree) windows, for
+   the unusual ``Reader`` routines that will create GUI windows to ask
+   questions. The Reader should do something reasonable such as take a
+   reasonable default if ``ParentFrame`` is None, which indicates that
+   GUI should not be accessed. 
+
+In addition, the following keyword parameters are defined that ``Reader``
+routines may optionally use:
+
+ * ``buffer``: a dict that can be used to retain information between repeated calls of the routine
+ * ``blocknum``: counts the number of times that a reader is called, to
+   be used with files that contain more than one set of data (e.g. GSAS
+   .gsa/.fxye files with multiple banks or image files with multiple images.)
+ * ``usedRanIdList``: a list of previously used random Id values that can be checked to determine that a value is unique. 
+
+Note that a Reader is used to read only a single phase, image,
+dataset, etc. and will be called repeatedly when used to read files
+that contain multiple datasets, etc. The ``buffer`` dict can be used
+to hold information that will speed repeated calls. 
+As an example, the ``buffer`` dict is used in CIF reading to hold the parsed CIF file,
+so that when reading multiple datasets or phases from a multi-block
+CIF, the parsed information can be reused without having to reread and
+reparse the file for subsequent calls.
+
+Some additional information specific to on what a ``Reader()`` method
+should do for images and single-crystal datasets can be found in the
+documentation for :class:`~GSASIIobj.ImportImage` (images) and 
+:class:`~GSASIIobj.ImportStructFactor`, respectively. 
+
+Reader return values
+______________________
+
+The ``Reader`` routine should return the value of True if the file has been
+read successfully. Optionally, use `self.warnings` to indicate any
+problems. 
+
+If the file cannot be read,  the ``Reader`` routine should
+return False or raise an :class:`GSASIIobj.ImportBaseclass.ImportException`
+exception. (Why either? Sometimes an exception is the easiest way to
+bail out of a called routine.) Place text in `self.errors` and/or use:: 
+
+     ImportException('Error message')
+
+to give the user information on what went wrong during the
+reading. The following variables are used to indicate results from the reader:
+
+self.warnings
+^^^^^^^^^^^^^^^^^^^^^
+
+Use `self.warnings` to indicate any information
+that should be displayed to the user if the file is read successfully,
+but perhaps not completely or additional settings will need to be
+made. 
+
+self.errors
+^^^^^^^^^^^^^^^^^^^^^
+
+Use `self.errors` to give the user information on where and why a read
+error occurs in the file. Note that text supplied with the ``raise``
+statement will be appended to ``self.errors``. 
+
+self.repeat
+^^^^^^^^^^^^^^^^^^^^^
+
+Set `self.repeat` to True (the default is False) if a Reader should be
+called again to after reading to indicate that more data may exist in
+the file to be read. This is used for reading multiple powder
+histograms or multiple images from a single file. Variable
+`self.repeatcount` is used to keep track of the block numbers.
+
+*Reader support routines*
+____________________________________
+
+Note that GSASIIctrlGUI supplies three GUI routines, 
+:meth:`~GSASIIctrlGUI.BlockSelector` 
+:meth:`~GSASIIctrlGUI.MultipleBlockSelector` and 
+:meth:`~GSASIIctrlGUI.MultipleChoiceSelector` that are useful for 
+selecting amongst one or more datasets (and perhaps phases) or data items for 
+``Reader()`` routines that may encounter more than one set of information
+in a file. 
+
+.. _ContentsValidator:  
+
+ContentsValidator()
+--------------------
+
+Defining a ``ContentsValidator`` method is optional, but is usually a
+good idea, particularly if the file extension is not a reliable
+identifier for the file type. The intent of this routine is to take a
+superficial look at the file to see if it has the expected
+characteristics of the expected file type. For example, are there
+numbers in the expected places? 
+
+This routine is passed a single argument:
+
+* `filepointer`: a file object (created by :func:`open`) that accesses
+  the file and is points to the beginning of the file when ContentsValidator is
+  called. 
+
+Note that :meth:`GSASIIobj.ImportBaseclass.CIFValidator` is a ContentsValidator
+for validating CIF files. 
+
+
+ContentsValidator return values
+________________________________
+
+The ``ContentsValidator`` routine should return the value of True if
+the file appears to match the type expected for the class. 
+
+If the file cannot be read by this class,  the routine should
+return False. Preferably one will also place text in `self.errors` 
+to give the user information on what went wrong during the reading.
+
+ReInitialize()
+--------------------
+
+Importer classes are substantiated only once and are used as needed.
+This means that if something needs to be initialized before the
+``Reader()`` will be called to read a new file, the initialization step must be coded. The
+``ReInitialize()`` method is provided for this and it is always called
+before the ``ContentsValidator`` method is called. Use care to call
+the parent class ``ReInitialize()`` method, if this is overridden. 
+
+======================================
+ Phase Importer Routines
+======================================
+
+Phase importer routines are classes derived from
 :class:`GSASIIobj.ImportPhase`.  
 They must be found in files named `G2phase*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
@@ -99,10 +297,10 @@ A short routine to read in a phase from an xyz Cartesian coordinate file
     :members: 
 
 ======================================
- Powder Data Import Routines
+ Powder Data Importer Routines
 ======================================
 
-Powder data import routines are classes derived from
+Powder data importer routines are classes derived from
 :class:`GSASIIobj.ImportPowderData`. 
 They must be found in files named `G2pwd*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a
@@ -112,7 +310,7 @@ The distributed powder data importers are:
 
 *Module G2pwd_GPX: GSAS-II projects*
 ------------------------------------
-Routine to import powder data from GSAS-II .gpx files
+Routine to importer powder data from GSAS-II .gpx files
 
 .. automodule:: G2pwd_GPX
     :members: 
@@ -172,7 +370,7 @@ Routine to read in powder data from a FullProf .dat file
 *Module G2pwd_Panalytical: Panalytical .xrdml data*
 ---------------------------------------------------
 
-Routines to import powder data from a Pananalytical (XML) .xrdm file. 
+Routines to importer powder data from a Pananalytical (XML) .xrdm file. 
 
 .. automodule:: G2pwd_Panalytical
     :members: 
@@ -195,10 +393,10 @@ column-oriented variable. The only allowed extensions for this are
 
 
 ======================================
- Single Crystal Data Import Routines
+ Single Crystal Data Importer Routines
 ======================================
 
-Single crystal data import routines are classes derived from
+Single crystal data importer routines are classes derived from
 , :class:`GSASIIobj.ImportStructFactor`.
 They must be found in files named `G2sfact*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
@@ -224,10 +422,10 @@ PyCifRW from James Hester (https://github.com/jamesrhester/pycifrw).
     :synopsis: Reads single crystal data from CIF files
 
 =================================================
- Small Angle Scattering Data Import Routines
+ Small Angle Scattering Data Importer Routines
 =================================================
 
-Small angle scattering data import routines are classes derived from
+Small angle scattering data importer routines are classes derived from
 , :class:`GSASIIobj.ImportSmallAngle`.
 They must be found in files named `G2sad*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
@@ -244,12 +442,12 @@ two-theta or Q steps. Expected extensions are .xsad, .xdat, .nsad, or .ndat.
     :synopsis: Reads small angle scattering data from simple files
 
 ======================================
- Image Import Routines
+ Image Importer Routines
 ======================================
 
-Image import routines are classes derived from
+Image importer routines are classes derived from
 :class:`GSASIIobj.ImportImage`. 
-See :ref:`Writing a Import Routine<import_routines>` for general
+See :ref:`Writing a Importer Routine<import_routines>` for general
 information on importers and the :class:`GSASIIobj.ImportImage` for
 information on what class variables a reader should set. 
 Image importers must be found in files named `G2img*.py` that are in the Python path
@@ -361,12 +559,12 @@ images, all are read.
 
 
 ======================================
- PDF Import Routines
+ PDF Importer Routines
 ======================================
 
-PDF import routines are classes derived from
+PDF importer routines are classes derived from
 :class:`GSASIIobj.ImportPDFData`. 
-See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
+See :ref:`Writing a Importer Routine<Import_Routines>` for general information on importers. 
 
 The distributed routines are in:
 
@@ -380,12 +578,12 @@ file (with :math:`\AA` steps) or S(Q) data from a .fq file.
     :members: 
 
 ======================================
- Reflectometry Import Routines
+ Reflectometry Importer Routines
 ======================================
 
-Reflectometry import routines are classes derived from
+Reflectometry importer routines are classes derived from
 :class:`GSASIIobj.ImportReflectometryData`. 
-See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
+See :ref:`Writing a Importer Routine<Import_Routines>` for general information on importers. 
 
 The distributed routines are:
 
@@ -402,196 +600,9 @@ two-theta or Q steps.
 *Module G2rfd_Panalytical: read Panalytical reflectometry data*
 -------------------------------------------------------------------
 
-Routine to import reflectivity data from a Panalytical .xrdm (xml)
+Routine to importer reflectivity data from a Panalytical .xrdm (xml)
 file.
 
 .. automodule:: G2rfd_Panalytical
     :members: 
-
-.. _import_routines: 
-
-======================================
- Writing an Import Routine
-======================================
-
-
-When writing a import routine, one should create a new class derived
-from
-:class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
-:class:`GSASIIobj.ImportPowderData` ,
-:class:`GSASIIobj.ImportSmallAngleData`,  
-:class:`GSASIIobj.ImportReflectometryData`,  
-:class:`GSASIIobj.ImportPDFData`,  
-or :class:`GSASIIobj.ImportImage`. As described below, 
-all these classes will implement
-an ``__init__()`` and a ``Reader()`` method, and most will supply a 
-``ContentsValidator()`` method, too.
-See the appropriate class documentation 
-for details on what values each type of ``Reader()`` should
-set. General principles on how an importer works are described below. 
-
-__init__()
---------------
- 
-The ``__init__`` method will follow standard boilerplate: 
-
-.. code-block:: python
-
-    def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.ext1','ext2'),
-            strictExtension=True,
-            formatName = 'example image',
-            longFormatName = 'A longer description that this is an example image format'
-            )
-
-The first line in the ``__init__`` method calls the parent class 
-``__init__`` method with the following parameters: 
-
-  * ``extensionlist``: a list of extensions that may be used for this type of file.
-  * ``strictExtension``: Should be True if only files with extensions in
-    ``extensionlist`` are allows; False if all file types should be offered
-    in the file browser. Also if False, the import class will be
-    used on all files when "guess from format" is tried, though 
-    readers with matching extensions will be tried first. 
-    It is a very good idea to supply  a :ref:`ContentsValidator <ContentsValidator>`
-    method when ``strictExtension`` is False.
-  * ``formatName``: a string to be used in the menu. Should be short. 
-  * ``longFormatName``: a longer string to be used to describe the
-    format in help. 
-
-Note that if an importer detects a condition which prevents its use,
-for example because a required Python package is not present, it can
-set the value of ``self.UseReader`` to False. Another possible use for
-this would be an importer that requires a network connection to a
-remote site. Setting ``self.UseReader`` to False must be done in the 
-``__init__`` method and will prevent the
-importer from being used or included in the expected menu. 
-
-Reader()
---------------
-
-The class must supply a ``Reader`` method that actually performs the
-reading. All readers must have at a minimum these arguments::
-
-    def Reader(self, filename, filepointer, ParentFrame, **unused):
-
-where the arguments have the following uses: 
-
- * ``filename``: a string with the name of the file being read
- * ``filepointer``: a file object (created by :func:`open`) that accesses
-   the file and is points to the beginning of the file when Reader is
-   called. 
- * ``ParentFrame``: a reference to the main GSAS-II (tree) windows, for
-   the unusual ``Reader`` routines that will create GUI windows to ask
-   questions. The Reader should do something reasonable such as take a
-   reasonable default if ``ParentFrame`` is None, which indicates that
-   GUI should not be accessed. 
-
-In addition, the following keyword parameters are defined that ``Reader``
-routines may optionally use:
-
- * ``buffer``: a dict that can be used to retain information between repeated calls of the routine
- * ``blocknum``: counts the number of times that a reader is called, to
-   be used with files that contain more than one set of data (e.g. GSAS
-   .gsa/.fxye files with multiple banks or image files with multiple images.)
- * ``usedRanIdList``: a list of previously used random Id values that can be checked to determine that a value is unique. 
-
-As an example, the ``buffer`` dict is used in CIF reading to hold the parsed CIF file
-so that it can be reused without having to reread the file from
-scratch. 
-
-Reader return values
-______________________
-
-The ``Reader`` routine should return the value of True if the file has been
-read successfully. Optionally, use `self.warnings` to indicate any
-problems. 
-
-If the file cannot be read,  the ``Reader`` routine should
-return False or raise an :class:`GSASIIobj.ImportBaseclass.ImportException`
-exception. (Why either? Sometimes an exception is the easiest way to
-bail out of a called routine.) Place text in `self.errors` and/or use:: 
-
-     ImportException('Error message')
-
-to give the user information on what went wrong during the
-reading. The following variables are used to indicate results from the reader:
-
-self.warnings
-^^^^^^^^^^^^^^^^^^^^^
-
-Use `self.warnings` to indicate any information
-that should be displayed to the user if the file is read successfully,
-but perhaps not completely or additional settings will need to be
-made. 
-
-self.errors
-^^^^^^^^^^^^^^^^^^^^^
-
-Use `self.errors` to give the user information on where and why a read
-error occurs in the file. Note that text supplied with the ``raise``
-statement will be appended to ``self.errors``. 
-
-self.repeat
-^^^^^^^^^^^^^^^^^^^^^
-
-Set `self.repeat` to True (the default is False) if a Reader should be
-called again to after reading to indicate that more data may exist in
-the file to be read. This is used for reading multiple powder
-histograms or multiple images from a single file. Variable
-`self.repeatcount` is used to keep track of the block numbers.
-
-*Reader support routines*
-____________________________________
-
-Note that GSASIIIO supplies three routines, 
-:meth:`~GSASIIIO.BlockSelector` 
-:meth:`~GSASIIIO.MultipleBlockSelector` and 
-:meth:`~GSASIIIO.MultipleChoiceSelector` that are useful for 
-selecting amongst one or more datasets (and perhaps phases) or data items for 
-``Reader()`` routines that may encounter more than one set of information
-in a file. 
-
-.. _ContentsValidator:  
-
-ContentsValidator()
---------------------
-
-Defining a ``ContentsValidator`` method is optional, but is usually a
-good idea, particularly if the file extension is not a reliable
-identifier for the file type. The intent of this routine is to take a
-superficial look at the file to see if it has the expected
-characteristics of the expected file type. For example, are there
-numbers in the expected places? 
-
-This routine is passed a single argument:
-
-* `filepointer`: a file object (created by :func:`open`) that accesses
-  the file and is points to the beginning of the file when ContentsValidator is
-  called. 
-
-Note that :meth:`GSASIIobj.ImportBaseclass.CIFValidator` is a ContentsValidator
-for validating CIF files. 
-
-
-ContentsValidator return values
-________________________________
-
-The ``ContentsValidator`` routine should return the value of True if
-the file appears to match the type expected for the class. 
-
-If the file cannot be read by this class,  the routine should
-return False. Preferably one will also place text in `self.errors` 
-to give the user information on what went wrong during the reading.
-
-ReInitialize()
---------------------
-
-Import classes are substantiated only once and are used as needed.
-This means that if something needs to be initialized before the
-``Reader()`` will be called to read a new file, the initialization step must be coded. The
-``ReInitialize()`` method is provided for this and it is always called
-before the ``ContentsValidator`` method is called. Use care to call
-the parent class ``ReInitialize()`` method, if this is overridden. 
 

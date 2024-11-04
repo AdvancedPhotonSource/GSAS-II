@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIspc.py $
-# $Id: GSASIIspc.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 ''':mod:`GSASIIspc` Classes & routines follow
 '''
 from __future__ import division, print_function
@@ -17,7 +10,6 @@ import copy
 import os.path as ospath
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
@@ -150,29 +142,29 @@ def SpcGroup(SGSymbol):
                 SGData['SGGen'][i] = 8
             elif (not SGData['SGInv']) and (SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']) and (gen == 1):
                 SGData['SGGen'][i] = 24
-        gen = SGData['SGGen'][i]
-        if gen == 99:
-            gen = 8
+        gen1 = SGData['SGGen'][i]
+        if gen1 == 99:
+            gen1 = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                gen = 3
+                gen1 = 3
             elif SGData['SGLaue'] == 'm3m':
-                gen = 12
-            SGData['SGGen'][i] = gen
-        elif gen == 98:
-            gen = 8
+                gen1 = 12
+            SGData['SGGen'][i] = gen1
+        elif gen1 == 98:
+            gen1 = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                gen = 4
-            SGData['SGGen'][i] = gen
-        elif not SGData['SGInv'] and gen in [23,] and SGData['SGLaue'] in ['m3','m3m']:
+                gen1 = 4
+            SGData['SGGen'][i] = gen1
+        elif not SGData['SGInv'] and gen1 in [23,] and SGData['SGLaue'] in ['m3','m3m']:
             SGData['SGGen'][i] = 24
-        elif gen >= 16 and gen != 128:
+        elif gen1 >= 16 and gen1 != 128:
             if not SGData['SGInv']:
-                gen = 31
+                gen1 = 31
             else:
-                gen ^= Ibarx 
-            SGData['SGGen'][i] = gen
+                gen1 ^= Ibarx 
+            SGData['SGGen'][i] = gen1
         if SGData['SGInv']:
-            if gen < 128:
+            if gen1 < 128:
                 moregen.append(SGData['SGGen'][i]^Ibar)
             else:
                 moregen.append(1)
@@ -599,6 +591,9 @@ def Latt2text(Cen):
             if icen == 1:
                 txt += '1,'
                 continue
+            elif icen == -1:
+                txt += '-1,'
+                continue
             if not icen:
                 txt += '0,'
                 continue
@@ -686,6 +681,8 @@ def GetGenSym(SGData):
     OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
+    # for oprname in OprNames: 
+    #     print(oprname)
     Nsyms = len(SGData['SGOps'])
     if SGData['SGInv'] and not SGData['SGFixed']: Nsyms *= 2
     UsymOp = ['1',]
@@ -728,7 +725,7 @@ def GetGenSym(SGData):
             UsymOp.append(OprNames[3])
             OprFlg.append(SGData['SGGen'][3])
     elif Nsyms == 6:                    #Point symmetry 32, 3m or 6
-            if '6' in OprNames[1]:      #Hexagonal 6/m Laue symmetry
+            if '6' in OprNames[1]:      #Hexagonal 6 Laue symmetry
                 UsymOp.append(OprNames[1])
                 OprFlg.append(SGData['SGGen'][1])
             else:                       #Trigonal
@@ -749,10 +746,10 @@ def GetGenSym(SGData):
                     UsymOp.append(OprNames[7])
                     OprFlg.append(8)
                 else:                       #-42m, -4m2, and 422 type groups
-                    UsymOp.append(OprNames[5])
-                    OprFlg.append(8)
                     UsymOp.append(OprNames[6])
                     OprFlg.append(19)
+                    UsymOp.append(OprNames[5])
+                    OprFlg.append(8)
         else:                               #Orthorhombic, mmm
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
@@ -769,8 +766,8 @@ def GetGenSym(SGData):
         if 'mz' in OprNames[9]:                     #6/m
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
-            UsymOp.append(OprNames[6])
-            OprFlg.append(SGData['SGGen'][6])
+            UsymOp.append(OprNames[9])
+            OprFlg.append(SGData['SGGen'][9])
         else:                                       #6mm, -62m, -6m2 or 622
             UsymOp.append(OprNames[6])
             OprFlg.append(18)
@@ -949,7 +946,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
         SGData['SGSpin'] = [1,]+list(SGData['SGSpin'])      #end patch
     GenSym = SGData['GenSym'][1:]       #skip identity
     SpnFlp = SGData['SGSpin']
-#    print('SpnFlp',SpnFlp)
+    # print('SpnFlp',SpnFlp,' GenSym',GenSym)
     SGPtGrp = SGData['SGPtGrp']
     if len(SpnFlp) == 1:
         SGData['MagPtGp'] = SGPtGrp
@@ -987,7 +984,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                 magSym[i+1] += "'"
                 SGData['MagPtGp'] += "'"
     elif SGLaue == '6/mmm': #ok
-        magPtGp = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            magPtGp = list(SGPtGrp[1:])
+            magPtGp[0] = '-'+magPtGp[0]
+        else:
+            magPtGp = list(SGPtGrp)
         if len(GenSym) == 2:
             for i in [0,1]:
                 if SpnFlp[i+1] < 0:
@@ -1015,7 +1016,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             magPtGp[0] = '/'.join(Ptsym)
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue == '4/mmm':
-        magPtGp = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            magPtGp = list(SGPtGrp[1:])
+            magPtGp[0] = '-'+magPtGp[0]
+        else:
+            magPtGp = list(SGPtGrp)
         if len(GenSym) == 2:
             for i in [0,1]:
                 if SpnFlp[i+1] < 0:
@@ -1050,7 +1055,11 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     magSym[1] += "'"
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue in ['3','3m1','31m']:   #ok 
-        Ptsym = list(SGPtGrp)
+        if '-' in SGPtGrp:
+            Ptsym = list(SGPtGrp[1:])
+            Ptsym[0] = '-'+Ptsym[0]
+        else:
+            Ptsym = list(SGPtGrp)
         if len(GenSym) == 1:    #all ok
             Id = 2
             if (len(magSym) == 4) and (magSym[2] == '1'):
@@ -1289,13 +1298,13 @@ def MagSSText2MTS(Opr,G2=False):
 def GetSGSpin(SGData,MSgSym):
     'get spin generators from magnetic space group symbol'
 
-    SpGrp = SGData['SpGrp']
     mSgSym = MSgSym+' '
     mFlds = mSgSym.split()
     mSpn = SGData['SGSpin']
     SGPtGrp = SGData['SGPtGrp']
     SGLaue = SGData['SGLaue']
     GenSym = GetGenSym(SGData)[0][1:]       #skip identity
+    # print('MSgSym',MSgSym,' GenSym',GenSym)
     if SGLaue in ['-1',]:
         if "'" in mFlds[1]:
             mSpn[1] = -1
@@ -1305,49 +1314,26 @@ def GetSGSpin(SGData,MSgSym):
         if len(mFlds) > 2:
             Id = [0,Uniq[SGData['SGUniq']]]
         sym = mFlds[Id[1]].split('/')
-        if len(GenSym) == 3:
-            for j in [0,1,2]:
-                if mFlds[j+1] != '1':
-                    for i in range(len(GenSym)):
-                        if "'" in sym[i]:
-                            mSpn[i+1] = -1                      
-        else:
-            for i in range(len(GenSym)):
-                if "'" in sym[i]:
-                    mSpn[i+1] = -1                      
+        for i in range(len(GenSym)):
+            if "'" in sym[i]:
+                mSpn[i+1] = -1
     elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         for i in [0,1,2]:
             if "'" in mFlds[i+1]:
                 mSpn[i+1] = -1
-    elif SGLaue == '6/mmm': #ok
-        if len(GenSym) == 2:
+    elif SGLaue in ['4/mmm','6/mmm']: #ok
+        if len(GenSym) == 2: #422, -4m2, -42m, 4mm, 622, -6m2, -62m, 6mm
             for i in [0,1]:
-                if "'" in mFlds[i+2]:
-                    mSpn[i+1] = -1
-        else:
+                if "'" in mFlds[i+1]:
+                    mSpn[i] = -1
+            mSpn[2] = mSpn[0]*mSpn[1]
+        else: #4/mmm, 6/mmm
             sym = mFlds[1].split('/')
             if "'" in sym[1]:
                 mSpn[1] = -1
             for i in [1,2]:
                 if "'" in mFlds[i+1]:
                     mSpn[i+1] = -1
-    elif SGLaue == '4/mmm':
-        if len(GenSym) == 2:
-            for i in [0,1]:
-                if "'" in mFlds[i+2]:
-                    mSpn[i+1] = -1
-        else:
-            if '/' in mFlds[1]:    #P 4/m m m, etc.
-                sym = mFlds[1].split('/')
-                if "'" in sym[1]:
-                    mSpn[1] = -1
-                for i in [1,2]:
-                    if "'" in mFlds[i+1]:
-                        mSpn[i+1] = -1
-            else:
-                for i in [0,1]:
-                    if "'" in mFlds[i+2]:
-                        mSpn[i+1] = -1
     elif SGLaue in ['3','3m1','31m']:   #ok 
         if len(GenSym) == 1:    #all ok
             Id = 2
@@ -1432,6 +1418,13 @@ def GenMagOps(SGData):
                         print('index error: ',Nsym,ieqv,Nfl,iunq)
                         FlpSpn = FlpSpn+[1,]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
+        if SGData['SGLaue'] == '6/m': # treat special as algorithm above fails 
+            if SGData['SGSpin'] == [1,-1,1]:
+                SpnFlp = [1,-1,1,-1,1,-1,1,-1,1,-1,1,-1]
+            elif SGData['SGSpin'] == [1,1,-1]:
+                SpnFlp = [1,1,1,1,1,1,-1,-1,-1,-1,-1,-1]
+            elif SGData['SGSpin'] == [1,-1,-1]:
+                SpnFlp = [1,-1,1,-1,1,-1,-1,1,-1,1,-1,1]
         for incv in range(Ncv):
             if incv:
                 try:
@@ -1441,7 +1434,7 @@ def GenMagOps(SGData):
                     SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
         if SGData['SGGray']:
            SpnFlp = np.concatenate((SpnFlp,-SpnFlp))
-           detMs =2*detMs                   
+           detMs = 2*detMs                   
     MagMom = SpnFlp*np.array(detMs)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
     return OprNames,SpnFlp
@@ -2368,12 +2361,12 @@ def checkMagextc(HKL,SGData):
             nsum += np.trace(phkl)          #eq(8)
             pterm = np.inner(Ftest,phkl)    #eq(9)
             Psum += pterm
-    if nsum/nA > 1.:        #only need to look at nA=1 frok eq(8)
+    if nsum/nA > 1.:        #only need to look at nA=1 from eq(8)
         return False
     if np.allclose(Psum,np.zeros(3),atol=1.e-3):
         return True
     else:
-        if np.inner(HKL,Psum):
+        if np.abs(np.inner(HKL,Psum)) > 1.e-3:
             return True
         return False
     
@@ -3937,10 +3930,32 @@ def SpaceGroupNumber(spcgroup):
         pass
     return SGNo
 
+def GetHallSpaceGroup(SGData):
+    '''Determine the Hall space group symbol for a GSAS-II space group object, 
+    if it exists (it will not if non-standard centering is used, perhaps also 
+    for other cases). Will return None if not found.
+    '''
+    try:
+        key = SGData['SpGrp'].lower().replace(' ','')
+        return spgHall[key][0]
+    except:
+        pass
+    # H is also allowed as suffix for Hexagonal & trigonal SGs (remove it)
+    if key[0] == 'p' and key[-1] == 'h':
+        try:
+            return spgHall[key[:-1]][0]
+        except:
+            pass
+    if key[1:3] in ['m3','n3','a3','d3']: # fix old-style cubic names
+        keyB3 = key.replace('3','-3')
+        if keyB3 in spgHall: return spgHall[keyB3][0]
+    # give up
+    return None
 
 spgbyNum = []
 '''Space groups indexed by number'''
-spgbyNum = [None,
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spgbyNum = [None,
         'P 1','P -1',                                                   #1-2
         'P 2','P 21','C 2','P m','P c','C m','C c','P 2/m','P 21/m',
         'C 2/m','P 2/c','P 21/c','C 2/c',                               #3-15
@@ -3998,7 +4013,8 @@ spgbyNum = [None,
 altSettingOrtho = {}
 ''' A dictionary of alternate settings for orthorhombic unit cells
 '''
-altSettingOrtho = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    altSettingOrtho = {
         'P 2 2 2' :{'abc':'P 2 2 2','cab':'P 2 2 2','bca':'P 2 2 2','acb':'P 2 2 2','bac':'P 2 2 2','cba':'P 2 2 2'},
         'P 2 2 21' :{'abc':'P 2 2 21','cab':'P 21 2 2','bca':'P 2 21 2','acb':'P 2 21 2','bac':'P 2 2 21','cba':'P 21 2 2'},
         'P 21 21 2':{'abc':'P 21 21 2','cab':'P 2 21 21','bca':'P 21 2 21','acb':'P 21 2 21','bac':'P 21 21 2','cba':'P 2 21 21'},
@@ -4063,7 +4079,8 @@ spg2origins = {}
 ''' A dictionary of all spacegroups that have 2nd settings; the value is the 
 1st --> 2nd setting transformation vector as X(2nd) = X(1st)-V, nonstandard ones are included.
 '''
-spg2origins = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spg2origins = {
         'P n n n':[-.25,-.25,-.25],
         'P b a n':[-.25,-.25,0],'P n c b':[0,-.25,-.25],'P c n a':[-.25,0,-.25],
         'P m m n':[-.25,-.25,0],'P n m m':[0,-.25,-.25],'P m n m':[-.25,0,-.25],
@@ -4085,7 +4102,8 @@ separate the different crystallographic directions.
 Note that the symmetry codes here will recognize many non-standard space group 
 symbols with different settings. They are ordered by Laue group
 '''
-spglist = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spglist = {
     'P1' : ('P 1','P -1',), # 1-2
     'C1' : ('C 1','C -1',),
     'P2/m': ('P 2','P 21','P m','P a','P c','P n',
@@ -4187,7 +4205,8 @@ sgequiv_2002_orthorhombic = {}
 ''' A dictionary of orthorhombic space groups that were renamed in the 2002 Volume A,
  along with the pre-2002 name. The e designates a double glide-plane
 '''
-sgequiv_2002_orthorhombic = {
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    sgequiv_2002_orthorhombic = {
         'AEM2':'A b m 2','B2EM':'B 2 c m','CM2E':'C m 2 a',
         'AE2M':'A c 2 m','BME2':'B m a 2','C2ME':'C 2 m b',
         'AEA2':'A b a 2','B2EB':'B 2 c b','CC2E':'C c 2 a',
@@ -4197,6 +4216,561 @@ sgequiv_2002_orthorhombic = {
         'CMME':'C m m a','AEMM':'A b m m','BMEM':'B m c m',
         'CCCE':'C c c a','AEAA':'A b a a','BBEB':'B b c b'}
 
+spgHall = []
+'''Hall space group symbols indexed by GSAS-II space group name. This is indexed 
+by a key which is generated from the name used in GSAS-II with spaces removed 
+and all letters in lowercase. The value associated with the key consists of a 
+list of two values: the first is the Hall name and the second is a
+Hermann-Mauguin name. Note that there may be several names used by 
+GSAS-II that map to the same symmetry operators and the same Hall symbol
+(for example "P 21" and "P 1 21 1" and "P 63/m" and "P 63/m H"). There
+are also space group names that GSAS-II will accept that do not have Hall
+symbols (such as "I -1" or "F 21 21 21"). 
+'''
+# generated from https://cci.lbl.gov/sginfo/hall_symbols.html by Sydney R. Hall & Ralf W. Grosse-Kunstleve
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+    spgHall = {
+        'p1':('P 1', 'P 1', 1),   # P 1
+        'p-1':('-P 1', 'P -1', 2),   # P -1
+        'p121':('P 2y', 'P 1 2 1', 3),   # P 1 2 1
+        'p2':('P 2y', 'P 1 2 1', 3),   # P 2
+        'p112':('P 2', 'P 1 1 2', 3),   # P 1 1 2
+        'p211':('P 2x', 'P 2 1 1', 3),   # P 2 1 1
+        'p1211':('P 2yb', 'P 1 21 1', 4),   # P 1 21 1
+        'p21':('P 2yb', 'P 1 21 1', 4),   # P 21
+        'p1121':('P 2c', 'P 1 1 21', 4),   # P 1 1 21
+        'p2111':('P 2xa', 'P 21 1 1', 4),   # P 21 1 1
+        'c121':('C 2y', 'C 1 2 1', 5),   # C 1 2 1
+        'c2':('C 2y', 'C 1 2 1', 5),   # C 2
+        'a121':('A 2y', 'A 1 2 1', 5),   # A 1 2 1
+        'a2':('A 2y', 'A 1 2 1', 5),   # A 2
+        'i121':('I 2y', 'I 1 2 1', 5),   # I 1 2 1
+        'i2':('I 2y', 'I 1 2 1', 5),   # I 2
+        'a112':('A 2', 'A 1 1 2', 5),   # A 1 1 2
+        'b112':('B 2', 'B 1 1 2', 5),   # B 1 1 2
+        'i112':('I 2', 'I 1 1 2', 5),   # I 1 1 2
+        'b211':('B 2x', 'B 2 1 1', 5),   # B 2 1 1
+        'c211':('C 2x', 'C 2 1 1', 5),   # C 2 1 1
+        'i211':('I 2x', 'I 2 1 1', 5),   # I 2 1 1
+        'p1m1':('P -2y', 'P 1 m 1', 6),   # P 1 m 1
+        'pm':('P -2y', 'P 1 m 1', 6),   # P m
+        'p11m':('P -2', 'P 1 1 m', 6),   # P 1 1 m
+        'pm11':('P -2x', 'P m 1 1', 6),   # P m 1 1
+        'p1c1':('P -2yc', 'P 1 c 1', 7),   # P 1 c 1
+        'pc':('P -2yc', 'P 1 c 1', 7),   # P c
+        'p1n1':('P -2yac', 'P 1 n 1', 7),   # P 1 n 1
+        'pn':('P -2yac', 'P 1 n 1', 7),   # P n
+        'p1a1':('P -2ya', 'P 1 a 1', 7),   # P 1 a 1
+        'pa':('P -2ya', 'P 1 a 1', 7),   # P a
+        'p11a':('P -2a', 'P 1 1 a', 7),   # P 1 1 a
+        'p11n':('P -2ab', 'P 1 1 n', 7),   # P 1 1 n
+        'p11b':('P -2b', 'P 1 1 b', 7),   # P 1 1 b
+        'pb11':('P -2xb', 'P b 1 1', 7),   # P b 1 1
+        'pn11':('P -2xbc', 'P n 1 1', 7),   # P n 1 1
+        'pc11':('P -2xc', 'P c 1 1', 7),   # P c 1 1
+        'c1m1':('C -2y', 'C 1 m 1', 8),   # C 1 m 1
+        'cm':('C -2y', 'C 1 m 1', 8),   # C m
+        'a1m1':('A -2y', 'A 1 m 1', 8),   # A 1 m 1
+        'am':('A -2y', 'A 1 m 1', 8),   # A m
+        'i1m1':('I -2y', 'I 1 m 1', 8),   # I 1 m 1
+        'im':('I -2y', 'I 1 m 1', 8),   # I m
+        'a11m':('A -2', 'A 1 1 m', 8),   # A 1 1 m
+        'b11m':('B -2', 'B 1 1 m', 8),   # B 1 1 m
+        'i11m':('I -2', 'I 1 1 m', 8),   # I 1 1 m
+        'bm11':('B -2x', 'B m 1 1', 8),   # B m 1 1
+        'cm11':('C -2x', 'C m 1 1', 8),   # C m 1 1
+        'im11':('I -2x', 'I m 1 1', 8),   # I m 1 1
+        'c1c1':('C -2yc', 'C 1 c 1', 9),   # C 1 c 1
+        'cc':('C -2yc', 'C 1 c 1', 9),   # C c
+        'a1n1':('A -2yac', 'A 1 n 1', 9),   # A 1 n 1
+        'an':('A -2yac', 'A 1 n 1', 9),   # A n
+        'i1a1':('I -2ya', 'I 1 a 1', 9),   # I 1 a 1
+        'ia':('I -2ya', 'I 1 a 1', 9),   # I a
+        'a1a1':('A -2ya', 'A 1 a 1', 9),   # A 1 a 1
+        'aa':('A -2ya', 'A 1 a 1', 9),   # A a
+        'c1n1':('C -2ybc', 'C 1 n 1', 9),   # C 1 n 1
+        'cn':('C -2ybc', 'C 1 n 1', 9),   # C n
+        'i1c1':('I -2yc', 'I 1 c 1', 9),   # I 1 c 1
+        'ic':('I -2yc', 'I 1 c 1', 9),   # I c
+        'a11a':('A -2a', 'A 1 1 a', 9),   # A 1 1 a
+        'b11n':('B -2bc', 'B 1 1 n', 9),   # B 1 1 n
+        'i11b':('I -2b', 'I 1 1 b', 9),   # I 1 1 b
+        'b11b':('B -2b', 'B 1 1 b', 9),   # B 1 1 b
+        'a11n':('A -2ac', 'A 1 1 n', 9),   # A 1 1 n
+        'i11a':('I -2a', 'I 1 1 a', 9),   # I 1 1 a
+        'bb11':('B -2xb', 'B b 1 1', 9),   # B b 1 1
+        'cn11':('C -2xbc', 'C n 1 1', 9),   # C n 1 1
+        'ic11':('I -2xc', 'I c 1 1', 9),   # I c 1 1
+        'cc11':('C -2xc', 'C c 1 1', 9),   # C c 1 1
+        'bn11':('B -2xbc', 'B n 1 1', 9),   # B n 1 1
+        'ib11':('I -2xb', 'I b 1 1', 9),   # I b 1 1
+        'p12/m1':('-P 2y', 'P 1 2/m 1', 10),   # P 1 2/m 1
+        'p2/m':('-P 2y', 'P 1 2/m 1', 10),   # P 2/m
+        'p112/m':('-P 2', 'P 1 1 2/m', 10),   # P 1 1 2/m
+        'p2/m11':('-P 2x', 'P 2/m 1 1', 10),   # P 2/m 1 1
+        'p121/m1':('-P 2yb', 'P 1 21/m 1', 11),   # P 1 21/m 1
+        'p21/m':('-P 2yb', 'P 1 21/m 1', 11),   # P 21/m
+        'p1121/m':('-P 2c', 'P 1 1 21/m', 11),   # P 1 1 21/m
+        'p21/m11':('-P 2xa', 'P 21/m 1 1', 11),   # P 21/m 1 1
+        'c12/m1':('-C 2y', 'C 1 2/m 1', 12),   # C 1 2/m 1
+        'c2/m':('-C 2y', 'C 1 2/m 1', 12),   # C 2/m
+        'a12/m1':('-A 2y', 'A 1 2/m 1', 12),   # A 1 2/m 1
+        'a2/m':('-A 2y', 'A 1 2/m 1', 12),   # A 2/m
+        'i12/m1':('-I 2y', 'I 1 2/m 1', 12),   # I 1 2/m 1
+        'i2/m':('-I 2y', 'I 1 2/m 1', 12),   # I 2/m
+        'a112/m':('-A 2', 'A 1 1 2/m', 12),   # A 1 1 2/m
+        'b112/m':('-B 2', 'B 1 1 2/m', 12),   # B 1 1 2/m
+        'i112/m':('-I 2', 'I 1 1 2/m', 12),   # I 1 1 2/m
+        'b2/m11':('-B 2x', 'B 2/m 1 1', 12),   # B 2/m 1 1
+        'c2/m11':('-C 2x', 'C 2/m 1 1', 12),   # C 2/m 1 1
+        'i2/m11':('-I 2x', 'I 2/m 1 1', 12),   # I 2/m 1 1
+        'p12/c1':('-P 2yc', 'P 1 2/c 1', 13),   # P 1 2/c 1
+        'p2/c':('-P 2yc', 'P 1 2/c 1', 13),   # P 2/c
+        'p12/n1':('-P 2yac', 'P 1 2/n 1', 13),   # P 1 2/n 1
+        'p2/n':('-P 2yac', 'P 1 2/n 1', 13),   # P 2/n
+        'p12/a1':('-P 2ya', 'P 1 2/a 1', 13),   # P 1 2/a 1
+        'p2/a':('-P 2ya', 'P 1 2/a 1', 13),   # P 2/a
+        'p112/a':('-P 2a', 'P 1 1 2/a', 13),   # P 1 1 2/a
+        'p112/n':('-P 2ab', 'P 1 1 2/n', 13),   # P 1 1 2/n
+        'p112/b':('-P 2b', 'P 1 1 2/b', 13),   # P 1 1 2/b
+        'p2/b11':('-P 2xb', 'P 2/b 1 1', 13),   # P 2/b 1 1
+        'p2/n11':('-P 2xbc', 'P 2/n 1 1', 13),   # P 2/n 1 1
+        'p2/c11':('-P 2xc', 'P 2/c 1 1', 13),   # P 2/c 1 1
+        'p121/c1':('-P 2ybc', 'P 1 21/c 1', 14),   # P 1 21/c 1
+        'p21/c':('-P 2ybc', 'P 1 21/c 1', 14),   # P 21/c
+        'p121/n1':('-P 2yn', 'P 1 21/n 1', 14),   # P 1 21/n 1
+        'p21/n':('-P 2yn', 'P 1 21/n 1', 14),   # P 21/n
+        'p121/a1':('-P 2yab', 'P 1 21/a 1', 14),   # P 1 21/a 1
+        'p21/a':('-P 2yab', 'P 1 21/a 1', 14),   # P 21/a
+        'p1121/a':('-P 2ac', 'P 1 1 21/a', 14),   # P 1 1 21/a
+        'p1121/n':('-P 2n', 'P 1 1 21/n', 14),   # P 1 1 21/n
+        'p1121/b':('-P 2bc', 'P 1 1 21/b', 14),   # P 1 1 21/b
+        'p21/b11':('-P 2xab', 'P 21/b 1 1', 14),   # P 21/b 1 1
+        'p21/n11':('-P 2xn', 'P 21/n 1 1', 14),   # P 21/n 1 1
+        'p21/c11':('-P 2xac', 'P 21/c 1 1', 14),   # P 21/c 1 1
+        'c12/c1':('-C 2yc', 'C 1 2/c 1', 15),   # C 1 2/c 1
+        'c2/c':('-C 2yc', 'C 1 2/c 1', 15),   # C 2/c
+        'a12/n1':('-A 2yac', 'A 1 2/n 1', 15),   # A 1 2/n 1
+        'a2/n':('-A 2yac', 'A 1 2/n 1', 15),   # A 2/n
+        'i12/a1':('-I 2ya', 'I 1 2/a 1', 15),   # I 1 2/a 1
+        'i2/a':('-I 2ya', 'I 1 2/a 1', 15),   # I 2/a
+        'a12/a1':('-A 2ya', 'A 1 2/a 1', 15),   # A 1 2/a 1
+        'a2/a':('-A 2ya', 'A 1 2/a 1', 15),   # A 2/a
+        'c12/n1':('-C 2ybc', 'C 1 2/n 1', 15),   # C 1 2/n 1
+        'c2/n':('-C 2ybc', 'C 1 2/n 1', 15),   # C 2/n
+        'i12/c1':('-I 2yc', 'I 1 2/c 1', 15),   # I 1 2/c 1
+        'i2/c':('-I 2yc', 'I 1 2/c 1', 15),   # I 2/c
+        'a112/a':('-A 2a', 'A 1 1 2/a', 15),   # A 1 1 2/a
+        'b112/n':('-B 2bc', 'B 1 1 2/n', 15),   # B 1 1 2/n
+        'i112/b':('-I 2b', 'I 1 1 2/b', 15),   # I 1 1 2/b
+        'b112/b':('-B 2b', 'B 1 1 2/b', 15),   # B 1 1 2/b
+        'a112/n':('-A 2ac', 'A 1 1 2/n', 15),   # A 1 1 2/n
+        'i112/a':('-I 2a', 'I 1 1 2/a', 15),   # I 1 1 2/a
+        'b2/b11':('-B 2xb', 'B 2/b 1 1', 15),   # B 2/b 1 1
+        'c2/n11':('-C 2xbc', 'C 2/n 1 1', 15),   # C 2/n 1 1
+        'i2/c11':('-I 2xc', 'I 2/c 1 1', 15),   # I 2/c 1 1
+        'c2/c11':('-C 2xc', 'C 2/c 1 1', 15),   # C 2/c 1 1
+        'b2/n11':('-B 2xbc', 'B 2/n 1 1', 15),   # B 2/n 1 1
+        'i2/b11':('-I 2xb', 'I 2/b 1 1', 15),   # I 2/b 1 1
+        'p222':('P 2 2', 'P 2 2 2', 16),   # P 2 2 2
+        'p2221':('P 2c 2', 'P 2 2 21', 17),   # P 2 2 21
+        'p2122':('P 2a 2a', 'P 21 2 2', 17),   # P 21 2 2
+        'p2212':('P 2 2b', 'P 2 21 2', 17),   # P 2 21 2
+        'p21212':('P 2 2ab', 'P 21 21 2', 18),   # P 21 21 2
+        'p22121':('P 2bc 2', 'P 2 21 21', 18),   # P 2 21 21
+        'p21221':('P 2ac 2ac', 'P 21 2 21', 18),   # P 21 2 21
+        'p212121':('P 2ac 2ab', 'P 21 21 21', 19),   # P 21 21 21
+        'c2221':('C 2c 2', 'C 2 2 21', 20),   # C 2 2 21
+        'a2122':('A 2a 2a', 'A 21 2 2', 20),   # A 21 2 2
+        'b2212':('B 2 2b', 'B 2 21 2', 20),   # B 2 21 2
+        'c222':('C 2 2', 'C 2 2 2', 21),   # C 2 2 2
+        'a222':('A 2 2', 'A 2 2 2', 21),   # A 2 2 2
+        'b222':('B 2 2', 'B 2 2 2', 21),   # B 2 2 2
+        'f222':('F 2 2', 'F 2 2 2', 22),   # F 2 2 2
+        'i222':('I 2 2', 'I 2 2 2', 23),   # I 2 2 2
+        'i212121':('I 2b 2c', 'I 21 21 21', 24),   # I 21 21 21
+        'pmm2':('P 2 -2', 'P m m 2', 25),   # P m m 2
+        'p2mm':('P -2 2', 'P 2 m m', 25),   # P 2 m m
+        'pm2m':('P -2 -2', 'P m 2 m', 25),   # P m 2 m
+        'pmc21':('P 2c -2', 'P m c 21', 26),   # P m c 21
+        'pcm21':('P 2c -2c', 'P c m 21', 26),   # P c m 21
+        'p21ma':('P -2a 2a', 'P 21 m a', 26),   # P 21 m a
+        'p21am':('P -2 2a', 'P 21 a m', 26),   # P 21 a m
+        'pb21m':('P -2 -2b', 'P b 21 m', 26),   # P b 21 m
+        'pm21b':('P -2b -2', 'P m 21 b', 26),   # P m 21 b
+        'pcc2':('P 2 -2c', 'P c c 2', 27),   # P c c 2
+        'p2aa':('P -2a 2', 'P 2 a a', 27),   # P 2 a a
+        'pb2b':('P -2b -2b', 'P b 2 b', 27),   # P b 2 b
+        'pma2':('P 2 -2a', 'P m a 2', 28),   # P m a 2
+        'pbm2':('P 2 -2b', 'P b m 2', 28),   # P b m 2
+        'p2mb':('P -2b 2', 'P 2 m b', 28),   # P 2 m b
+        'p2cm':('P -2c 2', 'P 2 c m', 28),   # P 2 c m
+        'pc2m':('P -2c -2c', 'P c 2 m', 28),   # P c 2 m
+        'pm2a':('P -2a -2a', 'P m 2 a', 28),   # P m 2 a
+        'pca21':('P 2c -2ac', 'P c a 21', 29),   # P c a 21
+        'pbc21':('P 2c -2b', 'P b c 21', 29),   # P b c 21
+        'p21ab':('P -2b 2a', 'P 21 a b', 29),   # P 21 a b
+        'p21ca':('P -2ac 2a', 'P 21 c a', 29),   # P 21 c a
+        'pc21b':('P -2bc -2c', 'P c 21 b', 29),   # P c 21 b
+        'pb21a':('P -2a -2ab', 'P b 21 a', 29),   # P b 21 a
+        'pnc2':('P 2 -2bc', 'P n c 2', 30),   # P n c 2
+        'pcn2':('P 2 -2ac', 'P c n 2', 30),   # P c n 2
+        'p2na':('P -2ac 2', 'P 2 n a', 30),   # P 2 n a
+        'p2an':('P -2ab 2', 'P 2 a n', 30),   # P 2 a n
+        'pb2n':('P -2ab -2ab', 'P b 2 n', 30),   # P b 2 n
+        'pn2b':('P -2bc -2bc', 'P n 2 b', 30),   # P n 2 b
+        'pmn21':('P 2ac -2', 'P m n 21', 31),   # P m n 21
+        'pnm21':('P 2bc -2bc', 'P n m 21', 31),   # P n m 21
+        'p21mn':('P -2ab 2ab', 'P 21 m n', 31),   # P 21 m n
+        'p21nm':('P -2 2ac', 'P 21 n m', 31),   # P 21 n m
+        'pn21m':('P -2 -2bc', 'P n 21 m', 31),   # P n 21 m
+        'pm21n':('P -2ab -2', 'P m 21 n', 31),   # P m 21 n
+        'pba2':('P 2 -2ab', 'P b a 2', 32),   # P b a 2
+        'p2cb':('P -2bc 2', 'P 2 c b', 32),   # P 2 c b
+        'pc2a':('P -2ac -2ac', 'P c 2 a', 32),   # P c 2 a
+        'pna21':('P 2c -2n', 'P n a 21', 33),   # P n a 21
+        'pbn21':('P 2c -2ab', 'P b n 21', 33),   # P b n 21
+        'p21nb':('P -2bc 2a', 'P 21 n b', 33),   # P 21 n b
+        'p21cn':('P -2n 2a', 'P 21 c n', 33),   # P 21 c n
+        'pc21n':('P -2n -2ac', 'P c 21 n', 33),   # P c 21 n
+        'pn21a':('P -2ac -2n', 'P n 21 a', 33),   # P n 21 a
+        'pnn2':('P 2 -2n', 'P n n 2', 34),   # P n n 2
+        'p2nn':('P -2n 2', 'P 2 n n', 34),   # P 2 n n
+        'pn2n':('P -2n -2n', 'P n 2 n', 34),   # P n 2 n
+        'cmm2':('C 2 -2', 'C m m 2', 35),   # C m m 2
+        'a2mm':('A -2 2', 'A 2 m m', 35),   # A 2 m m
+        'bm2m':('B -2 -2', 'B m 2 m', 35),   # B m 2 m
+        'cmc21':('C 2c -2', 'C m c 21', 36),   # C m c 21
+        'ccm21':('C 2c -2c', 'C c m 21', 36),   # C c m 21
+        'a21ma':('A -2a 2a', 'A 21 m a', 36),   # A 21 m a
+        'a21am':('A -2 2a', 'A 21 a m', 36),   # A 21 a m
+        'bb21m':('B -2 -2b', 'B b 21 m', 36),   # B b 21 m
+        'bm21b':('B -2b -2', 'B m 21 b', 36),   # B m 21 b
+        'ccc2':('C 2 -2c', 'C c c 2', 37),   # C c c 2
+        'a2aa':('A -2a 2', 'A 2 a a', 37),   # A 2 a a
+        'bb2b':('B -2b -2b', 'B b 2 b', 37),   # B b 2 b
+        'amm2':('A 2 -2', 'A m m 2', 38),   # A m m 2
+        'bmm2':('B 2 -2', 'B m m 2', 38),   # B m m 2
+        'b2mm':('B -2 2', 'B 2 m m', 38),   # B 2 m m
+        'c2mm':('C -2 2', 'C 2 m m', 38),   # C 2 m m
+        'cm2m':('C -2 -2', 'C m 2 m', 38),   # C m 2 m
+        'am2m':('A -2 -2', 'A m 2 m', 38),   # A m 2 m
+        'abm2':('A 2 -2c', 'A b m 2', 39),   # A b m 2
+        'bma2':('B 2 -2c', 'B m a 2', 39),   # B m a 2
+        'b2cm':('B -2c 2', 'B 2 c m', 39),   # B 2 c m
+        'c2mb':('C -2b 2', 'C 2 m b', 39),   # C 2 m b
+        'cm2a':('C -2b -2b', 'C m 2 a', 39),   # C m 2 a
+        'ac2m':('A -2c -2c', 'A c 2 m', 39),   # A c 2 m
+        'ama2':('A 2 -2a', 'A m a 2', 40),   # A m a 2
+        'bbm2':('B 2 -2b', 'B b m 2', 40),   # B b m 2
+        'b2mb':('B -2b 2', 'B 2 m b', 40),   # B 2 m b
+        'c2cm':('C -2c 2', 'C 2 c m', 40),   # C 2 c m
+        'cc2m':('C -2c -2c', 'C c 2 m', 40),   # C c 2 m
+        'am2a':('A -2a -2a', 'A m 2 a', 40),   # A m 2 a
+        'aba2':('A 2 -2ac', 'A b a 2', 41),   # A b a 2
+        'bba2':('B 2 -2bc', 'B b a 2', 41),   # B b a 2
+        'b2cb':('B -2bc 2', 'B 2 c b', 41),   # B 2 c b
+        'c2cb':('C -2bc 2', 'C 2 c b', 41),   # C 2 c b
+        'cc2a':('C -2bc -2bc', 'C c 2 a', 41),   # C c 2 a
+        'ac2a':('A -2ac -2ac', 'A c 2 a', 41),   # A c 2 a
+        'fmm2':('F 2 -2', 'F m m 2', 42),   # F m m 2
+        'f2mm':('F -2 2', 'F 2 m m', 42),   # F 2 m m
+        'fm2m':('F -2 -2', 'F m 2 m', 42),   # F m 2 m
+        'fdd2':('F 2 -2d', 'F d d 2', 43),   # F d d 2
+        'f2dd':('F -2d 2', 'F 2 d d', 43),   # F 2 d d
+        'fd2d':('F -2d -2d', 'F d 2 d', 43),   # F d 2 d
+        'imm2':('I 2 -2', 'I m m 2', 44),   # I m m 2
+        'i2mm':('I -2 2', 'I 2 m m', 44),   # I 2 m m
+        'im2m':('I -2 -2', 'I m 2 m', 44),   # I m 2 m
+        'iba2':('I 2 -2c', 'I b a 2', 45),   # I b a 2
+        'i2cb':('I -2a 2', 'I 2 c b', 45),   # I 2 c b
+        'ic2a':('I -2b -2b', 'I c 2 a', 45),   # I c 2 a
+        'ima2':('I 2 -2a', 'I m a 2', 46),   # I m a 2
+        'ibm2':('I 2 -2b', 'I b m 2', 46),   # I b m 2
+        'i2mb':('I -2b 2', 'I 2 m b', 46),   # I 2 m b
+        'i2cm':('I -2c 2', 'I 2 c m', 46),   # I 2 c m
+        'ic2m':('I -2c -2c', 'I c 2 m', 46),   # I c 2 m
+        'im2a':('I -2a -2a', 'I m 2 a', 46),   # I m 2 a
+        'pmmm':('-P 2 2', 'P m m m', 47),   # P m m m
+        'pnnn':('-P 2ab 2bc', 'P n n n', 48),   # P n n n
+        'pccm':('-P 2 2c', 'P c c m', 49),   # P c c m
+        'pmaa':('-P 2a 2', 'P m a a', 49),   # P m a a
+        'pbmb':('-P 2b 2b', 'P b m b', 49),   # P b m b
+        'pban':('-P 2ab 2b', 'P b a n', 50),   # P b a n
+        'pncb':('-P 2b 2bc', 'P n c b', 50),   # P n c b
+        'pcna':('-P 2a 2c', 'P c n a', 50),   # P c n a
+        'pmma':('-P 2a 2a', 'P m m a', 51),   # P m m a
+        'pmmb':('-P 2b 2', 'P m m b', 51),   # P m m b
+        'pbmm':('-P 2 2b', 'P b m m', 51),   # P b m m
+        'pcmm':('-P 2c 2c', 'P c m m', 51),   # P c m m
+        'pmcm':('-P 2c 2', 'P m c m', 51),   # P m c m
+        'pmam':('-P 2 2a', 'P m a m', 51),   # P m a m
+        'pnna':('-P 2a 2bc', 'P n n a', 52),   # P n n a
+        'pnnb':('-P 2b 2n', 'P n n b', 52),   # P n n b
+        'pbnn':('-P 2n 2b', 'P b n n', 52),   # P b n n
+        'pcnn':('-P 2ab 2c', 'P c n n', 52),   # P c n n
+        'pncn':('-P 2ab 2n', 'P n c n', 52),   # P n c n
+        'pnan':('-P 2n 2bc', 'P n a n', 52),   # P n a n
+        'pmna':('-P 2ac 2', 'P m n a', 53),   # P m n a
+        'pnmb':('-P 2bc 2bc', 'P n m b', 53),   # P n m b
+        'pbmn':('-P 2ab 2ab', 'P b m n', 53),   # P b m n
+        'pcnm':('-P 2 2ac', 'P c n m', 53),   # P c n m
+        'pncm':('-P 2 2bc', 'P n c m', 53),   # P n c m
+        'pman':('-P 2ab 2', 'P m a n', 53),   # P m a n
+        'pcca':('-P 2a 2ac', 'P c c a', 54),   # P c c a
+        'pccb':('-P 2b 2c', 'P c c b', 54),   # P c c b
+        'pbaa':('-P 2a 2b', 'P b a a', 54),   # P b a a
+        'pcaa':('-P 2ac 2c', 'P c a a', 54),   # P c a a
+        'pbcb':('-P 2bc 2b', 'P b c b', 54),   # P b c b
+        'pbab':('-P 2b 2ab', 'P b a b', 54),   # P b a b
+        'pbam':('-P 2 2ab', 'P b a m', 55),   # P b a m
+        'pmcb':('-P 2bc 2', 'P m c b', 55),   # P m c b
+        'pcma':('-P 2ac 2ac', 'P c m a', 55),   # P c m a
+        'pccn':('-P 2ab 2ac', 'P c c n', 56),   # P c c n
+        'pnaa':('-P 2ac 2bc', 'P n a a', 56),   # P n a a
+        'pbnb':('-P 2bc 2ab', 'P b n b', 56),   # P b n b
+        'pbcm':('-P 2c 2b', 'P b c m', 57),   # P b c m
+        'pcam':('-P 2c 2ac', 'P c a m', 57),   # P c a m
+        'pmca':('-P 2ac 2a', 'P m c a', 57),   # P m c a
+        'pmab':('-P 2b 2a', 'P m a b', 57),   # P m a b
+        'pbma':('-P 2a 2ab', 'P b m a', 57),   # P b m a
+        'pcmb':('-P 2bc 2c', 'P c m b', 57),   # P c m b
+        'pnnm':('-P 2 2n', 'P n n m', 58),   # P n n m
+        'pmnn':('-P 2n 2', 'P m n n', 58),   # P m n n
+        'pnmn':('-P 2n 2n', 'P n m n', 58),   # P n m n
+        'pmmn':('-P 2ab 2a', 'P m m n', 59),   # P m m n
+        'pnmm':('-P 2c 2bc', 'P n m m', 59),   # P n m m
+        'pmnm':('-P 2c 2a', 'P m n m', 59),   # P m n m
+        'pbcn':('-P 2n 2ab', 'P b c n', 60),   # P b c n
+        'pcan':('-P 2n 2c', 'P c a n', 60),   # P c a n
+        'pnca':('-P 2a 2n', 'P n c a', 60),   # P n c a
+        'pnab':('-P 2bc 2n', 'P n a b', 60),   # P n a b
+        'pbna':('-P 2ac 2b', 'P b n a', 60),   # P b n a
+        'pcnb':('-P 2b 2ac', 'P c n b', 60),   # P c n b
+        'pbca':('-P 2ac 2ab', 'P b c a', 61),   # P b c a
+        'pcab':('-P 2bc 2ac', 'P c a b', 61),   # P c a b
+        'pnma':('-P 2ac 2n', 'P n m a', 62),   # P n m a
+        'pmnb':('-P 2bc 2a', 'P m n b', 62),   # P m n b
+        'pbnm':('-P 2c 2ab', 'P b n m', 62),   # P b n m
+        'pcmn':('-P 2n 2ac', 'P c m n', 62),   # P c m n
+        'pmcn':('-P 2n 2a', 'P m c n', 62),   # P m c n
+        'pnam':('-P 2c 2n', 'P n a m', 62),   # P n a m
+        'cmcm':('-C 2c 2', 'C m c m', 63),   # C m c m
+        'ccmm':('-C 2c 2c', 'C c m m', 63),   # C c m m
+        'amma':('-A 2a 2a', 'A m m a', 63),   # A m m a
+        'amam':('-A 2 2a', 'A m a m', 63),   # A m a m
+        'bbmm':('-B 2 2b', 'B b m m', 63),   # B b m m
+        'bmmb':('-B 2b 2', 'B m m b', 63),   # B m m b
+        'cmca':('-C 2bc 2', 'C m c a', 64),   # C m c a
+        'ccmb':('-C 2bc 2bc', 'C c m b', 64),   # C c m b
+        'abma':('-A 2ac 2ac', 'A b m a', 64),   # A b m a
+        'acam':('-A 2 2ac', 'A c a m', 64),   # A c a m
+        'bbcm':('-B 2 2bc', 'B b c m', 64),   # B b c m
+        'bmab':('-B 2bc 2', 'B m a b', 64),   # B m a b
+        'cmmm':('-C 2 2', 'C m m m', 65),   # C m m m
+        'ammm':('-A 2 2', 'A m m m', 65),   # A m m m
+        'bmmm':('-B 2 2', 'B m m m', 65),   # B m m m
+        'cccm':('-C 2 2c', 'C c c m', 66),   # C c c m
+        'amaa':('-A 2a 2', 'A m a a', 66),   # A m a a
+        'bbmb':('-B 2b 2b', 'B b m b', 66),   # B b m b
+        'cmma':('-C 2b 2', 'C m m a', 67),   # C m m a
+        'cmmb':('-C 2b 2b', 'C m m b', 67),   # C m m b
+        'abmm':('-A 2c 2c', 'A b m m', 67),   # A b m m
+        'acmm':('-A 2 2c', 'A c m m', 67),   # A c m m
+        'bmcm':('-B 2 2c', 'B m c m', 67),   # B m c m
+        'bmam':('-B 2c 2', 'B m a m', 67),   # B m a m
+        'ccca':('-C 2b 2bc', 'C c c a', 68),   # C c c a
+        'cccb':('-C 2b 2c', 'C c c b', 68),   # C c c b
+        'abaa':('-A 2a 2c', 'A b a a', 68),   # A b a a
+        'acaa':('-A 2ac 2c', 'A c a a', 68),   # A c a a
+        'bbcb':('-B 2bc 2b', 'B b c b', 68),   # B b c b
+        'bbab':('-B 2b 2bc', 'B b a b', 68),   # B b a b
+        'fmmm':('-F 2 2', 'F m m m', 69),   # F m m m
+        'fddd':('-F 2uv 2vw', 'F d d d', 70),   # F d d d
+        'immm':('-I 2 2', 'I m m m', 71),   # I m m m
+        'ibam':('-I 2 2c', 'I b a m', 72),   # I b a m
+        'imcb':('-I 2a 2', 'I m c b', 72),   # I m c b
+        'icma':('-I 2b 2b', 'I c m a', 72),   # I c m a
+        'ibca':('-I 2b 2c', 'I b c a', 73),   # I b c a
+        'icab':('-I 2a 2b', 'I c a b', 73),   # I c a b
+        'imma':('-I 2b 2', 'I m m a', 74),   # I m m a
+        'immb':('-I 2a 2a', 'I m m b', 74),   # I m m b
+        'ibmm':('-I 2c 2c', 'I b m m', 74),   # I b m m
+        'icmm':('-I 2 2b', 'I c m m', 74),   # I c m m
+        'imcm':('-I 2 2a', 'I m c m', 74),   # I m c m
+        'imam':('-I 2c 2', 'I m a m', 74),   # I m a m
+        'p4':('P 4', 'P 4', 75),   # P 4
+        'p41':('P 4w', 'P 41', 76),   # P 41
+        'p42':('P 4c', 'P 42', 77),   # P 42
+        'p43':('P 4cw', 'P 43', 78),   # P 43
+        'i4':('I 4', 'I 4', 79),   # I 4
+        'i41':('I 4bw', 'I 41', 80),   # I 41
+        'p-4':('P -4', 'P -4', 81),   # P -4
+        'i-4':('I -4', 'I -4', 82),   # I -4
+        'p4/m':('-P 4', 'P 4/m', 83),   # P 4/m
+        'p42/m':('-P 4c', 'P 42/m', 84),   # P 42/m
+        'p4/n':('-P 4a', 'P 4/n', 85),   # P 4/n
+        'p42/n':('-P 4bc', 'P 42/n', 86),   # P 42/n
+        'i4/m':('-I 4', 'I 4/m', 87),   # I 4/m
+        'i41/a':('-I 4ad', 'I 41/a', 88),   # I 41/a
+        'p422':('P 4 2', 'P 4 2 2', 89),   # P 4 2 2
+        'p4212':('P 4ab 2ab', 'P 42 1 2', 90),   # P 42 1 2
+        'p4122':('P 4w 2c', 'P 41 2 2', 91),   # P 41 2 2
+        'p41212':('P 4abw 2nw', 'P 41 21 2', 92),   # P 41 21 2
+        'p4222':('P 4c 2', 'P 42 2 2', 93),   # P 42 2 2
+        'p42212':('P 4n 2n', 'P 42 21 2', 94),   # P 42 21 2
+        'p4322':('P 4cw 2c', 'P 43 2 2', 95),   # P 43 2 2
+        'p43212':('P 4nw 2abw', 'P 43 21 2', 96),   # P 43 21 2
+        'i422':('I 4 2', 'I 4 2 2', 97),   # I 4 2 2
+        'i4122':('I 4bw 2bw', 'I 41 2 2', 98),   # I 41 2 2
+        'p4mm':('P 4 -2', 'P 4 m m', 99),   # P 4 m m
+        'p4bm':('P 4 -2ab', 'P 4 b m', 100),   # P 4 b m
+        'p42cm':('P 4c -2c', 'P 42 c m', 101),   # P 42 c m
+        'p42nm':('P 4n -2n', 'P 42 n m', 102),   # P 42 n m
+        'p4cc':('P 4 -2c', 'P 4 c c', 103),   # P 4 c c
+        'p4nc':('P 4 -2n', 'P 4 n c', 104),   # P 4 n c
+        'p42mc':('P 4c -2', 'P 42 m c', 105),   # P 42 m c
+        'p42bc':('P 4c -2ab', 'P 42 b c', 106),   # P 42 b c
+        'i4mm':('I 4 -2', 'I 4 m m', 107),   # I 4 m m
+        'i4cm':('I 4 -2c', 'I 4 c m', 108),   # I 4 c m
+        'i41md':('I 4bw -2', 'I 41 m d', 109),   # I 41 m d
+        'i41cd':('I 4bw -2c', 'I 41 c d', 110),   # I 41 c d
+        'p-42m':('P -4 2', 'P -4 2 m', 111),   # P -4 2 m
+        'p-42c':('P -4 2c', 'P -4 2 c', 112),   # P -4 2 c
+        'p-421m':('P -4 2ab', 'P -4 21 m', 113),   # P -4 21 m
+        'p-421c':('P -4 2n', 'P -4 21 c', 114),   # P -4 21 c
+        'p-4m2':('P -4 -2', 'P -4 m 2', 115),   # P -4 m 2
+        'p-4c2':('P -4 -2c', 'P -4 c 2', 116),   # P -4 c 2
+        'p-4b2':('P -4 -2ab', 'P -4 b 2', 117),   # P -4 b 2
+        'p-4n2':('P -4 -2n', 'P -4 n 2', 118),   # P -4 n 2
+        'i-4m2':('I -4 -2', 'I -4 m 2', 119),   # I -4 m 2
+        'i-4c2':('I -4 -2c', 'I -4 c 2', 120),   # I -4 c 2
+        'i-42m':('I -4 2', 'I -4 2 m', 121),   # I -4 2 m
+        'i-42d':('I -4 2bw', 'I -4 2 d', 122),   # I -4 2 d
+        'p4/mmm':('-P 4 2', 'P 4/m m m', 123),   # P 4/m m m
+        'p4/mcc':('-P 4 2c', 'P 4/m c c', 124),   # P 4/m c c
+        'p4/nbm':('-P 4a 2b', 'P 4/n b m', 125),   # P 4/n b m
+        'p4/nnc':('-P 4a 2bc', 'P 4/n n c', 126),   # P 4/n n c
+        'p4/mbm':('-P 4 2ab', 'P 4/m b m', 127),   # P 4/m b m
+        'p4/mnc':('-P 4 2n', 'P 4/m n c', 128),   # P 4/m n c
+        'p4/nmm':('-P 4a 2a', 'P 4/n m m', 129),   # P 4/n m m
+        'p4/ncc':('-P 4a 2ac', 'P 4/n c c', 130),   # P 4/n c c
+        'p42/mmc':('-P 4c 2', 'P 42/m m c', 131),   # P 42/m m c
+        'p42/mcm':('-P 4c 2c', 'P 42/m c m', 132),   # P 42/m c m
+        'p42/nbc':('-P 4ac 2b', 'P 42/n b c', 133),   # P 42/n b c
+        'p42/nnm':('-P 4ac 2bc', 'P 42/n n m', 134),   # P 42/n n m
+        'p42/mbc':('-P 4c 2ab', 'P 42/m b c', 135),   # P 42/m b c
+        'p42/mnm':('-P 4n 2n', 'P 42/m n m', 136),   # P 42/m n m
+        'p42/nmc':('-P 4ac 2a', 'P 42/n m c', 137),   # P 42/n m c
+        'p42/ncm':('-P 4ac 2ac', 'P 42/n c m', 138),   # P 42/n c m
+        'i4/mmm':('-I 4 2', 'I 4/m m m', 139),   # I 4/m m m
+        'i4/mcm':('-I 4 2c', 'I 4/m c m', 140),   # I 4/m c m
+        'i41/amd':('-I 4bd 2', 'I 41/a m d', 141),   # I 41/a m d
+        'i41/acd':('-I 4bd 2c', 'I 41/a c d', 142),   # I 41/a c d
+        'p3':('P 3', 'P 3', 143),   # P 3
+        'p31':('P 31', 'P 31', 144),   # P 31
+        'p32':('P 32', 'P 32', 145),   # P 32
+        'r3h':('R 3', 'R 3 H', 146),   # R 3 H
+        'r3':('R 3', 'R 3 H', 146),   # R 3
+        'r3r':('P 3*', 'R 3 R', 146),   # R 3 R
+        'p-3':('-P 3', 'P -3', 147),   # P -3
+        'r-3h':('-R 3', 'R -3 H', 148),   # R -3 H
+        'r-3':('-R 3', 'R -3 H', 148),   # R -3
+        'r-3r':('-P 3*', 'R -3 R', 148),   # R -3 R
+        'p312':('P 3 2', 'P 3 1 2', 149),   # P 3 1 2
+        'p321':('P 3 2"', 'P 3 2 1', 150),   # P 3 2 1
+        'p3112':('P 31 2c (0 0 1)', 'P 31 1 2', 151),   # P 31 1 2
+        'p3121':('P 31 2"', 'P 31 2 1', 152),   # P 31 2 1
+        'p3212':('P 32 2c (0 0 -1)', 'P 32 1 2', 153),   # P 32 1 2
+        'p3221':('P 32 2"', 'P 32 2 1', 154),   # P 32 2 1
+        'r32h':('R 3 2"', 'R 32 H', 155),   # R 32 H
+        'r32':('R 3 2"', 'R 32 H', 155),   # R 32
+        'r32r':('P 3* 2', 'R 32 R', 155),   # R 32 R
+        'p3m1':('P 3 -2"', 'P 3 m 1', 156),   # P 3 m 1
+        'p31m':('P 3 -2', 'P 3 1 m', 157),   # P 3 1 m
+        'p3c1':('P 3 -2"c', 'P 3 c 1', 158),   # P 3 c 1
+        'p31c':('P 3 -2c', 'P 3 1 c', 159),   # P 3 1 c
+        'r3mh':('R 3 -2"', 'R 3 m H', 160),   # R 3 m H
+        'r3m':('R 3 -2"', 'R 3 m H', 160),   # R 3 m
+        'r3mr':('P 3* -2', 'R 3 m R', 160),   # R 3 m R
+        'r3ch':('R 3 -2"c', 'R 3 c H', 161),   # R 3 c H
+        'r3c':('R 3 -2"c', 'R 3 c H', 161),   # R 3 c
+        'r3cr':('P 3* -2n', 'R 3 c R', 161),   # R 3 c R
+        'p-31m':('-P 3 2', 'P -3 1 m', 162),   # P -3 1 m
+        'p-31c':('-P 3 2c', 'P -3 1 c', 163),   # P -3 1 c
+        'p-3m1':('-P 3 2"', 'P -3 m 1', 164),   # P -3 m 1
+        'p-3c1':('-P 3 2"c', 'P -3 c 1', 165),   # P -3 c 1
+        'r-3mh':('-R 3 2"', 'R -3 m H', 166),   # R -3 m H
+        'r-3m':('-R 3 2"', 'R -3 m H', 166),   # R -3 m
+        'r-3mr':('-P 3* 2', 'R -3 m R', 166),   # R -3 m R
+        'r-3ch':('-R 3 2"c', 'R -3 c H', 167),   # R -3 c H
+        'r-3c':('-R 3 2"c', 'R -3 c H', 167),   # R -3 c
+        'r-3cr':('-P 3* 2n', 'R -3 c R', 167),   # R -3 c R
+        'p6':('P 6', 'P 6', 168),   # P 6
+        'p61':('P 61', 'P 61', 169),   # P 61
+        'p65':('P 65', 'P 65', 170),   # P 65
+        'p62':('P 62', 'P 62', 171),   # P 62
+        'p64':('P 64', 'P 64', 172),   # P 64
+        'p63':('P 6c', 'P 63', 173),   # P 63
+        'p-6':('P -6', 'P -6', 174),   # P -6
+        'p6/m':('-P 6', 'P 6/m', 175),   # P 6/m
+        'p63/m':('-P 6c', 'P 63/m', 176),   # P 63/m
+        'p622':('P 6 2', 'P 6 2 2', 177),   # P 6 2 2
+        'p6122':('P 61 2 (0 0 -1)', 'P 61 2 2', 178),   # P 61 2 2
+        'p6522':('P 65 2 (0 0 1)', 'P 65 2 2', 179),   # P 65 2 2
+        'p6222':('P 62 2c (0 0 1)', 'P 62 2 2', 180),   # P 62 2 2
+        'p6422':('P 64 2c (0 0 -1)', 'P 64 2 2', 181),   # P 64 2 2
+        'p6322':('P 6c 2c', 'P 63 2 2', 182),   # P 63 2 2
+        'p6mm':('P 6 -2', 'P 6 m m', 183),   # P 6 m m
+        'p6cc':('P 6 -2c', 'P 6 c c', 184),   # P 6 c c
+        'p63cm':('P 6c -2', 'P 63 c m', 185),   # P 63 c m
+        'p63mc':('P 6c -2c', 'P 63 m c', 186),   # P 63 m c
+        'p-6m2':('P -6 2', 'P -6 m 2', 187),   # P -6 m 2
+        'p-6c2':('P -6c 2', 'P -6 c 2', 188),   # P -6 c 2
+        'p-62m':('P -6 -2', 'P -6 2 m', 189),   # P -6 2 m
+        'p-62c':('P -6c -2c', 'P -6 2 c', 190),   # P -6 2 c
+        'p6/mmm':('-P 6 2', 'P 6/m m m', 191),   # P 6/m m m
+        'p6/mcc':('-P 6 2c', 'P 6/m c c', 192),   # P 6/m c c
+        'p63/mcm':('-P 6c 2', 'P 63/m c m', 193),   # P 63/m c m
+        'p63/mmc':('-P 6c 2c', 'P 63/m m c', 194),   # P 63/m m c
+        'p23':('P 2 2 3', 'P 2 3', 195),   # P 2 3
+        'f23':('F 2 2 3', 'F 2 3', 196),   # F 2 3
+        'i23':('I 2 2 3', 'I 2 3', 197),   # I 2 3
+        'p213':('P 2ac 2ab 3', 'P 21 3', 198),   # P 21 3
+        'i213':('I 2b 2c 3', 'I 21 3', 199),   # I 21 3
+        'pm-3':('-P 2 2 3', 'P m -3', 200),   # P m -3
+        'pn-3':('-P 2ab 2bc 3', 'P n -3', 201),   # P n -3
+        'fm-3':('-F 2 2 3', 'F m -3', 202),   # F m -3
+        'fd-3':('-F 2uv 2vw 3', 'F d -3', 203),   # F d -3
+        'im-3':('-I 2 2 3', 'I m -3', 204),   # I m -3
+        'pa-3':('-P 2ac 2ab 3', 'P a -3', 205),   # P a -3
+        'ia-3':('-I 2b 2c 3', 'I a -3', 206),   # I a -3
+        'p432':('P 4 2 3', 'P 4 3 2', 207),   # P 4 3 2
+        'p4232':('P 4n 2 3', 'P 42 3 2', 208),   # P 42 3 2
+        'f432':('F 4 2 3', 'F 4 3 2', 209),   # F 4 3 2
+        'f4132':('F 4d 2 3', 'F 41 3 2', 210),   # F 41 3 2
+        'i432':('I 4 2 3', 'I 4 3 2', 211),   # I 4 3 2
+        'p4332':('P 4acd 2ab 3', 'P 43 3 2', 212),   # P 43 3 2
+        'p4132':('P 4bd 2ab 3', 'P 41 3 2', 213),   # P 41 3 2
+        'i4132':('I 4bd 2c 3', 'I 41 3 2', 214),   # I 41 3 2
+        'p-43m':('P -4 2 3', 'P -4 3 m', 215),   # P -4 3 m
+        'f-43m':('F -4 2 3', 'F -4 3 m', 216),   # F -4 3 m
+        'i-43m':('I -4 2 3', 'I -4 3 m', 217),   # I -4 3 m
+        'p-43n':('P -4n 2 3', 'P -4 3 n', 218),   # P -4 3 n
+        'f-43c':('F -4c 2 3', 'F -4 3 c', 219),   # F -4 3 c
+        'i-43d':('I -4bd 2c 3', 'I -4 3 d', 220),   # I -4 3 d
+        'pm-3m':('-P 4 2 3', 'P m -3 m', 221),   # P m -3 m
+        'pn-3n':('-P 4a 2bc 3', 'P n -3 n', 222),   # P n -3 n
+        'pm-3n':('-P 4n 2 3', 'P m -3 n', 223),   # P m -3 n
+        'pn-3m':('-P 4bc 2bc 3', 'P n -3 m', 224),   # P n -3 m
+        'fm-3m':('-F 4 2 3', 'F m -3 m', 225),   # F m -3 m
+        'fm-3c':('-F 4c 2 3', 'F m -3 c', 226),   # F m -3 c
+        'fd-3m':('-F 4vw 2vw 3', 'F d -3 m', 227),   # F d -3 m
+        'fd-3c':('-F 4cvw 2vw 3', 'F d -3 c', 228),   # F d -3 c
+        'im-3m':('-I 4 2 3', 'I m -3 m', 229),   # I m -3 m
+        'ia-3d':('-I 4bd 2c 3', 'I a -3 d', 230),   # I a -3 d
+        }
+        
 #'A few non-standard space groups for test use'
 nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 
                       'R -3 r', 'R 3 2 r','R 3 m h', 'R 3 m r',

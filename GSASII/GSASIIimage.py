@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASII image calculations: Image calibration, masking & integration routines.
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIimage.py $
-# $Id: GSASIIimage.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIimage` follow. 
 '''
@@ -23,11 +16,6 @@ from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
-try:
-    import GSASIIplot as G2plt
-except ImportError: # expected in scriptable w/o matplotlib and/or wx
-    pass
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
@@ -561,26 +549,25 @@ def GetDetXYfromThAzm(Th,Azm,data):
     '''
     dsp = data['wavelength']/(2.0*npsind(Th))    
     return GetDetectorXY(dsp,Azm,data)
-                    
+
+# this suite not used for integration - only image plotting & mask positioning                    
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
     Use only for detector 2-theta = 0
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-       G is ? and dsp is the d-space
+       and dsp is the d-space - not used in integration
     '''
     wave = data['wavelength']
     cent = data['center']
     tilt = data['tilt']
     dist = data['distance']/cosd(tilt)
-    x0 = dist*tand(tilt)
     phi = data['rotation']
     dep = data.get('DetDepth',0.)
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
-    D = ((dx-x0)**2+dy**2+dist**2)      #sample to pixel distance
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
@@ -591,8 +578,7 @@ def GetTthAzmDsp2(x,y,data): #expensive
     tth = npatan2d(DY,DX) 
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-    G = D/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return np.array([tth,azm,G,dsp])
+    return np.array([tth,azm,dsp])
     
 def GetTthAzmDsp(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
@@ -600,7 +586,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     Use for detector 2-theta != 0.
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-        G is ? and dsp is the d-space
+        and dsp is the d-space - not used in integration
     '''
     
     def costth(xyz):
@@ -633,13 +619,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     tth = npacosd(ctth)
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation        
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    distsq = data['distance']**2
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return [tth,azm,G,dsp]
+    return [tth,azm,dsp]
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -655,6 +635,20 @@ def GetTthAzm(x,y,data):
     else:
         return GetTthAzmDsp2(x,y,data)[0:2]
     
+def GetDsp(x,y,data):
+    'Give d-spacing value for detector x,y position; calibration info in data'
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[2]
+    else:
+        return GetTthAzmDsp2(x,y,data)[2]
+       
+def GetAzm(x,y,data):
+    'Give azimuth value for detector x,y position; calibration info in data'
+    if data['det2theta']:
+        return GetTthAzmDsp(x,y,data)[1]
+    else:
+        return GetTthAzmDsp2(x,y,data)[1]
+# these two are used only for integration & finding pixel masks    
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration for detector 2-theta = 0
@@ -670,12 +664,10 @@ def GetTthAzmG2(x,y,data):
     dzp = peneCorr(tth0,data['DetDepth'],dist)
     tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp) 
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
-    
-    distsq = data['distance']**2
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def GetTthAzmG(x,y,data):
@@ -712,28 +704,12 @@ def GetTthAzmG(x,y,data):
     ctth = costth(dxyz)
     tth = npacosd(ctth)
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation        
-    x0 = data['distance']*nptand(tilt)
-    x0x = x0*npcosd(data['rotation'])
-    x0y = x0*npsind(data['rotation'])
-    distsq = data['distance']**2
-    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# G-calculation - use Law of sines
+    sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
+    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+    G = data['distance']**2*sinB2/npsind(C)**2
     return tth,azm,G
 
-def GetDsp(x,y,data):
-    'Give d-spacing value for detector x,y position; calibration info in data'
-    if data['det2theta']:
-        return GetTthAzmDsp(x,y,data)[3]
-    else:
-        return GetTthAzmDsp2(x,y,data)[3]
-       
-def GetAzm(x,y,data):
-    'Give azimuth value for detector x,y position; calibration info in data'
-    if data['det2theta']:
-        return GetTthAzmDsp(x,y,data)[1]
-    else:
-        return GetTthAzmDsp2(x,y,data)[1]
-    
 def meanAzm(a,b):
     AZM = lambda a,b: npacosd(0.5*(npsind(2.*b)-npsind(2.*a))/(np.pi*(b-a)/180.))/2.
     azm = AZM(a,b)
@@ -1005,13 +981,19 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
+        import GSASIIplot as G2plt
         G2plt.PlotImage(G2frame,newImage=True)        
     return [vals,varyList,sigList,parmDict,covar]
 
 def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.
+
+    Called only from ``OnImRelease`` (mouse release) in 
+    :func:`GSASIIplot.PlotImage`, thus expected to be used from GUI 
+    only (not scripted)
     '''
+    import GSASIIplot as G2plt
     G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']
@@ -1391,7 +1373,7 @@ def MakeUseTA(data,blkSize=128):
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))          #2-theta & azimuth arrays & create position mask
             TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             useTAj.append(TAr)
         useTA.append(useTAj)
     return useTA
@@ -1467,6 +1449,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     H0 = np.zeros(shape=(numAzms,1),order='F',dtype=np.float32)
     AMasks = {'Points':[],'Rings':[ring,],'Arcs':[],'Polygons':[],'Frames':[],
          'Thresholds':data['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
+    muT = data.get('SampleAbs',[0.0,''])[0]
     LUtth = [ring[0],ring[0]+ring[1]]
     dtth = ring[1]
     Nx,Ny = data['size']
@@ -1481,12 +1464,21 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask (none here)
             TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-            TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+            TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin),tamp)
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
-            # tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
-            # tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
+            if data.get('SampleAbs',[0.0,''])[1]:
+                if 'Cylind' in data['SampleShape']:
+                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
+                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
+                    tabs = G2pwd.Absorb('Fixed',muT,tay)
+                else:
+                    tabs = np.ones_like(taz)
+            else:
+                tabs = np.ones_like(taz)                
+            taz = np.array((taz*tad*tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,1,LRazm,LUtth,Dazm,dtth,NST,H0)
@@ -1569,7 +1561,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             else:
                 TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-                TAr = [i.squeeze() for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
+                TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
             times[1] += time.time()-t0      #xy->th,azm
 
             t0 = time.time()
@@ -1600,7 +1592,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             times[2] += time.time()-t0          #fill map
 
             t0 = time.time()
-            taz = np.array((taz*tad/tabs),dtype='float32')
+            taz = np.array((taz*tad*tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)

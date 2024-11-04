@@ -67,12 +67,12 @@ The "*A* tensor" terms are defined as
 *d* is the d-spacing, and :math:`d^*` is the reciprocal lattice spacing, 
 :math:`Q = 2 \pi d^* = 2 \pi / d`. 
 Note that GSAS-II variables ``p::Ai`` (i = 0, 1,... 5) and ``p`` is a phase number are 
-used for the *Ai* values. See :func:`A2cell`, :func:`cell2A` for interconversion between A and 
-unit cell parameters; :func:`cell2Gmat` :func:`Gmat2cell` for G and cell parameters. 
+used for the *Ai* values. See :func:`~GSASIIlattice.A2cell`, :func:`~GSASIIlattice.cell2A` for interconversion between A and 
+unit cell parameters; :func:`~GSASIIlattice.cell2Gmat` :func:`~GSASIIlattice.Gmat2cell` for G and cell parameters. 
 
 When the hydrostatic/elastic strain coefficients (*Dij*, :math:`D_{ij}`) are used, they are added to the 
 *A* tensor terms (Ai, :math:`A_{i}`) so that A is redefined 
-:math:`A = (\begin{matrix} A_{0} + D_{11} & A_{1} + D_{22} & A_{2} + D_{33} & A_{3} + D_{12} & A_{4} + D_{13} & A_{5} + D_{23}\end{matrix})`. See :func:`cellDijFill`. 
+:math:`A = (\begin{matrix} A_{0} + D_{11} & A_{1} + D_{22} & A_{2} + D_{33} & A_{3} + D_{12} & A_{4} + D_{13} & A_{5} + D_{23}\end{matrix})`. See :func:`~GSASIIlattice.cellDijFill`. 
 Note that GSAS-II variables ``p:h:Dij`` (i,j = 1, 2, 3) and ``p`` is a phase number 
 and ``h`` a histogram number are used for the *Dij* values.
 

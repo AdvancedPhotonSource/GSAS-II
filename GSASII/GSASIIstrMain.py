@@ -27,7 +27,6 @@ import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -258,7 +257,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
     '''
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-    G2sc.patchControls(Controls)
+    G2obj.patchControls(Controls)
     # end patch
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
@@ -433,7 +432,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,allDerivs=False):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     '''Global refinement -- refines to minimize against all histograms. 
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
@@ -453,7 +452,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     parmDict = {}
     G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
-    Controls['newLeBail'] = newLeBail
+    Controls['newLeBail'] = Controls.get('newLeBail',False)
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)

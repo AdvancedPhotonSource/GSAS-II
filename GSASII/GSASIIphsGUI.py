@@ -34,12 +34,13 @@ import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIddataGUI as G2ddG
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 # if GSASIIpath.GetConfigValue('debug'):
 #     print('Debug reloading',G2plt)
 #     import imp
 #     imp.reload(G2plt)
 import GSASIIdataGUI as G2gd
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
@@ -86,12 +87,8 @@ prevResId = None
 prevVecId = None
 prevSpnId = None
 
-if '2' in platform.python_version_tuple()[0]:
-    GkDelta = unichr(0x0394)
-    Angstr = unichr(0x00c5)
-else:
-    GkDelta = chr(0x0394)
-    Angstr = chr(0x00c5)   
+GkDelta = chr(0x0394)
+Angstr = chr(0x00c5)   
 
 RMCmisc = {}
 ranDrwDict = {}
@@ -2052,6 +2049,32 @@ def UpdatePhaseData(G2frame,Item,data):
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
+
+            def onDefColor(event):
+                '''Called when a color bar in elements table is clicked on.
+                Changes default color for element in all phases
+                N.B. Change is not saved; will go back to original color when
+                GSAS-II is restarted.
+                Changes colors of matching atoms in Draw Atoms table for 
+                current phase -- only. 
+                '''
+                if not hasattr(event.GetEventObject(),'atomNum'): return
+                anum = event.GetEventObject().atomNum
+                (R,G,B) = generalData['Color'][anum]
+                dlg = wx.ColourDialog(event.GetEventObject().GetTopLevelParent())
+                dlg.GetColourData().SetChooseFull(False)
+                dlg.GetColourData().SetColour(wx.Colour(R,G,B))
+                if dlg.ShowModal() == wx.ID_OK:
+                    El = generalData['AtomTypes'][anum]
+                    RGB = dlg.GetColourData().GetColour()[0:3]
+                    G2elem.SetAtomColor(El, RGB)
+                    cx,ct,cs,ci = data['Drawing']['atomPtrs']
+                    for atom in data['Drawing']['Atoms']:
+                        if atom[ct] != El: continue
+                        atom[cs+2] = RGB
+                    breakpoint()
+                    wx.CallAfter(UpdateGeneral)
+                dlg.Destroy()
                     
             elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
@@ -2087,9 +2110,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 elemTxt = G2G.ReadOnlyTextCtrl(General,value='%.2f'%(rad))
                 elemSizer.Add(elemTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Default color'),0,WACV)
-            for R,G,B in generalData['Color']:
+            for i,(R,G,B) in enumerate(generalData['Color']):
                 colorTxt = G2G.ReadOnlyTextCtrl(General,value='')
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
+                colorTxt.atomNum = i
+                colorTxt.Bind(wx.EVT_SET_FOCUS,onDefColor)
                 elemSizer.Add(colorTxt,0,WACV)
             if generalData['Type'] == 'magnetic':
                 elemSizer.Add(wx.StaticText(General,label=' Lande g factor: '),0,WACV)
@@ -2344,6 +2369,20 @@ def UpdatePhaseData(G2frame,Item,data):
                        
         def PawleySizer():
             # find d-space range in used histograms
+            def enablePawley(*args):
+                for c in PawleyCtrlsList:
+                    c.Enable(generalData['doPawley'])
+                # If Pawley is on, turn off Le Bail settings (since they will
+                # be hidden)
+                if generalData['doPawley']:
+                    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.GPXtree.root, 'Controls'))
+                    Controls['newLeBail'] = False
+                    for h in data['Histograms']:
+                        data['Histograms'][h]['LeBail'] = False
+                    G2G.G2MessageBox(G2frame,title='Note:',
+                            msg='Use Pawley Create in Operations menu of Pawley'+
+                            ' Reflections tab to complete the Pawley setup')
+                
             dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
             
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2356,24 +2395,30 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Pawley dmax'] = min(generalData['Pawley dmax'],dmax)
             generalData['Pawley dmin'] = max(generalData['Pawley dmin'],dmin)
 
+            PawleyCtrlsList = []
             pawlRef = G2G.G2CheckBoxFrontLbl(General,' Do Pawley refinement?',
-                                         generalData,'doPawley')
+                                         generalData,'doPawley',enablePawley)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label='  dmin: '),0,WACV)
             pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(75,-1),
                 xmin=dmin,xmax=20.,nDig=(10,5))
+            PawleyCtrlsList.append(pawlMin)
             pawleySizer.Add(pawlMin,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label='  dmax: '),0,WACV)
             pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(75,-1),
                 xmin=2.0,xmax=dmax,nDig=(10,5))
+            PawleyCtrlsList.append(pawlMax)
             pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,-1),
                 xmin=0.,xmax=1.,nDig=(10,3,'g'))
+            PawleyCtrlsList.append(pawlNegWt)
             pawleySizer.Add(pawlNegWt,0,WACV)
             pawleyOuter = wx.BoxSizer(wx.VERTICAL)
             pawleyOuter.Add(pawleySizer)
             pawleyOuter.Add(wx.StaticText(General,label=lbl),0,wx.LEFT,120)
+            for c in PawleyCtrlsList:
+                c.Enable(generalData['doPawley'])
             return pawleyOuter
             
         def MapSizer():
@@ -3688,7 +3733,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Restraints[ophsnam]['Angle']['Angles'] = []
             # Now generate .gpx files and show results
             for num,s in structDict.items():   # loop over supergroup settings
-                f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+                f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
                 if f: gpxList.append(msgs[num])
         ans = showSuperResults(G2frame,msgs,pagelist,fileList,ReSearch,pagelist[0],msgs[0])
         for i in fileList: os.unlink(i) # cleanup tmp web pages
@@ -3726,7 +3771,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 del pagelist[key]
                 structDict = _testSuperGroups(ophsnam,rowdict,csdict,valsdict,savedcookies,pagelist)
                 for num,s in structDict.items():   # loop over supergroup settings
-                    f = SUBGROUPS.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
+                    f = G2IO.saveNewPhase(G2frame,data,s,num,msgs,orgFilName)
                     if f:
                         gpxList.append(msgs[num])
                 fndStruct = SUBGROUPS.find2SearchAgain(pagelist,'')
@@ -4116,7 +4161,7 @@ def UpdatePhaseData(G2frame,Item,data):
             data.update(copy.deepcopy(orgData))   # get rid of prev phase
             magchoice = subKeep[sel]
             spg = magchoice['SGData']['SpGrp'].replace(' ','')
-            subId = subIds[sel]
+            #subId = subIds[sel]
             # generate the new phase            
             newPhase = copy.deepcopy(data)
             generalData = newPhase['General']
@@ -7425,38 +7470,39 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not len(data['Atoms']):
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - RMC not available for display'))
-            return mainSizer            
-        runFile = ' '
-        choice = ['RMCProfile','fullrmc','PDFfit']
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
-        RMCsel.SetStringSelection(G2frame.RMCchoice)
-        RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
-        topSizer.Add(RMCsel,0)
-        topSizer.Add((20,0))
-        txt = wx.StaticText(G2frame.FRMC,
-            label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
-        txt.Wrap(400)
-        topSizer.Add(txt,0)
-        mainSizer.Add(topSizer,0)
-        RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
-        mainSizer.Add(RMCmisc['RMCnote'])
-        G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-        if G2frame.RMCchoice == 'fullrmc':
-            RMCPdict = data['RMC']['fullrmc']
-            mainSizer.Add(fullrmcSizer(RMCPdict))
-                
-        elif G2frame.RMCchoice ==  'RMCProfile':
-            RMCPdict = data['RMC']['RMCProfile']
-            mainSizer.Add(RMCProfileSizer(RMCPdict))
-            
-        else:       #PDFfit
-            mainSizer.Add(PDFfitSizer(data))
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - PDF fitting not possible'))
+        else:
+            runFile = ' '
+            choice = ['RMCProfile','fullrmc','PDFfit']
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
+            RMCsel.SetStringSelection(G2frame.RMCchoice)
+            RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
+            topSizer.Add(RMCsel,0)
+            topSizer.Add((20,0))
+            txt = wx.StaticText(G2frame.FRMC,
+                label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
+            txt.Wrap(400)
+            topSizer.Add(txt,0)
+            mainSizer.Add(topSizer,0)
+            RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
+            mainSizer.Add(RMCmisc['RMCnote'])
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            if G2frame.RMCchoice == 'fullrmc':
+                RMCPdict = data['RMC']['fullrmc']
+                mainSizer.Add(fullrmcSizer(RMCPdict))
+
+            elif G2frame.RMCchoice ==  'RMCProfile':
+                RMCPdict = data['RMC']['RMCProfile']
+                mainSizer.Add(RMCProfileSizer(RMCPdict))
+
+            else:       #PDFfit
+                mainSizer.Add(PDFfitSizer(data))
 
         bigSizer.Add(mainSizer,1,wx.EXPAND)
         bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
         SetPhaseWindow(G2frame.FRMC,bigSizer)
+
         if G2frame.RMCchoice == 'PDFfit' and not checkPDFfit(G2frame):
             RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
         elif G2frame.RMCchoice == 'fullrmc' and G2pwd.findfullrmc() is None:
@@ -7476,7 +7522,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 wx.EndBusyCursor()
             else:
                 RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
-            return mainSizer
         
     def OnSetupRMC(event):
         generalData = data['General']
@@ -7571,7 +7616,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     def RunPDFfit(event):
         generalData = data['General']
         ISOdict = data['ISODISTORT']
-        PDFfit_exec,_ = G2pwd.findPDFfit()  #returns location of python with PDFfit installed and path(s) for  pdffit
+        PDFfit_exec = G2pwd.findPDFfit()  #returns location of python with PDFfit installed
         if not PDFfit_exec:
             wx.MessageBox(''' PDFfit2 is not currently installed for this platform. 
     Please contact us for assistance''',caption='No PDFfit2',style=wx.ICON_INFORMATION)
@@ -7950,7 +7995,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         batch.write(exstr+'\n')
         batch.write('pause\n')
         batch.close()
-        Proc = subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+        subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         
@@ -9551,7 +9596,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 XY = np.vstack((profile[0],rat))
                 G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
                     labelY='difference',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR',newPlot=True)
         else:   #selected area
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = simCodes[1]
@@ -9573,7 +9618,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         # see pwd.SetupPDFEval() and pwd.OptimizePDF() for an example minimization
         wx.EndBusyCursor()
         wx.CallAfter(UpdateLayerData)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSeqSimulate(event):
         
@@ -9967,8 +10012,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
-        if 'showSlice' not in drawingData:
-            drawingData['showSlice'] = ''
+        try:  # patch of sorts; this had been set to a string; needs to be an int between 0 & 3
+            int(drawingData['showSlice'])
+        except:
+            drawingData['showSlice'] = 0
         if 'sliceSize' not in drawingData:
             drawingData['sliceSize'] = 5.0
         if 'contourColor' not in drawingData:
@@ -11215,7 +11262,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 ranDrwDict['opt'] = dlg.GetSelection()
-                sellbl = ranDrwDict['optList'][dlg.GetSelection()]
+                ranDrwDict['optList'][dlg.GetSelection()]
             else:
                 return
         finally:
@@ -12360,7 +12407,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         # sanity check: should this project be fitting texture?
         mainSizer.Add(wx.StaticText(Texture,label=
             ' NB: Normally texture model fitting generally requires multiple datasets with differing sample orientations/detector values'))
-        msg = ''
         if G2frame.testSeqRefineMode() and G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential results'):
             mainSizer.Add(wx.StaticText(Texture,label=
                 " Sequential result found. Use Texture/Refine texture above. See Method B in texture tutorial."))
@@ -12777,7 +12823,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for histoName in newList:
                         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
-                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
+                        data['Histograms'][histoName] = {
+                            'Histogram':histoName,'Show':False,
+                            'LeBail':False,'newLeBail':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],'Type':Inst['Type'][0],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -12785,7 +12833,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],
                             'Layer Disp':[0.0,False],                         
-                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' ','FixedSeqVars':[]}
+                            'Extinction':[0.0,False],
+                            'Flack':[0.0,False],
+                            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                            'Fix FXU':' ','FixedSeqVars':[]}
                         refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
@@ -13583,10 +13634,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevResId is not None:
                 resId = prevResId
             try:
-                rbName = RBnames[resId]
+                RBnames[resId]
             except:
                 resId = 0
-                rbName = RBnames[resId]
+                #rbName = RBnames[resId]
             rbObj = data['RBModels']['Residue'][resId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -13612,10 +13663,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevVecId is not None:
                 vecId = prevVecId
             try:
-                rbName = RBnames[vecId]
+                RBnames[vecId]
             except:
                 vecId = 0
-                rbName = RBnames[vecId]
+                #rbName = RBnames[vecId]
             rbObj = data['RBModels']['Vector'][vecId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -13637,10 +13688,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if prevSpnId is not None:
                 spnId = prevSpnId
                 try:
-                    rbName = RBnames[spnId]
+                    RBnames[spnId]
                 except:
                     spnId = 0
-                    rbName = RBnames[spnId]
+                    #rbName = RBnames[spnId]
             rbObj = data['RBModels']['Spin'][spnId]
             data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
@@ -15461,13 +15512,16 @@ of the crystal structure.
         SetPhaseWindow(PawleyRefList,mainSizer)
                     
     def OnPawleySet(event):
-        '''Set Pawley parameters and optionally recompute
+        '''Open dialog to set Pawley parameters and optionally recompute reflections. 
+        This is called from the Phase/Pawley Reflections "Pawley Settings" 
+        menu command. These settings are also available on the Phase/General tab.
         '''
         def DisablePawleyOpts(*args):
-            for c in controlsList:
+            'dis-/enable Pawley options'
+            for c in PawleyCtrlsList:
                 c.Enable(generalData['doPawley'])
-
-        controlsList = []
+                
+        PawleyCtrlsList = []
         dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
         generalData = data['General']
         prevPawleySetting = generalData['doPawley']
@@ -15495,7 +15549,7 @@ of the crystal structure.
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
             xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float)
 #            xmin=dmin,xmax=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
-        controlsList.append(pawlVal)
+        PawleyCtrlsList.append(pawlVal)
         pawleySizer.Add(pawlVal,0,WACV)
         #pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
         #temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
@@ -15504,7 +15558,7 @@ of the crystal structure.
         #    pawlVal.SetValue(generalData['Pawley dmin'])        
         #pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
         #    xmin=0.314,xmax=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
-        #controlsList.append(pawlQVal)
+        #PawleyCtrlsList.append(pawlQVal)
         #pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
 
@@ -15512,7 +15566,7 @@ of the crystal structure.
         pawleySizer.Add(wx.StaticText(genDlg,label='   Pawley dmax: '),0,WACV)
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmax',
             xmin=2.,xmax=dmax,nDig=(10,5),typeHint=float)
-        controlsList.append(pawlVal)
+        PawleyCtrlsList.append(pawlVal)
         pawleySizer.Add(pawlVal,0,WACV)
         mainSizer.Add(pawleySizer)
         
@@ -15521,7 +15575,7 @@ of the crystal structure.
         pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
             xmin=0.,xmax=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
-        controlsList.append(pawlNegWt)
+        PawleyCtrlsList.append(pawlNegWt)
         mainSizer.Add(pawleySizer)
 
         # make OK button
@@ -15543,7 +15597,13 @@ of the crystal structure.
         res = genDlg.ShowModal()
         genDlg.Destroy()
         if res == wx.ID_NO: return
-
+        # If Pawley is on, turn off Le Bail settings (since they will
+        # be hidden)
+        if generalData['doPawley']:
+            Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.GPXtree.root, 'Controls'))
+            Controls['newLeBail'] = False
+            for h in data['Histograms']:
+                data['Histograms'][h]['LeBail'] = False
         # ask to generate the reflections if the extraction setting or dmin has changed
         if generalData['doPawley'] and res == wx.ID_OK and (
                 not prevPawleySetting or startDmin != generalData['Pawley dmin']):
@@ -15868,7 +15928,7 @@ of the crystal structure.
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            Ind = getAtomSelections(MapPeaks)
+            Ind = getAtomSelections(mapPeaks)
             Ind.sort()
             Ind.reverse()
             for ind in Ind:
@@ -16600,7 +16660,14 @@ of the crystal structure.
         return
         
     #### UpdatePhaseData execution starts here
-#patch
+    # make sure that the phase menu bars get created before selecting
+    # any (this will only be true on the first call to UpdatePhaseData)
+    if callable(G2frame.dataWindow.DataGeneral):
+        wx.BeginBusyCursor()        
+        G2frame.dataWindow.DataGeneral()
+        wx.EndBusyCursor()
+
+    #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
     if 'MCSA' not in data:
@@ -16802,9 +16869,7 @@ def checkPDFfit(G2frame):
     in a separate Python interpreter (saved in the pdffit2_exec config variable). If this is
     defined, no attempt is made to check that it actually runs. 
     Otherwise, if diffpy.PDFfit has been installed with conda/pip, it is checked if the 
-    install command. The fallback is to check if a .so/.pyd file has been supplied with 
-    GSAS-II. This requires that GSL (GNU Scientific Library) be installed. If the current 
-    Python is being run from conda, this will be loaded.
+    install command.
 
     :returns: False if PDFfit2 cannot be run/accessed. True if it appears it can be run.
     '''
@@ -16820,106 +16885,15 @@ def checkPDFfit(G2frame):
     except:
         pass
 
-    # See if if we can import the GSAS-II supplied PDFfit
-    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
-    print(pdffitloc,'\n',GSASIIpath.binaryPath)
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        pass
-        #print('Failed to import PDFfit2 with error:\n'+str(err))
-    
-    if not os.path.exists(pdffitloc):
-        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
-        return False
-
-    import glob
-    # see if we can fix things so the GSAS-II version can be used
-    if not GSASIIpath.condaTest() and glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-        msg = ('GSAS-II supplies a version of PDFfit2 that should be compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install GSL (GNU Software Library).')
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 will not load; No conda')
-        return False
-    elif not GSASIIpath.condaTest():
-        msg = ('GSAS-II does not supply a version of PDFfit2 compatible with '+
-        'this Python installation. Since Python was not installed under conda you need '+
-        'to correct this for yourself. You likely need to '+
-        'install the GSL (GNU Software Library) and use "pip install diffpy.pdffit2".'+
-        ' This is best done in a separate Python installation/virtual environment.')
-        G2G.G2MessageBox(G2frame,msg,'PDFfit2 not provided; No conda')
-        return False
-
+    # Last effort: With conda we should be able to create a separate
+    # Python in a separate environment
     try:     # have conda. Can we access it programmatically?
         import conda.cli.python_api
     except:
-        if not glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            msg = 'GSAS-II does not supply PDFfit2 for the version of Python that you are using'
-        else:
-            msg = 'GSAS-II supplies PDFfit2 that should be compatible with the version of Python that you are using. The problem is likely that the GSL package needs to be installed.'
-        msg += ('\n\nYou do not have the conda package installed in this '+
-                    'environment. This is needed for GSAS-II to install software.'+
-                    '\n\nDo you want to have conda installed for you?')
-        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return False
-        dlg.Destroy()
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install conda. This may take a few minutes...')
-            GSASIIpath.addCondaPkg()
-        finally:
-            wx.EndBusyCursor()
-        try:     # have conda. Can we access it programmatically?
-            import conda.cli.python_api
-        except:
-            print('command line conda install did not provide package. Unexpected!')
-            return False
-        
-    if ('gsl' not in conda.cli.python_api.run_command(
-             conda.cli.python_api.Commands.LIST,'gsl')[0].lower()
-        and
-             glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*'))):
-        msg = ('The gsl (GNU Software Library), needed by PDFfit2, '+
-                   ' is not installed in this Python. Do you want to have this installed?')
-        dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
-                                   style=wx.YES_NO|wx.ICON_QUESTION)
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return False
-        dlg.Destroy()
-
-        try:
-            wx.BeginBusyCursor()
-            print('Preparing to install gsl. This may take a few minutes...')
-            res = GSASIIpath.condaInstall(['gsl','-c','conda-forge'])
-        finally:
-            wx.EndBusyCursor()
-        if res:
-            msg = 'Installation of the GSL package failed with error:\n' + str(res)
-            G2G.G2MessageBox(G2frame,msg,'Install GSL Error')
-            
-    # GSAS-II supplied version for PDFfit now runs?
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
-    try:
-        from diffpy.pdffit2 import PdfFit
-        #pf = PdfFit()
-        return True
-    except Exception as err:
-        msg = 'Failed to import PDFfit2 with error:\n'+str(err)
-        print(msg)
-        if glob.glob(os.path.join(GSASIIpath.binaryPath,'pdffit*')):
-            G2G.G2MessageBox(G2frame,msg,'PDFfit2 import error')
-
-    # Last effort: With conda we should be able to create a separate Python in a separate
-    # environment
-    msg = ('Do you want to try using conda to install PDFfit2 into a separate environment? '+
+        G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
+        return
+    
+    msg = ('Do you want to use conda to install PDFfit2 into a separate environment? '+
                '\n\nIf successful, the pdffit2_exec configuration option will be set to the '+
                'this new Python environment.')
     dlg = wx.MessageDialog(G2frame,msg,caption='Install?',
@@ -16930,29 +16904,36 @@ def checkPDFfit(G2frame):
         wx.BeginBusyCursor()
         print('Preparing to create a conda environment. This may take a few minutes...')
         # for now use the older diffpy version of pdffit:
-        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.2 -c conda-forge -c diffpy
+        #   conda create -n pdffit2 python=3.7 conda gsl diffpy.pdffit2=1.3.4 -c conda-forge -c diffpy
         res,PDFpython = GSASIIpath.condaEnvCreate('pdffit2',
-                    ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2=1.2',
-                         '-c', 'conda-forge', '-c', 'diffpy'])
-        # someday perhaps this will work:
-        #   conda create -n pdffit2 python conda gsl diffpy.pdffit2 -c conda-forge
+                    ['python', 'conda', 'gsl', 'diffpy.pdffit2>=1.4.3',
+                         '-c', 'conda-forge']) #  not needed , '-c', 'diffpy'])
     finally:
         wx.EndBusyCursor()
-    if os.path.exists(PDFpython):
+    if os.path.exists(PDFpython) and is_exe(PDFpython):
         vars = G2G.GetConfigValsDocs()
         vars['pdffit2_exec'][1] = PDFpython
         GSASIIpath.SetConfigValue(vars)
         G2G.SaveConfigVars(vars)
         print('pdffit2_exec config set with ',GSASIIpath.GetConfigValue('pdffit2_exec'))
+        print('\n\nSuccess: PDFfit2 installed.')
         return True
     else:
-        msg = 'Failed to install PDFfit2 with error:\n'+str(PDFpython)
-        print(msg)
+        print(f'Failed to install PDFfit2 with error:\n{PDFpython}')
+        if ('PackagesNotFoundError' in PDFpython
+                and 'darwin' in sys.platform
+                and 'arm' in platform.machine()):
+            msg = ('It appears that PDFfit2 is not yet available as a conda package for Macs with arm processors. '+
+                       '\n\nYou could install PDFfit2 with x86 Python and use that '+
+                       'in compatibility mode.')
+        else:
+            msg = ('An attempt to install PDFfit2 has failed. '+
+                       'Do you have write access to where GSAS-II is installed? '+
+                       'You may be able to install PDFfit2 manually.')
+        msg += '\n\nIf you install PDFfit2 yourself, set the pdffit2_exec config variable to the install location'
         G2G.G2MessageBox(G2frame,
-            'Install failed. See console for error message\n\n'+
-            'All attempts to install PDFfit2 have failed. '+
-            'Do you have write access to where GSAS-II is installed?',
-            'PDFfit2 install error')
+                'PDFfit2 Install failed. See console for error message\n\n'+msg,
+                'PDFfit2 install error')
         return False
 
 def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
@@ -16965,7 +16946,7 @@ def makeIsoNewPhase(phData,cell,atomList,sglbl,sgnum):
     try: 
         sgnum = int(sgnum)
         sgsym = G2spc.spgbyNum[sgnum]
-        sgname = sgsym.replace(" ","")
+        #sgname = sgsym.replace(" ","")
     except:
         print(f'Problem with processing space group name {sglbl} and number {sgnum}')
         return

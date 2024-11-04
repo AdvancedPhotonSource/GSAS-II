@@ -1,20 +1,11 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2rfd_Panalytical.py $
-# $Id: G2rfd_Panalytical.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 
 from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
 sind = lambda x: np.sin(x*np.pi/180.)
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import reflectivity data from a Panalytical.xrdm (xml) file. 
     

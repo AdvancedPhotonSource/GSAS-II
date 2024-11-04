@@ -1,4 +1,3 @@
-#/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -26,7 +25,13 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5796 $"   # TODO: this should be removed (& where used)
+
+filversion = "?" 
+try:
+    import git_verinfo
+    filversion = git_verinfo.git_tags[0]
+except:
+    pass
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -3093,7 +3098,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     BraggWt = RMCPdict['histogram'][1]
     inst = PWDdata['Instrument Parameters'][0]
     try:
-        pName = Phase['General']['Name']
+        #pName = Phase['General']['Name']
         refList = PWDdata['Reflection Lists'][Name]['RefList']
     except TypeError:
         return 'Error - missing reflection list; you must do Refine first'
@@ -3447,41 +3452,18 @@ def fullrmcDownload():
 
 def findPDFfit():
     '''Find if PDFfit2 is installed (may be local to GSAS-II). Does the following:
-    :returns: two items: (1) the full path to a python executable or None, if 
-    it was not found and (2) path(s) to the PDFfit2 location(s) as a list.
-    
+    :returns: the full path to a python executable or None, if it was not found.
     '''
     if GSASIIpath.GetConfigValue('pdffit2_exec') is not None and is_exe(
             GSASIIpath.GetConfigValue('pdffit2_exec')):
-        return GSASIIpath.GetConfigValue('pdffit2_exec'),None
-    pdffitloc = os.path.join(GSASIIpath.path2GSAS2,'PDFfit2')
-    if not os.path.exists(pdffitloc):
-        print('PDFfit2 not found in GSAS-II \n\t(expected in '+pdffitloc+')')
-        return None,[]
-    if pdffitloc not in sys.path: sys.path.append(pdffitloc)
+        return GSASIIpath.GetConfigValue('pdffit2_exec')
     try:
         from diffpy.pdffit2 import PdfFit
         import diffpy
-        import inspect
-        pdffitloc = [os.path.dirname(os.path.dirname(inspect.getfile(diffpy)))]
-        # is this the original version of diffpy (w/pdffit2.py) 
-        try:
-            from diffpy.pdffit2 import pdffit2
-        except ImportError:
-            # or the GSAS-II version w/o; for this we need to find the binary's location
-            try:
-                import pdffit2     # added for GSAS-II to relocate binary file
-            except ImportError:
-                print('\nError: pdffit2 failed to load with this python\n')
-                return None,[]
-            except ModuleNotFoundError:
-                print('\nGSAS-II does not have a PDFfit2 module compatible\nwith this Python interpreter\n')
-                return None,[]
-            pdffitloc += [os.path.dirname(inspect.getfile(pdffit2))]
-        return sys.executable,pdffitloc
+        return sys.executable
     except Exception as msg:
         print('Error importing PDFfit2:\n',msg)
-        return None,[]
+        return None
     
 def GetPDFfitAtomVar(Phase,RMCPdict):
     ''' Find dict of independent "@n" variables for PDFfit in atom constraints
@@ -3583,12 +3565,9 @@ import sys,os
 datadir = r'{:}'
 pathWrap = lambda f: os.path.join(datadir,f)
 '''.format(os.path.abspath(os.getcwd()))
-    PDFfit_exe,PDFfit_path = findPDFfit()  # returns python loc and path(s) for pdffit
+    PDFfit_exe = findPDFfit()  # returns python loc
     if not PDFfit_exe:
         print('PDFfit2 is not found. Creating .sh file without paths.')
-    if PDFfit_path:
-        for p in PDFfit_path:
-            rundata += "sys.path.append(r'{:}')\n".format(p)
     rundata += 'from diffpy.pdffit2 import PdfFit\n'
     rundata += 'pf = PdfFit()\n'
     Nd = 0
@@ -3908,11 +3887,11 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
         atomsList.append([el] + atom[cx:cx+4])
     projDir,projName = os.path.split(os.path.abspath(pName))
     scrname = pName+'-fullrmc.py'
-    restart = '%s_restart.pdb'%pName
+    #restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
     rundata = ''
     rundata += '## fullrmc %s file ##\n## OK to edit this by hand ##\n'%scrname
-    rundata += '# created in '+__file__+" v"+filversion.split()[1]
+    rundata += '# created in '+__file__+" v"+filversion
     rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
 # fullrmc imports (all that are potentially useful)

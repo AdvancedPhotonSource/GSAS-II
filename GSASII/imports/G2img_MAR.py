@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_MAR.py $
-# $Id: G2img_MAR.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -15,7 +8,6 @@ import time
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 class MAR_ReaderClass(G2obj.ImportImage):
     '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
     '''

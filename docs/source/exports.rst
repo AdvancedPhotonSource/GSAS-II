@@ -2,7 +2,7 @@
 ====================================
 
 Exports are implemented by deriving a class from 
-:class:`GSASIIIO.ExportBaseclass`. Initialization of 
+:class:`GSASIIfiles.ExportBaseclass`. Initialization of 
 ``self.exporttype`` determines the type of export that will be performed
 ('project', 'phase', 'single', 'powder', 'image', 'map' or (someday)
 'pdf') and of ``self.multiple``
@@ -11,8 +11,8 @@ time (when False) or more than one can be selected.
 
 Powder export routines may optionally define a ``Writer()``
 method that accepts the histogram tree name as well as a file name to
-be written. This allows :func:`GSASIIIO.ExportPowder` to use the exporter
-independent of the GUI, for example from :mod:`GSASIIscriptable`.
+be written. This allows :mod:`GSASIIscriptable` to use the exporters
+independent of the GUI.
 
 -------------------------------------------
 *Module G2export_examples: Examples*

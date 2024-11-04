@@ -1,23 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_map.py $
-# $Id: G2export_map.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_map` follow:
 '''
 from __future__ import division, print_function
 import platform
 import os
-import GSASIIpath
 import numpy as np
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 
-class ExportMapASCII(G2IO.ExportBaseclass):
+class ExportMapASCII(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -43,6 +33,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
         filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
+            mapData = phasedict['General']['Map']
             rho = phasedict['General']['Map'].get('rho',[])
             if not len(rho):
                 print ("There is no map for phase "+phasenam)
@@ -65,7 +56,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
             self.CloseFile()
             print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
 
-class ExportMapCCP4(G2IO.ExportBaseclass):
+class ExportMapCCP4(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2020-03-03 15:01:43 -0600 (Tue, 03 Mar 2020) $
-# $Author: toby $
-# $Revision: 4339 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_Panalytical.py $
-# $Id: G2pwd_Panalytical.py 4339 2020-03-03 21:01:43Z toby $
-########### SVN repository information ###################
 
 from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 4339 $")
 class Panalytical_ReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Pananalytical.xrdm (xml) file. 
     

@@ -22,7 +22,7 @@ import GSASIImath as G2mth
 import GSASIIElem as G2elem
 import GSASIIpwdGUI as G2pdG
 import GSASIIplot as G2plt
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIfiles as G2fil
 import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
@@ -74,7 +74,7 @@ def GetImageZ(G2frame,data,newRange=False):
     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
     if imagefile is None: return []
     formatName = data.get('formatName','')
-    sumImg = np.array(G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName),dtype='float32')
+    sumImg = np.array(G2fil.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName),dtype='float32')
     if sumImg is None:
         return []
     darkImg = False
@@ -86,8 +86,8 @@ def GetImageZ(G2frame,data,newRange=False):
                 Ddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Did,'Image Controls'))
                 dformatName = Ddata.get('formatName','')
                 Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-#                darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
-                darkImage = np.array(G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName),dtype='float32')
+#                darkImage = G2fil.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
+                darkImage = np.array(G2fil.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName),dtype='float32')
                 if darkImg is not None:                
                     sumImg += np.array(darkImage*darkScale,dtype='float32')
             else:
@@ -102,7 +102,7 @@ def GetImageZ(G2frame,data,newRange=False):
                 Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
                 Bdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Bid,'Image Controls'))
                 bformatName = Bdata.get('formatName','')
-                backImage = np.array(G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype='float32')
+                backImage = np.array(G2fil.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype='float32')
                 if darkImg and backImage is not None:
                     backImage += np.array(darkImage*darkScale/backScale,dtype='float32')
                 if backImage is not None:
@@ -115,7 +115,7 @@ def GetImageZ(G2frame,data,newRange=False):
                 Npix,gainfile,imagetag = G2IO.GetCheckImageFile(G2frame,GMid)                
                 Gdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,GMid,'Image Controls'))
                 gformat = Gdata['formatName']
-                GMimage = G2IO.GetImageData(G2frame,gainfile,True,ImageTag=imagetag,FormatName=gformat)
+                GMimage = G2fil.GetImageData(G2frame,gainfile,True,ImageTag=imagetag,FormatName=gformat)
                 sumImg = sumImg*GMimage/1000
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
@@ -148,7 +148,7 @@ def UpdateImageData(G2frame,data):
         dlg.Destroy()
         
     def OnMakeGainMap(event):
-        import scipy.ndimage.filters as sdif
+        #import scipy.ndimage.filters as sdif
         sumImg = GetImageZ(G2frame,data)
         masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
@@ -193,7 +193,8 @@ def UpdateImageData(G2frame,data):
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
 
-    G2frame.PhaseRing2Th = []
+    G2frame.PhaseRing2Th = [] # list of known phase rings to superimpose
+    # listing 2theta, color, width, line-style for each ring
     G2frame.dataWindow.ClearData()
     G2frame.ImageZ = GetImageZ(G2frame,data)
     mainSizer = G2frame.dataWindow.GetSizer()
@@ -1552,60 +1553,76 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         gonioSizer.Add(globEdit,0,WACV)
         return gonioSizer
 
-    def OnDrawPhase(event):
+    def RefreshPlot():
+        '''Refresh the Image plot after a change in superimposed phase info
+        '''
+        computePhaseRings()
+        G2plt.PlotExposedImage(G2frame,event=None)
+
+    def OnSelectPhases(event):
         'generate and plot the rings for a selected phase'
+         # make a list of phases & calibrants
+        calList = sorted(calFile.Calibrants.keys(),key=lambda s: s.lower())
+        phaseOpts['warnOnce'] = None
+        phaseOpts['calList'] = calList
+        selList = G2frame.GetPhaseNames()
+        selList += [i for i in calList if i] # removes blank line(s)
+        phaseOpts['selList'] = selList
+        selectPhase(G2frame,selList,RefreshPlot)
+
+    def computePhaseRings():
+        'generate the powder reflections for the selected phase/calibrants'
         import GSASIIlattice as G2lat
         import GSASIIspc as G2spc
         import GSASIIpwd as G2pwd
-        #calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
-        # make a list of phases & calibrants
-        calList = sorted(calFile.Calibrants.keys(),key=lambda s: s.lower())
-        selList = ['(clear)']
-        selList += G2frame.GetPhaseNames()
-        selList += [i for i in calList if i]
-        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select a phase to superimpose on image',
-            'Select phase',selList)
-        dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            dlg.Destroy()
-        else:
-            dlg.Destroy()
-            return
-        # generate the powder reflections for the selected phase/calibrant
-        skip = data['calibskip']
         dmin = data['calibdmin']
         G2frame.PhaseRing2Th = []
-        if selList[sel] == '(clear)':
-            G2plt.PlotExposedImage(G2frame,event=event)
-            return
-        elif selList[sel] in calList:
-            Bravais,SGs,Cells = calFile.Calibrants[selList[sel]][:3]
-            HKL = []
-            for bravais,sg,cell in zip(Bravais,SGs,Cells):
-                A = G2lat.cell2A(cell)
-                if sg:
-                    SGData = G2spc.SpcGroup(sg)[1]
-                    hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
-                    HKL += list(hkl)
-                else:
-                    hkl = G2lat.GenHBravais(dmin,bravais,A)
-                    HKL += list(hkl)
-        else:
-            phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-            phId = G2gd.GetGPXtreeItemId(G2frame,phId,selList[sel])
-            phdata = G2frame.GPXtree.GetItemPyData(phId)
-            SGData = phdata['General']['SGData']
-            A = G2lat.cell2A(phdata['General']['Cell'][1:7])
-            HKL = list(G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True))
-        for iH,H in enumerate(HKL):
-            tth = 2.0*asind(data['wavelength']/(2.*H[3]))
-            G2frame.PhaseRing2Th.append(tth)
-        G2plt.PlotExposedImage(G2frame,event=event)
+        for p in phaseOpts['selList']:
+            if not phaseOpts[p]['Show']: continue
+            rColor = phaseOpts[p]['color']
+            rWid = phaseOpts[p]['width']
+            rStyle = phaseOpts[p]['MPLstyle']
+            if p in phaseOpts['calList']: # this is a calibrant
+                Bravais,SGs,Cells = calFile.Calibrants[p][:3]
+                HKL = []
+                for bravais,sg,cell in zip(Bravais,SGs,Cells):
+                    A = G2lat.cell2A(cell)
+                    if sg:
+                        SGData = G2spc.SpcGroup(sg)[1]
+                        hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
+                        HKL += list(hkl)
+                    else:
+                        hkl = G2lat.GenHBravais(dmin,bravais,A)
+                        HKL += list(hkl)
+            else:
+                phId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+                phId = G2gd.GetGPXtreeItemId(G2frame,phId,p)
+                phdata = G2frame.GPXtree.GetItemPyData(phId)
+                SGData = phdata['General']['SGData']
+                A = G2lat.cell2A(phdata['General']['Cell'][1:7])
+                HKL = list(G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True))
+            for H in HKL:
+                if len(G2frame.PhaseRing2Th) == 250:
+                    if phaseOpts['warnOnce'] is None:
+                        dlg = wx.MessageDialog(G2frame,
+                                'You have generated 250+ reflections. Are you sure you want to do this? Press Yes to stop adding more rings to plot.',
+                                caption='Too many rings?',
+                                style=wx.YES_NO|wx.ICON_EXCLAMATION)
+                        if dlg.ShowModal() != wx.ID_YES:
+                            phaseOpts['warnOnce'] = False
+                        else:
+                            phaseOpts['warnOnce'] = True
+                        dlg.Destroy()
+                    if phaseOpts['warnOnce']:
+                        G2plt.PlotExposedImage(G2frame,event=None)
+                        return
+                tth = 2.0*asind(data['wavelength']/(2.*H[3]))
+                G2frame.PhaseRing2Th.append((tth,rColor,rWid,rStyle))
+        G2plt.PlotExposedImage(G2frame,event=None)
         
-    # UpdateImageControls: Image Controls main code             
-                            
-    #fix for old files:
+    # UpdateImageControls starts here: Image Controls main code             
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ImageMenu)
+    #patch: fix for old files:
     if 'azmthOff' not in data:
         data['azmthOff'] = 0.0
     if 'background image' not in data:
@@ -1642,7 +1659,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['type'] = 'PWDR'
     typeDict = {'PWDR':typeList[0],'SASD':typeList[1],}
     G2frame.dataWindow.ClearData()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ImageMenu)
     G2frame.Bind(wx.EVT_MENU, OnCalibrate, id=G2G.wxID_IMCALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2G.wxID_IMRECALIBRATE)
     G2frame.Bind(wx.EVT_MENU, OnRecalibAll, id=G2G.wxID_IMRECALIBALL)
@@ -1666,7 +1682,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnLoadMultiControls, id=G2G.wxID_LOADELECTEDCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnTransferAngles, id=G2G.wxID_IMXFERCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnResetDist, id=G2G.wxID_IMRESETDIST)
-    G2frame.Bind(wx.EVT_MENU, OnDrawPhase, id=G2G.wxID_IMDRWPHS)
+    G2frame.Bind(wx.EVT_MENU, OnSelectPhases, id=G2G.wxID_IMDRWPHS)
     def OnDestroy(event):
         G2frame.autoIntFrame = None
     def OnAutoInt(event):
@@ -2167,14 +2183,15 @@ def UpdateMasks(G2frame,data):
         RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)
         G2plt.PlotXY(G2frame,[RingInt,],labelX='Azimuth',labelY='Intensity',newPlot=True,
             Title='Ring Mask Intensity: 2%s=%.2f'%(GkTheta,data['Rings'][ringId][0]),lines=True)
-                    
+
+    # UpdateMasks starts here
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MaskMenu)
     G2frame.dataWindow.ClearData()
     startScroll = None
     if G2frame.dataWindow:
         startScroll = G2frame.dataWindow.GetScrollPos(wx.VERTICAL) # save scroll position
     else:
         CleanupMasks(data) # posting page for 1st time; clean out anything unfinished
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MaskMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyMask, id=G2G.wxID_MASKCOPY)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
@@ -2834,6 +2851,7 @@ def UpdateStressStrain(G2frame,data):
         data['Sample load'] = 0.0
 # end patches
     
+    # UpdateStressStrain starts here
     G2frame.dataWindow.ClearData()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.StrStaMenu)
     G2frame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2G.wxID_APPENDDZERO)
@@ -4364,7 +4382,7 @@ def testColumnMetadata(G2frame):
         elif key in lbldict.values():
             l += ["  {} = {}".format(key,metadata[key])]
         else:
-            t += ["** Unexpected:  {}".format(key,metadata[key])]
+            t += [f"** Unexpected: {key}:{metadata[key]}"]
     if type(metadata['filename']) is str:
         l += ["","Filename: "+ metadata['filename']]
     else:
@@ -4379,6 +4397,176 @@ def testColumnMetadata(G2frame):
         if i in usedCols: continue
         t += ["  {}: {}".format(i,items[i])]
     dlg = G2G.G2SingleChoiceDialog(None,title,'Column metadata parse results',t,
-                                   monoFont=True,filterBox=False,size=(400,600),
-                                   style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE|wx.OK)
+                monoFont=True,filterBox=False,size=(400,600),
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE|wx.OK)
     dlg.ShowModal()
+
+#===========================================================================
+# GUI code to select phase(s) to superimpose on an image as well as
+# phase display options
+phaseOpts = {'phaseColorCount': 0}  # for phase superposition plotting options
+# phaseOpts['phaseColorCount'] counts number of phases that have been selected 
+def selectPhase(G2frame,calList,RefreshPlot):
+    '''Display a dialog with a list of avaliable phases
+
+    :param G2frame: main GSAS-II window
+    :param list calList: a list of phases and calibrants that can be selected
+    :param function RefreshPlot: a callable routine that will redisplay
+      the image
+    '''
+    # assemble a list of validated colors for tickmarks
+    if 'phaseColors' not in phaseOpts:
+        valid_colors = []
+        invalid_colors = []
+        for color in GSASIIpath.GetConfigValue('Ref_Colors',
+                                                getDefault=True).split():
+            try:
+                if mpl.colors.is_color_like(color):
+                    valid_colors.append(color)
+                else:
+                    invalid_colors.append(color)
+            except:
+                pass
+            if invalid_colors: # show error once
+                print(f'**** bad color code(s): "{", ".join(invalid_colors)}" - redo Preferences/Ref_Colors ****')
+        if len(valid_colors) < 3:
+            phaseOpts['phaseColors'] = ['b','r','c','g','m','k']
+        else:
+            phaseOpts['phaseColors'] = valid_colors
+    initPhaseOpts(calList)
+    dlg = wx.Dialog(G2frame,
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(
+        wx.StaticText(dlg,wx.ID_ANY,'Set options for superimposing phases on image',
+                          style=wx.ALIGN_CENTER),
+        0,wx.ALIGN_CENTER)
+    mainSizer.Add((-1,10))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Phases listed below are those imported into the current project followed by defined calibrants.')
+    txt.Wrap(510)
+    mainSizer.Add(txt)
+    mainSizer.Add((-1,10))
+    import wx.lib.scrolledpanel as wxscroll
+    panel = wxscroll.ScrolledPanel(dlg,size=(520,300))
+    headers = ['phase name  ',' Show ',' Color ','Width','Line type']
+    gsizer = wx.FlexGridSizer(cols=len(headers),hgap=2,vgap=2)
+    displayPhase(G2frame,calList,panel,gsizer,headers,RefreshPlot)
+    mainSizer.Add(panel,1,wx.EXPAND,1)
+    panel.SetSizer(gsizer)
+    panel.SetAutoLayout(1)
+    panel.SetupScrolling()
+    # OK/Cancel buttons
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER,5)
+    mainSizer.Layout()
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    dlg.ShowModal()
+
+def initPhaseOpts(phases):
+    '''Make sure that the options for display of partials are all defined
+    '''
+    for p in phases:
+        phaseOpts[p] = phaseOpts.get(p,{})
+        phaseOpts[p]['Show'] = phaseOpts[p].get('Show',False)
+        # colors are assigned as initially used
+        phaseOpts[p]['color'] = phaseOpts[p].get('color',None)
+        phaseOpts[p]['width'] = phaseOpts[p].get('width','1')
+        phaseOpts[p]['style'] = phaseOpts[p].get('style',2) # index in ltypeChoices/ltypeMPLname (see below)
+        phaseOpts[p]['MPLstyle'] = phaseOpts[p].get('MPLstyle','--')
+
+def displayPhase(G2frame,phList,panel,gsizer,headers,RefreshPlot):
+    '''Fills the scrolled panel with the potential phases to display
+    and their plot options
+    '''
+    def Refresh(*args):
+        '''update the panel to show colors etc for shown phases and
+        then update the image plot
+        '''
+        displayPhase(G2frame,phList,panel,gsizer,headers,RefreshPlot)
+        RefreshPlot()
+        
+    def OnSelectColor(event):
+        '''Respond to a change in color
+        '''
+        p = event.GetEventObject().phase
+        c = event.GetValue()
+        # convert wx.Colour to MPL color string
+        phaseOpts[p]['color'] = mpl.colors.to_hex(np.array(c.Get())/255)
+        Refresh()
+        
+    def StyleChange(*args):
+        'define MPL line style from line style index'
+        for p in phaseOpts['selList']:
+            try: 
+                phaseOpts[p]['MPLstyle'] = ltypeMPLname[phaseOpts[p]['style']]
+            except:
+                phaseOpts[p]['MPLstyle'] = '--'
+        Refresh()
+
+    import  wx.lib.colourselect as csel
+    ltypeChoices = ('solid','dotted','dashed','dash-dot','loosely dashed','loosely dashdotted')
+    ltypeMPLname = ('-',    ':',     '--',    '-.',      (0, (5, 10)),    (0, (3, 10, 1, 10)))
+
+    gsizer.Clear(True)
+    for h in headers:
+        txt = wx.StaticText(panel,wx.ID_ANY,h)
+        gsizer.Add(txt,0,wx.ALIGN_CENTER|wx.BOTTOM,6)
+    for p in phList:
+        txt = wx.StaticText(panel,wx.ID_ANY,p,size=(200,-1))
+        txt.Wrap(200)
+        gsizer.Add(txt,0,wx.ALIGN_LEFT)
+        #
+        ch = G2G.G2CheckBox(panel,'',phaseOpts[p],'Show',Refresh)
+        gsizer.Add(ch,0,wx.ALIGN_CENTER)
+        #
+        if phaseOpts[p]['Show']:
+            if phaseOpts[p]['color'] is None:
+                # first use of phase, set its color to next in sequence
+                ind = phaseOpts['phaseColorCount'] % len(phaseOpts['phaseColors'])
+                phaseOpts[p]['color'] = phaseOpts['phaseColors'][ind]
+                phaseOpts['phaseColorCount'] += 1
+            c = wx.Colour(mpl.colors.to_hex(phaseOpts[p]['color']))
+            b = csel.ColourSelect(panel, -1, '', c)
+            b.phase = p
+            b.Bind(csel.EVT_COLOURSELECT, OnSelectColor)
+            gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
+            #
+            lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
+            ch = G2G.G2ChoiceButton(panel,lwidChoices,None,None,
+                                    phaseOpts[p],'width',Refresh,
+                                    size=(50,-1))
+            gsizer.Add(ch,0,wx.ALIGN_CENTER)
+            #
+            ch = G2G.G2ChoiceButton(panel,ltypeChoices,
+                                    phaseOpts[p],'style',
+                                    None,None,StyleChange)
+            gsizer.Add(ch,0,wx.ALIGN_CENTER)
+        else:
+            b = (-1,-1)
+            gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
+            gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
+            gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
+    panel.SendSizeEvent()
+#===========================================================================    
+    
+if __name__ == '__main__':
+    app = wx.App()
+    GSASIIpath.InvokeDebugOpts()
+    frm = wx.Frame(None) # create a frame
+    ms = wx.BoxSizer(wx.VERTICAL)
+    text = 'this is a long string that will be scrolled'
+    ms.Add(G2G.ScrolledStaticText(frm,label=text))
+    frm.SetSizer(ms)
+    frm.Show(True) 
+    G2frame = frm
+   
+    # make a list of phases & calibrants
+    phList = sorted(calFile.Calibrants.keys(),key=lambda s: s.lower())
+    def RefreshPlot(*args): print('plot refresh')
+    selectPhase(G2frame,phList[1:],RefreshPlot)
+    #app.MainLoop()

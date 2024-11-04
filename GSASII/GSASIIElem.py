@@ -13,7 +13,7 @@ import numpy as np
 import atmdata
 import GSASIImath as G2mth
 import ElementTable as ET
-import GSASIIElem as G2elem
+#import GSASIIElem as G2elem   # but this module is GSASIIElem. Why are we doing this?
 nxs = np.newaxis
 Bohr = 0.529177
 
@@ -256,6 +256,15 @@ def FixValence(El):
     if '-0' in El:
         El = El.split('-0')[0]
     return El
+
+def SetAtomColor(El,RGB):
+    'Overrides the default color in the atoms table; not saved'
+    Elem = ET.ElTable
+    Elements = [elem[0][0] for elem in Elem]
+    if 'Q' in El: El = 'Q'      #patch - remove Qa, etc.
+    ElS = getElSym(El)
+    ET.ElTable[Elements.index(ElS)] = ET.ElTable[Elements.index(ElS)][0:6] + (
+        tuple(RGB),)
     
 def GetAtomInfo(El,ifMag=False):
     'reads element information from atmdata.py'
@@ -752,7 +761,7 @@ def SetupGeneral(data, dirname):
     be done after changes to the Atoms array.
 
     Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`), 
-    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`SUBGROUPS.saveNewPhase`,
+    :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`GSASIImiscGUI.saveNewPhase`,
     and in :func:`GSASIIscriptable.SetupGeneral`.
     '''
     generalData = data['General']
@@ -900,7 +909,8 @@ def SetupGeneral(data, dirname):
                     continue
                 nSh = len(Srb['RBId'])
                 for iSh in range(nSh):
-                    Info = G2elem.GetAtomInfo(Srb['atType'][iSh])
+#                    Info = G2elem.GetAtomInfo(Srb['atType'][iSh])
+                    Info = GetAtomInfo(Srb['atType'][iSh])
                     if Info['Symbol'] not in generalData['AtomTypes']:
                         generalData['AtomTypes'].append(Info['Symbol'])
                         generalData['Z'] = Info['Z']

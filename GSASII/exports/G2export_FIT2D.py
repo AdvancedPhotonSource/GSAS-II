@@ -1,23 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 14:22:54 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5576 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_FIT2D.py $
-# $Id: G2export_FIT2D.py 5576 2023-05-11 19:22:54Z toby $
-########### SVN repository information ###################
 '''Classes in :mod:`G2export_FIT2D` follow:
 '''
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5576 $")
-import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 import GSASIIobj as G2obj
 
-class ExportPowderCHI(G2IO.ExportBaseclass):
+class ExportPowderCHI(G2fil.ExportBaseclass):
     '''Used to create a CHI file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -66,7 +56,7 @@ class ExportPowderCHI(G2IO.ExportBaseclass):
             self.Writer(hist)
             print('Histogram '+hist+' written to file '+self.fullpath)
 
-class ExportPowderQCHI(G2IO.ExportBaseclass):
+class ExportPowderQCHI(G2fil.ExportBaseclass):
     '''Used to create a q-binned CHI file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

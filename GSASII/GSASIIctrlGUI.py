@@ -91,19 +91,8 @@ def Define_wxId(*args):
 #### Tree Control ################################################################################
 class G2TreeCtrl(wx.TreeCtrl):
     '''Create a wrapper around the standard TreeCtrl so we can "wrap"
-    various events.
-    
-    This logs when a tree item is selected (in :meth:`onSelectionChanged`)
-
-    This also wraps lists and dicts pulled out of the tree to track where
-    they were retrieved from.
+    various events.    
     '''
-    #def SelectItem(self,event):
-    #    print 'Select Item'
-    #    import GSASIIobj as G2obj
-    #    G2obj.HowDidIgetHere()
-    #    wx.TreeCtrl.SelectItem(self,event)
-        
     def __init__(self,parent=None,*args,**kwargs):
         super(self.__class__,self).__init__(parent=parent,*args,**kwargs)
         self.G2frame = parent.GetTopLevelParent()

@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 '''
-:mod:`GSASIIstrMath` routines, used for refinement computations 
-are found below.
+:mod:`GSASIIstrMath` routines, found below, used to support 
+refinement-related computations. These routines are used primarily in 
+:mod:`GSASIIstrMain` and :mod:`GSASIIstrIO`, but also in a few other routines 
+in other locations:
+The :meth:`GSASIIfiles.ExportBaseclass.loadParmDict` routine accesses routine 
+:func:`computeRBsu`, :meth:`GSASIIdataGUI.GSASII.OnExpressionCalc` 
+accesses :func:`ApplyRBModels` and in module :mod:`testDeriv` routines 
+:func:`errRefine` and :func:`dervRefine` are accessed a several places. 
+
+The routines here are most commonly called when working from a .gpx file, but 
+may sometimes be called from the GUI. These routines expect that all needed 
+input will have been read from the file/tree and are passed to the 
+routines as arguments. The data tree is never accessed directly here.
+
 '''
 from __future__ import division, print_function
 import time
@@ -346,7 +358,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
-
+                
 def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
     '''Computes s.u. values for atoms in rigid bodies
 

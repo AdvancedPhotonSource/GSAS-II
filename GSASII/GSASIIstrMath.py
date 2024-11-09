@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 '''
-:mod:`GSASIIstrMath` routines, used for refinement computations 
-are found below.
+:mod:`GSASIIstrMath` routines, found below, used to support 
+refinement-related computations. These routines are used primarily in 
+:mod:`GSASIIstrMain` and :mod:`GSASIIstrIO`, but also in a few other routines 
+in other locations:
+The :meth:`GSASIIfiles.ExportBaseclass.loadParmDict` routine accesses routine 
+:func:`computeRBsu`, :meth:`GSASIIdataGUI.GSASII.OnExpressionCalc` 
+accesses :func:`ApplyRBModels` and in module :mod:`testDeriv` routines 
+:func:`errRefine` and :func:`dervRefine` are accessed a several places. 
+
+The routines here are most commonly called when working from a .gpx file, but 
+may sometimes be called from the GUI. These routines expect that all needed 
+input will have been read from the file/tree and are passed to the 
+routines as arguments. The data tree is never accessed directly here.
+
 '''
 from __future__ import division, print_function
 import time
@@ -346,87 +358,6 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
-
-def mkParmDictfromTree(G2frame):#,computeSU=False):
-    '''Load the GSAS-II refinable parameters from the tree into dict parmDict
-    Update refined values to those from the last cycle 
-
-    '''
-    G2frame.CheckNotebook()
-    parmDict = {}
-    #self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
-    #self.RBsuDict = {} # dict with s.u. values for atoms in a rigid body
-    rigidbodyDict = {}
-    covDict = {}
-    consDict = {}
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if G2frame.GPXtree.IsEmpty(): return # nothing to do
-    item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-    while item:
-        name = G2frame.GPXtree.GetItemText(item)
-        if name == 'Rigid bodies':
-             rigidbodyDict = G2frame.GPXtree.GetItemPyData(item)
-        elif name == 'Covariance':
-             covDict = G2frame.GPXtree.GetItemPyData(item)
-        elif name == 'Constraints':
-             consDict = G2frame.GPXtree.GetItemPyData(item)
-        item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-    rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    parmDict.update(rbDict)
-    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave =  \
-        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
-    parmDict.update(phaseDict)
-    hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
-    parmDict.update(hapDict)
-    histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
-    parmDict.update(histDict)
-    parmDict.update(zip(
-            covDict.get('varyList',[]),
-            covDict.get('variables',[])))
-    #self.sigDict = dict(zip(
-    #        covDict.get('varyList',[]),
-    #        covDict.get('sig',[])))
-    # expand to include constraints: first compile a list of constraints
-    constList = []
-    for item in consDict:
-        if item.startswith('_'): continue
-        constList += consDict[item]
-    # now process the constraints
-    G2mv.InitVars()
-    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
-    varyList = covDict.get('varyListStart')
-    if varyList is None and len(constrDict) == 0:
-        # no constraints can use varyList
-        varyList = covDict.get('varyList')
-    elif varyList is None:
-        varyList = []
-        # # old GPX file from before pre-constraint varyList is saved
-        # print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
-        # raise Exception(' *** Export aborted ***')
-    else:
-        varyList = list(varyList)
-        # add symmetry-generated constraints
-    rigidbodyDict = G2frame.GPXtree.GetItemPyData(   
-            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave = \
-        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
-    msg = G2mv.EvaluateMultipliers(constrDict,phaseDict)
-    if msg:
-        print('Unable to interpret constraint multiplier(s): '+msg)
-        return None
-    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
-    if errmsg:
-        # this really should not happen
-        print (' *** ERROR - constraints are internally inconsistent ***')
-        print ('Errors: ',errmsg)
-        if warnmsg: print ('Warnings'+warnmsg)
-        return None
-    G2mv.Map2Dict(parmDict,varyList)   # changes varyList
-    G2mv.Dict2Map(parmDict)   # add the constrained values to the parameter dictionary
-    return parmDict,rigidbodyDict,covDict
                 
 def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
     '''Computes s.u. values for atoms in rigid bodies

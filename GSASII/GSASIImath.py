@@ -2790,14 +2790,18 @@ def getRestPolefigDerv(HKL,Grid,SHCoeff):
     pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
-    '''computes the numerical derivative of the distance between two atoms
-    used here in :func:`CalcDistDeriv` and in 
-    :func:`GSASIIstrMain.RetDistAngle`
+    '''computes the numerical derivative of the distance between two atoms.
+    Used in :func:`CalcDistDeriv` (seq. table) and in 
+    :func:`GSASIIstrMain.RetDistAngle` to compute the s.u. on the distance
     
-    :param type name: description
-    
-    :returns: type name: description
-    
+    :param list Oxyz: list of x, y, & z values for the Origin atom
+    :param list Txyz: list of x, y, & z values for the Target atom
+    :param np.array Amat: The reciprocal cell tensor
+    :param Tunit: translation applied to the target atom
+    :param int Top: symmetry operation applied to the target atom
+    :param dict SGData: space group object
+
+    :returns: the derivative w/r to the six coordinates, Oxyz & Txyz
     '''
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
@@ -2822,7 +2826,111 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
         deriv[i+3] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
         Txyz[i] -= dx
     return deriv
+
+def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
+    '''Compute a copy of the parameter dict (parmDict) with each varied 
+    parameter incremented by 1 s.u. value and with those values extended to 
+    other parameters due to rigid bodies or constraints. This gets called
+    once to prepare for s.u. computations in func:`GSASIIstrMain.RetDistAngle`
+    and the values are reused in every distance and angle computation. 
+
+    :returns: multiParmDict,changedParmDict where 
+      * multiParmDict[k] (k in varyList, plus None) is the copy of 
+        parmDict where parameter k has been changed; 
+      * changedParmDict[k] (k in varyList) is a list of all the parameters that have been 
+        changed in multiParmDict[k] after applying RB & constraints
+    '''
+    import GSASIImapvars as G2mv
+    import GSASIIstrMath as G2stMth
+    def extendChanges(prms):
+        '''Propagate changes due to constraint and rigid bodies 
+        from varied parameters to dependent parameters
+        '''
+        # apply constraints
+        G2mv.Dict2Map(prms)
+        # apply rigid body constraints
+        G2stMth.ApplyRBModels(prms,Phases,RBData)
+        # apply shifts to atoms
+        for dk in prms:
+            if not '::dA' in dk: continue
+            if prms[dk] == 0: continue
+            k = dk.replace('::dA','::A')
+            prms[k] += prms[dk]
+            prms[dk] = 0
+    multiParmDict = {None:copy.copy(parmDict)}
+    changedParmDict = {}
+    RBData = copy.deepcopy(rigidbodyDict)
+    for p,s in zip(varyList,sigList):
+        multiParmDict[p] = copy.copy(parmDict)
+        if p not in multiParmDict[p]:
+            print(f'setupRBDistDerv warning: parameter {p} not in parmDict')
+            continue
+        if s == 0: continue
+        multiParmDict[p][p] += s
+        extendChanges(multiParmDict[p])
+        changedParmDict[p] = []
+        for v in parmDict:
+            if '::dA' in v: continue
+            try:
+                if abs(multiParmDict[p][v] - parmDict[v]) > 1e-8:
+                    changedParmDict[p].append(v)
+            except:
+                pass
+    return multiParmDict,changedParmDict
+
+def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
+                      multiParmDict,changedParmDict,
+                      varyList,sigList):
+    '''computes the numerical derivative of the distance between two 
+    atoms. Used where one or both is in a rigid body.
+    Used in :func:`GSASIIstrMain.RetDistAngle` to compute the s.u. on 
+    the distance
     
+    :param list OxyzNames: parameter names for x, y, & z for the Origin atom
+    :param list TxyzNames: parameter names for x, y, & z for the Target atom
+    :param np.array Amat: The reciprocal cell tensor
+    :param Tunit: translation applied to the target atom
+    :param int Top: symmetry operation applied to the target atom
+    :param dict SGData: space group object
+    :param dict multiParmDict: multiParmDict[var] is the parameter 
+      dict where var has been offset by sigma (see sigList), as well 
+      as any parameters dependent on var
+    :param dict changedParmDict: changedParmDict[var] is a list the 
+      parameters changed in multiParmDict[var]
+    :param list varyList: list of varied parameters in the covariance 
+      matrix
+    :param list sigList: list of s.u. values for each of entry in 
+      varyList
+
+    :returns: the derivative w/r to the six coordinates, Oxyz & Txyz
+    '''
+    def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
+        TxT = inv*(np.inner(M,Tx)+T)+C+U
+        return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
+    
+    inv = Top/abs(Top)
+    cent = abs(Top)//100
+    op = abs(Top)%100-1
+    M,T = SGData['SGOps'][op]
+    C = SGData['SGCen'][cent]
+    OxyzNames = [k.replace('::dA','::A') for k in OdxyzNames]
+    TxyzNames = [k.replace('::dA','::A') for k in TdxyzNames]
+    # compute initial distance
+    Oxyz = [multiParmDict[None][k] for k in OxyzNames]
+    Txyz = [multiParmDict[None][k] for k in TxyzNames]
+    d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
+    deriv = np.zeros(len(varyList))    
+    for i,(var,sig) in enumerate(zip(varyList,sigList)):
+        if var not in multiParmDict or sig == 0: continue
+        # are any of the coordinates changed?
+        #if not any([k in changedParmDict[var] for k in OxyzNames+TxyzNames]): continue
+        if not any(True for x in changedParmDict[var] if x in OxyzNames+TxyzNames): continue # faster
+        Oxyz = [multiParmDict[var][k] for k in OxyzNames]
+        Txyz = [multiParmDict[var][k] for k in TxyzNames]
+        # delta(dist) / delta(var)
+        deriv[i] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/sig
+    return deriv
+
 def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
     '''computes the numerical derivative of the angle between two vectors
     (generated from pairs of atoms) used here in :func:`getAngSig`.

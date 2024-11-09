@@ -2072,7 +2072,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     for atom in data['Drawing']['Atoms']:
                         if atom[ct] != El: continue
                         atom[cs+2] = RGB
-                    breakpoint()
                     wx.CallAfter(UpdateGeneral)
                 dlg.Destroy()
                     
@@ -5442,75 +5441,101 @@ def UpdatePhaseData(G2frame,Item,data):
         OnDistAngle(event,hist=True)
         
     def OnDistAngle(event,fp=None,hist=False):
-        'Compute distances and angles'    
-        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
+        '''Compute distances and angles in response to a menu command
+        or may be called by :func:`OnDistAnglePrt` or :func:`OnDistAngleHist`.
+
+        This calls :func:`GSASIIstrMain.PrintDistAngle` to compute
+        bond distances & angles (computed in 
+        :func:`GSASIIstrMain.RetDistAngle`) and 
+        then format the results in a convenient way or plot them
+        using G2plt.PlotBarGraph.
+        '''
+
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms,ct-1)
+        if not indx:
+            print ("select one or more rows of atoms")
+            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            return
         Oxyz = []
         xyz = []
         DisAglData = {}
         DisAglCtls = {}
-        if indx:
-            generalData = data['General']
-            DisAglData['OrigIndx'] = indx
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
-            if dlg.ShowModal() == wx.ID_OK:
-                DisAglCtls = dlg.GetData()
-            else:
-                dlg.Destroy()
-                return
+        # add RB stuff to DisAglData
+        DisAglData['RBlist'] = []          # list of atom numbers used in the RB
+        for d in data['RBModels']['Residue']:
+            for rId in d['Ids']:
+                num = int(G2obj.LookupAtomId(ranId=rId,pId=data['pId']))
+                DisAglData['RBlist'].append(num)
+        DisAglData['rigidbodyDict'] = G2frame.GPXtree.GetItemPyData(
+             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        _,DisAglData['Phases'] = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        DisAglData['parmDict'] = G2IO.mkParmDictfromTree(G2frame)
+        # other setup prep
+        generalData = data['General']
+        DisAglData['OrigIndx'] = indx
+        if 'DisAglCtls' in generalData:
+            DisAglCtls = generalData['DisAglCtls']
+        # get atomic radii
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
+        if dlg.ShowModal() == wx.ID_OK:
+            DisAglCtls = dlg.GetData()
             dlg.Destroy()
-            generalData['DisAglCtls'] = DisAglCtls
-            atomData = data['Atoms']
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            cx = colLabels.index('x')
-            cn = colLabels.index('Name')
-            ct = colLabels.index('Type')
-            Atypes = []
-            for i,atom in enumerate(atomData):
-                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-                if i in indx:
-                    Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-                    Atypes.append(atom[ct])
-            Atypes = set(Atypes)
-            Atypes = ', '.join(Atypes)
-            DisAglData['OrigAtoms'] = Oxyz
-            DisAglData['TargAtoms'] = xyz
-            generalData = data['General']
-            DisAglData['SGData'] = generalData['SGData']
-            DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
-            if 'pId' in data:
-                DisAglData['pId'] = data['pId']
-                DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
-            try:
-                if hist:
-                    pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1, 
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
-                    pgbar.Destroy()
-                    Bonds = []
-                    for dists in DistArray:
-                        Bonds += [item[3] for item in DistArray[dists]]
-                    G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
-                        Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
-                    print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
-                    Angles = []
-                    for angles in AngArray:
-                        Angles += [item[2][0] for item in AngArray[angles]]
-                    G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
-                        Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
-                    print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
-                    
-                elif fp:
-                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
-                else:    
-                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
-            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
-            print ("select one or more rows of atoms")
-            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            dlg.Destroy()
+            return
+        generalData['DisAglCtls'] = DisAglCtls
+        atomData = data['Atoms']
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        ct = colLabels.index('Type')
+        Atypes = []
+        DisAglData['TargIndx'] = list(range(len(atomData)))
+        for i,atom in enumerate(atomData):
+            xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+            if i in indx:
+                Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+                Atypes.append(atom[ct])
+        Atypes = set(Atypes)
+        Atypes = ', '.join(Atypes)
+        DisAglData['OrigAtoms'] = Oxyz
+        DisAglData['TargAtoms'] = xyz
+        generalData = data['General']
+        DisAglData['SGData'] = generalData['SGData']
+        DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
+        if 'pId' in data:
+            DisAglData['pId'] = data['pId']
+            DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
+        try:
+            if hist:
+                pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1, 
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
+                pgbar.Destroy()
+                Bonds = []
+                for dists in DistArray:
+                    Bonds += [item[3] for item in DistArray[dists]]
+                G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
+                    Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
+                print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
+                Angles = []
+                for angles in AngArray:
+                    Angles += [item[2][0] for item in AngArray[angles]]
+                G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
+                    Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
+                print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
+
+            elif fp:
+                #from importlib import reload
+                #reload(G2stMn)
+                #reload(G2mth)
+                #print('reloading G2stMn & G2mth')
+                G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
+            else:    
+                G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
+        except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
+            G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
             
     def OnFracSplit(event):
         'Split atom frac accordintg to atom type & refined site fraction'    

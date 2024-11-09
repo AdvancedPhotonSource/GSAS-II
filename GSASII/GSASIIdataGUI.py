@@ -62,12 +62,10 @@ import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2stMn
-#import GSASIIstrMath as G2stMth
 import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 import GSASIIseqGUI as G2seq
 import GSASIIddataGUI as G2ddG
-#import GSASIIspc as G2spc
 
 try:
     wx.NewIdRef
@@ -637,9 +635,6 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES,"&Preferences",'')
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
-        if GSASIIpath.HowIsG2Installed() == 'svn':
-            item = parent.Append(wx.ID_ANY,'Edit proxy...','Edit proxy internet information (used for updates)')
-            self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
             try: 
                 import IPython
@@ -2293,85 +2288,7 @@ If you continue from this point, it is quite likely that all intensity computati
             G2fil.openInNewTerm(project)
             print ('exiting GSAS-II')
             sys.exit()
-                
 
-    def EditProxyInfo(self,event):
-        '''Edit the proxy information used by subversion (svn only, not used with git)
-        '''
-        h,p,e = host,port,etc = GSASIIpath.getsvnProxy()
-        labels = ['Proxy address','proxy port']
-        values = [host,port]
-        i = 1
-        for item in etc:
-            i += 1
-            labels.append('extra svn arg #'+str(i))
-            values.append(item)
-        msg = '''This dialog allows customization of the subversion (svn) 
-        command. If a proxy server is needed, the address/host and port 
-        can be added supplied here. This will generate command-line options 
-%t%          --config-option servers:global:http-proxy-host=*host*
-%t%          --config-option servers:global:http-proxy-port=*port*
-%%
-        where *host* will be a network name (proxy.subnet.org) or
-        IP address (102.3.123.23) and *port* will be a port number 
-        (integer such as 80, 8080, etc) or will be blank. 
-%%
-        Additional subversion command line options can be supplied here
-        by pressing the '+' button. Two lines are needed for each option 
-        where the first svn option name (starting with two dashes) and 
-        the second line will be the value. 
-        As examples of options that might be of 
-        value, use two extra lines to add:
-%t%          --config-dir
-%t%          DIR
-%%
-        to specify an alternate configuration location. 
-%%
-        Or, use four extra lines to add
-%t%          --config-option
-%t%          servers:global:http-proxy-username=*account*
-%t%          --config-option
-%t%          servers:global:http-proxy-password=*password*
-%%
-        to specify a proxy user name (*account*) and password (*password*). 
-        Note that this information will be stored in a plain-text file. 
-%%
-        See http://svnbook.red-bean.com for more information on subversion. 
-        '''
-        dlg = G2G.MultiStringDialog(self,'Enter proxy values',
-                            labels,values,size=300,addRows=True,hlp=msg)
-        if dlg.Show():
-            values = dlg.GetValues()
-            h,p = values[:2]
-            e = values[2:]
-        dlg.Destroy()
-        if h != host or p != port or etc != e:
-            localproxy = proxyinfo = os.path.join(
-                os.path.expanduser('~/.G2local/'),
-                "proxyinfo.txt")
-            if not os.path.exists(proxyinfo):
-                proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
-            GSASIIpath.setsvnProxy(h,p,e)
-            if not h.strip() and not e:
-                if os.path.exists(localproxy): os.remove(localproxy)
-                if os.path.exists(proxyinfo): os.remove(proxyinfo)
-                return
-            try:
-                fp = open(proxyinfo,'w')
-            except:
-                fp = open(localproxy,'w')
-                proxyinfo = localproxy
-            try:
-                fp.write(h.strip()+'\n')
-                fp.write(p.strip()+'\n')
-                for i in e:
-                    if i.strip():
-                        fp.write(i.strip()+'\n')
-                fp.close()
-            except Exception as err:
-                print('Error writing file {}:\n{}'.format(proxyinfo,err))
-            print('File {} written'.format(proxyinfo))
-                
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
         '''
@@ -4362,6 +4279,15 @@ If you continue from this point, it is quite likely that all intensity computati
         GSASIIpath.addPrevGPX(self.GSASprojectfile,config) # add new proj
         G2G.SaveConfigVars(config)
         self.LastGPXdir = pth
+        if GSASIIpath.GetConfigValue('debug'):
+            cmdfile = os.path.join(GSASIIpath.path2GSAS2,'debug_setup.py')
+            if os.path.exists(cmdfile):
+                print(f'executing debug commands from {cmdfile}')
+                txt = open(cmdfile,'r').read()
+                def exectxt():
+#                    print(txt)
+                    exec(txt)
+                wx.CallLater(100,exectxt)
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the

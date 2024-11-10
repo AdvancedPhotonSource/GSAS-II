@@ -18,6 +18,7 @@ import copy
 import pickle as cPickle
 import numpy as np
 import numpy.linalg as nl
+import numpy.ma as ma
 import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
@@ -1237,10 +1238,10 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
        * 'RBlist' has the index numbers for atoms in a rigid body
        * 'rigidbodyDict' the contents of the main Rigid Body data tree item
        * 'Phases' has the phase information for all used phases in the 
-         data tree. Only the current phase is needed, but...
+         data tree. Only the current phase is needed, but this is easy.
        * 'parmDict' is the GSAS-II parameter dict
 
-    :returns: AtomLabels,DistArray,AngArray where:
+    :returns: AtomLabels, DistArray, AngArray where:
 
       **AtomLabels** is a dict of atom labels, keys are the atom number
 
@@ -1248,24 +1249,25 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
       of distance entries. The value for each distance is a list containing:
 
         0) the target atom number (int);
-        1) the unit cell offsets added to x,y & z (tuple of int values)
-        2) the symmetry operator number (which may be modified to indicate centering and center of symmetry)
-        3) an interatomic distance in A (float)
-        4) an uncertainty on the distance in A or 0.0 (float)
+        1) the unit cell offsets added to x,y & z (tuple of int values);
+        2) the symmetry transformation, which includes the symmetry operator 
+           number, any centering, if a center of symmetry was applied;
+        3) an interatomic distance in A (float);
+        4) an uncertainty on the distance in A or 0.0 (float).
 
       **AngArray** is a dict keyed by the origin (central) atom number where
       the value is a list of
       angle entries. The value for each angle entry consists of three values:
 
-        0) a distance item reference for one neighbor (int)
-        1) a distance item reference for a second neighbor (int)
-        2) a angle, uncertainty pair; the s.u. may be zero (tuple of two floats)
+        0) a distance item reference for one neighbor atom (int);
+        1) a distance item reference for the second neighbor atom (int);
+        2) a angle, uncertainty pair; the s.u. may be zero (degrees, tuple of 
+           two floats).
 
       The AngArray distance reference items refer directly to the index of the items in the
-      DistArray item for the list of distances for the central atom.
+      DistArray item which gives the distance from the central atom and the applied
+      symmetry transformation for the two target atoms.
     '''
-    import numpy.ma as ma
-
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
@@ -1304,16 +1306,14 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
     AngArray = {}
     for iO,Oatom in enumerate(origAtoms):
         oRBdist = Oatom[0] in DisAglData['RBlist']   # is atom in a RB?
-        DistArray[Oatom[0]] = []
-        AngArray[Oatom[0]] = []
         OxyzNames = []
         if covData:
             OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
         IndBlist = []
         Dist = []
-        Vect = []  # can this be replaced with VectA?
+        # track vectors around Origin atom
         VectA = []
-        #angles = []
+        VectRB = [] # true if either atom is in a RB
         for Tatom in targAtoms:
             tRBdist = Tatom[0] in DisAglData['RBlist']   # is atom in RB?
             Xvcov = []
@@ -1328,44 +1328,45 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
                 dx = np.inner(Amat,Dx)
                 dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
                 IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
-                if np.any(IndB):
-                    for indb in IndB:
-                        for i in range(len(indb)):
-                            if str(dx.T[indb][i]) not in IndBlist:
-                                IndBlist.append(str(dx.T[indb][i]))
-                                unit = Units[indb][i]
-                                tunit = (unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
-                                sig = 0.0
-                                if (oRBdist or tRBdist) and multiParmDict:
-                                    pdpx = G2mth.getRBDistDerv(OxyzNames,TxyzNames,Amat,unit,Top,SGData,
-                                              multiParmDict,changedParmDict,varyList,varySig)
-                                    sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,covMatrix)))
-                                    if sig < 1e-9: sig = 0   # very small values are roundoff
-                                elif len(Xvcov):
-                                    pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
-                                    sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,Xvcov)))
-                                Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
-                                if (Dist[-1][-2]-AsumR) <= 0.:
-                                    Vect.append(dx.T[indb][i]/Dist[-1][-2])
-                                    VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
-                                else:
-                                    Vect.append([0.,0.,0.])
-                                    VectA.append([])
-        if dlg is not None:
-            dlg.Update(iO,newmsg='Atoms done=%d'%(iO))
-        for D in Dist:
-            DistArray[Oatom[0]].append(D[1:])
-        Vect = np.array(Vect)
-        #angles = np.zeros((len(Vect),len(Vect)))
-        #angsig = np.zeros((len(Vect),len(Vect)))
-        for i,veca in enumerate(Vect):
-            if np.any(veca):
-                for j,vecb in enumerate(Vect):
-                    if np.any(vecb):
-                        if i <= j: continue
-                        angSigij = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
-                        #angles[i][j],angsig[i][j] = angSigij
-                        AngArray[Oatom[0]].append((i,j,angSigij))
+                if not np.any(IndB): continue
+                for indb in IndB:
+                    for i in range(len(indb)):
+                        if str(dx.T[indb][i]) in IndBlist: continue
+                        IndBlist.append(str(dx.T[indb][i]))
+                        unit = Units[indb][i]
+                        tunit = (unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
+                        sig = 0.0
+                        RBdist = False
+                        if (oRBdist or tRBdist) and multiParmDict:
+                            pdpx = G2mth.getRBDistDerv(OxyzNames,TxyzNames,Amat,unit,Top,SGData,
+                                      multiParmDict,changedParmDict,varyList,varySig)
+                            sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,covMatrix)))
+                            if sig < 1e-9: sig = 0.   # very small values are roundoff
+                            RBdist = True
+                        elif len(Xvcov):
+                            pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
+                            sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,Xvcov)))
+                        Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
+                        VectRB.append(RBdist)
+                        if (Dist[-1][-2]-AsumR) <= 0.:
+                            VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
+                        else:
+                            VectA.append([])
+        DistArray[Oatom[0]] = [D[1:] for D in Dist]
+        AngArray[Oatom[0]] = []
+        for i,veca in enumerate(VectA):
+            if veca is None: continue
+            for j,vecb in enumerate(VectA):
+                if vecb is None: continue
+                if i <= j: continue
+                if (VectRB[i] or VectRB[j]) and covData:  # rigid body atom involved
+                    angSigij = G2mth.getRBAngSig(VectA[i],VectA[j],
+                            Amat,SGData,covData,
+                            multiParmDict,changedParmDict)
+                else:
+                    angSigij = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                AngArray[Oatom[0]].append((i,j,angSigij))
+        if dlg is not None: dlg.Update(iO,newmsg=f'Atoms done={iO} of {len(origAtoms)}')
     return AtomLabels,DistArray,AngArray
 
 def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):

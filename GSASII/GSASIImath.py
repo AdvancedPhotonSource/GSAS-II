@@ -2922,7 +2922,7 @@ def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
     deriv = np.zeros(len(varyList))    
     for i,(var,sig) in enumerate(zip(varyList,sigList)):
         if var not in multiParmDict or sig == 0: continue
-        # are any of the coordinates changed?
+        # are any of the coordinates changed by changing the value for var?
         #if not any([k in changedParmDict[var] for k in OxyzNames+TxyzNames]): continue
         if not any(True for x in changedParmDict[var] if x in OxyzNames+TxyzNames): continue # faster
         Oxyz = [multiParmDict[var][k] for k in OxyzNames]
@@ -2935,7 +2935,6 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
     '''computes the numerical derivative of the angle between two vectors
     (generated from pairs of atoms) used here in :func:`getAngSig`.
     '''
-    
     def calcAngle(Oxyz,ABxyz,Amat,Tunit,symNo,SGData):
         vec = np.zeros((2,3))
         for i in range(2):
@@ -2953,9 +2952,7 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
             if not dist:
                 return 0.
             vec[i] /= dist
-        angle = acosd(np.sum(vec[0]*vec[1]))
-    #    GSASIIpath.IPyBreak()
-        return angle
+        return acosd(np.sum(vec[0]*vec[1]))
         
     dx = .00001
     deriv = np.zeros(9)
@@ -3051,6 +3048,76 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return Ang,sigAng
     else:
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
+
+def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
+    '''Compute an interatomic angle and its uncertainty from two vectors 
+    each between an orgin atom and either of a pair of nearby atoms.
+    Uncertainties are computed taling into account rigid bodies and 
+    constraints.
+    
+    :param np.array VA: an interatomic vector as a structure
+    :param np.array VB: an interatomic vector also as a structure
+    :param np.array Amat: unit cell parameters as an A vector
+    :param dict SGData: symmetry information 
+    :param dict covData: covariance information including 
+      the covariance matrix and the list of varied parameters. If not 
+      supplied, the s.u. values are returned as zeros.
+    
+    :returns: angle, sigma(angle)
+    '''
+    def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
+        TxT = inv*(np.inner(M,Tx)+T)+C+U
+        return np.inner(Amat,(TxT-Ox))
+        
+    def calcAngle(Ox,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat):
+        VecA = calcVec(Ox,TxA,unitA,invA,CA,MA,TA,Amat)
+        VecA /= np.sqrt(np.sum(VecA**2))
+        VecB = calcVec(Ox,TxB,unitB,invB,CB,MB,TB,Amat)
+        VecB /= np.sqrt(np.sum(VecB**2))
+        edge = VecB-VecA
+        edge = np.sum(edge**2)
+        angle = (2.-edge)/2.
+        angle = max(angle,-1.)
+        return acosd(angle)
+        
+    OxAdN,OxA,TxAdN,TxA,unitA,TopA = VA
+    OxBdN,OxB,TxBdN,TxB,unitB,TopB = VB
+    print(OxAdN[0],TxAdN[0],OxBdN[0],TxBdN[0])
+    invA = invB = 1
+    invA = TopA//abs(TopA)
+    invB = TopB//abs(TopB)
+    centA = abs(TopA)//100
+    centB = abs(TopB)//100
+    opA = abs(TopA)%100-1
+    opB = abs(TopB)%100-1
+    MA,TA = SGData['SGOps'][opA]
+    MB,TB = SGData['SGOps'][opB]
+    CA = SGData['SGCen'][centA]
+    CB = SGData['SGCen'][centB]
+    covMatrix = covData['covMatrix']
+    varyList = covData['varyList']
+    sigList = covData['sig']
+    OxAN = [k.replace('::dA','::A') for k in OxAdN]
+    TxAN = [k.replace('::dA','::A') for k in TxAdN]
+    TxBN = [k.replace('::dA','::A') for k in TxBdN]
+    Ang0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+    deriv = np.zeros(len(varyList))    
+    for i,(var,sig) in enumerate(zip(varyList,sigList)):
+        if var not in multiParmDict or sig == 0: continue
+        # are any of the coordinates changed by changing the var value?
+        if not any(True for x in changedParmDict[var] if x in OxAN+TxAN+TxBN):
+            continue
+        OxA = [multiParmDict[var][k] for k in OxAN]
+        TxA = [multiParmDict[var][k] for k in TxAN]
+        TxB = [multiParmDict[var][k] for k in TxBN]
+        Ang = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+        deriv[i] = (Ang-Ang0)/sig
+        #print(var,Ang,Ang0,(Ang-Ang0)/sig)
+    sigAng = np.sqrt(np.inner(deriv,np.inner(covMatrix,deriv)))
+    if sigAng < 1e-9: sigAng = 0.   # very small values are roundoff
+    print (Ang0,sigAng)
+    #breakpoint()
+    return Ang0,sigAng
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     '''not used

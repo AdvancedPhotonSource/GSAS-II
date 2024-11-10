@@ -6763,16 +6763,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 colLabels.insert(3,'M')
         else:
             if 'C' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
                 Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif Inst['Type'][0][2] in ['A','B']:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'E' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','I100']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','I100']
                 Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')

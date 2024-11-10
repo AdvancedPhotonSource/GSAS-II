@@ -2183,7 +2183,7 @@ class ExportBaseclass(object):
         '''
         if self.fp is None and self.DelayOpen:
             if GSASIIpath.GetConfigValue('debug'): 
-                print('Delayed open: close before file not created')
+                print('Delayed open: close before uncreated file')
             return
         if self.fp is None:
             if GSASIIpath.GetConfigValue('debug'): 

@@ -3082,7 +3082,6 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
         
     OxAdN,OxA,TxAdN,TxA,unitA,TopA = VA
     OxBdN,OxB,TxBdN,TxB,unitB,TopB = VB
-    print(OxAdN[0],TxAdN[0],OxBdN[0],TxBdN[0])
     invA = invB = 1
     invA = TopA//abs(TopA)
     invB = TopB//abs(TopB)
@@ -3112,11 +3111,8 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
         TxB = [multiParmDict[var][k] for k in TxBN]
         Ang = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
         deriv[i] = (Ang-Ang0)/sig
-        #print(var,Ang,Ang0,(Ang-Ang0)/sig)
     sigAng = np.sqrt(np.inner(deriv,np.inner(covMatrix,deriv)))
     if sigAng < 1e-9: sigAng = 0.   # very small values are roundoff
-    print (Ang0,sigAng)
-    #breakpoint()
     return Ang0,sigAng
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):

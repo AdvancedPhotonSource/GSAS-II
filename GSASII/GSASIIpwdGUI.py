@@ -1042,7 +1042,7 @@ def UpdatePeakGrid(G2frame, data):
         'Set background colors in peak list table; red if negative (nonsense), white if ok'
         for r in range(reflGrid.GetNumberRows()):
             for c in range(reflGrid.GetNumberCols()):
-                if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
+                if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma\u00b2','gamma']:
                     try:
                         if float(reflGrid.GetCellValue(r,c)) < 0.:
                             reflGrid.SetCellBackgroundColour(r,c,wx.RED)

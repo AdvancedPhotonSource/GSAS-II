@@ -2335,7 +2335,7 @@ def getHeaderInfo(dataType):
     lnames = ['position','intensity']
     if 'LF' in dataType:
         names = ['int','sig','gam','dampM','dampP','l','ttheta']
-        lnames = ['intensity','sigma','gamma','damping\nminus',
+        lnames = ['intensity','sigma\u00b2','gamma','damping\nminus',
                       'damping\nplus','00l',
                       #'2theta    '
                       '2\u03B8'
@@ -2343,19 +2343,19 @@ def getHeaderInfo(dataType):
         fmt = ["%10.2f","%10.3f","%10.3f","%10.3f","%10.3f","%4.0f","%8.3f"]
     elif 'C' in dataType:
         names += ['sig','gam']
-        lnames += ['sigma','gamma']
+        lnames += ['sigma\u00b2','gamma']
         fmt = ["%10.5f","%10.1f","%10.3f","%10.3f"]
     elif 'T' in dataType:
         names += ['alp','bet','sig','gam']
-        lnames += ['alpha','beta','sigma','gamma']
+        lnames += ['alpha','beta','sigma\u00b2','gamma']
         fmt = ["%10.2f","%10.4f","%8.3f","%8.5f","%10.3f","%10.3f"]
     elif 'E' in dataType:
         names += ['sig','gam']
-        lnames += ['sigma','gamma']
+        lnames += ['sigma\u00b2','gamma']
         fmt = ["%10.5f","%10.1f","%8.3f","%10.3f"]
     else: # 'B'
         names += ['alp','bet','sig','gam']
-        lnames += ['alpha','beta','sigma','gamma']
+        lnames += ['alpha','beta','sigma\u00b2','gamma']
         fmt = ["%10.5f","%10.1f","%8.2f","%8.4f","%10.3f","%10.3f"]
     return names, fmt, lnames
 

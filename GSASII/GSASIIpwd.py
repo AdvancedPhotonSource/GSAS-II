@@ -1,4 +1,3 @@
-#/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow. 
@@ -26,7 +25,13 @@ import scipy.special as sp
 import scipy.signal as signal
 
 import GSASIIpath
-filversion = "$Revision: 5796 $"   # TODO: this should be removed (& where used)
+
+filversion = "?" 
+try:
+    import git_verinfo
+    filversion = git_verinfo.git_tags[0]
+except:
+    pass
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -3093,7 +3098,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     BraggWt = RMCPdict['histogram'][1]
     inst = PWDdata['Instrument Parameters'][0]
     try:
-        pName = Phase['General']['Name']
+        #pName = Phase['General']['Name']
         refList = PWDdata['Reflection Lists'][Name]['RefList']
     except TypeError:
         return 'Error - missing reflection list; you must do Refine first'
@@ -3882,11 +3887,11 @@ def MakefullrmcRun(pName,Phase,RMCPdict):
         atomsList.append([el] + atom[cx:cx+4])
     projDir,projName = os.path.split(os.path.abspath(pName))
     scrname = pName+'-fullrmc.py'
-    restart = '%s_restart.pdb'%pName
+    #restart = '%s_restart.pdb'%pName
     Files = RMCPdict['files']
     rundata = ''
     rundata += '## fullrmc %s file ##\n## OK to edit this by hand ##\n'%scrname
-    rundata += '# created in '+__file__+" v"+filversion.split()[1]
+    rundata += '# created in '+__file__+" v"+filversion
     rundata += dt.datetime.strftime(dt.datetime.now()," at %Y-%m-%dT%H:%M\n")
     rundata += '''
 # fullrmc imports (all that are potentially useful)

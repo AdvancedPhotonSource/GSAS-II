@@ -1,12 +1,4 @@
-#/usr/bin/env python
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-11-06 09:07:21 -0600 (Mon, 06 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5698 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIsasd.py $
-# $Id: GSASIIsasd.py 5698 2023-11-06 15:07:21Z vondreele $
-########### SVN repository information ###################
 '''
 Classes and routines defined in :mod:`GSASIIsasd` follow. 
 '''
@@ -19,8 +11,6 @@ import scipy.special as scsp
 import scipy.optimize as so
 #import pdb
 
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5698 $")
 import GSASIIpwd as G2pwd
 
 # trig functions in degrees

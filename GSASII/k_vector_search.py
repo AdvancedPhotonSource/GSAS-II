@@ -281,11 +281,11 @@ class kVector:
         return k_info
 
     def hklConvToPrim(self, hkl: list) -> np.ndarray:
-        """Convert the hkl indeces in the conventional cell setting to the
+        """Convert the hkl indices in the conventional cell setting to the
         primitive cell setting.
 
-        :param hkl: input hkl indeces in the conventional cell setting
-        :return: a list containing the hkl indeces in the primitive cell
+        :param hkl: input hkl indices in the conventional cell setting
+        :return: a list containing the hkl indices in the primitive cell
                  setting.
         """
         prim_hkl = np.matmul(

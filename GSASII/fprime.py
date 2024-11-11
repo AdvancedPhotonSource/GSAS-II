@@ -4,7 +4,6 @@
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
 """
 from __future__ import division, print_function
-import platform
 import math
 import sys
 import wx
@@ -14,7 +13,6 @@ if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: Tru
 import numpy as np
 import matplotlib as mpl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5743 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 
@@ -24,30 +22,17 @@ try:
 except AttributeError:
     pass
 
-if '2' in platform.python_version_tuple()[0]:
-    Gkmu = unichr(0x3bc)
-    Gktheta = unichr(0x3b8)
-    Gklambda = unichr(0x3bb)
-    GkDelta = unichr(0x0394)
-    Pwr10 = unichr(0x0b9)+unichr(0x2070)
-    Pwr20 = unichr(0x0b2)+unichr(0x2070)
-    Pwrm1 = unichr(0x207b)+unichr(0x0b9)
-    Pwrm2 = unichr(0x207b)+unichr(0x0b2)
-    Pwrm6 = unichr(0x207b)+unichr(0x2076)
-    Pwrm4 = unichr(0x207b)+unichr(0x2074)
-    Angstr = unichr(0x00c5)
-else:
-    Gkmu = chr(0x3bc)
-    Gktheta = chr(0x3b8)
-    Gklambda = chr(0x3bb)
-    GkDelta = chr(0x0394)
-    Pwr10 = chr(0x0b9)+chr(0x2070)
-    Pwr20 = chr(0x0b2)+chr(0x2070)
-    Pwrm1 = chr(0x207b)+chr(0x0b9)
-    Pwrm2 = chr(0x207b)+chr(0x0b2)
-    Pwrm6 = chr(0x207b)+chr(0x2076)
-    Pwrm4 = chr(0x207b)+chr(0x2074)
-    Angstr = chr(0x00c5)   
+Gkmu = chr(0x3bc)
+Gktheta = chr(0x3b8)
+Gklambda = chr(0x3bb)
+GkDelta = chr(0x0394)
+Pwr10 = chr(0x0b9)+chr(0x2070)
+Pwr20 = chr(0x0b2)+chr(0x2070)
+Pwrm1 = chr(0x207b)+chr(0x0b9)
+Pwrm2 = chr(0x207b)+chr(0x0b2)
+Pwrm6 = chr(0x207b)+chr(0x2076)
+Pwrm4 = chr(0x207b)+chr(0x2074)
+Angstr = chr(0x00c5)   
 
 [wxID_FPRIMECHOICE1, wxID_FPRIMECHOICE2, wxID_SPINTEXT1, wxID_SPINTEXT2,
  wxID_FPRIMERESULTS,wxID_FPRIMESLIDER1, wxID_SPINBUTTON,

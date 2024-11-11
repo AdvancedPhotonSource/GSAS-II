@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Classes in :mod:`G2export_examples` follow:
 '''
@@ -7,15 +6,12 @@
 from __future__ import division, print_function
 import os
 import numpy as np
-import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5791 $")
-import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
 
-class ExportPhaseText(G2IO.ExportBaseclass):
+class ExportPhaseText(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -97,7 +93,7 @@ class ExportPhaseText(G2IO.ExportBaseclass):
             print('Phase '+phasenam+' written to file '+self.fullpath)
         self.CloseFile()
 
-class ExportPowderText(G2IO.ExportBaseclass):
+class ExportPowderText(G2fil.ExportBaseclass):
     '''Used to create a text file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -153,7 +149,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
             self.Writer(hist)
             print(hist+' written to file '+self.fullpath)
         
-class ExportPowderReflText(G2IO.ExportBaseclass):
+class ExportPowderReflText(G2fil.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
@@ -246,7 +242,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
         self.CloseFile()
         print(hist+'reflections written to file '+self.fullpath)                        
 
-class ExportSingleText(G2IO.ExportBaseclass):
+class ExportSingleText(G2fil.ExportBaseclass):
     '''Used to create a text file with single crystal reflection data
     skips user rejected & space group extinct reflections
 

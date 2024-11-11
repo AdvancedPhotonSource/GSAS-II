@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sfact_CIF.py $
-# $Id: G2sfact_CIF.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
-'''
+'''Class to read single-crystal data from a CIF
 '''
 # routines to read in structure factors from a CIF
 # 
@@ -14,12 +7,6 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
-import GSASIIpath
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 import CifFile as cif # PyCifRW from James Hester
 
 class CIFhklReader(G2obj.ImportStructFactor):
@@ -161,6 +148,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 self.repeatcount += 1
                 if self.repeatcount >= len(blklist): self.repeat = False
             else:
+                import GSASIIctrlGUI as G2G
                 selblk = G2G.BlockSelector(
                     choice,
                     ParentFrame=ParentFrame,

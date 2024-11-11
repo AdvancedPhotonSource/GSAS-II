@@ -3322,8 +3322,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                         hapVary.append(pfx+bab)
                 Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],])
                 if len(Twins) == 1:
-                    hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
-                    if hapData.get('Flack',[0,False])[1]:
+                    hapData['Flack'] = hapData.get('Flack',[0.,False])
+                    hapDict[pfx+'Flack'] = hapData['Flack'][0]
+                    if hapData['Flack'][1]:
                         hapVary.append(pfx+'Flack')
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []
@@ -3363,6 +3364,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
                     if not SGData['SGInv'] and len(Twins) == 1:
+                        hapData['Flack'] = hapData.get('Flack',[0.,False])
                         pFile.write(' Flack parameter: %10.3f Refine? %s\n'%(hapData['Flack'][0],hapData['Flack'][1]))
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):

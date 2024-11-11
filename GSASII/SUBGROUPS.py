@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/SUBGROUPS.py $
-# $Id: SUBGROUPS.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 from __future__ import division, print_function
 import re
 import copy
@@ -15,10 +8,8 @@ import os
 import numpy as np
 import numpy.linalg as nl
 import GSASIIspc as G2spc
-import GSASIIIO as G2IO
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
-import GSASIImath as G2mth
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
@@ -85,7 +76,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    page = G2IO.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(submagSite,postdict)
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -202,7 +193,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    page = G2IO.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(submagSite,postdict)
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -263,7 +254,7 @@ def subBilbaoCheckLattice(spgNum,cell,tol=5):
     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
-    page = G2IO.postURL(psSite,datastr,timeout=timeout)
+    page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
     if not page:
         print('connection error - not on internet?')
         return None
@@ -324,7 +315,7 @@ def GetStdSGset(SGData=None, oprList=[]):
 
     print('\n'+GetStdSGsetCite+'\n')
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
-    page = G2IO.postURL(Site,postdict,timeout=timeout)
+    page = GSASIIpath.postURL(Site,postdict,timeout=timeout)
     if not page:
         print('error:','No response')
         return [None,None,None,None]
@@ -371,7 +362,7 @@ def GetSupergroup(SGnum,dlg=None):
     import re
     Site = bilbaoSite + 'nph-minsup'
     if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
-    out = G2IO.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
+    out = GSASIIpath.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
     if not out: return None
         
     if dlg: dlg.Update(1,newmsg='Initial table of supergroups returned')
@@ -397,7 +388,7 @@ def GetSupergroup(SGnum,dlg=None):
     for i,line in enumerate(xforms):
         click = line[-1]
         print(SGnum,click)
-        out1 = G2IO.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
+        out1 = GSASIIpath.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
                                 ,timeout=timeout)
         if not out1: return None
         #open(f'/tmp/{click}.html','w').write(out1)
@@ -574,7 +565,7 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None,
         postdict["stru"] += f"{el:4s} {i} - {atom[cx]:.5f} {atom[cx+1]:.5f} {atom[cx+2]:.5f}\n"
 #    if GSASIIpath.GetConfigValue('debug'): print(postdict["stru"])
     savedcookies = {}
-    page0 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+    page0 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                              getcookie=savedcookies,timeout=timeout)
     if not page0: return None
     if pagelist is not None:
@@ -665,7 +656,7 @@ def BilbaoLowSymSea1(valsdict,row,savedcookies,pagelist=None):
     num = row[0]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num}")
     postdict['lattice'] = num
-    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+    page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
     if not page1: return None,None,None,None
 
@@ -701,7 +692,7 @@ def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
     postdict.update(valsdict)
     postdict['super_numind'] = row[1]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num} supergroup {row[1]}")
-    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+    page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
     if page1 is None: return '',None
     lbl = f'cell{num}_{row[1]}'
@@ -731,7 +722,7 @@ def BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
             postdict = {}
             postdict.update(valsdict)
             postdict['cs'] = num
-            page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict,
+            page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
             if pagelist is not None:
                 pagelist[num] = page1
@@ -793,7 +784,7 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
 
     '''
     savedcookies = {}
-    page1 = G2IO.postURL(bilbaoSite+pseudosym,postdict
+    page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict
                              ,getcookie=savedcookies,timeout=timeout)
     if pagelist is not None:
         pagelist[key] = page1
@@ -801,86 +792,6 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
     valsdict,csdict,rowdict = scanBilbaoSymSearch1(page1,postdict)
     return valsdict,csdict,rowdict,savedcookies
 
-def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
-    '''create a .gpx file from a structure from the BilbaoSite pseudosym site
-    saved in newData
-    '''
-    def fmtCell(cell):
-        s = ''
-        for i in cell[0:3]: s += f"{i:.3f}, "
-        for i in cell[3:5]: s += f"{i:.2f}, "
-        s += f"{cell[5]:.2f}"
-        return s
-    if newData is None:
-        print(phlbl,'empty structure')
-        return
-    elif type(newData) is str:
-        msgs[phlbl] = newData
-        return
-    # create a new phase
-    try: 
-        sgnum = int(newData[0].strip())
-        sgsym = G2spc.spgbyNum[sgnum]
-        sgname = sgsym.replace(" ","")
-    except:
-        print(f'Problem with processing record:\n{newData}')
-        return
-    newPhase = copy.deepcopy(phData)
-    newPhase['ranId'] = ran.randint(0,sys.maxsize),
-    if 'magPhases' in phData: del newPhase['magPhases']
-    generalData = newPhase['General']
-    generalData['SGData'] = SGData = G2spc.SpcGroup(sgsym)[1]
-    generalData['Cell'][1:7] = [float(i) for i in newData[1].split()]
-    generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
-    cx,ct,cs,cia = generalData['AtomPtrs']
-    Atoms = newPhase['Atoms'] = []
-    for a in newData[3:]:
-        if not a.strip(): continue
-        try: 
-            elem,n,wyc,x,y,z = a.split()
-            atom = []
-            atom.append(elem+n)
-            atom.append(elem)
-            atom.append('')
-            for i in x,y,z: atom.append(float(i))
-            atom.append(1.0)
-            SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
-            atom.append(SytSym)
-            atom.append(Mult)
-            atom.append('I')
-            atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
-            atom.append(ran.randint(0,sys.maxsize))
-            Atoms.append(atom)
-        except:
-            print(f'error in atom line {a}')
-        #finally: pass
-    phData.update(newPhase)
-    G2elem.SetupGeneral(phData,phData['General']['Mydir'])  # fixup composition info
-    # save new file
-    G2frame.GSASprojectfile = os.path.splitext(orgFilName
-                            )[0]+'_super_'+sgname.replace('/','$')+'.gpx'
-    while os.path.exists(G2frame.GSASprojectfile):
-        s = re.split(r'_([\d]+)\.gpx',G2frame.GSASprojectfile)
-        if len(s) == 1:
-            G2frame.GSASprojectfile = os.path.splitext(G2frame.GSASprojectfile)[0] + '_1.gpx'
-        else:
-            num = 10
-            try:
-                num = int(s[1]) + 1
-            except:
-                pass
-            G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
-    G2IO.ProjFileSave(G2frame)
-    # get transformed contents
-    nacomp,nccomp = G2mth.phaseContents(phData)
-    msgs[phlbl] = f"With space group {sgsym} and cell={fmtCell(generalData['Cell'][1:7])}"
-    msgs[phlbl] += f", vol={generalData['Cell'][7]:.2f} A^3"
-    msgs[phlbl] += f", project file created as {G2frame.GSASprojectfile}"
-
-    msgs[phlbl] += f". After transform, unit cell {G2mth.fmtPhaseContents(nccomp)}"
-    msgs[phlbl] += f", density={G2mth.getDensity(generalData)[0]:.2f} g/cm^3"
-    msgs[phlbl] += f". Asymmetric unit {G2mth.fmtPhaseContents(nacomp)} ({len(phData['Atoms'])} atoms)."
-    return G2frame.GSASprojectfile
 
 def createStdSetting(cifFile,rd):
     '''Use the Bilbao "CIF to Standard Setting" web service to obtain a 
@@ -909,7 +820,7 @@ doi: 10.1146/annurev-matsci-070214-021008''')
     r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
     structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
     spnum,celllist,natom = structure.split('\n')[:3]
-    spgNam = G2spc.spgbyNum[int(spnum)]
+    #spgNam = G2spc.spgbyNum[int(spnum)]
     cell = [float(i) for i in celllist.split()]
     # replace cell, space group and atom info with info from Bilbao
     # could try to xfer Uiso (Uij needs xform), but that would be too involved

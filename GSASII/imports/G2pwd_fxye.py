@@ -6,7 +6,6 @@ import os.path as ospath
 import platform
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIpath
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'
@@ -395,6 +394,11 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             if 'Temp' in S.split('=')[0]:
                 try:
                     Temperature = float(S.split('=')[1])
+                except:
+                    pass
+            if 'pressure' in S.lower().split('=')[0]:
+                try:
+                    self.Sample['Pressure'] = float(S.split('=')[1])
                 except:
                     pass
             elif 'Gonio' in S.split('=')[0]:

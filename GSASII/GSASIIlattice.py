@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-11-30 08:10:11 -0600 (Thu, 30 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5702 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $
-# $Id: GSASIIlattice.py 5702 2023-11-30 14:10:11Z vondreele $
-########### SVN repository information ###################
 '''
 :mod:`GSASIIlattice` Classes & routines follow
 '''
@@ -22,7 +15,6 @@ import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
-GSASIIpath.SetVersionNumber("$Revision: 5702 $")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
@@ -1188,31 +1180,31 @@ def calc_rDsq(H,A):
     return rdsq
     
 def calc_rDsq2(H,G):
-    'needs doc string'
+    'computes 1/d^2 from hkl & reciprocal metric tensor G'
     return np.inner(H,np.inner(G,H))
     
 def calc_rDsqSS(H,A,vec):
-    'needs doc string'
+    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector'
     rdsq = calc_rDsq(H[:3]+(H[3]*vec).T,A)
     return rdsq
        
 def calc_rDsqZ(H,A,Z,tth,lam):
-    'needs doc string'
+    'computes 1/d^2 from hkl & reciprocal metric tensor A with CW ZERO shift'
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
-    'needs doc string'
+    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with CW Z shift'
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqT(H,A,Z,tof,difC):
-    'needs doc string'
+    'computes 1/d^2 from hkl & reciprocal metric tensor A with TOF ZERO shift'
     rdsq = calc_rDsq(H,A)+Z/difC
     return rdsq
        
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
-    'needs doc string'
+    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with TOF Z shift'
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
     

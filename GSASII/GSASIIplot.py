@@ -36,7 +36,7 @@ except (ImportError, ValueError) as err:
 import GSASIIdataGUI as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
@@ -45,7 +45,7 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-from GSASIIpwdplot import PlotPatterns,ReplotPattern
+import GSASIIpwdplot as G2pwpl
 try:
     import pytexture as ptx
     ptx.pyqlmninit()
@@ -140,8 +140,13 @@ try:
         0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
         0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-    '''This can be done on request for other colors - any new names must be explicitly added to color list
-    obtained from mpl.cm.datad.keys() (currently 10 places in GSAS-II code)
+    '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors. 
+    _Old_Paired_data is the pre-2.0 Paired color map found in 
+    matplotlib._cm.py and is used to creat color map GSPaired.
+
+    This can be done on request for other color maps. N.B. any new names 
+    must be explicitly added to the color list obtained from 
+    mpl.cm.datad.keys() (currently 10 places in GSAS-II code).
     '''
     oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
     try:
@@ -571,7 +576,7 @@ class G2PlotNoteBook(wx.Panel):
     def SetHelpButton(self,help):
         '''Adds a Help button to the status bar on plots.
         
-        TODO: This has a problem with PlotPatterns where creation of the 
+        TODO: This has a problem with G2pwpl.PlotPatterns where creation of the 
         HelpButton causes the notebook tabs to be duplicated. A manual 
         resize fixes that, but the SendSizeEvent has not worked. 
         '''
@@ -669,7 +674,7 @@ class GSASIItoolbar(Toolbar):
         if len(axlist) == 1:
              ax = axlist[0]
              ax1 = None
-        elif len(axlist) == 3: # used in "w" mode in PlotPatterns
+        elif len(axlist) == 3: # used in "w" mode in G2pwpl.PlotPatterns
              _,ax,ax1 = axlist
              xmin,xmax,ymin1,ymax1 = ax1.axis()
         else:
@@ -2969,7 +2974,7 @@ def PlotSASDSizeDist(G2frame):
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
@@ -3021,7 +3026,7 @@ def PlotSASDPairDist(G2frame):
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
@@ -5519,9 +5524,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 
         # plot the selected phase as green rings
         try:
-            for tth in G2frame.PhaseRing2Th:
+            for tth,rColor,rWidth,rStype in G2frame.PhaseRing2Th:
                 (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,Data['wavelength'])
-                Plot.plot(x1,y1,'g',picker=False)
+                Plot.plot(x1,y1,rColor,picker=False,
+                              linestyle=rStype,linewidth=rWidth)
         except:
             pass
 

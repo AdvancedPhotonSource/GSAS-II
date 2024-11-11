@@ -1,16 +1,8 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-20 13:24:42 -0500 (Sat, 20 May 2023) $
-# $Author: vondreele $
-# $Revision: 5586 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIElemGUI.py $
-# $Id: GSASIIElemGUI.py 5586 2023-05-20 18:24:42Z vondreele $
-########### SVN repository information ###################
 '''Routines for Periodic table wx.Frame follow. 
 '''
 from __future__ import division, print_function
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5586 $")
 import wx
 import os
 import wx.lib.colourselect as wscs

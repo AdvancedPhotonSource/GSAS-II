@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIseqGUI - Sequential Results Display routines
-########### SVN repository information ###################
-# $Date: 2023-11-13 14:28:09 -0600 (Mon, 13 Nov 2023) $
-# $Author: vondreele $
-# $Revision: 5700 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIseqGUI.py $
-# $Id: GSASIIseqGUI.py 5700 2023-11-13 20:28:09Z vondreele $
-########### SVN repository information ###################
 '''
 Routines for Sequential Results & Cluster Analysis dataframes follow. 
 '''
@@ -24,13 +17,13 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5700 $")
 import GSASIImath as G2mth
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import GSASIIdataGUI as G2gd
 import GSASIIstrIO as G2stIO
 import GSASIIlattice as G2lat
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 import GSASIImapvars as G2mv
 import GSASIIobj as G2obj
 import GSASIIexprGUI as G2exG
@@ -145,7 +138,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if name.startswith('PWDR'):
                 pickId = G2frame.PickId
                 G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
-                G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
                 G2frame.PickId = pickId
             elif name.startswith('PDF'):
                 pickId = G2frame.PickId
@@ -1924,7 +1917,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
             G2frame.PatternId = item
             if 'PWDR' in name:
-                G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
             else: #PDF
                 data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
@@ -2005,7 +1998,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         G2frame.PatternId = item
         if 'PWDR' in name:
             G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-            G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
         else:
             data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
             G2plt.PlotISFG(G2frame,data,plotType='G(R)')

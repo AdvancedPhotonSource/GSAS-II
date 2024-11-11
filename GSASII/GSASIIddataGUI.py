@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
-########### SVN repository information ###################
-# $Date: 2024-05-24 10:06:45 -0500 (Fri, 24 May 2024) $
-# $Author: toby $
-# $Revision: 5789 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIddataGUI.py $
-# $Id: GSASIIddataGUI.py 5789 2024-05-24 15:06:45Z toby $
-########### SVN repository information ###################
 '''Routines for Data tab in Phase dataframe follows. 
 '''
 from __future__ import division, print_function
@@ -14,7 +7,6 @@ import copy
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5789 $")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIplot as G2plt
@@ -855,11 +847,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
         def OnLeBail(event):
-            if not UseList[G2frame.hist]['LeBail']:
+            '''Toggle the LeBail flag (Phase['Histograms'][hist]['LeBail'] and
+            when turned on, set the Controls['newLeBail'] flag to indicate that
+            the a new Le Bail extraction will be performed at the next 
+            refinement
+            '''
+            UseList[G2frame.hist]['LeBail'] = not UseList[G2frame.hist]['LeBail']
+            if UseList[G2frame.hist]['LeBail']:
                 Controls['newLeBail'] = True
             else:
                 Controls['newLeBail'] = False
-            UseList[G2frame.hist]['LeBail'] = not UseList[G2frame.hist]['LeBail']
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnResetSize(event):
@@ -1047,6 +1044,13 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic': 
                     bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
+            else:
+                # turn off preferred orientation fitting in LeBail mode (hidden)
+                UseList[G2frame.hist]['Pref.Ori.'][2] = False
+                for bab in ['A','U']:
+                    UseList[G2frame.hist]['Babinet']['Bab'+bab][1] = False
+                # TODO: should turn off all Extinction refinement flags
+                UseList[G2frame.hist]['Extinction'][1] = False
         elif G2frame.hist[:4] == 'HKLF':
             bottomSizer.Add(ExtSizer('HKLF'))  #,0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer())  #,0,wx.BOTTOM,5)

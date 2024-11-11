@@ -1531,11 +1531,12 @@ class ImportImage(ImportBaseclass):
         :meth:`Reader`. This returns a list of reader objects for each read image.
         Also used in :func:`GSASIIscriptable.import_generic`.
 
-      * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
+      * Images are read alternatively in :func:`GSASIImiscGUI.ReadImages`, which puts image info
         directly into the data tree.
 
       * Unlike all other data types read by GSAS-II, images are only kept in memory as 
-        they are used and function :func:`GSASIIIO.GetImageData` is used to reread images
+        they are used and function :func:`GSASIIfiles.GetImageData` or 
+        :func:`GSASIIfiles.RereadImageData` is used to reread images
         if they are reloaded. For quick retrieval of previously read images, it may be useful to 
         save sums of images or save a keyword (see ``ImageTag``, below
 
@@ -2207,6 +2208,33 @@ def validateAtomDrawType(typ,generalData={}):
     #     if typ in ('backbone',):
     #         return typ
     return 'vdW balls'
+
+def patchControls(Controls):
+    '''patch routine to convert variable names used in parameter limits 
+    to G2VarObj objects 
+    (See :ref:`Parameter Limits<ParameterLimits>` description.)
+    '''
+    import GSASIIfiles as G2fil
+    #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
+    for d in 'parmMaxDict','parmMinDict':
+        if d not in Controls: Controls[d] = {}
+        for k in Controls[d]:  
+            if type(k) is str:
+                G2fil.G2Print("Applying patch to Controls['{}']".format(d))
+                Controls[d] = {G2VarObj(k):v for k,v in Controls[d].items()}
+                break
+    conv = False
+    if 'parmFrozen' not in Controls: Controls['parmFrozen'] = {}
+    for k in Controls['parmFrozen']:
+        for item in Controls['parmFrozen'][k]:
+            if type(item) is str:
+                conv = True
+                Controls['parmFrozen'][k] = [G2VarObj(i) for i in Controls['parmFrozen'][k]]
+                break
+    if conv: G2fil.G2Print("Applying patch to Controls['parmFrozen']")
+    if 'newLeBail' not in Controls:
+        Controls['newLeBail'] = False
+    # end patch
 
 if __name__ == "__main__":
     # test variable descriptions

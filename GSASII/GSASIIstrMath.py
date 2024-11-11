@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 '''
-:mod:`GSASIIstrMath` routines, used for refinement computations 
-are found below.
+:mod:`GSASIIstrMath` routines, found below, used to support 
+refinement-related computations. These routines are used primarily in 
+:mod:`GSASIIstrMain` and :mod:`GSASIIstrIO`, but also in a few other routines 
+in other locations:
+The :meth:`GSASIIfiles.ExportBaseclass.loadParmDict` routine accesses routine 
+:func:`computeRBsu`, :meth:`GSASIIdataGUI.GSASII.OnExpressionCalc` 
+accesses :func:`ApplyRBModels` and in module :mod:`testDeriv` routines 
+:func:`errRefine` and :func:`dervRefine` are accessed a several places. 
+
+The routines here are most commonly called when working from a .gpx file, but 
+may sometimes be called from the GUI. These routines expect that all needed 
+input will have been read from the file/tree and are passed to the 
+routines as arguments. The data tree is never accessed directly here.
+
 '''
 from __future__ import division, print_function
 import time
@@ -346,7 +358,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
-
+                
 def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
     '''Computes s.u. values for atoms in rigid bodies
 
@@ -3950,7 +3962,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
                         if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2
             
-        elif 'E' in histType:
+        elif 'E' in histType:  # Energy-dispersive X-ray
             
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
@@ -3989,7 +4001,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     yc[iBeg:iFin] += refl[9+im]*fp
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
             
-        elif 'T' in histType:
+        elif 'T' in histType:   # TOF 
             for iref,refl in enumerate(refDict['RefList']):
                 if im:
                     h,k,l,m = refl[:4]
@@ -4904,7 +4916,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6+im] > 0:
                         ref[11+im] = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist)[0]
-                        w = 1.0/ref[6+im]   # 1/sig(F^2)
+                        w = wtFactor/ref[6+im]   # 1/sig(F^2)
                         ref[7+im] *= parmDict[phfx+'Scale']*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
@@ -4942,7 +4954,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
-                        w = 2.0*Fo/ref[6+im]    # 1/sig(F)?
+                        w = 2.0*wtFactor*Fo/ref[6+im]    # 1/sig(F)?
                         if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo
@@ -5002,7 +5014,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
-            M = np.concatenate((M,wtFactor*df))
+            M = np.concatenate((M,df))
             # end of HKLF processing
 #    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     Histograms['sumwYo'] = SumwYo

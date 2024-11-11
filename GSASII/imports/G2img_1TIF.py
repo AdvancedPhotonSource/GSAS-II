@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-10-28 16:43:36 -0500 (Sat, 28 Oct 2023) $
-# $Author: vondreele $
-# $Revision: 5687 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_1TIF.py $
-# $Id: G2img_1TIF.py 5687 2023-10-28 21:43:36Z vondreele $
-########### SVN repository information ###################
 '''
 Note that the name ``G2img_1TIF`` is used so that this file will
 sort to the top of the image formats and thus show up first in the menu.
@@ -20,7 +13,6 @@ import GSASIIfiles as G2fil
 import numpy as np
 import time
 DEBUG = False
-GSASIIpath.SetVersionNumber("$Revision: 5687 $")
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
     for files that can be identified from known instruments and will

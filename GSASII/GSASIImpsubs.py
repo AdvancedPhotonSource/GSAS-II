@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImpsubs.py $
-# $Id: GSASIImpsubs.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 The routines here are called either directly when GSAS-II is used without multiprocessing
 or in separate cores when multiprocessing is used.
@@ -26,7 +19,6 @@ import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIpwd as G2pwd
 import GSASIIfiles as G2fil
 
@@ -188,7 +180,7 @@ def ComputeFobsSqCW(refl,iref):
 def ComputeFobsSqCWB(refl,iref):
     yp = np.zeros(len(x)) # not masked
     refl8im = 0
-    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.)
+    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
     iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
     iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
     if not iBeg+iFin:       #peak below low limit - skip peak
@@ -206,7 +198,7 @@ def ComputeFobsSqCWB(refl,iref):
 def ComputeFobsSqCWA(refl,iref):
     yp = np.zeros(len(x)) # not masked
     refl8im = 0
-    Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
+    Wd,fmin,fmax = G2pwd.getWidthsCWA(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl)
     iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
     iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
     if not iBeg+iFin:       #peak below low limit - skip peak

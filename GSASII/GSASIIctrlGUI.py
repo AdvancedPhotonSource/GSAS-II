@@ -15,7 +15,6 @@ try:
     # import wx.wizard as wz
     import wx.aui
     import wx.lib.scrolledpanel as wxscroll
-    import wx.html        # could postpone this for quicker startup
     import wx.lib.mixins.listctrl  as  listmix
     import wx.richtext as wxrt
     import wx.lib.filebrowsebutton as wxfilebrowse
@@ -45,12 +44,11 @@ import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIElem as G2elem
-import GSASIIscriptable as G2sc
 import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
 import GSASIIstrMain as G2stMn
-import GSASIIIO as G2IO
+import GSASIImiscGUI as G2IO
 import config_example
 from tutorialIndex import tutorialIndex
 if sys.version_info[0] >= 3:
@@ -93,19 +91,8 @@ def Define_wxId(*args):
 #### Tree Control ################################################################################
 class G2TreeCtrl(wx.TreeCtrl):
     '''Create a wrapper around the standard TreeCtrl so we can "wrap"
-    various events.
-    
-    This logs when a tree item is selected (in :meth:`onSelectionChanged`)
-
-    This also wraps lists and dicts pulled out of the tree to track where
-    they were retrieved from.
+    various events.    
     '''
-    #def SelectItem(self,event):
-    #    print 'Select Item'
-    #    import GSASIIobj as G2obj
-    #    G2obj.HowDidIgetHere()
-    #    wx.TreeCtrl.SelectItem(self,event)
-        
     def __init__(self,parent=None,*args,**kwargs):
         super(self.__class__,self).__init__(parent=parent,*args,**kwargs)
         self.G2frame = parent.GetTopLevelParent()
@@ -1301,6 +1288,30 @@ class G2ChoiceButton(wx.Choice):
     :param int/str strKey: the dict key or the list index for the string value 
       The ``strLoc[strKey]`` element must exist or strLoc must be None (default).
     :param function onChoice: name of a function to call when the choice is made.
+
+    Example 1::
+
+        data['Orientation'] = 1
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['Horizontal','Vertical'],
+                            data,'Orientation',
+                            onChoice=replot)
+
+    This will show "Vertical" as the initial value, and based on what is 
+    selected, ``data['Orientation']`` will be set to 0 or 1 (as an int value).
+
+    Example 2::
+
+        data[0]['Font'] = '8'
+        choice = G2G.G2ChoiceButton(dlg,
+                            ['6','8','10','12','14','16'],
+                            None,None,
+                            data[0],'Font',
+                            onChoice=replot)
+
+    This will show "8" as the initial value, and based on what is selected,
+    ``data[0]['Font']`` will be set to a string with one of the size 
+    options ("6"... "16").
     '''
     def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
                  onChoice=None,**kwargs):
@@ -1735,11 +1746,13 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND,1)
+        txt = wx.StaticText(self,wx.ID_ANY,title)
+        #txt.SetMinSize((-1,35))
+        topSizer.Add(txt,1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add((10,-1))
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
@@ -2175,6 +2188,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
       does not have refine flag.
 
     Example::
+
       array = data 
       labelLst = ['v1','v2']
       elemKeysLst = [['v1'], ['v2',0]]
@@ -2976,7 +2990,7 @@ class MultiDataDialog(wx.Dialog):
     :param str header: a string to be placed at the top of the 
        window. Ignored if None (the default.)
 
-    example 1::
+    Example 1::
 
         dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
                 prompts=['lattice constants tolerance',
@@ -2989,7 +3003,7 @@ class MultiDataDialog(wx.Dialog):
         latTol,coordTol,occTol = dlg.GetValues()
         dlg.Destroy()
 
-    example 2::
+    Example 2::
 
         nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']
         dm = ['1','2','3','4','5','6']
@@ -4731,7 +4745,7 @@ class VirtualVarBox(wx.ListCtrl):
     def __init__(self, parent):
         self.parmWin = parent
         #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
-        G2sc.patchControls(self.parmWin.Controls)
+        G2obj.patchControls(self.parmWin.Controls)
         # end patch
         wx.ListCtrl.__init__(
             self, parent, -1,
@@ -5945,64 +5959,87 @@ def updateNotifier(G2frame,fileVersion):
     dlg.Destroy()
                   
 ################################################################################
-class MyHtmlPanel(wx.Panel):
-    '''Defines a panel to display HTML help information, as an alternative to
-    displaying help information in a web browser.
+def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
+    '''Creates a child wx.Frame with an OS-managed web browser. The window 
+    is modeless, so it can be left open without affecting GSAS-II operations,
+    but will be closed when GSAS-II is ended if a ``parent`` window is 
+    specified.
+
+    The web browser is filled with a supplied URL or HTML text. 
+    Reuses the previous window unless ``newFrame`` is set to True.
+
+    :param wx.Frame parent: name of main GSAS-II window (G2frame), if None
+      a toplevel window is created (probably not a good idea).
+    :param str URL: web page to be viewed. This is ignored if ``HTML`` 
+      (below) is specified, but argument ``URL`` is not optional.
+    :param wx.Size size: initial size of Frame to be created. Defaults 
+      to (750,450).
+    :param bool newFrame: When True, a new frame is opened even if the 
+      previously-used frame exists. Default is False.
+    :param str HTML: HTML text of a web page to be displayed. If this 
+      is specified, the contents of the URL argument is ignored.
+
+    :returns: the wx.Frame object used to display the web page
     '''
-    def __init__(self, frame, newId):
-        self.frame = frame
-        wx.Panel.__init__(self, frame, newId)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        back = wx.Button(self, -1, "Back")
-        back.Bind(wx.EVT_BUTTON, self.OnBack)
-        self.htmlwin = G2HtmlWindow(self, newId, size=(750,450))
-        sizer.Add(self.htmlwin, 1,wx.EXPAND)
-        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(frame)        
-        self.Bind(wx.EVT_SIZE,self.OnHelpSize)
-    def OnHelpSize(self,event):         #does the job but weirdly!!
-        anchor = self.htmlwin.GetOpenedAnchor()
-        if anchor:            
-            self.htmlwin.ScrollToAnchor(anchor)
-            wx.CallAfter(self.htmlwin.ScrollToAnchor,anchor)
-            if event: event.Skip()
-    def OnBack(self, event):
-        self.htmlwin.HistoryBack()
-    def LoadFile(self,file):
-        pos = file.rfind('#')
-        if pos != -1:
-            helpfile = file[:pos]
-            helpanchor = file[pos+1:]
-        else:
-            helpfile = file
-            helpanchor = None
-        self.htmlwin.LoadPage(helpfile)
-        if helpanchor is not None:
-            self.htmlwin.ScrollToAnchor(helpanchor)
-            xs,ys = self.htmlwin.GetViewStart()
-            self.htmlwin.Scroll(xs,ys-1)
-################################################################################
-class G2HtmlWindow(wx.html.HtmlWindow):
-    '''Displays help information in a primitive HTML browser type window
-    '''
-    def __init__(self, parent, *args, **kwargs):
-        self.parent = parent
-        wx.html.HtmlWindow.__init__(self, parent, *args, **kwargs)
-    def LoadPage(self, *args, **kwargs):
-        wx.html.HtmlWindow.LoadPage(self, *args, **kwargs)
-        self.TitlePage()
-    def OnLinkClicked(self, *args, **kwargs):
-        wx.html.HtmlWindow.OnLinkClicked(self, *args, **kwargs)
-        xs,ys = self.GetViewStart()
-        self.Scroll(xs,ys-1)
-        self.TitlePage()
-    def HistoryBack(self, *args, **kwargs):
-        wx.html.HtmlWindow.HistoryBack(self, *args, **kwargs)
-        self.TitlePage()
-    def TitlePage(self):
-        self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
-            self.GetOpenedPageTitle())
+    def copyURL(event):
+        '''Copies URL name to paste buffer
+        '''
+        txt = event.GetEventObject().GetValue()
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(txt))
+            wx.TheClipboard.Close()
+
+    import wx.html2  # don't import until needed, as this is only used here
+    global lastWebFrame
+    if not newFrame:
+        try:
+            if not lastWebFrame.IsBeingDeleted():
+                if HTML:
+                    lastWebFrame.wv.SetPage(HTML,'')
+                else:
+                    lastWebFrame.wv.LoadURL(URL)
+                return
+        except:
+            pass
+    dlg = wx.Frame(parent,size=size)
+    lastWebFrame = dlg
+    dlg.Show()
+    sizer=wx.BoxSizer(wx.VERTICAL)
+    dlg.wv = wx.html2.WebView.New(dlg)
+    # place HTML title into window title
+    dlg.wv.Bind(wx.EVT_UPDATE_UI, lambda event:
+                    dlg.SetTitle(dlg.wv.GetCurrentTitle()))
+    lastWebView = dlg.wv
+    sizer.Add(dlg.wv,1,wx.EXPAND)
+    # row of buttons & URL label on bottom of window
+    bsizer=wx.BoxSizer(wx.HORIZONTAL)
+    dlg.back = wx.Button(dlg, -1, "Back")
+    dlg.back.Bind(wx.EVT_BUTTON, lambda event:dlg.wv.GoBack())
+    # 1st history entry is a blank page. Disable Back button to prevent loading that
+    dlg.back.Bind(wx.EVT_UPDATE_UI, lambda event: event.Enable(
+            len(dlg.wv.GetBackwardHistory()) > 1))
+    dlg.back.Enable(False)
+    bsizer.Add(dlg.back,0,wx.ALIGN_CENTER_VERTICAL)
+    # read-only TextCtrl to show the URL
+    urltxt = wx.TextCtrl(dlg,wx.ID_ANY,URL,style=wx.TE_READONLY|wx.TE_CENTER|wx.TE_PROCESS_ENTER)
+    urltxt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+    urltxt.Bind(wx.EVT_UPDATE_UI, lambda event: event.SetText(dlg.wv.GetCurrentURL()))
+    # Can't get copy to work on URL, so Enter copies contents to paste buffer
+    urltxt.Bind(wx.EVT_TEXT_ENTER, copyURL)
+    bsizer.Add(urltxt,1,wx.EXPAND)
+    close = wx.Button(dlg, -1, "Close")
+    close.Bind(wx.EVT_BUTTON, lambda event:dlg.Destroy())
+    bsizer.Add(close,0,wx.ALIGN_CENTER_VERTICAL)
+    sizer.Add(bsizer,0,wx.EXPAND|wx.TOP|wx.BOTTOM,3)
+    # load URL/HTML contents
+    if HTML:
+        dlg.wv.SetPage(HTML,'')
+    else:
+        dlg.wv.LoadURL(URL)
+    dlg.SetSizer(sizer)
+    sizer.Layout()
+    dlg.SendSizeEvent()
+    return dlg
 
 ################################################################################
 def StripIndents(msg,singleLine=False):
@@ -7501,7 +7538,7 @@ htmlFrame = None
 htmlFirstUse = True
 #helpLocDict = {}  # to be implemented if we ever split gsasii.html over multiple files
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
-def ShowHelp(helpType,frame):
+def ShowHelp(helpType,frame,helpMode=None):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse,htmlPanel,htmlFrame
     # no defined link to use, create a default based on key
@@ -7516,21 +7553,15 @@ def ShowHelp(helpType,frame):
     else: 
         helplink = 'gsasII.html'
     # determine if a web browser or the internal viewer should be used for help info
-    if GSASIIpath.GetConfigValue('Help_mode'):
+    if helpMode:
+        pass
+    elif GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
     else:
         helpMode = 'browser'
     if helpMode == 'internal':
-        helplink = os.path.join(path2GSAS2,'help',helplink)
-        try:
-            htmlPanel.LoadFile(helplink)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(helplink)
+        helplink = 'file://' + os.path.abspath(os.path.join(path2GSAS2,'help',helplink))
+        viewWebPage(frame,helplink)
     else:
         import webbrowser     # postpone this until now for quicker startup
         wb = webbrowser
@@ -7570,7 +7601,7 @@ def ShowHelp(helpType,frame):
         else:
             wb.open(pfx+helplink, new=0, autoraise=True)
 
-def ShowWebPage(URL,frame,browser=False):
+def ShowWebPage(URL,frame,browser=False,internal=False):
     '''Called to show a tutorial web page.
 
     :param str URL: web page URL
@@ -7580,20 +7611,16 @@ def ShowWebPage(URL,frame,browser=False):
     '''
     global htmlFirstUse,htmlPanel,htmlFrame
     # determine if a web browser or the internal viewer should be used for help info
-    if GSASIIpath.GetConfigValue('Help_mode') and not browser:
+    if GSASIIpath.GetConfigValue('Help_mode') and not browser and not internal:
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
+    elif internal:
+        helpMode = 'internal'
     else:
+#    elif browser:
         helpMode = 'browser'
+        
     if helpMode == 'internal':
-        try:
-            htmlPanel.LoadFile(URL)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(URL)
+        viewWebPage(frame,URL)
     else:
         import webbrowser     # postpone this until now for quicker startup
         if URL.startswith('http'): 
@@ -8090,6 +8117,7 @@ class OpenGitTutorial(wx.Dialog):
         The data files associated with that directory are then downloaded.
         '''
         tutdir = self.onWebBrowse(event)
+        if tutdir is None: return
         GSASIIpath.downloadDirContents([tutdir,'data'],self.tutorialPath)
 
     def onWebBrowse(self,event):
@@ -8165,6 +8193,7 @@ class OpenGitTutorial(wx.Dialog):
 AutoLoadWindow = None
 
 def AutoLoadFiles(G2frame,FileTyp='pwd'):
+    import GSASIIscriptable as G2sc
     def OnBrowse(event):
         '''Responds when the Browse button is pressed to load a file.
         The routine determines which button was pressed and gets the
@@ -9527,11 +9556,11 @@ class ScrolledStaticText(wx.StaticText):
 #===========================================================================
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
                        confirmoverwrite=True, parent=None,
-                       multipleselect=False):
+                       multipleselect=False,msg=''):
     '''If the filename is a zip file, extract a file from that
     archive.
 
-    :param list Selection: used to predefine the name of the file
+    :param list selection: used to predefine the name of the file
       to be extracted. Filename case and zip directory name are
       ignored in selection; the first matching file is used.
 
@@ -9545,6 +9574,9 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
       file to be extracted, a list of file(s) is returned.
       If only one file is present, do not ask which one, otherwise
       offer a list of choices (unless selection is used).
+
+    :param str msg: a message explaining what is being read. Default
+      is blank.
     
     :returns: the name of the file that has been created or a
       list of files (see multipleselect)
@@ -9570,7 +9602,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         if selection.lower() in choices:
             zlist = [choices.index(selection.lower())]
         else:
-            print('debug: file '+str(selection)+' was not found in '+str(filename))
+            #print('debug: file '+str(selection)+' was not found in '+str(filename))
             zlist = [-1]
     elif len(zinfo) == 1 and confirmread:
         result = wx.ID_NO
@@ -9594,7 +9626,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
+        dlg = G2MultiChoiceDialog(parent,
+            msg+f'Select file(s) to extract from zip file\n{filename}',
             'Choose file(s)',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()
@@ -9605,8 +9638,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         # select one from a from list
         choices = [i.filename for i in zinfo]
         dlg = wx.SingleChoiceDialog(parent,
-            'Select file to extract from zip file'+str(filename),'Choose file',
-            choices,)
+            msg+f'Select a file to extract from zip file\n{filename}',
+            'Choose a file',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = [dlg.GetSelection()]
         else:
@@ -10283,19 +10316,20 @@ if __name__ == '__main__':
     #siz = G2SliderWidget(pnl,valArr,'k','test slider w/entry',20,50,.1)
     #ms.Add(siz)
     text = 'this is a long string that will be scrolled'
-    ms.Add(ScrolledStaticText(frm,label=text))
-    txt = ScrolledStaticText(frm,label=text, lbllen=20)
-    smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
-    smallfont.SetPointSize(10)
-    txt.SetFont(smallfont)
-    ms.Add(txt)
-    ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
+    #ms.Add(ScrolledStaticText(frm,label=text))
+    #txt = ScrolledStaticText(frm,label=text, lbllen=20)
+    #smallfont = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
+    #smallfont.SetPointSize(10)
+    #txt.SetFont(smallfont)
+    #ms.Add(txt)
+    #ms.Add(ScrolledStaticText(frm,label=text,dots=False,delay=250, lbllen=20))
     frm.SetSizer(ms)
     frm.Show(True)
 
     G2frame = frm
 
-
+    #ShowWebPage('http://wxpython.org',G2frame,internal=True)
+    #ShowHelp('hist/phase',G2frame,'internal')
     testAtoms = ['']
     
     nm = [' ','0','1','-1','2','-2','3','-3','4','5','6','7','8','9']

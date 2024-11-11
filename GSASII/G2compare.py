@@ -384,7 +384,7 @@ be included for the files beginning with "B" only.
 
     def LoadPwdr(self,fil):
         '''Load PWDR entries from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         G2frame = self
         filep = open(fil,'rb')
@@ -468,7 +468,7 @@ be included for the files beginning with "B" only.
 
     def LoadPhase(self,fil):
         '''Load Phase entries from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         G2frame = self
         filep = open(fil,'rb')
@@ -530,7 +530,7 @@ be included for the files beginning with "B" only.
 
     def LoadProject(self,fil):
         '''Load the Covariance entry from a .GPX file to the tree.
-        see :func:`GSASIIIO.ProjFileOpen`
+        see :func:`GSASIImiscGUI.ProjFileOpen`
         '''
         import datetime
         G2frame = self

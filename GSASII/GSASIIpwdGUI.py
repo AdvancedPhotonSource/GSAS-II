@@ -32,6 +32,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
+import GSASIIpwdplot as G2pwpl
 import GSASIIdataGUI as G2gd
 import GSASIIphsGUI as G2phsG
 import GSASIIctrlGUI as G2G
@@ -733,7 +734,7 @@ def UpdatePeakGrid(G2frame, data):
         for pos,mag in refs:
             data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnCopyPeaks(event):
         'Copy peaks to other histograms'
@@ -781,7 +782,7 @@ def UpdatePeakGrid(G2frame, data):
             dlg.Destroy()
         data = {'peaks':peaks,'sigDict':{}}
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSavePeaks(event):
         'Save peak to file suitable for OnLoadPeaks'
@@ -818,7 +819,7 @@ def UpdatePeakGrid(G2frame, data):
         file.close()
         G2frame.dataWindow.UnDo.Enable(False)
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def SaveState():
         'Saves result of a peaak fit for possible UnDo'
@@ -935,7 +936,7 @@ def UpdatePeakGrid(G2frame, data):
         for i in sorted(sel,reverse=True):
             del tbl[i]
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnClearPeaks(event):
         'Clear the Peak fit table'
@@ -946,7 +947,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         UpdatePeakGrid(G2frame,peaks)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnPeakFit(oneCycle=False,noFit=False):
         'Do peak fitting by least squares'
@@ -1003,7 +1004,7 @@ def UpdatePeakGrid(G2frame, data):
             bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             return
         # try:
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
@@ -1020,7 +1021,7 @@ def UpdatePeakGrid(G2frame, data):
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2frame.AddToNotebook(text,'PF')
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         
     def OnResetSigGam(event):
@@ -1102,7 +1103,7 @@ def UpdatePeakGrid(G2frame, data):
         else:
             event.Skip()
             return
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
             
     def SelectVars(rows):
@@ -1161,7 +1162,7 @@ def UpdatePeakGrid(G2frame, data):
             reflGrid.ClearSelection()
             reflGrid.SelectRow(r,True)
             wx.CallAfter(G2frame.reflGrid.ForceRefresh)
-            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+            wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
         elif c > 0:     #column label: just select it (& redisplay)
             reflGrid.ClearSelection()
             reflGrid.SelectCol(c,True)
@@ -1191,7 +1192,7 @@ def UpdatePeakGrid(G2frame, data):
     def OnXtraMode(event):
         data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
         
     def OnSetPeakWidMode(event):
         '''Toggle G2pwd.peakInstPrmMode mode; determines if unvaried 
@@ -1589,7 +1590,7 @@ def UpdateBackground(G2frame,data):
         finally:
             dlg.Destroy()
         CalcBack(G2frame.PatternId)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallLater(100,UpdateBackground,G2frame,newback)
 
     def OnBkgFit(event):
@@ -1677,7 +1678,7 @@ def UpdateBackground(G2frame,data):
         pwddata[3][xBeg:xFin] *= 0.
         pwddata[5][xBeg:xFin] *= 0.
         pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,xdata,bxye)[0]
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
         
@@ -1687,7 +1688,7 @@ def UpdateBackground(G2frame,data):
             return
         else:
             data[1]['FixedPoints'] = []
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
     
     def OnPeaksMove(event):
         'Move a background peak'
@@ -1749,7 +1750,7 @@ def UpdateBackground(G2frame,data):
         def AfterChange(invalid,value,tc):
             if invalid: return
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1794,7 +1795,7 @@ def UpdateBackground(G2frame,data):
                     del(data[1]['debyeTerms'][-1])
             if N == 0:
                 CalcBack(G2frame.PatternId)
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
             wx.CallAfter(UpdateBackground,G2frame,data)
 
         def KeyEditPeakGrid(event):
@@ -1817,7 +1818,7 @@ def UpdateBackground(G2frame,data):
         
         def OnCellChange(event):
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
 
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1861,7 +1862,7 @@ def UpdateBackground(G2frame,data):
                     del(data[1]['peaksList'][-1])
             if N == 0:
                 CalcBack(G2frame.PatternId)
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             # this callback is crashing wx when there is an open
             # peaksGrid cell editor, at least on Mac. Code below
             # should fix this, but it does not.
@@ -1894,7 +1895,7 @@ def UpdateBackground(G2frame,data):
                             
         def OnCellChange(event):
             CalcBack(G2frame.PatternId)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')                
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1947,13 +1948,13 @@ def UpdateBackground(G2frame,data):
             else:
                 data[1]['background PWDR'][2] = False
             CalcBack()
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             wx.CallLater(100,UpdateBackground,G2frame,data)
         
         def AfterChange(invalid,value,tc):
             if invalid: return
             CalcBack()
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
         def OnBackFit(event):
             data[1]['background PWDR'][2] = not data[1]['background PWDR'][2]            
@@ -2010,7 +2011,7 @@ def UpdateBackground(G2frame,data):
             xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
             addAutoBack(G2frame,data,xydata)
             wx.CallAfter(UpdateBackground,G2frame,data)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         elif bkgdict['autoPrms']['Mode'] == 'fit':
             xydata[4] = G2pwd.autoBkgCalc(bkgdict,xydata[1])
             npts = len(xydata[0])
@@ -2020,7 +2021,7 @@ def UpdateBackground(G2frame,data):
             OnBkgFit(event)
         else:
             wx.CallAfter(UpdateBackground,G2frame,data)
-            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
 
     def copyAutoBack(event):
         '''reproduce the auto background computation on selected 
@@ -2089,6 +2090,8 @@ def UpdateBackground(G2frame,data):
         pwddata[1][4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[1][0][xBeg:xFin],fixBack[xBeg:xFin])[0]
 
     # UpdateBackground execution starts here    
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu) # needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.BackMenu)
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]})
     if 'nPeaks' not in data[1]:
@@ -2098,7 +2101,6 @@ def UpdateBackground(G2frame,data):
     elif len(data[1]['background PWDR']) < 3:
         data[1]['background PWDR'].append(False)
     G2frame.dataWindow.currentGrids = []
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.BackMenu)
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2G.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2G.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackSave,id=G2G.wxID_BACKSAVE)
@@ -2267,8 +2269,7 @@ class autoBackground(wx.Dialog):
         the auto background
         '''
         self.xydata[4] = G2pwd.autoBkgCalc(self.bkgdict,self.xydata[1].data)
-        import GSASIIplot as G2plt
-        G2plt.PlotPatterns(self.G2frame,plotType='PWDR')
+        G2pwpl.PlotPatterns(self.G2frame,plotType='PWDR')
     
 ################################################################################
 #####  Limits
@@ -2280,7 +2281,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
     def AfterChange(invalid,value,tc):
         if invalid: return
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=datatype)  #unfortunately this resets the plot width
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,newPlot=False,plotType=datatype)  #unfortunately this resets the plot width
 
     def LimitSizer():
         limits = wx.FlexGridSizer(0,3,0,5)
@@ -2299,7 +2300,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             del(data[item+2])
-            G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
+            G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
             wx.CallAfter(UpdateLimitsGrid,G2frame,data,datatype)
         
         Indx = {}
@@ -2332,7 +2333,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
             G2frame.ifSetLimitsMode = 0
             G2frame.CancelSetLimitsMode.Enable(False)
         G2frame.plotFrame.Raise()
-        G2plt.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
+        G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType=datatype)
         
     def OnLimitCopy(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
@@ -2371,16 +2372,19 @@ def UpdateLimitsGrid(G2frame, data,datatype):
         G2frame.dataWindow.SetSizer(mainSizer)
         G2frame.dataWindow.SetDataSize()
 
+    # start of UpdateLimitsGrid
     G2frame.ifSetLimitsMode = 0
-    G2frame.CancelSetLimitsMode.Enable(False)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu) # needed below
     if 'P' in datatype:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
+        G2frame.CancelSetLimitsMode.Enable(False)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
         for n in (G2G.wxID_ADDEXCLREGION, G2G.wxID_SETLOWLIMIT,
                   G2G.wxID_SETTOPLIMIT, G2G.wxID_STOPSETLIMIT):
             G2frame.Bind(wx.EVT_MENU,onSetLimExcl,id=n)
     elif 'A' in datatype or 'R' in datatype:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDLimitMenu)
+        G2frame.CancelSetLimitsMode.Enable(False)
         G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_SASDLIMITCOPY)
     Draw() 
     
@@ -3298,7 +3302,6 @@ def UpdateInstrumentGrid(G2frame,data):
                     insRef[item] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.InstMenu)
         G2frame.GetStatusBar().SetStatusText('NB: Azimuth is used for polarization only',1)
         G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2G.wxID_INSTCALIB)
@@ -3310,14 +3313,14 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2G.wxID_INSTFLAGCOPY)
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2G.wxID_INST1VAL)
         G2frame.Bind(wx.EVT_MENU,OnInstMult,id=G2G.wxID_INSTSHOWMULT)        
+        menuitem = G2frame.dataWindow.InstMenu.FindItemById(G2G.wxID_INSTSHOWMULT)
+        if menuitem.IsChecked():
+            MakeMultiParameterWindow()
+        else:
+            MakeParameterWindow()
     elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
-    menuitem = G2frame.dataWindow.InstMenu.FindItemById(G2G.wxID_INSTSHOWMULT)
-    if menuitem.IsChecked():
-        MakeMultiParameterWindow()
-    else:
-        MakeParameterWindow()
     G2frame.dataWindow.SendSizeEvent()        
     
 ################################################################################
@@ -3467,7 +3470,7 @@ def UpdateSampleGrid(G2frame,data):
                     data['Scale'][0] = 1.0
             finally:
                 dlg.Destroy()
-            G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
             UpdateSampleGrid(G2frame,data)
             return
         #SASD rescaliing                
@@ -3497,7 +3500,7 @@ def UpdateSampleGrid(G2frame,data):
         refProfile = G2frame.GPXtree.GetItemPyData(refId)[1]
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         UpdateSampleGrid(G2frame,data)
         
     def OnRescaleAll(event):
@@ -3532,7 +3535,7 @@ def UpdateSampleGrid(G2frame,data):
                             wi /= Scale**2
         finally:
             dlg.Destroy()
-        G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],
@@ -3605,7 +3608,7 @@ def UpdateSampleGrid(G2frame,data):
                     sampleData.update(copyDict)
         finally:
             dlg.Destroy()            
-        G2plt.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
+        G2pwpl.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
 
     def OnSampleFlagCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'])
@@ -3651,7 +3654,7 @@ def UpdateSampleGrid(G2frame,data):
         if invalid:
             return
         if tc.key == 0 and 'SASD' in histName:          #a kluge for Scale!
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif tc.key == 'Thick':
             wx.CallAfter(UpdateSampleGrid,G2frame,data)            
             
@@ -3693,11 +3696,13 @@ def UpdateSampleGrid(G2frame,data):
                                   .format(item.strip(),name))
             Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)
-        
+
+    # start of UpdateSampleGrid
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu) # needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SampleMenu)
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SampleMenu)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sample Parameters')
     G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2G.wxID_SETSCALE)
     G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2G.wxID_SAMPLECOPY)
@@ -3887,7 +3892,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                 G2plt.PlotPowderLines(G2frame)
             else:
-                G2plt.PlotPatterns(G2frame,plotType='PWDR')
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             
     def OnReload(event):
         peaks = []
@@ -3966,9 +3971,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=False
                     elif key == 83: # 'S'
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col] = not data[0][row][col]
-            
+
+    # start of UpdateIndexPeaksGrid
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu) # needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu) # needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndPeaksMenu)
     if 'PWD' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndPeaksMenu)
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2G.wxID_INDXRELOAD)
         G2frame.Bind(wx.EVT_MENU, OnSave, id=G2G.wxID_INDEXSAVE)
         G2frame.Bind(wx.EVT_MENU, OnExportPreDICT, id=G2G.wxID_INDEXEXPORTDICVOL)
@@ -4153,22 +4161,36 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnMeths(event):
-        ssopt['kMethod'] = method.GetValue()
-        G2frame.kvecSearch['mode'] = False
-        if 'SeekPath' in ssopt['kMethod']:
-            G2frame.kvecSearch['mode'] = True
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        ssopt['kMethod'] = method.GetStringSelection()
+#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
-        print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
-            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
-            if len(result[0]) == 2:
-                G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
-                    newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
+            if 'Brute' in ssopt.get('kMethod','Brute'):
+                print(' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+                if len(result[0]) == 2:
+                    G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                        newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
+            else:
+                print('TBD: Trying the seekpath algorithm')
+                try:
+                    Seek = False
+                    import seekpath
+                    import kvec_general
+                    Seek = True
+                except:
+                    res = GSASIIpath.condaInstall(['seekpath','kvec_general'])
+                    if res:
+                        msg = 'Installation of the seekpath & kvec_general packages failed with error:\n' + str(res)
+                        G2G.G2MessageBox(G2frame,msg,'Install seekpath/kvec_general Error')
+                    else:
+                        Seek = True
+                if Seek:
+                    OnKvecSearch(event)
         finally:
             dlg.Destroy()
         OnHklShow(event)
@@ -4415,7 +4437,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame)
         return result
             
     def OnSortCells(event):
@@ -4534,6 +4556,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[6:13] = Cell[1:8]
         cx,ct,cs,cia = Phase['General']['AtomPtrs']
         controls[15] = [atom[:cx+3] for atom in Phase['Atoms']]
+        controls.append(Phase)
         if 'N' in Inst['Type'][0]:
             if not ssopt.get('Use',False):
                 G2frame.dataWindow.RunSubGroupsMag.Enable(True)
@@ -4653,7 +4676,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnIndexPeaks(event):
@@ -4707,7 +4730,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
-                    G2plt.PlotPatterns(G2frame)
+                    G2pwpl.PlotPatterns(G2frame)
             G2frame.dataWindow.CopyCell.Enable(True)
             G2frame.dataWindow.IndexPeaks.Enable(True)
             G2frame.dataWindow.MakeNewPhase.Enable(True)
@@ -4721,7 +4744,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         r,c =  event.GetRow(),event.GetCol()
         if cells:
             if cells[0][0] == '?':  # k-vector table
-                # uncheck all rows then check only the one used row
+                # uncheck all rowes then check only the one used row
                 for i in range(len(cells)):
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
@@ -4833,7 +4856,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         G2frame.HKL.append(list_tmp)
                     G2frame.HKL = np.array(G2frame.HKL)
 
-                    G2plt.PlotPatterns(G2frame)
+                    G2pwpl.PlotPatterns(G2frame)
             if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False
@@ -4851,7 +4874,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                         G2plt.PlotPowderLines(G2frame)
                     else:
-                        G2plt.PlotPatterns(G2frame)
+                        G2pwpl.PlotPatterns(G2frame)
                 except:
                     pass
             elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
@@ -4902,7 +4925,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = magcells[next]['SGData']
         A = G2lat.cell2A(magcells[next]['Cell'][:6])  
         G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-        G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         magDisplay.ForceRefresh()
         # change Scroll to display new setting
         xscroll = G2frame.dataWindow.GetScrollPos(wx.HORIZONTAL)
@@ -4942,7 +4965,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 mSGData = phase['SGData']
                 A = G2lat.cell2A(phase['Cell'][:6])  
                 G2frame.HKL = G2pwd.getHKLpeak(1.0,mSGData,A,Inst)
-                G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+                G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
             elif c == 2:
                 if MagCellsTable.GetValue(r,c):
                     MagCellsTable.SetValue(r,c,False)
@@ -5409,7 +5432,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  
             G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-            G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -5546,12 +5569,169 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  
             G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-            G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
+    def updateCellsWindow(event):
+        'called when k-vec mode is selected'
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+    def OnKvecSearch(event):
+        'Run the k-vector search'
+
+#        data = [controls,bravais,cells,dmin,ssopt,magcells]
+
+        controls, lat_type, cells, _, ssopt, _ = data
+        useMP,num_procs = G2mp.InitMP()
+        print(useMP,num_procs)
+        # grab the satellite peaks. here, gsas-ii will only grab the data
+        # for the histogram under selection.
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))[0]
+        if ssopt.get('Use',False): #incommensurate - irrational k-vectors
+            xtra_peaks_d = [peak[-2] for peak in peaks if peak[7] or not peak[3]]  #previously indexed hklm
+            hkl_refls = [list(peak[4:7]) for peak in peaks if not peak[7] and peak[3]]
+            kvs_option = 2  #general
+        else:   #commensurate - rational k-vectors
+            xtra_peaks_d = [peak[-2] for peak in peaks if not peak[3]]
+            hkl_refls = [peak[4:7] for peak in peaks if peak[3]]
+            kvs_option = 1  #HighSymPts & HighSymPaths
+        if len(xtra_peaks_d) == 0:
+            err_title = "Empty satellite peak list"
+            err_msg = "There were no unindexed lines in Index Peak List - reconsider"
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            return
+
+        if kvs_option == 2:
+            # grab the search range, which will be used for the option of
+            # 'General' only -- see the part below for user selection of the
+            # search option.
+            print(hkl_refls,xtra_peaks_d)
+            warn_title = "Long execution time expected"
+            warn_msg = "Searching over general k points may take a while, "
+            warn_msg += "usually on the level of serveral hours. "
+            warn_msg += "Do you want to proceed?"
+            dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
+                wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
+            result = dialog.ShowModal()
+
+            if result == wx.ID_OK:
+                pass
+            else:
+                dialog.Destroy()
+                wx.EndBusyCursor()
+                return
+
+            kstep = [0.005,0.005,0.005]
+        else:
+            num_procs = None
+            kstep = None
+
+        # grab the user defined tolerance for determining the optimal k vector.
+        # refer to the following link for more detailed explanation about this,
+        #
+        # https://yr.iris-home.net/kvectordoc
+        #
+        tol_val = .001
+
+        Phase = controls[16]
+
+        # grab the Bravais lattice type
+        #
+        # given the lattice type and lattice system, the Bravais lattice type
+        # can be determined. see the comparison table in the Wikipedia link
+        # below for the correspondence,
+        #
+        # https://en.wikipedia.org/wiki/Crystal_system
+        #
+        # here, we need to assign the Bravais lattice with specific names as
+        # inputs for the `seekpath` routine.
+        lat_type = Phase["General"]["SGData"]["SGLatt"]
+        lat_sym = Phase["General"]["SGData"]["SGSys"]
+        if lat_sym == "trigonal":
+            brav_sym = "hR"
+        else:
+            brav_sym = lat_sym[0] + lat_type
+
+        # grab all atomic coordinates in the P1 symmetry
+        #
+        # define some matrix as necessary inputs for generating the P1
+        # structure.
+        Trans = np.eye(3)
+        Uvec = np.zeros(3)
+        Vvec = np.zeros(3)
+
+        # expand the structure to P1 symmetry
+        newPhase = copy.deepcopy(Phase)
+        newPhase['ranId'] = ran.randint(0, sys.maxsize)
+        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+        newPhase, _ = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
+        atoms_pointer = newPhase['General']['AtomPtrs']
+
+        atom_coords = list()
+        atom_types = list()
+        for atom in newPhase["Atoms"]:
+            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
+            atom_coords.append(coord_tmp)
+            type_tmp = atom[atoms_pointer[1]]
+            atom_types.append(type_tmp)
+
+        # this will turn each of the atom types into a unique integer number,
+        # which is required by the `seekpath` routine
+        atom_ids = kvs.unique_id_gen(atom_types)
+
+        # grab the parent unit cell and construct the lattice vectors
+        cell_params = newPhase["General"]["Cell"][1:7]
+        lat_vectors = kvs.lat_params_to_vec(cell_params)
+
+        # hkl_refls = list()
+        # for i in range(6):
+        #     for j in range(6):
+        #         for k in range(6):
+        #             hkl_refls.append([i, j, k])
+
+        try:
+            # if we choose option-2, we need to use the `kvec_general` module
+            # Otherwise, the computation time would be unacceptably long.
+            k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
+                hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
+                kstep=kstep,processes=num_procs)
+        except ModuleNotFoundError:
+            err_title = "Module not found"
+            err_msg = "The `kvec_general` module is not found. Please install "
+            err_msg += "the module before running the k-vector search with "
+            err_msg += "option-2."
+            G2G.G2MessageBox(G2frame, err_msg, err_title)
+            wx.EndBusyCursor()
+            return
+
+        k_opt = k_search.kOptFinder()
+        k_opt_dist = k_opt[1]
+        ave_dd = k_opt[2]
+        max_dd = k_opt[3]
+        k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
+
+        cells.clear()
+
+        # display the result
+        for i, k_v in enumerate(k_opt):
+            cells.append([])
+            laue = 'P1'
+            cells[-1] += ['?', 0, laue]
+            c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
+            cells[-1] += c
+            cells[-1] += [0, False, False]
+            # G2frame.OnFileSave(event) # forces save of project
+        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
+
+    def OnClearCells(event):
+        'remove previous search results'
+        data[2] = []
+        data[5] = []
+        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
+        
     def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
         '''Search for 
         using the ISODISTORT web service 
@@ -5698,272 +5878,10 @@ def UpdateUnitCellsGrid(G2frame, data):
 
         return
         
-    def updateCellsWindow(event):
-        'called when k-vec mode is selected'
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-
-    def OnKvecSearch(event):
-        'Run the k-vector search'
-
-        try:
-            import seekpath
-        except:
-            msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
-            dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
-            result = wx.ID_NO
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-                wx.GetApp().Yield()
-            if result != wx.ID_YES: return
-            wx.BeginBusyCursor()
-            try:             # can we install via conda?
-                import conda.cli.python_api
-                print('Starting conda install of seekpath...')
-                GSASIIpath.condaInstall(['seekpath'])
-                print('conda install of seekpath completed')
-            except Exception as msg:
-                print(msg)
-                try:
-                    print('Starting pip install of seekpath...')
-                    GSASIIpath.pipInstall(['seekpath'])
-                    print('pip install of seekpath completed')
-                except Exception as msg:
-                    print('install of seekpath failed, sorry\n',msg)
-                    return
-            finally:
-                wx.EndBusyCursor()
-            ans = G2frame.OnFileSave(None)
-            if not ans: return
-            project = os.path.abspath(G2frame.GSASprojectfile)
-            print(f"Restarting GSAS-II with project file {project!r}")
-            G2fil.openInNewTerm(project)
-            print ('exiting GSAS-II')
-            sys.exit()
-
-        # msg = G2G.NISTlatUse(True)
-        _, _, cells, _, _, _ = data
-        wx.BeginBusyCursor()
-
-        # grab the satellite peaks. here, gsas-ii will only grab the data
-        # for the histogram under selection.
-        hist_name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
-        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist_name)
-        peakId = G2gd.GetGPXtreeItemId(G2frame, Id, 'Peak List')
-        peakdata = G2frame.GPXtree.GetItemPyData(peakId)
-        if len(peakdata["xtraPeaks"]) == 0:
-            err_title = "Empty satellite peak list"
-            err_msg = "The satellite peak list is empty. Please select the "
-            err_msg += "extra peak positions before executing the k vector "
-            err_msg += "search."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # we need to grab the instrument parameter and call gsas ii routine
-        # to convert the satellite peaks into d-spacing.
-        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Instrument Parameters')
-        Parms, _ = G2frame.GPXtree.GetItemPyData(Id)
-        xtra_peaks_d = list()
-        for extra_peak in peakdata["xtraPeaks"]:
-            dsp_tmp = G2lat.Pos2dsp(Parms, extra_peak[0])
-            xtra_peaks_d.append(dsp_tmp)
-
-        # select a parent phase. error message will be presented in a pop-up
-        # window if an invalid selection is made.
-        phase_sel = G2frame.kvecSearch['phase']
-        if len(phase_sel.strip()) == 0:
-            err_title = "Missing parent phase"
-            err_msg = "Please select the parent phase from the dropdown."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # again, gsas ii will only grab the reflection lists for the
-        # histogram under selection. also, only those phases that are being
-        # used for the selected histogram will be included in the
-        # `refDict` variable.
-        refDict = G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Reflection Lists'))
-        if phase_sel not in refDict.keys():
-            err_title = "Phase selection error"
-            err_msg = "The parent phase selected is not used in "
-            err_msg += "current histogram. "
-            err_msg += "Please select from one of the followings, "
-            err_msg += f"{list(refDict.keys())}"
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # grab the search option. By default, we would search over those
-        # high symmetry points only.
-        kvs_option_map = {
-            "HighSymPts": 0,
-            "HighSymPts & HighSymPaths": 1,
-            "General": 2
-        }
-        kvs_option = G2frame.kvecSearch['soption']
-        kvs_option = kvs_option_map[kvs_option]
-        if kvs_option == 2:
-            # grab the search range, which will be used for the option of
-            # 'General' only -- see the part below for user selection of the
-            # search option.
-            try:
-                kx_s = float(G2frame.kvecSearch['kx_step'])
-                ky_s = float(G2frame.kvecSearch['ky_step'])
-                kz_s = float(G2frame.kvecSearch['kz_step'])
-                num_procs = int(G2frame.kvecSearch['num_procs'])
-            except ValueError:
-                err_title = "Invalid k grid input"
-                err_msg = "The k gird values should all be float numbers"
-                G2G.G2MessageBox(G2frame, err_msg, err_title)
-                wx.EndBusyCursor()
-                return
-
-            if kx_s <= 0 or ky_s <= 0 or kz_s <= 0:
-                err_title = "Invalid k grid input"
-                err_msg = "The k step is less than or equal to 0. "
-                err_msg += "Please check the input values."
-                G2G.G2MessageBox(G2frame, err_msg, err_title)
-                wx.EndBusyCursor()
-                return
-            else:
-                warn_title = "Long execution time expected"
-                warn_msg = "Searching over general k points may take a while, "
-                warn_msg += "usually on the level of serveral hours. "
-                warn_msg += "Do you want to proceed?"
-                dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
-                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
-                result = dialog.ShowModal()
-
-                if result == wx.ID_OK:
-                    pass
-                else:
-                    dialog.Destroy()
-                    wx.EndBusyCursor()
-                    return
-
-            kstep = [kx_s, ky_s, kz_s]
-        else:
-            num_procs = None
-            kstep = None
-
-        # grab the user defined tolerance for determining the optimal k vector.
-        # refer to the following link for more detailed explanation about this,
-        #
-        # https://yr.iris-home.net/kvectordoc
-        #
-        try:
-            tol_val = float(G2frame.kvecSearch['tolerance'])
-        except ValueError:
-            err_title = "Invalid tolerance input"
-            err_msg = "The tolerance value should be a float number, "
-            err_msg += "representing the instrument resolution "
-            err_msg += ("level " + u"\u03B4" + "d/d.")
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        Phase = Phases[phase_sel]
-
-        # grab the Bravais lattice type
-        #
-        # given the lattice type and lattice system, the Bravais lattice type
-        # can be determined. see the comparison table in the Wikipedia link
-        # below for the correspondence,
-        #
-        # https://en.wikipedia.org/wiki/Crystal_system
-        #
-        # here, we need to assign the Bravais lattice with specific names as
-        # inputs for the `seekpath` routine.
-        lat_type = Phase["General"]["SGData"]["SGLatt"]
-        lat_sym = Phase["General"]["SGData"]["SGSys"]
-        if lat_sym == "trigonal":
-            brav_sym = "hR"
-        else:
-            brav_sym = lat_sym[0] + lat_type
-
-        # grab all atomic coordinates in the P1 symmetry
-        #
-        # define some matrix as necessary inputs for generating the P1
-        # structure.
-        Trans = np.eye(3)
-        Uvec = np.zeros(3)
-        Vvec = np.zeros(3)
-
-        # expand the structure to P1 symmetry
-        newPhase = copy.deepcopy(Phase)
-        newPhase['ranId'] = ran.randint(0, sys.maxsize)
-        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-        newPhase, _ = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
-        atoms_pointer = newPhase['General']['AtomPtrs']
-
-        atom_coords = list()
-        atom_types = list()
-        for atom in newPhase["Atoms"]:
-            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
-            atom_coords.append(coord_tmp)
-            type_tmp = atom[atoms_pointer[1]]
-            atom_types.append(type_tmp)
-
-        # this will turn each of the atom types into a unique integer number,
-        # which is required by the `seekpath` routine
-        atom_ids = kvs.unique_id_gen(atom_types)
-
-        # grab the parent unit cell and construct the lattice vectors
-        cell_params = newPhase["General"]["Cell"][1:7]
-        lat_vectors = kvs.lat_params_to_vec(cell_params)
-
-        hkl_refls = list()
-        for i in range(6):
-            for j in range(6):
-                for k in range(6):
-                    hkl_refls.append([i, j, k])
-
-        try:
-            # if we choose option-2, we need to use the `kvec_general` module
-            # Otherwise, the computation time would be unacceptably long.
-            k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
-                hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
-                kstep=kstep,processes=num_procs)
-        except ModuleNotFoundError:
-            err_title = "Module not found"
-            err_msg = "The `kvec_general` module is not found. Please install "
-            err_msg += "the module before running the k-vector search with "
-            err_msg += "option-2."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        k_opt = k_search.kOptFinder()
-        k_opt_dist = k_opt[1]
-        ave_dd = k_opt[2]
-        max_dd = k_opt[3]
-        k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
-
-        wx.EndBusyCursor()
-        cells.clear()
-
-        # display the result
-        for i, k_v in enumerate(k_opt):
-            cells.append([])
-            laue = 'P1'
-            cells[-1] += ['?', 0, laue]
-            c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
-            cells[-1] += c
-            cells[-1] += [0, False, False]
-            # G2frame.OnFileSave(event) # forces save of project
-        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
-
-    def OnClearCells(event):
-        'remove previous search results'
-        data[2] = []
-        data[5] = []
-        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
-        
     #### UpdateUnitCellsGrid code starts here
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)   # Needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)   # Needed below
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     Indx = {}
     G2frame.ifSetLimitsMode = 0
     G2frame.CancelSetLimitsMode.Enable(False)
@@ -5984,7 +5902,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     else:   #'C', 'B', or 'PKS'
         wave = G2mth.getWave(Inst)
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.GetStatusBar().SetStatusText('')
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
@@ -6310,10 +6227,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Unit cell:'))
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
-        indChoice = ['1','2','3','4',]
         SpSg = SGData['SpGrp']
         if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
-            indChoice = ['1',]
             SpSg = SGData['MagSpGrp']
         ssChoice = G2spc.SSChoice(SGData)
         if ssopt['ssSymb'] not in ssChoice:
@@ -6347,27 +6262,30 @@ def UpdateUnitCellsGrid(G2frame, data):
                 modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                 ssSizer.Add(modVal,0,WACV)
         mainSizer.Add(ssSizer,0)
-        kSizer = wx.BoxSizer(wx.HORIZONTAL)
-        kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' k-vector max. M: '),0,WACV)
-        maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
-            choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
-        kSizer.Add(maxMH,0,WACV)
-        if len(peaks[0]):
-            ssopt['kMethod'] = ssopt.get('kMethod','Brute')
-            kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' search method: '),0,WACV)
-            meths = ['Brute','SeekPath']
-            method = wx.ComboBox(G2frame.dataWindow,value=ssopt['kMethod'],
-                choices=meths,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            method.Bind(wx.EVT_COMBOBOX,OnMeths)
-            kSizer.Add(method,0,WACV)
-            findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
-            findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
-            kSizer.Add(findMV,0,WACV)
-            findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
-            findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
-            kSizer.Add(findallMV,0,WACV)
-        mainSizer.Add(kSizer,0)
+    indChoice = ['1','2','3','4',]
+    if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
+        indChoice = ['1',]
+    kSizer = wx.BoxSizer(wx.HORIZONTAL)
+    kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' k-vector max. M: '),0,WACV)
+    maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt.get('maxH',1)),
+        choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
+    kSizer.Add(maxMH,0,WACV)
+    if len(peaks[0]):
+        ssopt['kMethod'] = ssopt.get('kMethod','Brute')
+        kSizer.Add(wx.StaticText(G2frame.dataWindow,label=' search method: '),0,WACV)
+        meths = ['Brute','SeekPath']
+        method = wx.ComboBox(G2frame.dataWindow,value=ssopt['kMethod'],
+            choices=meths,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        method.Bind(wx.EVT_COMBOBOX,OnMeths)
+        kSizer.Add(method,0,WACV)
+        findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
+        findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
+        kSizer.Add(findMV,0,WACV)
+        findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
+        findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
+        kSizer.Add(findallMV,0,WACV)
+    mainSizer.Add(kSizer,0)
 
     G2frame.dataWindow.currentGrids = []
     if len(ssopt.get('SgResults',[])):
@@ -6769,16 +6687,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 colLabels.insert(3,'M')
         else:
             if 'C' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
                 Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif Inst['Type'][0][2] in ['A','B']:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
                 Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'E' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','I100']
+                colLabels = ['H','K','L','mul','d','pos','sig^2','gam','Fosq','Fcsq','phase','Icorr','I100']
                 Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
@@ -6876,10 +6794,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 ShowReflTable(phases[sel])
         finally:
             dlg.Destroy()
-            
+
+    # start of UpdateReflectionGrid            
     if not data:
         print ('No phases, no reflections')
         return
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ReflMenu)
     if HKLF:
         G2frame.RefList = 1
         phaseName = IsHistogramInAnyPhase(G2frame,Name)
@@ -6890,7 +6810,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         phaseName = G2frame.RefList
         phases = list(data.keys())
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ReflMenu)
     if HKLF:
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
@@ -7266,11 +7185,12 @@ def UpdateSubstanceGrid(G2frame,data):
                 denSizer.Add(wx.StaticText(G2frame.dataWindow,label=': %.3g cm%s'%(Substance['XAbsorption'],Pwrm1)),0,WACV)
                 substSizer.Add(denSizer)
         return substSizer
-            
+
+    # start of UpdateSubstanceGrid            
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SubstanceMenu)
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[2]
     wave = G2mth.getWave(Inst)
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SubstanceMenu)
     G2frame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2G.wxID_LOADSUBSTANCE)    
     G2frame.Bind(wx.EVT_MENU, OnReloadSubstances, id=G2G.wxID_RELOADSUBSTANCES)    
     G2frame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2G.wxID_ADDSUBSTANCE)
@@ -7328,7 +7248,7 @@ def UpdateModelsGrid(G2frame,data):
     def RefreshPlots(newPlot=False):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
         elif 'Size' in PlotText:
             G2plt.PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
@@ -7796,7 +7716,7 @@ def UpdateModelsGrid(G2frame,data):
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
             PDBtext = 'P(R) dif: %.3f r-value: %.3f Nbeads: %d'%(PRcalc[r][-1],pattern[-1],len(selAtoms[1]))
 #            RefreshPlots(True)
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2pwpl.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             G2plt.PlotSASDPairDist(G2frame)
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults,PDBtext)
         
@@ -8141,7 +8061,9 @@ def UpdateModelsGrid(G2frame,data):
         else:
             Profile[5] = np.zeros(len(Profile[5]))
         RefreshPlots(True)
-            
+
+    # start of UpdateModelsGrid
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ModelMenu)
     Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))
@@ -8150,7 +8072,6 @@ def UpdateModelsGrid(G2frame,data):
         BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['BackFile'])
         BackSample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,BackId, 'Sample Parameters'))
         Profile[5] = BackSample['Scale'][0]*G2frame.GPXtree.GetItemPyData(BackId)[1][1]
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ModelMenu)
     G2frame.dataWindow.ClearData()
     G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
     G2frame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2G.wxID_MODELCOPYFLAGS)
@@ -8252,7 +8173,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
-        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        G2pwpl.PlotPatterns(G2frame,plotType='REFD')
         wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
         
     def OnModelPlot(event):
@@ -8389,7 +8310,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
-        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        G2pwpl.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
     def DoUnDo():
@@ -8443,7 +8364,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
@@ -8509,7 +8430,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
 
         overall = wx.BoxSizer(wx.HORIZONTAL)
         overall.Add(wx.StaticText(G2frame.dataWindow,label=' Scale: '),0,WACV)
@@ -8551,7 +8472,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             if Name == 'unit scatter':
                 data['Layers'][item]['iDenMul'] = [0.,False]
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
         def OnCheckBox(event):
@@ -8565,7 +8486,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['Layers'].insert(ind+1,{'Name':'vacuum','DenMul':[1.0,False],})
             data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
         def OnDeleteLayer(event):
@@ -8574,7 +8495,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             del data['Layers'][ind]
             data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
 
         def Recalculate(invalid,value,tc):
@@ -8585,7 +8506,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
 
         def OnMoveParm(event):
             Obj = event.GetEventObject()
@@ -8776,8 +8697,10 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            G2pwpl.PlotPatterns(G2frame,plotType='REFD')
     
+    # start of UpdateREFDModelsGrid
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.REFDModelMenu)
     Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:3]
     #patch
@@ -8788,7 +8711,6 @@ def UpdateREFDModelsGrid(G2frame,data):
         data['dQ type'] = 'None'
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.REFDModelMenu)
     G2frame.dataWindow.ClearData()
     G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
     G2frame.Bind(wx.EVT_MENU, OnModelPlot, id=G2G.wxID_MODELPLOT)
@@ -9513,6 +9435,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
 
     # Routine UpdatePDFGrid starts here
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
     tof2q = lambda t,C:2.0*math.pi*C/t
@@ -9559,7 +9482,6 @@ def UpdatePDFGrid(G2frame,data):
             data['diffMult'] = 1.0
         if 'GR Scale' not in data:
             data['GR Scale'] = 1.0
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     if powId:
         G2frame.dataWindow.PDFMenu.EnableTop(0,enable=True)
     else:
@@ -9764,6 +9686,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         G2plt.PlotISFG(G2frame,data,peaks=peaks,newPlot=False)
         wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
 
+    # start of UpdatePDFPeaks
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFPksMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyPDFPeaks, id=G2G.wxID_PDFCOPYPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2G.wxID_PDFPKSFIT)

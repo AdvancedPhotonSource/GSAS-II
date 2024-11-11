@@ -1,29 +1,13 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_GPX.py $
-# $Id: G2phase_GPX.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
-'''
+'''Class to read a phase from an existing GSAS-II project file
 '''
 from __future__ import division, print_function
 import platform
 import sys
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle
 import random as ran
 import GSASIIobj as G2obj
 import GSASIIstrIO as G2stIO
-import GSASIIpath
-try:
-    import GSASIIctrlGUI as G2G
-except ImportError:
-    pass
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'
@@ -36,16 +20,16 @@ class PhaseReaderClass(G2obj.ImportPhase):
             )
         
     def ContentsValidator(self, filename):
-        "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
+        "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         if True:
             fp = open(filename,'rb')
         try: 
             if '2' in platform.python_version_tuple()[0]:
-                data = cPickle.load(fp)
+                data = pickle.load(fp)
             else:
-                data = cPickle.load(fp,encoding='latin-1')
+                data = pickle.load(fp,encoding='latin-1')
         except:
-            self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
+            self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
             fp.close()
             return False
         fp.close()
@@ -65,6 +49,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         elif len(phasenames) == 1: # one block, no choices
             selblk = 0
         else:                       # choose from options                
+            import GSASIIctrlGUI as G2G
             selblk = G2G.PhaseSelector(phasenames,ParentFrame=ParentFrame,
                 title= 'Select a phase from the list below',)
             if selblk is None:

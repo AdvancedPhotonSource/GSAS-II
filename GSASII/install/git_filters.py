@@ -21,7 +21,9 @@ path2GSAS2 = os.path.dirname(os.path.dirname(
 path2repo = os.path.dirname(path2GSAS2)
 
 if __name__ == '__main__':
-
+    print("don't use this. Replaced by tag-version.py")
+    sys.exit()
+    
     help = False
     actionName = None
     for arg in sys.argv[1:]:
@@ -118,18 +120,22 @@ if __name__ == '__main__':
         # tagged one
         untagged = []
         for i,c in enumerate(g2repo.iter_commits('HEAD')):
-            if i > 50: break
+            if i > 500:
+                print('No tag found in 500 commits')
+                #break
+                sys.exit()
             tags = g2repo.git.tag('--points-at',c).split('\n')
             if tags == ['']:
                 untagged.append(c)
             else:
                 break
-        # add tags, processing the oldest untagged version first
+        # add a tag to the newest untagged version
         tagnum = max_numeric
-        for i in sorted(untagged,key=lambda k:k.committed_datetime):
+        for i in sorted(untagged,key=lambda k:k.committed_datetime,reverse=True):
             tagnum += 1
             if str(tagnum) in g2repo.tags:
                 print(f'Error: {tagnum} would be repeated')
                 break
             g2repo.create_tag(str(tagnum),ref=i)
             print(f'created tag {tagnum} for {i.hexsha[:6]}')
+            break

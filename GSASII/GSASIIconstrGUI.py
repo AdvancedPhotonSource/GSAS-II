@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 #GSASIIconstrGUI - constraint GUI routines
-########### SVN repository information ###################
-# $Date: 2024-06-13 07:33:46 -0500 (Thu, 13 Jun 2024) $
-# $Author: toby $
-# $Revision: 5790 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
-# $Id: GSASIIconstrGUI.py 5790 2024-06-13 12:33:46Z toby $
-########### SVN repository information ###################
 '''
 Constraints and rigid bodies GUI routines follow.
 
@@ -25,7 +18,6 @@ import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5790 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO
@@ -39,7 +31,6 @@ import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIphsGUI as G2phG
-import GSASIIIO as G2IO
 import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -1539,6 +1530,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         ShowIsoDistortCalc(G2frame)
 
     #### UpdateConstraints execution starts here ##############################
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     if Clear:
         G2frame.dataWindow.ClearData() 
     if not data:  # usually created in CheckNotebook
@@ -1675,7 +1667,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     Indx = {}
     G2frame.Page = [0,'phs']
     
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     SetStatusLine('')
     
     G2frame.Bind(wx.EVT_MENU, OnAddConstraint, id=G2G.wxID_CONSTRAINTADD)
@@ -2481,7 +2472,7 @@ unselected atoms appear much darker than selected atoms.
                 else:
                     print('nothing selected')
                     return
-                obj = G2IO.ExportBaseclass(G2frame,'XYZ','.xyz')
+                obj = G2fil.ExportBaseclass(G2frame,'XYZ','.xyz')
                 #obj.InitExport(None)
                 if obj.ExportSelect():    # set export parameters; ask for file name
                     return

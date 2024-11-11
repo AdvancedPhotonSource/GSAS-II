@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-########### SVN repository information ###################
-# $Date: 2023-05-11 18:08:12 -0500 (Thu, 11 May 2023) $
-# $Author: toby $
-# $Revision: 5577 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_GE.py $
-# $Id: G2img_GE.py 5577 2023-05-11 23:08:12Z toby $
-########### SVN repository information ###################
 '''
 '''
 
@@ -14,7 +7,6 @@ import os
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5577 $")
 class GE_ReaderClass(G2obj.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         

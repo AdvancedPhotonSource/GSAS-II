@@ -2051,25 +2051,28 @@ class ExportCIF(G2fil.ExportBaseclass):
             DisAglData['TargAtoms'] = xyz
             SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                 generalData['SGData'])
-
-#            xpandSGdata = generalData['SGData'].copy()
-#            xpandSGdata.update({'SGOps':symOpList,
-#                                'SGInv':False,
-#                                'SGLatt':'P',
-#                                'SGCen':np.array([[0, 0, 0]]),})
-#            DisAglData['SGData'] = xpandSGdata
             DisAglData['SGData'] = generalData['SGData'].copy()
 
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in phasedict:
                 DisAglData['pId'] = phasedict['pId']
                 DisAglData['covData'] = self.OverallParms['Covariance']
+                # add RB stuff to DisAglData
+                DisAglData['RBlist'] = []          # list of atom numbers used in the RB
+                for d in phasedict['RBModels']['Residue']:
+                    for rId in d['Ids']:
+                        num = int(G2obj.LookupAtomId(ranId=rId,pId=phasedict['pId']))
+                        DisAglData['RBlist'].append(num)
+                DisAglData['rigidbodyDict'] = self.OverallParms['Rigid bodies']
+                DisAglData['Phases'] = self.Phases
+                DisAglData['parmDict'] = self.parmDict
             try:
                 AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(
                     generalData['DisAglCtls'],
                     DisAglData)
-            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                print(u'**** ERROR computing distances & angles for phase {} ****\nresetting to default values'.format(phasenam))
+            except KeyError as msg:        # inside DistAngle for missing atom types in DisAglCtls
+                print(f'**** ERROR computing distances & angles for phase {phasenam} ****\nresetting to default values')
+                if GSASIIpath.GetConfigValue('debug'): print(msg)
                 data = generalData['DisAglCtls'] = {}
                 data['Name'] = generalData['Name']
                 data['Factors'] = [0.85,0.85]
@@ -2193,13 +2196,6 @@ class ExportCIF(G2fil.ExportBaseclass):
             DisAglData['TargAtoms'] = xyz
             SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                 generalData['SGData'])
-
-#            xpandSGdata = generalData['SGData'].copy()
-#            xpandSGdata.update({'SGOps':symOpList,
-#                                'SGInv':False,
-#                                'SGLatt':'P',
-#                                'SGCen':np.array([[0, 0, 0]]),})
-#            DisAglData['SGData'] = xpandSGdata
             DisAglData['SGData'] = generalData['SGData'].copy()
 
             DisAglData['Cell'] = cellList  #+ volume
@@ -2207,6 +2203,15 @@ class ExportCIF(G2fil.ExportBaseclass):
                 DisAglData['pId'] = phasedict['pId']
                 DisAglData['covData'] = seqData[histname]
                 # self.OverallParms['Covariance']
+                # add RB stuff to DisAglData
+                DisAglData['RBlist'] = []          # list of atom numbers used in the RB
+                for d in phasedict['RBModels']['Residue']:
+                    for rId in d['Ids']:
+                        num = int(G2obj.LookupAtomId(ranId=rId,pId=phasedict['pId']))
+                        DisAglData['RBlist'].append(num)
+                DisAglData['rigidbodyDict'] = self.OverallParms['Rigid bodies']
+                DisAglData['Phases'] = self.Phases
+                DisAglData['parmDict'] = parmDict
             try:
                 AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(
                     generalData['DisAglCtls'],
@@ -3527,7 +3532,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Reset temperature selection(s)')
             but.Bind(wx.EVT_BUTTON,_ResetSelT)
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
-            cpnl = wxscroll.ScrolledPanel(self.cifdefs,size=(300,300))
+            cpnl = wxscroll.ScrolledPanel(self.cifdefs,size=(450,300))
             cbox = wx.BoxSizer(wx.VERTICAL)
             G2G.HorizontalLine(cbox,cpnl)
             cbox.Add(
@@ -3744,8 +3749,12 @@ class ExportCIF(G2fil.ExportBaseclass):
             for c in sorted(DistArray):
                 karr = []
                 UsedCols = {}
-                cbox.Add(wx.StaticText(cpnl,wx.ID_ANY,
-                                   'distances to/angles around atom '+AtomLabels[c]))
+                if len(AngArray[c]) == 0:
+                    cbox.Add(wx.StaticText(cpnl,wx.ID_ANY,
+                                   f'distances to atom {AtomLabels[c]}'))
+                else:
+                    cbox.Add(wx.StaticText(cpnl,wx.ID_ANY,
+                        f'distances to/angles around atom {AtomLabels[c]}'))
                 #dbox = wx.GridBagSizer(hgap=5)
                 dbox = wx.GridBagSizer()
                 for i,D in enumerate(DistArray[c]):

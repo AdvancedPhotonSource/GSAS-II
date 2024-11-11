@@ -1,8 +1,9 @@
 # GSAS-II settings, perhaps to be moved
 config.py
 
-# manages GSAS-II version info for non-git installs
-#git_verinfo.py
+# local code for debugging
+debug_setup.py.example
+debug_setup.py
 
 # created on MacOS by makeMacApp.py
 GSAS-II.app/

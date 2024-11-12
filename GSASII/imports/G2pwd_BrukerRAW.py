@@ -225,8 +225,6 @@ class brml_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
         self.data = None
 
-    # TODO: refactor this: 
-    #   Should not count on ContentsValidator being called before Reader
     def ContentsValidator(self, filename):
         if xml is None:
             return False

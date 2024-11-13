@@ -8302,6 +8302,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #        if G2frame.dataDisplay: 
 #            oldPage = G2frame.dataDisplay.GetSelection()
         
+    G2frame.GetStatusBar().SetStatusText('',1)
     SetDataMenuBar(G2frame)
     G2frame.SetTitleByGPX()
     G2frame.PickId = item
@@ -8682,10 +8683,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.GPXtree.SetItemPyData(item,data)  
 #end patch
         # debug stuff
-        #if GSASIIpath.GetConfigValue('debug'):
-        #    import imp
-        #    imp.reload(G2pdG)  # for testing changes
-        #    print('debug: reloaded',G2pdG)
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     import imp
+        #     imp.reload(G2pdG)  # for testing changes
+        #     print('debug: reloaded',G2pdG)
         # end debug stuff
         G2pdG.UpdateUnitCellsGrid(G2frame,data)
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):

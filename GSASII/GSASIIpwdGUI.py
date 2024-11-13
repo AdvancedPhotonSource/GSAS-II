@@ -4255,13 +4255,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             ssopt['Use'] = False
             G2frame.dataWindow.RefineCell.Enable(True)
-            ssopt['SgResults'] += [OnHklShow(event,False),]
-        ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
-        ssopt['SgResults'][0][1] = True
-        controls[13] = ssopt['SgResults'][0][0]
-        ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-        G2frame.dataWindow.RefineCell.Enable(True)
-        OnHklShow(event,False)
+            res = OnHklShow(event,False)
+            if res: 
+                ssopt['SgResults'].append(res)
+        if ssopt['SgResults']:
+            ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
+            ssopt['SgResults'][0][1] = True
+            controls[13] = ssopt['SgResults'][0][0]
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event,False)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
 
     def OnSelectSgrp(event):
@@ -4363,6 +4366,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnHklShow(event=None,Print=True):
+        result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
@@ -5708,6 +5712,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 
         try:
             import seekpath
+            seekpath
         except:
             msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
             dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
@@ -5721,6 +5726,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.BeginBusyCursor()
             try:             # can we install via conda?
                 import conda.cli.python_api
+                conda.cli.python_api
                 print('Starting conda install of seekpath...')
                 GSASIIpath.condaInstall(['seekpath'])
                 print('conda install of seekpath completed')
@@ -6057,7 +6063,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataWindow.ClearData()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing controls'),0,WACV)
+    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing tools'),0,WACV)
     if not hasattr(G2frame,'kvecSearch'):
         G2frame.kvecSearch = {'mode':False}
 
@@ -6072,8 +6078,27 @@ def UpdateUnitCellsGrid(G2frame, data):
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    mainSizer.Add((5,5),0)
+    mainSizer.Add((-1,3),0)
     if not G2frame.kvecSearch['mode']:
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
+                        label='Autoindexing of "Index Peak List" contents',
+                        style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bravais Lattice(s) for autoindexing trials:'),0)
+        mainSizer.Add((5,5),0)
+        indentSizer = wx.BoxSizer(wx.HORIZONTAL)
+        indentSizer.Add((20,-1))
+        littleSizer = wx.FlexGridSizer(0,4,5,5)
+        bravList = []
+        bravs = zip(bravais,bravaisNames)
+        for brav,bravName in bravs:
+            bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
+            bravList.append(bravCk.GetId())
+            bravCk.SetValue(brav)
+            bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
+            littleSizer.Add(bravCk,0,WACV)
+
+        indentSizer.Add(littleSizer,0)
+        mainSizer.Add(indentSizer,0)
         littleSizer = wx.FlexGridSizer(0,5,5,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
         NcNo = wx.SpinCtrl(G2frame.dataWindow)
@@ -6090,24 +6115,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         littleSizer.Add(x20,0,WACV)
         mainSizer.Add(littleSizer,0)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),0)
-        mainSizer.Add((5,5),0)
-        indentSizer = wx.BoxSizer(wx.HORIZONTAL)
-        indentSizer.Add((20,-1))
-        littleSizer = wx.FlexGridSizer(0,4,5,5)
-        bravList = []
-        bravs = zip(bravais,bravaisNames)
-        for brav,bravName in bravs:
-            bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
-            bravList.append(bravCk.GetId())
-            bravCk.SetValue(brav)
-            bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
-            littleSizer.Add(bravCk,0,WACV)
-
-        indentSizer.Add(littleSizer,0)
-        mainSizer.Add(indentSizer,0)
     else:
         #breakpoint()
+        mainSizer.Add(wx.StaticText(
+            parent=G2frame.dataWindow,label='k-Vector Search Mode',style=wx.ALIGN_CENTER),0,wx.EXPAND)
         Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         littleSizer1x = wx.BoxSizer(wx.HORIZONTAL)
@@ -6174,113 +6185,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         mainSizer.Add((-1, 10), 0)
         mainSizer.Add(littleSizer2, 0)
     
-    mainSizer.Add((-1, 10), 0)
-
-    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test && Refinement: '),0,WACV)
-    littleSizer.Add((5,5),0)
-    hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
-    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
-    littleSizer.Add(hklShow,0,WACV)    
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' cell step ',style=wx.ALIGN_RIGHT),0,WACV)
-    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
-    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
-    shiftSel.SetSelection(3)
-    littleSizer.Add(shiftSel)
-    
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
-    G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
-    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
-        indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnHklShow)
-    littleSizer.Add(Sel,0,WACV)
-    
-    mainSizer.Add(littleSizer,0)
-    
-    mainSizer.Add((5,5),0)
-    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
-    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
-    bravSel.SetSelection(bravaisSymb.index(controls[5]))
-    bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
-    littleSizer.Add(bravSel,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
-    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
-    try:
-        spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
-    except ValueError:
-        pass
-    spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
-    littleSizer.Add(spcSel,0,WACV)
-    tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
-    tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
-    littleSizer.Add(tryAll,0,WACV)
-    if 'E' not in Inst['Type'][0]:
-        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
-        SSopt.SetValue(ssopt.get('Use',False))
-        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
-        littleSizer.Add(SSopt,0,WACV)
-        if ssopt.get('Use',False):        #zero for super lattice doesn't work!
-            controls[0] = False
-        else:
-            littleSizer.Add(G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',cellDisplayOpts,
-                'showExtinct',OnChange=OnHklShow),0,WACV)
-        if 'N' in Inst['Type'][0]:
-            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
-            MagSel.SetValue('MagSpGrp' in SGData)
-            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
-            littleSizer.Add(MagSel,0,WACV)
-        if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
-            mainSizer.Add(littleSizer,0)
-            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
-            zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
-                xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
-            littleSizer.Add(zero,0,WACV)
-            zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
-            zeroVar.SetValue(controls[0])
-            zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
-            littleSizer.Add(zeroVar,0,WACV)
-        if len(G2frame.HKL):
-            makePks = wx.Button(G2frame.dataWindow,label='Make Peak list')
-            makePks.Bind(wx.EVT_BUTTON,OnMakePks)
-            littleSizer.Add(makePks,0,WACV)
-            
-    mainSizer.Add(littleSizer,0)
-    mainSizer.Add((5,5),0)
-    if 'N' in Inst['Type'][0]:
-        neutSizer = wx.BoxSizer(wx.HORIZONTAL)
-        if 'MagSpGrp' in SGData:
-            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-            SGData['GenSym'] = GenSym
-            SGData['SGGray'] = False
-            neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
-            BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
-            BNSkeys.sort()
-            try:        #this is an ugly kluge - bug in wx.ComboBox
-                if SGData['BNSlattsym'][0][2] in ['a','b','c']:
-                    BNSkeys.reverse()
-            except:
-                pass
-            BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
-                choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
-            neutSizer.Add(BNS,0,WACV)
-            spinColor = ['black','red']
-            spCode = {-1:'red',1:'black'}
-            for isym,sym in enumerate(GenSym[1:]):
-                neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
-                spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)                
-                Indx[spinOp.GetId()] = isym
-                spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
-                neutSizer.Add(spinOp,0,WACV)
-            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
-            SGData['SpnFlp'] = SpnFlp
-            showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
-            showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
-            neutSizer.Add(showSpins,0,WACV)
-        mainSizer.Add(neutSizer,0)
-        mainSizer.Add((5,5),0)
+    mainSizer.Add((-1,3),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    mainSizer.Add((-1, 3), 0)
+    mainSizer.Add(wx.StaticText(
+        parent=G2frame.dataWindow,
+        label='Unit Cell && Symmetry Settings for Reflection Display',
+        style=wx.ALIGN_CENTER),0,wx.EXPAND)
     ibrav = SetLattice(controls)
     for cellGUI in cellGUIlist:
         if ibrav in cellGUI[0]:
@@ -6288,11 +6199,11 @@ def UpdateUnitCellsGrid(G2frame, data):
     cellList = []
     valDict = {}
     Info = {}
-    littleSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),5,5)
+    cellSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),3,3)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT)
+        cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT)
         if ifEdit:          #a,b,c,etc.
-            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(80,-1))
+            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(65,-1))
             Info[cellVal.GetId()] = Id
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
@@ -6301,17 +6212,63 @@ def UpdateUnitCellsGrid(G2frame, data):
             cellSpin.SetRange(-1,1)
             cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
             valSizer.Add(cellSpin,0,WACV)
-            littleSizer.Add(valSizer,0,WACV)
+            cellSizer.Add(valSizer,0,WACV)
             cellList.append(cellVal.GetId())
             cellList.append(cellSpin.GetId())
             valDict[cellSpin.GetId()] = cellVal
         else:               #volume
-            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(80,-1))
+            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(65,-1))
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
-            littleSizer.Add(volVal,0,WACV)
+            cellSizer.Add(volVal,0,WACV)
         
-    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Unit cell:'))
-    mainSizer.Add(littleSizer,0)
+    bravSizer = wx.BoxSizer(wx.HORIZONTAL)
+    bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
+    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
+    bravSel.SetSelection(bravaisSymb.index(controls[5]))
+    bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
+    bravSizer.Add(bravSel,0,WACV)
+    bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
+    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
+    try:
+        spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
+    except ValueError:
+        pass
+    spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
+    bravSizer.Add(spcSel,0,WACV)
+    bravSizer.Add((5,-1))
+    tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
+    tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
+    bravSizer.Add(tryAll,0,WACV)
+    if 'E' not in Inst['Type'][0]:
+        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+        SSopt.SetValue(ssopt.get('Use',False))
+        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
+        bravSizer.Add(SSopt,0,WACV)
+        if ssopt.get('Use',False):        #zero for super lattice doesn't work!
+            controls[0] = False
+    mainSizer.Add(bravSizer,0)
+    
+    hSizer = wx.BoxSizer(wx.HORIZONTAL)
+    hSizer.Add(cellSizer,0)
+    hSizer.Add((3,-1))
+    hSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell\nstep',
+                                 style=wx.ALIGN_CENTER),0,WACV)
+    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
+    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
+    shiftSel.SetSelection(3)
+    hSizer.Add(shiftSel,0,WACV)
+    if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
+        hSizer.Add((3,-1))
+        hSizer.Add(wx.StaticText(G2frame.dataWindow,label="Zero\noffset",
+                                     style=wx.ALIGN_CENTER),0,WACV)
+        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
+                xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
+        hSizer.Add(zero,0,WACV)
+        zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
+        zeroVar.SetValue(controls[0])
+        zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
+        hSizer.Add(zeroVar,0,WACV)
+    mainSizer.Add(hSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
         SpSg = SGData['SpGrp']
@@ -6362,6 +6319,80 @@ def UpdateUnitCellsGrid(G2frame, data):
             findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
             ssSizer.Add(findallMV,0,WACV)
         mainSizer.Add(ssSizer,0)
+
+    mainSizer.Add((-1,3),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
+                    label='Cell Display Options && Search Results',
+                    style=wx.ALIGN_CENTER),
+                0,wx.EXPAND|wx.BOTTOM,3)
+    # cell display options
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    littleSizer.Add((5,-1),0)
+    hklShow = wx.Button(G2frame.dataWindow,label="Recalc hkl positions")
+    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+    littleSizer.Add(hklShow,0,WACV)    
+    
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
+    G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
+    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
+        indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnHklShow)
+    littleSizer.Add(Sel,0,WACV)
+
+    if 'E' not in Inst['Type'][0]:
+        if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
+            littleSizer.Add(G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
+                cellDisplayOpts,'showExtinct',OnChange=OnHklShow),
+                                0,WACV)
+        if 'N' in Inst['Type'][0]:
+            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
+            MagSel.SetValue('MagSpGrp' in SGData)
+            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
+            littleSizer.Add(MagSel,0,WACV)
+        if len(G2frame.HKL):
+            makePks = wx.Button(G2frame.dataWindow,label='Make Peak list')
+            makePks.Bind(wx.EVT_BUTTON,OnMakePks)
+            makePks.Enable(False) # TODO: this button causes problems
+            # (peaklist should be a dict; what does it do?)
+            # disable & revist later
+            littleSizer.Add(makePks,0,WACV)
+
+    mainSizer.Add(littleSizer,0)
+    mainSizer.Add((5,5),0)
+    if 'N' in Inst['Type'][0]:
+        neutSizer = wx.BoxSizer(wx.HORIZONTAL)
+        if 'MagSpGrp' in SGData:
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+            SGData['GenSym'] = GenSym
+            SGData['SGGray'] = False
+            neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
+            BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
+            BNSkeys.sort()
+            try:        #this is an ugly kluge - bug in wx.ComboBox
+                if SGData['BNSlattsym'][0][2] in ['a','b','c']:
+                    BNSkeys.reverse()
+            except:
+                pass
+            BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
+                choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+            neutSizer.Add(BNS,0,WACV)
+            spinColor = ['black','red']
+            spCode = {-1:'red',1:'black'}
+            for isym,sym in enumerate(GenSym[1:]):
+                neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
+                spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+                Indx[spinOp.GetId()] = isym
+                spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+                neutSizer.Add(spinOp,0,WACV)
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            SGData['SpnFlp'] = SpnFlp
+            showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
+            showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
+            neutSizer.Add(showSpins,0,WACV)
+        mainSizer.Add(neutSizer,0)
+        mainSizer.Add((5,5),0)
 
     G2frame.dataWindow.currentGrids = []
     if len(ssopt.get('SgResults',[])):

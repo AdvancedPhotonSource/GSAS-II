@@ -6246,7 +6246,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
         SSopt.SetValue(ssopt.get('Use',False))
         SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
-        bravSizer.Add(SSopt,0,WACV)
+        bravSizer.Add(SSopt,0,WACV|wx.LEFT,5)
         if ssopt.get('Use',False):        #zero for super lattice doesn't work!
             controls[0] = False
     mainSizer.Add(bravSizer,0)

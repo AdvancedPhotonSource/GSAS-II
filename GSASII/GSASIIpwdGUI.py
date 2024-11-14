@@ -4721,6 +4721,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                    G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
             if cells[0][0] == '?':  # k-vector table
                 # uncheck all rowes then check only the one used row
                 for i in range(len(cells)):
@@ -4815,11 +4817,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                         reverse=True
                     )
 
-                    Inst = G2frame.GPXtree.GetItemPyData(
-                        G2gd.GetGPXtreeItemId(
-                            G2frame,G2frame.PatternId,
-                            'Instrument Parameters')
-                    )[0]
 
                     # Here we are generating a dummy HKL list to host the
                     # satellite peak positions for the selected k vector. We
@@ -5981,7 +5978,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
     elif 'E' in Inst['Type'][0]:
         TTh = Inst['2-theta'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[1])

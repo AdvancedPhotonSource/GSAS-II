@@ -2900,7 +2900,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.PeakTable = []
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         self.PlotOpts = {}  # new place to put plotting options
         self.Lines = []     # lines used for data limits & excluded regions
@@ -3171,7 +3171,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for file_ajk in dlg.GetPaths():
-                    self.HKL = []
+                    self.HKL = np.array([])
                     self.Extinct = []
                     self.powderfile = file_ajk
                     comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
@@ -4138,7 +4138,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     return False
         self.GPXtree.DeleteChildren(self.root)
         self.GSASprojectfile = ''
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         if self.G2plotNB.plotList:
             self.G2plotNB.clear()
@@ -4233,7 +4233,7 @@ If you continue from this point, it is quite likely that all intensity computati
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         while item:
@@ -4308,7 +4308,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.GPXtree.DeleteChildren(self.root)
                 self.dataWindow.ClearData()
                 if len(self.HKL):
-                    self.HKL = []
+                    self.HKL = np.array([])
                     self.Extinct = []
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
@@ -5755,7 +5755,7 @@ If you continue from this point, it is quite likely that all intensity computati
         :param rtext str: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         G2IO.ProjFileOpen(self,False)
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
@@ -5991,7 +5991,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL):
-                        self.HKL = []
+                        self.HKL = np.array([])
                         self.Extinct = []
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
@@ -8689,16 +8689,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         #     print('debug: reloaded',G2pdG)
         # end debug stuff
         G2pdG.UpdateUnitCellsGrid(G2frame,data)
-        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-            G2plt.PlotPowderLines(G2frame)
-        else:
-            newPlot = False
-            if hasattr(G2frame,'Contour'):
-                if G2frame.Contour:
-                    G2frame.Contour = False
-                    newPlot = True
-            G2pwpl.PlotPatterns(G2frame,newPlot)
-            G2pwpl.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)

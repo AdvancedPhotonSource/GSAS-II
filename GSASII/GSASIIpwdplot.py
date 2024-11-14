@@ -121,7 +121,8 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     PlotPatterns(G2frame,plotType=plotType)
 
 def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
-    '''shortcut to plot vertical lines for limits, etc.'''
+    '''shortcut to plot vertical lines for limits & Laue satellites.
+    Was used for extrapeaks'''
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
             picker=pick,pickradius=2.,linestyle='dotted'))
@@ -139,11 +140,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     as "waterfall plots" or contour plots. Log I plotting available.
 
     Note that information needed for plotting will be found in:
-       G2frame.PatternId (contains the tree item for the current histogram)
-       
-       G2frame.PickId (contains the actual selected tree item (can be child of histogram)
 
-       G2frame.HKL (used for tool tip display of hkl for selected phase reflection list). Not used for HKL markers.
+      * G2frame.PatternId: contains the tree item for the current histogram       
+      * G2frame.PickId: contains the actual selected tree item (can be child 
+        of histogram)
+      * G2frame.HKL: used for tooltip display of hkl for a selected/generated 
+        phase's reflections when mouse is moved to a reflection location; 
+        HKL locations shown (usually as an orange line) in "Index Peak List"
+        & "Unit Cells List" plots. 
+        N.B. reflection tick markers are generated from each phase's 
+        reflection list.
+      * G2frame.Extinct: used for display of extinct reflections (in blue) 
+        for generated reflections when "show extinct" is selected.
     '''
     global PlotList
     def PublishPlot(event):
@@ -2012,6 +2020,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         continue
                     if x > xmax:
                         continue
+                # magnification region marker
                 magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),
                                 picker=True,pickradius=2.,label='_magline'))
                 lbl = Plot.annotate("x{}".format(ml), xy=(x, tpos), xycoords=("data", "axes fraction"),
@@ -2436,15 +2445,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
             peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
-            if not len(peaks): return # are there any peaks?
-            for peak in peaks[0]:
-                if peak[2]:
-                    if Page.plotStyle['qPlot']:
-                        Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    elif Page.plotStyle['dPlot']:
-                        Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    else:
-                        Plot.axvline(peak[0],color='b')
+            if len(peaks):  # are there any peaks?
+                for peak in peaks[0]:
+                    if peak[2]:
+                        if Page.plotStyle['qPlot']:
+                            Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                        elif Page.plotStyle['dPlot']:
+                            Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                        else:
+                            Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
                 clr = orange
                 dash = (3,3)

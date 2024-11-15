@@ -6450,7 +6450,7 @@ class G2Image(G2ObjectWrapper):
           the histogram name is taken from the image name. 
         :param list MaskMap: from :func:`IntMaskMap` 
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
-        :returns: a list of created histogram (:class:`G2PwdrData`) objects.
+        :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
         '''
         if self.image is not None:
             ImageZ = self.image

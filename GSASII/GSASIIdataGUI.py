@@ -2367,12 +2367,12 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
                 [Iparm1,Iparm2])
             self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+                self.GPXtree.AppendItem(Id,text='Substances'),G2pwd.SetDefaultSubstances())
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
             self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
+                self.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultSASDModel())
             newHistList.append(HistName)
         else:
             self.EnablePlot = True
@@ -2462,12 +2462,12 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
                 [Iparm1,Iparm2])
             self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+                self.GPXtree.AppendItem(Id,text='Substances'),G2pwd.SetDefaultSubstances())
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
             self.GPXtree.SetItemPyData(
-                self.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultREFDModel())
+                self.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultREFDModel())
             newHistList.append(HistName)
         else:
             self.EnablePlot = True
@@ -2882,7 +2882,11 @@ If you continue from this point, it is quite likely that all intensity computati
                 if GSASIIpath.GetConfigValue(var):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
                     win.Center()
-                    
+        # create a stand-in for a menu until it is created
+        class dummymenu(object):
+            def Enable(*args, **kwargs): pass
+        self.CancelSetLimitsMode = dummymenu()
+            
 #### init_vars ################################################################
     def init_vars(self):
         ''' initialize default values for GSAS-II "global" variables (saved in main Frame, G2frame)
@@ -6757,7 +6761,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.SASDInstMenu)
         self.SASDInstMenu = _makemenu
-        
+
         #SASD & REFL/ Substance editor
         G2G.Define_wxId('wxID_LOADSUBSTANCE','wxID_RELOADSUBSTANCES','wxID_ADDSUBSTANCE','wxID_COPYSUBSTANCE',
             'wxID_DELETESUBSTANCE','wxID_ELEMENTADD', 'wxID_ELEMENTDELETE',)    

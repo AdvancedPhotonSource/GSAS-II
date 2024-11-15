@@ -1610,6 +1610,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
+    elif 'SAS' in plottype:
+        Page.phaseList = Phases = []
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']:
         # get reflection positions for other places where they are displayed
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()

@@ -121,22 +121,22 @@ def ShowVersions():
         msg = ''
         if s == 'Python':
             pkgver = platform.python_version()
-            prefix = ''
+            #prefix = ''
             msg = f"from {format(sys.executable)}"
         else:
             pkgver = m.__version__
-            prefix = 'Package '
+            #prefix = 'Package '
         out += f"  {s:12s}{pkgver}:  {msg}\n"
     out += GSASIIpath.getG2VersionInfo()
     out += "\n\n"
     try: 
         out += f"GSAS-II location: {GSASIIpath.path2GSAS2}\n"
     except:
-        out += f"GSAS-II location: not set\n"
+        out += "GSAS-II location: not set\n"
     try: 
         out += f"Binary location:  {GSASIIpath.binaryPath}\n"
     except:
-        out += f"Binary location:  not found\n"
+        out += "Binary location:  not found\n"
     return out
 
 def LoadG2fil():
@@ -1358,7 +1358,7 @@ class G2Project(G2ObjectWrapper):
             raise ValueError("add_single_histogram: A value is required for the fmthint parameter"+
                                  f'\n\nChoices are: {choices}')
         readers = import_generic(datafile, Readers['HKLF'],fmthint=fmthint)
-        histlist = []
+        #histlist = []
         for r in readers:  # only expect 1
             histname = 'HKLF ' + G2obj.StripUnicode(
                 os.path.split(r.readfilename)[1],'_')
@@ -3072,7 +3072,7 @@ class G2AtomRecord(G2ObjectWrapper):
         return self.data[self.ct-1]
     @label.setter
     def label(self, val):
-        self.data[self.ct-1] = str(value)        
+        self.data[self.ct-1] = str(val)
 
     @property
     def type(self):
@@ -3089,7 +3089,7 @@ class G2AtomRecord(G2ObjectWrapper):
     @type.setter
     def type(self, val):
         # TODO: should check if atom type is defined 
-        self.data[self.ct] = str(value)        
+        self.data[self.ct] = str(val)
     
     @property
     def element(self):
@@ -3456,7 +3456,7 @@ class G2PwdrData(G2ObjectWrapper):
                 if float(h) > self.data['Limits'][0][1]:
                     s += f'Upper limit {h} too high. '
         except:
-            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {values}')
+            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}')
         if s: 
             raise G2ScriptException(f'G2PwdData.Excluded error(s): {s}')
         self.data['Limits'][2:] = listValues
@@ -6527,16 +6527,16 @@ class G2Image(G2ObjectWrapper):
                 section = 'Reflection Lists'
                 histItems += [section]
                 HistDict[section] = {}
-            # elif 'SASD' in Aname:             
-            #     section = 'Substances'
-            #     histItems += [section]
-            #     HistDict[section] = G2pdG.SetDefaultSubstances()  # this needs to be moved
-            #     section = 'Sample Parameters'
-            #     histItems += [section]
-            #     HistDict[section] = Sample
-            #     section = 'Models'
-            #     histItems += [section]
-            #     HistDict[section] = G2pdG.SetDefaultSASDModel() # this needs to be moved
+            elif 'SASD' in Aname:             
+                section = 'Substances'
+                histItems += [section]
+                HistDict[section] = G2pwd.SetDefaultSubstances()
+                section = 'Sample Parameters'
+                histItems += [section]
+                HistDict[section] = Sample
+                section = 'Models'
+                histItems += [section]
+                HistDict[section] = G2pwd.SetDefaultSASDModel()
             valuesdict = {
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
                 'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
@@ -6547,10 +6547,11 @@ class G2Image(G2ObjectWrapper):
                     break
             else:
                 G2fil.G2Print('Adding "{}" to project'.format(Aname))
-                self.proj.names.append([Aname]+
-                        ['Comments','Limits','Background','Instrument Parameters',
-                         'Sample Parameters', 'Peak List', 'Index Peak List',
-                         'Unit Cells List', 'Reflection Lists'])
+                self.proj.names.append(histItems)
+#                self.proj.names.append([Aname]+
+#                        ['Comments','Limits','Background','Instrument Parameters',
+#                         'Sample Parameters', 'Peak List', 'Index Peak List',
+#                         'Unit Cells List', 'Reflection Lists'])
             HistDict['data'] = [valuesdict,
                     [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
             self.proj.data[Aname] = HistDict
@@ -6653,7 +6654,7 @@ class G2Image(G2ObjectWrapper):
             outMask = np.zeros_like(tam,dtype=bool).ravel()
             TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
             try:
-                masked = fmask.mask(esdMul, tam.ravel(), TA.ravel(),
+                fmask.mask(esdMul, tam.ravel(), TA.ravel(),
                                         Image.ravel(), TThs, outMask, ttmin, ttmax)
             except Exception as msg:
                 print('Exception in fmask.mask\n\t',msg)

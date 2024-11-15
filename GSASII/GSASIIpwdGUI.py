@@ -3830,8 +3830,8 @@ def UpdateSampleGrid(G2frame,data):
     
 ################################################################################
 #####  Indexing Peaks
-################################################################################           
-       
+################################################################################
+
 def UpdateIndexPeaksGrid(G2frame, data):
     '''respond to selection of PWDR Index Peak List data
     tree item.
@@ -6503,8 +6503,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     
 ################################################################################
 #####  Reflection list
-################################################################################           
-       
+################################################################################
+
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item by displaying
     a table of reflections in the data window.
@@ -7237,7 +7237,7 @@ def UpdateSubstanceGrid(G2frame,data):
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample substances for %s:'%Name),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    print('Substance ',G2frame.dataWindow.helpKey)
+    #print('Substance ',G2frame.dataWindow.helpKey)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(SubstSizer(),0)
@@ -7245,8 +7245,8 @@ def UpdateSubstanceGrid(G2frame,data):
 
 ################################################################################
 #####  SASD Models 
-################################################################################           
-       
+################################################################################
+
 def UpdateModelsGrid(G2frame,data):
     '''respond to selection of SASD Models data tree item.
     '''
@@ -8176,8 +8176,8 @@ def UpdateModelsGrid(G2frame,data):
 
 ################################################################################
 #####  REFD Models 
-################################################################################           
-       
+################################################################################
+
 def UpdateREFDModelsGrid(G2frame,data):
     '''respond to selection of REFD Models data tree item.
     '''
@@ -8788,7 +8788,8 @@ def UpdateREFDModelsGrid(G2frame,data):
     
 ################################################################################
 #####  PDF controls
-################################################################################           
+################################################################################
+
 def computePDF(G2frame,data):
     '''Calls :func:`GSASIIpwd.CalcPDF` to compute the PDF and put into the data tree array.
     Called from OnComputePDF and OnComputeAllPDF and OnComputeAllPDF in

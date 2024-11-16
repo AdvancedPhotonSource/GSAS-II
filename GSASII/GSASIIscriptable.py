@@ -21,7 +21,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 # 1) add a new object class (e.g. G2PDF)
 # 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
 # 3) add a new method to add the object into a project (G2Project.add_PDF)
-#   in ../docs/source/GSASIIscriptable.rst
+# Document: (in ../docs/source/GSASIIscriptable.rst)
 # 4) add to documentation in section :class:`G2Project` 
 # 5) add a new documentation section for the new class
 #============================================================================
@@ -121,22 +121,22 @@ def ShowVersions():
         msg = ''
         if s == 'Python':
             pkgver = platform.python_version()
-            prefix = ''
+            #prefix = ''
             msg = f"from {format(sys.executable)}"
         else:
             pkgver = m.__version__
-            prefix = 'Package '
+            #prefix = 'Package '
         out += f"  {s:12s}{pkgver}:  {msg}\n"
     out += GSASIIpath.getG2VersionInfo()
     out += "\n\n"
     try: 
         out += f"GSAS-II location: {GSASIIpath.path2GSAS2}\n"
     except:
-        out += f"GSAS-II location: not set\n"
+        out += "GSAS-II location: not set\n"
     try: 
         out += f"Binary location:  {GSASIIpath.binaryPath}\n"
     except:
-        out += f"Binary location:  not found\n"
+        out += "Binary location:  not found\n"
     return out
 
 def LoadG2fil():
@@ -1358,7 +1358,7 @@ class G2Project(G2ObjectWrapper):
             raise ValueError("add_single_histogram: A value is required for the fmthint parameter"+
                                  f'\n\nChoices are: {choices}')
         readers = import_generic(datafile, Readers['HKLF'],fmthint=fmthint)
-        histlist = []
+        #histlist = []
         for r in readers:  # only expect 1
             histname = 'HKLF ' + G2obj.StripUnicode(
                 os.path.split(r.readfilename)[1],'_')
@@ -1697,7 +1697,7 @@ class G2Project(G2ObjectWrapper):
             if pdfRef.proj == self:
                 return pdfRef
             else:
-                raise Exception("PDF {} not in current selected project".format(pdfRef.name))
+                raise Exception(f"PDF {pdfRef.name} not in current selected project")
         if pdfRef in self._pdfs():
             return G2PDF(self.data[pdfRef], pdfRef, self)
 
@@ -1707,11 +1707,9 @@ class G2Project(G2ObjectWrapper):
             pdfRef = self._pdfs()[num] 
             return G2PDF(self.data[pdfRef], pdfRef, self)
         except ValueError:
-            raise Exception("pdfRef {} not an object, name or PDF index in current selected project"
-                                .format(pdfRef))
+            raise Exception(f"pdfRef {pdfRef} not an object, name or PDF index in current selected project")
         except IndexError:
-            raise Exception("pdfRef {} out of range (max={}) in current selected project"
-                                .format(pdfRef,len(self._images())-1))
+            raise Exception(f"pdfRef {pdfRef} out of range (max={len(G2SmallAngle)-1}) in current selected project")
     def pdfs(self):
         """
         Returns a list of all the PDFs in the project.
@@ -2037,6 +2035,61 @@ class G2Project(G2ObjectWrapper):
         self.save()
         return G2stIO.GetUsedHistogramsAndPhases(self.filename)
 
+    def _sasd(self):
+        """Returns a list of all the SASD entries in the project.
+        """
+        return [i[0] for i in self.names if i[0].startswith('SASD ')]
+    
+    def SAS(self, sasRef):
+        """
+        Gives an object representing the specified SAS entry in this project.
+
+        :param sasRef: A reference to the desired SASD entry. Either the SASD 
+          tree name (str), the SASD's index (int) or
+          a SASD object (:class:`G2SmallAngle`)
+        :returns: A :class:`G2SmallAngle` object
+        :raises: KeyError
+
+        .. seealso::
+            :meth:`~G2Project.SASs`
+            :class:`~G2PDF`
+        """
+        if isinstance(sasRef, G2SmallAngle):
+            if sasRef.proj == self:
+                return sasRef
+            else:
+                raise Exception(f"SASD {sasRef.name} not in current selected project")
+        if sasRef in self._sasd():
+            return G2SmallAngle(self.data[sasRef], sasRef, self)
+
+        try:
+            # sasRef should be an index
+            num = int(sasRef)
+            sasRef = self._sasd()[num] 
+            return G2PDF(self.data[sasRef], sasRef, self)
+        except ValueError:
+            raise Exception(f"sasRef {sasRef} not an object, name or SAS index in current selected project")
+        except IndexError:
+            raise Exception(f"sasRef {sasRef} out of range (max={len(self._sasd())-1}) in current selected project")
+        
+    def SASs(self):
+        """
+        Returns a list of all the Small Angle histograms in the project.
+
+        :returns: A list of :class:`G2SmallAngle` objects
+        """
+        return [G2SmallAngle(self.data[i],i,self) for i in self._sasd()]
+    
+    def add_SmallAngle(self, datafile):
+        '''Placeholder for an eventual routine that will read a small angle dataset 
+        from a file.
+
+        :param str datafile: The SASD data file to read, a filename.
+        :returns: A :class:`G2SmallAngle` object for the SASD entry
+        '''
+        raise G2ScriptException("Error: add_SmallAngle not yet implemented.")
+        #return G2SmallAngle(self.data[PDFname], PDFname, self)
+    
     def get_Constraints(self,ctype):
         '''Returns a list of constraints of the type selected.
 
@@ -3072,7 +3125,7 @@ class G2AtomRecord(G2ObjectWrapper):
         return self.data[self.ct-1]
     @label.setter
     def label(self, val):
-        self.data[self.ct-1] = str(value)        
+        self.data[self.ct-1] = str(val)
 
     @property
     def type(self):
@@ -3089,7 +3142,7 @@ class G2AtomRecord(G2ObjectWrapper):
     @type.setter
     def type(self, val):
         # TODO: should check if atom type is defined 
-        self.data[self.ct] = str(value)        
+        self.data[self.ct] = str(val)
     
     @property
     def element(self):
@@ -3456,7 +3509,7 @@ class G2PwdrData(G2ObjectWrapper):
                 if float(h) > self.data['Limits'][0][1]:
                     s += f'Upper limit {h} too high. '
         except:
-            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {values}')
+            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}')
         if s: 
             raise G2ScriptException(f'G2PwdData.Excluded error(s): {s}')
         self.data['Limits'][2:] = listValues
@@ -6397,7 +6450,7 @@ class G2Image(G2ObjectWrapper):
           the histogram name is taken from the image name. 
         :param list MaskMap: from :func:`IntMaskMap` 
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
-        :returns: a list of created histogram (:class:`G2PwdrData`) objects.
+        :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
         '''
         if self.image is not None:
             ImageZ = self.image
@@ -6527,17 +6580,17 @@ class G2Image(G2ObjectWrapper):
                 section = 'Reflection Lists'
                 histItems += [section]
                 HistDict[section] = {}
-            # elif 'SASD' in Aname:             
-            #     section = 'Substances'
-            #     histItems += [section]
-            #     HistDict[section] = G2pdG.SetDefaultSubstances()  # this needs to be moved
-            #     section = 'Sample Parameters'
-            #     histItems += [section]
-            #     HistDict[section] = Sample
-            #     section = 'Models'
-            #     histItems += [section]
-            #     HistDict[section] = G2pdG.SetDefaultSASDModel() # this needs to be moved
-            valuesdict = {
+            elif 'SASD' in Aname:             
+                section = 'Substances'
+                histItems += [section]
+                HistDict[section] = G2pwd.SetDefaultSubstances()
+                section = 'Sample Parameters'
+                histItems += [section]
+                HistDict[section] = Sample
+                section = 'Models'
+                histItems += [section]
+                HistDict[section] = G2pwd.SetDefaultSASDModel()
+            valuesdict = { # same for SASD and PWDR
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
                 'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
             # if Aname is already in the project replace it
@@ -6547,14 +6600,16 @@ class G2Image(G2ObjectWrapper):
                     break
             else:
                 G2fil.G2Print('Adding "{}" to project'.format(Aname))
-                self.proj.names.append([Aname]+
-                        ['Comments','Limits','Background','Instrument Parameters',
-                         'Sample Parameters', 'Peak List', 'Index Peak List',
-                         'Unit Cells List', 'Reflection Lists'])
+                self.proj.names.append(histItems)
             HistDict['data'] = [valuesdict,
-                    [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
+                [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
             self.proj.data[Aname] = HistDict
-            IntgOutList.append(self.proj.histogram(Aname))
+            if 'PWDR' in Aname:
+                IntgOutList.append(self.proj.histogram(Aname))
+            elif 'SASD' in Aname:
+                IntgOutList.append(self.proj.SAS(Aname))
+            else:
+                print(f'Created histogram of unknown type {Aname}')
         return IntgOutList
 
     def TestFastPixelMask(self):
@@ -6653,7 +6708,7 @@ class G2Image(G2ObjectWrapper):
             outMask = np.zeros_like(tam,dtype=bool).ravel()
             TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
             try:
-                masked = fmask.mask(esdMul, tam.ravel(), TA.ravel(),
+                fmask.mask(esdMul, tam.ravel(), TA.ravel(),
                                         Image.ravel(), TThs, outMask, ttmin, ttmax)
             except Exception as msg:
                 print('Exception in fmask.mask\n\t',msg)
@@ -6673,8 +6728,38 @@ class G2Image(G2ObjectWrapper):
         size & memory use
         '''
         self.getMasks()['SpotMask']['spotMask'] = None
-            
-            
+
+class G2SmallAngle(G2ObjectWrapper):
+    """Wrapper for SASD histograms (and hopefully, in the future, other 
+    small angle histogram types).
+     
+    Note that in a GSASIIscriptable script, instances of G2SmallAngle will be 
+    created by calls to 
+    :meth:`~G2Project.SAS`, :meth:`~G2Project.SASs`,
+    or by :meth:`G2Project.Integrate`.
+    Also, someday :meth:`G2Project.add_SAS`.
+    Scripts should not try to create a :class:`G2SmallAngle` object directly.
+
+    This object contains these class variables:
+        * G2SmallAngle.proj: contains a reference to the :class:`G2Project`
+          object that contains this histogram 
+        * G2SmallAngle.name: contains the name of the histogram
+        * G2SmallAngle.data: contains the histogram's associated data 
+          in a dict with keys 'Comments', 'Limits', 'Instrument Parameters', 
+          'Substances', 'Sample Parameters' and 'Models'. 
+          Further documentation on SASD entries needs to be written.
+
+    .. seealso::
+        :meth:`~G2Project.add_SAS`
+        :meth:`~G2Project.SAS`
+        :meth:`~G2Project.SASs`
+        :meth:`~G2Project.Integrate`
+    """
+    def __init__(self, data, proj, name):
+        self.data = data
+        self.name = name
+        self.proj = proj
+
 ##########################
 # Command Line Interface #
 ##########################

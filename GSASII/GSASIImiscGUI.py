@@ -45,6 +45,7 @@ import GSASIImath as G2mth
 import GSASIIElem as G2elem
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
+import GSASIIpwd as G2pwd
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
@@ -840,9 +841,9 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Unit Cells List'),[])
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection Lists'),{})
         elif 'SASD' in Aname:             
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pwd.SetDefaultSubstances())
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultSASDModel())
         valuesdict = {
             'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
             'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}

@@ -5740,6 +5740,47 @@ def LaueSatellite(peakpos,wave,c,ncell,j=[-4,-3,-2,-1,0,1,2,3,4]):
     dQvals = (2 * np.array(j) + np.sign(j)) * np.pi / (c * ncell)
     return np.arcsin((Qpos+dQvals)*wave/(4*np.pi)) * (360 / np.pi)
 
+def SetDefaultSubstances():
+    'Fills in default items for the SASD Substances dictionary'
+    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0,'XImag density':0.0},
+        'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':1.0}}}
+
+def SetDefaultSASDModel():
+    'Fills in default items for the SASD Models dictionary'    
+    return {'Back':[0.0,False],
+        'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt',
+                'Distribution':[],'Shape':['Spheroid',1.0],
+                'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
+                'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
+        'Pair':{'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User',
+                'Percent error':2.5,'Background':[0,False],'Distribution':[],
+                'Moore':10,'Dist G':100.,'Result':[],},            
+        'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
+        'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
+                 'inflateV':1.0,'AAglue':0.0,'pdbOut':False,'boxStep':4.0},
+        'Current':'Size dist.','BackFile':'',
+        }
+        
+def SetDefaultREFDModel():
+    '''Fills in default items for the REFD Models dictionary which are 
+    defined as follows for each layer:
+    
+    * Name: name of substance
+    * Thick: thickness of layer in Angstroms (not present for top & bottom layers)
+    * Rough: upper surface roughness for layer (not present for toplayer)
+    * Penetration: mixing of layer substance into layer above-is this needed?
+    * DenMul: multiplier for layer scattering density (default = 1.0)
+        
+    Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance.
+    
+    Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance.
+    '''
+    return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
+        {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
+        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top','dQ type':'None','Layer Seq':[],               #globals
+        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,             #minimizer controls
+        'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
+
 #### testing data
 NeedTestData = True
 def TestData():

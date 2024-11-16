@@ -380,48 +380,7 @@ def SetupSampleLabels(histName,dataType,histType):
     parms.append(['Temperature','Sample temperature (K): ',[10,3]])
     parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
     return parms
-
-def SetDefaultSASDModel():
-    'Fills in default items for the SASD Models dictionary'    
-    return {'Back':[0.0,False],
-        'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt',
-                'Distribution':[],'Shape':['Spheroid',1.0],
-                'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
-                'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
-        'Pair':{'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User',
-                'Percent error':2.5,'Background':[0,False],'Distribution':[],
-                'Moore':10,'Dist G':100.,'Result':[],},            
-        'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
-        'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
-                 'inflateV':1.0,'AAglue':0.0,'pdbOut':False,'boxStep':4.0},
-        'Current':'Size dist.','BackFile':'',
-        }
         
-def SetDefaultREFDModel():
-    '''Fills in default items for the REFD Models dictionary which are 
-    defined as follows for each layer:
-    
-    * Name: name of substance
-    * Thick: thickness of layer in Angstroms (not present for top & bottom layers)
-    * Rough: upper surface roughness for layer (not present for toplayer)
-    * Penetration: mixing of layer substance into layer above-is this needed?
-    * DenMul: multiplier for layer scattering density (default = 1.0)
-        
-    Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance.
-    
-    Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance.
-    '''
-    return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
-        {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
-        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top','dQ type':'None','Layer Seq':[],               #globals
-        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,             #minimizer controls
-        'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
-        
-def SetDefaultSubstances():
-    'Fills in default items for the SASD Substances dictionary'
-    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0,'XImag density':0.0},
-        'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':1.0}}}
-
 def GetFileList(G2frame,fileType):
     ''' Get list of file names containing a particular string
     param: fileType str: any string within a file name
@@ -691,8 +650,8 @@ def TestAtoms(phase,magAtms,SGData,Uvec,Trans,maxequiv=100,maximal=False):
 
 ################################################################################
 #####  Powder Peaks
-################################################################################           
-       
+################################################################################
+
 def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
@@ -1459,8 +1418,8 @@ def UpdatePeakGrid(G2frame, data):
     
 ################################################################################
 #####  Background
-################################################################################           
-       
+################################################################################
+
 def UpdateBackground(G2frame,data):
     '''respond to selection of PWDR background data tree item.
     '''
@@ -2273,7 +2232,8 @@ class autoBackground(wx.Dialog):
     
 ################################################################################
 #####  Limits
-################################################################################       
+################################################################################
+
 def UpdateLimitsGrid(G2frame, data,datatype):
     '''respond to selection of PWDR Limits data tree item.
     Allows setting of limits and excluded regions in a PWDR data set
@@ -2390,8 +2350,8 @@ def UpdateLimitsGrid(G2frame, data,datatype):
     
 ################################################################################
 #####  Instrument parameters
-################################################################################           
-       
+################################################################################
+
 def UpdateInstrumentGrid(G2frame,data):
     '''respond to selection of PWDR/SASD/REFD Instrument Parameters
     data tree item.
@@ -3246,7 +3206,7 @@ def UpdateInstrumentGrid(G2frame,data):
         wx.EndBusyCursor()
         # end of MakeMultiParameterWindow
                 
-    # beginning of UpdateInstrumentGrid code    
+    #### beginning of UpdateInstrumentGrid code    
     #patch: make sure all parameter items are lists
     patched = 0
     for key in data:
@@ -3319,14 +3279,15 @@ def UpdateInstrumentGrid(G2frame,data):
         else:
             MakeParameterWindow()
     elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
+        MakeParameterWindow()
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
     G2frame.dataWindow.SendSizeEvent()        
     
 ################################################################################
 #####  Sample parameters
-################################################################################           
-       
+################################################################################
+
 def UpdateSampleGrid(G2frame,data):
     '''respond to selection of PWDR/SASD Sample Parameters
     data tree item.
@@ -3869,8 +3830,8 @@ def UpdateSampleGrid(G2frame,data):
     
 ################################################################################
 #####  Indexing Peaks
-################################################################################           
-       
+################################################################################
+
 def UpdateIndexPeaksGrid(G2frame, data):
     '''respond to selection of PWDR Index Peak List data
     tree item.
@@ -4737,6 +4698,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                    G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
             if cells[0][0] == '?':  # k-vector table
                 # uncheck all rowes then check only the one used row
                 for i in range(len(cells)):
@@ -4831,11 +4794,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                         reverse=True
                     )
 
-                    Inst = G2frame.GPXtree.GetItemPyData(
-                        G2gd.GetGPXtreeItemId(
-                            G2frame,G2frame.PatternId,
-                            'Instrument Parameters')
-                    )[0]
 
                     # Here we are generating a dummy HKL list to host the
                     # satellite peak positions for the selected k vector. We
@@ -6007,7 +5965,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
     elif 'E' in Inst['Type'][0]:
         TTh = Inst['2-theta'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
@@ -6608,8 +6566,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     OnHklShow()
 ################################################################################
 #####  Reflection list
-################################################################################           
-       
+################################################################################
+
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item by displaying
     a table of reflections in the data window.
@@ -7342,7 +7300,7 @@ def UpdateSubstanceGrid(G2frame,data):
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample substances for %s:'%Name),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    print('Substance ',G2frame.dataWindow.helpKey)
+    #print('Substance ',G2frame.dataWindow.helpKey)
     topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(topSizer,0,wx.EXPAND)
     mainSizer.Add(SubstSizer(),0)
@@ -7350,8 +7308,8 @@ def UpdateSubstanceGrid(G2frame,data):
 
 ################################################################################
 #####  SASD Models 
-################################################################################           
-       
+################################################################################
+
 def UpdateModelsGrid(G2frame,data):
     '''respond to selection of SASD Models data tree item.
     '''
@@ -8281,8 +8239,8 @@ def UpdateModelsGrid(G2frame,data):
 
 ################################################################################
 #####  REFD Models 
-################################################################################           
-       
+################################################################################
+
 def UpdateREFDModelsGrid(G2frame,data):
     '''respond to selection of REFD Models data tree item.
     '''
@@ -8893,7 +8851,8 @@ def UpdateREFDModelsGrid(G2frame,data):
     
 ################################################################################
 #####  PDF controls
-################################################################################           
+################################################################################
+
 def computePDF(G2frame,data):
     '''Calls :func:`GSASIIpwd.CalcPDF` to compute the PDF and put into the data tree array.
     Called from OnComputePDF and OnComputeAllPDF and OnComputeAllPDF in

@@ -2832,7 +2832,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow, 400)
+        self.mainPanel.SplitVertically(self.treePanel,
+                                           self.dataWindow.outer, 400)
         self.Status.SetStatusWidths([200,-1])   # make these match?
         
         G2G.wxID_GPXTREE = wx.NewId()
@@ -6134,8 +6135,27 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     '''
 
     def __init__(self,parent):
-        wx.ScrolledWindow.__init__(self,parent,wx.ID_ANY,size=parent.GetSize())
         self.parent = parent
+        # create an outer unscrolled panel
+        self.outer = wx.Panel(parent,size=parent.GetSize())
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.outer.SetSizer(mainSizer)
+        # three things in unscrolled panel, topBox, self (ScrolledWindow) and bottomBox
+        self.topBox = wx.BoxSizer(wx.HORIZONTAL)
+        self.topPanel = self.outer
+        mainSizer.Add(self.topBox)
+
+        self.topBox.Add(wx.StaticText(self.topPanel,label='top Test text'),0)
+        
+        wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize())
+        mainSizer.Add(self,1,wx.EXPAND,0)
+        self.bottomBox = wx.BoxSizer(wx.HORIZONTAL)
+        self.bottomPanel = self.outer
+        mainSizer.Add(self.bottomBox)
+
+        self.bottomBox.Add(wx.StaticText(self.bottomPanel,label='bottom Test text'),0)
+
+        
         self._initMenus()
         self.currentGrids = []
         self.helpKey = ''  # defines help entry for current item selected in data tree
@@ -6143,8 +6163,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     def ClearData(self):
         '''Initializes the contents of the dataWindow panel
         '''
+        print('ClearData')
         self.Unbind(wx.EVT_SIZE)
-        #self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
+        self.topBox.Clear()
+        self.bottomBox.Clear()
+#self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
         #self.SetBackgroundColour(VERY_LIGHT_GREY)  # BHT: I prefer a gray background. Makes TextCtrls stand out, but
         # a bit lighter than the splitter bar
         Sizer = self.GetSizer()

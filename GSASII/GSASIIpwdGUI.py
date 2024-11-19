@@ -6042,22 +6042,39 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     # GUI code
     G2frame.dataWindow.ClearData()
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing tools'),0,WACV)
+    
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,label='Indexing tools'),0,WACV)
     if not hasattr(G2frame,'kvecSearch'):
         G2frame.kvecSearch = {'mode':False}
 
     if G2frame.dataWindow.XtraPeakMode.IsChecked():
-        cb = G2G.G2CheckBox(G2frame.dataWindow,'Search for k-vector',G2frame.kvecSearch,'mode',OnChange=updateCellsWindow)
+        cb = G2G.G2CheckBox(parent,'Search for k-vector',G2frame.kvecSearch,'mode',OnChange=updateCellsWindow)
         topSizer.Add(cb,0,WACV|wx.LEFT,15)
     else: 
         G2frame.kvecSearch['mode'] = False
-
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    topSizer.Layout()
+    
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    # topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    # topSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Indexing tools'),0,WACV)
+    # if not hasattr(G2frame,'kvecSearch'):
+    #     G2frame.kvecSearch = {'mode':False}
+
+    # if G2frame.dataWindow.XtraPeakMode.IsChecked():
+    #     cb = G2G.G2CheckBox(G2frame.dataWindow,'Search for k-vector',G2frame.kvecSearch,'mode',OnChange=updateCellsWindow)
+    #     topSizer.Add(cb,0,WACV|wx.LEFT,15)
+    # else: 
+    #     G2frame.kvecSearch['mode'] = False
+
+    # # add help button to bring up help web page - at right side of window
+    # topSizer.Add((-1,-1),1,wx.EXPAND)
+    # topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
+    # mainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((-1,3),0)
     if not G2frame.kvecSearch['mode']:

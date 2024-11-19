@@ -54,6 +54,7 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import atmdata
 import ISODISTORT as ISO
+import platform
 
 try:
     wx.NewIdRef
@@ -7971,13 +7972,20 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-        if rmcfile is None:
-            wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
-      Obtain the zip file distribution from www.rmcprofile.org, 
-      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
-          caption='RMCProfile',style=wx.ICON_INFORMATION)
-            return
-        rmcexe = os.path.split(rmcfile)[0]
+        os_name = platform.system()
+        if os_name == "Darwin":
+            rmcexe = os.path.join(
+                "/Applications/RMCProfile.app/Contents/MacOS/exe/",
+                "rmcprofile.x"
+            )
+        else:
+            if rmcfile is None:
+                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
+        Obtain the zip file distribution from www.rmcprofile.org, 
+        unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
+            caption='RMCProfile',style=wx.ICON_INFORMATION)
+                return
+            rmcexe = os.path.split(rmcfile)[0]
         print(rmcexe)
         wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
@@ -8014,13 +8022,30 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         G2frame.OnFileSave(event)
         print (' GSAS-II project saved')
         pName = generalData['Name'].replace(' ','_')
-        exstr = rmcexe+'\\rmcprofile.exe '+pName
-        batch = open('runrmc.bat','w')
-        batch.write('Title RMCProfile\n')
-        batch.write(exstr+'\n')
-        batch.write('pause\n')
-        batch.close()
-        subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+
+        if os_name == "Darwin":
+            with open('runrmc.sh', 'w') as f:
+                f.write("#!/bin/bash\n")
+                f.write("cd " + os.getcwd() + "\n")
+                f.write(rmcexe + " " + pName + "\n")
+            os.system("chmod +x runrmc.sh")
+            script_file = os.path.join(os.getcwd(), "runrmc.sh")
+            applescript_command = 'tell app "Terminal"\n'
+            applescript_command += "if not (exists window 1) then\n"
+            applescript_command += f'do script "source {script_file}"\n'
+            applescript_command += "else\n"
+            applescript_command += f'do script "source {script_file}"'
+            applescript_command += " in window 1\n"
+            applescript_command += "end if\nactivate\nend tell"
+            subp.Popen(['osascript', '-e', applescript_command])
+        else:
+            exstr = rmcexe+'\\rmcprofile.exe '+pName
+            batch = open('runrmc.bat','w')
+            batch.write('Title RMCProfile\n')
+            batch.write(exstr+'\n')
+            batch.write('pause\n')
+            batch.close()
+            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         

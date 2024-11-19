@@ -3879,7 +3879,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             useMP = False
             ypartial = np.zeros_like(yb)
         if useMP: # multiprocessing: create a set of initialized Python processes
-            MPpool = mp.Pool(ncores,G2mp.InitPwdrProfGlobals,[im,shl,x])
+            MPpool = mp.Pool(ncores,G2mp.InitPwdrProfGlobals,[im,x])
             profArgs = [[] for i in range(ncores)]
         if histType[2] in ['A','B','C']:
             for iref,refl in enumerate(refDict['RefList']):
@@ -3924,7 +3924,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     badPeak = True
                     continue
                 if useMP:
-                    profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
+                    if 'B' in histType:
+                        profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin))
+                    else: #'A' or 'C'
+                        profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.,shl))
                 else:
                     if 'C' in histType:
                         fp = G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
@@ -3934,12 +3937,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         fp = G2pwd.getExpFCJVoigt3(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]                    
                     yc[iBeg:iFin] += refl[11+im]*refl[9+im]*fp   #>90% of time spent here
                     if phasePartials: ypartial[iBeg:iFin] += refl[11+im]*refl[9+im]*fp
-                if Ka2:
+                if Ka2 and 'B' not in histType:
                     pos2 = refl[5+im]+lamRatio*tand(refl[5+im]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     if 'C' in histType:
                         Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
-                    elif 'B' in histType:
-                        Wd,fmin,fmax = G2pwd.getWidthsCWB(pos2,refl[12+im],refl[13+im],refl[6+im],refl[7+im])
                     else: #'A'    
                         Wd,fmin,fmax = G2pwd.getWidthsCWA(pos2,refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl)
                     iBeg = np.searchsorted(x,pos2-fmin)
@@ -3951,12 +3952,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     elif iBeg > iFin:   #bad peak coeff - skip
                         continue
                     if useMP:
-                        profArgs[iref%ncores].append((pos2,refl,iBeg,iFin,kRatio))
+                        profArgs[iref%ncores].append((pos2,refl,iBeg,iFin,kRatio,shl))
                     else:
                         if 'C' in histType:
                             fp2 = G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]
-                        elif 'B' in histType:
-                            fp2 = G2pwd.getEpsVoigt(pos2,refl[12+im],refl[13+im],refl[6+im]/1.e4,refl[7+im]/100.,ma.getdata(x[iBeg:iFin]))[0]/100.
                         else: #'A'
                             fp2 = G2pwd.getExpFCJVoigt3(pos2,refl[12+im],refl[13+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))[0]                    
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*fp2       #and here
@@ -3995,7 +3994,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     badPeak = True
                     continue
                 if useMP:
-                    profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin,1.))
+                    profArgs[iref%ncores].append((refl[5+im],refl,iBeg,iFin))
                 else:
                     fp = G2pwd.getPsVoigt(refl[5+im],refl[6+im]*1.e4,refl[7+im]*100.,ma.getdata(x[iBeg:iFin]))[0]
                     yc[iBeg:iFin] += refl[9+im]*fp

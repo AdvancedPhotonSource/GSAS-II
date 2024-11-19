@@ -1154,10 +1154,10 @@ def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
     if 'T' in Inst['Type'][0]:
-        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
+        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp-Inst['Zero'][1]
     elif 'E' in Inst['Type'][0]:
         return 12.398/(2.0*dsp*sind(Inst['2-theta'][1]/2.0))+Inst['ZE'][1]+Inst['YE'][1]*dsp+Inst['XE'][1]*dsp**2
-    else:   #'C' or 'B'
+    else:   #'A', 'B' or 'C'
         wave = G2mth.getWave(Inst)
         val = min(0.995,wave/(2.*dsp))  #set max at 168deg
         pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]             
@@ -1170,7 +1170,7 @@ def getPeakPos(dataType,parmdict,dsp):
         pos = parmdict['difC']*dsp+parmdict['difA']*dsp**2+parmdict['difB']/dsp+parmdict['Zero']
     elif 'E'in dataType:
         pos = 12.398/(2.0*dsp*sind(parmdict['2-theta']/2.0)+parmdict['ZE']+parmdict['YE']*dsp+parmdict['XE']*dsp**2)
-    else:   #'C' or 'B'
+    else:   #'A', 'B' or 'C'
         pos = 2.0*asind(parmdict['Lam']/(2.*dsp))+parmdict['Zero']
     return pos
                    

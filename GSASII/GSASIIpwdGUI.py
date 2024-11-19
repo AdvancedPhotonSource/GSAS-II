@@ -15,6 +15,7 @@ except ImportError:
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
+import multiprocessing as mp
 import math
 import copy
 import random as ran
@@ -4743,6 +4744,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                    G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
             if cells[0][0] == '?':  # k-vector table
                 # uncheck all rowes then check only the one used row
                 for i in range(len(cells)):
@@ -4837,11 +4840,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                         reverse=True
                     )
 
-                    Inst = G2frame.GPXtree.GetItemPyData(
-                        G2gd.GetGPXtreeItemId(
-                            G2frame,G2frame.PatternId,
-                            'Instrument Parameters')
-                    )[0]
 
                     # Here we are generating a dummy HKL list to host the
                     # satellite peak positions for the selected k vector. We
@@ -4876,6 +4874,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     else:
                         G2pwpl.PlotPatterns(G2frame)
                 except:
+                    print('Fail')
                     pass
             elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
                 if UnitCellsTable.GetValue(r,c):
@@ -5585,8 +5584,6 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        data = [controls,bravais,cells,dmin,ssopt,magcells]
 
         controls, lat_type, cells, _, ssopt, _ = data
-        useMP,num_procs = G2mp.InitMP()
-        print(useMP,num_procs)
         # grab the satellite peaks. here, gsas-ii will only grab the data
         # for the histogram under selection.
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))[0]
@@ -5608,10 +5605,10 @@ def UpdateUnitCellsGrid(G2frame, data):
             # grab the search range, which will be used for the option of
             # 'General' only -- see the part below for user selection of the
             # search option.
-            print(hkl_refls,xtra_peaks_d)
+            print('indexed reflections: %d, unindexed peaks: %d'%(len(hkl_refls),len(xtra_peaks_d)))
             warn_title = "Long execution time expected"
             warn_msg = "Searching over general k points may take a while, "
-            warn_msg += "usually on the level of serveral hours. "
+            warn_msg += "on the level of serveral hours for a slow computer. "
             warn_msg += "Do you want to proceed?"
             dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
                 wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
@@ -5623,6 +5620,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 dialog.Destroy()
                 wx.EndBusyCursor()
                 return
+            num_procs = mp.cpu_count()//2
+            print('Number of cpu cores used: ',num_procs)
 
             kstep = [0.005,0.005,0.005]
         else:
@@ -5692,20 +5691,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         #         for k in range(6):
         #             hkl_refls.append([i, j, k])
 
-        try:
-            # if we choose option-2, we need to use the `kvec_general` module
-            # Otherwise, the computation time would be unacceptably long.
-            k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
-                hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
-                kstep=kstep,processes=num_procs)
-        except ModuleNotFoundError:
-            err_title = "Module not found"
-            err_msg = "The `kvec_general` module is not found. Please install "
-            err_msg += "the module before running the k-vector search with "
-            err_msg += "option-2."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
+        # if we choose option-2, we need to use the `kvec_general` module
+        # Otherwise, the computation time would be unacceptably long.
+        k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
+            hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
+            kstep=kstep,processes=num_procs)
 
         k_opt = k_search.kOptFinder()
         k_opt_dist = k_opt[1]
@@ -5895,7 +5885,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
     elif 'E' in Inst['Type'][0]:
         TTh = Inst['2-theta'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[1])

@@ -6069,30 +6069,66 @@ Do you want to transfer the cell refinement flag to the Dij terms?
 
 #### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
-    '''Create the data item window as well as the menu. Note that 
-    the same core menu items are used in all menus, but different items may be
-    added depending on what data tree item (and for phases, the phase tab).
+    '''Create the GSAS-II data window as well as sets up the menus for each 
+    window. There will be one instance of this in the GSAS-II app named as 
+    ``G2frame.dataWindow``.
 
-    Note that while the menus are created here, or a routine is defined 
-    here that will create the menu later (see :func:`SetDataMenuBar`), 
-    the bindings for the entries 
-    within the menus is done later in various GSASII*GUI modules,
-    where the functions to be called are defined.
+    This creates two panels, where the inner one is the data object in 
+    this class, which is scrolled. The outer one 
+    (:data:`G2frame.dataWindow.outer`) uses all space in
+    the appropriate part of the window, but defines a sizer at the
+    top and bottom of the window that can be used to place information
+    that will not be scrolled. The inner one is the ``G2frame.dataWindow``
+    object. 
 
-    Use of the dataWindow scrolled panel:
-    
-    dataWindow has a “master” vertical BoxSizer: find it with
-    G2frame.dataWindow.GetSizer() and always use it. A call to
-    dataWindow.SetSizer() should not be needed. 
+    Note that before any items are to be placed in either of these panels,
+    one should call::
+
+        G2frame.dataWindow.ClearData()
+
+    This deletes the contents of the three main sizers used in the 
+    panels. Do not delete them. The 
+    sizers for the unscrolled regions at the top and bottom of
+    the outer panel cannot be [easily] regenerated if deleted. 
+    The sizer for the scrolled panel should be reused.
+    Find the “master” vertical BoxSizer for the scrolled region using::
+
+        G2frame.dataWindow.GetSizer() 
+
+    A call to::
+
+        G2frame.dataWindow.SetSizer()
+
+    should not be needed. There are likely some calls in 
+    the code that replace the sizer associated with the scrolled 
+    panel, but is not ideal becuase it risks that an unexpected sizer
+    type might be created. 
+
+    After the contents of the data window have been created, 
+    a call is made to::
+
+        G2frame.dataWindow.SetDataSize()
+
+    this ensures that the window's scroll bars are placed properly. 
+    Initial GUI creation for the contents of dataWindow is done in 
+    :func:`SelectDataTreeItem`(), which is invoked when a selection 
+    is made in the data tree selection. This may places items into
+    the dataWindow, but more commonly calls other routeins tht call 
+    that. 
+
+    Routines that are called multiple times to redraw the contents 
+    of the data window should call :meth:`ClearData()` and 
+    :meth:`SetDataSize` at the beginning and end of the GUI code, 
+    respectively, to clear contents and complete the layout. 
 
     When placing a widget in the sizer that has its own scrolling
-    (e.g. G2G.GSNoteBook, anything else?) that one widget should be placed
-    in the sizer as
+    e.g. :class:`GSASIIctrlGUI.GSNoteBook` (anything else?) that 
+    one widget should be placed in the scrolledpanel sizer using::
 
-         G2frame.dataWindow.GetSizer().Add(G2frame.<obj>,1,wx.ALL|wx.EXPAND)
+         G2frame.dataWindow.GetSizer().Add(G2frame.<obj>,1,wx.EXPAND)
 
-    [is wx.ALL superfluous here?] so that it consumes the full size of the
-    panel and so that the NoteBook widget does the scrolling.
+    so that it consumes the full size of the panel and so that 
+    the NoteBook widget does the scrolling.
 
     For other uses, one will likely place a bunch of widgets and (other
     [sub-]sizers) into the master sizer. In this case, DO NOT use wx.EXPAND,
@@ -6102,35 +6138,47 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     Sizer.Fit(dataWindow) will do bad things, though a call to
     SubSizer.Fit(dataWindow.subpanel) could make sense.
 
-    Initial GUI draws to dataWindow will go through
-    GSASIIdataGUI.SelectDataTreeItem(), which is called after any changes to
-    data tree selection. SelectDataTreeItem places items in dataWindow or
-    calls that do that. Before it calls those routines, it calls 
+    Use of the unscrolled top sizer: 
+    :data:`G2DataWindow.topBox` provides access to a Horizontal 
+    wx.BoxSizer, where GUI objects can be placed. The parent for these
+    objects should be :data:`G2DataWindow.topPanel`. For the unscrolled
+    bottom region of the window, use :data:`G2DataWindow.bottomBox` 
+    and :data:`G2DataWindow.bottomPanel` as parent.
+    Sample code:: 
 
-        G2frame.dataWindow.ClearData()
+        topSizer = G2frame.dataWindow.topBox
+        parent = G2frame.dataWindow.topPanel
+        topSizer.Add(wx.StaticText(parent,label='Indexing tools'),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
 
-    which deletes the contents of the master sizer. After the contents are
-    posted a call is made to 
+    Menus: The same core menu items are used in all menu bars (defined in 
+    :meth:`PrefillDataMenu` and :meth:`PostfillDataMenu, but 
+    different items may be added, depending on what data tree item and 
+    in some cases (phases +?) window tab. Menu definitions are 
+    performed in :meth:`_initMenus`. Menus that are needed at all 
+    times in GSAS-II are created there with a call sich as::
 
-        G2frame.dataWindow.SetDataSize()
+        self.ConstraintMenu = wx.MenuBar()
 
-    which repaints the window. For routines [such as GSASIIpwdGUI.UpdatePeakGrid()]
-    that are called repeatedly to update the entire contents of dataWindow
-    themselves, it is important to add calls to 
+    but to reduce the time needed to start GSAS-II initially, most menus 
+    are created "on demand". This is done by defining a routine (named 
+    here as :func:`_makemenu`) and the above definition is replaced with::
 
-        G2frame.dataWindow.ClearData()
+        self.ConstraintMenu = _makemenu
 
-    and
+    The code that causes a menubar to be displayed (:func:`SetDataMenuBar`) 
+    checks to see if the menubar has been already been created, if so it 
+    is displayed, if not the function (the appropriate one of many 
+    :func:`_makemenu` routines) is called. This creates and displays the 
+    menu. 
 
-    	 G2frame.dataWindow.SetDataSize()
-
-    at the beginning and end respectively to clear and refresh. This is not
-    needed for GSNoteBook repaints, which seem to be working mostly
-    automatically. If there is a problem, a call like 
+    Note, if there is a problem, a call like 
 
          wx.CallAfter(G2frame.phaseDisplay.SendSizeEvent)
 
     might be needed. There are some calls to G2frame.dataWindow.SendSizeEvent()
+    or G2frame.dataWindow.outer.SendSizeEvent()
     that may be doing the same thing. 
     '''
 
@@ -6141,21 +6189,23 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.outer.SetSizer(mainSizer)
         # three things in unscrolled panel, topBox, self (ScrolledWindow) and bottomBox
+        # topBox
         self.topBox = wx.BoxSizer(wx.HORIZONTAL)
         self.topPanel = self.outer
-        mainSizer.Add(self.topBox)
+        mainSizer.Add(self.topBox,0,wx.EXPAND)
 
-        self.topBox.Add(wx.StaticText(self.topPanel,label='top Test text'),0)
-        
+        # scrolled area
         wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize())
         mainSizer.Add(self,1,wx.EXPAND,0)
+        scrollSizer = wx.BoxSizer(wx.VERTICAL)  # get access to this sizer using self.GetSizer()
+        # it gets deleted and replaced sometimes (though it might be better if it did not)
+        self.SetSizer(scrollSizer)
+
+        # bottomBox
         self.bottomBox = wx.BoxSizer(wx.HORIZONTAL)
         self.bottomPanel = self.outer
         mainSizer.Add(self.bottomBox)
 
-        self.bottomBox.Add(wx.StaticText(self.bottomPanel,label='bottom Test text'),0)
-
-        
         self._initMenus()
         self.currentGrids = []
         self.helpKey = ''  # defines help entry for current item selected in data tree
@@ -6163,11 +6213,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     def ClearData(self):
         '''Initializes the contents of the dataWindow panel
         '''
-        print('ClearData')
         self.Unbind(wx.EVT_SIZE)
-        self.topBox.Clear()
-        self.bottomBox.Clear()
-#self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
+        self.topBox.Clear(True)
+        self.bottomBox.Clear(True)
+        #self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
         #self.SetBackgroundColour(VERY_LIGHT_GREY)  # BHT: I prefer a gray background. Makes TextCtrls stand out, but
         # a bit lighter than the splitter bar
         Sizer = self.GetSizer()
@@ -6179,6 +6228,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         else:
             print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
+        Sizer.Add((-1,3)) # small space on top of scrolled window
 
     def OnResize(self,event):
         'Used for grids to match ScrolledWindow size'
@@ -6227,7 +6277,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 return
         self.SetAutoLayout(True)
         self.SetScrollRate(10,10)
-        self.SendSizeEvent()
+        self.outer.SendSizeEvent()
 
     def PrefillDataMenu(self,menu,empty=False):
         '''Create the "standard" part of data frame menus & add the dataWindow menu headings
@@ -7457,11 +7507,12 @@ def UpdateComments(G2frame,data):
     '''Place comments into the data window
     '''
     lines = ""
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     for line in data:
-        if 'phoenix' in wx.version() and hasattr(line,'decode'):
-            lines += line.decode('latin-1').rstrip()+'\n'
-        else:
-            lines += line.rstrip()+'\n'
+        lines += line.rstrip()+'\n'
     try:
         text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lines)
     except:
@@ -8057,9 +8108,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
     
-    if G2frame.dataWindow:
-        G2frame.dataWindow.ClearData()
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.ClearData()
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    
+    mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
@@ -8075,8 +8130,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     if kind == 'PWDR':
         wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Surprise" factor: %.3f'%S))
-    wtSizer.Add((-1,-1),1,wx.EXPAND)
-    wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(wtSizer,0,wx.EXPAND)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
@@ -8184,9 +8237,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         addmag.Bind(wx.EVT_BUTTON,OnAddMag)
         mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
         mainSizer.Add(mSizer)
-        
-    G2frame.dataWindow.SetSizer(mainSizer)
-    
+
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
     if kind in ['PWDR','SASD','REFD',]:

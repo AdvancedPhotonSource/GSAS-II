@@ -1169,8 +1169,7 @@ def UpdatePeakGrid(G2frame, data):
         data['LaueFringe']['clat'] *= 1. + move/2000.
         wx.CallAfter(RefreshPeakGrid,None)
 
-    #======================================================================
-    #### beginning of UpdatePeakGrid
+    #### beginning of UpdatePeakGrid =================================
     G2frame.GetStatusBar().SetStatusText('Global refine: select refine column & press Y or N',1)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
@@ -1258,6 +1257,7 @@ def UpdatePeakGrid(G2frame, data):
                                           colLabels=kcolLabels,types=Types)
         G2frame.dataWindow.currentGrids = []
         reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+        reflGrid.SetRowLabelSize(45)
         reflGrid.SetTable(kPeakTable, True)
         setBackgroundColors()                         
         reflGrid.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshPeakGrid)
@@ -1265,7 +1265,7 @@ def UpdatePeakGrid(G2frame, data):
         reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
         reflGrid.AutoSizeColumns(False)
         G2frame.reflGrid = reflGrid
-        mainSizer.Add(reflGrid,0,wx.ALL,10)
+        mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,3)
         G2frame.dataWindow.SetDataSize()
         return
 
@@ -1297,7 +1297,6 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
 
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
     if 'LF' in Inst['Type'][0]:
         data['LFpeaks'] = []
         for i in range(len(data['peaks'])):
@@ -1327,6 +1326,7 @@ def UpdatePeakGrid(G2frame, data):
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Peak List')
     G2frame.dataWindow.currentGrids = []
     reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+    reflGrid.SetRowLabelSize(45)
     reflGrid.SetTable(G2frame.PeakTable, True)
     setBackgroundColors()                         
     reflGrid.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshPeakGrid)
@@ -1339,6 +1339,7 @@ def UpdatePeakGrid(G2frame, data):
     topSizer.Add(wx.StaticText(parent,label='List of peaks to fit individually'),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    mainSizer = G2frame.dataWindow.GetSizer()
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     if 'LF' in Inst['Type'][0]:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Laue Fringe fitting'))
@@ -1410,7 +1411,7 @@ def UpdatePeakGrid(G2frame, data):
         prmVSizer.Add(prmSizer)
         topSizer.Add(prmVSizer,0,WACV)
         mainSizer.Add(topSizer)
-    mainSizer.Add(reflGrid,0,wx.ALL,10)
+    mainSizer.Add(reflGrid,1,wx.EXPAND,1)
     G2frame.dataWindow.SetDataSize()
     #RefreshPeakGrid(None)
     
@@ -1877,6 +1878,7 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+            peaksGrid.SetRowLabelSize(45)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.Bind(wg.EVT_GRID_CELL_CHANGED,OnCellChange)
@@ -2806,19 +2808,20 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(RefineBox(key),0,WACV)
                 
         G2frame.dataWindow.ClearData()
+        topSizer = G2frame.dataWindow.topBox
+        parent = G2frame.dataWindow.topPanel
+        topSizer.Add(wx.StaticText(parent,label=' Instrument settings'),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer = G2frame.dataWindow.GetSizer()
-        instSizer = wx.FlexGridSizer(0,3,5,5)
-        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
         if insVal['Bank'] == None:      #patch
             insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
         if 'SEC' in insVal['Type']:
             text += ' (NB: Enter microscope voltage in keV to get wavelength)'
-        subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text),0,WACV)
-        # add help button to bring up help web page - at right side of window
-        subSizer.Add((-1,-1),1,wx.EXPAND)
-        subSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(subSizer,0,wx.EXPAND)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text))
+        instSizer = wx.FlexGridSizer(0,3,5,5)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
             [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
@@ -3716,8 +3719,7 @@ def UpdateSampleGrid(G2frame,data):
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
-    topSizer.Add(wx.StaticText(parent,label=' Sample and Experimental Parameters'))
-    # add help button to bring up help web page - at right side of window
+    topSizer.Add(wx.StaticText(parent,label=' Sample and Experimental Parameters'),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
@@ -3985,9 +3987,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.GPXtree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataWindow.currentGrids = []
-    G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)                
+    G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)
+    G2frame.indxPeaks.SetRowLabelSize(45)
     G2frame.indxPeaks.SetTable(G2frame.IndexPeaksTable, True)
-    G2frame.indxPeaks.SetScrollRate(10,10)
     XY = []
     Sigs = []
     for r in range(G2frame.indxPeaks.GetNumberRows()):
@@ -4010,14 +4012,15 @@ def UpdateIndexPeaksGrid(G2frame, data):
         XY = np.array(XY)
         G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
     G2frame.dataWindow.ClearData()
-    mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
     topSizer.Add(wx.StaticText(parent,label='Index peaks list'),0,WACV)
     # add help button to bring up help web page - at right side of window
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(G2frame.indxPeaks)
+    mainSizer = G2frame.dataWindow.GetSizer()
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    mainSizer.Add(G2frame.indxPeaks,1,wx.EXPAND,1)
     G2frame.dataWindow.SetDataSize()
 ################################################################################
 #####  Unit cells
@@ -5940,10 +5943,44 @@ def UpdateUnitCellsGrid(G2frame, data):
             err_msg += "the drop-down list."
             G2G.G2MessageBox(G2frame, err_msg, err_title)
 
+    def _setupResultsGrid(grid):
+        '''Use to ensure that Search Results tables scroll nicely
+        with scrollbars internal to the table (plays nicely with table 
+        headers). This is done by making the table slightly narrower 
+        than the available space (leaving room for a inner scroll bar) 
+        and give each table less than half the vertical size of the 
+        window so that a single table does not "take over" the 
+        dataWindow real estate. 
+        Also, register the grid in resizeGrids so that it will be 
+        adjusted if the window is resized.
+        '''
+        wid,hgt = G2frame.dataWindow.GetSize()
+        grid.SetMaxSize((wid-15,int(hgt/2.5)))
+        grid.SetScrollRate(10,10)
+        resizeGrids.append(grid)
+
+    def _onResize(event):
+        '''This is called to adjust the sizes of objects in 
+        the dataWindow display if that window is resized.
+
+        The only task at present is to match the width of the 
+        GSGrid tables (search results) to the new width of the 
+        window and make sure that each results table takes 
+        less than 1/2 of the available vertical space
+        '''
+        G2frame.dataWindow.Layout()
+        wid,hgt = G2frame.dataWindow.GetSize()
+        wid,hgt = G2frame.dataWindow.GetSize()
+        for grid in resizeGrids:
+            grid.SetMaxSize((wid-15,int(hgt/2.5)))
+        event.Skip()
+            
     #### UpdateUnitCellsGrid code starts here
+    # create all menubars accessed here
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)   # Needed below
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)   # Needed below
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
+    resizeGrids = []     # track Grids to resize
     Indx = {}
     G2frame.ifSetLimitsMode = 0
     G2frame.CancelSetLimitsMode.Enable(False)
@@ -6396,6 +6433,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 else:
                     SgDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(SgDisplay)
+        _setupResultsGrid(SgDisplay)
         
     # cell search results
     if cells:
@@ -6486,8 +6524,9 @@ def UpdateUnitCellsGrid(G2frame, data):
 
             mainSizer.Add(hSizer)
         else:
-            mainSizer.Add(gridDisplay)
-
+            mainSizer.Add(gridDisplay,1,wx.EXPAND,1)
+            _setupResultsGrid(gridDisplay)
+            
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:
         itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
@@ -6532,6 +6571,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.GetStatusBar().SetStatusText(
                 'Double click Keep to refresh Keep flags; click Space Gp to see sym. ops., Uniq to see unique atoms list; Try to trigger K & J keys on plot',1)
         magDisplay = G2G.GSGrid(G2frame.dataWindow)
+        magDisplay.SetRowLabelSize(45)
         magDisplay.SetTable(MagCellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
         magDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnRefreshKeep)
@@ -6543,6 +6583,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 else:
                     magDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(magDisplay)
+        _setupResultsGrid(magDisplay)
 
     # GUI creation done -- finally
     G2frame.dataWindow.SetDataSize()
@@ -6558,10 +6599,13 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        G2pwpl.PlotPatterns(G2frame)
     G2frame.Contour = False
     OnHklShow()
+    # setup for resizing
+    G2frame.dataWindow.Unbind(wx.EVT_SIZE)
+    G2frame.dataWindow.Bind(wx.EVT_SIZE,_onResize)
+
 ################################################################################
 #####  Reflection list
 ################################################################################
-
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item by displaying
     a table of reflections in the data window.
@@ -6931,10 +6975,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     for tabnum,phase in enumerate(phases):
         if isinstance(data,list):           #single crystal HKLF
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
+            G2frame.refTable[phase].SetRowLabelSize(60)  # leave room for big numbers
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
             G2frame.refTable[phase].SetScrollRate(10,10) # reflection grids (inside tab) need scroll bars 
         elif len(data[phase]):              #else dict for PWDR
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
+            G2frame.refTable[phase].SetRowLabelSize(60)
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
             G2frame.refTable[phase].SetScrollRate(10,10) # as above
         else:       #cleanup deleted phase reflection lists
@@ -6945,7 +6991,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             else:
                 G2frame.RefList = ''
                 phaseName = ''
-#    mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     if phaseName: ShowReflTable(phaseName)
     G2frame.refBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataWindow.SetDataSize()
@@ -6953,14 +6998,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
 ################################################################################
 #####  SASD/REFD Substances 
 ################################################################################
-           
 def UpdateSubstanceGrid(G2frame,data):
     '''respond to selection of SASD/REFD Substance data tree item.
     '''
     import Substances as substFile
     
     def LoadSubstance(name):
-
         subst = substFile.Substances[name]
         ElList = subst['Elements'].keys()
         for El in ElList:
@@ -7868,6 +7911,7 @@ def UpdateModelsGrid(G2frame,data):
                 tableVals.append([Atoms[2*i][0],False,False,Patterns[i][-1],PRcalc[i][-1],len(Atoms[2*i][1]),len(Atoms[2*i+1][1])])
             shapeTable = G2G.Table(tableVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             ShapesResult = G2G.GSGrid(G2frame.dataWindow)
+            ShapesResult.SetRowLabelSize(45)
             ShapesResult.SetTable(shapeTable,True)
             ShapesResult.AutoSizeColumns(False)
             ShapesResult.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnShapeSelect)
@@ -9680,6 +9724,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         rowLabels = [str(i) for i in range(len(peaks['Peaks']))]
         peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         PDFPeaks = G2G.GSGrid(G2frame.dataWindow)
+        PDFPeaks.SetRowLabelSize(45)
         PDFPeaks.SetTable(peakTable,True)
         PDFPeaks.AutoSizeColumns(False)
         PDFPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PeaksRefine)

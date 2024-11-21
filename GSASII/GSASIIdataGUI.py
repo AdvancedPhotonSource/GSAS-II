@@ -6185,7 +6185,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     def __init__(self,parent):
         self.parent = parent
         # create an outer unscrolled panel
-        self.outer = wx.Panel(parent,size=parent.GetSize())
+        self.outer = wx.Panel(parent,size=parent.GetSize(),name='Outer data window')
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.outer.SetSizer(mainSizer)
         # three things in unscrolled panel, topBox, self (ScrolledWindow) and bottomBox
@@ -6195,7 +6195,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         mainSizer.Add(self.topBox,0,wx.EXPAND)
 
         # scrolled area
-        wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize())
+        wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize(),
+                                       name="inner scrolled data window")
         mainSizer.Add(self,1,wx.EXPAND,0)
         scrollSizer = wx.BoxSizer(wx.VERTICAL)  # get access to this sizer using self.GetSizer()
         # it gets deleted and replaced sometimes (though it might be better if it did not)
@@ -6230,51 +6231,54 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             if GSASIIpath.GetConfigValue('debug'): raise Exception
         Sizer.Add((-1,3)) # small space on top of scrolled window
 
-    def OnResize(self,event):
-        'Used for grids to match ScrolledWindow size'
-        event.Skip()
-        Sizer = self.GetSizer()
-        if not Sizer: return
-        #if Sizer.GetItemCount() == 1: # not wx 2.8
-        if len(Sizer.GetChildren()) == 1: # if there is a single grid, resize it
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid): 
-                Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
+    # def OnResize(self,event):
+    #     'Used for grids to match ScrolledWindow size'
+    #     event.Skip()
+    #     Sizer = self.GetSizer()
+    #     if not Sizer: return
+    #     #if Sizer.GetItemCount() == 1: # not wx 2.8
+    #     if len(Sizer.GetChildren()) == 1: # if there is a single grid, resize it
+    #         if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid): 
+    #             Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
                     
     def SetDataSize(self):
-        '''Sizes the contents of the dataWindow panel
+        '''Sizes the contents of the dataWindow panel and sets up
+        for response to change in size of window.
         '''
         Sizer = self.GetSizer()
         if not Sizer:
             print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
             return
-        #if Sizer.GetItemCount() == 1: # not wx 2.8
-        if len(Sizer.GetChildren()) == 1: # handle cases with a single grid in DataWindow differently
-            # note that Grid's scroll bars must be turned on with .SetScrollRate(10,10)
-            # just after the call to .GSGrid()
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid):
-                self.Bind(wx.EVT_SIZE,self.OnResize)
-                Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
-                self.SetAutoLayout(False)
-                self.SetScrollRate(0,0) 
-                self.SendSizeEvent()
-                return
-        elif len(Sizer.GetChildren()) == 2: # case where there is a NoteBook & help button
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSNoteBook):
-                # with wx4.2 (& 4.1?) AutoLayout causes all inner windows
-                # to be made large and scrolling is done at outer window
-                # this messes things up for grids inside notebooks (Reflection lists)
-                # for this case turn off AutoLayout on dataWindow, but
-                # use a Bind to redo Layout. This works for expansion but not
-                # contraction of the window. 
-                def _onResize(event):
-                    self.Layout()
-                    event.Skip()
-                self.Bind(wx.EVT_SIZE,_onResize)
-                self.SetScrollRate(0,0)
+        # find out more about what is in the scrolled window
+        numChild = len(self.GetChildren())
+        haveGrid = None # grid or notebook, if only one in panel
+        for child in self.GetChildren():
+            if isinstance(child,G2G.GSGrid) or isinstance(child,G2G.GSNoteBook):
+                if haveGrid:
+                    haveGrid = None
+                    break
+                haveGrid = child
+        extra = 0
+        if sys.platform == "darwin": extra = 3 # N.B. 3 extra items in MacOS (Linux?)
+        # for simple windows with only a GSNotebook or GSGrid, turn off
+        # scrolling in the scrolled window and let the notebook or grid
+        # handle the scaling
+        if numChild <= 2+extra and haveGrid:
+            def _onResize(event):
                 self.Layout()
-                self.SetAutoLayout(False)
-                return
+                self.SetVirtualSize(self.GetSize())
+                event.Skip()
+            self.Bind(wx.EVT_SIZE,_onResize)
+            self.SetVirtualSize(self.GetSize())
+            self.SetAutoLayout(False)
+            self.SetScrollRate(0,0)
+            if isinstance(haveGrid,G2G.GSGrid):
+                haveGrid.SetScrollRate(10,10)
+            self.outer.SendSizeEvent()
+            return
+        # otherwise turn on autolayout and scrolling for the scrolled window
+        #self.Bind(wx.EVT_SIZE,self.OnResize)
         self.SetAutoLayout(True)
         self.SetScrollRate(10,10)
         self.outer.SendSizeEvent()
@@ -7509,6 +7513,7 @@ def UpdateComments(G2frame,data):
     lines = ""
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,label=' Information from data file'),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     for line in data:
@@ -7518,8 +7523,8 @@ def UpdateComments(G2frame,data):
     except:
         text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
                                  G2obj.StripUnicode(lines))
+    G2G.HorizontalLine(G2frame.dataWindow.GetSizer(),G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
-
             
 ####  Controls Tree Item editor ##############################################
 def UpdateControls(G2frame,data):

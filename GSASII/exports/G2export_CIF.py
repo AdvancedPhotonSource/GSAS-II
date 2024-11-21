@@ -2059,7 +2059,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 DisAglData['covData'] = self.OverallParms['Covariance']
                 # add RB stuff to DisAglData
                 DisAglData['RBlist'] = []          # list of atom numbers used in the RB
-                for d in phasedict['RBModels']['Residue']:
+                for d in phasedict['RBModels'].get('Residue',[]):
                     for rId in d['Ids']:
                         num = int(G2obj.LookupAtomId(ranId=rId,pId=phasedict['pId']))
                         DisAglData['RBlist'].append(num)
@@ -2205,7 +2205,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 # self.OverallParms['Covariance']
                 # add RB stuff to DisAglData
                 DisAglData['RBlist'] = []          # list of atom numbers used in the RB
-                for d in phasedict['RBModels']['Residue']:
+                for d in phasedict['RBModels'].get('Residue',[]):
                     for rId in d['Ids']:
                         num = int(G2obj.LookupAtomId(ranId=rId,pId=phasedict['pId']))
                         DisAglData['RBlist'].append(num)

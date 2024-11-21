@@ -4215,7 +4215,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             ssopt['Use'] = False
             G2frame.dataWindow.RefineCell.Enable(True)
-            res = OnHklShow(event,False)
+            res = OnHklShow(event,True)
             if res: 
                 ssopt['SgResults'].append(res)
         if ssopt['SgResults']:
@@ -4224,7 +4224,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[13] = ssopt['SgResults'][0][0]
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event,False)
+            OnHklShow(event,True)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
 
     def OnSelectSgrp(event):
@@ -4337,7 +4337,7 @@ def UpdateUnitCellsGrid(G2frame, data):
          * Nhkl: number of generated reflections below dmin
          * frfnd: fraction of lines indexed
         '''
-        print('called OnHklShow')
+#        print('called OnHklShow')
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
@@ -4641,6 +4641,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         keepcells = []
         try:
             controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+            ssopt['SgResults'] = []
             for cell in cells:
                 if cell[11]:
                     cell[10] = False    #clear selection flag on keepers
@@ -5939,6 +5940,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         'remove previous search results'
         data[2] = []
         data[5] = []
+        ssopt['SgResults'] = []
         wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
         
     def OnISODIST(event):
@@ -6373,15 +6375,12 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add((-1,3),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
-                    label='Cell Search Results',
-                    style=wx.ALIGN_CENTER),
-                0,wx.EXPAND|wx.BOTTOM,3)
-    mainSizer.Add((5,5),0)
+        label='Cell Search Results',style=wx.ALIGN_CENTER),0,wx.EXPAND,3)
     G2frame.dataWindow.currentGrids = []
     
     # space group search results
     if len(ssopt.get('SgResults',[])):
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Space Group Search Results:'))
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Space Group Search Results:'))
         colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
             wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']

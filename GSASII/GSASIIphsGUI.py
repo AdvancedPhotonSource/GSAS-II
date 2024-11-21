@@ -12754,7 +12754,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         '''
         sourceDict = data['Histograms'][G2frame.hist]
         try:
-            dlg = G2G.gpxFileSelector(parent=G2frame)
+            pth = G2G.GetImportPath(G2frame)
+            dlg = G2G.gpxFileSelector(parent=G2frame,startdir=pth)
             if wx.ID_OK == dlg.ShowModal():
                 filename = dlg.Selection
             else:

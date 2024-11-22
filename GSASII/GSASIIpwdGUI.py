@@ -6622,8 +6622,10 @@ def UpdateUnitCellsGrid(G2frame, data):
 #####  Reflection list
 ################################################################################
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
-    '''respond to selection of PWDR Reflections data tree item by displaying
-    a table of reflections in the data window.
+    '''respond to selection of PWDR or HKLF Reflections data tree 
+    item by displaying a table of reflections in the data window.
+
+    Note that this is used for Single Xtal even though in pwdGUI.
     '''
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     dMin = 0.05
@@ -6967,6 +6969,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnWilsonStat, id=G2G.wxID_WILSONSTAT)
         G2frame.Bind(wx.EVT_MENU, OnToggleExt, id=G2G.wxID_SHOWHIDEEXTINCT)
         G2frame.dataWindow.SelectPhase.Enable(False)
+        lbl = 'Single crystal reflections'
     else:
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2G.wxID_SELECTPHASE)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
@@ -6975,11 +6978,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnMakeCSV, id=G2G.wxID_CSVFROMTABLE)
         G2frame.Bind(wx.EVT_MENU, OnWilsonStat, id=G2G.wxID_WILSONSTAT)
         G2frame.dataWindow.SelectPhase.Enable(False)
+        lbl = 'Powder reflections, selected by phase'
             
     G2frame.dataWindow.ClearData()
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
-    #topSizer.Add(wx.StaticText(parent,label=''),0,WACV)
+    topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     G2frame.refBook = G2G.GSNoteBook(parent=G2frame.dataWindow)

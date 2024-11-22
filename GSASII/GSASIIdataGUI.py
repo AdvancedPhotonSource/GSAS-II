@@ -7761,14 +7761,14 @@ def UpdateControls(G2frame,data):
         G2frame.GetStatusBar().SetStatusText('',1)
     G2frame.dataWindow.ClearData()
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
-    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5),0)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement Controls'),0,WACV)    
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,wx.ID_ANY,'Refinement Controls'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex='Controls'))
+    
+    mainSizer = G2frame.dataWindow.GetSizer()
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),0)
     LSSizer,ShklSizer = LSSizer()
     mainSizer.Add(LSSizer)
@@ -7823,14 +7823,8 @@ def UpdateControls(G2frame,data):
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
         subSizer.Add(btn)
         mainSizer.Add(subSizer)
-    bigSizer.Add(mainSizer)
-        
-    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Controls'))
-    bigSizer.Layout()
-    bigSizer.FitInside(G2frame.dataWindow)
-    G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
-    G2frame.SendSizeEvent()
+#    G2frame.SendSizeEvent()
     
 ####  Main PWDR panel ########################################################    
 def UpdatePWHKPlot(G2frame,kind,item):
@@ -8112,14 +8106,26 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
-    
+    if kind == 'PWDR':
+        lbl = 'Powder'
+    elif kind == 'SASD':
+        lbl = 'Small-angle'
+    elif kind == 'REFD':
+        lbl = 'Reflectometry'
+    elif kind == 'HKLF':
+        lbl = 'Single crystal'
+    else:
+        lbl = '?'
+    lbl += ' histogram: ' + G2frame.GPXtree.GetItemText(item)[:60]    
     G2frame.dataWindow.ClearData()
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     
     mainSizer = G2frame.dataWindow.GetSizer()
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
@@ -8451,13 +8457,18 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Covariance':
             data = G2frame.GPXtree.GetItemPyData(item)
             text = ''
-            mainSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer = wx.BoxSizer(wx.VERTICAL)
             if 'Rvals' in data:
                 lbl = 'Refinement results'
             else:
-                lbl = 'No refinement results' + 50*' '
-            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                lbl = '*** No refinement results ***'
+            topSizer = G2frame.dataWindow.topBox
+            parent = G2frame.dataWindow.topPanel
+            topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(parent,helpIndex='Covariance'))
+                
+            mainSizer = G2frame.dataWindow.GetSizer()
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
@@ -8472,13 +8483,13 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
-                subSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
                 if Rvals.get('RestraintSum',0) > 0:
                     chisq_data = (Rvals['chisq']-Rvals['RestraintSum'])/(Rvals['Nobs']-Rvals['Nvars'])
                     lbl = '\nData-only residuals (without restraints)'
                     lbl += f'\n\tGOF = {np.sqrt(chisq_data):.2f}'
                     lbl += f'\n\tReduced χ**2 = {chisq_data:.2f}'
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
                 plotSizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 if 'Lastshft' in data and not data['Lastshft'] is None:
@@ -8490,11 +8501,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)
                     plotSizer.Add((10,-1))
                     plotSizer.Add(showShift)
-                subSizer.Add((-1,10))
-                subSizer.Add(plotSizer)
-            mainSizer.Add(subSizer)
-            mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
-            G2frame.dataWindow.GetSizer().Add(mainSizer)
+                mainSizer.Add((-1,10))
+                mainSizer.Add(plotSizer)
+            G2frame.dataWindow.SetDataSize()
             G2plt.PlotCovariance(G2frame,data)
             #try:
             # if True:
